@@ -1305,22 +1305,22 @@
     </div>
     <script>
         (function(){
-            var p = new URLSearchParams(window.location.search);
             var nav = performance.getEntriesByType('navigation')[0];
             var isBackButton = nav && nav.type === 'back_forward';
-            var wantsLoader = p.get('loader') === '1';
-            var hasAnyParam = p.toString().length > 0;
-            // 로더 표시: ?loader=1이거나 파라미터가 아예 없을 때(첫 방문/주소 직접 입력)
-            // 로더 숨김: 뒤로가기, ?back=1, ?tab=tab 등
-            if (isBackButton || (hasAnyParam && !wantsLoader)) {
+            var skipLoader = sessionStorage.getItem('skipLoader');
+            // 로더 표시: 첫 방문 또는 로고 클릭(showLoader)
+            // 로더 숨김: 뒤로가기, 돌아가기 링크(skipLoader)
+            if (isBackButton || (skipLoader && skipLoader !== 'showLoader')) {
                 document.getElementById('loader').style.display = 'none';
             }
+            // 사용 후 정리
+            sessionStorage.removeItem('skipLoader');
         })();
     </script>
 
     <!-- Navigation -->
     <nav id="navbar">
-        <a href="index.html?loader=1" class="nav-logo"><img src="logo-vertical.webp" alt="안쌤의 기타나무숲" style="height: 75px; vertical-align: middle; margin-left: 30px;"></a>
+        <a href="index.html" onclick="sessionStorage.setItem('skipLoader','showLoader')" class="nav-logo"><img src="logo-vertical.webp" alt="안쌤의 기타나무숲" style="height: 75px; vertical-align: middle; margin-left: 30px;"></a>
         <ul class="nav-links">
             <li><a href="#guitar-forest">콘텐츠</a></li>
             <li><a href="#shop">Shop</a></li>
@@ -1699,19 +1699,19 @@
 
         // Loader
         window.addEventListener('load', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const tabParam = urlParams.get('tab');
+            var gotoTab = sessionStorage.getItem('gotoTab');
+            sessionStorage.removeItem('gotoTab');
             const loader = document.getElementById('loader');
             // 로더가 아직 보이는 경우(display:none 안 된 경우)만 fadeout
             if (loader.style.display !== 'none') {
                 setTimeout(() => loader.classList.add('hidden'), 800);
             }
             // TAB악보 탭 전환
-            if (tabParam) {
-                setTimeout(() => switchShopTab(tabParam), loader.style.display === 'none' ? 100 : 900);
+            if (gotoTab) {
+                setTimeout(() => switchShopTab(gotoTab), loader.style.display === 'none' ? 100 : 900);
             }
-            // 파라미터/해시 없이 접속 시 항상 맨 위로 (홈 화면 아이콘, 북마크 등)
-            if (!urlParams.toString() && !window.location.hash) {
+            // 해시 없이 접속 시 항상 맨 위로 (홈 화면 아이콘, 북마크 등)
+            if (!window.location.hash) {
                 window.scrollTo(0, 0);
             }
         });
