@@ -32,10 +32,102 @@
             background: var(--white);
         }
 
+        /* ===== NAVIGATION (메인 동일) ===== */
+        nav {
+            position: fixed; top: 15px; left: 0; right: 0; z-index: 1000;
+            padding: 1.2rem 3rem;
+            display: flex; align-items: center; justify-content: space-between;
+            transition: all 0.4s ease;
+            background: transparent;
+        }
+        nav.scrolled {
+            top: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 2px 30px rgba(0,0,0,0.08);
+            padding: 1rem 3rem;
+        }
+        .nav-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem; font-weight: 700;
+            color: var(--white);
+            text-decoration: none !important;
+            transition: color 0.3s;
+            letter-spacing: 0.05em;
+        }
+        nav.scrolled .nav-logo { color: var(--green-deep); }
+        .nav-links { display: flex; gap: 2.5rem; list-style: none; transform: translateX(-40px); }
+        .nav-links a {
+            text-decoration: none !important;
+            color: rgba(255,255,255,0.85) !important;
+            font-size: 0.85rem; font-weight: 500;
+            letter-spacing: 0.15em; text-transform: uppercase;
+            transition: color 0.3s;
+            position: relative;
+        }
+        .nav-links a::after {
+            content: ''; position: absolute; bottom: -4px; left: 0;
+            width: 0; height: 2px;
+            background: var(--green-light);
+            transition: width 0.3s ease;
+        }
+        .nav-links a:hover::after { width: 100%; }
+        nav.scrolled .nav-links a { color: var(--text-mid) !important; }
+        nav.scrolled .nav-links a:hover { color: var(--green-dark) !important; }
+
+        .nav-social { display: flex; gap: 1rem; margin-right: 30px; }
+        .nav-social a {
+            color: rgba(255,255,255,0.7); font-size: 1rem;
+            transition: color 0.3s, transform 0.3s;
+            text-decoration: none;
+        }
+        .nav-social a:hover { color: var(--white); transform: translateY(-2px); }
+        .nav-social .naver-blog-icon,
+        .nav-social .naver-cafe-icon {
+            width: 1rem; height: 1rem; border-radius: 3px;
+            vertical-align: middle; opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+        .nav-social a:hover .naver-blog-icon,
+        .nav-social a:hover .naver-cafe-icon { opacity: 1; }
+        nav.scrolled .nav-social a { color: var(--text-light); }
+        nav.scrolled .nav-social a:hover { color: var(--green-dark); }
+
+        .mobile-menu { display: none; }
+        .menu-toggle { display: none; cursor: pointer; z-index: 1001; }
+        .menu-toggle span {
+            display: block; width: 25px; height: 2px;
+            background: var(--white); margin: 6px 0;
+            transition: all 0.3s;
+        }
+        nav.scrolled .menu-toggle span { background: var(--green-deep); }
+
+        @media (max-width: 768px) {
+            nav { padding: 1rem 1.5rem; }
+            nav.scrolled { padding: 0.6rem 1.5rem; }
+            .nav-links, .nav-social { display: none; }
+            .menu-toggle { display: block; }
+            .mobile-menu {
+                position: fixed; inset: 0; z-index: 999;
+                background: var(--green-deep);
+                display: flex !important; flex-direction: column;
+                align-items: center; justify-content: center;
+                gap: 2rem;
+                transform: translateX(100%);
+                transition: transform 0.4s ease;
+            }
+            .mobile-menu.open { transform: translateX(0); }
+            .mobile-menu a {
+                color: var(--white); text-decoration: none;
+                font-size: 1.3rem; letter-spacing: 0.2em;
+                text-transform: uppercase;
+            }
+        }
+
         /* Header */
         .page-header {
             background: linear-gradient(135deg, #3a8a5c 0%, #2f7a50 50%, #52a872 100%);
-            padding: 5rem 3rem 3rem;
+            padding: 9rem 3rem 3rem;
             text-align: center;
             position: relative;
             overflow: hidden;
@@ -246,7 +338,7 @@
 
         @media (max-width: 768px) {
             .gallery-item { flex: 0 0 calc(37% - 0.5rem); min-width: unset; }
-            .page-header { padding: 4rem 1.5rem 2rem; }
+            .page-header { padding: 7rem 1.5rem 2rem; }
             .page-header h1 { font-size: 1.8rem; }
             .row-title { font-size: 1.2rem; }
             .scroll-arrow { display: none; }
@@ -255,14 +347,44 @@
 </head>
 <body>
 
+    <!-- Navigation -->
+    <nav id="navbar">
+        <a href="/" onclick="sessionStorage.setItem('skipLoader','showLoader')" class="nav-logo"><img src="logo-vertical.webp" alt="안쌤의 기타나무숲" style="height: 75px; vertical-align: middle; margin-left: 30px;"></a>
+        <ul class="nav-links">
+            <li><a href="/#contents">콘텐츠</a></li>
+            <li><a href="/#shop" onclick="sessionStorage.setItem('gotoTab','books')">Shop</a></li>
+            <li><a href="/#shop" onclick="sessionStorage.setItem('gotoTab','tab')">TAB악보</a></li>
+            <li><a href="/#about">소개</a></li>
+            <li><a href="/#contact">Contact</a></li>
+        </ul>
+        <div style="display: flex; align-items: center; gap: 1.2rem;">
+            <div class="nav-social">
+                <a href="https://www.youtube.com/channel/UC0TC0fLj3ZahhlKcC9ebVrg" target="_blank" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                <a href="https://www.instagram.com/ahnssamguitar/" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.tiktok.com/@ahnssamguitar" target="_blank" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                <a href="https://blog.naver.com/ynlee2568" target="_blank" aria-label="Naver Blog"><img src="naver-blog-icon.svg" alt="Naver Blog" class="naver-blog-icon"></a>
+                <a href="https://cafe.naver.com/ahnsguitarforest" target="_blank" aria-label="Naver Cafe"><img src="naver-cafe-icon.png" alt="Naver Cafe" class="naver-cafe-icon"></a>
+            </div>
+        </div>
+        <div class="menu-toggle" onclick="toggleMenu()">
+            <span></span><span></span><span></span>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="/#contents" onclick="toggleMenu()">콘텐츠</a>
+        <a href="/#shop" onclick="toggleMenu(); sessionStorage.setItem('gotoTab','books')">Shop</a>
+        <a href="/#shop" onclick="toggleMenu(); sessionStorage.setItem('gotoTab','tab')">TAB악보</a>
+        <a href="/#about" onclick="toggleMenu()">소개</a>
+        <a href="/#contact" onclick="toggleMenu()">Contact</a>
+    </div>
+
     <div class="page-header">
         <i class="fas fa-leaf page-header-leaf" style="top: 15%; left: 8%; font-size: 2.5rem; animation-delay: 0s;"></i>
         <i class="fas fa-leaf page-header-leaf" style="top: 55%; right: 10%; font-size: 2rem; animation-delay: 3s;"></i>
         <i class="fas fa-seedling page-header-leaf" style="top: 25%; right: 20%; font-size: 1.8rem; animation-delay: 6s;"></i>
         <i class="fas fa-leaf page-header-leaf" style="bottom: 15%; left: 15%; font-size: 1.5rem; animation-delay: 9s;"></i>
-        <div class="page-header-nav">
-            <a href="/" onclick="sessionStorage.setItem('skipLoader','showLoader')" class="page-logo"><img src="logo-vertical.webp" alt="안쌤의 기타나무숲"></a>
-        </div>
         <h1>세션활동</h1>
         <p>스튜디오 세션, 라이브 무대, 그리고 함께한 순간들</p>
     </div>
@@ -410,6 +532,17 @@
                 track.scrollLeft = scrollLeft - (x - startX) * 1.5;
             });
         });
+
+        // Navbar scroll
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 50);
+        });
+
+        // Mobile menu
+        function toggleMenu() {
+            document.getElementById('mobileMenu').classList.toggle('open');
+        }
     </script>
 </body>
 </html>
