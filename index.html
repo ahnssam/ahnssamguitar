@@ -728,23 +728,26 @@
         }
         .fingering-selector {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.4rem;
             justify-content: center;
             margin-top: 1.2rem;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             cursor: default;
         }
         .fingering-btn {
-            padding: 0.5rem 1.1rem;
+            padding: 0.5rem 0.7rem;
             background: rgba(255,255,255,0.06);
             color: rgba(255,255,255,0.75);
             border: 1px solid rgba(255,255,255,0.22);
             border-radius: 22px;
-            font-size: 0.85rem;
+            font-size: 0.78rem;
             font-family: inherit;
             font-weight: 500;
             cursor: pointer;
             transition: background 0.2s, color 0.2s, border-color 0.2s;
+            white-space: nowrap;
+            flex-shrink: 1;
+            min-width: 0;
         }
         .fingering-btn:hover {
             background: rgba(82, 168, 114, 0.2);
@@ -3130,8 +3133,16 @@
                 }
             }
         }
-        // Back button handler — close drawer when it's open
+        // Back button handler — close chord modal first, then drawer
         window.addEventListener('popstate', function() {
+            // Priority 1: chord modal (stacked on top of drawer)
+            const chordModal = document.getElementById('chordModal');
+            if (chordModal && chordModal.classList.contains('open')) {
+                window._chordModalHistoryAdded = false;
+                chordModal.classList.remove('open');
+                return;
+            }
+            // Priority 2: drawer
             const drawer = document.getElementById('toolsDrawer');
             if (!drawer || !drawer.classList.contains('open')) return;
             _drawerHistoryAdded = false;
@@ -4243,7 +4254,6 @@
                 if (!modal || !content) return;
 
                 const defaultIdx = chord.defaultFingering || 0;
-                // Build initial chord with default fingering applied
                 let displayChord = chord;
                 if (chord.fingerings && chord.fingerings[defaultIdx]) {
                     const variant = chord.fingerings[defaultIdx];
@@ -4268,6 +4278,13 @@
                 content.innerHTML = html;
                 window._modalChord = chord;
                 modal.classList.add('open');
+                // Push history entry so back button closes modal
+                if (!window._chordModalHistoryAdded) {
+                    try {
+                        history.pushState({ chordModal: true }, '', window.location.hash);
+                        window._chordModalHistoryAdded = true;
+                    } catch (e) {}
+                }
             }
             window.switchFingering = function(idx) {
                 const chord = window._modalChord;
@@ -4286,7 +4303,12 @@
             };
             window.closeChordModal = function() {
                 const modal = document.getElementById('chordModal');
-                if (modal) modal.classList.remove('open');
+                if (!modal || !modal.classList.contains('open')) return;
+                modal.classList.remove('open');
+                if (window._chordModalHistoryAdded) {
+                    window._chordModalHistoryAdded = false;
+                    try { history.back(); } catch (e) {}
+                }
             };
             // Close on ESC
             document.addEventListener('keydown', function(e) {
