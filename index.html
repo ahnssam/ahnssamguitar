@@ -600,16 +600,17 @@
             flex-wrap: wrap;
         }
         .chord-filter {
-            padding: 0.4rem 0.9rem;
+            padding: 0.4rem 0.8rem;
             background: rgba(255,255,255,0.06);
             color: rgba(255,255,255,0.75);
             border: 1px solid rgba(255,255,255,0.18);
             border-radius: 20px;
-            font-size: 0.78rem;
+            font-size: 0.72rem;
             font-weight: 500;
             cursor: pointer;
             font-family: inherit;
             transition: background 0.2s, border-color 0.2s, color 0.2s;
+            white-space: nowrap;
         }
         .chord-filter:hover { background: rgba(82, 168, 114, 0.15); }
         .chord-filter.active {
@@ -724,6 +725,36 @@
             width: 100%;
             height: auto;
             display: block;
+        }
+        .fingering-selector {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 1.2rem;
+            flex-wrap: wrap;
+            cursor: default;
+        }
+        .fingering-btn {
+            padding: 0.5rem 1.1rem;
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.75);
+            border: 1px solid rgba(255,255,255,0.22);
+            border-radius: 22px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s, border-color 0.2s;
+        }
+        .fingering-btn:hover {
+            background: rgba(82, 168, 114, 0.2);
+            color: var(--white);
+            border-color: rgba(114, 196, 146, 0.5);
+        }
+        .fingering-btn.active {
+            background: rgba(82, 168, 114, 0.35);
+            color: var(--white);
+            border-color: var(--green-mid);
         }
         .tools-tab.active {
             color: var(--white);
@@ -3051,6 +3082,7 @@
     <!-- Practice Tools (Tuner + Metronome) -->
     <script>
         // ========== Drawer toggle ==========
+        let _drawerHistoryAdded = false;
         function getActiveTool() {
             const activeTab = document.querySelector('.tools-tab.active');
             return activeTab ? activeTab.dataset.tool : 'tuner';
@@ -3061,20 +3093,51 @@
         function clearHash() {
             try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch (e) {}
         }
+        function pushDrawerHistory(tool) {
+            if (_drawerHistoryAdded) return;
+            try {
+                history.pushState({ drawerOpen: true }, '', '#' + (tool || getActiveTool()));
+                _drawerHistoryAdded = true;
+            } catch (e) {}
+        }
+        function doCloseDrawer() {
+            const drawer = document.getElementById('toolsDrawer');
+            const overlay = document.getElementById('toolsOverlay');
+            if (!drawer) return;
+            drawer.classList.remove('open');
+            if (overlay) overlay.classList.remove('open');
+            if (window._tunerRunning) toggleTuner();
+            if (window._metroRunning) toggleMetronome();
+        }
         function toggleTools() {
             const drawer = document.getElementById('toolsDrawer');
             const overlay = document.getElementById('toolsOverlay');
-            const isOpen = drawer.classList.toggle('open');
-            overlay.classList.toggle('open', isOpen);
-            if (isOpen) {
+            const wasOpen = drawer.classList.contains('open');
+            if (!wasOpen) {
+                // Opening
+                drawer.classList.add('open');
+                overlay.classList.add('open');
                 updateHashForTool(getActiveTool());
+                pushDrawerHistory();
             } else {
+                // Closing manually
+                doCloseDrawer();
                 clearHash();
-                // Stop any running tools when closed
-                if (window._tunerRunning) toggleTuner();
-                if (window._metroRunning) toggleMetronome();
+                if (_drawerHistoryAdded) {
+                    _drawerHistoryAdded = false;
+                    // Pop our pushed entry; popstate handler will no-op (drawer already closed)
+                    try { history.back(); } catch (e) {}
+                }
             }
         }
+        // Back button handler — close drawer when it's open
+        window.addEventListener('popstate', function() {
+            const drawer = document.getElementById('toolsDrawer');
+            if (!drawer || !drawer.classList.contains('open')) return;
+            _drawerHistoryAdded = false;
+            doCloseDrawer();
+            clearHash();
+        });
 
         // ========== Auto-open drawer from URL hash ==========
         (function() {
@@ -3099,6 +3162,7 @@
                 drawer.classList.add('open');
                 overlay.classList.add('open');
                 if (typeof switchTool === 'function') switchTool(tool);
+                if (typeof pushDrawerHistory === 'function') pushDrawerHistory(tool);
             }
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', openFromHash);
@@ -3960,14 +4024,24 @@
                 { name: 'Gm',   cat: 'minor', frets: [3, 5, 5, 3, 3, 3], fingers: [1, 3, 4, 1, 1, 1] },
                 // Maj7
                 { name: 'Cmaj7',cat: 'maj7',  frets: [null, 3, 2, 0, 0, 0], fingers: [0, 3, 2, 0, 0, 0] },
-                { name: 'Dmaj7',cat: 'maj7',  frets: [null, null, 0, 2, 2, 2], fingers: [0, 0, 0, 1, 1, 1] },
+                { name: 'Dmaj7',cat: 'maj7',  frets: [null, null, 0, 2, 2, 2], fingers: [0, 0, 0, 1, 1, 1],
+                    defaultFingering: 1,
+                    fingerings: [
+                        { fingers: [0, 0, 0, 1, 2, 3] },
+                        { fingers: [0, 0, 0, 1, 1, 1] },
+                        { fingers: [0, 0, 0, 2, 3, 4] }
+                    ]
+                },
+                { name: 'Emaj7',cat: 'maj7',  frets: [0, 2, 1, 1, 0, 0], fingers: [0, 3, 1, 2, 0, 0] },
                 { name: 'Fmaj7',cat: 'maj7',  frets: [null, null, 3, 2, 1, 0], fingers: [0, 0, 3, 2, 1, 0] },
-                { name: 'Gmaj7',cat: 'maj7',  frets: [3, 2, 0, 0, 0, 2], fingers: [3, 2, 0, 0, 0, 1] },
+                { name: 'Gmaj7',cat: 'maj7',  frets: [3, null, 0, 0, 3, 2], fingers: [3, 0, 0, 0, 4, 1] },
                 { name: 'Amaj7',cat: 'maj7',  frets: [null, 0, 2, 1, 2, 0], fingers: [0, 0, 2, 1, 3, 0] },
+                { name: 'Bmaj7',cat: 'maj7',  frets: [null, 2, 4, 3, 4, 2], fingers: [0, 1, 3, 2, 4, 1] },
                 // 7th (Dominant)
                 { name: 'C7',   cat: '7th',   frets: [null, 3, 2, 3, 1, 0], fingers: [0, 3, 2, 4, 1, 0] },
                 { name: 'D7',   cat: '7th',   frets: [null, null, 0, 2, 1, 2], fingers: [0, 0, 0, 2, 1, 3] },
                 { name: 'E7',   cat: '7th',   frets: [0, 2, 0, 1, 0, 0], fingers: [0, 2, 0, 1, 0, 0] },
+                { name: 'F7',   cat: '7th',   frets: [1, 3, 1, 2, 1, 1], fingers: [1, 3, 1, 2, 1, 1] },
                 { name: 'G7',   cat: '7th',   frets: [3, 2, 0, 0, 0, 1], fingers: [3, 2, 0, 0, 0, 1] },
                 { name: 'A7',   cat: '7th',   frets: [null, 0, 2, 0, 2, 0], fingers: [0, 0, 2, 0, 3, 0] },
                 { name: 'B7',   cat: '7th',   frets: [null, 2, 1, 2, 0, 2], fingers: [0, 2, 1, 3, 0, 4] },
@@ -3977,15 +4051,29 @@
                 { name: 'Cm7',  cat: 'm7',    frets: [null, 3, 5, 3, 4, 3], fingers: [0, 1, 3, 1, 2, 1] },
                 { name: 'Dm7',  cat: 'm7',    frets: [null, null, 0, 2, 1, 1], fingers: [0, 0, 0, 2, 1, 1] },
                 { name: 'Em7',  cat: 'm7',    frets: [0, 2, 0, 0, 0, 0], fingers: [0, 2, 0, 0, 0, 0] },
+                { name: 'Fm7',  cat: 'm7',    frets: [1, 3, 1, 1, 1, 1], fingers: [1, 3, 1, 1, 1, 1] },
+                { name: 'Gm7',  cat: 'm7',    frets: [3, null, 3, 3, 3, null], fingers: [1, 0, 2, 3, 4, 0],
+                    fingerings: [
+                        { fingers: [1, 0, 2, 3, 4, 0] },
+                        { fingers: [2, 0, 3, 3, 3, 0] },
+                        { fingers: [2, 0, 1, 1, 1, 0] }
+                    ]
+                },
                 // m7b5 (Half-diminished)
                 { name: 'Am7b5',cat: 'm7b5',  frets: [null, 0, 1, 0, 1, null], fingers: [0, 0, 1, 0, 2, 0] },
                 { name: 'Bm7b5',cat: 'm7b5',  frets: [null, 2, 3, 2, 3, null], fingers: [0, 1, 3, 2, 4, 0] },
+                { name: 'Cm7b5',cat: 'm7b5',  frets: [null, 3, 4, 3, 4, null], fingers: [0, 1, 3, 2, 4, 0] },
                 { name: 'Dm7b5',cat: 'm7b5',  frets: [null, null, 0, 1, 1, 1], fingers: [0, 0, 0, 1, 2, 3] },
-                { name: 'Em7b5',cat: 'm7b5',  frets: [0, 1, 2, 0, 3, null], fingers: [0, 1, 2, 0, 3, 0] },
-                // dim (Diminished 7th)
+                { name: 'Em7b5',cat: 'm7b5',  frets: [null, null, 2, 3, 3, 3], fingers: [0, 0, 1, 2, 3, 4] },
+                { name: 'Fm7b5',cat: 'm7b5',  frets: [1, null, 1, 1, 0, null], fingers: [1, 0, 1, 1, 0, 0] },
+                { name: 'Gm7b5',cat: 'm7b5',  frets: [3, null, 3, 3, 2, null], fingers: [2, 0, 3, 4, 1, 0] },
+                // dim (Diminished)
                 { name: 'Cdim7',cat: 'dim',   frets: [null, 3, 4, 2, 4, null], fingers: [0, 2, 4, 1, 3, 0] },
                 { name: 'Ddim7',cat: 'dim',   frets: [null, null, 0, 1, 0, 1], fingers: [0, 0, 0, 2, 0, 3] },
-                { name: 'F#dim7',cat:'dim',   frets: [2, null, 1, 2, 1, null], fingers: [2, 0, 1, 4, 1, 0] },
+                { name: 'Edim', cat: 'dim',   frets: [null, null, 2, 3, 2, 3], fingers: [0, 0, 1, 3, 2, 4] },
+                { name: 'Fdim', cat: 'dim',   frets: [1, null, 0, 1, 0, null], fingers: [2, 0, 0, 1, 0, 0] },
+                { name: 'Gdim', cat: 'dim',   frets: [3, null, 2, 3, 2, null], fingers: [3, 0, 1, 4, 2, 0] },
+                { name: 'Adim', cat: 'dim',   frets: [null, 0, 4, 5, 4, null], fingers: [0, 0, 1, 3, 2, 0], startFret: 2, labelAt: 2 },
                 { name: 'Bdim7',cat: 'dim',   frets: [null, 2, 3, 1, 3, null], fingers: [0, 2, 4, 1, 3, 0] }
             ];
 
@@ -3996,16 +4084,22 @@
                 const maxFret = pressedFrets.length ? Math.max(...pressedFrets) : 0;
                 const minFret = pressedFrets.length ? Math.min(...pressedFrets) : 0;
                 const NUM_FRETS = 4;
-                let startFret = 0;
-                if (maxFret > 4) {
+                let startFret;
+                if (chord.startFret !== undefined) {
+                    startFret = chord.startFret;
+                } else if (maxFret > 4) {
                     startFret = minFret - 1;
                     if (startFret < 1) startFret = 1;
+                } else {
+                    startFret = 0;
                 }
+                // Position of fret number label (1-indexed relFret), default 1 (leftmost)
+                const labelRelFret = (chord.labelAt !== undefined) ? chord.labelAt : 1;
 
                 // Horizontal layout (CCW 90° rotation):
                 // - Nut on LEFT, frets go RIGHT
                 // - Low E (string 0) at BOTTOM, High E (string 5) at TOP
-                const W = 140, H = 92;
+                const W = 140, H = 100;
                 const NUT_X = 28, TOP_Y = 22, STR_SP = 10, FR_W = 22;
                 const boardBottom = TOP_Y + STR_SP * 5;
                 const boardRight = NUT_X + FR_W * NUM_FRETS;
@@ -4017,7 +4111,9 @@
                 if (startFret === 0) {
                     svg += `<rect x="${NUT_X - 1.5}" y="${TOP_Y - 1}" width="3" height="${STR_SP * 5 + 2}" fill="rgba(255,255,255,0.85)"/>`;
                 } else {
-                    svg += `<text x="${NUT_X + FR_W*0.5}" y="${boardBottom + 10}" fill="rgba(255,255,255,0.65)" font-size="7.5" text-anchor="middle">${startFret+1}fr</text>`;
+                    const labelX = NUT_X + FR_W * (labelRelFret - 0.5);
+                    const labelFret = startFret + labelRelFret;
+                    svg += `<text x="${labelX}" y="${boardBottom + 15}" fill="rgba(255,255,255,0.7)" font-size="7.5" text-anchor="middle">${labelFret}fr</text>`;
                 }
 
                 // Frets (vertical lines)
@@ -4030,6 +4126,29 @@
                     const y = TOP_Y + STR_SP * i;
                     svg += `<line x1="${NUT_X}" y1="${y}" x2="${boardRight}" y2="${y}" stroke="rgba(255,255,255,0.5)" stroke-width="0.8"/>`;
                 }
+
+                // ===== Barre indicator: detect ANY finger spanning multiple strings at same fret =====
+                const barreGroups = {};
+                for (let s = 0; s < 6; s++) {
+                    const finger = fingers[s];
+                    if (finger > 0 && frets[s] != null && frets[s] > 0) {
+                        const key = finger + '@' + frets[s];
+                        if (!barreGroups[key]) barreGroups[key] = { fret: frets[s], strings: [] };
+                        barreGroups[key].strings.push(s);
+                    }
+                }
+                Object.keys(barreGroups).forEach(function(key) {
+                    const group = barreGroups[key];
+                    if (group.strings.length < 2) return;
+                    const relFret = group.fret - startFret;
+                    if (relFret < 1 || relFret > NUM_FRETS) return;
+                    const minS = Math.min.apply(null, group.strings);
+                    const maxS = Math.max.apply(null, group.strings);
+                    const x = NUT_X + FR_W * (relFret - 0.5);
+                    const yTop = TOP_Y + (5 - maxS) * STR_SP;
+                    const yBot = TOP_Y + (5 - minS) * STR_SP;
+                    svg += `<rect x="${x - 6.5}" y="${yTop - 6.5}" width="13" height="${yBot - yTop + 13}" rx="6.5" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.9"/>`;
+                });
 
                 // Markers — string index 0 (low E) → bottom, 5 (high E) → top
                 for (let s = 0; s < 6; s++) {
@@ -4087,7 +4206,7 @@
                     if (b.classList.contains('chord-filter-dd')) return;
                     b.classList.toggle('active', b.dataset.filter === cat);
                 });
-                // Handle 7도화음 dropdown group
+                // Handle 7도화음 dropdown label
                 const ddBtn = document.getElementById('chord7thBtn');
                 const ddLabel = document.getElementById('chord7thLabel');
                 if (SEVENTH_CATS.includes(cat)) {
@@ -4122,9 +4241,49 @@
                 const modal = document.getElementById('chordModal');
                 const content = document.getElementById('chordModalContent');
                 if (!modal || !content) return;
-                content.innerHTML = renderChordSVG(chord);
+
+                const defaultIdx = chord.defaultFingering || 0;
+                // Build initial chord with default fingering applied
+                let displayChord = chord;
+                if (chord.fingerings && chord.fingerings[defaultIdx]) {
+                    const variant = chord.fingerings[defaultIdx];
+                    displayChord = Object.assign({}, chord, {
+                        fingers: variant.fingers || chord.fingers,
+                        frets: variant.frets || chord.frets
+                    });
+                }
+
+                let html = '<div class="chord-modal-svg" id="chordModalSvg">' + renderChordSVG(displayChord) + '</div>';
+                if (chord.fingerings && chord.fingerings.length > 1) {
+                    html += '<div class="fingering-selector">';
+                    chord.fingerings.forEach((f, i) => {
+                        html += '<button class="fingering-btn' + (i === defaultIdx ? ' active' : '') +
+                                '" data-idx="' + i +
+                                '" onmouseenter="switchFingering(' + i + ')" ' +
+                                ' onclick="event.stopPropagation(); switchFingering(' + i + ')">' +
+                                '운지법 ' + (i + 1) + '</button>';
+                    });
+                    html += '</div>';
+                }
+                content.innerHTML = html;
+                window._modalChord = chord;
                 modal.classList.add('open');
             }
+            window.switchFingering = function(idx) {
+                const chord = window._modalChord;
+                if (!chord || !chord.fingerings) return;
+                const variant = chord.fingerings[idx];
+                if (!variant) return;
+                const tempChord = Object.assign({}, chord, {
+                    fingers: variant.fingers || chord.fingers,
+                    frets: variant.frets || chord.frets
+                });
+                const svgContainer = document.getElementById('chordModalSvg');
+                if (svgContainer) svgContainer.innerHTML = renderChordSVG(tempChord);
+                document.querySelectorAll('.fingering-btn').forEach(b => {
+                    b.classList.toggle('active', parseInt(b.dataset.idx) === idx);
+                });
+            };
             window.closeChordModal = function() {
                 const modal = document.getElementById('chordModal');
                 if (modal) modal.classList.remove('open');
