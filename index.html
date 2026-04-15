@@ -403,6 +403,7 @@
             box-shadow: -10px 0 40px rgba(0,0,0,0.2);
             color-scheme: dark;
             forced-color-adjust: none;
+            overscroll-behavior: contain;
         }
         .tools-drawer.open { transform: translateX(0); }
         .tools-header {
@@ -480,20 +481,25 @@
         .more-menu-item {
             display: flex;
             align-items: center;
-            gap: 0.6rem;
+            gap: 0.5rem;
             width: 100%;
-            padding: 0.75rem 1rem;
+            padding: 0.75rem 0.6rem;
             background: transparent;
             border: none;
             color: rgba(255,255,255,0.75);
-            font-size: 0.88rem;
+            font-size: 0.78rem;
             font-family: inherit;
             cursor: pointer;
             text-align: left;
             transition: background 0.2s, color 0.2s;
             line-height: 1.3;
+            word-break: keep-all;
         }
-        .more-menu-item span { line-height: 1.3; }
+        .more-menu-item span {
+            line-height: 1.3;
+            white-space: nowrap;
+            word-break: keep-all;
+        }
         .more-menu-item:hover {
             background: rgba(82, 168, 114, 0.18);
             color: var(--white);
@@ -576,6 +582,8 @@
             line-height: 1;
             margin: 0;
             display: block;
+            font-variant-numeric: lining-nums tabular-nums;
+            font-feature-settings: "lnum" 1, "tnum" 1;
         }
         .capo-result-desc {
             font-size: 0.82rem;
@@ -609,6 +617,53 @@
             border-color: var(--green-mid);
             color: var(--white);
         }
+        .chord-filter-wrap { position: relative; }
+        .chord-filter-dd {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .chord-dd-chev {
+            font-size: 0.55rem;
+            transition: transform 0.25s ease;
+        }
+        .chord-filter-wrap.open .chord-dd-chev { transform: rotate(180deg); }
+        .chord-7th-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            background: #0f1614;
+            border: 1px solid rgba(114, 196, 146, 0.35);
+            border-radius: 10px;
+            padding: 0.3rem;
+            min-width: 130px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            z-index: 10;
+            display: none;
+        }
+        .chord-filter-wrap.open .chord-7th-menu { display: block; }
+        .chord-7th-menu button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 0.5rem 0.8rem;
+            background: transparent;
+            color: rgba(255,255,255,0.8);
+            border: none;
+            font-size: 0.82rem;
+            font-family: inherit;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .chord-7th-menu button:hover {
+            background: rgba(82, 168, 114, 0.2);
+            color: var(--white);
+        }
+        .chord-7th-menu button.active {
+            background: rgba(82, 168, 114, 0.3);
+            color: var(--green-pale);
+        }
         .chord-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -621,7 +676,51 @@
             padding: 0.5rem;
             text-align: center;
         }
+        .chord-card {
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, transform 0.15s;
+        }
+        .chord-card:hover {
+            background: rgba(82, 168, 114, 0.15);
+            border-color: rgba(114, 196, 146, 0.5);
+        }
+        .chord-card:active { transform: scale(0.97); }
         .chord-card svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Chord Modal (enlarged view) */
+        .chord-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.88);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1200;
+            padding: 2rem;
+            cursor: zoom-out;
+            animation: chordModalFade 0.2s ease-out;
+            color-scheme: dark;
+        }
+        .chord-modal.open { display: flex; }
+        @keyframes chordModalFade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .chord-modal-inner {
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            background: #1a2421;
+            border: 2px solid rgba(114, 196, 146, 0.6);
+            border-radius: 18px;
+            padding: 2rem 1.5rem;
+            box-shadow: 0 0 60px rgba(114, 196, 146, 0.25);
+        }
+        .chord-modal-inner svg {
             width: 100%;
             height: auto;
             display: block;
@@ -638,6 +737,8 @@
             padding: 2rem 1.5rem;
             flex: 1;
             overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
         }
         .tool-panel.active { display: block; }
 
@@ -2310,12 +2411,28 @@
                 <button class="chord-filter active" data-filter="all" onclick="filterChords('all')">전체</button>
                 <button class="chord-filter" data-filter="major" onclick="filterChords('major')">메이저</button>
                 <button class="chord-filter" data-filter="minor" onclick="filterChords('minor')">마이너</button>
-                <button class="chord-filter" data-filter="7th" onclick="filterChords('7th')">7th</button>
-                <button class="chord-filter" data-filter="maj7" onclick="filterChords('maj7')">Maj7</button>
+                <div class="chord-filter-wrap">
+                    <button class="chord-filter chord-filter-dd" id="chord7thBtn" onclick="toggle7thMenu(event)">
+                        <span id="chord7thLabel">7도화음</span>
+                        <i class="fas fa-chevron-down chord-dd-chev"></i>
+                    </button>
+                    <div class="chord-7th-menu" id="chord7thMenu">
+                        <button data-filter="maj7" onclick="filterChords('maj7')">Maj7</button>
+                        <button data-filter="7th" onclick="filterChords('7th')">7th</button>
+                        <button data-filter="m7" onclick="filterChords('m7')">m7</button>
+                        <button data-filter="m7b5" onclick="filterChords('m7b5')">m7b5</button>
+                        <button data-filter="dim" onclick="filterChords('dim')">dim</button>
+                    </div>
+                </div>
             </div>
             <div class="chord-grid" id="chordGrid"></div>
         </div>
     </aside>
+
+    <!-- Chord Modal (enlarged chord view) -->
+    <div class="chord-modal" id="chordModal" onclick="closeChordModal()">
+        <div class="chord-modal-inner" id="chordModalContent"></div>
+    </div>
 
     <!-- Mobile Menu -->
     <div class="mobile-menu" id="mobileMenu">
@@ -3835,27 +3952,41 @@
                 { name: 'B',    cat: 'major', frets: [null, 2, 4, 4, 4, 2], fingers: [0, 1, 2, 3, 4, 1] },
                 // Minor
                 { name: 'Am',   cat: 'minor', frets: [null, 0, 2, 2, 1, 0], fingers: [0, 0, 2, 3, 1, 0] },
+                { name: 'Bm',   cat: 'minor', frets: [null, 2, 4, 4, 3, 2], fingers: [0, 1, 3, 4, 2, 1] },
+                { name: 'Cm',   cat: 'minor', frets: [null, 3, 5, 5, 4, 3], fingers: [0, 1, 3, 4, 2, 1] },
                 { name: 'Dm',   cat: 'minor', frets: [null, null, 0, 2, 3, 1], fingers: [0, 0, 0, 2, 3, 1] },
                 { name: 'Em',   cat: 'minor', frets: [0, 2, 2, 0, 0, 0], fingers: [0, 2, 3, 0, 0, 0] },
                 { name: 'Fm',   cat: 'minor', frets: [1, 3, 3, 1, 1, 1], fingers: [1, 3, 4, 1, 1, 1] },
                 { name: 'Gm',   cat: 'minor', frets: [3, 5, 5, 3, 3, 3], fingers: [1, 3, 4, 1, 1, 1] },
-                { name: 'Bm',   cat: 'minor', frets: [null, 2, 4, 4, 3, 2], fingers: [0, 1, 3, 4, 2, 1] },
-                // 7th (dominant)
+                // Maj7
+                { name: 'Cmaj7',cat: 'maj7',  frets: [null, 3, 2, 0, 0, 0], fingers: [0, 3, 2, 0, 0, 0] },
+                { name: 'Dmaj7',cat: 'maj7',  frets: [null, null, 0, 2, 2, 2], fingers: [0, 0, 0, 1, 1, 1] },
+                { name: 'Fmaj7',cat: 'maj7',  frets: [null, null, 3, 2, 1, 0], fingers: [0, 0, 3, 2, 1, 0] },
+                { name: 'Gmaj7',cat: 'maj7',  frets: [3, 2, 0, 0, 0, 2], fingers: [3, 2, 0, 0, 0, 1] },
+                { name: 'Amaj7',cat: 'maj7',  frets: [null, 0, 2, 1, 2, 0], fingers: [0, 0, 2, 1, 3, 0] },
+                // 7th (Dominant)
                 { name: 'C7',   cat: '7th',   frets: [null, 3, 2, 3, 1, 0], fingers: [0, 3, 2, 4, 1, 0] },
                 { name: 'D7',   cat: '7th',   frets: [null, null, 0, 2, 1, 2], fingers: [0, 0, 0, 2, 1, 3] },
                 { name: 'E7',   cat: '7th',   frets: [0, 2, 0, 1, 0, 0], fingers: [0, 2, 0, 1, 0, 0] },
                 { name: 'G7',   cat: '7th',   frets: [3, 2, 0, 0, 0, 1], fingers: [3, 2, 0, 0, 0, 1] },
                 { name: 'A7',   cat: '7th',   frets: [null, 0, 2, 0, 2, 0], fingers: [0, 0, 2, 0, 3, 0] },
                 { name: 'B7',   cat: '7th',   frets: [null, 2, 1, 2, 0, 2], fingers: [0, 2, 1, 3, 0, 4] },
-                { name: 'Am7',  cat: '7th',   frets: [null, 0, 2, 0, 1, 0], fingers: [0, 0, 2, 0, 1, 0] },
-                { name: 'Dm7',  cat: '7th',   frets: [null, null, 0, 2, 1, 1], fingers: [0, 0, 0, 2, 1, 1] },
-                { name: 'Em7',  cat: '7th',   frets: [0, 2, 0, 0, 0, 0], fingers: [0, 2, 0, 0, 0, 0] },
-                // Maj7
-                { name: 'Cmaj7',cat: 'maj7',  frets: [null, 3, 2, 0, 0, 0], fingers: [0, 3, 2, 0, 0, 0] },
-                { name: 'Dmaj7',cat: 'maj7',  frets: [null, null, 0, 2, 2, 2], fingers: [0, 0, 0, 1, 1, 1] },
-                { name: 'Fmaj7',cat: 'maj7',  frets: [null, null, 3, 2, 1, 0], fingers: [0, 0, 3, 2, 1, 0] },
-                { name: 'Gmaj7',cat: 'maj7',  frets: [3, 2, 0, 0, 0, 2], fingers: [3, 2, 0, 0, 0, 1] },
-                { name: 'Amaj7',cat: 'maj7',  frets: [null, 0, 2, 1, 2, 0], fingers: [0, 0, 2, 1, 3, 0] }
+                // m7 (Minor 7th)
+                { name: 'Am7',  cat: 'm7',    frets: [null, 0, 2, 0, 1, 0], fingers: [0, 0, 2, 0, 1, 0] },
+                { name: 'Bm7',  cat: 'm7',    frets: [null, 2, 4, 2, 3, 2], fingers: [0, 1, 3, 1, 2, 1] },
+                { name: 'Cm7',  cat: 'm7',    frets: [null, 3, 5, 3, 4, 3], fingers: [0, 1, 3, 1, 2, 1] },
+                { name: 'Dm7',  cat: 'm7',    frets: [null, null, 0, 2, 1, 1], fingers: [0, 0, 0, 2, 1, 1] },
+                { name: 'Em7',  cat: 'm7',    frets: [0, 2, 0, 0, 0, 0], fingers: [0, 2, 0, 0, 0, 0] },
+                // m7b5 (Half-diminished)
+                { name: 'Am7b5',cat: 'm7b5',  frets: [null, 0, 1, 0, 1, null], fingers: [0, 0, 1, 0, 2, 0] },
+                { name: 'Bm7b5',cat: 'm7b5',  frets: [null, 2, 3, 2, 3, null], fingers: [0, 1, 3, 2, 4, 0] },
+                { name: 'Dm7b5',cat: 'm7b5',  frets: [null, null, 0, 1, 1, 1], fingers: [0, 0, 0, 1, 2, 3] },
+                { name: 'Em7b5',cat: 'm7b5',  frets: [0, 1, 2, 0, 3, null], fingers: [0, 1, 2, 0, 3, 0] },
+                // dim (Diminished 7th)
+                { name: 'Cdim7',cat: 'dim',   frets: [null, 3, 4, 2, 4, null], fingers: [0, 2, 4, 1, 3, 0] },
+                { name: 'Ddim7',cat: 'dim',   frets: [null, null, 0, 1, 0, 1], fingers: [0, 0, 0, 2, 0, 3] },
+                { name: 'F#dim7',cat:'dim',   frets: [2, null, 1, 2, 1, null], fingers: [2, 0, 1, 4, 1, 0] },
+                { name: 'Bdim7',cat: 'dim',   frets: [null, 2, 3, 1, 3, null], fingers: [0, 2, 4, 1, 3, 0] }
             ];
 
             function renderChordSVG(chord) {
@@ -3941,16 +4072,72 @@
                     const card = document.createElement('div');
                     card.className = 'chord-card';
                     card.innerHTML = renderChordSVG(ch);
+                    card.onclick = function() { showChordModal(ch); };
                     grid.appendChild(card);
                 });
             }
+            const SEVENTH_CATS = ['maj7', '7th', 'm7', 'm7b5', 'dim'];
+            const SEVENTH_LABELS = {
+                'maj7': 'Maj7', '7th': '7th', 'm7': 'm7', 'm7b5': 'm7b5', 'dim': 'dim'
+            };
             window.filterChords = function(cat) {
                 currentFilter = cat;
+                // Update top-level filter buttons
                 document.querySelectorAll('.chord-filter').forEach(b => {
+                    if (b.classList.contains('chord-filter-dd')) return;
                     b.classList.toggle('active', b.dataset.filter === cat);
                 });
+                // Handle 7도화음 dropdown group
+                const ddBtn = document.getElementById('chord7thBtn');
+                const ddLabel = document.getElementById('chord7thLabel');
+                if (SEVENTH_CATS.includes(cat)) {
+                    if (ddBtn) ddBtn.classList.add('active');
+                    if (ddLabel) ddLabel.textContent = '7도화음 · ' + SEVENTH_LABELS[cat];
+                } else {
+                    if (ddBtn) ddBtn.classList.remove('active');
+                    if (ddLabel) ddLabel.textContent = '7도화음';
+                }
+                // Mark active sub-item
+                document.querySelectorAll('.chord-7th-menu button').forEach(b => {
+                    b.classList.toggle('active', b.dataset.filter === cat);
+                });
+                // Close dropdown
+                const wrap = document.querySelector('.chord-filter-wrap');
+                if (wrap) wrap.classList.remove('open');
                 renderGrid();
             };
+            window.toggle7thMenu = function(e) {
+                if (e) e.stopPropagation();
+                const wrap = document.querySelector('.chord-filter-wrap');
+                if (wrap) wrap.classList.toggle('open');
+            };
+            // Close on outside click
+            document.addEventListener('click', function(e) {
+                const wrap = document.querySelector('.chord-filter-wrap');
+                if (!wrap || !wrap.classList.contains('open')) return;
+                if (!wrap.contains(e.target)) wrap.classList.remove('open');
+            });
+
+            function showChordModal(chord) {
+                const modal = document.getElementById('chordModal');
+                const content = document.getElementById('chordModalContent');
+                if (!modal || !content) return;
+                content.innerHTML = renderChordSVG(chord);
+                modal.classList.add('open');
+            }
+            window.closeChordModal = function() {
+                const modal = document.getElementById('chordModal');
+                if (modal) modal.classList.remove('open');
+            };
+            // Close on ESC
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('chordModal');
+                    if (modal && modal.classList.contains('open')) {
+                        modal.classList.remove('open');
+                    }
+                }
+            });
         })();
 
         // Keyboard shortcuts when drawer is open
