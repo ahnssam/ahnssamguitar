@@ -331,6 +331,501 @@
             .cart-drawer { width: 100%; }
         }
 
+        /* Practice Tools Button */
+        .tools-btn {
+            background: transparent;
+            border: none;
+            color: var(--white);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 2px 6px;
+            transition: transform 0.3s;
+            font-family: inherit;
+        }
+        .tools-btn:hover { transform: translateY(-2px); }
+        .tools-btn-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(255,255,255,0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .tools-btn:hover .tools-btn-icon {
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.9);
+        }
+        .tools-btn i { font-size: 1.15rem; }
+        .tools-btn span {
+            font-size: 0.62rem;
+            letter-spacing: 0.1em;
+            font-weight: 500;
+        }
+        nav.scrolled .tools-btn { color: var(--green-deep); }
+        nav.scrolled .tools-btn-icon {
+            border-color: rgba(42, 107, 74, 0.45);
+        }
+        nav.scrolled .tools-btn:hover .tools-btn-icon {
+            background: rgba(42, 107, 74, 0.12);
+            border-color: rgba(42, 107, 74, 0.9);
+        }
+        .tools-btn-mobile { display: none; }
+
+        /* Tools Drawer */
+        .tools-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s;
+            z-index: 1100;
+        }
+        .tools-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .tools-drawer {
+            position: fixed;
+            top: 0; right: 0;
+            width: 380px; max-width: 100vw;
+            height: 100vh;
+            background: #1a2421;
+            color: var(--white);
+            transform: translateX(100%);
+            transition: transform 0.4s ease;
+            z-index: 1101;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -10px 0 40px rgba(0,0,0,0.2);
+        }
+        .tools-drawer.open { transform: translateX(0); }
+        .tools-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .tools-header h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+        }
+        .tools-close {
+            background: transparent;
+            border: none;
+            color: var(--white);
+            font-size: 1.3rem;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        .tools-close:hover { opacity: 1; }
+
+        .tools-tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .tools-tab {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.5);
+            padding: 1rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: color 0.3s, background 0.3s;
+            font-family: inherit;
+            letter-spacing: 0.05em;
+        }
+        .tools-tab.active {
+            color: var(--white);
+            background: rgba(82, 168, 114, 0.15);
+            border-bottom: 2px solid var(--green-mid);
+        }
+        .tools-tab i { margin-right: 0.4rem; }
+
+        .tool-panel {
+            display: none;
+            padding: 2rem 1.5rem;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .tool-panel.active { display: block; }
+
+        /* Tuner */
+        .tuner-display {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .tuner-note {
+            font-family: 'Playfair Display', serif;
+            font-size: 5rem;
+            font-weight: 900;
+            line-height: 1;
+            color: var(--green-pale);
+            transition: color 0.3s;
+        }
+        .tuner-note.in-tune { color: #4ade80; }
+        .tuner-freq {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.5);
+            margin-top: 0.5rem;
+            letter-spacing: 0.1em;
+        }
+        .tuner-meter {
+            margin-bottom: 2rem;
+        }
+        .tuner-meter-track {
+            position: relative;
+            height: 60px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 30px;
+            overflow: hidden;
+            padding: 0 1rem;
+        }
+        .tuner-meter-scale {
+            position: absolute;
+            top: 6px;
+            left: 0; right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 1rem;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.3);
+        }
+        .tuner-meter-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 2px;
+            height: 30px;
+            background: rgba(255,255,255,0.25);
+        }
+        .tuner-meter-needle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 4px;
+            height: 40px;
+            background: var(--green-light);
+            border-radius: 2px;
+            transition: left 0.1s ease-out, background 0.3s;
+            box-shadow: 0 0 15px rgba(114, 196, 146, 0.6);
+        }
+        .tuner-meter-needle.in-tune { background: #4ade80; box-shadow: 0 0 20px rgba(74, 222, 128, 0.8); }
+        .tuner-cents {
+            text-align: center;
+            margin-top: 0.8rem;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.6);
+            letter-spacing: 0.05em;
+        }
+        .tuner-btn, .metronome-btn {
+            width: 100%;
+            background: var(--green-mid);
+            color: var(--white);
+            border: none;
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            transition: background 0.3s, transform 0.2s;
+            font-family: inherit;
+        }
+        .tuner-btn:hover, .metronome-btn:hover { background: var(--green-dark); }
+        .tuner-btn.active, .metronome-btn.active { background: #e74c3c; }
+        .tuner-btn.active:hover, .metronome-btn.active:hover { background: #c0392b; }
+        .tuner-hint {
+            margin-top: 1rem;
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.4);
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        /* Metronome */
+        .metronome-bpm {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .metronome-bpm-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 5rem;
+            font-weight: 900;
+            line-height: 1;
+            color: var(--green-pale);
+        }
+        .metronome-bpm-label {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.5);
+            letter-spacing: 0.3em;
+            margin-top: 0.3rem;
+        }
+        .metronome-slider {
+            width: 100%;
+            margin: 1rem 0;
+            -webkit-appearance: none;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+        .metronome-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px; height: 20px;
+            background: var(--green-mid);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .metronome-slider::-moz-range-thumb {
+            width: 20px; height: 20px;
+            background: var(--green-mid);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+        .metronome-bpm-controls {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .metronome-bpm-controls button {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            color: var(--white);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 0.6rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: inherit;
+            transition: background 0.2s;
+        }
+        .metronome-bpm-controls button:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .metronome-beats {
+            display: flex;
+            justify-content: center;
+            gap: 0.8rem;
+            margin: 1.5rem 0;
+        }
+        .beat-dot {
+            width: 18px; height: 18px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            transition: background 0.1s, transform 0.1s;
+        }
+        .beat-dot.active {
+            background: var(--green-light);
+            transform: scale(1.4);
+        }
+        .beat-dot.accent.active {
+            background: #4ade80;
+            transform: scale(1.5);
+        }
+        .metronome-time-sig {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.6);
+        }
+        /* Keyboard shortcut hint */
+        .kbd-hint {
+            display: inline-block;
+            margin-left: 0.55rem;
+            padding: 0.14rem 0.5rem;
+            font-size: 0.6rem;
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 4px;
+            background: rgba(255,255,255,0.08);
+            letter-spacing: 0.12em;
+            opacity: 0.75;
+            vertical-align: middle;
+            font-family: inherit;
+        }
+        @media (max-width: 768px) {
+            .kbd-hint { display: none; }
+        }
+
+        /* Metronome inline tap button */
+        .metronome-tap-btn {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            color: var(--green-pale);
+            border: 1px dashed rgba(255,255,255,0.2);
+            padding: 0.7rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1.2rem;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            transition: background 0.28s ease-out, border-color 0.28s ease-out, box-shadow 0.28s ease-out;
+        }
+        @media (hover: hover) {
+            .metronome-tap-btn:hover { background: rgba(255,255,255,0.1); }
+        }
+        .metronome-tap-btn:focus { outline: none; }
+        .metronome-tap-btn.tapping {
+            background: rgba(114, 196, 146, 0.35);
+            border-color: rgba(168, 230, 193, 0.8);
+            color: var(--white);
+            box-shadow: 0 0 18px rgba(114, 196, 146, 0.5);
+            transition: none;
+        }
+
+        /* Tap Tempo panel */
+        .tap-display {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .tap-bpm {
+            font-family: 'Playfair Display', serif;
+            font-size: 5.5rem;
+            font-weight: 900;
+            line-height: 1;
+            color: var(--green-pale);
+            transition: color 0.2s;
+        }
+        .tap-bpm.active { color: #4ade80; }
+        .tap-bpm-label {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.5);
+            letter-spacing: 0.3em;
+            margin-top: 0.3rem;
+        }
+        .tap-count {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.4);
+            margin-top: 0.8rem;
+        }
+        .tap-big-btn {
+            width: 100%;
+            aspect-ratio: 1.8 / 1;
+            max-height: 180px;
+            background: linear-gradient(135deg, var(--green-mid), var(--green-dark));
+            color: var(--white);
+            border: none;
+            border-radius: 16px;
+            font-size: 2rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: background 0.28s ease-out, box-shadow 0.28s ease-out;
+            font-family: inherit;
+            letter-spacing: 0.1em;
+            margin-bottom: 1.2rem;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            box-shadow: 0 4px 20px rgba(82, 168, 114, 0.25);
+        }
+        @media (hover: hover) {
+            .tap-big-btn:hover { box-shadow: 0 6px 28px rgba(82, 168, 114, 0.4); }
+        }
+        .tap-big-btn:focus { outline: none; }
+        .tap-big-btn.tapping {
+            background: linear-gradient(135deg, #a8e6c1, #72c492);
+            box-shadow: 0 0 36px rgba(168, 230, 193, 0.85), 0 0 70px rgba(114, 196, 146, 0.45), inset 0 0 28px rgba(255,255,255,0.25);
+            transition: none;
+        }
+        .tap-big-btn i { font-size: 2.2rem; }
+        .tap-actions {
+            display: flex;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+        }
+        .tap-action-btn {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            color: var(--white);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-family: inherit;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+        .tap-action-btn:hover { background: rgba(255,255,255,0.1); }
+        .tap-action-btn.tap-send {
+            background: rgba(82, 168, 114, 0.2);
+            border-color: rgba(82, 168, 114, 0.4);
+            color: var(--green-pale);
+        }
+        .tap-action-btn.tap-send:hover { background: rgba(82, 168, 114, 0.35); }
+
+        .sound-toggle {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.2rem;
+        }
+        .sound-toggle-btn {
+            flex: 1;
+            max-width: 140px;
+            padding: 0.6rem 1rem;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 2px solid var(--green-mid);
+            background: transparent;
+            color: var(--green-pale);
+            transition: all 0.3s;
+            letter-spacing: 0.05em;
+            font-family: inherit;
+        }
+        .sound-toggle-btn:first-child { border-radius: 24px 0 0 24px; }
+        .sound-toggle-btn:last-child { border-radius: 0 24px 24px 0; border-left: none; }
+        .sound-toggle-btn.active {
+            background: var(--green-mid);
+            color: var(--white);
+        }
+        .sound-toggle-btn:hover:not(.active) {
+            background: rgba(82, 168, 114, 0.15);
+        }
+        .metronome-time-sig select {
+            background: rgba(255,255,255,0.05);
+            color: var(--white);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
         /* Mobile menu */
         .mobile-menu { display: none; }
         .menu-toggle { display: none; cursor: pointer; z-index: 1001; }
@@ -600,6 +1095,43 @@
 
         /* ===== PORTFOLIO SECTION ===== */
         .portfolio { background: var(--white); }
+
+        /* Channel Stats */
+        .channel-stats {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 3rem;
+            margin: 0 auto 3.5rem;
+            padding: 1.5rem 2rem;
+            max-width: 560px;
+        }
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+        .stat-number {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.6rem;
+            font-weight: 900;
+            color: var(--green-deep);
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+        .stat-label {
+            font-size: 0.78rem;
+            color: var(--text-mid);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+        .stat-divider {
+            width: 1px;
+            height: 50px;
+            background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.15), transparent);
+            flex-shrink: 0;
+        }
+
         .portfolio-zigzag {
             max-width: 1200px;
             margin: 0 auto;
@@ -1222,7 +1754,43 @@
             nav { padding: 1rem 1.5rem; }
             nav.scrolled { padding: 0.6rem 1.5rem; }
             .nav-links, .nav-social { display: none; }
+            .tools-btn:not(.tools-btn-mobile) { display: none; }
+            .tools-btn-mobile {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                gap: 0.45rem;
+                margin-left: auto;
+                margin-right: 0.8rem;
+                padding: 6px 12px;
+                border: 1.5px solid rgba(255,255,255,0.45);
+                border-radius: 18px;
+                transition: background 0.3s, border-color 0.3s;
+            }
+            .tools-btn-mobile span {
+                display: inline-block;
+                font-size: 0.72rem;
+                letter-spacing: 0.08em;
+                font-weight: 500;
+            }
+            .tools-btn-mobile .tools-btn-icon {
+                width: auto;
+                height: auto;
+                border: none;
+                background: transparent;
+            }
+            .tools-btn-mobile .tools-btn-icon i { font-size: 1rem; }
+            .tools-btn-mobile:hover {
+                background: rgba(255,255,255,0.15);
+                border-color: rgba(255,255,255,0.9);
+            }
+            nav.scrolled .tools-btn-mobile { border-color: rgba(42, 107, 74, 0.45); }
+            nav.scrolled .tools-btn-mobile:hover {
+                background: rgba(42, 107, 74, 0.12);
+                border-color: rgba(42, 107, 74, 0.9);
+            }
             .menu-toggle { display: block; }
+            .tools-drawer { width: 100vw; }
 
             .mobile-menu {
                 position: fixed; inset: 0; z-index: 999;
@@ -1279,6 +1847,15 @@
             .hero-title-kr { margin-bottom: 1.2rem; }
             .hero-desc { margin-bottom: 2rem; max-width: none; }
             .hero-buttons { justify-content: center; }
+
+            .channel-stats {
+                gap: 1.5rem;
+                padding: 1rem;
+                margin-bottom: 2.5rem;
+            }
+            .stat-number { font-size: 1.8rem; }
+            .stat-label { font-size: 0.68rem; letter-spacing: 0.15em; }
+            .stat-divider { height: 36px; }
 
             .about-grid { grid-template-columns: 1fr; }
             .about-image { max-width: 350px; margin: 0 auto; }
@@ -1371,6 +1948,10 @@
             <li><a href="#contact">Contact</a></li>
         </ul>
         <div style="display: flex; align-items: center; gap: 1.2rem;">
+            <button class="tools-btn" onclick="toggleTools()" aria-label="연습도구">
+                <div class="tools-btn-icon"><i class="fas fa-guitar"></i></div>
+                <span>연습도구</span>
+            </button>
             <div class="nav-social">
                 <a href="https://www.youtube.com/channel/UC0TC0fLj3ZahhlKcC9ebVrg" target="_blank" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
                 <a href="https://www.instagram.com/ahnssamguitar/" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
@@ -1379,10 +1960,123 @@
                 <a href="https://cafe.naver.com/ahnsguitarforest" target="_blank" aria-label="Naver Cafe"><img src="naver-cafe-icon.png" alt="Naver Cafe" class="naver-cafe-icon"></a>
             </div>
         </div>
+        <button class="tools-btn tools-btn-mobile" onclick="toggleTools()" aria-label="연습도구">
+            <i class="fas fa-guitar"></i>
+            <span>연습도구</span>
+        </button>
         <div class="menu-toggle" onclick="toggleMenu()">
             <span></span><span></span><span></span>
         </div>
     </nav>
+
+    <!-- Tools Drawer (Tuner + Metronome) -->
+    <div class="tools-overlay" id="toolsOverlay" onclick="toggleTools()"></div>
+    <aside class="tools-drawer" id="toolsDrawer">
+        <div class="tools-header">
+            <h3>연습도구</h3>
+            <button class="tools-close" onclick="toggleTools()" aria-label="닫기"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="tools-tabs">
+            <button class="tools-tab active" data-tool="tuner" onclick="switchTool('tuner')">
+                <i class="fas fa-microphone"></i> 튜너
+            </button>
+            <button class="tools-tab" data-tool="metronome" onclick="switchTool('metronome')">
+                <i class="fas fa-stopwatch"></i> 메트로놈
+            </button>
+            <button class="tools-tab" data-tool="taptempo" onclick="switchTool('taptempo')">
+                <i class="fas fa-hand-pointer"></i> 탭템포
+            </button>
+        </div>
+
+        <!-- Tuner Panel -->
+        <div class="tool-panel active" id="tunerPanel">
+            <div class="tuner-display">
+                <div class="tuner-note" id="tunerNote">—</div>
+                <div class="tuner-freq" id="tunerFreq">0 Hz</div>
+            </div>
+            <div class="tuner-meter">
+                <div class="tuner-meter-track">
+                    <div class="tuner-meter-scale">
+                        <span>-50</span><span>-25</span><span>0</span><span>+25</span><span>+50</span>
+                    </div>
+                    <div class="tuner-meter-needle" id="tunerNeedle"></div>
+                    <div class="tuner-meter-center"></div>
+                </div>
+                <div class="tuner-cents" id="tunerCents">— cents</div>
+            </div>
+            <button class="tuner-btn" id="tunerBtn" onclick="toggleTuner()">
+                <i class="fas fa-microphone"></i>
+                <span>시작하기</span>
+            </button>
+            <p class="tuner-hint">마이크 권한을 허용해주세요. 기타 한 줄씩 천천히 쳐보세요.</p>
+        </div>
+
+        <!-- Metronome Panel -->
+        <div class="tool-panel" id="metronomePanel">
+            <div class="metronome-bpm">
+                <div class="metronome-bpm-value" id="bpmValue">90</div>
+                <div class="metronome-bpm-label">BPM</div>
+            </div>
+            <input type="range" min="40" max="240" value="90" class="metronome-slider" id="bpmSlider" oninput="updateBPM(this.value)">
+            <div class="metronome-bpm-controls">
+                <button onclick="adjustBPM(-5)">-5</button>
+                <button onclick="adjustBPM(-1)">-1</button>
+                <button onclick="adjustBPM(1)">+1</button>
+                <button onclick="adjustBPM(5)">+5</button>
+            </div>
+            <button class="metronome-tap-btn" id="metroTapBtn" onclick="metroTap()">
+                <i class="fas fa-hand-pointer"></i>
+                <span>탭으로 BPM 설정</span>
+                <span class="kbd-hint">ENTER</span>
+            </button>
+            <div class="metronome-beats" id="metronomeBeats">
+                <div class="beat-dot"></div>
+                <div class="beat-dot"></div>
+                <div class="beat-dot"></div>
+                <div class="beat-dot"></div>
+            </div>
+            <div class="sound-toggle">
+                <button class="sound-toggle-btn active" data-sound="click" onclick="updateSoundMode('click')">클릭</button>
+                <button class="sound-toggle-btn" data-sound="drums" onclick="updateSoundMode('drums')">8비트 드럼</button>
+            </div>
+            <div class="metronome-time-sig" id="timeSigRow">
+                <label>박자</label>
+                <select id="timeSig" onchange="updateTimeSig()">
+                    <option value="0">없음</option>
+                    <option value="2">2/4</option>
+                    <option value="3">3/4</option>
+                    <option value="4" selected>4/4</option>
+                    <option value="6">6/8</option>
+                </select>
+            </div>
+            <button class="metronome-btn" id="metronomeBtn" onclick="toggleMetronome()">
+                <i class="fas fa-play"></i>
+                <span>시작</span>
+                <span class="kbd-hint">SPACE</span>
+            </button>
+        </div>
+
+        <!-- Tap Tempo Panel -->
+        <div class="tool-panel" id="taptempoPanel">
+            <div class="tap-display">
+                <div class="tap-bpm" id="tapBpmValue">—</div>
+                <div class="tap-bpm-label">BPM</div>
+            </div>
+            <button class="tap-big-btn" id="tapBigBtn" onclick="bigTap()">
+                <i class="fas fa-hand-pointer"></i>
+                <span>TAP</span>
+            </button>
+            <div class="tap-actions">
+                <button class="tap-action-btn" onclick="resetTap()">
+                    <i class="fas fa-redo"></i> 초기화
+                </button>
+                <button class="tap-action-btn tap-send" onclick="sendToMetronome()">
+                    <i class="fas fa-arrow-right"></i> 메트로놈으로
+                </button>
+            </div>
+            <p class="tuner-hint">버튼이나 스페이스바를 박자에 맞춰 2~8번 연속으로 누르세요.</p>
+        </div>
+    </aside>
 
     <!-- Mobile Menu -->
     <div class="mobile-menu" id="mobileMenu">
@@ -1439,6 +2133,17 @@
             <p class="section-label">Ahnssam's</p>
             <h2 class="section-title">Contents</h2>
             <div class="section-line"></div>
+        </div>
+        <div class="channel-stats reveal">
+            <div class="stat-item">
+                <div class="stat-number" id="totalSubs">-</div>
+                <div class="stat-label">전체 구독자</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <div class="stat-number" id="totalViews">-</div>
+                <div class="stat-label">누적 조회수</div>
+            </div>
         </div>
         <div class="portfolio-zigzag reveal">
             <!-- 1. 기타나무숲 (위) -->
@@ -1885,6 +2590,810 @@
                     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             });
+        });
+    </script>
+
+    <!-- YouTube Channel Stats -->
+    <script>
+        (function() {
+            const YT_API_KEY = 'AIzaSyByMjrzYZwe8vOd6Ho-TxvxVBtq-YjM8Xc';
+            const CHANNELS = [
+                { id: 'UC0TC0fLj3ZahhlKcC9ebVrg' },  // 기타나무숲
+                { handle: 'ahnssamgtbgm' },          // 기타브금
+                { handle: 'ahnssamguitartab' },      // 악보나무숲
+                { handle: 'anqgtmusic' }             // 안큐
+            ];
+            const CACHE_KEY = 'yt_stats_cache_v1';
+            const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+            function formatKoreanNumber(n) {
+                if (n < 10000) return n.toLocaleString();
+                if (n < 100000000) {
+                    const v = n / 10000;
+                    return (v >= 100 ? Math.round(v) : v.toFixed(1).replace(/\.0$/, '')) + '만';
+                }
+                const v = n / 100000000;
+                return (v >= 10 ? v.toFixed(1).replace(/\.0$/, '') : v.toFixed(2).replace(/\.?0+$/, '')) + '억';
+            }
+
+            function animateCounter(elementId, target, duration) {
+                const el = document.getElementById(elementId);
+                if (!el) return;
+                const start = performance.now();
+                duration = duration || 1500;
+                function update(now) {
+                    const progress = Math.min((now - start) / duration, 1);
+                    const eased = 1 - Math.pow(1 - progress, 3);
+                    const current = Math.round(target * eased);
+                    el.textContent = formatKoreanNumber(current);
+                    if (progress < 1) requestAnimationFrame(update);
+                }
+                requestAnimationFrame(update);
+            }
+
+            async function fetchChannel(ch) {
+                const param = ch.id ? 'id=' + ch.id : 'forHandle=' + encodeURIComponent(ch.handle);
+                const url = 'https://www.googleapis.com/youtube/v3/channels?part=statistics&' + param + '&key=' + YT_API_KEY;
+                try {
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    if (data.items && data.items[0]) {
+                        return {
+                            subs: parseInt(data.items[0].statistics.subscriberCount || 0),
+                            views: parseInt(data.items[0].statistics.viewCount || 0)
+                        };
+                    }
+                } catch (e) {
+                    console.error('YouTube API error:', ch, e);
+                }
+                return { subs: 0, views: 0 };
+            }
+
+            async function fetchAllStats() {
+                // Try cache first
+                try {
+                    const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+                    if (cached && Date.now() - cached.t < CACHE_TTL) {
+                        return cached.d;
+                    }
+                } catch (e) {}
+
+                const results = await Promise.all(CHANNELS.map(fetchChannel));
+                const totalSubs = results.reduce((sum, r) => sum + r.subs, 0);
+                const totalViews = results.reduce((sum, r) => sum + r.views, 0);
+                const data = { totalSubs, totalViews };
+
+                if (totalSubs > 0 || totalViews > 0) {
+                    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ d: data, t: Date.now() })); } catch (e) {}
+                }
+                return data;
+            }
+
+            async function loadStats() {
+                const stats = await fetchAllStats();
+                animateCounter('totalSubs', stats.totalSubs);
+                animateCounter('totalViews', stats.totalViews);
+            }
+
+            // Trigger on visible
+            document.addEventListener('DOMContentLoaded', function() {
+                const statsEl = document.querySelector('.channel-stats');
+                if (!statsEl) return;
+                const obs = new IntersectionObserver(function(entries) {
+                    entries.forEach(function(entry) {
+                        if (entry.isIntersecting) {
+                            loadStats();
+                            obs.disconnect();
+                        }
+                    });
+                }, { threshold: 0.2 });
+                obs.observe(statsEl);
+            });
+        })();
+    </script>
+
+    <!-- Practice Tools (Tuner + Metronome) -->
+    <script>
+        // ========== Drawer toggle ==========
+        function toggleTools() {
+            const drawer = document.getElementById('toolsDrawer');
+            const overlay = document.getElementById('toolsOverlay');
+            const isOpen = drawer.classList.toggle('open');
+            overlay.classList.toggle('open', isOpen);
+            if (!isOpen) {
+                // Stop any running tools when closed
+                if (window._tunerRunning) toggleTuner();
+                if (window._metroRunning) toggleMetronome();
+            }
+        }
+        function switchTool(tool) {
+            document.querySelectorAll('.tools-tab').forEach(t => t.classList.toggle('active', t.dataset.tool === tool));
+            document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(tool + 'Panel').classList.add('active');
+        }
+
+        // ========== TUNER ==========
+        (function() {
+            const NOTE_STRINGS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            let audioCtx = null;
+            let analyser = null;
+            let micStream = null;
+            let rafId = null;
+
+            function freqToNote(freq) {
+                // A4 = 440 Hz, MIDI note 69
+                const noteNum = 12 * (Math.log2(freq / 440)) + 69;
+                const rounded = Math.round(noteNum);
+                const cents = Math.floor((noteNum - rounded) * 100);
+                const noteName = NOTE_STRINGS[rounded % 12];
+                const octave = Math.floor(rounded / 12) - 1;
+                return { noteName, octave, cents, targetFreq: 440 * Math.pow(2, (rounded - 69) / 12) };
+            }
+
+            // Autocorrelation pitch detection
+            function autoCorrelate(buf, sampleRate) {
+                const SIZE = buf.length;
+                let rms = 0;
+                for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
+                rms = Math.sqrt(rms / SIZE);
+                if (rms < 0.01) return -1; // too quiet
+
+                let r1 = 0, r2 = SIZE - 1, thres = 0.2;
+                for (let i = 0; i < SIZE / 2; i++) if (Math.abs(buf[i]) < thres) { r1 = i; break; }
+                for (let i = 1; i < SIZE / 2; i++) if (Math.abs(buf[SIZE - i]) < thres) { r2 = SIZE - i; break; }
+                const b = buf.slice(r1, r2);
+                const newSize = b.length;
+                const c = new Array(newSize).fill(0);
+                for (let i = 0; i < newSize; i++)
+                    for (let j = 0; j < newSize - i; j++)
+                        c[i] = c[i] + b[j] * b[j + i];
+
+                let d = 0;
+                while (c[d] > c[d + 1]) d++;
+                let maxval = -1, maxpos = -1;
+                for (let i = d; i < newSize; i++) {
+                    if (c[i] > maxval) { maxval = c[i]; maxpos = i; }
+                }
+                let T0 = maxpos;
+                const x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
+                const a = (x1 + x3 - 2 * x2) / 2;
+                const b2 = (x3 - x1) / 2;
+                if (a) T0 = T0 - b2 / (2 * a);
+                return sampleRate / T0;
+            }
+
+            async function startTuner() {
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+                    const source = audioCtx.createMediaStreamSource(micStream);
+                    analyser = audioCtx.createAnalyser();
+                    analyser.fftSize = 2048;
+                    source.connect(analyser);
+                    const buf = new Float32Array(analyser.fftSize);
+
+                    const noteEl = document.getElementById('tunerNote');
+                    const freqEl = document.getElementById('tunerFreq');
+                    const centsEl = document.getElementById('tunerCents');
+                    const needleEl = document.getElementById('tunerNeedle');
+
+                    function update() {
+                        analyser.getFloatTimeDomainData(buf);
+                        const freq = autoCorrelate(buf, audioCtx.sampleRate);
+                        if (freq > 0 && freq < 2000) {
+                            const { noteName, octave, cents } = freqToNote(freq);
+                            noteEl.textContent = noteName + octave;
+                            freqEl.textContent = freq.toFixed(1) + ' Hz';
+                            centsEl.textContent = (cents > 0 ? '+' : '') + cents + ' cents';
+
+                            // Needle position: -50 to +50 cents mapped to 0-100%
+                            const pct = Math.max(0, Math.min(100, 50 + cents));
+                            needleEl.style.left = pct + '%';
+
+                            // In-tune indicator (within ±5 cents)
+                            const inTune = Math.abs(cents) <= 5;
+                            noteEl.classList.toggle('in-tune', inTune);
+                            needleEl.classList.toggle('in-tune', inTune);
+                        } else {
+                            noteEl.textContent = '—';
+                            freqEl.textContent = '0 Hz';
+                            centsEl.textContent = '— cents';
+                            needleEl.style.left = '50%';
+                            noteEl.classList.remove('in-tune');
+                            needleEl.classList.remove('in-tune');
+                        }
+                        rafId = requestAnimationFrame(update);
+                    }
+                    update();
+
+                    const btn = document.getElementById('tunerBtn');
+                    btn.classList.add('active');
+                    btn.querySelector('span').textContent = '정지';
+                    btn.querySelector('i').className = 'fas fa-stop';
+                    window._tunerRunning = true;
+                } catch (err) {
+                    alert('마이크 접근이 거부되었습니다. 브라우저 설정에서 마이크 권한을 허용해주세요.');
+                    console.error(err);
+                }
+            }
+
+            function stopTuner() {
+                if (rafId) cancelAnimationFrame(rafId);
+                if (micStream) micStream.getTracks().forEach(t => t.stop());
+                if (audioCtx) audioCtx.close();
+                audioCtx = null; analyser = null; micStream = null; rafId = null;
+
+                const btn = document.getElementById('tunerBtn');
+                btn.classList.remove('active');
+                btn.querySelector('span').textContent = '시작하기';
+                btn.querySelector('i').className = 'fas fa-microphone';
+
+                document.getElementById('tunerNote').textContent = '—';
+                document.getElementById('tunerFreq').textContent = '0 Hz';
+                document.getElementById('tunerCents').textContent = '— cents';
+                document.getElementById('tunerNeedle').style.left = '50%';
+                document.getElementById('tunerNote').classList.remove('in-tune');
+                document.getElementById('tunerNeedle').classList.remove('in-tune');
+                window._tunerRunning = false;
+            }
+
+            window.toggleTuner = function() {
+                if (window._tunerRunning) stopTuner();
+                else startTuner();
+            };
+        })();
+
+        // ========== METRONOME ==========
+        (function() {
+            let audioCtx = null;
+            let bpm = 90;
+            let timeSig = 4;
+            let soundMode = 'click';
+            let nextNoteTime = 0;
+            let currentBeat = 0;
+            let timerId = null;
+            let silentAudio = null;
+            let cachedNoiseBuffer = null;
+            const lookahead = 25; // ms
+            const scheduleAheadTime = 0.1; // seconds
+
+            function getNoiseBuffer() {
+                if (cachedNoiseBuffer) return cachedNoiseBuffer;
+                const bufferSize = audioCtx.sampleRate * 0.5;
+                cachedNoiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = cachedNoiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                return cachedNoiseBuffer;
+            }
+
+            // ===== Acoustic drum synthesis (layered for realism) =====
+            // Master bus compression for punch
+            let drumBus = null;
+            let drumMaster = null;
+            function getDrumBus() {
+                if (drumBus) return drumBus;
+                drumBus = audioCtx.createDynamicsCompressor();
+                drumBus.threshold.value = -16;
+                drumBus.knee.value = 8;
+                drumBus.ratio.value = 5;
+                drumBus.attack.value = 0.002;
+                drumBus.release.value = 0.08;
+                drumMaster = audioCtx.createGain();
+                drumMaster.gain.value = 1.6;
+                drumBus.connect(drumMaster);
+                drumMaster.connect(audioCtx.destination);
+                return drumBus;
+            }
+
+            function playKick(time) {
+                const bus = getDrumBus();
+
+                // 1. Beater attack "click" — most important for realism
+                // Short, sharp transient that defines the kick character
+                const click = audioCtx.createBufferSource();
+                click.buffer = getNoiseBuffer();
+                const clickBP = audioCtx.createBiquadFilter();
+                clickBP.type = 'bandpass';
+                clickBP.frequency.value = 3800;
+                clickBP.Q.value = 1.4;
+                const clickGain = audioCtx.createGain();
+                clickGain.gain.setValueAtTime(0.0001, time);
+                clickGain.gain.exponentialRampToValueAtTime(0.55, time + 0.0005);
+                clickGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.012);
+                click.connect(clickBP);
+                clickBP.connect(clickGain);
+                clickGain.connect(bus);
+                click.start(time);
+                click.stop(time + 0.02);
+
+                // 2. Mid punch "thump" — the body of the beater hitting head
+                // Quick 180Hz→60Hz pitch drop (much faster than 808)
+                const thump = audioCtx.createOscillator();
+                const thumpGain = audioCtx.createGain();
+                thump.type = 'sine';
+                thump.frequency.setValueAtTime(180, time);
+                thump.frequency.exponentialRampToValueAtTime(60, time + 0.02);
+                thump.frequency.exponentialRampToValueAtTime(55, time + 0.1);
+                thumpGain.gain.setValueAtTime(0.0001, time);
+                thumpGain.gain.exponentialRampToValueAtTime(1.0, time + 0.002);
+                thumpGain.gain.exponentialRampToValueAtTime(0.15, time + 0.05);
+                thumpGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.18);
+                thump.connect(thumpGain);
+                thumpGain.connect(bus);
+                thump.start(time);
+                thump.stop(time + 0.2);
+
+                // 3. Low body resonance — shell/head resonance
+                const body = audioCtx.createOscillator();
+                const bodyGain = audioCtx.createGain();
+                body.type = 'sine';
+                body.frequency.setValueAtTime(55, time);
+                body.frequency.exponentialRampToValueAtTime(48, time + 0.15);
+                bodyGain.gain.setValueAtTime(0.0001, time);
+                bodyGain.gain.exponentialRampToValueAtTime(0.5, time + 0.008);
+                bodyGain.gain.exponentialRampToValueAtTime(0.08, time + 0.12);
+                bodyGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.22);
+                body.connect(bodyGain);
+                bodyGain.connect(bus);
+                body.start(time);
+                body.stop(time + 0.24);
+
+                // 4. Low-mid knock (tight "pok" around 90Hz, like beater against closed head)
+                const knock = audioCtx.createOscillator();
+                const knockGain = audioCtx.createGain();
+                knock.type = 'sine';
+                knock.frequency.setValueAtTime(90, time);
+                knock.frequency.exponentialRampToValueAtTime(70, time + 0.03);
+                knockGain.gain.setValueAtTime(0.0001, time);
+                knockGain.gain.exponentialRampToValueAtTime(0.35, time + 0.003);
+                knockGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.07);
+                knock.connect(knockGain);
+                knockGain.connect(bus);
+                knock.start(time);
+                knock.stop(time + 0.08);
+            }
+
+            function playSnare(time) {
+                const bus = getDrumBus();
+                // Fundamental shell tone (180Hz + 330Hz overtone = acoustic snare body)
+                const f1 = audioCtx.createOscillator();
+                const f1Gain = audioCtx.createGain();
+                f1.type = 'triangle';
+                f1.frequency.setValueAtTime(185, time);
+                f1.frequency.exponentialRampToValueAtTime(170, time + 0.08);
+                f1Gain.gain.setValueAtTime(0.0001, time);
+                f1Gain.gain.exponentialRampToValueAtTime(0.3, time + 0.002);
+                f1Gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.1);
+                f1.connect(f1Gain);
+                f1Gain.connect(bus);
+                f1.start(time);
+                f1.stop(time + 0.12);
+
+                const f2 = audioCtx.createOscillator();
+                const f2Gain = audioCtx.createGain();
+                f2.type = 'triangle';
+                f2.frequency.setValueAtTime(330, time);
+                f2.frequency.exponentialRampToValueAtTime(300, time + 0.08);
+                f2Gain.gain.setValueAtTime(0.0001, time);
+                f2Gain.gain.exponentialRampToValueAtTime(0.15, time + 0.002);
+                f2Gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.08);
+                f2.connect(f2Gain);
+                f2Gain.connect(bus);
+                f2.start(time);
+                f2.stop(time + 0.1);
+
+                // Snare wire rattle: bandpass noise around 3-5kHz
+                const rattle = audioCtx.createBufferSource();
+                rattle.buffer = getNoiseBuffer();
+                const rattleBP = audioCtx.createBiquadFilter();
+                rattleBP.type = 'bandpass';
+                rattleBP.frequency.value = 4500;
+                rattleBP.Q.value = 0.8;
+                const rattleHP = audioCtx.createBiquadFilter();
+                rattleHP.type = 'highpass';
+                rattleHP.frequency.value = 1500;
+                const rattleGain = audioCtx.createGain();
+                rattleGain.gain.setValueAtTime(0.0001, time);
+                rattleGain.gain.exponentialRampToValueAtTime(0.55, time + 0.001);
+                rattleGain.gain.exponentialRampToValueAtTime(0.15, time + 0.04);
+                rattleGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.18);
+                rattle.connect(rattleBP);
+                rattleBP.connect(rattleHP);
+                rattleHP.connect(rattleGain);
+                rattleGain.connect(bus);
+                rattle.start(time);
+                rattle.stop(time + 0.2);
+
+                // Crack: high-freq transient
+                const crack = audioCtx.createBufferSource();
+                crack.buffer = getNoiseBuffer();
+                const crackBP = audioCtx.createBiquadFilter();
+                crackBP.type = 'bandpass';
+                crackBP.frequency.value = 8000;
+                crackBP.Q.value = 0.7;
+                const crackGain = audioCtx.createGain();
+                crackGain.gain.setValueAtTime(0.0001, time);
+                crackGain.gain.exponentialRampToValueAtTime(0.35, time + 0.0005);
+                crackGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.025);
+                crack.connect(crackBP);
+                crackBP.connect(crackGain);
+                crackGain.connect(bus);
+                crack.start(time);
+                crack.stop(time + 0.03);
+            }
+
+            function playHiHat(time, accent) {
+                const bus = getDrumBus();
+                // Layer 1: metallic shimmer (bandpass cluster simulating cymbal harmonics)
+                const layers = [
+                    { freq: 8000, q: 3, gain: accent ? 0.18 : 0.1, decay: 0.04 },
+                    { freq: 10500, q: 4, gain: accent ? 0.14 : 0.08, decay: 0.035 },
+                    { freq: 13000, q: 5, gain: accent ? 0.1 : 0.06, decay: 0.03 }
+                ];
+                layers.forEach(l => {
+                    const noise = audioCtx.createBufferSource();
+                    noise.buffer = getNoiseBuffer();
+                    const bp = audioCtx.createBiquadFilter();
+                    bp.type = 'bandpass';
+                    bp.frequency.value = l.freq;
+                    bp.Q.value = l.q;
+                    const g = audioCtx.createGain();
+                    g.gain.setValueAtTime(0.0001, time);
+                    g.gain.exponentialRampToValueAtTime(l.gain, time + 0.001);
+                    g.gain.exponentialRampToValueAtTime(0.0001, time + l.decay);
+                    noise.connect(bp);
+                    bp.connect(g);
+                    g.connect(bus);
+                    noise.start(time);
+                    noise.stop(time + l.decay + 0.01);
+                });
+                // High-pass shelf for overall brightness
+                const highNoise = audioCtx.createBufferSource();
+                highNoise.buffer = getNoiseBuffer();
+                const hp = audioCtx.createBiquadFilter();
+                hp.type = 'highpass';
+                hp.frequency.value = 7000;
+                const hpGain = audioCtx.createGain();
+                hpGain.gain.setValueAtTime(0.0001, time);
+                hpGain.gain.exponentialRampToValueAtTime(accent ? 0.12 : 0.07, time + 0.001);
+                hpGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.05);
+                highNoise.connect(hp);
+                hp.connect(hpGain);
+                hpGain.connect(bus);
+                highNoise.start(time);
+                highNoise.stop(time + 0.06);
+            }
+
+            function playClickSound(beatNum, time) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                const isAccent = timeSig > 0 && (beatNum % timeSig) === 0;
+                osc.frequency.value = isAccent ? 1000 : 750;
+                gain.gain.setValueAtTime(0.0001, time);
+                gain.gain.exponentialRampToValueAtTime(isAccent ? 0.75 : 0.5, time + 0.001);
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.06);
+                osc.start(time);
+                osc.stop(time + 0.07);
+            }
+
+            function playDrumPattern(eighthIdx, time) {
+                const e = eighthIdx % 8;
+                // Hi-hat on every eighth (accent on downbeats)
+                playHiHat(time, e % 2 === 0);
+                // Kick on beats 1 and 3 (eighths 0 and 4)
+                if (e === 0 || e === 4) playKick(time);
+                // Snare on beats 2 and 4 (eighths 2 and 6)
+                if (e === 2 || e === 6) playSnare(time);
+            }
+
+            function highlightDot(dotIdx, time) {
+                const delay = (time - audioCtx.currentTime) * 1000;
+                setTimeout(() => {
+                    const dots = document.querySelectorAll('#metronomeBeats .beat-dot');
+                    dots.forEach(d => d.classList.remove('active'));
+                    const dot = dots[dotIdx];
+                    if (dot) {
+                        dot.classList.add('active');
+                        setTimeout(() => dot.classList.remove('active'), 120);
+                    }
+                }, Math.max(0, delay));
+            }
+
+            // Generate silent WAV audio (for Media Session support)
+            function createSilentAudio() {
+                const sampleRate = 44100;
+                const duration = 1;
+                const numSamples = sampleRate * duration;
+                const buffer = new ArrayBuffer(44 + numSamples * 2);
+                const view = new DataView(buffer);
+                const writeString = (offset, str) => {
+                    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+                };
+                writeString(0, 'RIFF');
+                view.setUint32(4, 36 + numSamples * 2, true);
+                writeString(8, 'WAVE');
+                writeString(12, 'fmt ');
+                view.setUint32(16, 16, true);
+                view.setUint16(20, 1, true);
+                view.setUint16(22, 1, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * 2, true);
+                view.setUint16(32, 2, true);
+                view.setUint16(34, 16, true);
+                writeString(36, 'data');
+                view.setUint32(40, numSamples * 2, true);
+                const blob = new Blob([buffer], { type: 'audio/wav' });
+                const audio = new Audio(URL.createObjectURL(blob));
+                audio.loop = true;
+                return audio;
+            }
+
+            function scheduleNote(beatNum, time) {
+                if (soundMode === 'drums') {
+                    playDrumPattern(beatNum, time);
+                    // Highlight dot on quarter beats (every 2nd eighth)
+                    if (beatNum % 2 === 0) {
+                        const quarter = (beatNum / 2) % 4;
+                        highlightDot(quarter, time);
+                    }
+                } else {
+                    playClickSound(beatNum, time);
+                    const idx = timeSig > 0 ? (beatNum % timeSig) : 0;
+                    highlightDot(idx, time);
+                }
+            }
+
+            function scheduler() {
+                const interval = soundMode === 'drums' ? 30.0 / bpm : 60.0 / bpm;
+                while (nextNoteTime < audioCtx.currentTime + scheduleAheadTime) {
+                    scheduleNote(currentBeat, nextNoteTime);
+                    nextNoteTime += interval;
+                    currentBeat++;
+                }
+            }
+
+            function renderBeats() {
+                const container = document.getElementById('metronomeBeats');
+                container.innerHTML = '';
+                // Drum mode always shows 4 dots (4/4 inherent)
+                if (soundMode === 'drums') {
+                    for (let i = 0; i < 4; i++) {
+                        const dot = document.createElement('div');
+                        dot.className = 'beat-dot' + (i === 0 ? ' accent' : '');
+                        container.appendChild(dot);
+                    }
+                    return;
+                }
+                if (timeSig === 0) {
+                    const dot = document.createElement('div');
+                    dot.className = 'beat-dot';
+                    container.appendChild(dot);
+                    return;
+                }
+                for (let i = 0; i < timeSig; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'beat-dot' + (i === 0 ? ' accent' : '');
+                    container.appendChild(dot);
+                }
+            }
+
+            window.updateSoundMode = function(mode) {
+                soundMode = mode;
+                document.querySelectorAll('.sound-toggle-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.sound === mode);
+                });
+                const timeSigRow = document.getElementById('timeSigRow');
+                if (timeSigRow) timeSigRow.style.display = soundMode === 'drums' ? 'none' : 'flex';
+                renderBeats();
+                currentBeat = 0;
+                if (window._metroRunning && audioCtx) {
+                    nextNoteTime = audioCtx.currentTime + 0.05;
+                }
+            };
+
+            window.updateBPM = function(val) {
+                bpm = parseInt(val);
+                document.getElementById('bpmValue').textContent = bpm;
+                if (window._metroRunning && 'mediaSession' in navigator) {
+                    navigator.mediaSession.metadata = new MediaMetadata({
+                        title: '메트로놈 · ' + bpm + ' BPM',
+                        artist: '안쌤의 기타나무숲',
+                        album: '연습도구'
+                    });
+                }
+            };
+            window.adjustBPM = function(delta) {
+                bpm = Math.max(40, Math.min(240, bpm + delta));
+                document.getElementById('bpmSlider').value = bpm;
+                document.getElementById('bpmValue').textContent = bpm;
+                if (window._metroRunning && 'mediaSession' in navigator) {
+                    navigator.mediaSession.metadata = new MediaMetadata({
+                        title: '메트로놈 · ' + bpm + ' BPM',
+                        artist: '안쌤의 기타나무숲',
+                        album: '연습도구'
+                    });
+                }
+            };
+            window.updateTimeSig = function() {
+                timeSig = parseInt(document.getElementById('timeSig').value);
+                renderBeats();
+                currentBeat = 0;
+            };
+
+            function setupMediaSession() {
+                if (!('mediaSession' in navigator)) return;
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: '메트로놈 · ' + bpm + ' BPM',
+                    artist: '안쌤의 기타나무숲',
+                    album: '연습도구'
+                });
+                navigator.mediaSession.setActionHandler('play', () => {
+                    if (!window._metroRunning) startMetronome();
+                });
+                navigator.mediaSession.setActionHandler('pause', () => {
+                    if (window._metroRunning) stopMetronome();
+                });
+                navigator.mediaSession.setActionHandler('stop', () => {
+                    if (window._metroRunning) stopMetronome();
+                });
+            }
+
+            function startMetronome() {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                // Start silent audio for media key support
+                if (!silentAudio) silentAudio = createSilentAudio();
+                silentAudio.play().catch(() => {});
+
+                currentBeat = 0;
+                nextNoteTime = audioCtx.currentTime + 0.05;
+                timerId = setInterval(scheduler, lookahead);
+
+                setupMediaSession();
+                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+
+                const btn = document.getElementById('metronomeBtn');
+                btn.classList.add('active');
+                btn.querySelector('span').textContent = '정지';
+                btn.querySelector('i').className = 'fas fa-stop';
+                window._metroRunning = true;
+            }
+
+            function stopMetronome() {
+                if (timerId) clearInterval(timerId);
+                timerId = null;
+
+                if (silentAudio) silentAudio.pause();
+                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+
+                const btn = document.getElementById('metronomeBtn');
+                btn.classList.remove('active');
+                btn.querySelector('span').textContent = '시작';
+                btn.querySelector('i').className = 'fas fa-play';
+
+                document.querySelectorAll('#metronomeBeats .beat-dot').forEach(d => d.classList.remove('active'));
+                window._metroRunning = false;
+            }
+
+            window.toggleMetronome = function() {
+                if (window._metroRunning) stopMetronome();
+                else startMetronome();
+            };
+
+            // Initial render
+            document.addEventListener('DOMContentLoaded', renderBeats);
+        })();
+
+        // ========== TAP TEMPO ==========
+        (function() {
+            const TAP_RESET_MS = 2500;
+            const MAX_TAPS = 8;
+            let tapTimes = [];
+            let tapResetTimer = null;
+
+            function calculateBPM() {
+                if (tapTimes.length < 2) return null;
+                let sum = 0;
+                for (let i = 1; i < tapTimes.length; i++) {
+                    sum += tapTimes[i] - tapTimes[i - 1];
+                }
+                const avgMs = sum / (tapTimes.length - 1);
+                const bpm = Math.round(60000 / avgMs);
+                return Math.max(30, Math.min(300, bpm));
+            }
+
+            function registerTap(targetMode) {
+                // targetMode: 'standalone' (taptempo tab) or 'metro' (metronome panel)
+                const now = performance.now();
+                if (tapTimes.length > 0 && now - tapTimes[tapTimes.length - 1] > TAP_RESET_MS) {
+                    tapTimes = [];
+                }
+                tapTimes.push(now);
+                if (tapTimes.length > MAX_TAPS) tapTimes.shift();
+
+                const bpm = calculateBPM();
+
+                if (targetMode === 'standalone') {
+                    const bpmEl = document.getElementById('tapBpmValue');
+                    if (bpm !== null) {
+                        bpmEl.textContent = bpm;
+                        bpmEl.classList.add('active');
+                    }
+                    // Visual feedback on big button
+                    const btn = document.getElementById('tapBigBtn');
+                    btn.classList.add('tapping');
+                    requestAnimationFrame(() => requestAnimationFrame(() => btn.classList.remove('tapping')));
+                } else if (targetMode === 'metro') {
+                    if (bpm !== null) {
+                        window.updateBPM(bpm);
+                        document.getElementById('bpmSlider').value = bpm;
+                    }
+                    const btn = document.getElementById('metroTapBtn');
+                    btn.classList.add('tapping');
+                    requestAnimationFrame(() => requestAnimationFrame(() => btn.classList.remove('tapping')));
+                }
+
+                // Reset countdown after inactivity
+                if (tapResetTimer) clearTimeout(tapResetTimer);
+                tapResetTimer = setTimeout(() => {
+                    tapTimes = [];
+                    const bpmEl = document.getElementById('tapBpmValue');
+                    if (bpmEl) bpmEl.classList.remove('active');
+                }, TAP_RESET_MS + 200);
+            }
+
+            window.bigTap = function() { registerTap('standalone'); };
+            window.metroTap = function() { registerTap('metro'); };
+
+            window.resetTap = function() {
+                tapTimes = [];
+                const bpmEl = document.getElementById('tapBpmValue');
+                if (bpmEl) {
+                    bpmEl.textContent = '—';
+                    bpmEl.classList.remove('active');
+                }
+            };
+
+            window.sendToMetronome = function() {
+                const bpmText = document.getElementById('tapBpmValue').textContent;
+                const bpm = parseInt(bpmText);
+                if (isNaN(bpm)) {
+                    alert('먼저 TAP 버튼을 2번 이상 눌러 BPM을 측정해주세요.');
+                    return;
+                }
+                window.updateBPM(bpm);
+                document.getElementById('bpmSlider').value = bpm;
+                switchTool('metronome');
+            };
+        })();
+
+        // Keyboard shortcuts when drawer is open
+        document.addEventListener('keydown', function(e) {
+            const drawer = document.getElementById('toolsDrawer');
+            if (!drawer || !drawer.classList.contains('open')) return;
+            const tag = document.activeElement.tagName;
+            if (['INPUT', 'SELECT', 'TEXTAREA'].includes(tag)) return;
+            const activeTab = document.querySelector('.tools-tab.active');
+            if (!activeTab) return;
+
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (activeTab.dataset.tool === 'tuner') toggleTuner();
+                else if (activeTab.dataset.tool === 'metronome') toggleMetronome();
+                else if (activeTab.dataset.tool === 'taptempo') window.bigTap();
+            } else if (e.code === 'Enter') {
+                // Enter only triggers tap tempo in metronome panel
+                if (activeTab.dataset.tool !== 'metronome') return;
+                e.preventDefault();
+                window.metroTap();
+                // Blur any focused button so Enter doesn't also re-click it
+                if (document.activeElement && document.activeElement.blur) {
+                    document.activeElement.blur();
+                }
+            }
         });
     </script>
 </body>
