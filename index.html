@@ -490,7 +490,8 @@
         .tuner-meter-track {
             position: relative;
             height: 60px;
-            background: rgba(255,255,255,0.04);
+            background: rgba(255,255,255,0.08);
+            border: 1.5px solid rgba(255,255,255,0.3);
             border-radius: 30px;
             overflow: hidden;
             padding: 0 1rem;
@@ -503,7 +504,8 @@
             justify-content: space-between;
             padding: 0 1rem;
             font-size: 0.7rem;
-            color: rgba(255,255,255,0.3);
+            color: rgba(255,255,255,0.55);
+            font-weight: 500;
         }
         .tuner-meter-center {
             position: absolute;
@@ -511,8 +513,8 @@
             left: 50%;
             transform: translate(-50%, -50%);
             width: 2px;
-            height: 30px;
-            background: rgba(255,255,255,0.25);
+            height: 36px;
+            background: rgba(255,255,255,0.55);
         }
         .tuner-meter-needle {
             position: absolute;
@@ -2872,6 +2874,37 @@
                 return cachedNoiseBuffer;
             }
 
+            // ===== Drum sample loading =====
+            const drumSamples = { kick: null, snare: null, hihat: null };
+            let samplesLoadPromise = null;
+            function loadDrumSamples() {
+                if (samplesLoadPromise) return samplesLoadPromise;
+                const load = (key, url) =>
+                    fetch(url)
+                        .then(r => r.ok ? r.arrayBuffer() : Promise.reject('404 ' + url))
+                        .then(ab => audioCtx.decodeAudioData(ab))
+                        .then(buf => { drumSamples[key] = buf; })
+                        .catch(err => { console.warn('Sample load failed:', key, err); });
+                samplesLoadPromise = Promise.all([
+                    load('kick', 'sounds/kick.wav'),
+                    load('snare', 'sounds/snare.wav'),
+                    load('hihat', 'sounds/hihat.wav')
+                ]);
+                return samplesLoadPromise;
+            }
+            function playSample(key, time, gainVal) {
+                const buf = drumSamples[key];
+                if (!buf) return false;
+                const source = audioCtx.createBufferSource();
+                source.buffer = buf;
+                const g = audioCtx.createGain();
+                g.gain.value = gainVal || 1;
+                source.connect(g);
+                g.connect(getDrumBus());
+                source.start(time);
+                return true;
+            }
+
             // ===== Acoustic drum synthesis (layered for realism) =====
             // Master bus compression for punch
             let drumBus = null;
@@ -2892,6 +2925,7 @@
             }
 
             function playKick(time) {
+                if (playSample('kick', time, 1.0)) return;
                 const bus = getDrumBus();
 
                 // 1. Beater attack "click" — most important for realism
@@ -2960,75 +2994,99 @@
             }
 
             function playSnare(time) {
+                if (playSample('snare', time, 1.0)) return;
                 const bus = getDrumBus();
-                // Fundamental shell tone (180Hz + 330Hz overtone = acoustic snare body)
-                const f1 = audioCtx.createOscillator();
-                const f1Gain = audioCtx.createGain();
-                f1.type = 'triangle';
-                f1.frequency.setValueAtTime(185, time);
-                f1.frequency.exponentialRampToValueAtTime(170, time + 0.08);
-                f1Gain.gain.setValueAtTime(0.0001, time);
-                f1Gain.gain.exponentialRampToValueAtTime(0.3, time + 0.002);
-                f1Gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.1);
-                f1.connect(f1Gain);
-                f1Gain.connect(bus);
-                f1.start(time);
-                f1.stop(time + 0.12);
 
-                const f2 = audioCtx.createOscillator();
-                const f2Gain = audioCtx.createGain();
-                f2.type = 'triangle';
-                f2.frequency.setValueAtTime(330, time);
-                f2.frequency.exponentialRampToValueAtTime(300, time + 0.08);
-                f2Gain.gain.setValueAtTime(0.0001, time);
-                f2Gain.gain.exponentialRampToValueAtTime(0.15, time + 0.002);
-                f2Gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.08);
-                f2.connect(f2Gain);
-                f2Gain.connect(bus);
-                f2.start(time);
-                f2.stop(time + 0.1);
+                // 1. Main body thump — thick low-mid (210→155Hz, prominent)
+                // This is the FAT part of the snare - tuned rock snare body
+                const body = audioCtx.createOscillator();
+                const bodyGain = audioCtx.createGain();
+                body.type = 'triangle';
+                body.frequency.setValueAtTime(210, time);
+                body.frequency.exponentialRampToValueAtTime(155, time + 0.03);
+                body.frequency.exponentialRampToValueAtTime(140, time + 0.1);
+                bodyGain.gain.setValueAtTime(0.0001, time);
+                bodyGain.gain.exponentialRampToValueAtTime(0.55, time + 0.002);
+                bodyGain.gain.exponentialRampToValueAtTime(0.1, time + 0.05);
+                bodyGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.12);
+                body.connect(bodyGain);
+                bodyGain.connect(bus);
+                body.start(time);
+                body.stop(time + 0.14);
 
-                // Snare wire rattle: bandpass noise around 3-5kHz
+                // 2. Low-mid sub-body — adds thickness without going too low
+                const subBody = audioCtx.createOscillator();
+                const subGain = audioCtx.createGain();
+                subBody.type = 'sine';
+                subBody.frequency.setValueAtTime(115, time);
+                subBody.frequency.exponentialRampToValueAtTime(85, time + 0.05);
+                subGain.gain.setValueAtTime(0.0001, time);
+                subGain.gain.exponentialRampToValueAtTime(0.22, time + 0.003);
+                subGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.09);
+                subBody.connect(subGain);
+                subGain.connect(bus);
+                subBody.start(time);
+                subBody.stop(time + 0.11);
+
+                // 3. Mid thwack — stick impact body (450Hz)
+                const thwack = audioCtx.createBufferSource();
+                thwack.buffer = getNoiseBuffer();
+                const thwackBP = audioCtx.createBiquadFilter();
+                thwackBP.type = 'bandpass';
+                thwackBP.frequency.value = 450;
+                thwackBP.Q.value = 0.5;
+                const thwackGain = audioCtx.createGain();
+                thwackGain.gain.setValueAtTime(0.0001, time);
+                thwackGain.gain.exponentialRampToValueAtTime(0.3, time + 0.001);
+                thwackGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.035);
+                thwack.connect(thwackBP);
+                thwackBP.connect(thwackGain);
+                thwackGain.connect(bus);
+                thwack.start(time);
+                thwack.stop(time + 0.04);
+
+                // 4. Wire rattle — mid-upper bandpass for acoustic snare character
                 const rattle = audioCtx.createBufferSource();
                 rattle.buffer = getNoiseBuffer();
                 const rattleBP = audioCtx.createBiquadFilter();
                 rattleBP.type = 'bandpass';
-                rattleBP.frequency.value = 4500;
+                rattleBP.frequency.value = 3200;
                 rattleBP.Q.value = 0.8;
                 const rattleHP = audioCtx.createBiquadFilter();
                 rattleHP.type = 'highpass';
-                rattleHP.frequency.value = 1500;
+                rattleHP.frequency.value = 1200;
                 const rattleGain = audioCtx.createGain();
                 rattleGain.gain.setValueAtTime(0.0001, time);
-                rattleGain.gain.exponentialRampToValueAtTime(0.55, time + 0.001);
-                rattleGain.gain.exponentialRampToValueAtTime(0.15, time + 0.04);
-                rattleGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.18);
+                rattleGain.gain.exponentialRampToValueAtTime(0.32, time + 0.001);
+                rattleGain.gain.exponentialRampToValueAtTime(0.06, time + 0.04);
+                rattleGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.11);
                 rattle.connect(rattleBP);
                 rattleBP.connect(rattleHP);
                 rattleHP.connect(rattleGain);
                 rattleGain.connect(bus);
                 rattle.start(time);
-                rattle.stop(time + 0.2);
+                rattle.stop(time + 0.12);
 
-                // Crack: high-freq transient
+                // 5. Subtle stick attack (5000Hz, reduced from 7200Hz — darker, quieter)
                 const crack = audioCtx.createBufferSource();
                 crack.buffer = getNoiseBuffer();
                 const crackBP = audioCtx.createBiquadFilter();
                 crackBP.type = 'bandpass';
-                crackBP.frequency.value = 8000;
-                crackBP.Q.value = 0.7;
+                crackBP.frequency.value = 5000;
+                crackBP.Q.value = 0.6;
                 const crackGain = audioCtx.createGain();
                 crackGain.gain.setValueAtTime(0.0001, time);
-                crackGain.gain.exponentialRampToValueAtTime(0.35, time + 0.0005);
-                crackGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.025);
+                crackGain.gain.exponentialRampToValueAtTime(0.18, time + 0.0003);
+                crackGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.015);
                 crack.connect(crackBP);
                 crackBP.connect(crackGain);
                 crackGain.connect(bus);
                 crack.start(time);
-                crack.stop(time + 0.03);
+                crack.stop(time + 0.02);
             }
 
             function playHiHat(time, accent) {
+                if (playSample('hihat', time, accent ? 0.85 : 0.55)) return;
                 const bus = getDrumBus();
                 // Layer 1: metallic shimmer (bandpass cluster simulating cymbal harmonics)
                 const layers = [
@@ -3249,6 +3307,9 @@
             function startMetronome() {
                 if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                // Start loading drum samples (async, non-blocking)
+                loadDrumSamples();
 
                 // Start silent audio for media key support
                 if (!silentAudio) silentAudio = createSilentAudio();
