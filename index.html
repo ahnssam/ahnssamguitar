@@ -671,6 +671,14 @@
             vertical-align: middle;
             font-family: inherit;
         }
+        .tap-big-btn .kbd-hint {
+            margin-left: 0;
+            margin-top: 0.15rem;
+            font-size: 0.65rem;
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.5);
+            opacity: 0.9;
+        }
         @media (max-width: 768px) {
             .kbd-hint { display: none; }
         }
@@ -2073,6 +2081,7 @@
             <button class="tap-big-btn" id="tapBigBtn" onclick="bigTap()">
                 <i class="fas fa-hand-pointer"></i>
                 <span>TAP</span>
+                <span class="kbd-hint">SPACE</span>
             </button>
             <div class="tap-actions">
                 <button class="tap-action-btn" onclick="resetTap()">
@@ -2703,21 +2712,68 @@
     <!-- Practice Tools (Tuner + Metronome) -->
     <script>
         // ========== Drawer toggle ==========
+        function getActiveTool() {
+            const activeTab = document.querySelector('.tools-tab.active');
+            return activeTab ? activeTab.dataset.tool : 'tuner';
+        }
+        function updateHashForTool(tool) {
+            try { history.replaceState(null, '', '#' + tool); } catch (e) {}
+        }
+        function clearHash() {
+            try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch (e) {}
+        }
         function toggleTools() {
             const drawer = document.getElementById('toolsDrawer');
             const overlay = document.getElementById('toolsOverlay');
             const isOpen = drawer.classList.toggle('open');
             overlay.classList.toggle('open', isOpen);
-            if (!isOpen) {
+            if (isOpen) {
+                updateHashForTool(getActiveTool());
+            } else {
+                clearHash();
                 // Stop any running tools when closed
                 if (window._tunerRunning) toggleTuner();
                 if (window._metroRunning) toggleMetronome();
             }
         }
+
+        // ========== Auto-open drawer from URL hash ==========
+        (function() {
+            const HASH_MAP = {
+                'tools': 'tuner',
+                'tuner': 'tuner',
+                'metronome': 'metronome',
+                'metro': 'metronome',
+                'taptempo': 'taptempo',
+                'tap': 'taptempo'
+            };
+            function openFromHash() {
+                const raw = (window.location.hash || '').toLowerCase().replace('#', '');
+                const tool = HASH_MAP[raw];
+                if (!tool) return;
+                const drawer = document.getElementById('toolsDrawer');
+                const overlay = document.getElementById('toolsOverlay');
+                if (!drawer || drawer.classList.contains('open')) return;
+                drawer.classList.add('open');
+                overlay.classList.add('open');
+                if (typeof switchTool === 'function') switchTool(tool);
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', openFromHash);
+            } else {
+                openFromHash();
+            }
+            window.addEventListener('hashchange', openFromHash);
+        })();
         function switchTool(tool) {
             document.querySelectorAll('.tools-tab').forEach(t => t.classList.toggle('active', t.dataset.tool === tool));
             document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
             document.getElementById(tool + 'Panel').classList.add('active');
+            // Update URL hash only when drawer is open
+            const drawer = document.getElementById('toolsDrawer');
+            if (drawer && drawer.classList.contains('open')) {
+                updateHashForTool(tool);
+            }
         }
 
         // ========== TUNER ==========
