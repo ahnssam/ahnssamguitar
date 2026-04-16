@@ -790,6 +790,14 @@
             transition: color 0.3s;
         }
         .tuner-note.in-tune { color: #4ade80; }
+        .tuner-octave {
+            font-size: 0.4em;
+            font-weight: 700;
+            vertical-align: super;
+            margin-left: 0.12em;
+            opacity: 0.75;
+            letter-spacing: 0;
+        }
         .tuner-freq {
             font-size: 0.85rem;
             color: rgba(255,255,255,0.5);
@@ -900,6 +908,39 @@
             letter-spacing: 0.3em;
             margin-top: 0.3rem;
         }
+        .bpm-edge-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2px;
+            margin-top: 0.3rem;
+            margin-bottom: -0.3rem;
+        }
+        .bpm-edge-btn {
+            background: var(--green-mid);
+            border: none;
+            color: var(--white);
+            font-size: 1.35rem;
+            font-weight: 400;
+            line-height: 1;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, transform 0.1s;
+            font-family: inherit;
+            padding: 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        .bpm-edge-btn:hover {
+            background: var(--green-dark);
+        }
+        .bpm-edge-btn:active {
+            transform: scale(0.92);
+        }
         .metronome-slider {
             width: 100%;
             margin: 1rem 0;
@@ -927,23 +968,25 @@
         .metronome-bpm-controls {
             display: flex;
             justify-content: space-between;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
+            align-items: center;
+            margin-top: 0.2rem;
+            margin-bottom: 1.2rem;
+            padding: 0 2px;
         }
         .metronome-bpm-controls button {
-            flex: 1;
             background: rgba(255,255,255,0.08);
             color: var(--white);
             border: 1px solid rgba(255,255,255,0.25);
-            padding: 0.6rem;
-            border-radius: 8px;
+            padding: 0.3rem 0.55rem;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.78rem;
             font-family: inherit;
             transition: background 0.2s;
+            line-height: 1.1;
         }
         .metronome-bpm-controls button:hover {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.16);
         }
         .metronome-beats {
             display: flex;
@@ -1095,8 +1138,25 @@
         .tap-big-btn i { font-size: 2.2rem; }
         .tap-actions {
             display: flex;
+            justify-content: center;
             gap: 0.6rem;
             margin-bottom: 1rem;
+        }
+        .tap-reset-big {
+            flex: 0 0 auto !important;
+            min-width: 180px;
+            padding: 1rem 2rem !important;
+            font-size: 1rem !important;
+            font-weight: 600;
+            background: rgba(114, 196, 146, 0.15) !important;
+            border: 1.5px solid rgba(114, 196, 146, 0.6) !important;
+            color: var(--green-pale) !important;
+        }
+        .tap-reset-big:hover {
+            background: rgba(114, 196, 146, 0.28) !important;
+        }
+        .tap-reset-big i {
+            font-size: 1rem;
         }
         .tap-action-btn {
             flex: 1;
@@ -1176,6 +1236,27 @@
         }
         .time-sig-btn:hover:not(.active) {
             background: rgba(82, 168, 114, 0.22);
+        }
+        /* Drum rhythm: 2-row grid so "X 2" variants line up under their base */
+        #drumRhythmRow {
+            align-items: flex-start;
+        }
+        #drumRhythmRow > label {
+            padding-top: 0.45rem;
+        }
+        #drumRhythmRow .time-sig-btns {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.3rem;
+            min-width: 0;
+        }
+        #drumRhythmRow .time-sig-btn {
+            padding: 0.4rem 0.3rem;
+            font-size: 0.74rem;
+            white-space: nowrap;
+            letter-spacing: 0;
+            min-width: 0;
         }
 
         /* Mobile menu */
@@ -2609,16 +2690,22 @@
 
         <!-- Metronome Panel -->
         <div class="tool-panel" id="metronomePanel">
+            <div class="sound-toggle">
+                <button class="sound-toggle-btn active" data-sound="click" onclick="updateSoundMode('click')">클릭</button>
+                <button class="sound-toggle-btn" data-sound="drums" onclick="updateSoundMode('drums')">드럼</button>
+            </div>
             <div class="metronome-bpm">
                 <div class="metronome-bpm-value" id="bpmValue">90</div>
                 <div class="metronome-bpm-label">BPM</div>
             </div>
+            <div class="bpm-edge-row">
+                <button type="button" class="bpm-edge-btn" onclick="adjustBPM(-1)" aria-label="BPM -1">−</button>
+                <button type="button" class="bpm-edge-btn" onclick="adjustBPM(1)" aria-label="BPM +1">+</button>
+            </div>
             <input type="range" min="40" max="240" value="90" class="metronome-slider" id="bpmSlider" oninput="updateBPM(this.value)">
             <div class="metronome-bpm-controls">
-                <button onclick="adjustBPM(-5)">-5</button>
-                <button onclick="adjustBPM(-1)">-1</button>
-                <button onclick="adjustBPM(1)">+1</button>
-                <button onclick="adjustBPM(5)">+5</button>
+                <button onclick="adjustBPM(-10)">−10</button>
+                <button onclick="adjustBPM(10)">+10</button>
             </div>
             <button class="metronome-tap-btn" id="metroTapBtn" onclick="metroTap()">
                 <i class="fas fa-hand-pointer"></i>
@@ -2631,18 +2718,25 @@
                 <div class="beat-dot"></div>
                 <div class="beat-dot"></div>
             </div>
-            <div class="sound-toggle">
-                <button class="sound-toggle-btn active" data-sound="click" onclick="updateSoundMode('click')">클릭</button>
-                <button class="sound-toggle-btn" data-sound="drums" onclick="updateSoundMode('drums')">8비트 드럼</button>
-            </div>
             <div class="metronome-time-sig" id="timeSigRow">
                 <label>박자</label>
                 <div class="time-sig-btns" id="timeSigBtns">
                     <button type="button" class="time-sig-btn active" data-ts="0" onclick="updateTimeSig(0)">기본</button>
+                    <button type="button" class="time-sig-btn" data-ts="4" onclick="updateTimeSig(4)">4/4</button>
                     <button type="button" class="time-sig-btn" data-ts="2" onclick="updateTimeSig(2)">2/4</button>
                     <button type="button" class="time-sig-btn" data-ts="3" onclick="updateTimeSig(3)">3/4</button>
-                    <button type="button" class="time-sig-btn" data-ts="4" onclick="updateTimeSig(4)">4/4</button>
                     <button type="button" class="time-sig-btn" data-ts="6" onclick="updateTimeSig(6)">6/8</button>
+                </div>
+            </div>
+            <div class="metronome-time-sig" id="drumRhythmRow" style="display:none;">
+                <label>리듬</label>
+                <div class="time-sig-btns">
+                    <button type="button" class="time-sig-btn active" data-rhythm="8beat" onclick="updateDrumRhythm('8beat')">8비트</button>
+                    <button type="button" class="time-sig-btn" data-rhythm="16beat" onclick="updateDrumRhythm('16beat')">16비트</button>
+                    <button type="button" class="time-sig-btn" data-rhythm="ballad" onclick="updateDrumRhythm('ballad')">락발라드</button>
+                    <button type="button" class="time-sig-btn" data-rhythm="halftime" onclick="updateDrumRhythm('halftime')">하프타임</button>
+                    <button type="button" class="time-sig-btn" data-rhythm="8beat2" onclick="updateDrumRhythm('8beat2')">8비트 2</button>
+                    <button type="button" class="time-sig-btn" data-rhythm="16beat2" onclick="updateDrumRhythm('16beat2')">16비트 2</button>
                 </div>
             </div>
             <button class="metronome-btn" id="metronomeBtn" onclick="toggleMetronome()">
@@ -2661,17 +2755,14 @@
             <button class="tap-big-btn" id="tapBigBtn" onclick="bigTap()">
                 <i class="fas fa-hand-pointer"></i>
                 <span>TAP</span>
-                <span class="kbd-hint">SPACE</span>
+                <span class="kbd-hint">Press any key</span>
             </button>
             <div class="tap-actions">
-                <button class="tap-action-btn" onclick="resetTap()">
+                <button class="tap-action-btn tap-reset-big" onclick="resetTap()">
                     <i class="fas fa-redo"></i> 초기화
                 </button>
-                <button class="tap-action-btn tap-send" onclick="sendToMetronome()">
-                    <i class="fas fa-arrow-right"></i> 메트로놈으로
-                </button>
             </div>
-            <p class="tuner-hint">버튼이나 스페이스바를 박자에 맞춰 2~8번 연속으로 누르세요.</p>
+            <p class="tuner-hint">버튼이나 아무 키나 박자에 맞춰 2~8번 연속으로 누르세요.</p>
         </div>
 
         <!-- Capo Calculator Panel -->
@@ -3780,7 +3871,7 @@
                                 hasValue = true;
                             }
 
-                            noteEl.textContent = noteName + octave;
+                            noteEl.innerHTML = noteName + '<span class="tuner-octave">' + octave + '</span>';
                             freqEl.textContent = smoothedFreq.toFixed(1) + ' Hz';
 
                             // Needle position: -50 to +50 cents mapped to 0-100%
@@ -3839,8 +3930,34 @@
             let bpm = 90;
             let timeSig = 0;
             let soundMode = 'click';
+            let drumRhythm = '8beat';
             let nextNoteTime = 0;
             let currentBeat = 0;
+
+            // Drum rhythm patterns
+            // ticksPerBeat: subdivision per beat (2 = eighths, 4 = sixteenths, 3 = triplet/6-8)
+            // beatsPerMeasure: number of visible dots
+            // kick/snare/hihat: tick indices within the measure that trigger that drum
+            const DRUM_PATTERNS = {
+                '8beat':    { ticksPerBeat: 2, beatsPerMeasure: 4,
+                              kick: [0, 4], snare: [2, 6],
+                              hihat: [0, 1, 2, 3, 4, 5, 6, 7] },
+                '16beat':   { ticksPerBeat: 4, beatsPerMeasure: 4,
+                              kick: [0, 8], snare: [4, 12],
+                              hihat: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] },
+                'ballad':   { ticksPerBeat: 3, beatsPerMeasure: 2,
+                              kick: [0], snare: [3],
+                              hihat: [0, 1, 2, 3, 4, 5] },
+                'halftime': { ticksPerBeat: 2, beatsPerMeasure: 4,
+                              kick: [0], snare: [4],
+                              hihat: [0, 1, 2, 3, 4, 5, 6, 7] },
+                '8beat2':   { ticksPerBeat: 2, beatsPerMeasure: 4,
+                              kick: [0, 3, 4], snare: [2, 6],
+                              hihat: [0, 1, 2, 3, 4, 5, 6, 7] },
+                '16beat2':  { ticksPerBeat: 4, beatsPerMeasure: 4,
+                              kick: [0, 3, 7, 9, 10], snare: [4, 12],
+                              hihat: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] }
+            };
             let timerId = null;
             let silentAudio = null;
             let cachedNoiseBuffer = null;
@@ -4124,14 +4241,14 @@
                 osc.stop(time + 0.07);
             }
 
-            function playDrumPattern(eighthIdx, time) {
-                const e = eighthIdx % 8;
-                // Hi-hat on every eighth (accent on downbeats)
-                playHiHat(time, e % 2 === 0);
-                // Kick on beats 1 and 3 (eighths 0 and 4)
-                if (e === 0 || e === 4) playKick(time);
-                // Snare on beats 2 and 4 (eighths 2 and 6)
-                if (e === 2 || e === 6) playSnare(time);
+            function playDrumPattern(tickIdx, time) {
+                const p = DRUM_PATTERNS[drumRhythm] || DRUM_PATTERNS['8beat'];
+                const measureLen = p.ticksPerBeat * p.beatsPerMeasure;
+                const t = tickIdx % measureLen;
+                // Hi-hat (accent on downbeats = ticks aligned to beat)
+                if (p.hihat.includes(t)) playHiHat(time, t % p.ticksPerBeat === 0);
+                if (p.kick.includes(t))  playKick(time);
+                if (p.snare.includes(t)) playSnare(time);
             }
 
             function highlightDot(dotIdx, time) {
@@ -4178,11 +4295,14 @@
 
             function scheduleNote(beatNum, time) {
                 if (soundMode === 'drums') {
+                    const p = DRUM_PATTERNS[drumRhythm] || DRUM_PATTERNS['8beat'];
                     playDrumPattern(beatNum, time);
-                    // Highlight dot on quarter beats (every 2nd eighth)
-                    if (beatNum % 2 === 0) {
-                        const quarter = (beatNum / 2) % 4;
-                        highlightDot(quarter, time);
+                    // Highlight dot when tick aligns to a beat
+                    const measureLen = p.ticksPerBeat * p.beatsPerMeasure;
+                    const t = beatNum % measureLen;
+                    if (t % p.ticksPerBeat === 0) {
+                        const dotIdx = Math.floor(t / p.ticksPerBeat);
+                        highlightDot(dotIdx, time);
                     }
                 } else {
                     playClickSound(beatNum, time);
@@ -4192,7 +4312,13 @@
             }
 
             function scheduler() {
-                const interval = soundMode === 'drums' ? 30.0 / bpm : 60.0 / bpm;
+                let interval;
+                if (soundMode === 'drums') {
+                    const p = DRUM_PATTERNS[drumRhythm] || DRUM_PATTERNS['8beat'];
+                    interval = 60.0 / bpm / p.ticksPerBeat;
+                } else {
+                    interval = 60.0 / bpm;
+                }
                 while (nextNoteTime < audioCtx.currentTime + scheduleAheadTime) {
                     scheduleNote(currentBeat, nextNoteTime);
                     nextNoteTime += interval;
@@ -4203,9 +4329,9 @@
             function renderBeats() {
                 const container = document.getElementById('metronomeBeats');
                 container.innerHTML = '';
-                // Drum mode always shows 4 dots (4/4 inherent)
                 if (soundMode === 'drums') {
-                    for (let i = 0; i < 4; i++) {
+                    const p = DRUM_PATTERNS[drumRhythm] || DRUM_PATTERNS['8beat'];
+                    for (let i = 0; i < p.beatsPerMeasure; i++) {
                         const dot = document.createElement('div');
                         dot.className = 'beat-dot' + (i === 0 ? ' accent' : '');
                         container.appendChild(dot);
@@ -4232,6 +4358,21 @@
                 });
                 const timeSigRow = document.getElementById('timeSigRow');
                 if (timeSigRow) timeSigRow.style.display = soundMode === 'drums' ? 'none' : 'flex';
+                const drumRhythmRow = document.getElementById('drumRhythmRow');
+                if (drumRhythmRow) drumRhythmRow.style.display = soundMode === 'drums' ? 'flex' : 'none';
+                renderBeats();
+                currentBeat = 0;
+                if (window._metroRunning && audioCtx) {
+                    nextNoteTime = audioCtx.currentTime + 0.05;
+                }
+            };
+
+            window.updateDrumRhythm = function(rhythm) {
+                if (!DRUM_PATTERNS[rhythm]) return;
+                drumRhythm = rhythm;
+                document.querySelectorAll('.time-sig-btn[data-rhythm]').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.rhythm === rhythm);
+                });
                 renderBeats();
                 currentBeat = 0;
                 if (window._metroRunning && audioCtx) {
@@ -4791,17 +4932,36 @@
             if (!drawer || !drawer.classList.contains('open')) return;
             const tag = document.activeElement.tagName;
             if (['INPUT', 'SELECT', 'TEXTAREA'].includes(tag)) return;
-            const activeTab = document.querySelector('.tools-tab.active');
-            if (!activeTab) return;
+
+            // Detect active tool from the visible panel (works for both top-level and sub-tools)
+            const activePanel = document.querySelector('.tool-panel.active');
+            if (!activePanel) return;
+            const tool = (activePanel.id || '').replace('Panel', '');
+
+            // Tap tempo: any non-modifier key triggers a tap
+            if (tool === 'taptempo') {
+                if (e.metaKey || e.ctrlKey || e.altKey) return;
+                if (['Escape', 'Tab', 'Shift', 'Control', 'Alt', 'Meta',
+                     'CapsLock', 'NumLock', 'ScrollLock', 'ContextMenu',
+                     'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+                     'PageUp', 'PageDown', 'Home', 'End',
+                     'F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12'
+                    ].includes(e.key)) return;
+                e.preventDefault();
+                window.bigTap();
+                if (document.activeElement && document.activeElement.blur) {
+                    document.activeElement.blur();
+                }
+                return;
+            }
 
             if (e.code === 'Space') {
                 e.preventDefault();
-                if (activeTab.dataset.tool === 'tuner') toggleTuner();
-                else if (activeTab.dataset.tool === 'metronome') toggleMetronome();
-                else if (activeTab.dataset.tool === 'taptempo') window.bigTap();
+                if (tool === 'tuner') toggleTuner();
+                else if (tool === 'metronome') toggleMetronome();
             } else if (e.code === 'Enter') {
                 // Enter only triggers tap tempo in metronome panel
-                if (activeTab.dataset.tool !== 'metronome') return;
+                if (tool !== 'metronome') return;
                 e.preventDefault();
                 window.metroTap();
                 // Blur any focused button so Enter doesn't also re-click it
