@@ -404,7 +404,6 @@
             box-shadow: -10px 0 40px rgba(0,0,0,0.2);
             color-scheme: dark;
             forced-color-adjust: none;
-            overscroll-behavior: contain;
         }
         .tools-drawer.open { transform: translateX(0); }
         .tools-header {
@@ -774,6 +773,7 @@
             overflow-y: auto;
             overscroll-behavior: contain;
             -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
         }
         .tool-panel.active { display: block; }
 
@@ -3713,6 +3713,13 @@
         }
         // Back button handler — close chord modal first, then drawer
         window.addEventListener('popstate', function() {
+            // If a close action already did the work and programmatically called
+            // history.back(), skip this popstate so we don't cascade into closing
+            // the drawer too.
+            if (window._skipNextPopstate) {
+                window._skipNextPopstate = false;
+                return;
+            }
             // Priority 1: chord modal (stacked on top of drawer)
             const chordModal = document.getElementById('chordModal');
             if (chordModal && chordModal.classList.contains('open')) {
@@ -4972,6 +4979,10 @@
                 modal.classList.remove('open');
                 if (window._chordModalHistoryAdded) {
                     window._chordModalHistoryAdded = false;
+                    // We've already handled the close — tell the popstate
+                    // listener to ignore the next event so it doesn't
+                    // cascade into closing the drawer too.
+                    window._skipNextPopstate = true;
                     try { history.back(); } catch (e) {}
                 }
             };
