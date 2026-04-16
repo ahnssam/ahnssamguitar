@@ -3639,33 +3639,29 @@
                 _drawerHistoryAdded = true;
             } catch (e) {}
         }
-        // --- Body scroll lock helpers (iOS-safe) ---
+        // --- Body scroll lock helpers ---
+        // Use overflow:hidden on html+body instead of position:fixed,
+        // because position:fixed on body breaks range-input (slider)
+        // touch-drag on mobile browsers.
+        // Background touch-scroll is already blocked by the overlay's
+        // touch-action:none CSS + the touchmove preventDefault below.
         let _savedScrollY = 0;
         function lockBodyScroll() {
             if (document.body.dataset.scrollLocked === '1') return;
             _savedScrollY = window.scrollY || window.pageYOffset || 0;
             document.body.dataset.scrollLocked = '1';
-            document.body.style.position = 'fixed';
-            document.body.style.top = '-' + _savedScrollY + 'px';
-            document.body.style.left = '0';
-            document.body.style.right = '0';
-            document.body.style.width = '100%';
+            document.documentElement.style.overflow = 'hidden';
             document.body.style.overflow = 'hidden';
         }
         function unlockBodyScroll() {
             if (document.body.dataset.scrollLocked !== '1') return;
             document.body.dataset.scrollLocked = '';
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.left = '';
-            document.body.style.right = '';
-            document.body.style.width = '';
+            document.documentElement.style.overflow = '';
             document.body.style.overflow = '';
             window.scrollTo(0, _savedScrollY);
         }
-        // Prevent touchmove on the overlay (which sits under the drawer) to stop
-        // background scroll when a touch-drag starts inside the drawer and
-        // bubbles up through the backdrop.
+        // Prevent touchmove on the overlay to stop background scroll
+        // on mobile when the drawer is open.
         (function blockOverlayTouch() {
             const overlay = document.getElementById('toolsOverlay');
             if (!overlay) return;
