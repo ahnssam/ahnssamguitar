@@ -810,14 +810,20 @@
         }
         .tuner-meter-scale {
             position: absolute;
-            top: 6px;
+            top: 0; bottom: 0;
             left: 0; right: 0;
             display: flex;
+            align-items: center;
             justify-content: space-between;
             padding: 0 1rem;
-            font-size: 0.7rem;
-            color: rgba(255,255,255,0.55);
+            font-size: 1.4rem;
+            color: rgba(255,255,255,0.65);
             font-weight: 500;
+            pointer-events: none;
+            line-height: 1;
+        }
+        .tuner-meter-flat, .tuner-meter-sharp {
+            font-family: 'Times New Roman', serif;
         }
         .tuner-meter-center {
             position: absolute;
@@ -2570,12 +2576,11 @@
             <div class="tuner-meter">
                 <div class="tuner-meter-track">
                     <div class="tuner-meter-scale">
-                        <span>-50</span><span>-25</span><span>0</span><span>+25</span><span>+50</span>
+                        <span class="tuner-meter-flat">♭</span><span class="tuner-meter-sharp">♯</span>
                     </div>
                     <div class="tuner-meter-needle" id="tunerNeedle"></div>
                     <div class="tuner-meter-center"></div>
                 </div>
-                <div class="tuner-cents" id="tunerCents">— cents</div>
             </div>
             <button class="tuner-btn" id="tunerBtn" onclick="toggleTuner()">
                 <i class="fas fa-microphone"></i>
@@ -3691,7 +3696,8 @@
                 let rms = 0;
                 for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
                 rms = Math.sqrt(rms / SIZE);
-                if (rms < 0.01) return -1; // too quiet
+                // Raised threshold: ignore quiet room noise / distant speech
+                if (rms < 0.025) return -1;
 
                 let r1 = 0, r2 = SIZE - 1, thres = 0.2;
                 for (let i = 0; i < SIZE / 2; i++) if (Math.abs(buf[i]) < thres) { r1 = i; break; }
@@ -3709,6 +3715,10 @@
                 for (let i = d; i < newSize; i++) {
                     if (c[i] > maxval) { maxval = c[i]; maxpos = i; }
                 }
+                // Confidence check: reject non-periodic signals (speech, noise, clicks)
+                // Pure tones approach 1.0; reject anything below 0.5 of total energy
+                if (c[0] <= 0 || maxval / c[0] < 0.5) return -1;
+
                 let T0 = maxpos;
                 const x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
                 const a = (x1 + x3 - 2 * x2) / 2;
@@ -3729,34 +3739,47 @@
 
                     const noteEl = document.getElementById('tunerNote');
                     const freqEl = document.getElementById('tunerFreq');
-                    const centsEl = document.getElementById('tunerCents');
                     const needleEl = document.getElementById('tunerNeedle');
+
+                    // Smooth CSS transition for the needle so movement looks fluid
+                    needleEl.style.transition = 'left 120ms ease-out, background 150ms ease-out, box-shadow 150ms ease-out';
+
+                    // Smoothing state — last valid reading stays on screen until tuner is stopped
+                    let smoothedCents = 0;
+                    let smoothedFreq = 0;
+                    let hasValue = false;
+                    const SMOOTHING = 0.12; // lower = slower/smoother needle (0-1)
 
                     function update() {
                         analyser.getFloatTimeDomainData(buf);
                         const freq = autoCorrelate(buf, audioCtx.sampleRate);
+
                         if (freq > 0 && freq < 2000) {
                             const { noteName, octave, cents } = freqToNote(freq);
+
+                            // Exponential smoothing (low-pass filter) on cents & freq
+                            if (hasValue) {
+                                smoothedCents += (cents - smoothedCents) * SMOOTHING;
+                                smoothedFreq  += (freq  - smoothedFreq)  * SMOOTHING;
+                            } else {
+                                smoothedCents = cents;
+                                smoothedFreq  = freq;
+                                hasValue = true;
+                            }
+
                             noteEl.textContent = noteName + octave;
-                            freqEl.textContent = freq.toFixed(1) + ' Hz';
-                            centsEl.textContent = (cents > 0 ? '+' : '') + cents + ' cents';
+                            freqEl.textContent = smoothedFreq.toFixed(1) + ' Hz';
 
                             // Needle position: -50 to +50 cents mapped to 0-100%
-                            const pct = Math.max(0, Math.min(100, 50 + cents));
+                            const pct = Math.max(0, Math.min(100, 50 + smoothedCents));
                             needleEl.style.left = pct + '%';
 
                             // In-tune indicator (within ±5 cents)
-                            const inTune = Math.abs(cents) <= 5;
+                            const inTune = Math.abs(smoothedCents) <= 5;
                             noteEl.classList.toggle('in-tune', inTune);
                             needleEl.classList.toggle('in-tune', inTune);
-                        } else {
-                            noteEl.textContent = '—';
-                            freqEl.textContent = '0 Hz';
-                            centsEl.textContent = '— cents';
-                            needleEl.style.left = '50%';
-                            noteEl.classList.remove('in-tune');
-                            needleEl.classList.remove('in-tune');
                         }
+                        // If no valid signal: do nothing — keep the last note, freq, and needle position on screen
                         rafId = requestAnimationFrame(update);
                     }
                     update();
@@ -3785,7 +3808,6 @@
 
                 document.getElementById('tunerNote').textContent = '—';
                 document.getElementById('tunerFreq').textContent = '0 Hz';
-                document.getElementById('tunerCents').textContent = '— cents';
                 document.getElementById('tunerNeedle').style.left = '50%';
                 document.getElementById('tunerNote').classList.remove('in-tune');
                 document.getElementById('tunerNeedle').classList.remove('in-tune');
