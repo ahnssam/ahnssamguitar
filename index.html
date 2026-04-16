@@ -2078,6 +2078,84 @@
         @media (max-width: 1024px) {
             .tabs-grid { grid-template-columns: repeat(2, 1fr); }
         }
+
+        /* Intermediate range: narrow desktop / portrait monitor (769px ~ 1150px)
+           Prevents nav wrapping, hero photo cutoff, and contents overflow */
+        @media (min-width: 769px) and (max-width: 1150px) {
+            /* --- Navigation: compact + no wrapping --- */
+            nav { padding: 1rem 1.5rem; }
+            nav.scrolled { padding: 0.8rem 1.5rem; }
+            .nav-logo img {
+                height: 58px !important;
+                margin-left: 10px !important;
+            }
+            .nav-links {
+                gap: 1.3rem;
+                transform: none;
+                flex-wrap: nowrap;
+            }
+            .nav-links li { white-space: nowrap; }
+            .nav-links a {
+                font-size: 0.72rem;
+                letter-spacing: 0.08em;
+                white-space: nowrap;
+            }
+            .nav-social { gap: 0.7rem; margin-right: 10px; }
+            .nav-social a { font-size: 0.9rem; }
+            .tools-btn span { font-size: 0.72rem; }
+            .tools-btn { padding: 6px 10px; }
+
+            /* --- Hero: scale down photos and text to fit viewport --- */
+            .hero { min-height: 620px; }
+            .hero-content {
+                padding: 0 2rem;
+                gap: 2rem;
+                max-width: 100%;
+            }
+            .hero-title { font-size: clamp(2.4rem, 5vw, 4.2rem); }
+            .hero-title-kr { font-size: clamp(1.4rem, 3vw, 2.2rem); }
+            .hero-desc {
+                font-size: 0.95rem;
+                white-space: normal;
+                max-width: 100%;
+            }
+            .hero-visual {
+                width: 100%;
+                max-width: 420px;
+                height: 380px;
+                justify-self: end;
+            }
+            .hero-photo-main { width: 230px; height: 230px; }
+            .hero-photo-sub1 { width: 115px; height: 115px; right: 10px; top: 10px; }
+            .hero-photo-sub2 { width: 100px; height: 100px; right: 30px; bottom: 5px; }
+            .hero-photo-sub3 { width: 90px; height: 90px; left: 10px; top: 30px; }
+
+            /* --- Contents: fall back to 2-2-1 grid like mobile --- */
+            .portfolio-zigzag {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1.5rem 1.2rem;
+                justify-items: center;
+                max-width: 520px;
+                margin: 0 auto;
+            }
+            .portfolio-zigzag .zz-card {
+                flex: none;
+                max-width: 230px;
+                width: 100%;
+            }
+            .portfolio-zigzag .zz-card.zz-down { margin-top: 0; }
+            .portfolio-zigzag .zz-card:last-child {
+                grid-column: 1 / -1;
+                max-width: 230px;
+            }
+            .zz-card[data-channel="forest"] { order: 1; }
+            .zz-card[data-channel="sheet"]  { order: 2; }
+            .zz-card[data-channel="anq"]    { order: 3; }
+            .zz-card[data-channel="bgm"]    { order: 4; }
+            .zz-card[data-channel="session"]{ order: 5; }
+        }
+
         @media (max-width: 768px) {
             nav { padding: 1rem 1.5rem; }
             nav.scrolled { padding: 0.6rem 1.5rem; }
@@ -3086,6 +3164,7 @@
     <script>
         // ========== Drawer toggle ==========
         let _drawerHistoryAdded = false;
+        let _suppressHashOpen = false;
         function getActiveTool() {
             const activeTab = document.querySelector('.tools-tab.active');
             return activeTab ? activeTab.dataset.tool : 'tuner';
@@ -3123,14 +3202,21 @@
                 updateHashForTool(getActiveTool());
                 pushDrawerHistory();
             } else {
-                // Closing manually
+                // Closing manually — suppress hash-based auto-reopen
+                // because history.back() will restore a tool hash and
+                // fire hashchange that would otherwise re-open the drawer.
+                _suppressHashOpen = true;
                 doCloseDrawer();
-                clearHash();
                 if (_drawerHistoryAdded) {
                     _drawerHistoryAdded = false;
-                    // Pop our pushed entry; popstate handler will no-op (drawer already closed)
+                    // Pop our pushed entry first (this restores a tool hash briefly)
                     try { history.back(); } catch (e) {}
                 }
+                // Then clear the hash so URL stays clean
+                setTimeout(() => {
+                    clearHash();
+                    _suppressHashOpen = false;
+                }, 50);
             }
         }
         // Back button handler — close chord modal first, then drawer
@@ -3146,8 +3232,10 @@
             const drawer = document.getElementById('toolsDrawer');
             if (!drawer || !drawer.classList.contains('open')) return;
             _drawerHistoryAdded = false;
+            _suppressHashOpen = true;
             doCloseDrawer();
             clearHash();
+            setTimeout(() => { _suppressHashOpen = false; }, 50);
         });
 
         // ========== Auto-open drawer from URL hash ==========
@@ -3164,6 +3252,7 @@
                 'chord': 'chords'
             };
             function openFromHash() {
+                if (_suppressHashOpen) return;
                 const raw = (window.location.hash || '').toLowerCase().replace('#', '');
                 const tool = HASH_MAP[raw];
                 if (!tool) return;
