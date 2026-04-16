@@ -383,6 +383,7 @@
             visibility: hidden;
             transition: opacity 0.3s;
             z-index: 1100;
+            touch-action: none;
         }
         .tools-overlay.open {
             opacity: 1;
@@ -1247,7 +1248,7 @@
         #drumRhythmRow .time-sig-btns {
             flex: 1;
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 0.3rem;
             min-width: 0;
         }
@@ -1570,6 +1571,12 @@
             max-width: 1200px;
             margin: 0 auto 4rem;
             padding: 0 1rem;
+        }
+        .content-section-divider {
+            max-width: 900px;
+            height: 1px;
+            margin: 0 auto 4rem;
+            background: linear-gradient(90deg, transparent, rgba(60, 120, 70, 0.35), transparent);
         }
         .latest-videos-title {
             font-family: 'Playfair Display', serif;
@@ -1909,7 +1916,7 @@
         }
 
         /* ===== CONTACT SECTION ===== */
-        .contact { background: var(--cream); }
+        .contact { background: var(--green-faint); }
         .contact-grid {
             max-width: 1000px; margin: 0 auto;
             display: grid; grid-template-columns: 1fr 1fr;
@@ -2656,11 +2663,11 @@
                     <button class="more-menu-item" data-subtool="taptempo" onclick="selectMoreTool('taptempo')">
                         <i class="fas fa-hand-pointer"></i><span>탭템포</span>
                     </button>
-                    <button class="more-menu-item" data-subtool="capo" onclick="selectMoreTool('capo')">
-                        <i class="fas fa-sliders-h"></i><span>카포<br>계산기</span>
-                    </button>
                     <button class="more-menu-item" data-subtool="chords" onclick="selectMoreTool('chords')">
                         <i class="fas fa-guitar"></i><span>코드<br>라이브러리</span>
+                    </button>
+                    <button class="more-menu-item" data-subtool="capo" onclick="selectMoreTool('capo')">
+                        <i class="fas fa-sliders-h"></i><span>카포<br>계산기</span>
                     </button>
                 </div>
             </div>
@@ -2732,11 +2739,11 @@
                 <label>리듬</label>
                 <div class="time-sig-btns">
                     <button type="button" class="time-sig-btn active" data-rhythm="8beat" onclick="updateDrumRhythm('8beat')">8비트</button>
-                    <button type="button" class="time-sig-btn" data-rhythm="16beat" onclick="updateDrumRhythm('16beat')">16비트</button>
-                    <button type="button" class="time-sig-btn" data-rhythm="ballad" onclick="updateDrumRhythm('ballad')">락발라드</button>
-                    <button type="button" class="time-sig-btn" data-rhythm="halftime" onclick="updateDrumRhythm('halftime')">하프타임</button>
                     <button type="button" class="time-sig-btn" data-rhythm="8beat2" onclick="updateDrumRhythm('8beat2')">8비트 2</button>
-                    <button type="button" class="time-sig-btn" data-rhythm="16beat2" onclick="updateDrumRhythm('16beat2')">16비트 2</button>
+                    <button type="button" class="time-sig-btn" data-rhythm="ballad" onclick="updateDrumRhythm('ballad')">락발라드</button>
+                    <button type="button" class="time-sig-btn" data-rhythm="16beat" onclick="updateDrumRhythm('16beat')">16비트 A</button>
+                    <button type="button" class="time-sig-btn" data-rhythm="16beat2" onclick="updateDrumRhythm('16beat2')">16비트 B</button>
+                    <button type="button" class="time-sig-btn" data-rhythm="16beatC" onclick="updateDrumRhythm('16beatC')">16비트 C</button>
                 </div>
             </div>
             <button class="metronome-btn" id="metronomeBtn" onclick="toggleMetronome()">
@@ -2890,6 +2897,8 @@
                 <div class="lv-skeleton"></div>
             </div>
         </div>
+
+        <div class="content-section-divider reveal" aria-hidden="true"></div>
 
         <div class="portfolio-zigzag reveal">
             <!-- 1. 기타나무숲 (위) -->
@@ -3630,12 +3639,46 @@
                 _drawerHistoryAdded = true;
             } catch (e) {}
         }
+        // --- Body scroll lock helpers (iOS-safe) ---
+        let _savedScrollY = 0;
+        function lockBodyScroll() {
+            if (document.body.dataset.scrollLocked === '1') return;
+            _savedScrollY = window.scrollY || window.pageYOffset || 0;
+            document.body.dataset.scrollLocked = '1';
+            document.body.style.position = 'fixed';
+            document.body.style.top = '-' + _savedScrollY + 'px';
+            document.body.style.left = '0';
+            document.body.style.right = '0';
+            document.body.style.width = '100%';
+            document.body.style.overflow = 'hidden';
+        }
+        function unlockBodyScroll() {
+            if (document.body.dataset.scrollLocked !== '1') return;
+            document.body.dataset.scrollLocked = '';
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
+            document.body.style.width = '';
+            document.body.style.overflow = '';
+            window.scrollTo(0, _savedScrollY);
+        }
+        // Prevent touchmove on the overlay (which sits under the drawer) to stop
+        // background scroll when a touch-drag starts inside the drawer and
+        // bubbles up through the backdrop.
+        (function blockOverlayTouch() {
+            const overlay = document.getElementById('toolsOverlay');
+            if (!overlay) return;
+            overlay.addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
+        })();
+
         function doCloseDrawer() {
             const drawer = document.getElementById('toolsDrawer');
             const overlay = document.getElementById('toolsOverlay');
             if (!drawer) return;
             drawer.classList.remove('open');
             if (overlay) overlay.classList.remove('open');
+            unlockBodyScroll();
             if (window._tunerRunning) toggleTuner();
             if (window._metroRunning) toggleMetronome();
         }
@@ -3645,6 +3688,7 @@
             const wasOpen = drawer.classList.contains('open');
             if (!wasOpen) {
                 // Opening
+                lockBodyScroll();
                 drawer.classList.add('open');
                 overlay.classList.add('open');
                 updateHashForTool(getActiveTool());
@@ -3942,21 +3986,21 @@
                 '8beat':    { ticksPerBeat: 2, beatsPerMeasure: 4,
                               kick: [0, 4], snare: [2, 6],
                               hihat: [0, 1, 2, 3, 4, 5, 6, 7] },
-                '16beat':   { ticksPerBeat: 4, beatsPerMeasure: 4,
-                              kick: [0, 8], snare: [4, 12],
-                              hihat: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] },
-                'ballad':   { ticksPerBeat: 3, beatsPerMeasure: 2,
-                              kick: [0], snare: [3],
-                              hihat: [0, 1, 2, 3, 4, 5] },
-                'halftime': { ticksPerBeat: 2, beatsPerMeasure: 4,
-                              kick: [0], snare: [4],
-                              hihat: [0, 1, 2, 3, 4, 5, 6, 7] },
                 '8beat2':   { ticksPerBeat: 2, beatsPerMeasure: 4,
                               kick: [0, 3, 4], snare: [2, 6],
                               hihat: [0, 1, 2, 3, 4, 5, 6, 7] },
+                'ballad':   { ticksPerBeat: 3, beatsPerMeasure: 2,
+                              kick: [0], snare: [3],
+                              hihat: [0, 1, 2, 3, 4, 5] },
+                '16beat':   { ticksPerBeat: 4, beatsPerMeasure: 4,
+                              kick: [0, 8], snare: [4, 12],
+                              hihat: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] },
                 '16beat2':  { ticksPerBeat: 4, beatsPerMeasure: 4,
                               kick: [0, 3, 7, 9, 10], snare: [4, 12],
-                              hihat: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] }
+                              hihat: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] },
+                '16beatC':  { ticksPerBeat: 4, beatsPerMeasure: 4,
+                              kick: [0, 2, 10], snare: [4, 7, 9, 12],
+                              hihat: [0, 1, 2, 4, 6, 8, 9, 10, 12, 14, 15] }
             };
             let timerId = null;
             let silentAudio = null;
@@ -4185,13 +4229,13 @@
             }
 
             function playHiHat(time, accent) {
-                if (playSample('hihat', time, accent ? 0.85 : 0.55)) return;
+                if (playSample('hihat', time, accent ? 0.5 : 0.32)) return;
                 const bus = getDrumBus();
                 // Layer 1: metallic shimmer (bandpass cluster simulating cymbal harmonics)
                 const layers = [
-                    { freq: 8000, q: 3, gain: accent ? 0.18 : 0.1, decay: 0.04 },
-                    { freq: 10500, q: 4, gain: accent ? 0.14 : 0.08, decay: 0.035 },
-                    { freq: 13000, q: 5, gain: accent ? 0.1 : 0.06, decay: 0.03 }
+                    { freq: 8000, q: 3, gain: accent ? 0.11 : 0.06, decay: 0.04 },
+                    { freq: 10500, q: 4, gain: accent ? 0.085 : 0.048, decay: 0.035 },
+                    { freq: 13000, q: 5, gain: accent ? 0.06 : 0.036, decay: 0.03 }
                 ];
                 layers.forEach(l => {
                     const noise = audioCtx.createBufferSource();
