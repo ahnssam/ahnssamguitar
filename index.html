@@ -1150,14 +1150,32 @@
         .sound-toggle-btn:hover:not(.active) {
             background: rgba(82, 168, 114, 0.15);
         }
-        .metronome-time-sig select {
-            background: rgba(255,255,255,0.05);
-            color: var(--white);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 0.4rem 0.8rem;
-            border-radius: 6px;
+        .time-sig-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            justify-content: center;
+        }
+        .time-sig-btn {
+            padding: 0.4rem 0.75rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border: 1.5px solid rgba(114, 196, 146, 0.45);
+            background: rgba(82, 168, 114, 0.08);
+            color: var(--green-pale);
+            border-radius: 20px;
             cursor: pointer;
+            transition: background 0.25s, border-color 0.25s, color 0.25s;
             font-family: inherit;
+            letter-spacing: 0.03em;
+        }
+        .time-sig-btn.active {
+            background: var(--green-mid);
+            border-color: var(--green-mid);
+            color: var(--white);
+        }
+        .time-sig-btn:hover:not(.active) {
+            background: rgba(82, 168, 114, 0.22);
         }
 
         /* Mobile menu */
@@ -2619,13 +2637,13 @@
             </div>
             <div class="metronome-time-sig" id="timeSigRow">
                 <label>박자</label>
-                <select id="timeSig" onchange="updateTimeSig()">
-                    <option value="0">없음</option>
-                    <option value="2">2/4</option>
-                    <option value="3">3/4</option>
-                    <option value="4" selected>4/4</option>
-                    <option value="6">6/8</option>
-                </select>
+                <div class="time-sig-btns" id="timeSigBtns">
+                    <button type="button" class="time-sig-btn active" data-ts="0" onclick="updateTimeSig(0)">기본</button>
+                    <button type="button" class="time-sig-btn" data-ts="2" onclick="updateTimeSig(2)">2/4</button>
+                    <button type="button" class="time-sig-btn" data-ts="3" onclick="updateTimeSig(3)">3/4</button>
+                    <button type="button" class="time-sig-btn" data-ts="4" onclick="updateTimeSig(4)">4/4</button>
+                    <button type="button" class="time-sig-btn" data-ts="6" onclick="updateTimeSig(6)">6/8</button>
+                </div>
             </div>
             <button class="metronome-btn" id="metronomeBtn" onclick="toggleMetronome()">
                 <i class="fas fa-play"></i>
@@ -3696,8 +3714,7 @@
                 let rms = 0;
                 for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
                 rms = Math.sqrt(rms / SIZE);
-                // Raised threshold: ignore quiet room noise / distant speech
-                if (rms < 0.025) return -1;
+                if (rms < 0.01) return -1; // too quiet
 
                 let r1 = 0, r2 = SIZE - 1, thres = 0.2;
                 for (let i = 0; i < SIZE / 2; i++) if (Math.abs(buf[i]) < thres) { r1 = i; break; }
@@ -3715,10 +3732,6 @@
                 for (let i = d; i < newSize; i++) {
                     if (c[i] > maxval) { maxval = c[i]; maxpos = i; }
                 }
-                // Confidence check: reject non-periodic signals (speech, noise, clicks)
-                // Pure tones approach 1.0; reject anything below 0.5 of total energy
-                if (c[0] <= 0 || maxval / c[0] < 0.5) return -1;
-
                 let T0 = maxpos;
                 const x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
                 const a = (x1 + x3 - 2 * x2) / 2;
@@ -3824,7 +3837,7 @@
         (function() {
             let audioCtx = null;
             let bpm = 90;
-            let timeSig = 4;
+            let timeSig = 0;
             let soundMode = 'click';
             let nextNoteTime = 0;
             let currentBeat = 0;
@@ -3887,7 +3900,7 @@
                 drumBus.attack.value = 0.002;
                 drumBus.release.value = 0.08;
                 drumMaster = audioCtx.createGain();
-                drumMaster.gain.value = 1.6;
+                drumMaster.gain.value = 1.25;
                 drumBus.connect(drumMaster);
                 drumMaster.connect(audioCtx.destination);
                 return drumBus;
@@ -4105,7 +4118,7 @@
                 const isAccent = timeSig > 0 && (beatNum % timeSig) === 0;
                 osc.frequency.value = isAccent ? 1000 : 750;
                 gain.gain.setValueAtTime(0.0001, time);
-                gain.gain.exponentialRampToValueAtTime(isAccent ? 0.75 : 0.5, time + 0.001);
+                gain.gain.exponentialRampToValueAtTime(isAccent ? 0.95 : 0.7, time + 0.001);
                 gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.06);
                 osc.start(time);
                 osc.stop(time + 0.07);
@@ -4249,10 +4262,16 @@
                     });
                 }
             };
-            window.updateTimeSig = function() {
-                timeSig = parseInt(document.getElementById('timeSig').value);
+            window.updateTimeSig = function(ts) {
+                timeSig = parseInt(ts);
+                document.querySelectorAll('.time-sig-btn').forEach(btn => {
+                    btn.classList.toggle('active', parseInt(btn.dataset.ts) === timeSig);
+                });
                 renderBeats();
                 currentBeat = 0;
+                if (window._metroRunning && audioCtx) {
+                    nextNoteTime = audioCtx.currentTime + 0.05;
+                }
             };
 
             function setupMediaSession() {
