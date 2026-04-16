@@ -4228,14 +4228,18 @@
                 crack.stop(time + 0.02);
             }
 
-            function playHiHat(time, accent) {
-                if (playSample('hihat', time, accent ? 0.5 : 0.32)) return;
+            // level: 2 = accent (on-beat), 1 = normal (& / off-beat), 0 = ghost (e or a — 16th subdivisions)
+            function playHiHat(time, level) {
+                if (typeof level === 'boolean') level = level ? 2 : 1; // back-compat
+                const mult = level === 2 ? 1.0 : level === 1 ? 0.64 : 0.38;
+                const sampleVel = level === 2 ? 0.5 : level === 1 ? 0.32 : 0.18;
+                if (playSample('hihat', time, sampleVel)) return;
                 const bus = getDrumBus();
                 // Layer 1: metallic shimmer (bandpass cluster simulating cymbal harmonics)
                 const layers = [
-                    { freq: 8000, q: 3, gain: accent ? 0.11 : 0.06, decay: 0.04 },
-                    { freq: 10500, q: 4, gain: accent ? 0.085 : 0.048, decay: 0.035 },
-                    { freq: 13000, q: 5, gain: accent ? 0.06 : 0.036, decay: 0.03 }
+                    { freq: 8000, q: 3, gain: 0.11 * mult, decay: 0.04 },
+                    { freq: 10500, q: 4, gain: 0.085 * mult, decay: 0.035 },
+                    { freq: 13000, q: 5, gain: 0.06 * mult, decay: 0.03 }
                 ];
                 layers.forEach(l => {
                     const noise = audioCtx.createBufferSource();
@@ -4262,7 +4266,7 @@
                 hp.frequency.value = 7000;
                 const hpGain = audioCtx.createGain();
                 hpGain.gain.setValueAtTime(0.0001, time);
-                hpGain.gain.exponentialRampToValueAtTime(accent ? 0.12 : 0.07, time + 0.001);
+                hpGain.gain.exponentialRampToValueAtTime(0.12 * mult, time + 0.001);
                 hpGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.05);
                 highNoise.connect(hp);
                 hp.connect(hpGain);
@@ -4289,8 +4293,20 @@
                 const p = DRUM_PATTERNS[drumRhythm] || DRUM_PATTERNS['8beat'];
                 const measureLen = p.ticksPerBeat * p.beatsPerMeasure;
                 const t = tickIdx % measureLen;
-                // Hi-hat (accent on downbeats = ticks aligned to beat)
-                if (p.hihat.includes(t)) playHiHat(time, t % p.ticksPerBeat === 0);
+                // Hi-hat: accent = on-beat, normal = off-beat (&), ghost = e/a (16th subdivisions)
+                if (p.hihat.includes(t)) {
+                    let level;
+                    const sub = t % p.ticksPerBeat;
+                    if (p.ticksPerBeat === 4) {
+                        // 16th: 0 = beat (accent), 2 = & (normal), 1/3 = e/a (ghost)
+                        level = sub === 0 ? 2 : sub === 2 ? 1 : 0;
+                    } else if (p.ticksPerBeat === 2) {
+                        level = sub === 0 ? 2 : 1;
+                    } else {
+                        level = sub === 0 ? 2 : 1;
+                    }
+                    playHiHat(time, level);
+                }
                 if (p.kick.includes(t))  playKick(time);
                 if (p.snare.includes(t)) playSnare(time);
             }
