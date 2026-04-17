@@ -404,14 +404,21 @@
             box-shadow: -10px 0 40px rgba(0,0,0,0.2);
             color-scheme: dark;
             forced-color-adjust: none;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         .tools-drawer.open { transform: translateX(0); }
         .tools-header {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: #1a2421;
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 1.5rem;
             border-bottom: 1px solid rgba(255,255,255,0.08);
+            flex-shrink: 0;
         }
         .tools-header h3 {
             font-size: 1.1rem;
@@ -430,8 +437,13 @@
         .tools-close:hover { opacity: 1; }
 
         .tools-tabs {
+            position: sticky;
+            top: var(--drawer-header-h, 62px);
+            z-index: 5;
+            background: #1a2421;
             display: flex;
             border-bottom: 1px solid rgba(255,255,255,0.08);
+            flex-shrink: 0;
         }
         .tools-tab {
             flex: 1;
@@ -1097,11 +1109,7 @@
         .tool-panel {
             display: none;
             padding: 0.8rem 1.5rem;
-            flex: 1;
-            overflow-y: auto;
-            overscroll-behavior: contain;
-            -webkit-overflow-scrolling: touch;
-            touch-action: pan-y;
+            min-height: calc(100vh - 120px);
         }
         .tool-panel.active { display: block; }
 
@@ -4137,6 +4145,9 @@
                 lockBodyScroll();
                 drawer.classList.add('open');
                 overlay.classList.add('open');
+                // Measure header height for sticky tabs
+                var dh = document.querySelector('.tools-header');
+                if (dh) drawer.style.setProperty('--drawer-header-h', dh.offsetHeight + 'px');
                 updateHashForTool(getActiveTool());
                 pushDrawerHistory();
             } else {
@@ -4246,6 +4257,9 @@
             }
             const panel = document.getElementById(tool + 'Panel');
             if (panel) panel.classList.add('active');
+            // Scroll drawer to top when switching tools
+            var dw = document.getElementById('toolsDrawer');
+            if (dw) dw.scrollTop = 0;
             // Close more menu if open
             closeMoreMenu();
             // Update URL hash only when drawer is open
