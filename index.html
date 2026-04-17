@@ -4471,7 +4471,8 @@
                               hihat: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] },
                 '16beatC':  { ticksPerBeat: 4, beatsPerMeasure: 4,
                               kick: [0, 2, 10], snare: [4, 7, 9, 12],
-                              hihat: [0, 1, 2, 4, 6, 8, 9, 10, 12, 14, 15] }
+                              hihat: [0, 1, 4, 6, 8, 9, 12, 14, 15],
+                              hihatOpen: [2, 10] }
             };
             let timerId = null;
             let silentAudio = null;
@@ -4489,7 +4490,7 @@
             }
 
             // ===== Drum sample loading =====
-            const drumSamples = { kick: null, snare: null, hihat: null };
+            const drumSamples = { kick: null, snare: null, hihat: null, hihatOpen: null };
             let samplesLoadPromise = null;
             function loadDrumSamples() {
                 if (samplesLoadPromise) return samplesLoadPromise;
@@ -4502,7 +4503,8 @@
                 samplesLoadPromise = Promise.all([
                     load('kick', 'sounds/kick.mp3'),
                     load('snare', 'sounds/snare.mp3'),
-                    load('hihat', 'sounds/hihat.mp3')
+                    load('hihat', 'sounds/hihat.mp3'),
+                    load('hihatOpen', 'sounds/hihat open.mp3')
                 ]);
                 return samplesLoadPromise;
             }
@@ -4516,7 +4518,39 @@
                 source.connect(g);
                 g.connect(getDrumBus());
                 source.start(time);
-                return true;
+                return { source: source, gain: g };
+            }
+
+            // Track active open hi-hat for choke
+            let _openHihatNode = null;
+            let _openHihatGain = null;
+
+            function playHiHatOpen(time) {
+                // Choke any previous open hihat
+                chokeOpenHihat(time);
+                const buf = drumSamples.hihatOpen;
+                if (!buf) return;
+                const source = audioCtx.createBufferSource();
+                source.buffer = buf;
+                const g = audioCtx.createGain();
+                g.gain.value = 0.5;
+                source.connect(g);
+                g.connect(getDrumBus());
+                source.start(time);
+                _openHihatNode = source;
+                _openHihatGain = g;
+            }
+
+            function chokeOpenHihat(time) {
+                if (_openHihatGain && _openHihatNode) {
+                    try {
+                        _openHihatGain.gain.setValueAtTime(_openHihatGain.gain.value, time);
+                        _openHihatGain.gain.exponentialRampToValueAtTime(0.001, time + 0.02);
+                        _openHihatNode.stop(time + 0.025);
+                    } catch(e) {}
+                    _openHihatNode = null;
+                    _openHihatGain = null;
+                }
             }
 
             // ===== Acoustic drum synthesis (layered for realism) =====
@@ -4704,6 +4738,8 @@
                 if (typeof level === 'boolean') level = level ? 2 : 1; // back-compat
                 const mult = level === 2 ? 1.0 : level === 1 ? 0.64 : 0.38;
                 const sampleVel = level === 2 ? 0.5 : level === 1 ? 0.32 : 0.18;
+                // Choke open hihat when closed hihat plays
+                chokeOpenHihat(time);
                 if (playSample('hihat', time, sampleVel)) return;
                 const bus = getDrumBus();
                 // Layer 1: metallic shimmer (bandpass cluster simulating cymbal harmonics)
@@ -4765,7 +4801,10 @@
                 const measureLen = p.ticksPerBeat * p.beatsPerMeasure;
                 const t = tickIdx % measureLen;
                 // Hi-hat: accent = on-beat, normal = off-beat (&), ghost = e/a (16th subdivisions)
-                if (p.hihat.includes(t)) {
+                // Hi-hat open (must check before closed hihat)
+                if (p.hihatOpen && p.hihatOpen.includes(t)) {
+                    playHiHatOpen(time);
+                } else if (p.hihat.includes(t)) {
                     let level;
                     const sub = t % p.ticksPerBeat;
                     if (p.ticksPerBeat === 4) {
@@ -4992,6 +5031,9 @@
             function stopMetronome() {
                 if (timerId) clearInterval(timerId);
                 timerId = null;
+                // Clean up open hihat
+                _openHihatNode = null;
+                _openHihatGain = null;
 
                 if (silentAudio) silentAudio.pause();
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
