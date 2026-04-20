@@ -2292,6 +2292,44 @@
             .hero-photo-circle { transition: none; }
         }
         /* --- end hero photos hover --- */
+
+        /* Music note particles (spawn on main hover) */
+        .note-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: visible;
+            z-index: 4;
+        }
+        .note-layer .note {
+            position: absolute;
+            font-size: 1.4rem;
+            color: var(--green-pale);
+            opacity: 0;
+            animation: noteFloat 1.8s ease-out forwards;
+            text-shadow: 0 2px 10px rgba(114, 196, 146, 0.6);
+            user-select: none;
+            pointer-events: none;
+        }
+        @keyframes noteFloat {
+            0%   { opacity: 0; transform: translate(0, 0) rotate(0deg) scale(0.6); }
+            15%  { opacity: 1; }
+            100% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, -120px)) rotate(var(--rot, 20deg)) scale(1); }
+        }
+
+        /* Hero photo beat bob — synced with the metronome/drum
+           when the practice-tools metronome is running. The bob is
+           applied to the inner <img> so it stacks cleanly on top of
+           the existing float/hover transforms. */
+        .hero-photo-circle img {
+            transition: transform 0.08s ease-out;
+        }
+        .hero-photo-circle.beat img {
+            transform: translateY(-5px) scale(1.015);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .hero-photo-circle.beat img { transform: none; }
+        }
         .guitar-icon {
             font-size: 8rem; color: var(--white);
             opacity: 0.9; filter: drop-shadow(0 0 30px rgba(255,255,255,0.2));
@@ -3993,6 +4031,7 @@
                 </p>
             </div>
             <div class="hero-visual">
+                <div class="note-layer" id="heroNoteLayer"></div>
                 <div class="hero-photo-circle hero-photo-sub3">
                     <img src="hero-photo-03.webp" alt="안쌤">
                 </div>
@@ -4493,6 +4532,74 @@
                 }
             });
         });
+    </script>
+
+    <script>
+    // ---------- Hero photo: music note particles on main hover ----------
+    (function() {
+        var main = document.querySelector('.hero-photo-main');
+        var layer = document.getElementById('heroNoteLayer');
+        if (!main || !layer) return;
+        var notes = ['♪','♫','♬','♩'];
+        var spawner = null;
+
+        function spawnNote() {
+            try {
+                var mainRect = main.getBoundingClientRect();
+                var parentRect = layer.getBoundingClientRect();
+                var el = document.createElement('span');
+                el.className = 'note';
+                el.textContent = notes[Math.floor(Math.random() * notes.length)];
+                var angle = (Math.random() * Math.PI) - Math.PI; // upper half
+                var r = mainRect.width / 2 - 10;
+                var cx = (mainRect.left + mainRect.right) / 2 - parentRect.left;
+                var cy = (mainRect.top + mainRect.bottom) / 2 - parentRect.top;
+                el.style.left = (cx + Math.cos(angle) * r) + 'px';
+                el.style.top  = (cy + Math.sin(angle) * r) + 'px';
+                el.style.setProperty('--dx', ((Math.random() - 0.5) * 80) + 'px');
+                el.style.setProperty('--dy', (-80 - Math.random() * 80) + 'px');
+                el.style.setProperty('--rot', ((Math.random() - 0.5) * 60) + 'deg');
+                el.style.fontSize = (0.9 + Math.random() * 1.1) + 'rem';
+                layer.appendChild(el);
+                setTimeout(function() { el.remove(); }, 1800);
+            } catch (e) {}
+        }
+
+        main.addEventListener('mouseenter', function() {
+            if (spawner) return;
+            spawnNote();
+            spawner = setInterval(spawnNote, 180);
+        });
+        main.addEventListener('mouseleave', function() {
+            if (spawner) { clearInterval(spawner); spawner = null; }
+        });
+    })();
+
+    // ---------- Hero photo beat bob synced with metronome/drum ----------
+    // schedulePhotoBeat(beatNum, time) is called from the metronome's
+    // scheduleNote(). It uses the audio context's time to bob the
+    // matching photo at the right moment.
+    (function() {
+        var photos = [
+            document.querySelector('.hero-photo-main'),
+            document.querySelector('.hero-photo-sub1'),
+            document.querySelector('.hero-photo-sub2'),
+            document.querySelector('.hero-photo-sub3')
+        ];
+        window.schedulePhotoBeat = function(beatNum, delayMs) {
+            try {
+                if (!photos[0]) return;
+                var delay = (typeof delayMs === 'number' && delayMs > 0) ? delayMs : 0;
+                var idx = ((beatNum % 4) + 4) % 4;
+                setTimeout(function() {
+                    var p = photos[idx];
+                    if (!p) return;
+                    p.classList.add('beat');
+                    setTimeout(function() { p.classList.remove('beat'); }, 130);
+                }, delay);
+            } catch (e) {}
+        };
+    })();
     </script>
 
     <!-- YouTube Channel Stats -->
@@ -5907,6 +6014,11 @@
             }
 
             function scheduleNote(beatNum, time) {
+                try {
+                    if (window.schedulePhotoBeat && audioCtx) {
+                        window.schedulePhotoBeat(beatNum, Math.max(0, (time - audioCtx.currentTime) * 1000));
+                    }
+                } catch (e) {}
                 if (soundMode === 'loop') {
                     const r = loopRhythm;
                     const p = DRUM_PATTERNS[r] || DRUM_PATTERNS['8beat'];
@@ -7611,6 +7723,14 @@
                     return;
                 }
 
+                // In single-note mode, clicking a different note should
+                // replace the previous pick (interval/chord do the same).
+                if (_etPitchCount === 1 && _etPitchPicks.length === 1) {
+                    var prevNote = _etPitchPicks[0];
+                    _etPitchPicks = [];
+                    var prevBtn = document.querySelector('#etPitchChoices .et-choice-btn[data-pnote="' + prevNote + '"]');
+                    if (prevBtn) prevBtn.classList.remove('selected');
+                }
                 if (_etPitchPicks.length >= _etPitchCount) return;
                 _etPitchPicks.push(note);
                 var btnToSelect = document.querySelector('#etPitchChoices .et-choice-btn[data-pnote="' + note + '"]');
