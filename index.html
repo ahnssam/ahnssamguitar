@@ -562,11 +562,24 @@
             font-family: 'Playfair Display', serif;
             transition: background 0.2s, border-color 0.2s, color 0.2s;
         }
+        .capo-key-btn { position: relative; }
         .capo-key-btn:hover { background: rgba(82, 168, 114, 0.15); }
         .capo-key-btn.active {
             background: var(--green-mid);
             border-color: var(--green-mid);
             color: var(--white);
+        }
+        .capo-key-btn.capo-key-dim {
+            opacity: 0.35;
+        }
+        .capo-key-badge {
+            position: absolute;
+            top: 2px; right: 3px;
+            font-size: 0.55rem;
+            font-weight: 400;
+            opacity: 0.5;
+            font-family: sans-serif;
+            line-height: 1;
         }
         .capo-result {
             background: rgba(82, 168, 114, 0.2);
@@ -4462,7 +4475,8 @@
                               hihat: [0, 1, 2, 3, 4, 5, 6, 7] },
                 'ballad':   { ticksPerBeat: 3, beatsPerMeasure: 4,
                               kick: [0, 5, 6], snare: [3, 9],
-                              hihat: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
+                              hihat: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                              hihatOpen: [11] },
                 '16beat':   { ticksPerBeat: 4, beatsPerMeasure: 4,
                               kick: [0, 8], snare: [4, 12],
                               hihat: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] },
@@ -4814,7 +4828,8 @@
                         // 8th: on-beat = accent, off-beat(&) = ghost
                         level = sub === 0 ? 2 : 0;
                     } else {
-                        level = sub === 0 ? 2 : 1;
+                        // triplet (ballad etc): on-beat = accent, off-beats = ghost
+                        level = sub === 0 ? 2 : 0;
                     }
                     playHiHat(time, level);
                 }
@@ -5143,17 +5158,66 @@
         // ========== CAPO CALCULATOR ==========
         (function() {
             const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-            let songKeyIdx = 0;   // default C
-            let playKeyIdx = 0;   // default C
+            const NATURAL = new Set([0, 2, 4, 5, 7, 9, 11]); // C D E F G A B
+            let songKeyIdx = 0;
+            let playKeyIdx = 0;
             let capoInitialized = false;
 
-            function renderKeyButtons(container, selectedIdx, onChange) {
+            function renderSongKeyButtons(container) {
                 container.innerHTML = '';
                 NOTES.forEach((note, i) => {
                     const btn = document.createElement('button');
-                    btn.className = 'capo-key-btn' + (i === selectedIdx ? ' active' : '');
+                    btn.className = 'capo-key-btn' + (i === songKeyIdx ? ' active' : '');
                     btn.textContent = note;
-                    btn.onclick = function() { onChange(i); };
+                    btn.onclick = function() {
+                        songKeyIdx = i;
+                        renderSongKeyButtons(container);
+                        renderPlayKeyButtons(document.getElementById('capoPlayKey'));
+                        calcCapo();
+                    };
+                    container.appendChild(btn);
+                });
+            }
+
+            function renderPlayKeyButtons(container) {
+                container.innerHTML = '';
+                var all = NOTES.map(function(note, i) {
+                    return {
+                        idx: i,
+                        name: note,
+                        capo: (songKeyIdx - i + 12) % 12,
+                        natural: NATURAL.has(i)
+                    };
+                });
+                // Sort: naturals first, then sharps; within each: capo ≤5 first, ascending capo
+                all.sort(function(a, b) {
+                    if (a.natural !== b.natural) return a.natural ? -1 : 1;
+                    var aOk = a.capo <= 5 ? 0 : 1;
+                    var bOk = b.capo <= 5 ? 0 : 1;
+                    if (aOk !== bOk) return aOk - bOk;
+                    return a.capo - b.capo;
+                });
+                // If current playKeyIdx is a sharp, reset to first natural
+                if (!NATURAL.has(playKeyIdx)) {
+                    playKeyIdx = all[0].idx;
+                }
+                all.forEach(function(item) {
+                    var btn = document.createElement('button');
+                    btn.className = 'capo-key-btn' + (item.idx === playKeyIdx ? ' active' : '');
+                    // Dim: sharps always, or naturals with capo > 5
+                    if (!item.natural || item.capo > 5) btn.classList.add('capo-key-dim');
+                    btn.textContent = item.name;
+                    if (item.capo > 0) {
+                        var badge = document.createElement('span');
+                        badge.className = 'capo-key-badge';
+                        badge.textContent = item.capo;
+                        btn.appendChild(badge);
+                    }
+                    btn.onclick = function() {
+                        playKeyIdx = item.idx;
+                        renderPlayKeyButtons(container);
+                        calcCapo();
+                    };
                     container.appendChild(btn);
                 });
             }
@@ -5167,7 +5231,7 @@
                     if (fret === 0) {
                         descEl.textContent = '카포 없이 ' + NOTES[playKeyIdx] + ' 모양으로 연주';
                     } else {
-                        descEl.textContent = NOTES[playKeyIdx] + ' 모양 코드로 연주하면 ' + NOTES[songKeyIdx] + ' 키 효과';
+                        descEl.textContent = fret + '프렛에 카포, ' + NOTES[playKeyIdx] + ' 모양으로 연주하면 ' + NOTES[songKeyIdx] + ' 키';
                     }
                 }
             }
@@ -5175,18 +5239,8 @@
             window.initCapo = function() {
                 if (capoInitialized) return;
                 capoInitialized = true;
-                const songCont = document.getElementById('capoSongKey');
-                const playCont = document.getElementById('capoPlayKey');
-                renderKeyButtons(songCont, songKeyIdx, function(i) {
-                    songKeyIdx = i;
-                    renderKeyButtons(songCont, songKeyIdx, arguments.callee);
-                    calcCapo();
-                });
-                renderKeyButtons(playCont, playKeyIdx, function(i) {
-                    playKeyIdx = i;
-                    renderKeyButtons(playCont, playKeyIdx, arguments.callee);
-                    calcCapo();
-                });
+                renderSongKeyButtons(document.getElementById('capoSongKey'));
+                renderPlayKeyButtons(document.getElementById('capoPlayKey'));
                 calcCapo();
             };
         })();
