@@ -2,6 +2,14 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-B1HS5NH4L1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-B1HS5NH4L1');
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light">
     <meta name="theme-color" content="#2a6b4a">
@@ -424,6 +432,32 @@
             font-size: 1.1rem;
             font-weight: 700;
             letter-spacing: 0.1em;
+            flex-shrink: 0;
+        }
+        .master-vol {
+            display: flex; align-items: center; gap: 0.4rem;
+            flex: 1; max-width: 140px; margin: 0 0.8rem;
+        }
+        .master-vol i {
+            font-size: 0.75rem; color: rgba(255,255,255,0.45);
+            flex-shrink: 0;
+        }
+        .master-vol-slider {
+            -webkit-appearance: none; appearance: none;
+            width: 100%; height: 3px; border-radius: 2px;
+            background: rgba(255,255,255,0.15); outline: none;
+            cursor: pointer;
+        }
+        .master-vol-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 14px; height: 14px; border-radius: 50%;
+            background: var(--green-mid); cursor: pointer;
+            border: 2px solid #1a2421;
+        }
+        .master-vol-slider::-moz-range-thumb {
+            width: 14px; height: 14px; border-radius: 50%;
+            background: var(--green-mid); cursor: pointer;
+            border: 2px solid #1a2421;
         }
         .tools-close {
             background: transparent;
@@ -3142,6 +3176,10 @@
     <aside class="tools-drawer" id="toolsDrawer">
         <div class="tools-header">
             <h3>연습도구</h3>
+            <div class="master-vol">
+                <i class="fas fa-volume-up" id="masterVolIcon"></i>
+                <input type="range" min="0" max="100" value="100" class="master-vol-slider" id="masterVolSlider" oninput="updateMasterVol(this.value)">
+            </div>
             <button class="tools-close" onclick="toggleTools()" aria-label="닫기"><i class="fas fa-times"></i></button>
         </div>
         <div class="tools-tabs">
@@ -4634,6 +4672,15 @@
             let soundMode = 'click';
             let clickType = 'default'; // 'default' or 'voice'
             let drumRhythm = '8beat';
+            let masterGainNode = null;
+            let masterVol = 1.0;
+            function getMasterOut() {
+                if (masterGainNode) return masterGainNode;
+                masterGainNode = audioCtx.createGain();
+                masterGainNode.gain.value = masterVol;
+                masterGainNode.connect(audioCtx.destination);
+                return masterGainNode;
+            }
             // Voice count samples
             const voiceSamples = { 1: null, 2: null, 3: null, 4: null };
             let nextNoteTime = 0;
@@ -4856,7 +4903,7 @@
                 drumMaster = audioCtx.createGain();
                 drumMaster.gain.value = 0.9;
                 drumBus.connect(drumMaster);
-                drumMaster.connect(audioCtx.destination);
+                drumMaster.connect(getMasterOut());
                 return drumBus;
             }
 
@@ -5100,7 +5147,7 @@
                 comp.ratio.value = 4;
                 comp.attack.value = 0.003;
                 comp.release.value = 0.15;
-                comp.connect(audioCtx.destination);
+                comp.connect(getMasterOut());
                 bassBusNode = comp;
                 return bassBusNode;
             }
@@ -5258,7 +5305,7 @@
                         var acc = timeSig > 0 ? (beatNum % timeSig) === 0 : (beatNum % 4) === 0;
                         g.gain.value = acc ? 1.0 : 0.75;
                         source.connect(g);
-                        g.connect(audioCtx.destination);
+                        g.connect(getMasterOut());
                         source.start(time);
                         return;
                     }
@@ -5268,7 +5315,7 @@
                 var osc = audioCtx.createOscillator();
                 var gain = audioCtx.createGain();
                 osc.connect(gain);
-                gain.connect(audioCtx.destination);
+                gain.connect(getMasterOut());
                 osc.frequency.value = accent ? 1000 : 750;
                 gain.gain.setValueAtTime(0.0001, time);
                 gain.gain.exponentialRampToValueAtTime(accent ? 1.8 : 1.3, time + 0.001);
@@ -5500,6 +5547,15 @@
                 }
             };
 
+            window.updateMasterVol = function(val) {
+                masterVol = parseInt(val) / 100;
+                if (masterGainNode) masterGainNode.gain.value = masterVol;
+                var icon = document.getElementById('masterVolIcon');
+                if (icon) {
+                    icon.className = masterVol === 0 ? 'fas fa-volume-mute' :
+                                     masterVol < 0.4 ? 'fas fa-volume-down' : 'fas fa-volume-up';
+                }
+            };
             window.updateBPM = function(val) {
                 bpm = parseInt(val);
                 document.getElementById('bpmValue').textContent = bpm;
@@ -5784,6 +5840,7 @@
                 _openHihatNode = null;
                 _openHihatGain = null;
                 bassBusNode = null;
+                masterGainNode = null;
 
                 if (silentAudio) silentAudio.pause();
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
