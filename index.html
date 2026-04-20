@@ -4724,9 +4724,8 @@
                         .then(function(buf) { bassSamples[note] = buf; })
                         .catch(function() { /* synth fallback */ });
                 };
-                var bassNotes = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
-                var sharpMap = {'C#':'Db','D#':'Eb','F#':'Gb','G#':'Ab','A#':'Bb'};
-                bassNotes.forEach(function(n) { loadBass(n, 'sounds/bass_' + n + '.mp3'); });
+                var bassNotes = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+                bassNotes.forEach(function(n) { loadBass(n, 'sounds/Bass_' + n + '.mp3'); });
                 return samplesLoadPromise;
             }
             function playSample(key, time, gainVal) {
@@ -5081,13 +5080,10 @@
                 return bassBusNode;
             }
 
-            // Map sharp names to flat for sample lookup
-            const BASS_SHARP_TO_FLAT = {'C#':'Db','D#':'Eb','F#':'Gb','G#':'Ab','A#':'Bb'};
             function playBass(note, time) {
                 if (!note || !BASS_FREQ[note]) return;
-                // Try sample first
-                var sampleKey = BASS_SHARP_TO_FLAT[note] || note;
-                var buf = bassSamples[sampleKey];
+                // Try sample first (keyed by note name: C, C#, D, ...)
+                var buf = bassSamples[note];
                 if (buf) {
                     var src = audioCtx.createBufferSource();
                     src.buffer = buf;
