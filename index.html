@@ -1559,7 +1559,8 @@
             font-family: inherit;
         }
         .sound-toggle-btn:first-child { border-radius: 24px 0 0 24px; }
-        .sound-toggle-btn:last-child { border-radius: 0 24px 24px 0; border-left: none; }
+        .sound-toggle-btn:nth-child(n+2) { border-left: none; }
+        .sound-toggle-btn:last-child { border-radius: 0 24px 24px 0; }
         .sound-toggle-btn.active {
             background: var(--green-mid);
             color: var(--white);
@@ -1567,6 +1568,137 @@
         .sound-toggle-btn:hover:not(.active) {
             background: rgba(82, 168, 114, 0.15);
         }
+        /* ===== LOOP MODE ===== */
+        .loop-section { display: none; }
+        .loop-section.visible { display: block; }
+        .loop-top-row {
+            display: flex; align-items: flex-start; gap: 1rem;
+            margin-bottom: 0.8rem; font-size: 0.8rem; color: rgba(255,255,255,0.6);
+        }
+        .loop-measures-label {
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .loop-measures-label label { white-space: nowrap; }
+        .loop-measures-btns { display: flex; gap: 0.3rem; }
+        .loop-measures-btns button {
+            padding: 0.3rem 0.7rem; font-size: 0.75rem; font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;
+            background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7);
+            cursor: pointer; font-family: inherit; transition: all 0.2s;
+        }
+        .loop-measures-btns button.active {
+            background: var(--green-mid); border-color: var(--green-mid); color: #fff;
+        }
+        .loop-rhythm-picker {
+            display: flex; align-items: center; gap: 0.5rem;
+            position: relative;
+        }
+        .loop-rhythm-picker label { white-space: nowrap; }
+        .loop-rhythm-toggle {
+            display: flex; align-items: center; gap: 0.4rem;
+            padding: 0.3rem 0.7rem; font-size: 0.75rem; font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;
+            background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.9);
+            cursor: pointer; font-family: inherit; transition: all 0.2s;
+        }
+        .loop-rhythm-toggle:hover { background: rgba(255,255,255,0.12); }
+        .loop-rhythm-toggle i {
+            font-size: 0.6rem; transition: transform 0.2s;
+        }
+        .loop-rhythm-toggle.open i { transform: rotate(180deg); }
+        .loop-rhythm-drawer {
+            display: none; position: absolute; top: 100%; right: 0;
+            margin-top: 0.3rem; z-index: 20;
+            background: #1e2e28; border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px; padding: 0.4rem; min-width: 220px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+        .loop-rhythm-drawer.open {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.25rem;
+        }
+        .loop-rhythm-drawer button {
+            padding: 0.4rem 0.3rem; font-size: 0.74rem; font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.15); border-radius: 4px;
+            background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7);
+            cursor: pointer; font-family: inherit; text-align: center;
+            white-space: nowrap; transition: all 0.15s;
+        }
+        .loop-rhythm-drawer button:hover {
+            background: rgba(82,168,114,0.2); color: #fff;
+        }
+        .loop-rhythm-drawer button.active {
+            background: var(--green-mid); border-color: var(--green-mid); color: #fff;
+        }
+        .loop-grid {
+            display: grid; gap: 0.35rem;
+            margin-bottom: 0.8rem;
+        }
+        .loop-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+        .loop-grid.cols-8 { grid-template-columns: repeat(4, 1fr); }
+        .loop-grid.cols-16 { grid-template-columns: repeat(4, 1fr); }
+        .loop-cell {
+            aspect-ratio: 1.6; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px; cursor: pointer; transition: all 0.2s;
+            position: relative; user-select: none;
+        }
+        .loop-cell:hover { background: rgba(82, 168, 114, 0.15); }
+        .loop-cell.playing {
+            background: rgba(82, 168, 114, 0.3);
+            border-color: var(--green-mid);
+            box-shadow: 0 0 8px rgba(82, 168, 114, 0.4);
+        }
+        .loop-cell-num {
+            font-size: 0.55rem; color: rgba(255,255,255,0.35);
+            position: absolute; top: 3px; left: 5px;
+        }
+        .loop-cell-chord {
+            font-size: 0.95rem; font-weight: 700; color: var(--white);
+            font-family: 'Playfair Display', serif;
+        }
+        .loop-cell-chord.empty {
+            font-size: 0.7rem; color: rgba(255,255,255,0.2);
+        }
+        .loop-cell-chord.inherited {
+            opacity: 0.35;
+        }
+        /* Root note picker popover */
+        .loop-chord-picker {
+            display: none; position: absolute; z-index: 10;
+            top: 100%;
+            background: #1e2e28; border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px; padding: 0.5rem; min-width: 150px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+        .loop-chord-picker.open { display: block; }
+        .loop-chord-picker.pos-right { left: 0; }
+        .loop-chord-picker.pos-left { right: 0; }
+        .loop-chord-picker-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.25rem;
+        }
+        .loop-chord-pick-btn {
+            padding: 0.4rem 0.2rem; font-size: 0.75rem; font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.15); border-radius: 4px;
+            background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8);
+            cursor: pointer; font-family: 'Playfair Display', serif;
+            transition: all 0.15s; text-align: center;
+        }
+        .loop-chord-pick-btn:hover {
+            background: var(--green-mid); border-color: var(--green-mid); color: #fff;
+        }
+        .loop-chord-pick-btn.selected {
+            background: var(--green-mid); border-color: var(--green-mid); color: #fff;
+        }
+        .loop-chord-clear {
+            width: 100%; margin-top: 0.3rem; padding: 0.3rem;
+            font-size: 0.7rem; border: none; border-radius: 4px;
+            background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5);
+            cursor: pointer; font-family: inherit;
+        }
+        .loop-chord-clear:hover { background: rgba(220,60,60,0.3); color: #fff; }
         .time-sig-btns {
             display: flex;
             flex-wrap: wrap;
@@ -3059,6 +3191,29 @@
             <div class="sound-toggle">
                 <button class="sound-toggle-btn active" data-sound="click" onclick="updateSoundMode('click')">클릭</button>
                 <button class="sound-toggle-btn" data-sound="drums" onclick="updateSoundMode('drums')">드럼</button>
+                <button class="sound-toggle-btn" data-sound="loop" onclick="updateSoundMode('loop')">루프</button>
+            </div>
+            <!-- Loop Section (visible only in loop mode) — above BPM -->
+            <div class="loop-section" id="loopSection">
+                <div class="loop-top-row">
+                    <div class="loop-measures-label">
+                        <label>마디</label>
+                        <div class="loop-measures-btns" id="loopMeasureBtns">
+                            <button class="active" data-bars="4" onclick="setLoopBars(4)">4</button>
+                            <button data-bars="8" onclick="setLoopBars(8)">8</button>
+                            <button data-bars="16" onclick="setLoopBars(16)">16</button>
+                        </div>
+                    </div>
+                    <div class="loop-rhythm-picker" id="loopRhythmPicker">
+                        <label>리듬</label>
+                        <button class="loop-rhythm-toggle" id="loopRhythmToggle" onclick="toggleLoopRhythmDrawer()">
+                            <span id="loopRhythmLabel">8비트 A</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="loop-rhythm-drawer" id="loopRhythmDrawer"></div>
+                    </div>
+                </div>
+                <div class="loop-grid cols-4" id="loopGrid"></div>
             </div>
             <div class="metronome-bpm">
                 <div class="metronome-bpm-value" id="bpmValue">90</div>
@@ -3090,6 +3245,13 @@
                     <button type="button" class="time-sig-btn" data-ts="2" onclick="updateTimeSig(2)">2/4</button>
                     <button type="button" class="time-sig-btn" data-ts="3" onclick="updateTimeSig(3)">3/4</button>
                     <button type="button" class="time-sig-btn" data-ts="6" onclick="updateTimeSig(6)">6/8</button>
+                </div>
+            </div>
+            <div class="metronome-time-sig" id="clickTypeRow">
+                <label>소리</label>
+                <div class="time-sig-btns">
+                    <button type="button" class="time-sig-btn active" data-clicktype="default" onclick="updateClickType('default')">기본</button>
+                    <button type="button" class="time-sig-btn" data-clicktype="voice" onclick="updateClickType('voice')">목소리</button>
                 </div>
             </div>
             <div class="metronome-time-sig" id="drumRhythmRow" style="display:none;">
@@ -4460,9 +4622,19 @@
             let bpm = 90;
             let timeSig = 0;
             let soundMode = 'click';
+            let clickType = 'default'; // 'default' or 'voice'
             let drumRhythm = '8beat';
+            // Voice count samples
+            const voiceSamples = { 1: null, 2: null, 3: null, 4: null };
             let nextNoteTime = 0;
             let currentBeat = 0;
+            // Loop mode state
+            let loopBars = 4;
+            let loopRhythm = '8beat';
+            let loopChords = {};       // { measureIndex: 'C', ... }
+            let loopMeasureIdx = 0;    // current measure being played
+            let loopInitialized = false;
+            let loopPickerCell = null;  // currently open picker cell index
 
             // Drum rhythm patterns
             // ticksPerBeat: subdivision per beat (2 = eighths, 4 = sixteenths, 3 = triplet/6-8)
@@ -4514,6 +4686,7 @@
 
             // ===== Drum sample loading =====
             const drumSamples = { kick: null, snare: null, hihat: null, hihatOpen: null };
+            const bassSamples = {}; // keyed by note name: { 'C': AudioBuffer, ... }
             let samplesLoadPromise = null;
             function loadDrumSamples() {
                 if (samplesLoadPromise) return samplesLoadPromise;
@@ -4529,6 +4702,31 @@
                     load('hihat', 'sounds/hihat.mp3'),
                     load('hihatOpen', 'sounds/hihat open.mp3')
                 ]);
+                // Also load voice count samples
+                var loadVoice = function(num, url) {
+                    return fetch(url)
+                        .then(function(r) { return r.ok ? r.arrayBuffer() : Promise.reject('404 ' + url); })
+                        .then(function(ab) { return audioCtx.decodeAudioData(ab); })
+                        .then(function(buf) { voiceSamples[num] = buf; })
+                        .catch(function(err) { console.warn('Voice sample load failed:', num, err); });
+                };
+                Promise.all([
+                    loadVoice(1, 'sounds/one.mp3'),
+                    loadVoice(2, 'sounds/two.mp3'),
+                    loadVoice(3, 'sounds/three.mp3'),
+                    loadVoice(4, 'sounds/four.mp3')
+                ]);
+                // Load bass samples (optional — falls back to synth if missing)
+                var loadBass = function(note, url) {
+                    return fetch(url)
+                        .then(function(r) { return r.ok ? r.arrayBuffer() : Promise.reject('404 ' + url); })
+                        .then(function(ab) { return audioCtx.decodeAudioData(ab); })
+                        .then(function(buf) { bassSamples[note] = buf; })
+                        .catch(function() { /* synth fallback */ });
+                };
+                var bassNotes = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+                var sharpMap = {'C#':'Db','D#':'Eb','F#':'Gb','G#':'Ab','A#':'Bb'};
+                bassNotes.forEach(function(n) { loadBass(n, 'sounds/bass_' + n + '.mp3'); });
                 return samplesLoadPromise;
             }
             function playSample(key, time, gainVal) {
@@ -4552,16 +4750,72 @@
                 // Choke any previous open hihat
                 chokeOpenHihat(time);
                 const buf = drumSamples.hihatOpen;
-                if (!buf) return;
-                const source = audioCtx.createBufferSource();
-                source.buffer = buf;
-                const g = audioCtx.createGain();
-                g.gain.value = 0.3;
-                source.connect(g);
-                g.connect(getDrumBus());
-                source.start(time);
-                _openHihatNode = source;
-                _openHihatGain = g;
+                if (buf) {
+                    const source = audioCtx.createBufferSource();
+                    source.buffer = buf;
+                    const g = audioCtx.createGain();
+                    g.gain.value = 0.3;
+                    source.connect(g);
+                    g.connect(getDrumBus());
+                    source.start(time);
+                    _openHihatNode = source;
+                    _openHihatGain = g;
+                    return;
+                }
+                // Synth fallback — longer, brighter noise burst with sustained tail
+                const bus = getDrumBus();
+                const dur = 0.35;
+                // Metallic shimmer layers (wider bandwidth, longer decay than closed)
+                const layers = [
+                    { freq: 6500, q: 2, gain: 0.18, decay: dur },
+                    { freq: 9000, q: 2.5, gain: 0.14, decay: dur * 0.9 },
+                    { freq: 12000, q: 3, gain: 0.10, decay: dur * 0.8 }
+                ];
+                const synthNodes = [];
+                const masterGain = audioCtx.createGain();
+                masterGain.gain.setValueAtTime(1.0, time);
+                masterGain.connect(bus);
+                layers.forEach(function(l) {
+                    const noise = audioCtx.createBufferSource();
+                    noise.buffer = getNoiseBuffer();
+                    const bp = audioCtx.createBiquadFilter();
+                    bp.type = 'bandpass';
+                    bp.frequency.value = l.freq;
+                    bp.Q.value = l.q;
+                    const g = audioCtx.createGain();
+                    g.gain.setValueAtTime(0.0001, time);
+                    g.gain.exponentialRampToValueAtTime(l.gain, time + 0.002);
+                    g.gain.setTargetAtTime(l.gain * 0.4, time + 0.03, 0.08);
+                    g.gain.setTargetAtTime(0.0001, time + l.decay * 0.7, 0.06);
+                    noise.connect(bp);
+                    bp.connect(g);
+                    g.connect(masterGain);
+                    noise.start(time);
+                    noise.stop(time + l.decay + 0.15);
+                    synthNodes.push(noise);
+                });
+                // Bright top shimmer
+                const topNoise = audioCtx.createBufferSource();
+                topNoise.buffer = getNoiseBuffer();
+                const hp = audioCtx.createBiquadFilter();
+                hp.type = 'highpass';
+                hp.frequency.value = 5500;
+                const hpGain = audioCtx.createGain();
+                hpGain.gain.setValueAtTime(0.0001, time);
+                hpGain.gain.exponentialRampToValueAtTime(0.16, time + 0.002);
+                hpGain.gain.setTargetAtTime(0.06, time + 0.04, 0.1);
+                hpGain.gain.setTargetAtTime(0.0001, time + dur * 0.8, 0.07);
+                topNoise.connect(hp);
+                hp.connect(hpGain);
+                hpGain.connect(masterGain);
+                topNoise.start(time);
+                topNoise.stop(time + dur + 0.15);
+                // Store for choke
+                _openHihatGain = masterGain;
+                _openHihatNode = { stop: function(t) {
+                    synthNodes.forEach(function(n) { try { n.stop(t); } catch(e){} });
+                    try { topNoise.stop(t); } catch(e){}
+                }};
             }
 
             function chokeOpenHihat(time) {
@@ -4805,22 +5059,179 @@
                 highNoise.stop(time + 0.06);
             }
 
+            // ========== BASS SYNTH ==========
+            // Bass note frequencies (octave 2 for deep bass, ~65-123 Hz)
+            const BASS_FREQ = {
+                'C': 65.41, 'C#': 69.30, 'D': 73.42, 'D#': 77.78,
+                'E': 41.20, 'F': 43.65, 'F#': 46.25, 'G': 49.00,
+                'G#': 51.91, 'A': 55.00, 'A#': 58.27, 'B': 61.74
+            };
+            let bassBusNode = null;
+            function getBassBus() {
+                if (bassBusNode) return bassBusNode;
+                // Separate bus for bass with slight compression feel
+                const comp = audioCtx.createDynamicsCompressor();
+                comp.threshold.value = -18;
+                comp.knee.value = 12;
+                comp.ratio.value = 4;
+                comp.attack.value = 0.003;
+                comp.release.value = 0.15;
+                comp.connect(audioCtx.destination);
+                bassBusNode = comp;
+                return bassBusNode;
+            }
+
+            // Map sharp names to flat for sample lookup
+            const BASS_SHARP_TO_FLAT = {'C#':'Db','D#':'Eb','F#':'Gb','G#':'Ab','A#':'Bb'};
+            function playBass(note, time) {
+                if (!note || !BASS_FREQ[note]) return;
+                // Try sample first
+                var sampleKey = BASS_SHARP_TO_FLAT[note] || note;
+                var buf = bassSamples[sampleKey];
+                if (buf) {
+                    var src = audioCtx.createBufferSource();
+                    src.buffer = buf;
+                    var g = audioCtx.createGain();
+                    g.gain.value = 0.7;
+                    src.connect(g);
+                    g.connect(getBassBus());
+                    src.start(time);
+                    return;
+                }
+                // Synth fallback
+                const freq = BASS_FREQ[note];
+                const bus = getBassBus();
+                // dur based on BPM: one full beat length, min 0.8s, max 2.0s
+                const beatLen = 60.0 / bpm;
+                const dur = Math.max(0.8, Math.min(2.0, beatLen * 2));
+
+                // 1. Fundamental — warm sine with slight pitch bend (finger pluck)
+                const fund = audioCtx.createOscillator();
+                fund.type = 'sine';
+                fund.frequency.setValueAtTime(freq * 1.006, time);
+                fund.frequency.exponentialRampToValueAtTime(freq, time + 0.03);
+                const fundGain = audioCtx.createGain();
+                fundGain.gain.setValueAtTime(0.0001, time);
+                fundGain.gain.exponentialRampToValueAtTime(0.50, time + 0.005);
+                fundGain.gain.setTargetAtTime(0.38, time + 0.04, 0.25);
+                fundGain.gain.setTargetAtTime(0.0001, time + dur * 0.85, 0.12);
+                fund.connect(fundGain);
+                fundGain.connect(bus);
+                fund.start(time);
+                fund.stop(time + dur + 0.2);
+
+                // 2. 2nd harmonic — adds warmth (triangle for softer tone)
+                const harm2 = audioCtx.createOscillator();
+                harm2.type = 'triangle';
+                harm2.frequency.setValueAtTime(freq * 2.003, time);
+                harm2.frequency.exponentialRampToValueAtTime(freq * 2, time + 0.025);
+                const h2Gain = audioCtx.createGain();
+                h2Gain.gain.setValueAtTime(0.0001, time);
+                h2Gain.gain.exponentialRampToValueAtTime(0.18, time + 0.004);
+                h2Gain.gain.setTargetAtTime(0.10, time + 0.04, 0.18);
+                h2Gain.gain.setTargetAtTime(0.0001, time + dur * 0.75, 0.10);
+                harm2.connect(h2Gain);
+                h2Gain.connect(bus);
+                harm2.start(time);
+                harm2.stop(time + dur + 0.2);
+
+                // 3. 3rd harmonic — gives the bass "growl" character
+                const harm3 = audioCtx.createOscillator();
+                harm3.type = 'sine';
+                harm3.frequency.setValueAtTime(freq * 3, time);
+                const h3Gain = audioCtx.createGain();
+                h3Gain.gain.setValueAtTime(0.0001, time);
+                h3Gain.gain.exponentialRampToValueAtTime(0.08, time + 0.003);
+                h3Gain.gain.setTargetAtTime(0.03, time + 0.05, 0.12);
+                h3Gain.gain.setTargetAtTime(0.0001, time + dur * 0.6, 0.08);
+                harm3.connect(h3Gain);
+                h3Gain.connect(bus);
+                harm3.start(time);
+                harm3.stop(time + dur + 0.2);
+
+                // 4. Finger noise / string attack — short noise burst through bandpass
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = getNoiseBuffer();
+                const nBP = audioCtx.createBiquadFilter();
+                nBP.type = 'bandpass';
+                nBP.frequency.value = 1200;
+                nBP.Q.value = 1.5;
+                const nGain = audioCtx.createGain();
+                nGain.gain.setValueAtTime(0.0001, time);
+                nGain.gain.exponentialRampToValueAtTime(0.12, time + 0.001);
+                nGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.03);
+                noise.connect(nBP);
+                nBP.connect(nGain);
+                nGain.connect(bus);
+                noise.start(time);
+                noise.stop(time + 0.05);
+
+                // 5. Sub-bass layer — octave below for weight (long sustain)
+                const sub = audioCtx.createOscillator();
+                sub.type = 'sine';
+                sub.frequency.value = freq / 2;
+                const subGain = audioCtx.createGain();
+                subGain.gain.setValueAtTime(0.0001, time);
+                subGain.gain.exponentialRampToValueAtTime(0.18, time + 0.012);
+                subGain.gain.setTargetAtTime(0.12, time + 0.06, 0.2);
+                subGain.gain.setTargetAtTime(0.0001, time + dur * 0.85, 0.12);
+                const subLP = audioCtx.createBiquadFilter();
+                subLP.type = 'lowpass';
+                subLP.frequency.value = freq;
+                sub.connect(subLP);
+                subLP.connect(subGain);
+                subGain.connect(bus);
+                sub.start(time);
+                sub.stop(time + dur + 0.2);
+            }
+
+            // Voice count patterns: which sample number (1-4) to play per beat index
+            // 기본/4/4 → 1,2,3,4 | 2/4 → 1,2 | 3/4 → 1,2,3 | 6/8 → 1,2,3,2,2,3
+            function getVoiceNum(beatNum) {
+                var patterns = {
+                    0: [1,2,3,4],       // 기본 (treated as 4/4)
+                    4: [1,2,3,4],
+                    2: [1,2],
+                    3: [1,2,3],
+                    6: [1,2,3,2,2,3]
+                };
+                var pat = patterns[timeSig] || [1,2,3,4];
+                return pat[beatNum % pat.length];
+            }
+
             function playClickSound(beatNum, time) {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
+                if (clickType === 'voice') {
+                    var num = getVoiceNum(beatNum);
+                    var buf = voiceSamples[num];
+                    if (buf) {
+                        var source = audioCtx.createBufferSource();
+                        source.buffer = buf;
+                        var g = audioCtx.createGain();
+                        var acc = timeSig > 0 ? (beatNum % timeSig) === 0 : (beatNum % 4) === 0;
+                        g.gain.value = acc ? 1.0 : 0.75;
+                        source.connect(g);
+                        g.connect(audioCtx.destination);
+                        source.start(time);
+                        return;
+                    }
+                }
+                // Default click (oscillator)
+                var accent = timeSig > 0 && (beatNum % timeSig) === 0;
+                var osc = audioCtx.createOscillator();
+                var gain = audioCtx.createGain();
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
-                const isAccent = timeSig > 0 && (beatNum % timeSig) === 0;
-                osc.frequency.value = isAccent ? 1000 : 750;
+                osc.frequency.value = accent ? 1000 : 750;
                 gain.gain.setValueAtTime(0.0001, time);
-                gain.gain.exponentialRampToValueAtTime(isAccent ? 1.8 : 1.3, time + 0.001);
+                gain.gain.exponentialRampToValueAtTime(accent ? 1.8 : 1.3, time + 0.001);
                 gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.06);
                 osc.start(time);
                 osc.stop(time + 0.07);
             }
 
             function playDrumPattern(tickIdx, time) {
-                const p = DRUM_PATTERNS[drumRhythm] || DRUM_PATTERNS['8beat'];
+                const activeRhythm = soundMode === 'loop' ? loopRhythm : drumRhythm;
+                const p = DRUM_PATTERNS[activeRhythm] || DRUM_PATTERNS['8beat'];
                 const measureLen = p.ticksPerBeat * p.beatsPerMeasure;
                 const t = tickIdx % measureLen;
                 // Hi-hat: accent = on-beat, normal = off-beat (&), ghost = e/a (16th subdivisions)
@@ -4889,10 +5300,30 @@
             }
 
             function scheduleNote(beatNum, time) {
-                if (soundMode === 'drums') {
+                if (soundMode === 'loop') {
+                    const r = loopRhythm;
+                    const p = DRUM_PATTERNS[r] || DRUM_PATTERNS['8beat'];
+                    playDrumPattern(beatNum, time);
+                    const measureLen = p.ticksPerBeat * p.beatsPerMeasure;
+                    const t = beatNum % measureLen;
+                    if (t % p.ticksPerBeat === 0) {
+                        const dotIdx = Math.floor(t / p.ticksPerBeat);
+                        highlightDot(dotIdx, time);
+                    }
+                    // Track measure transitions for loop grid highlight
+                    if (t === 0) {
+                        const totalTicks = measureLen * loopBars;
+                        const globalTick = beatNum % totalTicks;
+                        const mIdx = Math.floor(globalTick / measureLen);
+                        loopMeasureIdx = mIdx;
+                        highlightLoopCell(mIdx, time);
+                        // Play bass root note on beat 1 of each measure (inherits from previous)
+                        const rootNote = getEffectiveRoot(mIdx);
+                        if (rootNote) playBass(rootNote, time);
+                    }
+                } else if (soundMode === 'drums') {
                     const p = DRUM_PATTERNS[drumRhythm] || DRUM_PATTERNS['8beat'];
                     playDrumPattern(beatNum, time);
-                    // Highlight dot when tick aligns to a beat
                     const measureLen = p.ticksPerBeat * p.beatsPerMeasure;
                     const t = beatNum % measureLen;
                     if (t % p.ticksPerBeat === 0) {
@@ -4906,10 +5337,22 @@
                 }
             }
 
+            function highlightLoopCell(mIdx, time) {
+                const delay = (time - audioCtx.currentTime) * 1000;
+                setTimeout(function() {
+                    var cells = document.querySelectorAll('#loopGrid .loop-cell');
+                    cells.forEach(function(c) { c.classList.remove('playing'); });
+                    if (cells[mIdx]) cells[mIdx].classList.add('playing');
+                }, Math.max(0, delay));
+            }
+
             function scheduler() {
                 let interval;
                 if (soundMode === 'drums') {
                     const p = DRUM_PATTERNS[drumRhythm] || DRUM_PATTERNS['8beat'];
+                    interval = 60.0 / bpm / p.ticksPerBeat;
+                } else if (soundMode === 'loop') {
+                    const p = DRUM_PATTERNS[loopRhythm] || DRUM_PATTERNS['8beat'];
                     interval = 60.0 / bpm / p.ticksPerBeat;
                 } else {
                     interval = 60.0 / bpm;
@@ -4924,6 +5367,15 @@
             function renderBeats() {
                 const container = document.getElementById('metronomeBeats');
                 container.innerHTML = '';
+                if (soundMode === 'loop') {
+                    const p = DRUM_PATTERNS[loopRhythm] || DRUM_PATTERNS['8beat'];
+                    for (let i = 0; i < p.beatsPerMeasure; i++) {
+                        const dot = document.createElement('div');
+                        dot.className = 'beat-dot' + (i === 0 ? ' accent' : '');
+                        container.appendChild(dot);
+                    }
+                    return;
+                }
                 if (soundMode === 'drums') {
                     const p = DRUM_PATTERNS[drumRhythm] || DRUM_PATTERNS['8beat'];
                     for (let i = 0; i < p.beatsPerMeasure; i++) {
@@ -4952,14 +5404,29 @@
                     btn.classList.toggle('active', btn.dataset.sound === mode);
                 });
                 const timeSigRow = document.getElementById('timeSigRow');
-                if (timeSigRow) timeSigRow.style.display = soundMode === 'drums' ? 'none' : 'flex';
+                if (timeSigRow) timeSigRow.style.display = mode === 'click' ? 'flex' : 'none';
+                const clickTypeRow = document.getElementById('clickTypeRow');
+                if (clickTypeRow) clickTypeRow.style.display = mode === 'click' ? 'flex' : 'none';
                 const drumRhythmRow = document.getElementById('drumRhythmRow');
-                if (drumRhythmRow) drumRhythmRow.style.display = soundMode === 'drums' ? 'flex' : 'none';
+                if (drumRhythmRow) drumRhythmRow.style.display = mode === 'drums' ? 'flex' : 'none';
+                const loopSection = document.getElementById('loopSection');
+                if (loopSection) {
+                    loopSection.classList.toggle('visible', mode === 'loop');
+                    if (mode === 'loop') initLoop();
+                }
                 renderBeats();
                 currentBeat = 0;
+                loopMeasureIdx = 0;
                 if (window._metroRunning && audioCtx) {
                     nextNoteTime = audioCtx.currentTime + 0.05;
                 }
+            };
+
+            window.updateClickType = function(type) {
+                clickType = type;
+                document.querySelectorAll('#clickTypeRow .time-sig-btn').forEach(function(btn) {
+                    btn.classList.toggle('active', btn.dataset.clicktype === type);
+                });
             };
 
             window.updateDrumRhythm = function(rhythm) {
@@ -4998,9 +5465,172 @@
                     });
                 }
             };
+            // ========== LOOP FUNCTIONS ==========
+            const LOOP_ROOTS = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+            const LOOP_RHYTHM_LABELS = {
+                '4beat': '4비트 A', '4beat2': '4비트 B',
+                '8beat': '8비트 A', '8beat2': '8비트 B',
+                '16beat': '16비트 A', '16beat2': '16비트 B', '16beatC': '16비트 C',
+                'ballad': '락발라드'
+            };
+            function initLoop() {
+                if (loopInitialized) return;
+                loopInitialized = true;
+                renderLoopRhythms();
+                renderLoopGrid();
+                // Close picker and rhythm drawer on outside click
+                document.addEventListener('click', function(e) {
+                    if (!e.target.closest('.loop-cell') && !e.target.closest('.loop-chord-picker')) {
+                        closeLoopPicker();
+                    }
+                    if (!e.target.closest('.loop-rhythm-picker')) {
+                        closeLoopRhythmDrawer();
+                    }
+                });
+            }
+            function renderLoopRhythms() {
+                var drawer = document.getElementById('loopRhythmDrawer');
+                if (!drawer) return;
+                drawer.innerHTML = '';
+                var order = ['8beat','8beat2','4beat','4beat2','16beat','16beat2','16beatC','ballad'];
+                order.forEach(function(key) {
+                    var btn = document.createElement('button');
+                    btn.textContent = LOOP_RHYTHM_LABELS[key] || key;
+                    if (key === loopRhythm) btn.classList.add('active');
+                    btn.onclick = function(e) {
+                        e.stopPropagation();
+                        loopRhythm = key;
+                        document.getElementById('loopRhythmLabel').textContent = LOOP_RHYTHM_LABELS[key] || key;
+                        closeLoopRhythmDrawer();
+                        renderBeats();
+                        currentBeat = 0;
+                        loopMeasureIdx = 0;
+                        if (window._metroRunning && audioCtx) nextNoteTime = audioCtx.currentTime + 0.05;
+                        renderLoopRhythms(); // refresh active state
+                    };
+                    drawer.appendChild(btn);
+                });
+            }
+            window.toggleLoopRhythmDrawer = function() {
+                var drawer = document.getElementById('loopRhythmDrawer');
+                var toggle = document.getElementById('loopRhythmToggle');
+                if (!drawer) return;
+                var isOpen = drawer.classList.contains('open');
+                if (isOpen) {
+                    closeLoopRhythmDrawer();
+                } else {
+                    drawer.classList.add('open');
+                    if (toggle) toggle.classList.add('open');
+                }
+            };
+            function closeLoopRhythmDrawer() {
+                var drawer = document.getElementById('loopRhythmDrawer');
+                var toggle = document.getElementById('loopRhythmToggle');
+                if (drawer) drawer.classList.remove('open');
+                if (toggle) toggle.classList.remove('open');
+            }
+            // Get effective root note for a measure (inherits from previous measures)
+            function getEffectiveRoot(idx) {
+                for (var i = idx; i >= 0; i--) {
+                    if (loopChords[i]) return loopChords[i];
+                }
+                return null;
+            }
+            function renderLoopGrid() {
+                var grid = document.getElementById('loopGrid');
+                if (!grid) return;
+                grid.innerHTML = '';
+                grid.className = 'loop-grid cols-' + loopBars;
+                for (var i = 0; i < loopBars; i++) {
+                    var cell = document.createElement('div');
+                    cell.className = 'loop-cell';
+                    cell.dataset.idx = i;
+                    var num = document.createElement('span');
+                    num.className = 'loop-cell-num';
+                    num.textContent = (i + 1);
+                    cell.appendChild(num);
+                    var directRoot = loopChords[i];
+                    var inherited = !directRoot ? getEffectiveRoot(i) : null;
+                    var displayNote = directRoot || inherited;
+                    var chord = document.createElement('span');
+                    if (directRoot) {
+                        chord.className = 'loop-cell-chord';
+                        chord.textContent = directRoot;
+                    } else if (inherited) {
+                        chord.className = 'loop-cell-chord empty';
+                        chord.textContent = '+';
+                    } else {
+                        chord.className = 'loop-cell-chord empty';
+                        chord.textContent = '+';
+                    }
+                    cell.appendChild(chord);
+                    (function(idx, cellEl) {
+                        cellEl.onclick = function(e) {
+                            e.stopPropagation();
+                            toggleLoopPicker(idx, cellEl);
+                        };
+                    })(i, cell);
+                    grid.appendChild(cell);
+                }
+            }
+            function toggleLoopPicker(idx, cellEl) {
+                // Close existing picker and rhythm drawer
+                closeLoopPicker();
+                closeLoopRhythmDrawer();
+                if (loopPickerCell === idx) { loopPickerCell = null; return; }
+                loopPickerCell = idx;
+                var picker = document.createElement('div');
+                // Smart positioning: determine column position
+                var colsPerRow = 4;
+                var col = idx % colsPerRow;
+                var posClass = col < 2 ? 'pos-right' : 'pos-left';
+                picker.className = 'loop-chord-picker open ' + posClass;
+                picker.onclick = function(e) { e.stopPropagation(); };
+                var pickerGrid = document.createElement('div');
+                pickerGrid.className = 'loop-chord-picker-grid';
+                LOOP_ROOTS.forEach(function(note) {
+                    var btn = document.createElement('button');
+                    btn.className = 'loop-chord-pick-btn' + (loopChords[idx] === note ? ' selected' : '');
+                    btn.textContent = note;
+                    btn.onclick = function() {
+                        loopChords[idx] = note;
+                        closeLoopPicker();
+                        loopPickerCell = null;
+                        renderLoopGrid();
+                    };
+                    pickerGrid.appendChild(btn);
+                });
+                picker.appendChild(pickerGrid);
+                var clearBtn = document.createElement('button');
+                clearBtn.className = 'loop-chord-clear';
+                clearBtn.textContent = '삭제';
+                clearBtn.onclick = function() {
+                    delete loopChords[idx];
+                    closeLoopPicker();
+                    loopPickerCell = null;
+                    renderLoopGrid();
+                };
+                picker.appendChild(clearBtn);
+                cellEl.style.position = 'relative';
+                cellEl.appendChild(picker);
+            }
+            function closeLoopPicker() {
+                document.querySelectorAll('.loop-chord-picker').forEach(function(p) { p.remove(); });
+            }
+            window.setLoopBars = function(n) {
+                loopBars = n;
+                loopMeasureIdx = 0;
+                currentBeat = 0;
+                document.querySelectorAll('#loopMeasureBtns button').forEach(function(b) {
+                    b.classList.toggle('active', parseInt(b.dataset.bars) === n);
+                });
+                renderLoopGrid();
+                if (window._metroRunning && audioCtx) nextNoteTime = audioCtx.currentTime + 0.05;
+            };
+
             window.updateTimeSig = function(ts) {
                 timeSig = parseInt(ts);
-                document.querySelectorAll('.time-sig-btn').forEach(btn => {
+                document.querySelectorAll('#timeSigBtns .time-sig-btn').forEach(btn => {
                     btn.classList.toggle('active', parseInt(btn.dataset.ts) === timeSig);
                 });
                 renderBeats();
@@ -5056,9 +5686,10 @@
             function stopMetronome() {
                 if (timerId) clearInterval(timerId);
                 timerId = null;
-                // Clean up open hihat
+                // Clean up open hihat & bass bus
                 _openHihatNode = null;
                 _openHihatGain = null;
+                bassBusNode = null;
 
                 if (silentAudio) silentAudio.pause();
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
@@ -5169,7 +5800,7 @@
             const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
             const NATURAL = new Set([0, 2, 4, 5, 7, 9, 11]); // C D E F G A B
             let songKeyIdx = 0;
-            let playKeyIdx = 0;
+            let playKeyIdx = -1; // -1 = none selected
             let capoInitialized = false;
 
             function renderSongKeyButtons(container) {
@@ -5180,6 +5811,7 @@
                     btn.textContent = note;
                     btn.onclick = function() {
                         songKeyIdx = i;
+                        playKeyIdx = -1; // reset play key on song key change
                         renderSongKeyButtons(container);
                         renderPlayKeyButtons(document.getElementById('capoPlayKey'));
                         calcCapo();
@@ -5197,8 +5829,7 @@
                         capo: (songKeyIdx - i + 12) % 12,
                         natural: NATURAL.has(i)
                     };
-                }).filter(function(item) { return item.capo !== 0; }); // exclude same key as song
-                // Sort: naturals first, then sharps; within each: capo ≤5 first, ascending capo
+                }).filter(function(item) { return item.capo !== 0; });
                 all.sort(function(a, b) {
                     if (a.natural !== b.natural) return a.natural ? -1 : 1;
                     var aOk = a.capo <= 5 ? 0 : 1;
@@ -5206,14 +5837,9 @@
                     if (aOk !== bOk) return aOk - bOk;
                     return a.capo - b.capo;
                 });
-                // If current playKeyIdx equals song key or is sharp, reset to first natural
-                if (playKeyIdx === songKeyIdx || !NATURAL.has(playKeyIdx)) {
-                    playKeyIdx = all[0].idx;
-                }
                 all.forEach(function(item) {
                     var btn = document.createElement('button');
                     btn.className = 'capo-key-btn' + (item.idx === playKeyIdx ? ' active' : '');
-                    // Dim: sharps always, or naturals with capo > 5
                     if (!item.natural || item.capo > 5) btn.classList.add('capo-key-dim');
                     btn.textContent = item.name;
                     if (item.capo > 0) {
@@ -5232,9 +5858,14 @@
             }
 
             function calcCapo() {
-                const fret = (songKeyIdx - playKeyIdx + 12) % 12;
                 const fretEl = document.getElementById('capoFretValue');
                 const descEl = document.getElementById('capoFretDesc');
+                if (playKeyIdx < 0) {
+                    if (fretEl) fretEl.textContent = '-';
+                    if (descEl) descEl.textContent = '내가 칠 키를 선택하세요';
+                    return;
+                }
+                const fret = (songKeyIdx - playKeyIdx + 12) % 12;
                 if (fretEl) fretEl.textContent = fret;
                 if (descEl) {
                     if (fret === 0) {
