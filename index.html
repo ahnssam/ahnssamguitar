@@ -1655,15 +1655,25 @@
             font-size: 0.55rem; color: rgba(255,255,255,0.35);
             position: absolute; top: 3px; left: 5px;
         }
-        .loop-cell-chord {
-            font-size: 0.95rem; font-weight: 700; color: var(--white);
+        .loop-cell-halves {
+            display: flex; align-items: center; gap: 0;
+            width: 100%;
+        }
+        .loop-cell-half {
+            flex: 1; text-align: center; cursor: pointer;
+            font-size: 0.85rem; font-weight: 700; color: var(--white);
             font-family: 'Playfair Display', serif;
+            padding: 0.15rem 0; border-radius: 3px;
+            transition: background 0.15s;
         }
-        .loop-cell-chord.empty {
-            font-size: 0.7rem; color: rgba(255,255,255,0.2);
+        .loop-cell-half:hover {
+            background: rgba(82,168,114,0.2);
         }
-        .loop-cell-chord.inherited {
-            opacity: 0.35;
+        .loop-cell-half.empty {
+            font-size: 0.65rem; color: rgba(255,255,255,0.2); font-weight: 400;
+        }
+        .loop-cell-half + .loop-cell-half {
+            border-left: 1px solid rgba(255,255,255,0.1);
         }
         /* Root note picker popover */
         .loop-chord-picker {
@@ -4631,10 +4641,12 @@
             // Loop mode state
             let loopBars = 4;
             let loopRhythm = '8beat';
-            let loopChords = {};       // { measureIndex: 'C', ... }
+            let loopChords = {};       // { measureIndex: 'C', ... } — first half (beats 1-2)
+            let loopChordsB = {};      // { measureIndex: 'G', ... } — second half (beats 3-4)
             let loopMeasureIdx = 0;    // current measure being played
             let loopInitialized = false;
-            let loopPickerCell = null;  // currently open picker cell index
+            let loopPickerCell = null;  // { idx, half } or null
+
 
             // Drum rhythm patterns
             // ticksPerBeat: subdivision per beat (2 = eighths, 4 = sixteenths, 3 = triplet/6-8)
@@ -4772,7 +4784,7 @@
                 ];
                 const synthNodes = [];
                 const masterGain = audioCtx.createGain();
-                masterGain.gain.setValueAtTime(1.0, time);
+                masterGain.gain.setValueAtTime(0.35, time);
                 masterGain.connect(bus);
                 layers.forEach(function(l) {
                     const noise = audioCtx.createBufferSource();
@@ -5068,14 +5080,14 @@
             // Bass rhythm patterns: on = ticks where bass plays, off = ticks where bass chokes
             // soft = ticks where bass plays at reduced volume
             const BASS_PATTERNS = {
-                '8beat':   { on: [0, 3, 4], off: [2, 6], soft: [] },
-                '8beat2':  { on: [0, 3, 4], off: [2, 6], soft: [] },
-                '4beat':   { on: [0, 2], off: [1, 3], soft: [] },
-                '4beat2':  { on: [0, 1, 2, 3], off: [], soft: [] },
-                '16beat':  { on: [0, 7, 8], off: [4, 12], soft: [7] },
-                '16beat2': { on: [0, 3, 7, 9, 10], off: [4, 8, 14], soft: [] },
-                '16beatC': { on: [0, 2, 7, 10], off: [4, 8, 12], soft: [] },
-                'ballad':  { on: [0, 5, 6], off: [3, 9], soft: [5] }
+                '8beat':   { on: [0, 3, 4], off: [2, 6], quiet: [] },
+                '8beat2':  { on: [0, 3, 4], off: [2, 6], quiet: [] },
+                '4beat':   { on: [0, 2], off: [1, 3], quiet: [] },
+                '4beat2':  { on: [0, 1, 2, 3], off: [], quiet: [] },
+                '16beat':  { on: [0, 7, 8], off: [4, 12], quiet: [7] },
+                '16beat2': { on: [0, 3, 7, 9, 10], off: [4, 8, 14], quiet: [9] },
+                '16beatC': { on: [0, 2, 7, 10], off: [4, 8, 12], quiet: [] },
+                'ballad':  { on: [0, 5, 6], off: [3, 9], quiet: [5] }
             };
             let bassBusNode = null;
             let _activeBassGain = null;
@@ -5108,12 +5120,12 @@
                 }
             }
 
-            function playBass(note, time, soft) {
+            function playBass(note, time, velLevel) {
                 if (!note || !BASS_FREQ[note]) return;
                 // Choke previous bass note
                 chokeBass(time);
-                // Master gain for this note (used for choking)
-                var vol = soft ? 0.55 : 1.0;
+                // Master gain: normal or quiet
+                var vol = velLevel ? 0.3 : 0.7;
                 var noteGain = audioCtx.createGain();
                 noteGain.gain.value = vol;
                 noteGain.connect(getBassBus());
@@ -5354,13 +5366,15 @@
                         loopMeasureIdx = mIdx;
                         highlightLoopCell(mIdx, time);
                     }
-                    // Bass rhythm pattern
+                    // Bass rhythm pattern — determine half (a=beats 1-2, b=beats 3-4)
                     var bp = BASS_PATTERNS[r];
                     if (bp) {
                         if (bp.on.indexOf(t) !== -1) {
-                            var rootNote = getEffectiveRoot(loopMeasureIdx);
-                            var isSoft = bp.soft && bp.soft.indexOf(t) !== -1;
-                            if (rootNote) playBass(rootNote, time, isSoft);
+                            var mid = measureLen / 2;
+                            var half = t < mid ? 'a' : 'b';
+                            var rootNote = getEffectiveRoot(loopMeasureIdx, half);
+                            var velLevel = (bp.quiet && bp.quiet.indexOf(t) !== -1) ? 1 : 0;
+                            if (rootNote) playBass(rootNote, time, velLevel);
                         } else if (bp.off.indexOf(t) !== -1) {
                             chokeBass(time);
                         }
@@ -5574,8 +5588,22 @@
                 if (toggle) toggle.classList.remove('open');
             }
             // Get effective root note for a measure (inherits from previous measures)
-            function getEffectiveRoot(idx) {
-                for (var i = idx; i >= 0; i--) {
+            // half: 'a' (beats 1-2) or 'b' (beats 3-4)
+            function getEffectiveRoot(idx, half) {
+                if (half === 'b') {
+                    // B half: check own B, then own A, then search backwards
+                    if (loopChordsB[idx]) return loopChordsB[idx];
+                    if (loopChords[idx]) return loopChords[idx];
+                    for (var i = idx - 1; i >= 0; i--) {
+                        if (loopChordsB[i]) return loopChordsB[i];
+                        if (loopChords[i]) return loopChords[i];
+                    }
+                    return null;
+                }
+                // A half: check own A, then search backwards (B then A of previous)
+                if (loopChords[idx]) return loopChords[idx];
+                for (var i = idx - 1; i >= 0; i--) {
+                    if (loopChordsB[i]) return loopChordsB[i];
                     if (loopChords[i]) return loopChords[i];
                 }
                 return null;
@@ -5593,38 +5621,55 @@
                     num.className = 'loop-cell-num';
                     num.textContent = (i + 1);
                     cell.appendChild(num);
-                    var directRoot = loopChords[i];
-                    var inherited = !directRoot ? getEffectiveRoot(i) : null;
-                    var displayNote = directRoot || inherited;
-                    var chord = document.createElement('span');
-                    if (directRoot) {
-                        chord.className = 'loop-cell-chord';
-                        chord.textContent = directRoot;
-                    } else if (inherited) {
-                        chord.className = 'loop-cell-chord empty';
-                        chord.textContent = '+';
+                    var halves = document.createElement('div');
+                    halves.className = 'loop-cell-halves';
+                    // Half A (beats 1-2)
+                    var halfA = document.createElement('span');
+                    var directA = loopChords[i];
+                    if (directA) {
+                        halfA.className = 'loop-cell-half';
+                        halfA.textContent = directA;
                     } else {
-                        chord.className = 'loop-cell-chord empty';
-                        chord.textContent = '+';
+                        halfA.className = 'loop-cell-half empty';
+                        halfA.textContent = '+';
                     }
-                    cell.appendChild(chord);
-                    (function(idx, cellEl) {
-                        cellEl.onclick = function(e) {
+                    // Half B (beats 3-4)
+                    var halfB = document.createElement('span');
+                    var directB = loopChordsB[i];
+                    if (directB) {
+                        halfB.className = 'loop-cell-half';
+                        halfB.textContent = directB;
+                    } else {
+                        halfB.className = 'loop-cell-half empty';
+                        halfB.textContent = '+';
+                    }
+                    (function(idx, elA, elB) {
+                        elA.onclick = function(e) {
                             e.stopPropagation();
-                            toggleLoopPicker(idx, cellEl);
+                            toggleLoopPicker(idx, 'a', elA.parentElement.parentElement);
                         };
-                    })(i, cell);
+                        elB.onclick = function(e) {
+                            e.stopPropagation();
+                            toggleLoopPicker(idx, 'b', elB.parentElement.parentElement);
+                        };
+                    })(i, halfA, halfB);
+                    halves.appendChild(halfA);
+                    halves.appendChild(halfB);
+                    cell.appendChild(halves);
                     grid.appendChild(cell);
                 }
             }
-            function toggleLoopPicker(idx, cellEl) {
+            function toggleLoopPicker(idx, half, cellEl) {
                 // Close existing picker and rhythm drawer
                 closeLoopPicker();
                 closeLoopRhythmDrawer();
-                if (loopPickerCell === idx) { loopPickerCell = null; return; }
-                loopPickerCell = idx;
+                if (loopPickerCell && loopPickerCell.idx === idx && loopPickerCell.half === half) {
+                    loopPickerCell = null; return;
+                }
+                loopPickerCell = { idx: idx, half: half };
+                var chordMap = half === 'b' ? loopChordsB : loopChords;
                 var picker = document.createElement('div');
-                // Smart positioning: determine column position
+                // Smart positioning
                 var colsPerRow = 4;
                 var col = idx % colsPerRow;
                 var posClass = col < 2 ? 'pos-right' : 'pos-left';
@@ -5634,10 +5679,10 @@
                 pickerGrid.className = 'loop-chord-picker-grid';
                 LOOP_ROOTS.forEach(function(note) {
                     var btn = document.createElement('button');
-                    btn.className = 'loop-chord-pick-btn' + (loopChords[idx] === note ? ' selected' : '');
+                    btn.className = 'loop-chord-pick-btn' + (chordMap[idx] === note ? ' selected' : '');
                     btn.textContent = note;
                     btn.onclick = function() {
-                        loopChords[idx] = note;
+                        chordMap[idx] = note;
                         closeLoopPicker();
                         loopPickerCell = null;
                         renderLoopGrid();
@@ -5649,7 +5694,7 @@
                 clearBtn.className = 'loop-chord-clear';
                 clearBtn.textContent = '삭제';
                 clearBtn.onclick = function() {
-                    delete loopChords[idx];
+                    delete chordMap[idx];
                     closeLoopPicker();
                     loopPickerCell = null;
                     renderLoopGrid();
@@ -5730,12 +5775,14 @@
             function stopMetronome() {
                 if (timerId) clearInterval(timerId);
                 timerId = null;
-                // Clean up open hihat & bass
+                // Clean up open hihat & bass on stop
+                if (audioCtx) {
+                    var now = audioCtx.currentTime;
+                    try { chokeOpenHihat(now); } catch(e) {}
+                    try { chokeBass(now); } catch(e) {}
+                }
                 _openHihatNode = null;
                 _openHihatGain = null;
-                if (audioCtx && _activeBassGain) {
-                    try { chokeBass(audioCtx.currentTime); } catch(e) {}
-                }
                 bassBusNode = null;
 
                 if (silentAudio) silentAudio.pause();
