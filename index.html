@@ -4460,9 +4460,9 @@
                 '8beat2':   { ticksPerBeat: 2, beatsPerMeasure: 4,
                               kick: [0, 3, 4], snare: [2, 6],
                               hihat: [0, 1, 2, 3, 4, 5, 6, 7] },
-                'ballad':   { ticksPerBeat: 3, beatsPerMeasure: 2,
-                              kick: [0], snare: [3],
-                              hihat: [0, 1, 2, 3, 4, 5] },
+                'ballad':   { ticksPerBeat: 3, beatsPerMeasure: 4,
+                              kick: [0, 5, 6], snare: [3, 9],
+                              hihat: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
                 '16beat':   { ticksPerBeat: 4, beatsPerMeasure: 4,
                               kick: [0, 8], snare: [4, 12],
                               hihat: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] },
@@ -4736,8 +4736,8 @@
             // level: 2 = accent (on-beat), 1 = normal (& / off-beat), 0 = ghost (e or a — 16th subdivisions)
             function playHiHat(time, level) {
                 if (typeof level === 'boolean') level = level ? 2 : 1; // back-compat
-                const mult = level === 2 ? 1.0 : level === 1 ? 0.64 : 0.38;
-                const sampleVel = level === 2 ? 0.5 : level === 1 ? 0.32 : 0.18;
+                const mult = level === 2 ? 1.0 : level === 1 ? 0.64 : 0.18;
+                const sampleVel = level === 2 ? 0.5 : level === 1 ? 0.32 : 0.09;
                 // Choke open hihat when closed hihat plays
                 chokeOpenHihat(time);
                 if (playSample('hihat', time, sampleVel)) return;
@@ -4811,7 +4811,8 @@
                         // 16th: 0 = beat (accent), 2 = & (normal), 1/3 = e/a (ghost)
                         level = sub === 0 ? 2 : sub === 2 ? 1 : 0;
                     } else if (p.ticksPerBeat === 2) {
-                        level = sub === 0 ? 2 : 1;
+                        // 8th: on-beat = accent, off-beat(&) = ghost
+                        level = sub === 0 ? 2 : 0;
                     } else {
                         level = sub === 0 ? 2 : 1;
                     }
