@@ -124,6 +124,10 @@
         @media (max-width: 768px) {
             nav { padding: 1rem 1.5rem; }
             nav.scrolled { padding: 0.6rem 1.5rem; }
+            .nav-logo img {
+                height: 42px !important;
+                margin-left: 0 !important;
+            }
             .nav-links, .nav-social { display: none; }
             .menu-toggle { display: block; }
             .mobile-menu {
@@ -141,6 +145,29 @@
                 font-size: 1.3rem; letter-spacing: 0.2em;
                 text-transform: uppercase;
             }
+        }
+
+        /* Intermediate: narrow desktop / portrait monitor (769px ~ 1150px) */
+        @media (min-width: 769px) and (max-width: 1150px) {
+            nav { padding: 1rem 1.5rem; }
+            nav.scrolled { padding: 0.8rem 1.5rem; }
+            .nav-logo img {
+                height: 58px !important;
+                margin-left: 10px !important;
+            }
+            .nav-links {
+                gap: 1.3rem;
+                transform: none;
+                flex-wrap: nowrap;
+            }
+            .nav-links li { white-space: nowrap; }
+            .nav-links a {
+                font-size: 0.72rem;
+                letter-spacing: 0.08em;
+                white-space: nowrap;
+            }
+            .nav-social { gap: 0.7rem; margin-right: 10px; }
+            .nav-social a { font-size: 0.9rem; }
         }
 
         /* ===== HEADER ===== */
@@ -902,6 +929,36 @@
         function toggleMenu() {
             document.getElementById('mobileMenu').classList.toggle('open');
         }
+    </script>
+    <script>
+    (function() {
+        // Purchase button click
+        document.querySelectorAll('.btn-purchase').forEach(function(a) {
+            a.addEventListener('click', function() {
+                var title = document.querySelector('.product-title');
+                gtag('event', 'tab_purchase_click', { title: title ? title.textContent.trim() : '', page: 'tab-detail' });
+            });
+        });
+        // Add to cart button
+        document.querySelectorAll('.btn-cart').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var title = document.querySelector('.product-title');
+                gtag('event', 'tab_add_to_cart', { title: title ? title.textContent.trim() : '' });
+            });
+        });
+        // Checkout button
+        document.querySelectorAll('.cart-checkout-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                gtag('event', 'tab_checkout');
+            });
+        });
+        // Nav social links
+        document.querySelectorAll('.nav-social a').forEach(function(a) {
+            a.addEventListener('click', function() {
+                gtag('event', 'social_click', { platform: a.getAttribute('aria-label') || '', page: 'tab-detail' });
+            });
+        });
+    })();
     </script>
 
 </body>
