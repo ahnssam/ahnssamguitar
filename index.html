@@ -5065,10 +5065,22 @@
                 'E': 41.20, 'F': 43.65, 'F#': 46.25, 'G': 49.00,
                 'G#': 51.91, 'A': 55.00, 'A#': 58.27, 'B': 61.74
             };
+            // Bass rhythm patterns: on = ticks where bass plays, off = ticks where bass chokes
+            const BASS_PATTERNS = {
+                '8beat':   { on: [0, 3, 4], off: [] },
+                '8beat2':  { on: [0, 3, 4], off: [] },
+                '4beat':   { on: [0, 2], off: [1, 3] },
+                '4beat2':  { on: [0, 1, 2, 3], off: [] },
+                '16beat':  { on: [0, 7], off: [4, 12] },
+                '16beat2': { on: [0, 7, 9], off: [4, 8, 14] },
+                '16beatC': { on: [0, 2, 7, 10], off: [4, 8, 12] },
+                'ballad':  { on: [0, 5], off: [3, 9] }
+            };
             let bassBusNode = null;
+            let _activeBassGain = null;
+            let _activeBassNodes = [];
             function getBassBus() {
                 if (bassBusNode) return bassBusNode;
-                // Separate bus for bass with slight compression feel
                 const comp = audioCtx.createDynamicsCompressor();
                 comp.threshold.value = -18;
                 comp.knee.value = 12;
@@ -5079,10 +5091,32 @@
                 bassBusNode = comp;
                 return bassBusNode;
             }
+            function chokeBass(time) {
+                if (_activeBassGain) {
+                    try {
+                        _activeBassGain.gain.cancelScheduledValues(time);
+                        _activeBassGain.gain.setValueAtTime(_activeBassGain.gain.value, time);
+                        _activeBassGain.gain.exponentialRampToValueAtTime(0.001, time + 0.02);
+                    } catch(e) {}
+                    _activeBassNodes.forEach(function(n) {
+                        try { n.stop(time + 0.03); } catch(e) {}
+                    });
+                    _activeBassGain = null;
+                    _activeBassNodes = [];
+                }
+            }
 
             function playBass(note, time) {
                 if (!note || !BASS_FREQ[note]) return;
-                // Try sample first (keyed by note name: C, C#, D, ...)
+                // Choke previous bass note
+                chokeBass(time);
+                // Master gain for this note (used for choking)
+                var noteGain = audioCtx.createGain();
+                noteGain.gain.value = 1.0;
+                noteGain.connect(getBassBus());
+                _activeBassGain = noteGain;
+                _activeBassNodes = [];
+                // Try sample first
                 var buf = bassSamples[note];
                 if (buf) {
                     var src = audioCtx.createBufferSource();
@@ -5090,18 +5124,16 @@
                     var g = audioCtx.createGain();
                     g.gain.value = 0.7;
                     src.connect(g);
-                    g.connect(getBassBus());
+                    g.connect(noteGain);
                     src.start(time);
+                    _activeBassNodes.push(src);
                     return;
                 }
                 // Synth fallback
                 const freq = BASS_FREQ[note];
-                const bus = getBassBus();
-                // dur based on BPM: one full beat length, min 0.8s, max 2.0s
-                const beatLen = 60.0 / bpm;
-                const dur = Math.max(0.8, Math.min(2.0, beatLen * 2));
+                const dur = 4.0; // long sustain — choke pattern handles cutoff
 
-                // 1. Fundamental — warm sine with slight pitch bend (finger pluck)
+                // 1. Fundamental
                 const fund = audioCtx.createOscillator();
                 fund.type = 'sine';
                 fund.frequency.setValueAtTime(freq * 1.006, time);
@@ -5109,14 +5141,15 @@
                 const fundGain = audioCtx.createGain();
                 fundGain.gain.setValueAtTime(0.0001, time);
                 fundGain.gain.exponentialRampToValueAtTime(0.50, time + 0.005);
-                fundGain.gain.setTargetAtTime(0.38, time + 0.04, 0.25);
-                fundGain.gain.setTargetAtTime(0.0001, time + dur * 0.85, 0.12);
+                fundGain.gain.setTargetAtTime(0.38, time + 0.04, 0.4);
+                fundGain.gain.setTargetAtTime(0.0001, time + dur * 0.85, 0.2);
                 fund.connect(fundGain);
-                fundGain.connect(bus);
+                fundGain.connect(noteGain);
                 fund.start(time);
-                fund.stop(time + dur + 0.2);
+                fund.stop(time + dur + 0.3);
+                _activeBassNodes.push(fund);
 
-                // 2. 2nd harmonic — adds warmth (triangle for softer tone)
+                // 2. 2nd harmonic
                 const harm2 = audioCtx.createOscillator();
                 harm2.type = 'triangle';
                 harm2.frequency.setValueAtTime(freq * 2.003, time);
@@ -5124,28 +5157,30 @@
                 const h2Gain = audioCtx.createGain();
                 h2Gain.gain.setValueAtTime(0.0001, time);
                 h2Gain.gain.exponentialRampToValueAtTime(0.18, time + 0.004);
-                h2Gain.gain.setTargetAtTime(0.10, time + 0.04, 0.18);
-                h2Gain.gain.setTargetAtTime(0.0001, time + dur * 0.75, 0.10);
+                h2Gain.gain.setTargetAtTime(0.10, time + 0.04, 0.3);
+                h2Gain.gain.setTargetAtTime(0.0001, time + dur * 0.75, 0.15);
                 harm2.connect(h2Gain);
-                h2Gain.connect(bus);
+                h2Gain.connect(noteGain);
                 harm2.start(time);
-                harm2.stop(time + dur + 0.2);
+                harm2.stop(time + dur + 0.3);
+                _activeBassNodes.push(harm2);
 
-                // 3. 3rd harmonic — gives the bass "growl" character
+                // 3. 3rd harmonic
                 const harm3 = audioCtx.createOscillator();
                 harm3.type = 'sine';
                 harm3.frequency.setValueAtTime(freq * 3, time);
                 const h3Gain = audioCtx.createGain();
                 h3Gain.gain.setValueAtTime(0.0001, time);
                 h3Gain.gain.exponentialRampToValueAtTime(0.08, time + 0.003);
-                h3Gain.gain.setTargetAtTime(0.03, time + 0.05, 0.12);
-                h3Gain.gain.setTargetAtTime(0.0001, time + dur * 0.6, 0.08);
+                h3Gain.gain.setTargetAtTime(0.03, time + 0.05, 0.2);
+                h3Gain.gain.setTargetAtTime(0.0001, time + dur * 0.6, 0.12);
                 harm3.connect(h3Gain);
-                h3Gain.connect(bus);
+                h3Gain.connect(noteGain);
                 harm3.start(time);
-                harm3.stop(time + dur + 0.2);
+                harm3.stop(time + dur + 0.3);
+                _activeBassNodes.push(harm3);
 
-                // 4. Finger noise / string attack — short noise burst through bandpass
+                // 4. Finger noise attack
                 const noise = audioCtx.createBufferSource();
                 noise.buffer = getNoiseBuffer();
                 const nBP = audioCtx.createBiquadFilter();
@@ -5158,27 +5193,29 @@
                 nGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.03);
                 noise.connect(nBP);
                 nBP.connect(nGain);
-                nGain.connect(bus);
+                nGain.connect(noteGain);
                 noise.start(time);
                 noise.stop(time + 0.05);
+                _activeBassNodes.push(noise);
 
-                // 5. Sub-bass layer — octave below for weight (long sustain)
+                // 5. Sub-bass
                 const sub = audioCtx.createOscillator();
                 sub.type = 'sine';
                 sub.frequency.value = freq / 2;
                 const subGain = audioCtx.createGain();
                 subGain.gain.setValueAtTime(0.0001, time);
                 subGain.gain.exponentialRampToValueAtTime(0.18, time + 0.012);
-                subGain.gain.setTargetAtTime(0.12, time + 0.06, 0.2);
-                subGain.gain.setTargetAtTime(0.0001, time + dur * 0.85, 0.12);
+                subGain.gain.setTargetAtTime(0.12, time + 0.06, 0.35);
+                subGain.gain.setTargetAtTime(0.0001, time + dur * 0.85, 0.2);
                 const subLP = audioCtx.createBiquadFilter();
                 subLP.type = 'lowpass';
                 subLP.frequency.value = freq;
                 sub.connect(subLP);
                 subLP.connect(subGain);
-                subGain.connect(bus);
+                subGain.connect(noteGain);
                 sub.start(time);
-                sub.stop(time + dur + 0.2);
+                sub.stop(time + dur + 0.3);
+                _activeBassNodes.push(sub);
             }
 
             // Voice count patterns: which sample number (1-4) to play per beat index
@@ -5313,9 +5350,16 @@
                         const mIdx = Math.floor(globalTick / measureLen);
                         loopMeasureIdx = mIdx;
                         highlightLoopCell(mIdx, time);
-                        // Play bass root note on beat 1 of each measure (inherits from previous)
-                        const rootNote = getEffectiveRoot(mIdx);
-                        if (rootNote) playBass(rootNote, time);
+                    }
+                    // Bass rhythm pattern
+                    var bp = BASS_PATTERNS[r];
+                    if (bp) {
+                        if (bp.on.indexOf(t) !== -1) {
+                            var rootNote = getEffectiveRoot(loopMeasureIdx);
+                            if (rootNote) playBass(rootNote, time);
+                        } else if (bp.off.indexOf(t) !== -1) {
+                            chokeBass(time);
+                        }
                     }
                 } else if (soundMode === 'drums') {
                     const p = DRUM_PATTERNS[drumRhythm] || DRUM_PATTERNS['8beat'];
@@ -5682,9 +5726,12 @@
             function stopMetronome() {
                 if (timerId) clearInterval(timerId);
                 timerId = null;
-                // Clean up open hihat & bass bus
+                // Clean up open hihat & bass
                 _openHihatNode = null;
                 _openHihatGain = null;
+                if (audioCtx && _activeBassGain) {
+                    try { chokeBass(audioCtx.currentTime); } catch(e) {}
+                }
                 bassBusNode = null;
 
                 if (silentAudio) silentAudio.pause();
