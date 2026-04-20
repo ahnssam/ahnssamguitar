@@ -386,6 +386,8 @@
         /* Tools Drawer */
         .tools-overlay {
             position: fixed; inset: 0;
+            height: 100vh;
+            height: 100dvh;
             background: rgba(0,0,0,0.5);
             opacity: 0;
             visibility: hidden;
@@ -402,6 +404,7 @@
             top: 0; right: 0;
             width: 380px; max-width: 100vw;
             height: 100vh;
+            height: 100dvh;
             background: #1a2421;
             color: var(--white);
             transform: translateX(100%);
@@ -485,7 +488,7 @@
             overflow-y: auto;
             overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
-            overscroll-behavior: contain;
+            overscroll-behavior: auto;
             min-height: 0;
             display: flex;
             flex-direction: column;
@@ -2224,6 +2227,71 @@
             50% { transform: translateY(-8px); }
         }
         @keyframes rotateRing { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* --- Hero photos: bump / push on hover --- */
+        /* Uses the separate `scale`/`translate`/`rotate` CSS properties
+           so they stack cleanly on top of the existing floatPhoto/
+           centering transforms without interfering. */
+        .hero-photo-circle {
+            cursor: pointer;
+            transition:
+                scale 0.4s cubic-bezier(0.22, 1.35, 0.4, 1),
+                translate 0.4s cubic-bezier(0.22, 1.35, 0.4, 1),
+                rotate 0.4s cubic-bezier(0.22, 1.35, 0.4, 1),
+                box-shadow 0.4s ease;
+            scale: 1;
+            translate: 0 0;
+            rotate: 0deg;
+        }
+        .hero-photo-circle:hover {
+            box-shadow: 0 14px 40px rgba(0,0,0,0.28);
+            z-index: 5;
+        }
+
+        /* Main grows on its own hover */
+        .hero-photo-main:hover { scale: 1.05; }
+
+        /* Main hovered → push the right-side subs outward,
+           and nudge the left sub3 a bit too */
+        .hero-visual:has(.hero-photo-main:hover) .hero-photo-sub1 {
+            translate: 26px -4px;
+            rotate: 4deg;
+        }
+        .hero-visual:has(.hero-photo-main:hover) .hero-photo-sub2 {
+            translate: 22px 6px;
+            rotate: -3deg;
+        }
+        .hero-visual:has(.hero-photo-main:hover) .hero-photo-sub3 {
+            translate: -16px 2px;
+            rotate: -3deg;
+        }
+
+        /* Sub1 hovered → sub1 grows, main gets tapped toward lower-left */
+        .hero-photo-sub1:hover { scale: 1.05; }
+        .hero-visual:has(.hero-photo-sub1:hover) .hero-photo-main {
+            translate: -14px 6px;
+            rotate: -2deg;
+        }
+
+        /* Sub2 hovered → sub2 grows, main gets tapped toward upper-left */
+        .hero-photo-sub2:hover { scale: 1.05; }
+        .hero-visual:has(.hero-photo-sub2:hover) .hero-photo-main {
+            translate: -14px -6px;
+            rotate: 2deg;
+        }
+
+        /* Sub3 hovered → sub3 grows, main gets tapped to the right */
+        .hero-photo-sub3:hover { scale: 1.05; }
+        .hero-visual:has(.hero-photo-sub3:hover) .hero-photo-main {
+            translate: 14px 0;
+            rotate: 2deg;
+        }
+
+        /* Respect reduced-motion preference */
+        @media (prefers-reduced-motion: reduce) {
+            .hero-photo-circle { transition: none; }
+        }
+        /* --- end hero photos hover --- */
         .guitar-icon {
             font-size: 8rem; color: var(--white);
             opacity: 0.9; filter: drop-shadow(0 0 30px rgba(255,255,255,0.2));
@@ -4725,24 +4793,22 @@
         // touch-action:none CSS + the touchmove preventDefault below.
         let _savedScrollY = 0;
         function lockBodyScroll() {
+            // We intentionally do NOT position:fixed the body anymore,
+            // because on mobile browsers (Samsung Internet, Chrome
+            // Android) that prevents the URL bar from auto-hiding when
+            // the user drags inside the drawer. We just remember the
+            // current scroll position so we can restore it on close.
             if (document.body.dataset.scrollLocked === '1') return;
             _savedScrollY = window.scrollY || window.pageYOffset || 0;
             document.body.dataset.scrollLocked = '1';
-            document.body.style.position = 'fixed';
-            document.body.style.top = '-' + _savedScrollY + 'px';
-            document.body.style.left = '0';
-            document.body.style.right = '0';
-            document.body.style.overflow = 'hidden';
         }
         function unlockBodyScroll() {
             if (document.body.dataset.scrollLocked !== '1') return;
             document.body.dataset.scrollLocked = '';
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.left = '';
-            document.body.style.right = '';
-            document.body.style.overflow = '';
-            window.scrollTo(0, _savedScrollY);
+            // Do not force-restore scroll position — the URL bar may
+            // have collapsed while the drawer was open, and jumping
+            // back to the old offset would look jarring. Leave the
+            // page wherever the user ended up.
         }
         // Prevent background scroll when interacting inside the drawer
         (function blockDrawerScrollLeak() {
