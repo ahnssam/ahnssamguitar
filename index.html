@@ -1260,7 +1260,8 @@
         .et-pitch-pick-chip {
             display: inline-flex;
             align-items: center;
-            gap: 0.25rem;
+            justify-content: center;
+            min-width: 2.4rem;
             padding: 0.3rem 0.7rem;
             border-radius: 16px;
             font-size: 0.8rem;
@@ -1270,10 +1271,12 @@
             background: rgba(82, 168, 114, 0.15);
             color: var(--green-pale);
         }
-        .et-pitch-pick-chip .pick-num {
-            font-size: 0.65rem;
-            opacity: 0.6;
-            margin-right: 0.1rem;
+        .et-pitch-pick-chip.empty {
+            opacity: 0.4;
+            border-style: dashed;
+            border-color: rgba(255,255,255,0.35);
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.5);
         }
         .et-choices {
             display: grid;
@@ -1296,10 +1299,19 @@
         .et-choice-btn:active {
             transform: scale(0.96);
         }
+        .et-choice-btn.selected {
+            background: rgba(114, 196, 146, 0.28);
+            border-color: var(--green-mid);
+            color: #ffffff;
+            font-weight: 700;
+            box-shadow: 0 0 14px rgba(114, 196, 146, 0.28);
+        }
         .et-choice-btn.correct {
-            background: rgba(74, 222, 128, 0.25);
-            border-color: #4ade80;
-            color: #4ade80;
+            background: rgba(114, 196, 146, 0.28);
+            border-color: var(--green-mid);
+            color: #ffffff;
+            font-weight: 700;
+            box-shadow: 0 0 14px rgba(114, 196, 146, 0.28);
         }
         .et-choice-btn.wrong {
             background: rgba(239, 68, 68, 0.2);
@@ -1309,6 +1321,9 @@
         .et-choice-btn.disabled {
             pointer-events: none;
             opacity: 0.5;
+        }
+        .et-choice-btn.correct.disabled {
+            opacity: 1;
         }
         .et-feedback {
             text-align: center;
@@ -3590,7 +3605,7 @@
                     <button type="button" class="time-sig-btn" data-rhythm="16beat" onclick="updateDrumRhythm('16beat')">16비트 A</button>
                     <button type="button" class="time-sig-btn" data-rhythm="16beat2" onclick="updateDrumRhythm('16beat2')">16비트 B</button>
                     <button type="button" class="time-sig-btn" data-rhythm="16beatC" onclick="updateDrumRhythm('16beatC')">16비트 C</button>
-                    <button type="button" class="time-sig-btn" data-rhythm="ballad" onclick="updateDrumRhythm('ballad')">락발라드</button>
+                    <button type="button" class="time-sig-btn" data-rhythm="ballad" onclick="updateDrumRhythm('ballad')">셔플락</button>
                 </div>
             </div>
             <button class="metronome-btn" id="metronomeBtn" onclick="toggleMetronome()">
@@ -3669,9 +3684,9 @@
                         <i class="fas fa-volume-up"></i>
                         <span>음정 듣기</span>
                     </button>
-                    <button class="et-next-btn" id="etNextBtn" onclick="etPlayQuestion()">
-                        <i class="fas fa-forward"></i>
-                        <span>다음 문제</span>
+                    <button class="et-next-btn" id="etNextBtn" onclick="etIntervalNextBtn()" data-state="check-disabled">
+                        <i class="fas fa-check"></i>
+                        <span>정답확인</span>
                     </button>
                 </div>
                 <div class="et-choices" id="etChoices"></div>
@@ -3729,9 +3744,9 @@
                         <i class="fas fa-volume-up"></i>
                         <span>음 듣기</span>
                     </button>
-                    <button class="et-next-btn" id="etPitchNextBtn" onclick="etPitchPlayQuestion()">
-                        <i class="fas fa-forward"></i>
-                        <span>다음 문제</span>
+                    <button class="et-next-btn" id="etPitchNextBtn" onclick="etPitchNextBtnClick()" data-state="check-disabled">
+                        <i class="fas fa-check"></i>
+                        <span>정답확인</span>
                     </button>
                 </div>
                 <div class="et-pitch-picks" id="etPitchPicks"></div>
@@ -3783,9 +3798,9 @@
                         <i class="fas fa-volume-up"></i>
                         <span>코드 듣기</span>
                     </button>
-                    <button class="et-next-btn" id="etChordNextBtn" onclick="etChordPlayQuestion()">
-                        <i class="fas fa-forward"></i>
-                        <span>다음 문제</span>
+                    <button class="et-next-btn" id="etChordNextBtn" onclick="etChordNextBtnClick()" data-state="check-disabled">
+                        <i class="fas fa-check"></i>
+                        <span>정답확인</span>
                     </button>
                 </div>
                 <div class="et-choices" id="etChordChoices"></div>
@@ -6036,7 +6051,7 @@
                 '4beat': '4비트 A', '4beat2': '4비트 B',
                 '8beat': '8비트 A', '8beat2': '8비트 B',
                 '16beat': '16비트 A', '16beat2': '16비트 B', '16beatC': '16비트 C',
-                'ballad': '락발라드'
+                'ballad': '셔플락'
             };
             function initLoop() {
                 if (loopInitialized) return;
@@ -6949,12 +6964,12 @@
                 const chosen = intervals[Math.floor(Math.random() * intervals.length)];
                 _etAnswer = chosen.semitones;
                 _etAnswered = false;
-                // Hide next button
-                var nb = document.getElementById('etNextBtn');
-                if (nb) nb.classList.remove('show');
+                _etSelectedSemi = null;
+                // Reset next button to disabled "정답확인" state
+                setEtBtnState('etNextBtn', 'check-disabled');
                 // Reset button states
                 document.querySelectorAll('#etChoices .et-choice-btn').forEach(b => {
-                    b.classList.remove('correct', 'wrong', 'disabled');
+                    b.classList.remove('correct', 'wrong', 'disabled', 'selected');
                 });
                 document.getElementById('etFeedback').textContent = '';
                 document.getElementById('etFeedback').className = 'et-feedback';
@@ -6980,7 +6995,42 @@
                 }
             };
 
+            // ---- Unified next-button state helper ----
+            function setEtBtnState(btnId, state) {
+                var btn = document.getElementById(btnId);
+                if (!btn) return;
+                btn.dataset.state = state;
+                var icon = btn.querySelector('i');
+                var label = btn.querySelector('span');
+                if (state === 'check-disabled') {
+                    btn.classList.remove('show');
+                    if (icon) icon.className = 'fas fa-check';
+                    if (label) label.textContent = '정답확인';
+                } else if (state === 'check-active') {
+                    btn.classList.add('show');
+                    if (icon) icon.className = 'fas fa-check';
+                    if (label) label.textContent = '정답확인';
+                } else if (state === 'next-active') {
+                    btn.classList.add('show');
+                    if (icon) icon.className = 'fas fa-forward';
+                    if (label) label.textContent = '다음 문제';
+                }
+            }
+
+            let _etSelectedSemi = null;
+
+            // On-click of a choice: just mark the selection (don't grade yet)
             window.etCheckAnswer = function(semi) {
+                if (_etAnswered) return;
+                _etSelectedSemi = semi;
+                document.querySelectorAll('#etChoices .et-choice-btn').forEach(function(b) {
+                    b.classList.toggle('selected', parseInt(b.dataset.semi) === semi);
+                });
+                setEtBtnState('etNextBtn', 'check-active');
+            };
+
+            // Grading (runs when user presses "정답확인")
+            function etGradeAnswer(semi) {
                 if (_etAnswered) return;
                 _etAnswered = true;
                 _etStats.total++;
@@ -6990,15 +7040,14 @@
                 const correctIv = ALL_INTERVALS.find(i => i.semitones === _etAnswer);
                 const pickedIv = ALL_INTERVALS.find(i => i.semitones === semi);
 
-                // Highlight buttons
                 document.querySelectorAll('#etChoices .et-choice-btn').forEach(b => {
                     const s = parseInt(b.dataset.semi);
+                    b.classList.remove('selected');
                     if (s === _etAnswer) b.classList.add('correct');
                     else if (s === semi && !isCorrect) b.classList.add('wrong');
                     b.classList.add('disabled');
                 });
 
-                // Build note info string
                 var baseName = freqToNoteName(_etBaseFreq);
                 var targetName = freqToNoteName(semitonesToFreq(_etBaseFreq, _etAnswer));
                 var noteInfo = baseName + ' → ' + targetName;
@@ -7015,7 +7064,6 @@
                 }
                 updateETScores();
 
-                // Add to history
                 _etHistory.push({
                     correct: isCorrect,
                     answerSemi: _etAnswer,
@@ -7026,9 +7074,17 @@
                 });
                 renderETHistory();
 
-                // Show next button
-                var nb = document.getElementById('etNextBtn');
-                if (nb) nb.classList.add('show');
+                setEtBtnState('etNextBtn', 'next-active');
+            }
+
+            window.etIntervalNextBtn = function() {
+                var btn = document.getElementById('etNextBtn');
+                if (!btn || !btn.classList.contains('show')) return;
+                if (btn.dataset.state === 'next-active') {
+                    etPlayQuestion();
+                } else if (btn.dataset.state === 'check-active') {
+                    if (_etSelectedSemi !== null) etGradeAnswer(_etSelectedSemi);
+                }
             };
 
             function renderETHistory() {
@@ -7088,19 +7144,19 @@
                 _etStats = { correct: 0, total: 0, streak: 0 };
                 _etAnswer = null;
                 _etAnswered = false;
+                _etSelectedSemi = null;
                 _etHistory = [];
                 updateETScores();
                 document.getElementById('etFeedback').textContent = '';
                 document.getElementById('etFeedback').className = 'et-feedback';
-                var nb = document.getElementById('etNextBtn');
-                if (nb) nb.classList.remove('show');
+                setEtBtnState('etNextBtn', 'check-disabled');
                 document.getElementById('etHistory').innerHTML = '';
                 var ht = document.getElementById('etHistoryToggle');
                 if (ht) { ht.style.display = 'none'; ht.classList.remove('open'); }
                 var hd = document.getElementById('etHistoryDrawer');
                 if (hd) hd.classList.remove('open');
                 document.querySelectorAll('#etChoices .et-choice-btn').forEach(b => {
-                    b.classList.remove('correct', 'wrong', 'disabled');
+                    b.classList.remove('correct', 'wrong', 'disabled', 'selected');
                 });
             };
 
@@ -7162,11 +7218,10 @@
                 var idx = CHORD_TYPES.indexOf(picked);
                 _etChordAnswer = idx;
                 _etChordAnswered = false;
-                // Hide next button
-                var cnb = document.getElementById('etChordNextBtn');
-                if (cnb) cnb.classList.remove('show');
+                _etSelectedChordIdx = null;
+                setEtBtnState('etChordNextBtn', 'check-disabled');
                 document.querySelectorAll('#etChordChoices .et-choice-btn').forEach(b => {
-                    b.classList.remove('correct', 'wrong', 'disabled');
+                    b.classList.remove('correct', 'wrong', 'disabled', 'selected');
                 });
                 document.getElementById('etChordFeedback').textContent = '';
                 document.getElementById('etChordFeedback').className = 'et-feedback';
@@ -7212,7 +7267,20 @@
                 return '<div class="et-chord-diagram">' + window._renderChordSVG(found) + '</div>';
             }
 
+            let _etSelectedChordIdx = null;
+
+            // Select-only (click a choice)
             window.etChordCheckAnswer = function(ci) {
+                if (_etChordAnswered) return;
+                _etSelectedChordIdx = ci;
+                document.querySelectorAll('#etChordChoices .et-choice-btn').forEach(function(b) {
+                    b.classList.toggle('selected', parseInt(b.dataset.ci) === ci);
+                });
+                setEtBtnState('etChordNextBtn', 'check-active');
+            };
+
+            // Grading
+            function etChordGradeAnswer(ci) {
                 if (_etChordAnswered) return;
                 _etChordAnswered = true;
                 _etChordStats.total++;
@@ -7224,6 +7292,7 @@
 
                 document.querySelectorAll('#etChordChoices .et-choice-btn').forEach(b => {
                     const idx = parseInt(b.dataset.ci);
+                    b.classList.remove('selected');
                     if (idx === _etChordAnswer) b.classList.add('correct');
                     else if (idx === ci && !isCorrect) b.classList.add('wrong');
                     b.classList.add('disabled');
@@ -7242,13 +7311,11 @@
                 }
                 updateETChordScores();
 
-                // Show chord diagram if available
                 const diagEl = document.getElementById('etChordDiagram');
                 if (diagEl) {
                     diagEl.innerHTML = findChordDiagram(_etChordRootNote, chordType.name);
                 }
 
-                // Add to history
                 _etChordHistory.push({
                     correct: isCorrect,
                     answerIdx: _etChordAnswer,
@@ -7259,9 +7326,17 @@
                 });
                 renderETChordHistory();
 
-                // Show next button
-                var cnb = document.getElementById('etChordNextBtn');
-                if (cnb) cnb.classList.add('show');
+                setEtBtnState('etChordNextBtn', 'next-active');
+            }
+
+            window.etChordNextBtnClick = function() {
+                var btn = document.getElementById('etChordNextBtn');
+                if (!btn || !btn.classList.contains('show')) return;
+                if (btn.dataset.state === 'next-active') {
+                    etChordPlayQuestion();
+                } else if (btn.dataset.state === 'check-active') {
+                    if (_etSelectedChordIdx !== null) etChordGradeAnswer(_etSelectedChordIdx);
+                }
             };
 
             function renderETChordHistory() {
@@ -7301,12 +7376,12 @@
                 _etChordStats = { correct: 0, total: 0, streak: 0 };
                 _etChordAnswer = null;
                 _etChordAnswered = false;
+                _etSelectedChordIdx = null;
                 _etChordHistory = [];
                 updateETChordScores();
                 document.getElementById('etChordFeedback').textContent = '';
                 document.getElementById('etChordFeedback').className = 'et-feedback';
-                var cnb = document.getElementById('etChordNextBtn');
-                if (cnb) cnb.classList.remove('show');
+                setEtBtnState('etChordNextBtn', 'check-disabled');
                 var diagEl = document.getElementById('etChordDiagram');
                 if (diagEl) diagEl.innerHTML = '';
                 document.getElementById('etChordHistory').innerHTML = '';
@@ -7315,7 +7390,7 @@
                 var chd = document.getElementById('etChordHistoryDrawer');
                 if (chd) chd.classList.remove('open');
                 document.querySelectorAll('#etChordChoices .et-choice-btn').forEach(b => {
-                    b.classList.remove('correct', 'wrong', 'disabled');
+                    b.classList.remove('correct', 'wrong', 'disabled', 'selected');
                 });
             };
 
@@ -7336,6 +7411,7 @@
             let _etPitchSimul = false;       // 한번에 듣기 on/off
             let _etPitchAnswer = null;       // array of { note, octave, freq }
             let _etPitchPicks = [];          // user's picked notes (strings)
+            let _etPitchGraded = false;      // whether current question has been graded
             let _etPitchStats = { correct: 0, total: 0, streak: 0 };
             let _etPitchHistory = [];
 
@@ -7360,9 +7436,12 @@
 
             function pickRandomPitchNotes(count) {
                 var notes = getPitchNotes();
+                var pool = notes.slice();
                 var result = [];
                 for (var i = 0; i < count; i++) {
-                    var chosen = notes[Math.floor(Math.random() * notes.length)];
+                    if (pool.length === 0) pool = notes.slice();
+                    var idx = Math.floor(Math.random() * pool.length);
+                    var chosen = pool.splice(idx, 1)[0];
                     var oct = Math.random() < 0.5 ? 3 : 4;
                     result.push({ note: chosen, octave: oct, freq: noteToFreq(chosen, oct) });
                 }
@@ -7405,35 +7484,26 @@
             };
 
             function renderPitchPicks() {
+                // Pick chips removed per UX: selected notes are now highlighted
+                // directly on the choice buttons via the .selected class.
                 var el = document.getElementById('etPitchPicks');
-                if (!el) return;
-                if (_etPitchCount <= 1) { el.innerHTML = ''; return; }
-                var html = '';
-                for (var i = 0; i < _etPitchCount; i++) {
-                    var picked = _etPitchPicks[i];
-                    if (picked) {
-                        html += '<span class="et-pitch-pick-chip"><span class="pick-num">' + (i + 1) + '</span>' + picked + '</span>';
-                    } else {
-                        html += '<span class="et-pitch-pick-chip" style="opacity:0.3;"><span class="pick-num">' + (i + 1) + '</span>?</span>';
-                    }
-                }
-                el.innerHTML = html;
+                if (el) el.innerHTML = '';
             }
 
             window.etPitchPlayQuestion = function() {
                 _etPitchAnswer = pickRandomPitchNotes(_etPitchCount);
                 _etPitchPicks = [];
-                var nb = document.getElementById('etPitchNextBtn');
-                if (nb) nb.classList.remove('show');
+                _etPitchGraded = false;
+                setEtBtnState('etPitchNextBtn', 'check-disabled');
                 document.querySelectorAll('#etPitchChoices .et-choice-btn').forEach(function(b) {
-                    b.classList.remove('correct', 'wrong', 'disabled');
+                    b.classList.remove('correct', 'wrong', 'disabled', 'selected');
                 });
                 document.getElementById('etPitchFeedback').textContent = '';
                 document.getElementById('etPitchFeedback').className = 'et-feedback';
                 renderPitchPicks();
                 updatePitchSimulBtn();
                 if (_etPitchCount > 1) {
-                    document.getElementById('etPitchFeedback').textContent = _etPitchCount + '개의 음을 순서대로 골라주세요';
+                    document.getElementById('etPitchFeedback').textContent = _etPitchCount + '개의 음을 골라주세요';
                 }
                 if (_etPitchSimul && _etPitchCount > 1) {
                     playPitchNotesSimul(_etPitchAnswer);
@@ -7454,17 +7524,62 @@
 
             window.etPitchCheckAnswer = function(note) {
                 if (!_etPitchAnswer) return;
+                if (_etPitchGraded) return;
 
-                // Single-note mode
+                // Toggle off if already picked (un-pick)
+                var existingIdx = _etPitchPicks.indexOf(note);
+                if (existingIdx >= 0) {
+                    _etPitchPicks.splice(existingIdx, 1);
+                    var btnToDeselect = document.querySelector('#etPitchChoices .et-choice-btn[data-pnote="' + note + '"]');
+                    if (btnToDeselect) btnToDeselect.classList.remove('selected');
+                    renderPitchPicks();
+                    setEtBtnState('etPitchNextBtn', 'check-disabled');
+                    var fb0 = document.getElementById('etPitchFeedback');
+                    if (_etPitchCount > 1) {
+                        fb0.textContent = _etPitchCount + '개의 음을 골라주세요';
+                        fb0.className = 'et-feedback';
+                    } else {
+                        fb0.textContent = '';
+                        fb0.className = 'et-feedback';
+                    }
+                    return;
+                }
+
+                if (_etPitchPicks.length >= _etPitchCount) return;
+                _etPitchPicks.push(note);
+                var btnToSelect = document.querySelector('#etPitchChoices .et-choice-btn[data-pnote="' + note + '"]');
+                if (btnToSelect) btnToSelect.classList.add('selected');
+                renderPitchPicks();
+
+                var fb = document.getElementById('etPitchFeedback');
+                var remaining = _etPitchCount - _etPitchPicks.length;
+                if (remaining > 0) {
+                    fb.textContent = remaining + '개 더 골라주세요';
+                    fb.className = 'et-feedback';
+                    setEtBtnState('etPitchNextBtn', 'check-disabled');
+                } else {
+                    fb.textContent = '';
+                    fb.className = 'et-feedback';
+                    setEtBtnState('etPitchNextBtn', 'check-active');
+                }
+            };
+
+            // Grade picked notes
+            function etPitchGradeAnswer() {
+                if (_etPitchGraded) return;
+                if (_etPitchPicks.length !== _etPitchCount) return;
+                _etPitchGraded = true;
+
+                var fb = document.getElementById('etPitchFeedback');
+                _etPitchStats.total++;
+
                 if (_etPitchCount === 1) {
-                    if (_etPitchPicks.length >= 1) return;
-                    _etPitchPicks.push(note);
                     var ans = _etPitchAnswer[0];
+                    var note = _etPitchPicks[0];
                     var isCorrect = note === ans.note;
-                    _etPitchStats.total++;
-                    var fb = document.getElementById('etPitchFeedback');
 
                     document.querySelectorAll('#etPitchChoices .et-choice-btn').forEach(function(b) {
+                        b.classList.remove('selected');
                         if (b.dataset.pnote === ans.note) b.classList.add('correct');
                         else if (b.dataset.pnote === note && !isCorrect) b.classList.add('wrong');
                         b.classList.add('disabled');
@@ -7488,40 +7603,31 @@
                         freqs: [ans.freq]
                     });
                     renderETPitchHistory();
-                    var nb = document.getElementById('etPitchNextBtn');
-                    if (nb) nb.classList.add('show');
+                    setEtBtnState('etPitchNextBtn', 'next-active');
                     gtag('event', 'ear_pitch_answer', { correct: isCorrect, count: 1 });
                     return;
                 }
 
-                // Multi-note mode: collect picks
-                if (_etPitchPicks.length >= _etPitchCount) return;
-                _etPitchPicks.push(note);
-                renderPitchPicks();
-
-                var fb = document.getElementById('etPitchFeedback');
-                var remaining = _etPitchCount - _etPitchPicks.length;
-                if (remaining > 0) {
-                    fb.textContent = remaining + '개 더 골라주세요';
-                    fb.className = 'et-feedback';
-                    return;
-                }
-
-                // All picked — now grade
+                // Multi-note grading (order-insensitive)
+                var answerNotes = _etPitchAnswer.map(function(n) { return n.note; });
                 var correctCount = 0;
-                _etPitchPicks.forEach(function(p, i) {
-                    if (p === _etPitchAnswer[i].note) correctCount++;
+                _etPitchPicks.forEach(function(p) {
+                    if (answerNotes.indexOf(p) !== -1) correctCount++;
                 });
                 var allCorrect = correctCount === _etPitchCount;
-                _etPitchStats.total++;
 
-                // Highlight correct answers in choices (not disabling individual picks)
                 document.querySelectorAll('#etPitchChoices .et-choice-btn').forEach(function(b) {
+                    b.classList.remove('selected');
+                    var pn = b.dataset.pnote;
+                    if (answerNotes.indexOf(pn) !== -1) {
+                        b.classList.add('correct');
+                    } else if (_etPitchPicks.indexOf(pn) !== -1) {
+                        b.classList.add('wrong');
+                    }
                     b.classList.add('disabled');
                 });
 
                 var answerStr = _etPitchAnswer.map(function(n) { return n.note + n.octave; }).join(', ');
-                var pickedStr = _etPitchPicks.join(', ');
 
                 if (allCorrect) {
                     _etPitchStats.correct++;
@@ -7541,9 +7647,18 @@
                     freqs: _etPitchAnswer.map(function(n) { return n.freq; })
                 });
                 renderETPitchHistory();
-                var nb = document.getElementById('etPitchNextBtn');
-                if (nb) nb.classList.add('show');
+                setEtBtnState('etPitchNextBtn', 'next-active');
                 gtag('event', 'ear_pitch_answer', { correct: allCorrect, count: _etPitchCount });
+            }
+
+            window.etPitchNextBtnClick = function() {
+                var btn = document.getElementById('etPitchNextBtn');
+                if (!btn || !btn.classList.contains('show')) return;
+                if (btn.dataset.state === 'next-active') {
+                    etPitchPlayQuestion();
+                } else if (btn.dataset.state === 'check-active') {
+                    etPitchGradeAnswer();
+                }
             };
 
             function renderETPitchHistory() {
@@ -7587,12 +7702,12 @@
                 _etPitchStats = { correct: 0, total: 0, streak: 0 };
                 _etPitchAnswer = null;
                 _etPitchPicks = [];
+                _etPitchGraded = false;
                 _etPitchHistory = [];
                 updateETPitchScores();
                 document.getElementById('etPitchFeedback').textContent = '';
                 document.getElementById('etPitchFeedback').className = 'et-feedback';
-                var nb = document.getElementById('etPitchNextBtn');
-                if (nb) nb.classList.remove('show');
+                setEtBtnState('etPitchNextBtn', 'check-disabled');
                 document.getElementById('etPitchHistory').innerHTML = '';
                 document.getElementById('etPitchPicks').innerHTML = '';
                 var ht = document.getElementById('etPitchHistoryToggle');
@@ -7600,7 +7715,7 @@
                 var hd = document.getElementById('etPitchHistoryDrawer');
                 if (hd) hd.classList.remove('open');
                 document.querySelectorAll('#etPitchChoices .et-choice-btn').forEach(function(b) {
-                    b.classList.remove('correct', 'wrong', 'disabled');
+                    b.classList.remove('correct', 'wrong', 'disabled', 'selected');
                 });
                 updatePitchSimulBtn();
             };
