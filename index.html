@@ -5160,6 +5160,19 @@
                 const drawer = document.getElementById('toolsDrawer');
                 const overlay = document.getElementById('toolsOverlay');
                 if (!drawer || drawer.classList.contains('open')) return;
+                // Mirror toggleTools() mobile behavior: on mobile, the
+                // drawer becomes a full page via body.mobile-tools-view.
+                try {
+                    if (typeof isMobileToolsViewport === 'function' && isMobileToolsViewport()) {
+                        if (typeof _mobileToolsSavedScrollY !== 'undefined') {
+                            _mobileToolsSavedScrollY = window.scrollY || window.pageYOffset || 0;
+                        }
+                        document.body.classList.add('mobile-tools-view');
+                        window.scrollTo(0, 0);
+                    } else if (typeof lockBodyScroll === 'function') {
+                        lockBodyScroll();
+                    }
+                } catch (e) {}
                 drawer.classList.add('open');
                 overlay.classList.add('open');
                 if (typeof switchTool === 'function') switchTool(tool);
