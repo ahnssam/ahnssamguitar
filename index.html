@@ -902,8 +902,8 @@
         }
         .et-mode-btn {
             flex: 1;
-            max-width: 130px;
-            padding: 0.55rem 1rem;
+            max-width: 140px;
+            padding: 0.55rem 0.55rem;
             font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
@@ -913,6 +913,7 @@
             transition: all 0.3s;
             letter-spacing: 0.03em;
             font-family: inherit;
+            white-space: nowrap;
         }
         .et-mode-btn { border-radius: 0; }
         .et-mode-btn:first-child { border-radius: 24px 0 0 24px; }
@@ -922,6 +923,11 @@
             background: var(--green-mid);
             color: var(--white);
         }
+        .et-btn-word { white-space: nowrap; }
+        /* Keep all three mode labels on a single line — the parent
+           .et-mode-btn has white-space: nowrap, and the spans here
+           are just there to semantically separate the word parts. */
+        .et-btn-sep { display: inline; }
         .et-mode-content { display: none; position: relative; }
         .et-mode-content.active { display: block; }
         .et-settings-box {
@@ -1697,6 +1703,10 @@
             font-size: 0.85rem;
             color: rgba(255,255,255,0.6);
         }
+        .metronome-time-sig > label {
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
         /* Keyboard shortcut hint */
         .kbd-hint {
             display: inline-block;
@@ -1923,7 +1933,10 @@
             border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;
             background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.9);
             cursor: pointer; font-family: inherit; transition: all 0.2s;
+            white-space: nowrap;
         }
+        .loop-rhythm-toggle #loopRhythmLabel,
+        #loopRhythmLabel { white-space: nowrap; }
         .loop-rhythm-toggle:hover { background: rgba(255,255,255,0.12); }
         .loop-rhythm-toggle i {
             font-size: 0.6rem; transition: transform 0.2s;
@@ -1933,20 +1946,22 @@
             display: none; position: absolute; top: 100%; right: 0;
             margin-top: 0.3rem; z-index: 20;
             background: #1e2e28; border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px; padding: 0.4rem; min-width: 220px;
+            border-radius: 8px; padding: 0.4rem; min-width: 260px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.5);
         }
         .loop-rhythm-drawer.open {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 0.25rem;
+            /* 3 columns so each cell is wide enough for "16비트 A" on one line */
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.3rem;
         }
         .loop-rhythm-drawer button {
             padding: 0.4rem 0.3rem; font-size: 0.74rem; font-weight: 600;
             border: 1px solid rgba(255,255,255,0.15); border-radius: 4px;
             background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7);
             cursor: pointer; font-family: inherit; text-align: center;
-            white-space: nowrap; transition: all 0.15s;
+            white-space: nowrap !important; transition: all 0.15s;
+            overflow: visible;
         }
         .loop-rhythm-drawer button:hover {
             background: rgba(82,168,114,0.2); color: #fff;
@@ -2051,6 +2066,34 @@
             transition: background 0.25s, border-color 0.25s, color 0.25s;
             font-family: inherit;
             letter-spacing: 0.03em;
+        }
+        /* Time-signature row: keep the 5 buttons on a single line where
+           possible (narrower padding + nowrap). Label never splits. */
+        #timeSigRow .time-sig-btn {
+            padding: 0.38rem 0.55rem;
+            font-size: 0.78rem;
+            white-space: nowrap;
+            letter-spacing: 0;
+        }
+        #timeSigRow .time-sig-btns {
+            flex-wrap: wrap;
+            gap: 0.3rem;
+        }
+        /* Very narrow screens: if a single line truly cannot fit, force
+           a 3-column grid so the split is 기본/4/4/2/4 on row 1 and
+           3/4/6/8 on row 2 (instead of a lonely 6/8 on its own line). */
+        @media (max-width: 360px) {
+            #timeSigRow .time-sig-btns {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.3rem;
+                flex: 1;
+                min-width: 0;
+            }
+            #timeSigRow .time-sig-btn {
+                padding: 0.35rem 0.3rem;
+                font-size: 0.75rem;
+            }
         }
         .time-sig-btn.active {
             background: var(--green-mid);
@@ -3506,6 +3549,51 @@
                 padding: 0.4rem 1rem;
             }
         }
+
+        /* ==========================================================
+           Mobile tools-view: transform the drawer into a full page
+           on mobile so the browser URL bar auto-hides naturally on
+           document scroll. Desktop keeps the drawer behavior intact.
+           ========================================================== */
+        @media (max-width: 767px) {
+            body.mobile-tools-view {
+                /* Let the page scroll as normal so URL bar hides. */
+                overflow: auto !important;
+            }
+            body.mobile-tools-view > #navbar,
+            body.mobile-tools-view > #loader,
+            body.mobile-tools-view > .mobile-menu,
+            body.mobile-tools-view > .hero,
+            body.mobile-tools-view > .portfolio,
+            body.mobile-tools-view > .shop-section,
+            body.mobile-tools-view > .about,
+            body.mobile-tools-view > .contact,
+            body.mobile-tools-view > footer,
+            body.mobile-tools-view > .tools-overlay {
+                display: none !important;
+            }
+            body.mobile-tools-view .tools-drawer {
+                position: static !important;
+                inset: auto !important;
+                top: auto !important;
+                right: auto !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                height: auto !important;
+                min-height: 100dvh !important;
+                transform: none !important;
+                box-shadow: none !important;
+                overflow: visible !important;
+            }
+            body.mobile-tools-view .tools-drawer .tools-header {
+                position: sticky;
+                top: 0;
+            }
+            body.mobile-tools-view .tools-drawer .tools-content {
+                overflow: visible !important;
+                -webkit-overflow-scrolling: auto;
+            }
+        }
     </style>
 </head>
 <body>
@@ -3743,9 +3831,9 @@
         <!-- Ear Training Panel -->
         <div class="tool-panel" id="eartrainingPanel">
             <div class="et-mode-toggle">
-                <button class="et-mode-btn active" data-mode="pitch" onclick="switchETMode('pitch')">음 맞추기</button>
-                <button class="et-mode-btn" data-mode="interval" onclick="switchETMode('interval')">두 음 비교</button>
-                <button class="et-mode-btn" data-mode="chord" onclick="switchETMode('chord')">코드 맞추기</button>
+                <button class="et-mode-btn active" data-mode="pitch" onclick="switchETMode('pitch')"><span class="et-btn-word">음</span><span class="et-btn-sep"> </span><span class="et-btn-word">맞추기</span></button>
+                <button class="et-mode-btn" data-mode="interval" onclick="switchETMode('interval')"><span class="et-btn-word">두&nbsp;음</span><span class="et-btn-sep"> </span><span class="et-btn-word">비교</span></button>
+                <button class="et-mode-btn" data-mode="chord" onclick="switchETMode('chord')"><span class="et-btn-word">코드</span><span class="et-btn-sep"> </span><span class="et-btn-word">맞추기</span></button>
             </div>
 
             <!-- Interval Mode -->
@@ -4921,9 +5009,18 @@
         (function blockDrawerScrollLeak() {
             const overlay = document.getElementById('toolsOverlay');
             const drawer = document.getElementById('toolsDrawer');
+            function isMobileToolsViewActive() {
+                return document.body.classList.contains('mobile-tools-view');
+            }
             if (overlay) {
-                overlay.addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
-                overlay.addEventListener('wheel', function(e) { e.preventDefault(); }, { passive: false });
+                overlay.addEventListener('touchmove', function(e) {
+                    if (isMobileToolsViewActive()) return;
+                    e.preventDefault();
+                }, { passive: false });
+                overlay.addEventListener('wheel', function(e) {
+                    if (isMobileToolsViewActive()) return;
+                    e.preventDefault();
+                }, { passive: false });
             }
             if (drawer) {
                 function isScrollableArea(target) {
@@ -4938,9 +5035,11 @@
                     return false;
                 }
                 drawer.addEventListener('touchmove', function(e) {
+                    if (isMobileToolsViewActive()) return;
                     if (!isScrollableArea(e.target)) e.preventDefault();
                 }, { passive: false });
                 drawer.addEventListener('wheel', function(e) {
+                    if (isMobileToolsViewActive()) return;
                     if (!isScrollableArea(e.target)) e.preventDefault();
                 }, { passive: false });
             }
@@ -4952,9 +5051,25 @@
             if (!drawer) return;
             drawer.classList.remove('open');
             if (overlay) overlay.classList.remove('open');
-            unlockBodyScroll();
+            var wasMobileView = document.body.classList.contains('mobile-tools-view');
+            if (wasMobileView) {
+                document.body.classList.remove('mobile-tools-view');
+                // Restore the original scroll position so the user lands
+                // back where they were before opening tools.
+                try { window.scrollTo(0, _mobileToolsSavedScrollY || 0); } catch (e) {}
+            } else {
+                unlockBodyScroll();
+            }
             if (window._tunerRunning) toggleTuner();
             if (window._metroRunning) toggleMetronome();
+        }
+        // Remembers the document scroll-y at the moment we enter
+        // mobile tools-view, so we can restore it on close.
+        let _mobileToolsSavedScrollY = 0;
+        function isMobileToolsViewport() {
+            try {
+                return window.matchMedia('(max-width: 767px)').matches;
+            } catch (e) { return false; }
         }
         function toggleTools() {
             const drawer = document.getElementById('toolsDrawer');
@@ -4962,7 +5077,14 @@
             const wasOpen = drawer.classList.contains('open');
             if (!wasOpen) {
                 // Opening
-                lockBodyScroll();
+                if (isMobileToolsViewport()) {
+                    _mobileToolsSavedScrollY = window.scrollY || window.pageYOffset || 0;
+                    document.body.classList.add('mobile-tools-view');
+                    // Start at the top of the drawer page
+                    window.scrollTo(0, 0);
+                } else {
+                    lockBodyScroll();
+                }
                 drawer.classList.add('open');
                 overlay.classList.add('open');
                 gtag('event', 'tools_open');
