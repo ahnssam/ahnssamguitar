@@ -216,6 +216,7 @@ nav.scrolled .auth-btn:hover {
 
 .auth-form { display: flex; flex-direction: column; gap: 0.7rem; }
 .auth-field { display: flex; flex-direction: column; gap: 0.3rem; }
+.auth-field-nickname { margin-bottom: 0.8rem; }
 .auth-label { font-size: 0.8rem; font-weight: 600; color: rgba(0,0,0,0.7); }
 .auth-input {
     padding: 0.75rem 0.9rem;
@@ -275,6 +276,9 @@ nav.scrolled .auth-btn:hover {
 @media (max-width: 480px) {
     .auth-modal { max-width: 100%; }
     .auth-oauth { grid-template-columns: 1fr; }
+    /* On narrow screens OAuth stacks vertically, making login taller.
+       Bump body min-height so signup matches login and the modal stays put. */
+    .auth-body { min-height: 425px; }
 }
 `;
 

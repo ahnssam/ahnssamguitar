@@ -52,6 +52,122 @@
         a { color: inherit; text-decoration: none; }
         button { font-family: inherit; }
 
+
+
+        /* ===== Coupang Partners banner ===== */
+        .coupang-banner {
+            max-width: 100%;
+            margin: 2.5rem auto 1rem;
+            padding: 10px 8px;
+            text-align: center;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            flex-shrink: 0;
+        }
+        .coupang-banner-desktop { display: block; }
+        .coupang-banner-mobile { display: none; }
+        .coupang-disclaimer {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.35);
+            margin-top: 8px;
+            line-height: 1.45;
+        }
+        @media (max-width: 900px), (orientation: portrait) {
+            .coupang-banner-desktop { display: none; }
+            .coupang-banner-mobile { display: block; }
+        }
+
+        /* ===== Desktop (>900px): hamburger pinned to top-left, bigger, always visible ===== */
+        @media (min-width: 901px) and (orientation: landscape) {
+            .topbar .hamburger {
+                position: fixed;
+                top: calc(var(--topbar-h) + 8px);
+                left: 12px;
+                width: 52px;
+                height: 52px;
+                font-size: 1.45rem;
+                z-index: 25;
+                background: transparent;
+            }
+            .topbar .hamburger:hover { background: rgba(255,255,255,0.1); }
+            /* Always visible on desktop — never removed when sidebar is collapsed */
+            .topbar .hamburger { display: inline-flex !important; }
+            /* Push "연습모드" label down so it doesn't overlap the pinned hamburger */
+            .sidebar > .sidebar-section-label:first-of-type {
+                padding-top: 4.6rem;
+            }
+
+            /* Sidebar smoothly transitions width too */
+            .sidebar { transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                                  width 0.32s cubic-bezier(0.4, 0, 0.2, 1); }
+
+            /* Collapsed state on desktop: become a narrow icon-only rail (not hidden) */
+            .sidebar.closed {
+                transform: none;
+                width: 68px;
+            }
+            .sidebar.closed .sidebar-section-label { display: none; }
+            .sidebar.closed .sidebar-foot { display: none; }
+            .sidebar.closed .sidebar-menu {
+                padding-left: 0;
+                padding-right: 0;
+            }
+            .sidebar.closed .menu-item {
+                justify-content: center;
+                gap: 0;
+                padding: 0.85rem 0;
+                width: 100%;
+            }
+            .sidebar.closed .menu-item span { display: none; }
+            .sidebar.closed .menu-item i {
+                font-size: 1.15rem;
+                width: 22px;
+                flex-shrink: 0;
+                text-align: center;
+                color: rgba(255,255,255,0.75);
+            }
+            .sidebar.closed .menu-item.active i { color: var(--green-pale); }
+            .sidebar.closed .menu-item:hover i { color: var(--green-pale); }
+            /* When collapsed, the first sidebar-menu needs its own top-padding to clear the hamburger
+               (since the normally-padded section-label is hidden) */
+            .sidebar.closed > .sidebar-menu:first-of-type {
+                padding-top: 4.6rem;
+            }
+            /* Content reflows to account for narrow rail instead of 0 */
+            .tools-main.full { margin-left: 68px; }
+        }
+
+        /* ===== LOADER (page-enter animation) ===== */
+        #loader {
+            position: fixed; inset: 0; z-index: 9999;
+            background: linear-gradient(135deg, #3a8a5c 0%, #2f7a50 50%, #52a872 100%);
+            display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+        #loader::before {
+            content: ''; position: absolute; inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M30 0l15 8.66v17.32L30 34.64 15 25.98V8.66L30 0z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+        #loader.hidden { opacity: 0; visibility: hidden; }
+        .loader-leaf {
+            position: absolute; z-index: 0;
+            opacity: 0.15; color: var(--green-pale, #b5e6c8);
+            animation: floatLeaf 15s ease-in-out infinite;
+        }
+        #loader .loader-text {
+            position: relative; z-index: 1;
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem; color: #fff;
+            letter-spacing: 0.3em;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+        @keyframes floatLeaf {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-20px) rotate(10deg); }
+            75% { transform: translateY(15px) rotate(-5deg); }
+        }
+
         /* ===== TOPBAR (hamburger + logo + master volume) ===== */
         .topbar {
             position: fixed;
@@ -141,7 +257,7 @@
             box-shadow: 4px 0 30px rgba(0,0,0,0.25);
             overflow: hidden;
         }
-        .sidebar.closed { transform: translateX(-100%); }
+        /* .sidebar.closed: desktop rail handled inside @media(min-width:901px); mobile uses .open */
 
         .sidebar-section-label {
             font-size: 0.72rem;
@@ -221,11 +337,17 @@
             padding: calc(var(--topbar-h) + 1rem) 2rem 4rem;
             transition: margin-left 0.32s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .tools-main.full { margin-left: 0; }
+        .tools-main.full { margin-left: 68px; /* narrow icon-rail sidebar width */ }
 
         .tool-header {
-            max-width: 860px;
-            margin: 0 auto 2rem;
+            position: absolute;
+            top: 0;
+            left: 0;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            z-index: 2;
         }
         .tool-header-icon {
             display: inline-flex;
@@ -235,14 +357,18 @@
             border-radius: 12px;
             background: rgba(82, 168, 114, 0.18);
             color: var(--green-pale);
+            flex-shrink: 0;
             font-size: 1.25rem;
-            margin-bottom: 1rem;
         }
         .tool-header h1 {
             font-size: 1.9rem;
             font-weight: 700;
             letter-spacing: 0.02em;
-            margin-bottom: 0.4rem;
+            margin: 0;
+            height: 48px;
+            line-height: 48px;
+            display: flex;
+            align-items: center;
         }
         .tool-header p {
             font-size: 0.95rem;
@@ -253,19 +379,27 @@
         /* Reset tool-panel so it behaves in standalone page */
         .tool-panel {
             display: none;
-            max-width: 860px;
-            margin: 0 auto;
+            max-width: none;
+            margin: 0;
             padding: 0;
+            position: relative;
         }
-        .tool-panel.active { display: block; }
+        .tool-panel.active {
+            display: flex;
+            flex-direction: column;
+        }
+        /* .tool-panel.active styled above */
         /* Chord library uses a wider panel so up to 7 columns can appear on desktop */
-        #chordsPanel { max-width: 1160px; }
+        #chordsPanel .tool-body { max-width: 1160px; }
 
         .tool-body {
             background: var(--bg-panel);
             border: 1px solid rgba(255,255,255,0.06);
             border-radius: 14px;
             padding: 1.8rem 1.5rem;
+            max-width: 860px;
+            width: 100%;
+            align-self: center;
         }
 
         /* ===== OVERLAY (mobile only) ===== */
@@ -288,7 +422,7 @@
         .mobile-tab-strip { display: none; }
         .topbar-compact-auth { display: none; }
 
-        @media (max-width: 900px) {
+        @media (max-width: 900px), (orientation: portrait) {
             /* Sidebar now slides in from the RIGHT, sitting below the tab strip */
             .sidebar {
                 top: calc(var(--topbar-h) + 48px);
@@ -1782,12 +1916,36 @@
             min-width: 0;
         }
     </style>
+    <!-- Coupang Partners SDK -->
+    <script src="https://ads-partners.coupang.com/g.js" async></script>
     <!-- Supabase auth (shared) -->
     <script src="auth.js" defer></script>
     <!-- Ear training session tracker + rankings + mypage -->
     <script src="ranking/ear-ranking.js" defer></script>
 </head>
 <body>
+
+    <!-- Loader (fades out on window load) -->
+    <div id="loader">
+        <i class="fas fa-leaf loader-leaf" style="top: 12%; left: 8%; font-size: 3rem; animation-delay: 0s;"></i>
+        <i class="fas fa-leaf loader-leaf" style="top: 55%; left: 5%; font-size: 2rem; animation-delay: 3s;"></i>
+        <i class="fas fa-seedling loader-leaf" style="top: 25%; right: 10%; font-size: 2.5rem; animation-delay: 6s;"></i>
+        <i class="fas fa-leaf loader-leaf" style="bottom: 18%; right: 12%; font-size: 1.8rem; animation-delay: 9s;"></i>
+        <div class="loader-text"><img src="images/apple-touch-icon.png" alt="안쌤의 기타나무숲" style="height: 140px;"></div>
+    </div>
+    <script>
+        (function(){
+            var nav = performance.getEntriesByType('navigation')[0];
+            var isBackButton = nav && nav.type === 'back_forward';
+            var skipLoader = sessionStorage.getItem('skipLoader');
+            // Show loader: first visit or explicit showLoader flag
+            // Skip: back/forward navigation, or skipLoader set to anything other than 'showLoader'
+            if (isBackButton || (skipLoader && skipLoader !== 'showLoader')) {
+                document.getElementById('loader').style.display = 'none';
+            }
+            sessionStorage.removeItem('skipLoader');
+        })();
+    </script>
 
     <!-- Topbar -->
     <header class="topbar">
@@ -2279,6 +2437,16 @@
         <!-- Mypage (filled by ear-ranking.js) -->
         <section class="tool-panel" id="mypagePanel"></section>
 
+
+        <!-- Coupang Partners banners — one per viewport -->
+        <div class="coupang-banner coupang-banner-desktop">
+            <script>if (window.PartnersCoupang) new PartnersCoupang.G({"id":982250,"template":"carousel","trackingCode":"AF9102087","width":"728","height":"90","tsource":""});</script>
+            <p class="coupang-disclaimer">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
+        </div>
+        <div class="coupang-banner coupang-banner-mobile">
+            <script>if (window.PartnersCoupang) new PartnersCoupang.G({"id":982250,"template":"carousel","trackingCode":"AF9102087","width":"320","height":"100","tsource":""});</script>
+            <p class="coupang-disclaimer">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
+        </div>
     </main>
 
     <!-- Chord Modal (enlarged chord view) -->
@@ -5050,6 +5218,17 @@
                 if (document.activeElement && document.activeElement.blur) {
                     document.activeElement.blur();
                 }
+            }
+        });
+    </script>
+
+    <script>
+        // Fade out the loader on window load
+        window.addEventListener('load', function() {
+            var loader = document.getElementById('loader');
+            if (!loader) return;
+            if (loader.style.display !== 'none') {
+                setTimeout(function() { loader.classList.add('hidden'); }, 800);
             }
         });
     </script>
