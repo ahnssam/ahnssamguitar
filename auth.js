@@ -61,7 +61,11 @@
     display: inline-flex; align-items: center; justify-content: center;
     font-weight: 700; font-size: 0.78rem;
     flex-shrink: 0;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
 }
+.auth-user .auth-user-avatar.has-image { background-image: var(--avatar-url, none); color: transparent; }
 .auth-user-menu {
     position: absolute; top: calc(100% + 6px); right: 0;
     min-width: 180px;
@@ -98,22 +102,23 @@ nav.scrolled .auth-btn:hover {
     border-color: var(--green-dark, #3a8a5c);
 }
 
-/* topbar (tools.html) — dark bg */
+/* topbar (tools.html) — light bg */
 .topbar .auth-slot .auth-btn {
-    background: rgba(255,255,255,0.08);
-    color: #fff;
-    border-color: rgba(255,255,255,0.25);
+    background: #fff;
+    color: var(--green-deep, #2a6b4a);
+    border-color: var(--green-mid, #62b682);
 }
 .topbar .auth-slot .auth-btn:hover {
-    background: rgba(255,255,255,0.18);
-    border-color: rgba(255,255,255,0.5);
+    background: var(--green-mid, #62b682);
+    color: #fff;
+    border-color: var(--green-mid, #62b682);
 }
 .topbar .auth-slot .auth-user {
-    background: rgba(255,255,255,0.08);
-    color: #fff;
-    border-color: rgba(255,255,255,0.25);
+    background: #fff;
+    color: var(--green-deep, #2a6b4a);
+    border-color: var(--green-mid, #62b682);
 }
-.topbar .auth-slot .auth-user:hover { background: rgba(255,255,255,0.14); }
+.topbar .auth-slot .auth-user:hover { background: var(--green-faint, #e2f5ea); }
 
 /* ---------- Modal ---------- */
 .auth-overlay {
@@ -421,16 +426,24 @@ nav.scrolled .auth-btn:hover {
         slots.forEach((slot) => {
             slot.innerHTML = '';
             if (currentSession) {
+                const userMeta = (currentSession.user && currentSession.user.user_metadata) || {};
                 const nick = (currentProfile && currentProfile.nickname) ||
-                             (currentSession.user && currentSession.user.user_metadata && currentSession.user.user_metadata.nickname) ||
+                             userMeta.nickname ||
                              (currentSession.user.email || '').split('@')[0];
                 const initial = (nick || '?').trim().charAt(0).toUpperCase();
+                const avatarUrl = (currentProfile && currentProfile.avatar_url) ||
+                                  userMeta.avatar_url ||
+                                  userMeta.picture || '';
+                const avatarAttrs = avatarUrl
+                    ? `class="auth-user-avatar has-image" style="--avatar-url: url('${avatarUrl.replace(/'/g, "\\'")}')" aria-label="${escapeHtml(initial)}"`
+                    : `class="auth-user-avatar"`;
+                const avatarContent = avatarUrl ? '' : escapeHtml(initial);
                 const container = document.createElement('div');
                 container.style.position = 'relative';
                 container.style.display = 'inline-flex';
                 container.innerHTML = `
                     <button class="auth-user" type="button" aria-haspopup="menu">
-                        <span class="auth-user-avatar">${escapeHtml(initial)}</span>
+                        <span ${avatarAttrs}>${avatarContent}</span>
                         <span class="auth-user-name">${escapeHtml(nick)}</span>
                     </button>
                     <div class="auth-user-menu" role="menu">

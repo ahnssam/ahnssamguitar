@@ -15,7 +15,7 @@
     display: inline-flex; align-items: center; gap: 0.4rem;
     padding: 0.25rem 0.7rem;
     font-size: 0.76rem; font-weight: 700;
-    color: var(--green-light, #72c492);
+    color: var(--green-deep, #2a6b4a);
     background: rgba(82,168,114,0.12);
     border: 1px solid rgba(82,168,114,0.3);
     border-radius: 999px;
@@ -23,13 +23,13 @@
     margin-right: 0.4rem;
     white-space: nowrap;
 }
-.et-session-pill.warn { color: #ffc98a; background: rgba(255,190,80,0.12); border-color: rgba(255,190,80,0.3); }
+.et-session-pill.warn { color: #c77900; background: rgba(255,190,80,0.12); border-color: rgba(255,190,80,0.3); }
 .et-session-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 6px currentColor; }
 
 /* Session summary overlay (10-question completion) */
 .sum-overlay {
     position: fixed; inset: 0;
-    background: rgba(12, 22, 18, 0.72);
+    background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     display: none; align-items: center; justify-content: center;
@@ -40,37 +40,37 @@
 .sum-overlay.open { display: flex; }
 .sum-card {
     width: 100%; max-width: 420px;
-    background: linear-gradient(160deg, #1e2e28, #14221d);
+    background: linear-gradient(160deg, #ffffff, #f5fbf7);
     border: 1px solid rgba(114,196,146,0.25);
     border-radius: 18px;
     padding: 1.8rem 1.6rem;
-    color: #fff;
+    color: var(--text-primary, #1a2421);
     box-shadow: 0 22px 60px rgba(0,0,0,0.5);
     text-align: center;
 }
 .sum-title {
     font-size: 1rem; font-weight: 700; letter-spacing: 0.18em;
-    color: var(--green-light, #72c492);
+    color: var(--green-deep, #2a6b4a);
     text-transform: uppercase;
     margin-bottom: 0.3rem;
 }
-.sum-mode { font-size: 0.88rem; font-weight: 500; color: rgba(255,255,255,0.6); margin-bottom: 1.2rem; }
+.sum-mode { font-size: 0.88rem; font-weight: 500; color: rgba(26, 36, 33, 0.6); margin-bottom: 1.2rem; }
 .sum-score {
     font-family: 'Playfair Display', serif;
     font-size: 3.2rem; font-weight: 900;
-    color: #fff;
+    color: var(--text-primary, #1a2421);
     line-height: 1;
     margin-bottom: 0.4rem;
 }
-.sum-score .sum-pts { font-size: 1.1rem; color: var(--green-pale, #b5e6c8); margin-left: 0.3rem; font-family: inherit; font-weight: 700; letter-spacing: 0.1em; }
-.sum-acc { font-size: 0.95rem; color: rgba(255,255,255,0.75); margin-bottom: 1.4rem; }
-.sum-acc strong { color: #fff; font-weight: 700; }
+.sum-score .sum-pts { font-size: 1.1rem; color: var(--green-mid, #62b682); margin-left: 0.3rem; font-family: inherit; font-weight: 700; letter-spacing: 0.1em; }
+.sum-acc { font-size: 0.95rem; color: rgba(26, 36, 33, 0.75); margin-bottom: 1.4rem; }
+.sum-acc strong { color: var(--text-primary, #1a2421); font-weight: 700; }
 .sum-note {
-    font-size: 0.82rem; color: rgba(255,255,255,0.55);
+    font-size: 0.82rem; color: rgba(26, 36, 33, 0.55);
     line-height: 1.55;
     padding: 0.75rem 0.8rem;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(26, 36, 33, 0.04);
+    border: 1px solid rgba(26, 36, 33, 0.06);
     border-radius: 9px;
     margin-bottom: 1.2rem;
 }
@@ -84,21 +84,21 @@
     transition: all 0.15s ease;
 }
 .sum-btn.primary {
-    color: #fff;
+    color: var(--text-primary, #1a2421);
     background: linear-gradient(135deg, var(--green-mid, #52a872), var(--green-deep, #2a6b4a));
 }
 .sum-btn.primary:hover { filter: brightness(1.08); }
 .sum-btn.ghost {
-    color: rgba(255,255,255,0.75);
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(26, 36, 33, 0.75);
+    background: rgba(26, 36, 33, 0.06);
+    border: 1px solid rgba(26, 36, 33, 0.12);
 }
-.sum-btn.ghost:hover { background: rgba(255,255,255,0.1); }
+.sum-btn.ghost:hover { background: rgba(26, 36, 33, 0.1); }
 
 /* First-time nickname setup (blocks until set) */
 .nick-overlay {
     position: fixed; inset: 0;
-    background: rgba(12, 22, 18, 0.78);
+    background: rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     display: none; align-items: center; justify-content: center;
@@ -129,7 +129,7 @@
     width: 100%;
     padding: 0.8rem 0.9rem;
     font-family: inherit; font-size: 1rem;
-    color: #1e2a24;
+    color: var(--text-primary, #1a2421);
     background: #f8faf7;
     border: 1.5px solid rgba(0,0,0,0.1);
     border-radius: 10px;
@@ -163,7 +163,7 @@
     margin-top: 1rem;
     padding: 0.85rem 1rem;
     font-family: inherit; font-size: 0.95rem; font-weight: 700;
-    color: #fff;
+    color: var(--text-primary, #1a2421);
     background: linear-gradient(135deg, var(--green-mid, #52a872), var(--green-deep, #2a6b4a));
     border: none; border-radius: 10px;
     cursor: pointer;
@@ -174,7 +174,7 @@
 .rank-tabs {
     display: flex;
     gap: 0.4rem;
-    background: rgba(255,255,255,0.04);
+    background: rgba(26, 36, 33, 0.04);
     border-radius: 10px;
     padding: 4px;
     margin-bottom: 1rem;
@@ -183,7 +183,7 @@
     flex: 1;
     padding: 0.65rem 0.8rem;
     font-family: inherit; font-size: 0.9rem; font-weight: 600;
-    color: rgba(255,255,255,0.65);
+    color: rgba(26, 36, 33, 0.65);
     background: transparent;
     border: none; border-radius: 7px;
     cursor: pointer;
@@ -191,18 +191,18 @@
 }
 .rank-tab.active {
     background: rgba(82,168,114,0.22);
-    color: var(--green-pale, #b5e6c8);
+    color: var(--green-mid, #62b682);
     box-shadow: 0 0 0 1px rgba(114,196,146,0.3);
 }
 .rank-meta {
     display: flex; justify-content: space-between; align-items: center;
     padding: 0 0.2rem 0.6rem;
-    font-size: 0.78rem; color: rgba(255,255,255,0.45);
+    font-size: 0.78rem; color: rgba(26, 36, 33, 0.45);
 }
 .rank-list {
     display: flex; flex-direction: column;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.07);
+    background: rgba(26, 36, 33, 0.03);
+    border: 1px solid rgba(26, 36, 33, 0.07);
     border-radius: 12px;
     overflow: hidden;
 }
@@ -212,36 +212,36 @@
     gap: 0.8rem;
     align-items: center;
     padding: 0.7rem 1rem;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(26, 36, 33, 0.05);
     font-size: 0.92rem;
-    color: #fff;
+    color: var(--text-primary, #1a2421);
 }
 .rank-row:last-child { border-bottom: none; }
-.rank-row.self { background: rgba(82,168,114,0.14); border-left: 3px solid var(--green-light, #72c492); padding-left: calc(1rem - 3px); }
+.rank-row.self { background: rgba(82,168,114,0.14); border-left: 3px solid var(--green-deep, #2a6b4a); padding-left: calc(1rem - 3px); }
 .rank-pos {
     font-family: 'Playfair Display', 'DejaVu Serif', serif;
     font-weight: 800;
     font-size: 1rem;
-    color: rgba(255,255,255,0.7);
+    color: rgba(26, 36, 33, 0.7);
     text-align: center;
 }
-.rank-pos.top1 { color: #ffd469; text-shadow: 0 0 10px rgba(255,212,105,0.5); }
-.rank-pos.top2 { color: #c8d5e3; }
+.rank-pos.top1 { color: #b8860b; text-shadow: 0 0 10px rgba(255,212,105,0.5); }
+.rank-pos.top2 { color: #5a7a88; }
 .rank-pos.top3 { color: #d99b6b; }
 .rank-ava {
     width: 36px; height: 36px; border-radius: 50%;
     background: linear-gradient(135deg, var(--green-mid, #52a872), var(--green-deep, #2a6b4a));
-    color: #fff;
+    color: var(--text-primary, #1a2421);
     display: flex; align-items: center; justify-content: center;
     font-weight: 700; font-size: 0.9rem;
     overflow: hidden;
     flex-shrink: 0;
 }
 .rank-ava img { width: 100%; height: 100%; object-fit: cover; }
-.rank-name { font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rank-name .rank-session-count { font-size: 0.75rem; font-weight: 500; color: rgba(255,255,255,0.45); margin-left: 0.4rem; }
-.rank-score { font-family: inherit; font-weight: 700; font-size: 1rem; color: var(--green-pale, #b5e6c8); letter-spacing: 0.02em; }
-.rank-empty { padding: 3rem 1rem; text-align: center; color: rgba(255,255,255,0.45); font-size: 0.92rem; }
+.rank-name { font-weight: 600; color: var(--text-primary, #1a2421); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-name .rank-session-count { font-size: 0.75rem; font-weight: 500; color: rgba(26, 36, 33, 0.45); margin-left: 0.4rem; }
+.rank-score { font-family: inherit; font-weight: 700; font-size: 1rem; color: var(--green-mid, #62b682); letter-spacing: 0.02em; }
+.rank-empty { padding: 3rem 1rem; text-align: center; color: rgba(26, 36, 33, 0.45); font-size: 0.92rem; }
 .rank-self-card {
     margin-top: 0.8rem;
     padding: 0.9rem 1rem;
@@ -253,15 +253,15 @@
     gap: 0.8rem;
     align-items: center;
 }
-.rank-self-card .rank-self-label { font-size: 0.78rem; color: rgba(255,255,255,0.6); font-weight: 500; }
-.rank-self-card .rank-self-rank { font-size: 1.1rem; font-weight: 800; color: var(--green-pale, #b5e6c8); }
+.rank-self-card .rank-self-label { font-size: 0.78rem; color: rgba(26, 36, 33, 0.6); font-weight: 500; }
+.rank-self-card .rank-self-rank { font-size: 1.1rem; font-weight: 800; color: var(--green-mid, #62b682); }
 .rank-loginCTA {
     padding: 1.4rem 1rem;
     text-align: center;
-    color: rgba(255,255,255,0.72);
+    color: rgba(26, 36, 33, 0.72);
     font-size: 0.9rem;
-    background: rgba(255,255,255,0.04);
-    border: 1px dashed rgba(255,255,255,0.12);
+    background: rgba(26, 36, 33, 0.04);
+    border: 1px dashed rgba(26, 36, 33, 0.12);
     border-radius: 11px;
 }
 /* ---------- Ranking: scoring help button ---------- */
@@ -272,17 +272,17 @@
     padding: 0;
     vertical-align: middle;
     font-size: 0.85rem; font-weight: 700;
-    background: rgba(255,255,255,0.08);
-    color: rgba(255,255,255,0.7);
-    border: 1.5px solid rgba(255,255,255,0.25);
+    background: rgba(26, 36, 33, 0.08);
+    color: rgba(26, 36, 33, 0.7);
+    border: 1.5px solid rgba(26, 36, 33, 0.25);
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.15s ease;
 }
 .rank-help-btn:hover {
     background: rgba(82,168,114,0.2);
-    border-color: var(--green-light, #72c492);
-    color: var(--green-pale, #b5e6c8);
+    border-color: var(--green-deep, #2a6b4a);
+    color: var(--green-mid, #62b682);
 }
 
 /* ---------- "내 누적" card above filters ---------- */
@@ -298,21 +298,21 @@
 }
 .rank-me-label {
     font-size: 0.72rem; font-weight: 700; letter-spacing: 0.15em;
-    color: rgba(255,255,255,0.55);
+    color: rgba(26, 36, 33, 0.55);
     text-transform: uppercase;
     flex-shrink: 0;
 }
 .rank-me-values {
     display: flex; align-items: baseline; gap: 0.6rem;
     flex: 1;
-    color: #fff;
+    color: var(--text-primary, #1a2421);
 }
 .rank-me-values .rank-me-value {
-    font-size: 1.35rem; font-weight: 800; color: #fff;
+    font-size: 1.35rem; font-weight: 800; color: var(--text-primary, #1a2421);
     letter-spacing: 0.01em;
 }
-.rank-me-values .rank-me-rounds { font-size: 0.95rem; color: rgba(255,255,255,0.7); font-weight: 600; }
-.rank-me-values .rank-me-sep { color: rgba(255,255,255,0.3); font-size: 0.9rem; }
+.rank-me-values .rank-me-rounds { font-size: 0.95rem; color: rgba(26, 36, 33, 0.7); font-weight: 600; }
+.rank-me-values .rank-me-sep { color: rgba(26, 36, 33, 0.3); font-size: 0.9rem; }
 .rank-me-values .rank-me-unit {
     font-size: 0.78rem; font-weight: 600;
     color: rgba(181,230,200,0.7);
@@ -324,8 +324,8 @@
     display: flex; flex-direction: column; gap: 0.6rem;
     margin-bottom: 1rem;
     padding: 0.7rem 0.9rem;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(26, 36, 33, 0.03);
+    border: 1px solid rgba(26, 36, 33, 0.05);
     border-radius: 11px;
 }
 .rank-filter-group {
@@ -336,7 +336,7 @@
     flex: 0 0 auto;
     width: 42px;
     font-size: 0.75rem; font-weight: 600;
-    color: rgba(255,255,255,0.5);
+    color: rgba(26, 36, 33, 0.5);
     letter-spacing: 0.05em;
 }
 .rank-pills {
@@ -348,26 +348,26 @@
     padding: 0.38rem 0.78rem;
     font-family: inherit;
     font-size: 0.8rem; font-weight: 600;
-    color: rgba(255,255,255,0.62);
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(26, 36, 33, 0.62);
+    background: rgba(26, 36, 33, 0.04);
+    border: 1px solid rgba(26, 36, 33, 0.08);
     border-radius: 999px;
     cursor: pointer;
     white-space: nowrap;
     transition: all 0.15s ease;
 }
-.rank-pill:hover { background: rgba(82,168,114,0.12); color: #fff; border-color: rgba(114,196,146,0.3); }
+.rank-pill:hover { background: rgba(82,168,114,0.12); color: var(--text-primary, #1a2421); border-color: rgba(114,196,146,0.3); }
 .rank-pill.active {
     background: rgba(82,168,114,0.28);
-    color: var(--green-pale, #b5e6c8);
-    border-color: var(--green-light, #72c492);
+    color: var(--green-mid, #62b682);
+    border-color: var(--green-deep, #2a6b4a);
     box-shadow: 0 0 0 1px rgba(114,196,146,0.3);
 }
 
 /* ---------- Help popup ---------- */
 .rank-help-overlay {
     position: fixed; inset: 0;
-    background: rgba(12, 22, 18, 0.72);
+    background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     display: none;
@@ -379,18 +379,18 @@
 .rank-help-overlay.open { display: flex; }
 .rank-help-card {
     width: 100%; max-width: 460px;
-    background: linear-gradient(160deg, #1e2e28, #14221d);
+    background: linear-gradient(160deg, #ffffff, #f5fbf7);
     border: 1px solid rgba(114,196,146,0.3);
     border-radius: 16px;
     padding: 1.6rem 1.6rem 1.3rem;
-    color: #fff;
+    color: var(--text-primary, #1a2421);
     box-shadow: 0 20px 60px rgba(0,0,0,0.5);
     position: relative;
     max-height: 90vh; overflow-y: auto;
 }
 .rank-help-card h3 {
     font-size: 1rem; font-weight: 700;
-    color: var(--green-pale, #b5e6c8);
+    color: var(--green-mid, #62b682);
     letter-spacing: 0.02em;
     margin: 1rem 0 0.55rem;
 }
@@ -401,15 +401,15 @@
     font-size: 1.2rem;
     background: transparent;
     border: none;
-    color: rgba(255,255,255,0.55);
+    color: rgba(26, 36, 33, 0.55);
     cursor: pointer; border-radius: 6px;
 }
-.rank-help-close:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.rank-help-close:hover { background: rgba(26, 36, 33, 0.08); color: var(--text-primary, #1a2421); }
 .rank-help-line {
-    font-size: 0.88rem; color: rgba(255,255,255,0.82);
+    font-size: 0.88rem; color: rgba(26, 36, 33, 0.82);
     line-height: 1.6; margin: 0 0 0.6rem;
 }
-.rank-help-line b { color: #fff; font-weight: 700; }
+.rank-help-line b { color: var(--text-primary, #1a2421); font-weight: 700; }
 .rank-help-formula {
     margin: 0.5rem 0 0.9rem;
     padding: 0.7rem 0.9rem;
@@ -418,7 +418,7 @@
     background: rgba(82,168,114,0.15);
     border: 1px dashed rgba(114,196,146,0.35);
     border-radius: 10px;
-    color: var(--green-pale, #b5e6c8);
+    color: var(--green-mid, #62b682);
     letter-spacing: 0.03em;
 }
 .rank-help-grid {
@@ -427,23 +427,23 @@
     gap: 0.3rem 1.2rem;
     margin: 0.3rem 0 0.9rem;
     padding-left: 0.3rem;
-    font-size: 0.86rem; color: rgba(255,255,255,0.78);
+    font-size: 0.86rem; color: rgba(26, 36, 33, 0.78);
 }
-.rank-help-grid div:nth-child(odd) { font-weight: 700; color: #fff; }
+.rank-help-grid div:nth-child(odd) { font-weight: 700; color: var(--text-primary, #1a2421); }
 .rank-help-list {
     margin: 0 0 0.5rem 1.1rem;
     padding: 0;
-    font-size: 0.85rem; color: rgba(255,255,255,0.78);
+    font-size: 0.85rem; color: rgba(26, 36, 33, 0.78);
     line-height: 1.65;
 }
 .rank-help-list li { margin-bottom: 0.2rem; }
-.rank-help-list b { color: #fff; font-weight: 700; }
+.rank-help-list b { color: var(--text-primary, #1a2421); font-weight: 700; }
 
 .rank-loginCTA button {
     margin-top: 0.7rem;
     padding: 0.55rem 1.1rem;
     font-family: inherit; font-size: 0.88rem; font-weight: 700;
-    color: #fff;
+    color: var(--text-primary, #1a2421);
     background: linear-gradient(135deg, var(--green-mid, #52a872), var(--green-deep, #2a6b4a));
     border: none; border-radius: 999px;
     cursor: pointer;
@@ -461,20 +461,20 @@
 .mp-avatar {
     width: 64px; height: 64px; border-radius: 50%;
     background: linear-gradient(135deg, var(--green-mid, #52a872), var(--green-deep, #2a6b4a));
-    color: #fff;
+    color: var(--text-primary, #1a2421);
     display: flex; align-items: center; justify-content: center;
     font-weight: 700; font-size: 1.4rem;
     overflow: hidden; flex-shrink: 0;
 }
 .mp-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .mp-info { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
-.mp-nick { font-size: 1.2rem; font-weight: 800; color: #fff; }
-.mp-since { font-size: 0.78rem; color: rgba(255,255,255,0.55); }
+.mp-nick { font-size: 1.2rem; font-weight: 800; color: var(--text-primary, #1a2421); }
+.mp-since { font-size: 0.78rem; color: rgba(26, 36, 33, 0.55); }
 .mp-edit-btn {
     margin-left: auto;
     padding: 0.5rem 0.85rem;
     font-family: inherit; font-size: 0.8rem; font-weight: 600;
-    color: var(--green-pale, #b5e6c8);
+    color: var(--green-mid, #62b682);
     background: rgba(82,168,114,0.2);
     border: 1px solid rgba(114,196,146,0.3);
     border-radius: 8px;
@@ -490,23 +490,23 @@
 }
 .mp-stat {
     padding: 0.9rem 0.8rem;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.07);
+    background: rgba(26, 36, 33, 0.03);
+    border: 1px solid rgba(26, 36, 33, 0.07);
     border-radius: 11px;
     text-align: center;
 }
-.mp-stat-value { font-size: 1.45rem; font-weight: 800; color: #fff; line-height: 1.1; }
-.mp-stat-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; color: rgba(255,255,255,0.5); margin-top: 0.25rem; text-transform: uppercase; }
+.mp-stat-value { font-size: 1.45rem; font-weight: 800; color: var(--text-primary, #1a2421); line-height: 1.1; }
+.mp-stat-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; color: rgba(26, 36, 33, 0.5); margin-top: 0.25rem; text-transform: uppercase; }
 .mp-section-title {
     font-size: 0.82rem; font-weight: 700; letter-spacing: 0.15em;
-    color: rgba(255,255,255,0.55);
+    color: rgba(26, 36, 33, 0.55);
     text-transform: uppercase;
     margin: 1.4rem 0 0.6rem;
 }
 .mp-session-list {
     display: flex; flex-direction: column;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.07);
+    background: rgba(26, 36, 33, 0.03);
+    border: 1px solid rgba(26, 36, 33, 0.07);
     border-radius: 12px;
     overflow: hidden;
 }
@@ -516,14 +516,14 @@
     gap: 0.8rem;
     align-items: center;
     padding: 0.7rem 1rem;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(26, 36, 33, 0.05);
     font-size: 0.88rem;
 }
 .mp-session-row:last-child { border-bottom: none; }
-.mp-session-mode { color: #fff; font-weight: 600; }
-.mp-session-mode .mp-diff { font-weight: 500; color: rgba(255,255,255,0.5); margin-left: 0.4rem; font-size: 0.78rem; }
-.mp-session-score { color: var(--green-pale, #b5e6c8); font-weight: 700; font-size: 0.95rem; }
-.mp-session-meta { color: rgba(255,255,255,0.5); font-size: 0.78rem; white-space: nowrap; }
+.mp-session-mode { color: var(--text-primary, #1a2421); font-weight: 600; }
+.mp-session-mode .mp-diff { font-weight: 500; color: rgba(26, 36, 33, 0.5); margin-left: 0.4rem; font-size: 0.78rem; }
+.mp-session-score { color: var(--green-mid, #62b682); font-weight: 700; font-size: 0.95rem; }
+.mp-session-meta { color: rgba(26, 36, 33, 0.5); font-size: 0.78rem; white-space: nowrap; }
 .mp-danger {
     margin-top: 1.6rem;
     padding: 1rem;
@@ -531,8 +531,8 @@
     border: 1px solid rgba(160, 50, 50, 0.25);
     border-radius: 11px;
 }
-.mp-danger-title { font-size: 0.82rem; font-weight: 700; color: #ff9a9a; margin-bottom: 0.4rem; letter-spacing: 0.1em; text-transform: uppercase; }
-.mp-danger-desc { font-size: 0.82rem; color: rgba(255,255,255,0.6); line-height: 1.55; margin-bottom: 0.8rem; }
+.mp-danger-title { font-size: 0.82rem; font-weight: 700; color: #a03232; margin-bottom: 0.4rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.mp-danger-desc { font-size: 0.82rem; color: rgba(26, 36, 33, 0.6); line-height: 1.55; margin-bottom: 0.8rem; }
 .mp-delete-btn {
     padding: 0.55rem 1rem;
     font-family: inherit; font-size: 0.82rem; font-weight: 600;
@@ -545,17 +545,17 @@
 .mp-purchase {
     margin-top: 1.4rem;
     padding: 1rem;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(26, 36, 33, 0.03);
+    border: 1px solid rgba(26, 36, 33, 0.08);
     border-radius: 11px;
 }
-.mp-purchase-title { font-size: 0.82rem; font-weight: 700; color: var(--green-pale, #b5e6c8); margin-bottom: 0.4rem; letter-spacing: 0.1em; text-transform: uppercase; }
-.mp-purchase-desc { font-size: 0.82rem; color: rgba(255,255,255,0.6); line-height: 1.55; margin-bottom: 0.8rem; }
+.mp-purchase-title { font-size: 0.82rem; font-weight: 700; color: var(--green-mid, #62b682); margin-bottom: 0.4rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.mp-purchase-desc { font-size: 0.82rem; color: rgba(26, 36, 33, 0.6); line-height: 1.55; margin-bottom: 0.8rem; }
 .mp-purchase-btn {
     display: inline-flex; align-items: center; gap: 0.4rem;
     padding: 0.55rem 1rem;
     font-family: inherit; font-size: 0.82rem; font-weight: 600;
-    color: #fff;
+    color: var(--text-primary, #1a2421);
     background: linear-gradient(135deg, var(--green-mid, #52a872), var(--green-deep, #2a6b4a));
     border: none;
     border-radius: 7px;
@@ -572,7 +572,7 @@
     background: rgba(114, 196, 146, 0.1);
     border: 1px solid rgba(114, 196, 146, 0.25);
     border-radius: 10px;
-    font-size: 0.85rem; color: var(--green-pale, #b5e6c8);
+    font-size: 0.85rem; color: var(--green-mid, #62b682);
     line-height: 1.5;
     text-align: center;
 }
@@ -1121,7 +1121,7 @@
                 selfCardHtml = `
 <div class="rank-self-card">
     <div class="rank-self-label">내 순위</div>
-    <div style="color:rgba(255,255,255,0.6);">아직 기록 없음</div>
+    <div style="color:rgba(26,36,33,0.6);">아직 기록 없음</div>
     <div class="rank-score">0점</div>
 </div>`;
             }
@@ -1206,7 +1206,7 @@
                 return `
 <div class="mp-session-row">
     <div class="mp-session-mode">${MODE_LABELS[r.mode] || r.mode}<span class="mp-diff">${DIFF_LABELS[r.difficulty] || r.difficulty}</span></div>
-    <div class="mp-session-score">${(r.score || 0).toLocaleString()}점 <span style="color:rgba(255,255,255,0.5);font-weight:500;font-size:0.78rem;">(${r.correct_count}/${r.total_count})</span></div>
+    <div class="mp-session-score">${(r.score || 0).toLocaleString()}점 <span style="color:rgba(26,36,33,0.5);font-weight:500;font-size:0.78rem;">(${r.correct_count}/${r.total_count})</span></div>
     <div class="mp-session-meta">${when}</div>
 </div>`;
             }).join('') + '</div>';
