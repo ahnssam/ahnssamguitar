@@ -211,6 +211,25 @@
             width: auto;
             display: block;
         }
+
+
+        /* Desktop auth slot in topbar (left of volume) */
+        .topbar-auth-slot {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 0.8rem;
+        }
+        /* Topbar section label (shown to the right of the logo) */
+        .topbar-section-label {
+            font-family: inherit;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.1em;
+            margin-left: 0.9rem;
+            line-height: 1;
+            white-space: nowrap;
+        }
         .topbar-spacer { flex: 1; }
         .master-vol {
             display: flex; align-items: center; gap: 0.5rem;
@@ -1795,7 +1814,7 @@
         .loop-grid.cols-12 { grid-template-columns: repeat(4, 1fr); }
         .loop-grid.cols-16 { grid-template-columns: repeat(4, 1fr); }
         .loop-cell {
-            aspect-ratio: 1.6; display: flex; flex-direction: column;
+            aspect-ratio: 2.4; display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
             border-radius: 6px; cursor: pointer; transition: all 0.2s;
@@ -1814,21 +1833,21 @@
         .loop-cell-halves { display: flex; align-items: center; gap: 0; width: 100%; }
         .loop-cell-half {
             flex: 1; text-align: center; cursor: pointer;
-            font-size: 0.85rem; font-weight: 700; color: var(--white);
+            font-size: 1.25rem; font-weight: 700; color: var(--white);
             font-family: 'Playfair Display', serif;
             padding: 0.15rem 0; border-radius: 3px;
             transition: background 0.15s;
         }
         .loop-cell-half:hover { background: rgba(82,168,114,0.2); }
         .loop-cell-half.empty {
-            font-size: 0.65rem; color: rgba(255,255,255,0.2); font-weight: 400;
+            font-size: 0.9rem; color: rgba(255,255,255,0.25); font-weight: 400;
         }
         .loop-cell-half + .loop-cell-half { border-left: 1px solid rgba(255,255,255,0.1); }
         .loop-chord-picker {
             display: none; position: absolute; z-index: 10;
             top: 100%;
             background: #1e2e28; border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px; padding: 0.5rem; min-width: 150px;
+            border-radius: 10px; padding: 0.7rem; min-width: 220px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.5);
         }
         .loop-chord-picker.open { display: block; }
@@ -1838,9 +1857,9 @@
             display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.25rem;
         }
         .loop-chord-pick-btn {
-            padding: 0.4rem 0.2rem; font-size: 0.75rem; font-weight: 600;
-            border: 1px solid rgba(255,255,255,0.15); border-radius: 4px;
-            background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8);
+            padding: 0.55rem 0.3rem; font-size: 1rem; font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.15); border-radius: 5px;
+            background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.85);
             cursor: pointer; font-family: 'Playfair Display', serif;
             transition: all 0.15s; text-align: center;
         }
@@ -1851,9 +1870,9 @@
             background: var(--green-mid); border-color: var(--green-mid); color: #fff;
         }
         .loop-chord-clear {
-            width: 100%; margin-top: 0.3rem; padding: 0.3rem;
-            font-size: 0.7rem; border: none; border-radius: 4px;
-            background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5);
+            width: 100%; margin-top: 0.5rem; padding: 0.45rem;
+            font-size: 0.82rem; border: none; border-radius: 5px;
+            background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6);
             cursor: pointer; font-family: inherit;
         }
         .loop-chord-clear:hover { background: rgba(220,60,60,0.3); color: #fff; }
@@ -1959,7 +1978,10 @@
         <a href="index.html" class="topbar-logo-link" aria-label="홈으로">
             <img src="images/logo-vertical.webp" alt="안쌤의 기타나무숲" class="topbar-logo">
         </a>
+        <span class="topbar-section-label" id="topbarSectionLabel">연습모드</span>
         <div class="topbar-spacer"></div>
+        <!-- Desktop auth slot: login button / profile (left of volume) -->
+        <div class="auth-slot topbar-auth-slot"></div>
         <div class="master-vol">
             <i id="masterVolIcon" class="fas fa-volume-up" onclick="toggleMute()" title="음소거 토글"></i>
             <input type="range" id="masterVolSlider" class="master-vol-slider" min="0" max="100" value="100" oninput="updateMasterVol(this.value)">
@@ -2511,6 +2533,10 @@
                 taptempo:    { label: '탭템포', icon: 'fa-hand-pointer' }
                 // NOTE: ranking/mypage deliberately NOT here — they don't replace the dynamic tab
             };
+            // Topbar section label: "연습모드" for tools, "내 기록" for ranking/mypage
+            const SECTION_LBL = { ranking: '내 기록', mypage: '내 기록' };
+            const tsl = document.getElementById('topbarSectionLabel');
+            if (tsl) tsl.textContent = SECTION_LBL[tool] || '연습모드';
             const dynTab = document.getElementById('mobileDynamicTab');
             if (dynTab && DYN[tool]) {
                 dynTab.dataset.tool = tool;
