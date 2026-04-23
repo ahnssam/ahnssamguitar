@@ -2134,6 +2134,8 @@
             transition: all 0.3s;
         }
         nav.scrolled .menu-toggle span { background: var(--green-deep); }
+        /* When the white mobile menu is open, force hamburger dark so it stays visible */
+        body.menu-open .menu-toggle span { background: var(--green-deep); }
 
         /* ===== HERO SECTION ===== */
         .hero {
@@ -3493,7 +3495,7 @@
 
             .mobile-menu {
                 position: fixed; inset: 0; z-index: 999;
-                background: var(--green-deep);
+                background: var(--white);
                 display: flex !important; flex-direction: column;
                 align-items: center; justify-content: center;
                 gap: 2rem;
@@ -3502,10 +3504,12 @@
             }
             .mobile-menu.open { transform: translateX(0); }
             .mobile-menu a {
-                color: var(--white); text-decoration: none;
+                color: var(--green-deep); text-decoration: none;
                 font-size: 1.3rem; letter-spacing: 0.2em;
                 text-transform: uppercase;
+                font-weight: 600;
             }
+            .mobile-menu a:hover { color: var(--green-dark); }
         /* Login/user slot inside mobile hamburger menu */
         .mobile-auth-slot {
             display: flex;
@@ -3721,10 +3725,10 @@
             <i class="fas fa-guitar"></i>
             <span>연습도구</span>
         </a>
+        <div class="auth-slot mobile-nav-auth-slot"></div>
         <div class="menu-toggle" onclick="toggleMenu()">
             <span></span><span></span><span></span>
         </div>
-        <div class="auth-slot mobile-nav-auth-slot"></div>
     </nav>
 
     <!-- Tools drawer removed; 연습도구 now links to tools.html -->
@@ -4154,7 +4158,9 @@
 
         // Mobile menu
         function toggleMenu() {
-            document.getElementById('mobileMenu').classList.toggle('open');
+            const mm = document.getElementById('mobileMenu');
+            mm.classList.toggle('open');
+            document.body.classList.toggle('menu-open', mm.classList.contains('open'));
         }
 
         // Scroll reveal
