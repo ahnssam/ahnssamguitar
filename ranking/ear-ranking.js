@@ -84,7 +84,7 @@
     transition: all 0.15s ease;
 }
 .sum-btn.primary {
-    color: var(--text-primary, #1a2421);
+    color: #ffffff;
     background: linear-gradient(135deg, var(--green-mid, #52a872), var(--green-deep, #2a6b4a));
 }
 .sum-btn.primary:hover { filter: brightness(1.08); }
@@ -443,10 +443,14 @@
     margin-top: 0.7rem;
     padding: 0.55rem 1.1rem;
     font-family: inherit; font-size: 0.88rem; font-weight: 700;
-    color: var(--text-primary, #1a2421);
+    color: #ffffff;
     background: linear-gradient(135deg, var(--green-mid, #52a872), var(--green-deep, #2a6b4a));
     border: none; border-radius: 999px;
     cursor: pointer;
+    transition: background 0.18s, transform 0.1s;
+}
+.rank-loginCTA button:hover {
+    background: linear-gradient(135deg, var(--green-dark, #3a8a5c), var(--green-deep, #2a6b4a));
 }
 
 /* ---------- Mypage panel ---------- */

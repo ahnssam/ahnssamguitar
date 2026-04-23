@@ -29,8 +29,9 @@
     white-space: nowrap;
 }
 .auth-btn:hover {
-    background: var(--green-mid, #52a872);
+    background: var(--green-dark, #3a8a5c);
     color: #fff;
+    border-color: var(--green-dark, #3a8a5c);
 }
 .auth-btn .auth-btn-icon { font-size: 0.82rem; }
 
@@ -106,17 +107,17 @@ nav.scrolled .auth-btn:hover {
 .topbar .auth-slot .auth-btn {
     background: #fff;
     color: var(--green-deep, #2a6b4a);
-    border-color: var(--green-mid, #62b682);
+    border-color: var(--green-mid, #52a872);
 }
 .topbar .auth-slot .auth-btn:hover {
-    background: var(--green-mid, #62b682);
+    background: var(--green-dark, #3a8a5c);
     color: #fff;
-    border-color: var(--green-mid, #62b682);
+    border-color: var(--green-dark, #3a8a5c);
 }
 .topbar .auth-slot .auth-user {
     background: #fff;
     color: var(--green-deep, #2a6b4a);
-    border-color: var(--green-mid, #62b682);
+    border-color: var(--green-mid, #52a872);
 }
 .topbar .auth-slot .auth-user:hover { background: var(--green-faint, #e2f5ea); }
 
