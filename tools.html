@@ -11,9 +11,9 @@
         gtag('config', 'G-B1HS5NH4L1');
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="dark">
-    <meta name="supported-color-schemes" content="dark">
-    <meta name="theme-color" content="#1a2421">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <meta name="theme-color" content="#e2f5ea">
     <title>연습도구 | 안쌤의 기타나무숲</title>
     <meta name="description" content="안쌤의 기타나무숲 연습도구 — 튜너, 메트로놈, 음정 트레이닝, 코드 라이브러리, 카포 계산기, 탭템포.">
     <meta name="robots" content="noindex, nofollow">
@@ -25,21 +25,33 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* "only dark" tells Samsung Internet / other browsers that this site is
-               intentionally dark and must NOT be force-inverted by their built-in
-               dark/night mode. Without this, Samsung Internet re-tints already-dark
-               UIs and crushes the border contrast on tools.html. */
-            color-scheme: only dark;
+            /* Light green theme matching index.html. "only light" tells Samsung
+               Internet / other browsers to NOT force-invert the page under their
+               built-in night mode.  Our palette is already a calm light green so
+               it reads well even if a user overrides. */
+            color-scheme: only light;
             --green-deep: #2a6b4a;
             --green-dark: #3a8a5c;
-            --green-mid: #52a872;
+            --green-mid: #62b682;
             --green-light: #72c492;
             --green-pale: #b5e6c8;
             --green-faint: #e2f5ea;
-            --bg-dark: #1a2421;
-            --bg-darker: #0f1614;
-            --bg-panel: #141d1b;
+            --cream: #f5fbf7;
+
+            /* Background tokens — kept under the old names so every existing
+               `var(--bg-*)` reference keeps working, just now pointing at light
+               values. */
+            --bg-darker: #e2f5ea;   /* outermost page bg (was near-black) */
+            --bg-dark:   #f5fbf7;   /* tool-body bg (was dark)            */
+            --bg-panel:  #ffffff;   /* card/panel bg (was dark)           */
+
+            /* Text tokens — anywhere the dark theme used var(--white) for
+               foreground text, we now want a deep neutral. --white stays as
+               pure #fff for real backgrounds. */
             --white: #ffffff;
+            --text-primary: #1a2421;   /* main text               */
+            --text-mid:     #4a5a52;   /* secondary text          */
+            --text-light:   #7a8a82;   /* muted / hints           */
 
             --sidebar-w: 260px;
             --topbar-h: 60px;
@@ -50,25 +62,25 @@
         html, body {
             height: 100%;
             background-color: var(--bg-darker);
-            /* Ambient cross pattern in all the empty dark space around the tool body.
-               The tool-body's own solid background covers this pattern underneath,
-               so the crosses only show in the side/margin areas. */
-            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.045'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-            color: var(--white);
+            /* Ambient cross pattern in the empty space around the tool body.
+               SVG fill is deep green at low opacity to blend with the light
+               green-faint body background. */
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%232a6b4a' fill-opacity='0.06'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            color: var(--text-primary);
             font-family: 'Noto Sans KR', sans-serif;
             overflow-x: hidden;
         }
         /* Ambient floating leaves decorating the empty side areas */
         .ambient-leaf {
             position: fixed;
-            color: var(--green-pale, #b5e6c8);
-            opacity: 0.09;
+            color: var(--green-mid, #52a872);
+            opacity: 0.18;
             z-index: 0;
             pointer-events: none;
             animation: floatLeaf 18s ease-in-out infinite;
         }
         @media (max-width: 900px), (orientation: portrait) {
-            .ambient-leaf { opacity: 0.08; font-size: 1.6rem; }
+            .ambient-leaf { opacity: 0.15; font-size: 1.6rem; }
         }
         a { color: inherit; text-decoration: none; }
         button { font-family: inherit; }
@@ -81,14 +93,14 @@
             margin: auto auto 0;
             padding: 10px 8px;
             text-align: center;
-            border-top: 1px solid rgba(255,255,255,0.06);
+            border-top: 1px solid rgba(42, 107, 74, 0.06);
             flex-shrink: 0;
         }
         .coupang-banner-desktop { display: block; }
         .coupang-banner-mobile { display: none; }
         .coupang-disclaimer {
             font-size: 0.65rem;
-            color: rgba(255,255,255,0.35);
+            color: rgba(26, 36, 33, 0.35);
             margin-top: 8px;
             line-height: 1.45;
         }
@@ -112,24 +124,34 @@
             }
         }
 
-        /* ===== Desktop (>900px): hamburger pinned to top-left, bigger, always visible ===== */
+        /* ===== Desktop (>900px): hamburger sits in the topbar's far-left slot ===== */
         @media (min-width: 901px) and (orientation: landscape) {
+            /* Taller topbar on desktop (60 → 84) to house the bigger logo. */
+            :root { --topbar-h: 84px; }
+
             .topbar .hamburger {
-                position: fixed;
-                top: calc(var(--topbar-h) + 8px);
-                left: 12px;
+                /* In-flow, first item in the flex row (to the LEFT of the logo). */
+                order: -1;
                 width: 52px;
                 height: 52px;
                 font-size: 1.45rem;
-                z-index: 25;
                 background: transparent;
+                margin-left: 4px;
+                margin-right: 0;
             }
-            .topbar .hamburger:hover { background: rgba(255,255,255,0.1); }
+            .topbar .hamburger:hover { background: rgba(42, 107, 74, 0.1); }
             /* Always visible on desktop — never removed when sidebar is collapsed */
             .topbar .hamburger { display: inline-flex !important; }
-            /* Push "연습 도구" label down so it doesn't overlap the pinned hamburger */
+            /* Tuck the logo snug against the hamburger — flush against the
+               hamburger's right edge (cancels flex gap + link padding). */
+            .topbar-logo-link {
+                margin-left: -14px;
+                padding-left: 0;
+            }
+            /* Sidebar's first section label — small breathing room at top
+               (hamburger no longer occupies this column). */
             .sidebar > .sidebar-section-label:first-of-type {
-                padding-top: 4.6rem;
+                padding-top: 0.9rem;
             }
 
             /* Sidebar smoothly transitions width too */
@@ -159,10 +181,10 @@
                 width: 22px;
                 flex-shrink: 0;
                 text-align: center;
-                color: rgba(255,255,255,0.75);
+                color: rgba(26, 36, 33, 0.75);
             }
-            .sidebar.closed .menu-item.active i { color: var(--green-pale); }
-            .sidebar.closed .menu-item:hover i { color: var(--green-pale); }
+            .sidebar.closed .menu-item.active i { color: var(--green-deep); }
+            .sidebar.closed .menu-item:hover i { color: var(--green-deep); }
             /* When collapsed, the first sidebar-menu needs its own top-padding to clear the hamburger
                (since the normally-padded section-label is hidden) */
             .sidebar.closed > .sidebar-menu:first-of-type {
@@ -213,7 +235,7 @@
         }
         #loader::before {
             content: ''; position: absolute; inset: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.07'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%232a6b4a' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
             pointer-events: none;
         }
         #loader.hidden { opacity: 0; visibility: hidden; }
@@ -225,7 +247,7 @@
         #loader .loader-text {
             position: relative; z-index: 1;
             font-family: 'Playfair Display', serif;
-            font-size: 2rem; color: #fff;
+            font-size: 2rem; color: var(--text-primary);
             letter-spacing: 0.3em;
             animation: pulse 1.5s ease-in-out infinite;
         }
@@ -243,7 +265,7 @@
             height: var(--topbar-h);
             z-index: 30;
             background: var(--bg-dark);
-            border-bottom: 1px solid rgba(255,255,255,0.08);
+            border-bottom: 1px solid rgba(42, 107, 74, 0.08);
             display: flex;
             align-items: center;
             gap: 14px;
@@ -255,7 +277,7 @@
             background: transparent;
             border: none;
             border-radius: 50%;
-            color: var(--white);
+            color: var(--text-primary);
             font-size: 1.1rem;
             cursor: pointer;
             display: flex;
@@ -264,8 +286,8 @@
             transition: background 0.2s;
             flex-shrink: 0;
         }
-        .hamburger:hover { background: rgba(255,255,255,0.08); }
-        .hamburger:active { background: rgba(255,255,255,0.14); }
+        .hamburger:hover { background: rgba(42, 107, 74, 0.08); }
+        .hamburger:active { background: rgba(42, 107, 74, 0.14); }
         .topbar-logo-link {
             display: inline-flex;
             align-items: center;
@@ -273,9 +295,9 @@
             border-radius: 6px;
             transition: background 0.2s;
         }
-        .topbar-logo-link:hover { background: rgba(255,255,255,0.05); }
+        .topbar-logo-link:hover { background: rgba(42, 107, 74, 0.05); }
         .topbar-logo {
-            height: 44px;
+            height: 60px;
             width: auto;
             display: block;
         }
@@ -287,16 +309,9 @@
             align-items: center;
             margin-right: 0.8rem;
         }
-        /* Topbar section label (shown to the right of the logo) */
+        /* Topbar section label (shown to the right of the logo) — hidden per spec */
         .topbar-section-label {
-            font-family: inherit;
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: #fff;
-            letter-spacing: 0.1em;
-            margin-left: 0.9rem;
-            line-height: 1;
-            white-space: nowrap;
+            display: none;
         }
         .topbar-spacer { flex: 1; }
         .master-vol {
@@ -304,15 +319,15 @@
             flex: 0 1 220px; min-width: 140px;
         }
         .master-vol i {
-            font-size: 0.9rem; color: rgba(255,255,255,0.6);
+            font-size: 0.9rem; color: rgba(26, 36, 33, 0.6);
             flex-shrink: 0; cursor: pointer;
             transition: color 0.2s;
         }
-        .master-vol i:hover { color: rgba(255,255,255,0.9); }
+        .master-vol i:hover { color: rgba(26, 36, 33, 0.9); }
         .master-vol-slider {
             -webkit-appearance: none; appearance: none;
             width: 100%; height: 3px; border-radius: 2px;
-            background: rgba(255,255,255,0.15); outline: none;
+            background: rgba(42, 107, 74, 0.15); outline: none;
             cursor: pointer;
         }
         .master-vol-slider::-webkit-slider-thumb {
@@ -341,8 +356,24 @@
             flex-direction: column;
             transform: translateX(0);
             transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 4px 0 30px rgba(0,0,0,0.25);
-            overflow: hidden;
+            box-shadow: 4px 0 30px rgba(42, 107, 74, 0.18);
+            /* Single unified scroll context — the two `.sidebar-menu` sections
+               size to content, and if the whole list + foot exceeds the
+               sidebar's height we scroll here as one, instead of having each
+               section trap the drag gesture separately. */
+            overflow-y: auto;
+            overflow-x: hidden;
+            /* Make the sidebar itself the drag/scroll target: smooth iOS
+               inertial scrolling + don't let the rubber-band leak to the
+               parent (body) so the gesture is visibly owned by the sidebar. */
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            touch-action: pan-y;
+        }
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(42, 107, 74, 0.12);
+            border-radius: 3px;
         }
         /* .sidebar.closed: desktop rail handled inside @media(min-width:901px); mobile uses .open */
 
@@ -350,24 +381,23 @@
             font-size: 0.72rem;
             font-weight: 700;
             letter-spacing: 0.18em;
-            color: rgba(255,255,255,0.45);
+            color: rgba(26, 36, 33, 0.45);
             text-transform: uppercase;
-            padding: 1.3rem 1.4rem 0.6rem;
+            /* Tight bottom padding so the first menu icon sits right under
+               the label, not pushed down by whitespace. */
+            padding: 1.1rem 1.4rem 0.25rem;
             flex-shrink: 0;
         }
+        /* Each sidebar nav section sizes to content — no per-section scroll
+           container, so drag gestures don't get trapped in the first nav.
+           If the whole list ever exceeds sidebar height, the sidebar itself
+           scrolls (.sidebar has overflow-y:auto below). */
         .sidebar-menu {
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding: 0.2rem 0.6rem 1rem;
+            flex: 0 0 auto;
+            padding: 0 0.6rem 0.3rem;
             display: flex;
             flex-direction: column;
             gap: 2px;
-        }
-        .sidebar-menu::-webkit-scrollbar { width: 6px; }
-        .sidebar-menu::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.1);
-            border-radius: 3px;
         }
         .menu-item {
             display: flex;
@@ -378,7 +408,7 @@
             background: transparent;
             border: none;
             border-radius: 10px;
-            color: rgba(255,255,255,0.78);
+            color: rgba(26, 36, 33, 0.78);
             font-size: 0.88rem;
             letter-spacing: 0.02em;
             cursor: pointer;
@@ -389,32 +419,36 @@
             width: 22px;
             text-align: center;
             font-size: 0.95rem;
-            color: rgba(255,255,255,0.55);
+            color: rgba(26, 36, 33, 0.55);
             transition: color 0.18s;
             flex-shrink: 0;
         }
         .menu-item:hover {
             background: rgba(82, 168, 114, 0.12);
-            color: var(--white);
+            color: var(--text-primary);
         }
-        .menu-item:hover i { color: var(--green-pale); }
+        .menu-item:hover i { color: var(--green-deep); }
         .menu-item.active {
             background: rgba(82, 168, 114, 0.22);
-            color: var(--green-pale);
+            color: var(--green-deep);
             font-weight: 600;
         }
-        .menu-item.active i { color: var(--green-pale); }
+        .menu-item.active i { color: var(--green-deep); }
 
         .sidebar-foot {
+            /* margin-top:auto keeps the "메인으로 돌아가기" link anchored at
+               the very bottom of the sidebar even when the nav list above is
+               short enough to leave blank space. */
+            margin-top: auto;
             padding: 0.9rem 1.4rem 1.2rem;
-            border-top: 1px solid rgba(255,255,255,0.06);
+            border-top: 1px solid rgba(42, 107, 74, 0.06);
             font-size: 0.7rem;
-            color: rgba(255,255,255,0.35);
+            color: rgba(26, 36, 33, 0.35);
             line-height: 1.5;
             flex-shrink: 0;
         }
         .sidebar-foot a {
-            color: rgba(255,255,255,0.55);
+            color: rgba(26, 36, 33, 0.55);
             display: block;
             text-align: center;
             font-size: 0.95rem;
@@ -422,7 +456,7 @@
             padding: 0.35rem 0;
             text-decoration: none;
         }
-        .sidebar-foot a:hover { color: var(--green-pale); }
+        .sidebar-foot a:hover { color: var(--green-deep); }
 
         /* ===== MAIN CONTENT ===== */
         .tools-main {
@@ -436,15 +470,27 @@
         }
         .tools-main.full { margin-left: 68px; /* narrow icon-rail sidebar width */ }
 
+        /* Tool title block (icon + "메트로놈"/"튜너"/...) lives INSIDE the
+           topbar row, vertically aligned with the logo + "연습도구" label.
+           It stays at the same x-offset it used to occupy (left edge of the
+           tool-body column) — just pulled up into the topbar row via
+           position:fixed so the tool-body isn't pushed down. z-index sits
+           above the topbar so the header paints on top of the empty
+           middle-spacer area of the topbar. */
         .tool-header {
-            position: absolute;
-            top: 0;
-            left: 0;
-            margin: 0;
+            position: fixed;
+            top: calc((var(--topbar-h) - 48px) / 2);
+            left: calc(var(--sidebar-w) + 1rem);
             display: flex;
             align-items: center;
             gap: 0.9rem;
-            z-index: 2;
+            z-index: 31;
+            pointer-events: none;  /* don't intercept clicks on topbar controls */
+        }
+        /* When the sidebar is collapsed (.tools-main gets .full), the tool
+           column shifts left to match the narrow icon-rail sidebar. */
+        .tools-main.full .tool-header {
+            left: calc(68px + 1rem);
         }
         .tool-header-icon {
             display: inline-flex;
@@ -453,7 +499,7 @@
             width: 48px; height: 48px;
             border-radius: 12px;
             background: rgba(82, 168, 114, 0.18);
-            color: var(--green-pale);
+            color: var(--green-deep);
             flex-shrink: 0;
             font-size: 1.25rem;
         }
@@ -469,7 +515,7 @@
         }
         .tool-header p {
             font-size: 0.95rem;
-            color: rgba(255,255,255,0.6);
+            color: rgba(26, 36, 33, 0.6);
             line-height: 1.6;
         }
 
@@ -488,17 +534,10 @@
         /* .tool-panel.active styled above */
         /* Chord library uses a wider panel so up to 7 columns can appear on desktop */
         #chordsPanel .tool-body { max-width: 1160px; }
-        /* Chord library header: two-line h1 with "코드" aligned to icon top */
-        #chordsPanel .tool-header { align-items: flex-start; }
-        #chordsPanel .tool-header h1 {
-            height: auto;
-            line-height: 1.15;
-            display: block;
-        }
 
         .tool-body {
             background: var(--bg-panel);
-            border: 1px solid rgba(255,255,255,0.06);
+            border: 1px solid rgba(42, 107, 74, 0.06);
             border-radius: 14px;
             padding: 1.8rem 1.5rem;
             max-width: 860px;
@@ -510,7 +549,7 @@
         .sidebar-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.55);
+            background: rgba(26, 36, 33, 0.35);
             z-index: 15;
             opacity: 0;
             visibility: hidden;
@@ -537,7 +576,7 @@
                 transform: translateX(100%);
                 z-index: 28;
                 border-right: none;
-                border-left: 1px solid rgba(255,255,255,0.06);
+                border-left: 1px solid rgba(42, 107, 74, 0.06);
             }
             .sidebar.open { transform: translateX(0); }
             /* Hide 튜너 and 메트로놈 from sidebar — they already live in the tab strip */
@@ -574,14 +613,14 @@
                 padding: 0;
                 border-radius: 50%;
                 justify-content: center;
-                background: rgba(255,255,255,0.08);
-                color: #fff;
-                border: 1.5px solid rgba(255,255,255,0.3);
+                background: rgba(42, 107, 74, 0.08);
+                color: var(--text-primary);
+                border: 1.5px solid rgba(42, 107, 74, 0.3);
             }
             .topbar-compact-auth .auth-btn:hover {
-                background: rgba(255,255,255,0.18);
-                border-color: rgba(255,255,255,0.55);
-                color: #fff;
+                background: rgba(42, 107, 74, 0.18);
+                border-color: rgba(26, 36, 33, 0.55);
+                color: var(--text-primary);
             }
             .topbar-compact-auth .auth-btn span { display: none; }
             .topbar-compact-auth .auth-btn .auth-btn-icon { font-size: 1.05rem; }
@@ -590,10 +629,10 @@
                 width: 38px; height: 38px;
                 border-radius: 50%;
                 justify-content: center;
-                background: rgba(255,255,255,0.08);
-                border: 1.5px solid rgba(255,255,255,0.3);
+                background: rgba(42, 107, 74, 0.08);
+                border: 1.5px solid rgba(42, 107, 74, 0.3);
             }
-            .topbar-compact-auth .auth-user:hover { background: rgba(255,255,255,0.18); }
+            .topbar-compact-auth .auth-user:hover { background: rgba(42, 107, 74, 0.18); }
             .topbar-compact-auth .auth-user .auth-user-name { display: none; }
             .topbar-compact-auth .auth-user-avatar {
                 width: 34px; height: 34px;
@@ -616,7 +655,7 @@
                 z-index: 29;
                 height: 48px;
                 background: var(--bg-dark);
-                border-bottom: 1px solid rgba(255,255,255,0.08);
+                border-bottom: 1px solid rgba(42, 107, 74, 0.08);
             }
             .mobile-tab {
                 flex: 1 1 0;
@@ -628,7 +667,7 @@
                 font-family: inherit;
                 font-size: 0.9rem;
                 font-weight: 600;
-                color: rgba(255,255,255,0.55);
+                color: rgba(26, 36, 33, 0.55);
                 background: transparent;
                 border: none;
                 border-bottom: 2px solid transparent;
@@ -639,12 +678,12 @@
             }
             .mobile-tab i { font-size: 0.9rem; opacity: 0.85; }
             .mobile-tab.active {
-                color: var(--green-pale);
+                color: var(--green-deep);
                 background: rgba(82,168,114,0.08);
-                border-bottom-color: var(--green-light);
+                border-bottom-color: var(--green-mid);
             }
             .mobile-tab.active i { opacity: 1; }
-            .mobile-tab:active:not(.active) { background: rgba(255,255,255,0.04); }
+            .mobile-tab:active:not(.active) { background: rgba(42, 107, 74, 0.04); }
             .mobile-tab-more {
                 flex: 0 0 auto;
                 width: 48px;
@@ -652,12 +691,12 @@
                 align-items: center;
                 justify-content: center;
                 background: transparent;
-                color: rgba(255,255,255,0.65);
+                color: rgba(26, 36, 33, 0.65);
                 border: none;
                 cursor: pointer;
                 font-size: 1rem;
             }
-            .mobile-tab-more:active { background: rgba(255,255,255,0.05); }
+            .mobile-tab-more:active { background: rgba(42, 107, 74, 0.05); }
 
             /* Main content: topbar + tab strip height */
             .tools-main {
@@ -709,7 +748,7 @@
                 padding: 1rem 0.9rem;
                 /* Brighter border on mobile so panel edges stay legible even if
                    Samsung Internet's night mode re-tints the page. */
-                border-color: rgba(255,255,255,0.14);
+                border-color: rgba(26, 36, 33, 0.14);
             }
             /* Reserve space on the right for the absolutely-positioned reset/pill
                column so the centered 점수/연속/정답률 boxes don't collide with it
@@ -772,12 +811,12 @@
         /* ===== Capo Calculator ===== */
         .capo-intro {
             font-size: 0.82rem;
-            color: rgba(255,255,255,0.7);
+            color: rgba(26, 36, 33, 0.7);
             text-align: center;
             line-height: 1.55;
             margin-bottom: 1.4rem;
             padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.12);
+            border-bottom: 1px solid rgba(42, 107, 74, 0.12);
         }
         .capo-intro-row {
             display: flex;
@@ -787,8 +826,8 @@
         }
         .capo-help-btn {
             background: none;
-            border: 1.5px solid rgba(255,255,255,0.3);
-            color: rgba(255,255,255,0.5);
+            border: 1.5px solid rgba(42, 107, 74, 0.3);
+            color: rgba(26, 36, 33, 0.5);
             width: 22px;
             height: 22px;
             border-radius: 50%;
@@ -807,8 +846,8 @@
             padding: 0;
         }
         .capo-help-btn:hover, .capo-help-btn:active {
-            border-color: var(--green-pale);
-            color: var(--green-pale);
+            border-color: var(--green-deep);
+            color: var(--green-deep);
             background: rgba(82, 168, 114, 0.12);
         }
         .capo-help-overlay {
@@ -824,7 +863,7 @@
         .capo-help-overlay.open { display: block; }
         .capo-help-overlay h4 {
             font-size: 0.95rem;
-            color: var(--green-pale);
+            color: var(--green-deep);
             margin-bottom: 0.8rem;
             display: flex;
             align-items: center;
@@ -833,39 +872,39 @@
         .capo-help-close {
             background: none;
             border: none;
-            color: rgba(255,255,255,0.5);
+            color: rgba(26, 36, 33, 0.5);
             font-size: 1.1rem;
             cursor: pointer;
             padding: 0.2rem;
         }
-        .capo-help-close:hover { color: var(--white); }
+        .capo-help-close:hover { color: var(--text-primary); }
         .capo-help-overlay p {
             font-size: 0.8rem;
-            color: rgba(255,255,255,0.75);
+            color: rgba(26, 36, 33, 0.75);
             line-height: 1.65;
             margin-bottom: 0.8rem;
         }
         .capo-help-overlay .capo-help-label {
             font-size: 0.78rem;
             font-weight: 700;
-            color: var(--green-pale);
+            color: var(--green-deep);
             margin-bottom: 0.25rem;
         }
         .capo-help-overlay .capo-help-example {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(42, 107, 74, 0.05);
+            border: 1px solid rgba(42, 107, 74, 0.08);
             border-radius: 8px;
             padding: 0.6rem 0.8rem;
             margin-bottom: 0.8rem;
             font-size: 0.78rem;
-            color: rgba(255,255,255,0.7);
+            color: rgba(26, 36, 33, 0.7);
             line-height: 1.6;
         }
         .capo-section { margin-bottom: 1.2rem; }
         .capo-label {
             display: block;
             font-size: 0.78rem;
-            color: rgba(255,255,255,0.55);
+            color: rgba(26, 36, 33, 0.55);
             letter-spacing: 0.15em;
             text-transform: uppercase;
             margin-bottom: 0.6rem;
@@ -878,9 +917,9 @@
         }
         .capo-key-btn {
             padding: 0.55rem 0;
-            background: rgba(255,255,255,0.06);
-            color: rgba(255,255,255,0.75);
-            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(42, 107, 74, 0.06);
+            color: rgba(26, 36, 33, 0.75);
+            border: 1px solid rgba(42, 107, 74, 0.18);
             border-radius: 6px;
             font-size: 0.82rem;
             font-weight: 600;
@@ -893,7 +932,7 @@
         .capo-key-btn.active {
             background: var(--green-mid);
             border-color: var(--green-mid);
-            color: var(--white);
+            color: var(--text-primary);
         }
         .capo-key-btn.capo-key-dim { opacity: 0.35; }
         .capo-key-badge {
@@ -917,7 +956,7 @@
         }
         .capo-result-label {
             font-size: 0.75rem;
-            color: rgba(255,255,255,0.7);
+            color: rgba(26, 36, 33, 0.7);
             letter-spacing: 0.25em;
             text-transform: uppercase;
             margin-bottom: 0.15rem;
@@ -927,7 +966,7 @@
             font-family: 'Playfair Display', serif;
             font-size: 3.8rem;
             font-weight: 900;
-            color: var(--green-pale);
+            color: var(--green-deep);
             line-height: 1;
             margin: 0;
             display: block;
@@ -936,7 +975,7 @@
         }
         .capo-result-desc {
             font-size: 0.82rem;
-            color: rgba(255,255,255,0.8);
+            color: rgba(26, 36, 33, 0.8);
             margin-top: 0.35rem;
             line-height: 1.45;
         }
@@ -958,17 +997,17 @@
             left: 0.7rem;
             top: 50%;
             transform: translateY(-50%);
-            color: rgba(255,255,255,0.4);
+            color: rgba(26, 36, 33, 0.4);
             font-size: 0.72rem;
             pointer-events: none;
         }
         .chord-search-input {
             width: 100%;
             padding: 0.4rem 1.9rem 0.4rem 1.8rem;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(42, 107, 74, 0.06);
+            border: 1px solid rgba(42, 107, 74, 0.18);
             border-radius: 8px;
-            color: rgba(255,255,255,0.92);
+            color: rgba(26, 36, 33, 0.92);
             font-size: 0.78rem;
             font-family: inherit;
             transition: border-color 0.2s, background 0.2s;
@@ -977,9 +1016,9 @@
         .chord-search-input:focus {
             outline: none;
             border-color: var(--green-mid);
-            background: rgba(255,255,255,0.08);
+            background: rgba(42, 107, 74, 0.08);
         }
-        .chord-search-input::placeholder { color: rgba(255,255,255,0.35); }
+        .chord-search-input::placeholder { color: rgba(26, 36, 33, 0.35); }
         .chord-search-clear {
             position: absolute;
             right: 0.3rem;
@@ -988,21 +1027,21 @@
             display: none;
             background: transparent;
             border: none;
-            color: rgba(255,255,255,0.55);
+            color: rgba(26, 36, 33, 0.55);
             cursor: pointer;
             padding: 0.25rem 0.4rem;
             font-size: 0.72rem;
             border-radius: 5px;
         }
         .chord-search-clear:hover {
-            color: #fff;
-            background: rgba(255,255,255,0.08);
+            color: var(--text-primary);
+            background: rgba(42, 107, 74, 0.08);
         }
         .chord-search-wrap.has-text .chord-search-clear { display: block; }
         .chord-empty {
             grid-column: 1 / -1;
             text-align: center;
-            color: rgba(255,255,255,0.5);
+            color: rgba(26, 36, 33, 0.5);
             font-size: 0.9rem;
             padding: 2.5rem 1rem;
         }
@@ -1012,7 +1051,7 @@
             justify-content: center;
             margin-bottom: 0.9rem;
             padding-bottom: 0.9rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(42, 107, 74, 0.1);
         }
         .chord-top-match .chord-card {
             max-width: 175px;
@@ -1029,9 +1068,9 @@
         }
         .chord-filter {
             padding: 0.4rem 0.8rem;
-            background: rgba(255,255,255,0.06);
-            color: rgba(255,255,255,0.75);
-            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(42, 107, 74, 0.06);
+            color: rgba(26, 36, 33, 0.75);
+            border: 1px solid rgba(42, 107, 74, 0.18);
             border-radius: 20px;
             font-size: 0.72rem;
             font-weight: 500;
@@ -1047,7 +1086,7 @@
         .chord-filter.active {
             background: var(--green-mid);
             border-color: var(--green-mid);
-            color: var(--white);
+            color: var(--text-primary);
         }
         .chord-filter-level {
             color: #e8c44a;
@@ -1061,7 +1100,7 @@
         .chord-filter-level.active {
             background: rgba(232, 196, 74, 0.25);
             border-color: #e8c44a;
-            color: #fff4c4;
+            color: #8a6a1a;
         }
         .chord-filter-wrap { position: relative; }
         .chord-filter-dd {
@@ -1078,12 +1117,12 @@
             position: absolute;
             top: calc(100% + 6px);
             left: 0;
-            background: #0f1614;
+            background: var(--bg-panel);
             border: 1px solid rgba(114, 196, 146, 0.35);
             border-radius: 10px;
             padding: 0.3rem;
             min-width: 130px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            box-shadow: 0 8px 20px rgba(42, 107, 74, 0.22);
             z-index: 10;
             display: none;
         }
@@ -1094,7 +1133,7 @@
             text-align: left;
             padding: 0.5rem 0.8rem;
             background: transparent;
-            color: rgba(255,255,255,0.8);
+            color: rgba(26, 36, 33, 0.8);
             border: none;
             font-size: 0.82rem;
             font-family: inherit;
@@ -1104,11 +1143,11 @@
         }
         .chord-7th-menu button:hover {
             background: rgba(82, 168, 114, 0.2);
-            color: var(--white);
+            color: var(--text-primary);
         }
         .chord-7th-menu button.active {
             background: rgba(82, 168, 114, 0.3);
-            color: var(--green-pale);
+            color: var(--green-deep);
         }
         .chord-grid {
             display: grid;
@@ -1119,8 +1158,8 @@
             justify-items: center;
         }
         .chord-card {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(42, 107, 74, 0.04);
+            border: 1px solid rgba(42, 107, 74, 0.12);
             border-radius: 10px;
             padding: 0.55rem;
             text-align: center;
@@ -1171,7 +1210,7 @@
         .chord-modal {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.88);
+            background: rgba(26, 36, 33, 0.45);
             display: none;
             align-items: center;
             justify-content: center;
@@ -1179,7 +1218,7 @@
             padding: 2rem;
             cursor: zoom-out;
             animation: chordModalFade 0.2s ease-out;
-            color-scheme: only dark;
+            color-scheme: only light;
         }
         .chord-modal.open { display: flex; }
         @keyframes chordModalFade {
@@ -1190,8 +1229,8 @@
             max-width: 500px;
             width: 100%;
             max-height: 90vh;
-            background: #1a2421;
-            border: 2px solid rgba(114, 196, 146, 0.6);
+            background: var(--bg-panel);
+            border: 2px solid rgba(42, 107, 74, 0.35);
             border-radius: 18px;
             padding: 2rem 1.5rem;
             box-shadow: 0 0 60px rgba(114, 196, 146, 0.25);
@@ -1211,9 +1250,9 @@
         }
         .fingering-btn {
             padding: 0.5rem 0.7rem;
-            background: rgba(255,255,255,0.06);
-            color: rgba(255,255,255,0.75);
-            border: 1px solid rgba(255,255,255,0.22);
+            background: rgba(42, 107, 74, 0.06);
+            color: rgba(26, 36, 33, 0.75);
+            border: 1px solid rgba(42, 107, 74, 0.22);
             border-radius: 22px;
             font-size: 0.78rem;
             font-family: inherit;
@@ -1226,12 +1265,12 @@
         }
         .fingering-btn:hover {
             background: rgba(82, 168, 114, 0.2);
-            color: var(--white);
+            color: var(--text-primary);
             border-color: rgba(114, 196, 146, 0.5);
         }
         .fingering-btn.active {
             background: rgba(82, 168, 114, 0.35);
-            color: var(--white);
+            color: var(--text-primary);
             border-color: var(--green-mid);
         }
 
@@ -1250,7 +1289,7 @@
             cursor: pointer;
             border: 2px solid var(--green-mid);
             background: rgba(82, 168, 114, 0.08);
-            color: var(--green-pale);
+            color: var(--green-deep);
             transition: all 0.3s;
             letter-spacing: 0.03em;
             font-family: inherit;
@@ -1262,15 +1301,15 @@
         .et-mode-btn + .et-mode-btn { border-left: none; }
         .et-mode-btn.active {
             background: var(--green-mid);
-            color: var(--white);
+            color: var(--text-primary);
         }
         .et-btn-word { white-space: nowrap; }
         .et-btn-sep { display: inline; }
         .et-mode-content { display: none; position: relative; }
         .et-mode-content.active { display: block; }
         .et-settings-box {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(42, 107, 74, 0.04);
+            border: 1px solid rgba(42, 107, 74, 0.08);
             border-radius: 12px;
             padding: 0.6rem 0.7rem;
             margin-bottom: 1rem;
@@ -1285,7 +1324,7 @@
         }
         .et-setting-label {
             font-size: 0.7rem;
-            color: rgba(255,255,255,0.4);
+            color: rgba(26, 36, 33, 0.4);
             min-width: 2.5rem;
             flex-shrink: 0;
             letter-spacing: 0.04em;
@@ -1299,23 +1338,23 @@
             padding: 0.3rem 0.65rem;
             font-size: 0.73rem;
             border-radius: 16px;
-            border: 1px solid rgba(255,255,255,0.18);
-            background: rgba(255,255,255,0.06);
-            color: rgba(255,255,255,0.55);
+            border: 1px solid rgba(42, 107, 74, 0.18);
+            background: rgba(42, 107, 74, 0.06);
+            color: rgba(26, 36, 33, 0.55);
             cursor: pointer;
             font-family: inherit;
             transition: all 0.2s;
         }
         .et-diff-btn.active, .et-dir-btn.active, .et-pdiff-btn.active, .et-poct-btn.active, .et-pcount-btn.active {
             background: var(--green-mid);
-            color: var(--white);
+            color: var(--text-primary);
             border-color: var(--green-mid);
         }
         .et-next-btn {
             display: flex;
-            background: rgba(255,255,255,0.04);
-            color: rgba(255,255,255,0.25);
-            border: 1.5px solid rgba(255,255,255,0.1);
+            background: rgba(42, 107, 74, 0.04);
+            color: rgba(26, 36, 33, 0.25);
+            border: 1.5px solid rgba(42, 107, 74, 0.1);
             padding: 1.1rem 0.8rem;
             border-radius: 12px;
             cursor: default;
@@ -1330,7 +1369,7 @@
         }
         .et-next-btn.show {
             background: rgba(114, 196, 146, 0.12);
-            color: var(--green-pale);
+            color: var(--green-deep);
             border-color: rgba(114, 196, 146, 0.55);
             cursor: pointer;
             pointer-events: auto;
@@ -1369,8 +1408,8 @@
         }
         .et-reset-btn-inline {
             background: none;
-            border: 1px solid rgba(255,255,255,0.12);
-            color: rgba(255,255,255,0.35);
+            border: 1px solid rgba(42, 107, 74, 0.12);
+            color: rgba(26, 36, 33, 0.35);
             width: 28px; height: 28px;
             border-radius: 50%;
             cursor: pointer;
@@ -1380,8 +1419,8 @@
             flex-shrink: 0;
         }
         .et-reset-btn-inline:hover {
-            background: rgba(255,255,255,0.08);
-            color: rgba(255,255,255,0.7);
+            background: rgba(42, 107, 74, 0.08);
+            color: rgba(26, 36, 33, 0.7);
         }
         /* Override ear-ranking.js's default pill margin-left: auto so that when
            the pill sits inside .et-reset-col it doesn't try to push itself away.
@@ -1393,15 +1432,15 @@
             line-height: 1;
         }
         .et-reset-col .et-session-pill.idle {
-            color: rgba(255,255,255,0.4);
-            background: rgba(255,255,255,0.04);
-            border-color: rgba(255,255,255,0.1);
+            color: rgba(26, 36, 33, 0.4);
+            background: rgba(42, 107, 74, 0.04);
+            border-color: rgba(26, 36, 33, 0.1);
         }
         .et-score-box { text-align: center; min-width: 60px; }
         .et-score-label {
             display: block;
             font-size: 0.7rem;
-            color: rgba(255,255,255,0.45);
+            color: rgba(26, 36, 33, 0.45);
             letter-spacing: 0.1em;
             margin-bottom: 0.2rem;
         }
@@ -1409,7 +1448,7 @@
             font-family: 'Playfair Display', serif;
             font-size: 1.6rem;
             font-weight: 700;
-            color: var(--green-pale);
+            color: var(--green-deep);
             font-variant-numeric: lining-nums tabular-nums;
         }
         .et-play-row {
@@ -1420,7 +1459,7 @@
         .et-play-btn {
             flex: 1;
             background: rgba(114, 196, 146, 0.12);
-            color: var(--green-pale);
+            color: var(--green-deep);
             border: 1.5px solid rgba(114, 196, 146, 0.55);
             padding: 1.1rem;
             border-radius: 12px;
@@ -1451,17 +1490,17 @@
             padding: 0.45rem 0.8rem;
             margin-top: 0.5rem;
             border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.04);
-            color: rgba(255,255,255,0.45);
+            border: 1px solid rgba(42, 107, 74, 0.1);
+            background: rgba(42, 107, 74, 0.04);
+            color: rgba(26, 36, 33, 0.45);
             font-size: 0.75rem;
             font-family: inherit;
             cursor: pointer;
             transition: all 0.2s;
         }
         .et-history-drawer-toggle:hover {
-            background: rgba(255,255,255,0.08);
-            color: rgba(255,255,255,0.7);
+            background: rgba(42, 107, 74, 0.08);
+            color: rgba(26, 36, 33, 0.7);
         }
         .et-hist-chev {
             font-size: 0.6rem;
@@ -1472,11 +1511,11 @@
             display: none;
             position: absolute;
             bottom: 0; left: 0; right: 0;
-            background: #1a2421;
-            border-top: 1px solid rgba(114, 196, 146, 0.3);
+            background: var(--bg-panel);
+            border-top: 1px solid rgba(42, 107, 74, 0.25);
             border-radius: 12px 12px 0 0;
             z-index: 10;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 -4px 20px rgba(42, 107, 74, 0.22);
         }
         .et-history-drawer.open { display: block; }
         .et-history-drawer-header {
@@ -1484,17 +1523,17 @@
             align-items: center;
             justify-content: space-between;
             padding: 0.6rem 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-            color: rgba(255,255,255,0.7);
+            border-bottom: 1px solid rgba(42, 107, 74, 0.08);
+            color: rgba(26, 36, 33, 0.7);
             font-size: 0.8rem;
             font-weight: 600;
         }
         .et-history-drawer-header button {
             background: none; border: none;
-            color: rgba(255,255,255,0.4);
+            color: rgba(26, 36, 33, 0.4);
             font-size: 0.9rem; cursor: pointer;
         }
-        .et-history-drawer-header button:hover { color: rgba(255,255,255,0.8); }
+        .et-history-drawer-header button:hover { color: rgba(26, 36, 33, 0.8); }
         .et-history-drawer .et-history-scroll {
             max-height: calc(4 * 44px);
             overflow-y: auto;
@@ -1507,7 +1546,7 @@
             gap: 0.5rem;
             padding: 0.5rem 0.7rem;
             font-size: 0.78rem;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(42, 107, 74, 0.05);
         }
         .et-history-item:last-child { border-bottom: none; }
         .et-history-icon {
@@ -1518,8 +1557,8 @@
         }
         .et-history-icon.correct { color: #4ade80; }
         .et-history-icon.wrong { color: #ef4444; }
-        .et-history-text { flex: 1; color: rgba(255,255,255,0.7); }
-        .et-history-text .et-h-answer { color: var(--white); font-weight: 600; }
+        .et-history-text { flex: 1; color: rgba(26, 36, 33, 0.7); }
+        .et-history-text .et-h-answer { color: var(--text-primary); font-weight: 600; }
         .et-history-text .et-h-wrong-pick {
             color: #ef4444;
             text-decoration: line-through;
@@ -1527,8 +1566,8 @@
         }
         .et-history-replay {
             background: none;
-            border: 1px solid rgba(255,255,255,0.15);
-            color: rgba(255,255,255,0.5);
+            border: 1px solid rgba(42, 107, 74, 0.15);
+            color: rgba(26, 36, 33, 0.5);
             width: 26px;
             height: 26px;
             border-radius: 50%;
@@ -1541,8 +1580,8 @@
             transition: all 0.2s;
         }
         .et-history-replay:active {
-            background: rgba(255,255,255,0.1);
-            color: var(--white);
+            background: rgba(42, 107, 74, 0.1);
+            color: var(--text-primary);
         }
         .et-simul-toggle {
             margin-left: 0.3rem;
@@ -1573,9 +1612,9 @@
         .et-choice-btn {
             padding: 0.7rem 0.3rem;
             border-radius: 10px;
-            border: 1.5px solid rgba(255,255,255,0.15);
-            background: rgba(255,255,255,0.05);
-            color: var(--white);
+            border: 1.5px solid rgba(42, 107, 74, 0.15);
+            background: rgba(42, 107, 74, 0.05);
+            color: var(--text-primary);
             font-size: 0.82rem;
             font-family: inherit;
             cursor: pointer;
@@ -1586,14 +1625,14 @@
         .et-choice-btn.selected {
             background: rgba(114, 196, 146, 0.28);
             border-color: var(--green-mid);
-            color: #ffffff;
+            color: var(--text-primary);
             font-weight: 700;
             box-shadow: 0 0 14px rgba(114, 196, 146, 0.28);
         }
         .et-choice-btn.correct {
             background: rgba(114, 196, 146, 0.28);
             border-color: var(--green-mid);
-            color: #ffffff;
+            color: var(--text-primary);
             font-weight: 700;
             box-shadow: 0 0 14px rgba(114, 196, 146, 0.28);
         }
@@ -1624,7 +1663,7 @@
             font-size: 5rem;
             font-weight: 900;
             line-height: 1;
-            color: var(--green-pale);
+            color: var(--green-deep);
             transition: color 0.3s;
         }
         .tuner-note.in-tune { color: #4ade80; }
@@ -1638,7 +1677,7 @@
         }
         .tuner-freq {
             font-size: 0.85rem;
-            color: rgba(255,255,255,0.5);
+            color: rgba(26, 36, 33, 0.5);
             margin-top: 0.5rem;
             letter-spacing: 0.1em;
         }
@@ -1646,8 +1685,8 @@
         .tuner-meter-track {
             position: relative;
             height: 60px;
-            background: rgba(255,255,255,0.08);
-            border: 1.5px solid rgba(255,255,255,0.3);
+            background: rgba(42, 107, 74, 0.08);
+            border: 1.5px solid rgba(42, 107, 74, 0.3);
             border-radius: 30px;
             overflow: hidden;
             padding: 0 1rem;
@@ -1661,7 +1700,7 @@
             justify-content: space-between;
             padding: 0 1rem;
             font-size: 1.4rem;
-            color: rgba(255,255,255,0.65);
+            color: rgba(26, 36, 33, 0.65);
             font-weight: 500;
             pointer-events: none;
             line-height: 1;
@@ -1674,7 +1713,7 @@
             transform: translate(-50%, -50%);
             width: 2px;
             height: 36px;
-            background: rgba(255,255,255,0.55);
+            background: rgba(42, 107, 74, 0.55);
         }
         .tuner-meter-ok-left, .tuner-meter-ok-right {
             position: absolute;
@@ -1702,7 +1741,7 @@
         .tuner-btn, .metronome-btn {
             width: 100%;
             background: var(--green-mid);
-            color: var(--white);
+            color: var(--text-primary);
             border: none;
             padding: 1.6rem;
             border-radius: 12px;
@@ -1722,7 +1761,7 @@
         .tuner-hint {
             margin-top: 1rem;
             font-size: 0.75rem;
-            color: rgba(255,255,255,0.4);
+            color: rgba(26, 36, 33, 0.4);
             text-align: center;
             line-height: 1.5;
         }
@@ -1734,11 +1773,11 @@
             font-size: 5rem;
             font-weight: 900;
             line-height: 1;
-            color: var(--green-pale);
+            color: var(--green-deep);
         }
         .metronome-bpm-label {
             font-size: 0.8rem;
-            color: rgba(255,255,255,0.5);
+            color: rgba(26, 36, 33, 0.5);
             letter-spacing: 0.3em;
             margin-top: 0.3rem;
         }
@@ -1754,7 +1793,7 @@
         .bpm-edge-btn {
             background: var(--green-mid);
             border: none;
-            color: var(--white);
+            color: var(--text-primary);
             font-size: 1.5rem;
             font-weight: 400;
             line-height: 1;
@@ -1768,14 +1807,14 @@
             transition: background 0.2s, transform 0.1s;
             font-family: inherit;
             padding: 0;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 6px rgba(42, 107, 74, 0.18);
         }
         .bpm-edge-btn:hover { background: var(--green-dark); }
         .bpm-edge-btn:active { transform: scale(0.92); }
         .bpm-edge-btn-sm {
             background: var(--green-mid);
             border: none;
-            color: var(--white);
+            color: var(--text-primary);
             font-size: 0.78rem;
             font-weight: 400;
             line-height: 1;
@@ -1789,7 +1828,7 @@
             transition: background 0.2s, transform 0.1s;
             font-family: inherit;
             padding: 0;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 6px rgba(42, 107, 74, 0.18);
         }
         .bpm-edge-btn-sm:hover { background: var(--green-dark); }
         .bpm-edge-btn-sm:active { transform: scale(0.92); }
@@ -1799,7 +1838,7 @@
             -webkit-appearance: none;
             appearance: none;
             height: 5px;
-            background: rgba(255,255,255,0.25);
+            background: rgba(42, 107, 74, 0.25);
             border-radius: 3px;
             outline: none;
         }
@@ -1827,7 +1866,7 @@
         .beat-dot {
             width: 12px; height: 12px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.15);
+            background: rgba(42, 107, 74, 0.15);
             transition: background 0.1s, transform 0.1s;
         }
         .beat-dot.active {
@@ -1845,7 +1884,7 @@
             gap: 0.8rem;
             margin-bottom: 1.5rem;
             font-size: 0.85rem;
-            color: rgba(255,255,255,0.6);
+            color: rgba(26, 36, 33, 0.6);
         }
         .metronome-time-sig > label { white-space: nowrap; flex-shrink: 0; }
 
@@ -1855,9 +1894,9 @@
             padding: 0.14rem 0.5rem;
             font-size: 0.6rem;
             font-weight: 600;
-            border: 1px solid rgba(255,255,255,0.3);
+            border: 1px solid rgba(42, 107, 74, 0.3);
             border-radius: 4px;
-            background: rgba(255,255,255,0.08);
+            background: rgba(42, 107, 74, 0.08);
             letter-spacing: 0.12em;
             opacity: 0.75;
             vertical-align: middle;
@@ -1867,8 +1906,8 @@
             margin-left: 0;
             margin-top: 0.15rem;
             font-size: 0.65rem;
-            background: rgba(255,255,255,0.15);
-            border-color: rgba(255,255,255,0.5);
+            background: rgba(42, 107, 74, 0.15);
+            border-color: rgba(26, 36, 33, 0.5);
             opacity: 0.9;
         }
         @media (max-width: 768px) { .kbd-hint { display: none; } }
@@ -1876,7 +1915,7 @@
         .metronome-tap-btn {
             width: 100%;
             background: rgba(114, 196, 146, 0.12);
-            color: var(--green-pale);
+            color: var(--green-deep);
             border: 1.5px solid rgba(114, 196, 146, 0.55);
             padding: 1.15rem;
             border-radius: 12px;
@@ -1893,13 +1932,13 @@
             transition: background 0.28s ease-out, border-color 0.28s ease-out, box-shadow 0.28s ease-out;
         }
         @media (hover: hover) {
-            .metronome-tap-btn:hover { background: rgba(255,255,255,0.1); }
+            .metronome-tap-btn:hover { background: rgba(42, 107, 74, 0.1); }
         }
         .metronome-tap-btn:focus { outline: none; }
         .metronome-tap-btn.tapping {
             background: rgba(114, 196, 146, 0.35);
             border-color: rgba(168, 230, 193, 0.8);
-            color: var(--white);
+            color: var(--text-primary);
             box-shadow: 0 0 18px rgba(114, 196, 146, 0.5);
             transition: none;
         }
@@ -1914,13 +1953,13 @@
             font-size: 5.5rem;
             font-weight: 900;
             line-height: 1;
-            color: var(--green-pale);
+            color: var(--green-deep);
             transition: color 0.2s;
         }
         .tap-bpm.active { color: #4ade80; }
         .tap-bpm-label {
             font-size: 0.8rem;
-            color: rgba(255,255,255,0.5);
+            color: rgba(26, 36, 33, 0.5);
             letter-spacing: 0.3em;
             margin-top: 0.3rem;
         }
@@ -1929,7 +1968,7 @@
             aspect-ratio: 1.8 / 1;
             max-height: 180px;
             background: linear-gradient(135deg, var(--green-mid), var(--green-dark));
-            color: var(--white);
+            color: var(--text-primary);
             border: 2px solid var(--green-light);
             border-radius: 16px;
             font-size: 2rem;
@@ -1955,7 +1994,7 @@
         .tap-big-btn:focus { outline: none; }
         .tap-big-btn.tapping {
             background: linear-gradient(135deg, #a8e6c1, #72c492);
-            box-shadow: 0 0 36px rgba(168, 230, 193, 0.85), 0 0 70px rgba(114, 196, 146, 0.45), inset 0 0 28px rgba(255,255,255,0.25);
+            box-shadow: 0 0 36px rgba(168, 230, 193, 0.85), 0 0 70px rgba(114, 196, 146, 0.45), inset 0 0 28px rgba(42, 107, 74, 0.25);
             transition: none;
         }
         .tap-big-btn i { font-size: 2.2rem; }
@@ -1973,15 +2012,15 @@
             font-weight: 600;
             background: rgba(114, 196, 146, 0.15) !important;
             border: 1.5px solid rgba(114, 196, 146, 0.6) !important;
-            color: var(--green-pale) !important;
+            color: var(--green-deep) !important;
         }
         .tap-reset-big:hover { background: rgba(114, 196, 146, 0.28) !important; }
         .tap-reset-big i { font-size: 1rem; }
         .tap-action-btn {
             flex: 1;
-            background: rgba(255,255,255,0.08);
-            color: var(--white);
-            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(42, 107, 74, 0.08);
+            color: var(--text-primary);
+            border: 1px solid rgba(42, 107, 74, 0.3);
             padding: 0.75rem;
             border-radius: 8px;
             cursor: pointer;
@@ -1993,7 +2032,7 @@
             justify-content: center;
             gap: 0.4rem;
         }
-        .tap-action-btn:hover { background: rgba(255,255,255,0.1); }
+        .tap-action-btn:hover { background: rgba(42, 107, 74, 0.1); }
 
         /* ===== Sound mode toggle ===== */
         .sound-toggle {
@@ -2010,7 +2049,7 @@
             cursor: pointer;
             border: 2px solid var(--green-mid);
             background: rgba(82, 168, 114, 0.08);
-            color: var(--green-pale);
+            color: var(--green-deep);
             transition: all 0.3s;
             letter-spacing: 0.05em;
             font-family: inherit;
@@ -2020,7 +2059,7 @@
         .sound-toggle-btn:last-child { border-radius: 0 24px 24px 0; }
         .sound-toggle-btn.active {
             background: var(--green-mid);
-            color: var(--white);
+            color: var(--text-primary);
         }
         .sound-toggle-btn:hover:not(.active) {
             background: rgba(82, 168, 114, 0.15);
@@ -2031,7 +2070,7 @@
         .loop-section.visible { display: block; }
         .loop-top-row {
             display: flex; align-items: flex-start; gap: 1rem;
-            margin-bottom: 0.8rem; font-size: 0.8rem; color: rgba(255,255,255,0.6);
+            margin-bottom: 0.8rem; font-size: 0.8rem; color: rgba(26, 36, 33, 0.6);
         }
         .loop-measures-label {
             display: flex; align-items: center; gap: 0.5rem;
@@ -2040,12 +2079,12 @@
         .loop-measures-btns { display: flex; gap: 0.3rem; }
         .loop-measures-btns button {
             padding: 0.3rem 0.7rem; font-size: 0.75rem; font-weight: 600;
-            border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;
-            background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7);
+            border: 1px solid rgba(42, 107, 74, 0.2); border-radius: 4px;
+            background: rgba(42, 107, 74, 0.06); color: rgba(26, 36, 33, 0.7);
             cursor: pointer; font-family: inherit; transition: all 0.2s;
         }
         .loop-measures-btns button.active {
-            background: var(--green-mid); border-color: var(--green-mid); color: #fff;
+            background: var(--green-mid); border-color: var(--green-mid); color: var(--text-primary);
         }
         .loop-rhythm-picker {
             display: flex; align-items: center; gap: 0.5rem;
@@ -2055,20 +2094,20 @@
         .loop-rhythm-toggle {
             display: flex; align-items: center; gap: 0.4rem;
             padding: 0.3rem 0.7rem; font-size: 0.75rem; font-weight: 600;
-            border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;
-            background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.9);
+            border: 1px solid rgba(42, 107, 74, 0.2); border-radius: 4px;
+            background: rgba(42, 107, 74, 0.06); color: rgba(26, 36, 33, 0.9);
             cursor: pointer; font-family: inherit; transition: all 0.2s;
             white-space: nowrap;
         }
-        .loop-rhythm-toggle:hover { background: rgba(255,255,255,0.12); }
+        .loop-rhythm-toggle:hover { background: rgba(42, 107, 74, 0.12); }
         .loop-rhythm-toggle i { font-size: 0.6rem; transition: transform 0.2s; }
         .loop-rhythm-toggle.open i { transform: rotate(180deg); }
         .loop-rhythm-drawer {
             display: none; position: absolute; top: 100%; right: 0;
             margin-top: 0.3rem; z-index: 20;
-            background: #1e2e28; border: 1px solid rgba(255,255,255,0.2);
+            background: var(--green-faint); border: 1px solid rgba(42, 107, 74, 0.25);
             border-radius: 8px; padding: 0.4rem; min-width: 260px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 24px rgba(42, 107, 74, 0.25);
         }
         .loop-rhythm-drawer.open {
             display: grid;
@@ -2077,17 +2116,17 @@
         }
         .loop-rhythm-drawer button {
             padding: 0.4rem 0.3rem; font-size: 0.74rem; font-weight: 600;
-            border: 1px solid rgba(255,255,255,0.15); border-radius: 4px;
-            background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7);
+            border: 1px solid rgba(42, 107, 74, 0.15); border-radius: 4px;
+            background: rgba(42, 107, 74, 0.06); color: rgba(26, 36, 33, 0.7);
             cursor: pointer; font-family: inherit; text-align: center;
             white-space: nowrap !important; transition: all 0.15s;
             overflow: visible;
         }
         .loop-rhythm-drawer button:hover {
-            background: rgba(82,168,114,0.2); color: #fff;
+            background: rgba(82,168,114,0.2); color: var(--text-primary);
         }
         .loop-rhythm-drawer button.active {
-            background: var(--green-mid); border-color: var(--green-mid); color: #fff;
+            background: var(--green-mid); border-color: var(--green-mid); color: var(--text-primary);
         }
         .loop-grid {
             display: grid; gap: 0.35rem;
@@ -2103,7 +2142,7 @@
         .loop-cell {
             aspect-ratio: 2.4; display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(42, 107, 74, 0.06); border: 1px solid rgba(42, 107, 74, 0.15);
             border-radius: 6px; cursor: pointer; transition: all 0.2s;
             position: relative; user-select: none;
             min-width: 0;
@@ -2121,7 +2160,7 @@
             box-shadow: 0 0 8px rgba(82, 168, 114, 0.4);
         }
         .loop-cell-num {
-            font-size: 0.55rem; color: rgba(255,255,255,0.35);
+            font-size: 0.55rem; color: rgba(26, 36, 33, 0.35);
             position: absolute; top: 3px; left: 5px;
         }
         .loop-cell-halves { display: flex; align-items: center; gap: 0; width: 100%; min-width: 0; }
@@ -2131,7 +2170,7 @@
                but never bigger than the desktop size. Chord text inside the cell
                will no longer force the measure to stretch. */
             font-size: clamp(0.85rem, 3.2vw, 1.25rem);
-            font-weight: 700; color: var(--white);
+            font-weight: 700; color: var(--text-primary);
             font-family: 'Playfair Display', serif;
             padding: 0.15rem 0; border-radius: 3px;
             transition: background 0.15s;
@@ -2141,15 +2180,15 @@
         .loop-cell-half:hover { background: rgba(82,168,114,0.2); }
         .loop-cell-half.empty {
             font-size: clamp(0.7rem, 2.3vw, 0.9rem);
-            color: rgba(255,255,255,0.25); font-weight: 400;
+            color: rgba(26, 36, 33, 0.25); font-weight: 400;
         }
-        .loop-cell-half + .loop-cell-half { border-left: 1px solid rgba(255,255,255,0.1); }
+        .loop-cell-half + .loop-cell-half { border-left: 1px solid rgba(42, 107, 74, 0.1); }
         .loop-chord-picker {
             display: none; position: absolute; z-index: 10;
             top: 100%;
-            background: #1e2e28; border: 1px solid rgba(255,255,255,0.2);
+            background: var(--green-faint); border: 1px solid rgba(42, 107, 74, 0.25);
             border-radius: 10px; padding: 0.7rem; min-width: 220px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 24px rgba(42, 107, 74, 0.25);
         }
         .loop-chord-picker.open { display: block; }
         .loop-chord-picker.pos-right { left: 0; }
@@ -2159,24 +2198,24 @@
         }
         .loop-chord-pick-btn {
             padding: 0.55rem 0.3rem; font-size: 1rem; font-weight: 600;
-            border: 1px solid rgba(255,255,255,0.15); border-radius: 5px;
-            background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.85);
+            border: 1px solid rgba(42, 107, 74, 0.15); border-radius: 5px;
+            background: rgba(42, 107, 74, 0.06); color: rgba(26, 36, 33, 0.85);
             cursor: pointer; font-family: 'Playfair Display', serif;
             transition: all 0.15s; text-align: center;
         }
         .loop-chord-pick-btn:hover {
-            background: var(--green-mid); border-color: var(--green-mid); color: #fff;
+            background: var(--green-mid); border-color: var(--green-mid); color: var(--text-primary);
         }
         .loop-chord-pick-btn.selected {
-            background: var(--green-mid); border-color: var(--green-mid); color: #fff;
+            background: var(--green-mid); border-color: var(--green-mid); color: var(--text-primary);
         }
         .loop-chord-clear {
             width: 100%; margin-top: 0.5rem; padding: 0.45rem;
             font-size: 0.82rem; border: none; border-radius: 5px;
-            background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6);
+            background: rgba(42, 107, 74, 0.08); color: rgba(26, 36, 33, 0.6);
             cursor: pointer; font-family: inherit;
         }
-        .loop-chord-clear:hover { background: rgba(220,60,60,0.3); color: #fff; }
+        .loop-chord-clear:hover { background: rgba(220,60,60,0.3); color: var(--text-primary); }
 
         /* ===== Time signature buttons ===== */
         .time-sig-btns {
@@ -2191,7 +2230,7 @@
             font-weight: 600;
             border: 1.5px solid rgba(114, 196, 146, 0.45);
             background: rgba(82, 168, 114, 0.08);
-            color: var(--green-pale);
+            color: var(--green-deep);
             border-radius: 20px;
             cursor: pointer;
             transition: background 0.25s, border-color 0.25s, color 0.25s;
@@ -2221,7 +2260,7 @@
         .time-sig-btn.active {
             background: var(--green-mid);
             border-color: var(--green-mid);
-            color: var(--white);
+            color: var(--text-primary);
         }
         .time-sig-btn:hover:not(.active) {
             background: rgba(82, 168, 114, 0.22);
@@ -2371,18 +2410,18 @@
                 font-size: 0.64rem;
             }
             .et-reset-col .et-session-pill.idle {
-                color: rgba(255,255,255,0.62);
-                background: rgba(255,255,255,0.06);
-                border-color: rgba(255,255,255,0.22);
+                color: rgba(26, 36, 33, 0.62);
+                background: rgba(42, 107, 74, 0.06);
+                border-color: rgba(26, 36, 33, 0.22);
             }
 
-            /* ===== Samsung Internet dark-mode contrast guard ===== */
-            /* Samsung Internet forcibly re-tints pages even when the site
-               already declares color-scheme: only dark.  Brighten the most
-               visible borders so panel edges and buttons remain legible
-               after that extra darkening pass. */
-            .tool-body { border-color: rgba(255,255,255,0.22); }
-            .mobile-tab-strip { border-bottom-color: rgba(255,255,255,0.20); }
+            /* ===== Samsung Internet night-mode contrast guard ===== */
+            /* Samsung Internet's 야간 모드 forcibly re-tints pages even when
+               the site already declares color-scheme: only light.  Keep panel
+               edges and button borders slightly stronger so they remain
+               legible after any inversion / extra tinting pass. */
+            .tool-body { border-color: rgba(26, 36, 33, 0.22); }
+            .mobile-tab-strip { border-bottom-color: rgba(26, 36, 33, 0.20); }
             .chord-filter,
             .chord-card,
             .capo-key-btn,
@@ -2393,10 +2432,10 @@
             .et-play-btn,
             .et-next-btn,
             .et-reset-btn-inline {
-                border-color: rgba(255,255,255,0.22);
+                border-color: rgba(26, 36, 33, 0.22);
             }
             .tuner-meter-track {
-                background: rgba(255,255,255,0.12);
+                background: rgba(42, 107, 74, 0.12);
             }
             /* Coupang banner on mobile — make sure it's visible once the
                SDK finishes loading (see script fix near the banner). */
@@ -2409,29 +2448,29 @@
            Samsung Internet extra-contrast shim.
            Applies when <html> has class "ua-samsung" (set by the UA sniff
            in the inline script near the top of <body>).  Samsung's 야간
-           모드 re-darkens the page on top of our dark theme, so borders
-           at rgba(255,255,255,0.14) fade to ~8% effective and panel
-           edges vanish.  We bump those specific borders / dividers up to
-           ~38% so they survive the extra tint and stay distinguishable
-           from adjacent dark surfaces.  Non-Samsung users never see
-           these rules.
+           모드 re-tints the page on top of our light green theme; panel
+           edges at rgba(42, 107, 74, 0.14) can wash out after inversion.
+           We bump those specific borders / dividers up to a firmer dark
+           tone so edges stay visible whether Samsung honors our
+           `color-scheme: only light` or forcibly inverts.  Non-Samsung
+           users never see these rules.
            ================================================================ */
         .ua-samsung .tool-body {
-            border-color: rgba(255,255,255,0.42);
-            box-shadow: 0 0 0 1px rgba(255,255,255,0.08) inset;
+            border-color: rgba(26, 36, 33, 0.42);
+            box-shadow: 0 0 0 1px rgba(42, 107, 74, 0.08) inset;
         }
         .ua-samsung .mobile-tab-strip {
-            border-bottom-color: rgba(255,255,255,0.38);
+            border-bottom-color: rgba(26, 36, 33, 0.38);
         }
         .ua-samsung .mobile-tab.active {
-            border-bottom-color: var(--green-light);
+            border-bottom-color: var(--green-mid);
         }
         .ua-samsung .sidebar {
-            border-left-color: rgba(255,255,255,0.32);
-            border-right-color: rgba(255,255,255,0.32);
+            border-left-color: rgba(26, 36, 33, 0.32);
+            border-right-color: rgba(26, 36, 33, 0.32);
         }
         .ua-samsung .menu-item {
-            border-color: rgba(255,255,255,0.18);
+            border-color: rgba(26, 36, 33, 0.18);
         }
         /* Buttons, cards, input fields — give them all a clearly visible
            edge so users can tell where tappable areas begin/end. */
@@ -2458,7 +2497,7 @@
         .ua-samsung .auth-btn,
         .ua-samsung .auth-user,
         .ua-samsung .master-vol {
-            border-color: rgba(255,255,255,0.42);
+            border-color: rgba(26, 36, 33, 0.42);
         }
         .ua-samsung .chord-filter.active,
         .ua-samsung .time-sig-btn.active,
@@ -2469,14 +2508,14 @@
         /* Inner dividers (between halves of a loop cell, between intro
            sections, etc.) need their own brightening pass. */
         .ua-samsung .loop-cell-half + .loop-cell-half {
-            border-left-color: rgba(255,255,255,0.32);
+            border-left-color: rgba(26, 36, 33, 0.32);
         }
         .ua-samsung .tuner-meter-track {
-            background: rgba(255,255,255,0.18);
-            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(42, 107, 74, 0.18);
+            border: 1px solid rgba(42, 107, 74, 0.12);
         }
         .ua-samsung .capo-intro {
-            border-bottom-color: rgba(255,255,255,0.32);
+            border-bottom-color: rgba(26, 36, 33, 0.32);
         }
         /* Secondary / subtle text that would otherwise fade out — push
            its alpha up so it's still readable after Samsung darkens it. */
@@ -2484,7 +2523,7 @@
         .ua-samsung .capo-label,
         .ua-samsung .tuner-hint,
         .ua-samsung .coupang-disclaimer {
-            color: rgba(255,255,255,0.72);
+            color: rgba(26, 36, 33, 0.72);
         }
     </style>
     <!-- Coupang Partners SDK — loaded synchronously (no async) so that
@@ -2929,7 +2968,7 @@
         <section class="tool-panel" id="chordsPanel">
             <div class="tool-header">
                 <div class="tool-header-icon"><i class="fas fa-guitar"></i></div>
-                <h1>코드<br>라이브러리</h1>
+                <h1>코드 라이브러리</h1>
             </div>
             <div class="tool-body">
                 <div class="chord-search-wrap">
@@ -2974,7 +3013,7 @@
                 <div class="capo-intro-row">
                     <p class="capo-intro" style="margin-bottom:0; padding-bottom:0; border-bottom:none;">원곡 키와 편하게 칠 코드 모양 (키)를 고르면<br>카포 위치를 알려드려요 <button class="capo-help-btn" onclick="toggleCapoHelp()" title="도움말">?</button></p>
                 </div>
-                <div style="border-bottom:1px solid rgba(255,255,255,0.12); margin-bottom:1.4rem; padding-bottom:1rem;"></div>
+                <div style="border-bottom:1px solid rgba(42, 107, 74, 0.12); margin-bottom:1.4rem; padding-bottom:1rem;"></div>
                 <div class="capo-section">
                     <label class="capo-label">원곡 키</label>
                     <div class="capo-keys" id="capoSongKey"></div>
@@ -3068,11 +3107,11 @@
 
         // ========== Samsung Internet night-mode compensation ==========
         // Samsung Internet's 야간 모드 forcibly re-tints pages even when the
-        // site already declares color-scheme: only dark.  There's no CSS
+        // site already declares color-scheme: only light.  There's no CSS
         // opt-out that works reliably across versions, but we CAN detect
-        // Samsung's browser via UA and preemptively brighten borders to
-        // survive the extra darkening pass.  Tag <html> so CSS (further
-        // down in <style>) can target .ua-samsung with stronger rules.
+        // Samsung's browser via UA and preemptively strengthen borders to
+        // survive the extra tinting pass.  Tag <html> so CSS (further down
+        // in <style>) can target .ua-samsung with stronger rules.
         (function () {
             try {
                 var ua = navigator.userAgent || '';
@@ -4754,20 +4793,20 @@
                 svg += `<text x="${W/2}" y="14" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="'Playfair Display', serif">${chord.name}</text>`;
 
                 if (startFret === 0) {
-                    svg += `<rect x="${NUT_X - 1.5}" y="${TOP_Y - 1}" width="3" height="${STR_SP * 5 + 2}" fill="rgba(255,255,255,0.85)"/>`;
+                    svg += `<rect x="${NUT_X - 1.5}" y="${TOP_Y - 1}" width="3" height="${STR_SP * 5 + 2}" fill="rgba(42, 107, 74, 0.85)"/>`;
                 } else {
                     const labelX = NUT_X + FR_W * (labelRelFret - 0.5);
                     const labelFret = startFret + labelRelFret;
-                    svg += `<text x="${labelX}" y="${boardBottom + 15}" fill="rgba(255,255,255,0.7)" font-size="7.5" text-anchor="middle">${labelFret}fr</text>`;
+                    svg += `<text x="${labelX}" y="${boardBottom + 15}" fill="rgba(42, 107, 74, 0.7)" font-size="7.5" text-anchor="middle">${labelFret}fr</text>`;
                 }
 
                 for (let i = 0; i <= NUM_FRETS; i++) {
                     const x = NUT_X + FR_W * i;
-                    svg += `<line x1="${x}" y1="${TOP_Y}" x2="${x}" y2="${boardBottom}" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>`;
+                    svg += `<line x1="${x}" y1="${TOP_Y}" x2="${x}" y2="${boardBottom}" stroke="rgba(42, 107, 74, 0.4)" stroke-width="0.8"/>`;
                 }
                 for (let i = 0; i < 6; i++) {
                     const y = TOP_Y + STR_SP * i;
-                    svg += `<line x1="${NUT_X}" y1="${y}" x2="${boardRight}" y2="${y}" stroke="rgba(255,255,255,0.5)" stroke-width="0.8"/>`;
+                    svg += `<line x1="${NUT_X}" y1="${y}" x2="${boardRight}" y2="${y}" stroke="rgba(42, 107, 74, 0.5)" stroke-width="0.8"/>`;
                 }
 
                 const barreGroups = {};
@@ -4789,16 +4828,16 @@
                     const x = NUT_X + FR_W * (relFret - 0.5);
                     const yTop = TOP_Y + (5 - maxS) * STR_SP;
                     const yBot = TOP_Y + (5 - minS) * STR_SP;
-                    svg += `<rect x="${x - 6.5}" y="${yTop - 6.5}" width="13" height="${yBot - yTop + 13}" rx="6.5" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.9"/>`;
+                    svg += `<rect x="${x - 6.5}" y="${yTop - 6.5}" width="13" height="${yBot - yTop + 13}" rx="6.5" fill="none" stroke="rgba(42, 107, 74, 0.5)" stroke-width="0.9"/>`;
                 });
 
                 for (let s = 0; s < 6; s++) {
                     const y = TOP_Y + (5 - s) * STR_SP;
                     const fret = frets[s];
                     if (fret === null) {
-                        svg += `<text x="${NUT_X - 10}" y="${y + 3}" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">×</text>`;
+                        svg += `<text x="${NUT_X - 10}" y="${y + 3}" text-anchor="middle" fill="rgba(42, 107, 74, 0.7)" font-size="9" font-weight="600">×</text>`;
                     } else if (fret === 0) {
-                        svg += `<circle cx="${NUT_X - 10}" cy="${y}" r="3.2" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.1"/>`;
+                        svg += `<circle cx="${NUT_X - 10}" cy="${y}" r="3.2" fill="none" stroke="rgba(42, 107, 74, 0.75)" stroke-width="1.1"/>`;
                     } else {
                         const relFret = fret - startFret;
                         if (relFret >= 1 && relFret <= NUM_FRETS) {
