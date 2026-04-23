@@ -2234,9 +2234,151 @@
             letter-spacing: 0;
             min-width: 0;
         }
+
+        /* ================================================================
+           MOBILE OVERRIDES — appended last so they win the cascade against
+           the desktop rules that appear later in the stylesheet (same
+           specificity, later wins).  Don't move earlier.
+           ================================================================ */
+        @media (max-width: 900px), (orientation: portrait) {
+            /* ===== Chord Library: 2-row filter grid, 2-col chord grid ===== */
+            .chord-filters {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 0.4rem 0.3rem;
+                overflow: visible;
+                flex-wrap: unset;
+                margin-bottom: 1rem;
+            }
+            .chord-filter {
+                padding: 0.45rem 0.35rem;
+                font-size: 0.72rem;
+                letter-spacing: 0;
+                flex: initial;
+                width: 100%;
+                text-align: center;
+                justify-content: center;
+                border-radius: 10px;
+                white-space: nowrap;
+            }
+            /* Row 1 — category buttons */
+            .chord-filters [data-filter="all"]   { grid-row: 1; grid-column: 1; }
+            .chord-filters [data-filter="major"] { grid-row: 1; grid-column: 2; }
+            .chord-filters [data-filter="minor"] { grid-row: 1; grid-column: 3; }
+            .chord-filters .chord-filter-wrap    { grid-row: 1; grid-column: 4; }
+            /* Row 2 — star levels */
+            .chord-filters [data-filter="level1"] { grid-row: 2; grid-column: 1; }
+            .chord-filters [data-filter="level2"] { grid-row: 2; grid-column: 2; }
+            .chord-filters [data-filter="level3"] { grid-row: 2; grid-column: 3; }
+            .chord-filters [data-filter="level4"] { grid-row: 2; grid-column: 4; }
+            .chord-filter-wrap { width: 100%; }
+            .chord-filter-dd {
+                padding: 0.45rem 0.3rem;
+                gap: 0.25rem;
+                width: 100%;
+                box-sizing: border-box;
+                justify-content: center;
+            }
+            .chord-filter-dd #chord7thLabel { font-size: 0.7rem; }
+            .chord-filter-level { padding: 0.45rem 0.25rem; letter-spacing: 0; }
+            .chord-7th-menu { left: auto; right: 0; }
+            #chordsPanel .tool-body { max-width: none; }
+            .chord-search-wrap { max-width: 100%; }
+            /* 2 columns on phone — overrides desktop's repeat(5, 1fr) */
+            .chord-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.6rem;
+            }
+            .chord-card { max-width: none; width: 100%; }
+
+            /* ===== Tuner / general: stop forcing tall empty panels ===== */
+            /* Remove the artificial min-height that stretched tools-main to
+               fill the viewport, which created a large empty gap below the
+               tuner's short content.  The page becomes naturally scrollable
+               because tool-body + coupang banner still exceed the visible
+               viewport after Samsung Internet's chrome hides, but short
+               panels no longer leave a dead zone. */
+            .tools-main {
+                min-height: 0;
+            }
+
+            /* ===== Loop: keep chord text compact so cells don't grow ===== */
+            /* minmax(0, 1fr) already bounds the column width, but the
+               clamp() min of 0.85rem still bumped 2-char chords like "Am" or
+               "Fm" to a height that made the cells visibly taller.  Lower
+               the min so scaling is driven purely by viewport width. */
+            .loop-cell-half {
+                font-size: clamp(0.7rem, 2.9vw, 1rem);
+                line-height: 1.05;
+                padding: 0.1rem 0;
+            }
+            .loop-cell-half.empty {
+                font-size: clamp(0.6rem, 2vw, 0.8rem);
+            }
+            .loop-cell {
+                aspect-ratio: 2.2;
+            }
+
+            /* ===== Ear-training (음정 테스트): pill reserved space ===== */
+            /* Idle pill was previously so faint it looked invisible, giving
+               the impression that "라운드 0/10" pops in mid-game.  Keep it
+               visibly present from the start, and reserve enough horizontal
+               room (~4.8rem) so the absolutely-positioned .et-reset-col
+               never overlaps the centred score boxes. */
+            .et-score-row {
+                padding-right: 4.8rem;
+                gap: 0.55rem;
+                min-height: 64px;
+            }
+            .et-score-box { min-width: 48px; }
+            .et-reset-col {
+                gap: 0.45rem;
+            }
+            .et-reset-col .et-session-pill {
+                padding: 0.22rem 0.6rem;
+                font-size: 0.64rem;
+            }
+            .et-reset-col .et-session-pill.idle {
+                color: rgba(255,255,255,0.62);
+                background: rgba(255,255,255,0.06);
+                border-color: rgba(255,255,255,0.22);
+            }
+
+            /* ===== Samsung Internet dark-mode contrast guard ===== */
+            /* Samsung Internet forcibly re-tints pages even when the site
+               already declares color-scheme: only dark.  Brighten the most
+               visible borders so panel edges and buttons remain legible
+               after that extra darkening pass. */
+            .tool-body { border-color: rgba(255,255,255,0.22); }
+            .mobile-tab-strip { border-bottom-color: rgba(255,255,255,0.20); }
+            .chord-filter,
+            .chord-card,
+            .capo-key-btn,
+            .tuner-btn,
+            .metronome-btn,
+            .loop-cell,
+            .sound-toggle-btn,
+            .et-play-btn,
+            .et-next-btn,
+            .et-reset-btn-inline {
+                border-color: rgba(255,255,255,0.22);
+            }
+            .tuner-meter-track {
+                background: rgba(255,255,255,0.12);
+            }
+            /* Coupang banner on mobile — make sure it's visible once the
+               SDK finishes loading (see script fix near the banner). */
+            .coupang-banner-mobile {
+                min-height: 100px;
+            }
+        }
     </style>
-    <!-- Coupang Partners SDK -->
-    <script src="https://ads-partners.coupang.com/g.js" async></script>
+    <!-- Coupang Partners SDK — loaded synchronously (no async) so that
+         PartnersCoupang is guaranteed to be defined by the time the
+         inline banner <script> tags run further down the page.  When it
+         was async, the inline `if (window.PartnersCoupang)` guard would
+         silently no-op and the banner never rendered. -->
+    <script src="https://ads-partners.coupang.com/g.js"></script>
     <!-- Supabase auth (shared) -->
     <script src="auth.js" defer></script>
     <!-- Ear training session tracker + rankings + mypage -->
