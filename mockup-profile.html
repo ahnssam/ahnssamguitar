@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>프로필 인터랙션 목업</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --green-deep: #2a6b4a;
+        --green-mid: #72c492;
+        --green-pale: #a8d5ba;
+        --white: #ffffff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: 'Noto Sans KR', sans-serif;
+        background: linear-gradient(160deg, #1f3a2b 0%, #2a6b4a 45%, #4a8d6a 100%);
+        color: var(--white);
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
+    .page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem 6rem;
+    }
+    .page h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 2rem;
+        margin-bottom: 0.3rem;
+    }
+    .page .sub {
+        opacity: 0.75;
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+    }
+    .legend {
+        background: rgba(0,0,0,0.25);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 14px;
+        padding: 1rem 1.2rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+        line-height: 1.7;
+    }
+    .legend b { color: var(--green-pale); }
+
+    .controls {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+        align-items: center;
+    }
+    .btn {
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.25);
+        color: var(--white);
+        padding: 0.55rem 1rem;
+        border-radius: 999px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+        font-family: inherit;
+    }
+    .btn:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.45); }
+    .btn.on { background: rgba(114, 196, 146, 0.35); border-color: var(--green-mid); }
+    .bpm-box {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        background: rgba(0,0,0,0.25);
+        border: 1px solid rgba(255,255,255,0.15);
+        padding: 0.3rem 0.8rem;
+        border-radius: 999px;
+        font-size: 0.85rem;
+    }
+    .bpm-box input {
+        width: 80px;
+        accent-color: var(--green-mid);
+    }
+
+    .stage {
+        position: relative;
+        width: 100%;
+        height: 520px;
+        background:
+            radial-gradient(ellipse at center, rgba(255,255,255,0.06) 0%, transparent 70%),
+            rgba(0,0,0,0.15);
+        border-radius: 24px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    @media (max-width: 600px) { .stage { height: 420px; } }
+
+    /* Spotlight overlay — fades in when the main is hovered */
+    .spotlight {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at center, transparent 0%, transparent 28%, rgba(0,0,0,0.55) 75%);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.45s ease;
+        z-index: 1;
+    }
+    .stage:has(.hero-photo-main:hover) .spotlight { opacity: 1; }
+
+    .hero-visual {
+        position: relative;
+        width: 480px; height: 420px;
+        z-index: 2;
+    }
+    @media (max-width: 600px) {
+        .hero-visual { transform: scale(0.72); }
+    }
+
+    .hero-photo-circle {
+        position: absolute;
+        border-radius: 50%;
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+        border: 3px solid rgba(255,255,255,0.3);
+        cursor: pointer;
+        transition:
+            scale 0.4s cubic-bezier(0.22, 1.35, 0.4, 1),
+            translate 0.4s cubic-bezier(0.22, 1.35, 0.4, 1),
+            rotate 0.4s cubic-bezier(0.22, 1.35, 0.4, 1),
+            box-shadow 0.4s ease;
+        scale: 1;
+        translate: 0 0;
+        rotate: 0deg;
+    }
+    .hero-photo-circle img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .hero-photo-circle:hover { box-shadow: 0 14px 40px rgba(0,0,0,0.35); z-index: 5; }
+
+    .hero-photo-main {
+        width: 280px; height: 280px;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 3;
+    }
+    .hero-photo-main::before {
+        content: ''; position: absolute;
+        inset: -12px; border-radius: 50%;
+        border: 1px solid rgba(168, 213, 186, 0.25);
+        animation: rotateRing 20s linear infinite;
+    }
+    .hero-photo-main::after {
+        content: ''; position: absolute;
+        inset: -24px; border-radius: 50%;
+        border: 1px dashed rgba(168, 213, 186, 0.12);
+        animation: rotateRing 30s linear infinite reverse;
+    }
+
+    .hero-photo-sub1 {
+        width: 130px; height: 130px;
+        top: 0; right: 20px;
+        z-index: 2;
+        animation: floatPhoto 6s ease-in-out infinite;
+    }
+    .hero-photo-sub2 {
+        width: 110px; height: 110px;
+        bottom: 10px; right: 40px;
+        z-index: 2;
+        animation: floatPhoto 6s ease-in-out infinite 2s;
+    }
+    .hero-photo-sub3 {
+        width: 100px; height: 100px;
+        top: 30px; left: 0;
+        z-index: 2;
+        animation: floatPhoto 6s ease-in-out infinite 4s;
+    }
+    @keyframes floatPhoto { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    @keyframes rotateRing { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* Push/bump between photos (same as current site) */
+    .hero-photo-main:hover { scale: 1.05; }
+    .hero-visual:has(.hero-photo-main:hover) .hero-photo-sub1 { translate: 26px -4px; rotate: 4deg; }
+    .hero-visual:has(.hero-photo-main:hover) .hero-photo-sub2 { translate: 22px 6px; rotate: -3deg; }
+    .hero-visual:has(.hero-photo-main:hover) .hero-photo-sub3 { translate: -16px 2px; rotate: -3deg; }
+
+    .hero-photo-sub1:hover { scale: 1.05; }
+    .hero-visual:has(.hero-photo-sub1:hover) .hero-photo-main { translate: -14px 6px; rotate: -2deg; }
+    .hero-photo-sub2:hover { scale: 1.05; }
+    .hero-visual:has(.hero-photo-sub2:hover) .hero-photo-main { translate: -14px -6px; rotate: 2deg; }
+    .hero-photo-sub3:hover { scale: 1.05; }
+    .hero-visual:has(.hero-photo-sub3:hover) .hero-photo-main { translate: 14px 0; rotate: 2deg; }
+
+    /* Speech bubble (idea #6) */
+    .bubble {
+        position: absolute;
+        top: -14px;
+        left: 50%;
+        transform: translate(-50%, -100%) scale(0.8);
+        background: #fff;
+        color: #2a6b4a;
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 0.4rem 0.75rem;
+        border-radius: 14px;
+        white-space: nowrap;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease, transform 0.35s cubic-bezier(0.34, 1.6, 0.5, 1);
+        z-index: 10;
+    }
+    .bubble::after {
+        content: '';
+        position: absolute;
+        left: 50%; bottom: -6px;
+        transform: translateX(-50%) rotate(45deg);
+        width: 10px; height: 10px;
+        background: #fff;
+    }
+    .hero-photo-circle:hover .bubble {
+        opacity: 1;
+        transform: translate(-50%, -100%) scale(1);
+    }
+
+    /* Music note particles layer */
+    .note-layer {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: visible;
+        z-index: 4;
+    }
+    .note {
+        position: absolute;
+        font-size: 1.4rem;
+        color: var(--green-pale);
+        opacity: 0;
+        animation: noteFloat 1.8s ease-out forwards;
+        text-shadow: 0 2px 10px rgba(114, 196, 146, 0.6);
+        user-select: none;
+    }
+    @keyframes noteFloat {
+        0%   { opacity: 0; transform: translate(0, 0) rotate(0deg) scale(0.6); }
+        15%  { opacity: 1; }
+        100% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, -120px)) rotate(var(--rot, 20deg)) scale(1); }
+    }
+
+    /* Metronome beat bob (idea #7)
+       Layered on the inner <img> so it stacks on top of the existing
+       float + hover transforms without interfering. */
+    .hero-photo-circle img {
+        transition: transform 0.08s ease-out;
+    }
+    body.metro-on .hero-photo-circle.beat img {
+        transform: translateY(-10px) scale(1.02);
+    }
+
+    .metro-indicator {
+        position: absolute;
+        top: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 0.4rem;
+        z-index: 3;
+    }
+    .metro-dot {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        transition: background 0.1s, transform 0.1s;
+    }
+    .metro-dot.active {
+        background: var(--green-mid);
+        transform: scale(1.4);
+    }
+
+    .stage-footer {
+        margin-top: 1.2rem;
+        font-size: 0.85rem;
+        opacity: 0.7;
+        text-align: center;
+    }
+</style>
+</head>
+<body>
+
+<div class="page">
+    <h1>프로필 인터랙션 목업</h1>
+    <p class="sub">현재 hover 푸시 효과 + ④ 스포트라이트/음표 파티클 + ⑥ 말풍선 + ⑦ 메트로놈 싱크 — 인덱스엔 반영 안 함, 이 페이지에서만 동작합니다.</p>
+
+    <div class="legend">
+        <b>① 프사에 hover</b> — 현재 사이트와 동일한 톡 치는 푸시 효과 + 말풍선이 머리 위로 퐁.<br>
+        <b>② 큰 프사(메인)에 hover</b> — 스포트라이트로 주변이 살짝 어두워지고 ♪ ♫ 음표가 위로 떠오릅니다.<br>
+        <b>③ 아래 "메트로놈 ON"</b> — 지정한 BPM에 맞춰 네 프사가 4/4 박자로 한 박자씩 돌아가며 살짝 통통 튑니다. 1박은 강세.
+    </div>
+
+    <div class="controls">
+        <button class="btn" id="metroBtn" type="button">메트로놈 OFF</button>
+        <span class="bpm-box">BPM <input type="range" id="bpm" min="40" max="180" value="90"> <span id="bpmVal">90</span></span>
+        <button class="btn" id="soundBtn" type="button">톡 소리 OFF</button>
+    </div>
+
+    <div class="stage" id="stage">
+        <div class="spotlight"></div>
+        <div class="metro-indicator" id="metroIndicator" style="display:none;">
+            <span class="metro-dot" data-beat="0"></span>
+            <span class="metro-dot" data-beat="1"></span>
+            <span class="metro-dot" data-beat="2"></span>
+            <span class="metro-dot" data-beat="3"></span>
+        </div>
+        <div class="note-layer" id="noteLayer"></div>
+
+        <div class="hero-visual" id="heroVisual">
+            <div class="hero-photo-circle hero-photo-sub3">
+                <img src="images/hero-photo-03.webp" alt="안쌤">
+                <span class="bubble">오늘 연습했어? 🎸</span>
+            </div>
+            <div class="hero-photo-circle hero-photo-main">
+                <img src="images/hero-photo-01.webp" alt="안쌤의 기타나무숲">
+                <span class="bubble">안녕! 🌳</span>
+            </div>
+            <div class="hero-photo-circle hero-photo-sub1">
+                <img src="images/hero-photo-02.webp" alt="안쌤">
+                <span class="bubble">같이 G코드 잡아볼래?</span>
+            </div>
+            <div class="hero-photo-circle hero-photo-sub2">
+                <img src="images/hero-photo-04.webp" alt="안쌤">
+                <span class="bubble">한 곡 치고 갈래?</span>
+            </div>
+        </div>
+    </div>
+
+    <p class="stage-footer">데스크톱 크롬/사파리에서 가장 부드럽게 동작합니다. 모바일은 hover가 없어 일부 효과는 탭으로 대체되어야 해요.</p>
+</div>
+
+<script>
+    // ---------- Music note particles on main-hover (idea #4) ----------
+    (function() {
+        var main = document.querySelector('.hero-photo-main');
+        var layer = document.getElementById('noteLayer');
+        var notes = ['\u266a','\u266b','\u266c','\u{1D11E}','\u2669'];
+        var spawner = null;
+
+        function spawnNote() {
+            var mainRect = main.getBoundingClientRect();
+            var stageRect = document.getElementById('stage').getBoundingClientRect();
+            var el = document.createElement('span');
+            el.className = 'note';
+            el.textContent = notes[Math.floor(Math.random() * notes.length)];
+            var angle = (Math.random() * Math.PI) - Math.PI;
+            var r = mainRect.width / 2 - 10;
+            var cx = (mainRect.left + mainRect.right) / 2 - stageRect.left;
+            var cy = (mainRect.top + mainRect.bottom) / 2 - stageRect.top;
+            var sx = cx + Math.cos(angle) * r;
+            var sy = cy + Math.sin(angle) * r;
+            el.style.left = sx + 'px';
+            el.style.top = sy + 'px';
+            el.style.setProperty('--dx', ((Math.random() - 0.5) * 80) + 'px');
+            el.style.setProperty('--dy', (-80 - Math.random() * 80) + 'px');
+            el.style.setProperty('--rot', ((Math.random() - 0.5) * 60) + 'deg');
+            el.style.fontSize = (0.9 + Math.random() * 1.1) + 'rem';
+            layer.appendChild(el);
+            setTimeout(function() { el.remove(); }, 1800);
+        }
+
+        main.addEventListener('mouseenter', function() {
+            if (spawner) return;
+            spawnNote();
+            spawner = setInterval(spawnNote, 180);
+        });
+        main.addEventListener('mouseleave', function() {
+            if (spawner) { clearInterval(spawner); spawner = null; }
+        });
+    })();
+
+    // ---------- Tiny click "톡" sound ----------
+    var soundOn = false;
+    var audioCtx = null;
+    function ensureCtx() {
+        if (!audioCtx) {
+            try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+        }
+        return audioCtx;
+    }
+    function playTok(freq) {
+        if (!soundOn) return;
+        var ctx = ensureCtx();
+        if (!ctx) return;
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq || 880;
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.22);
+    }
+    document.getElementById('soundBtn').addEventListener('click', function() {
+        soundOn = !soundOn;
+        this.textContent = '톡 소리 ' + (soundOn ? 'ON' : 'OFF');
+        this.classList.toggle('on', soundOn);
+        if (soundOn) ensureCtx();
+    });
+    document.querySelectorAll('.hero-photo-circle').forEach(function(el, i) {
+        var freqs = [523.25, 659.25, 783.99, 1046.5];
+        el.addEventListener('mouseenter', function() { playTok(freqs[i % freqs.length]); });
+    });
+
+    // ---------- Metronome beat bob (idea #7) ----------
+    var metroBtn = document.getElementById('metroBtn');
+    var bpm = document.getElementById('bpm');
+    var bpmVal = document.getElementById('bpmVal');
+    var indicator = document.getElementById('metroIndicator');
+    var photos = [
+        document.querySelector('.hero-photo-main'),
+        document.querySelector('.hero-photo-sub1'),
+        document.querySelector('.hero-photo-sub2'),
+        document.querySelector('.hero-photo-sub3')
+    ];
+    var dots = document.querySelectorAll('.metro-dot');
+
+    var metroTimer = null;
+    var beatIdx = 0;
+
+    function beatTick() {
+        photos.forEach(function(p) { p.classList.remove('beat'); });
+        dots.forEach(function(d) { d.classList.remove('active'); });
+        var p = photos[beatIdx % photos.length];
+        p.classList.add('beat');
+        dots[beatIdx].classList.add('active');
+        playTok(beatIdx === 0 ? 1200 : 820);
+        setTimeout(function() { p.classList.remove('beat'); dots[beatIdx].classList.remove('active'); }, 120);
+        beatIdx = (beatIdx + 1) % 4;
+    }
+    function startMetro() {
+        stopMetro();
+        beatIdx = 0;
+        var interval = 60000 / parseInt(bpm.value);
+        metroTimer = setInterval(beatTick, interval);
+        beatTick();
+    }
+    function stopMetro() {
+        if (metroTimer) { clearInterval(metroTimer); metroTimer = null; }
+        photos.forEach(function(p) { p.classList.remove('beat'); });
+        dots.forEach(function(d) { d.classList.remove('active'); });
+    }
+
+    metroBtn.addEventListener('click', function() {
+        var on = !document.body.classList.contains('metro-on');
+        document.body.classList.toggle('metro-on', on);
+        this.textContent = '메트로놈 ' + (on ? 'ON' : 'OFF');
+        this.classList.toggle('on', on);
+        indicator.style.display = on ? 'flex' : 'none';
+        if (on) { ensureCtx(); startMetro(); } else { stopMetro(); }
+    });
+
+    bpm.addEventListener('input', function() {
+        bpmVal.textContent = this.value;
+        if (document.body.classList.contains('metro-on')) startMetro();
+    });
+</script>
+
+</body>
+</html>
