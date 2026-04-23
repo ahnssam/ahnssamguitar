@@ -12,6 +12,7 @@
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="dark">
+    <meta name="supported-color-schemes" content="dark">
     <meta name="theme-color" content="#1a2421">
     <title>연습도구 | 안쌤의 기타나무숲</title>
     <meta name="description" content="안쌤의 기타나무숲 연습도구 — 튜너, 메트로놈, 음정 트레이닝, 코드 라이브러리, 카포 계산기, 탭템포.">
@@ -24,7 +25,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            color-scheme: dark;
+            /* "only dark" tells Samsung Internet / other browsers that this site is
+               intentionally dark and must NOT be force-inverted by their built-in
+               dark/night mode. Without this, Samsung Internet re-tints already-dark
+               UIs and crushes the border contrast on tools.html. */
+            color-scheme: only dark;
             --green-deep: #2a6b4a;
             --green-dark: #3a8a5c;
             --green-mid: #52a872;
@@ -658,16 +663,12 @@
                 padding: calc(var(--topbar-h) + 48px + 0.8rem) 0.9rem 0;
             }
 
-            /* Tuner content is very short and fits inside a single viewport, so Samsung
-               Internet / mobile browsers think there's nothing to scroll and refuse to
-               hide their address bar when you drag up. Force the tuner body to fill the
-               FULL (large) viewport so the page is always slightly taller than the
-               visible area when the address bar is showing — giving the browser room
-               to do its slide-up gesture. Other panels already have enough content to
-               overflow naturally. */
-            #tunerPanel .tool-body {
-                min-height: calc(100vh - var(--topbar-h) - 48px);
-            }
+            /* On mobile, let the Coupang banner flow right after the tool body instead
+               of sticking to the bottom of the 100vh flex container — that avoids the
+               big empty gap on short panels (tuner especially) and still gives Samsung
+               Internet enough total height (tool content + banner) to scroll & hide
+               its address bar naturally. */
+            .coupang-banner { margin: 0.8rem auto 0; }
 
             /* Hide the per-tool title + icon on mobile — the tab/menu already shows what's selected.
                EXCEPTION: 랭킹 + 마이페이지 keep their header (icon + title inline). */
@@ -702,33 +703,68 @@
                 line-height: 1.1;
             }
 
-            .tool-body { padding: 1rem 0.9rem; }
+            .tool-body {
+                padding: 1rem 0.9rem;
+                /* Brighter border on mobile so panel edges stay legible even if
+                   Samsung Internet's night mode re-tints the page. */
+                border-color: rgba(255,255,255,0.14);
+            }
+            /* Reserve space on the right for the absolutely-positioned reset/pill
+               column so the centered 점수/연속/정답률 boxes don't collide with it
+               on narrow phones. */
+            .et-score-row {
+                padding-right: 3.5rem;
+                gap: 0.7rem;
+            }
+            .et-score-box { min-width: 52px; }
 
-            /* Chord filter tabs — compact; scroll horizontally on narrow screens since star levels + categories overflow */
+            /* Chord filter tabs — 2 explicit rows on mobile instead of a single
+               horizontally-scrolling strip (which was collapsing to one line and
+               breaking the layout). Row 1: 전체 / 메이저 / 마이너 / 7도화음.
+               Row 2: ★ / ★★ / ★★★ / ★★★★. */
             .chord-filters {
-                gap: 0.3rem;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                scrollbar-width: none;
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 0.35rem 0.3rem;
+                overflow: visible;
             }
-            .chord-filters::-webkit-scrollbar { display: none; }
             .chord-filter {
-                padding: 0.35rem 0.55rem;
-                font-size: 0.7rem;
+                padding: 0.42rem 0.35rem;
+                font-size: 0.72rem;
                 letter-spacing: 0;
-                flex: 0 0 auto;
+                flex: initial;
+                width: 100%;
+                text-align: center;
+                justify-content: center;
             }
-            .chord-filter-dd { padding: 0.35rem 0.45rem; }
-            .chord-filter-level { padding: 0.35rem 0.5rem; }
+            /* Explicit grid placement — row 1 category buttons */
+            .chord-filters [data-filter="all"]   { grid-row: 1; grid-column: 1; }
+            .chord-filters [data-filter="major"] { grid-row: 1; grid-column: 2; }
+            .chord-filters [data-filter="minor"] { grid-row: 1; grid-column: 3; }
+            .chord-filters .chord-filter-wrap    { grid-row: 1; grid-column: 4; }
+            /* Row 2 — star-level buttons */
+            .chord-filters [data-filter="level1"] { grid-row: 2; grid-column: 1; }
+            .chord-filters [data-filter="level2"] { grid-row: 2; grid-column: 2; }
+            .chord-filters [data-filter="level3"] { grid-row: 2; grid-column: 3; }
+            .chord-filters [data-filter="level4"] { grid-row: 2; grid-column: 4; }
+
+            .chord-filter-dd { padding: 0.42rem 0.3rem; gap: 0.25rem; width: 100%; }
+            .chord-filter-dd #chord7thLabel { font-size: 0.7rem; }
+            .chord-filter-level { padding: 0.42rem 0.25rem; letter-spacing: 0; }
+            /* 7도화음 dropdown sits at the right edge on mobile — right-align the
+               menu so it doesn't spill past the viewport. */
+            .chord-7th-menu { left: auto; right: 0; }
             /* Chord library body — relax the 680px cap on mobile */
             #chordsPanel .tool-body { max-width: none; }
             .chord-search-wrap { max-width: 100%; }
-            /* On narrow screens, fall back to auto-fit so cards don't get too tiny on phones */
+            /* 2 columns on mobile (previously was falling back to auto-fit which
+               gave 3 tiny cards on some phones). Fixed 2-column grid keeps cards
+               legible at phone widths. */
             .chord-grid {
-                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-                gap: 0.5rem;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.6rem;
             }
-            .chord-card { max-width: 135px; }
+            .chord-card { max-width: none; width: 100%; }
         }
 
         /* ===== Capo Calculator ===== */
@@ -1141,7 +1177,7 @@
             padding: 2rem;
             cursor: zoom-out;
             animation: chordModalFade 0.2s ease-out;
-            color-scheme: dark;
+            color-scheme: only dark;
         }
         .chord-modal.open { display: flex; }
         @keyframes chordModalFade {
@@ -1307,11 +1343,27 @@
             100% { transform: scale(1); opacity: 1; }
         }
         .et-score-row {
+            /* Position-relative so the reset column on the right (absolute)
+               doesn't shove the centered score boxes off-axis when the
+               round pill is shown. The 3 boxes stay exactly centered whether
+               the round pill is showing "0/10" or "7/10". */
+            position: relative;
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 1rem;
             margin-bottom: 0.5rem;
+            min-height: 58px;
+        }
+        .et-reset-col {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.3rem;
         }
         .et-reset-btn-inline {
             background: none;
@@ -1323,12 +1375,25 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 0.65rem;
             transition: all 0.2s;
-            margin-left: 0.3rem;
             flex-shrink: 0;
         }
         .et-reset-btn-inline:hover {
             background: rgba(255,255,255,0.08);
             color: rgba(255,255,255,0.7);
+        }
+        /* Override ear-ranking.js's default pill margin-left: auto so that when
+           the pill sits inside .et-reset-col it doesn't try to push itself away.
+           Also give the "idle" (no session started) state a more muted look. */
+        .et-reset-col .et-session-pill {
+            margin: 0;
+            padding: 0.18rem 0.55rem;
+            font-size: 0.68rem;
+            line-height: 1;
+        }
+        .et-reset-col .et-session-pill.idle {
+            color: rgba(255,255,255,0.4);
+            background: rgba(255,255,255,0.04);
+            border-color: rgba(255,255,255,0.1);
         }
         .et-score-box { text-align: center; min-width: 60px; }
         .et-score-label {
@@ -2026,16 +2091,20 @@
             display: grid; gap: 0.35rem;
             margin-bottom: 0.8rem;
         }
-        .loop-grid.cols-4  { grid-template-columns: repeat(4, 1fr); }
-        .loop-grid.cols-8  { grid-template-columns: repeat(4, 1fr); }
-        .loop-grid.cols-12 { grid-template-columns: repeat(4, 1fr); }
-        .loop-grid.cols-16 { grid-template-columns: repeat(4, 1fr); }
+        /* minmax(0, 1fr) — the `0` floor keeps every column exactly 1fr wide
+           even when a chord name is wider than the cell. Without it, the grid
+           falls back to `auto` and the cell stretches to fit the text. */
+        .loop-grid.cols-4  { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .loop-grid.cols-8  { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .loop-grid.cols-12 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .loop-grid.cols-16 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         .loop-cell {
             aspect-ratio: 2.4; display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
             border-radius: 6px; cursor: pointer; transition: all 0.2s;
             position: relative; user-select: none;
+            min-width: 0; overflow: hidden;
         }
         .loop-cell:hover { background: rgba(82, 168, 114, 0.15); }
         .loop-cell.playing {
@@ -2047,17 +2116,24 @@
             font-size: 0.55rem; color: rgba(255,255,255,0.35);
             position: absolute; top: 3px; left: 5px;
         }
-        .loop-cell-halves { display: flex; align-items: center; gap: 0; width: 100%; }
+        .loop-cell-halves { display: flex; align-items: center; gap: 0; width: 100%; min-width: 0; }
         .loop-cell-half {
-            flex: 1; text-align: center; cursor: pointer;
-            font-size: 1.25rem; font-weight: 700; color: var(--white);
+            flex: 1 1 0; min-width: 0; text-align: center; cursor: pointer;
+            /* clamp(min, preferred, max): font scales smoothly with viewport width
+               but never bigger than the desktop size. Chord text inside the cell
+               will no longer force the measure to stretch. */
+            font-size: clamp(0.85rem, 3.2vw, 1.25rem);
+            font-weight: 700; color: var(--white);
             font-family: 'Playfair Display', serif;
             padding: 0.15rem 0; border-radius: 3px;
             transition: background 0.15s;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            line-height: 1.1;
         }
         .loop-cell-half:hover { background: rgba(82,168,114,0.2); }
         .loop-cell-half.empty {
-            font-size: 0.9rem; color: rgba(255,255,255,0.25); font-weight: 400;
+            font-size: clamp(0.7rem, 2.3vw, 0.9rem);
+            color: rgba(255,255,255,0.25); font-weight: 400;
         }
         .loop-cell-half + .loop-cell-half { border-left: 1px solid rgba(255,255,255,0.1); }
         .loop-chord-picker {
@@ -2441,7 +2517,10 @@
                             <span class="et-score-label">정답률</span>
                             <span class="et-score-value" id="etAccuracy">0%</span>
                         </div>
-                        <button class="et-reset-btn-inline" onclick="etReset()" title="초기화"><i class="fas fa-redo"></i></button>
+                        <div class="et-reset-col">
+                            <span class="et-session-pill idle" id="etSessionPill_interval"><span class="dot"></span><span>라운드 0/10</span></span>
+                            <button class="et-reset-btn-inline" onclick="etReset()" title="초기화"><i class="fas fa-redo"></i></button>
+                        </div>
                     </div>
                     <div class="et-feedback" id="etFeedback"></div>
                     <div class="et-play-row">
@@ -2501,7 +2580,10 @@
                             <span class="et-score-label">정답률</span>
                             <span class="et-score-value" id="etPitchAccuracy">0%</span>
                         </div>
-                        <button class="et-reset-btn-inline" onclick="etPitchReset()" title="초기화"><i class="fas fa-redo"></i></button>
+                        <div class="et-reset-col">
+                            <span class="et-session-pill idle" id="etSessionPill_pitch"><span class="dot"></span><span>라운드 0/10</span></span>
+                            <button class="et-reset-btn-inline" onclick="etPitchReset()" title="초기화"><i class="fas fa-redo"></i></button>
+                        </div>
                     </div>
                     <div class="et-feedback" id="etPitchFeedback"></div>
                     <div class="et-play-row">
@@ -2554,7 +2636,10 @@
                             <span class="et-score-label">정답률</span>
                             <span class="et-score-value" id="etChordAccuracy">0%</span>
                         </div>
-                        <button class="et-reset-btn-inline" onclick="etChordReset()" title="초기화"><i class="fas fa-redo"></i></button>
+                        <div class="et-reset-col">
+                            <span class="et-session-pill idle" id="etSessionPill_chord"><span class="dot"></span><span>라운드 0/10</span></span>
+                            <button class="et-reset-btn-inline" onclick="etChordReset()" title="초기화"><i class="fas fa-redo"></i></button>
+                        </div>
                     </div>
                     <div class="et-feedback" id="etChordFeedback"></div>
                     <div class="et-chord-diagram-wrap" id="etChordDiagram"></div>

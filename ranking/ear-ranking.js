@@ -756,35 +756,23 @@
         return msg;
     }
 
-    // Inline progress pill — inserted into each mode's .et-score-row
+    // Inline progress pill — updates the STATIC pill in each mode's .et-reset-col
+    // (HTML ships with a "라운드 0/10" placeholder pill so the row layout is
+    // stable whether or not a session is in flight).
     function updatePill() {
-        const pillId = (mode) => {
-            if (mode === 'ear_compare') return 'etSessionPill_interval';
-            if (mode === 'ear_single') return 'etSessionPill_pitch';
-            if (mode === 'ear_chord') return 'etSessionPill_chord';
-            return null;
+        const pillMap = {
+            'ear_compare': 'etSessionPill_interval',
+            'ear_single':  'etSessionPill_pitch',
+            'ear_chord':   'etSessionPill_chord'
         };
-        // Remove all pills first
-        document.querySelectorAll('.et-session-pill').forEach(p => p.remove());
-
-        if (!tracker.mode) return;
-        const id = pillId(tracker.mode);
-        if (!id) return;
-
-        // Find the score-row for the active mode
-        let rowSelector = '';
-        if (tracker.mode === 'ear_compare') rowSelector = '#etIntervalMode .et-score-row';
-        else if (tracker.mode === 'ear_single') rowSelector = '#etPitchMode .et-score-row';
-        else if (tracker.mode === 'ear_chord') rowSelector = '#etChordMode .et-score-row';
-        const row = document.querySelector(rowSelector);
-        if (!row) return;
-
-        const resetBtn = row.querySelector('.et-reset-btn-inline');
-        const pill = document.createElement('span');
-        pill.id = id;
-        pill.className = 'et-session-pill';
-        pill.innerHTML = `<span class="dot"></span><span>라운드 ${tracker.answers.length}/${SESSION_SIZE}</span>`;
-        if (resetBtn) row.insertBefore(pill, resetBtn); else row.appendChild(pill);
+        Object.keys(pillMap).forEach((m) => {
+            const el = document.getElementById(pillMap[m]);
+            if (!el) return;
+            const isActive = tracker.mode === m;
+            const count = isActive ? tracker.answers.length : 0;
+            el.innerHTML = `<span class="dot"></span><span>라운드 ${count}/${SESSION_SIZE}</span>`;
+            el.classList.toggle('idle', !isActive);
+        });
     }
 
     // ------------------------------------------------------------
