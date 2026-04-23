@@ -416,6 +416,7 @@
             border-color: rgba(42, 107, 74, 0.9);
         }
         .tools-btn-mobile { display: none; }
+        .mobile-nav-auth-slot { display: none; }
 
         .tools-header {
             position: sticky;
@@ -3418,9 +3419,72 @@
             }
             .menu-toggle { display: block; }
 
-            /* Hide login button from mobile nav — it moves into the hamburger menu */
-            nav#navbar > .auth-slot,
-            nav#navbar > div > .auth-slot { display: none !important; }
+            /* Hide desktop auth slot on mobile — mobile uses circular icon slot next to 연습도구 */
+            nav#navbar > .auth-slot:not(.mobile-nav-auth-slot),
+            nav#navbar > div > .auth-slot:not(.mobile-nav-auth-slot) { display: none !important; }
+
+            /* Circular icon-only login avatar on mobile (sits to the left of 연습도구) */
+            .mobile-nav-auth-slot {
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+                margin-right: 0.5rem;
+            }
+            .mobile-nav-auth-slot .auth-btn {
+                width: 36px; height: 36px;
+                padding: 0;
+                border-radius: 50%;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0;           /* hide "로그인" text */
+                line-height: 1;
+                background: rgba(255,255,255,0.15);
+                border: 1.5px solid rgba(255,255,255,0.75);
+                color: #fff;
+            }
+            .mobile-nav-auth-slot .auth-btn .auth-btn-icon {
+                font-size: 1rem;
+                margin: 0;
+            }
+            .mobile-nav-auth-slot .auth-btn span:not(.auth-btn-icon) {
+                display: none;
+            }
+            nav.scrolled .mobile-nav-auth-slot .auth-btn {
+                background: rgba(42,107,74,0.08);
+                border-color: rgba(42,107,74,0.45);
+                color: var(--green-deep);
+            }
+            nav.scrolled .mobile-nav-auth-slot .auth-btn:hover {
+                background: var(--green-dark, #3a8a5c);
+                border-color: var(--green-dark, #3a8a5c);
+                color: #fff;
+            }
+            /* Logged-in: show only the avatar circle with the first letter */
+            .mobile-nav-auth-slot .auth-user {
+                padding: 0 !important;
+                border: none !important;
+                background: transparent !important;
+                box-shadow: none !important;
+            }
+            .mobile-nav-auth-slot .auth-user .auth-user-name { display: none !important; }
+            .mobile-nav-auth-slot .auth-user .auth-user-avatar {
+                width: 36px; height: 36px;
+                font-size: 0.95rem;
+                font-weight: 700;
+                border: 1.5px solid rgba(255,255,255,0.75);
+                box-sizing: border-box;
+            }
+            nav.scrolled .mobile-nav-auth-slot .auth-user .auth-user-avatar {
+                border-color: rgba(42,107,74,0.45);
+            }
+            /* Dropdown menu positioning from this compact slot */
+            .mobile-nav-auth-slot .auth-user-menu {
+                right: 0;
+                left: auto;
+                top: calc(100% + 8px);
+                min-width: 180px;
+            }
 
             /* Keep 연습도구 mobile button on one line */
             .tools-btn-mobile,
@@ -3644,6 +3708,7 @@
                 <div class="tools-btn-icon"><i class="fas fa-guitar"></i></div>
                 <span>연습도구</span>
             </a>
+            <div class="auth-slot desktop-nav-auth-slot" style="display: inline-flex; align-items: center;"></div>
             <div class="nav-social">
                 <a href="https://www.youtube.com/channel/UC0TC0fLj3ZahhlKcC9ebVrg" target="_blank" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
                 <a href="https://www.instagram.com/ahnssamguitar/" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
@@ -3652,6 +3717,7 @@
                 <a href="https://cafe.naver.com/ahnsguitarforest" target="_blank" aria-label="Naver Cafe"><img src="images/naver-cafe-icon.png" alt="Naver Cafe" class="naver-cafe-icon"></a>
             </div>
         </div>
+        <div class="auth-slot mobile-nav-auth-slot"></div>
         <a class="tools-btn tools-btn-mobile" href="tools.html" aria-label="연습도구">
             <i class="fas fa-guitar"></i>
             <span>연습도구</span>
@@ -3685,8 +3751,6 @@
         <a href="#shop" onclick="toggleMenu(); setTimeout(()=>switchShopTab('tab'),300)">TAB악보</a>
         <a href="#about" onclick="toggleMenu()">소개</a>
         <a href="#contact" onclick="toggleMenu()">Contact</a>
-        <!-- Login button auto-filled by auth.js -->
-        <div class="auth-slot mobile-auth-slot"></div>
     </div>
 
     <!-- Hero Section -->
