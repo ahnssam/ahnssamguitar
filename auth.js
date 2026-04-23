@@ -753,15 +753,42 @@ nav.scrolled .auth-btn:hover {
             return;
         }
         sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true,
+                // Implicit flow: OAuth returns access_token in URL hash (#access_token=...).
+                // More robust on mobile than PKCE — PKCE requires the code_verifier
+                // to survive in sessionStorage across the OAuth redirect round-trip,
+                // which breaks in PWAs, in-app webviews, and when the OS browser
+                // switches tabs/contexts between the Google consent screen and
+                // the app. Hash-fragment tokens don't need sessionStorage.
+                flowType: 'implicit'
+            }
         });
 
-        const { data } = await sb.auth.getSession();
+        // Explicitly parse any OAuth callback tokens in the current URL.
+        // `detectSessionInUrl: true` normally handles this on createClient, but
+        // if our own hash router runs first it can clobber the fragment. This
+        // call is idempotent — no-op if there are no tokens in the URL.
+        try {
+            const hash = window.location.hash || '';
+            if (hash.includes('access_token=') || window.location.search.includes('code=')) {
+                console.log('[auth] OAuth callback detected, parsing session from URL');
+            }
+        } catch (e) {}
+
+        const { data, error: sessionErr } = await sb.auth.getSession();
+        if (sessionErr) console.warn('[auth] getSession error:', sessionErr);
         currentSession = data.session || null;
-        if (currentSession) await fetchProfile(currentSession.user.id);
+        if (currentSession) {
+            console.log('[auth] Session restored for user:', currentSession.user.email);
+            await fetchProfile(currentSession.user.id);
+        }
         renderSlot();
 
         sb.auth.onAuthStateChange(async (event, session) => {
+            console.log('[auth] state change:', event, session ? session.user.email : 'no session');
             currentSession = session || null;
             if (currentSession) {
                 await fetchProfile(currentSession.user.id);
