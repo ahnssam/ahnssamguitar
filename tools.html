@@ -1019,6 +1019,29 @@
             aspect-ratio: 7 / 5;
             width: 100%;
             max-width: 150px;
+            /* Entrance animation — new cards fade/slide in on every (re)render */
+            animation: chordCardIn 0.22s ease-out both;
+            animation-delay: calc(var(--card-i, 0) * 14ms);
+        }
+        /* Top match flies up from below (the "슝" effect) */
+        .chord-top-match .chord-card {
+            animation: chordFlyUp 0.38s cubic-bezier(0.25, 1.05, 0.4, 1) both;
+        }
+        @keyframes chordCardIn {
+            0%   { opacity: 0; transform: translateY(8px) scale(0.94); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes chordFlyUp {
+            0%   { opacity: 0; transform: translateY(140px) scale(0.7); }
+            65%  { opacity: 1; transform: translateY(-3px) scale(1.02); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        /* Respect reduced-motion preference */
+        @media (prefers-reduced-motion: reduce) {
+            .chord-card,
+            .chord-top-match .chord-card {
+                animation: none;
+            }
         }
         .chord-card:hover {
             background: rgba(82, 168, 114, 0.15);
@@ -4358,19 +4381,32 @@
                 renderGrid();
             };
             // ---- Hangul → English QWERTY mapping for typo-tolerant chord search ----
-            // If user searches "으" while in Korean IME, convert to "dm" before matching.
+            // Covers both composed syllables (U+AC00-U+D7A3, e.g. "으", "흐머")
+            // AND standalone compatibility Jamo (U+3131-U+3163, e.g. "ㅇ", "ㄹ").
+            // So "ㅇ" → "d", "으" → "dm", "흐머" → "gmaj", etc.
             const HANGUL_INITIALS = ['r','R','s','e','E','f','a','q','Q','t','T','d','w','W','c','z','x','v','g'];
             const HANGUL_VOWELS   = ['k','o','i','O','j','p','u','P','h','hk','ho','hl','y','n','nj','np','nl','b','m','ml','l'];
             const HANGUL_FINALS   = ['','r','R','rt','s','sw','sg','e','f','fr','fa','fq','ft','fx','fv','fg','a','q','qt','t','T','d','w','c','z','x','v','g'];
+            // Compatibility Jamo table — indexed by (codepoint - 0x3131).
+            // Consonants 0x3131-0x314E, vowels 0x314F-0x3163.
+            const HANGUL_COMPAT = [
+                'r','R','rt','s','sw','sg','e','E','f','fr','fa','fq','ft','fx','fv','fg',
+                'a','q','Q','qt','t','T','d','w','W','c','z','x','v','g',
+                'k','o','i','O','j','p','u','P','h','hk','ho','hl','y','n','nj','np','nl','b','m','ml','l'
+            ];
             function hangulToEn(str) {
                 let out = '';
                 for (let i = 0; i < str.length; i++) {
                     const code = str.charCodeAt(i);
                     if (code >= 0xAC00 && code <= 0xD7A3) {
+                        // Composed Hangul syllable (초성+중성+종성)
                         const idx = code - 0xAC00;
                         out += HANGUL_INITIALS[Math.floor(idx / 588)];
                         out += HANGUL_VOWELS[Math.floor((idx % 588) / 28)];
                         out += HANGUL_FINALS[idx % 28];
+                    } else if (code >= 0x3131 && code <= 0x3163) {
+                        // Standalone compatibility Jamo (ㄱ, ㅏ, etc.)
+                        out += HANGUL_COMPAT[code - 0x3131];
                     } else {
                         out += str[i];
                     }
@@ -4386,13 +4422,16 @@
                 if (idx === -1) return -1;                // no substring match
                 return 100 - idx * 5 - name.length;       // earlier position + shorter name = higher score
             }
-            function buildCard(ch) {
+            function buildCard(ch, idx) {
                 const card = document.createElement('div');
                 card.className = 'chord-card';
                 card.innerHTML = renderChordSVG(ch);
+                // Cap stagger index so "전체" view (49 cards) doesn't drag the tail out too long
+                if (idx != null) card.style.setProperty('--card-i', Math.min(idx, 14));
                 card.onclick = function() { showChordModal(ch); gtag('event', 'chord_view', { chord: ch.name }); };
                 return card;
             }
+
             function renderGrid() {
                 const grid = document.getElementById('chordGrid');
                 const topWrap = document.getElementById('chordTopMatch');
@@ -4411,7 +4450,6 @@
                 }
 
                 if (currentSearch) {
-                    // Score + filter out non-matches, then sort by score desc
                     filtered = filtered
                         .map(c => ({ c, score: chordMatchScore(c, currentSearch) }))
                         .filter(o => o.score >= 0)
@@ -4429,15 +4467,13 @@
                     return;
                 }
 
-                // When searching AND there are multiple matches, pull the top match out
-                // into its own highlighted slot, render the rest in the grid below.
                 if (currentSearch && filtered.length > 1 && topWrap) {
                     const best = filtered[0];
                     topWrap.appendChild(buildCard(best));
                     topWrap.style.display = 'flex';
-                    filtered.slice(1).forEach(ch => grid.appendChild(buildCard(ch)));
+                    filtered.slice(1).forEach((ch, i) => grid.appendChild(buildCard(ch, i)));
                 } else {
-                    filtered.forEach(ch => grid.appendChild(buildCard(ch)));
+                    filtered.forEach((ch, i) => grid.appendChild(buildCard(ch, i)));
                 }
             }
             const SEVENTH_CATS = ['maj7', '7th', 'm7', 'm7b5', 'dim'];
