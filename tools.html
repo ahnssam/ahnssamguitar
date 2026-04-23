@@ -629,14 +629,22 @@
 
             .tool-body { padding: 1rem 0.9rem; }
 
-            /* Chord filter tabs — compact so 전체/메이저/마이너/7도화음 all fit on one line */
-            .chord-filters { gap: 0.3rem; }
+            /* Chord filter tabs — compact; scroll horizontally on narrow screens since star levels + categories overflow */
+            .chord-filters {
+                gap: 0.3rem;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .chord-filters::-webkit-scrollbar { display: none; }
             .chord-filter {
                 padding: 0.35rem 0.55rem;
                 font-size: 0.7rem;
                 letter-spacing: 0;
+                flex: 0 0 auto;
             }
             .chord-filter-dd { padding: 0.35rem 0.45rem; }
+            .chord-filter-level { padding: 0.35rem 0.5rem; }
         }
 
         /* ===== Capo Calculator ===== */
@@ -812,6 +820,63 @@
         }
 
         /* ===== Chord Library ===== */
+        .chord-search-wrap {
+            position: relative;
+            margin-bottom: 0.7rem;
+        }
+        .chord-search-icon {
+            position: absolute;
+            left: 0.85rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255,255,255,0.4);
+            font-size: 0.8rem;
+            pointer-events: none;
+        }
+        .chord-search-input {
+            width: 100%;
+            padding: 0.55rem 2.3rem 0.55rem 2.1rem;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 10px;
+            color: rgba(255,255,255,0.92);
+            font-size: 0.85rem;
+            font-family: inherit;
+            transition: border-color 0.2s, background 0.2s;
+            box-sizing: border-box;
+        }
+        .chord-search-input:focus {
+            outline: none;
+            border-color: var(--green-mid);
+            background: rgba(255,255,255,0.08);
+        }
+        .chord-search-input::placeholder { color: rgba(255,255,255,0.35); }
+        .chord-search-clear {
+            position: absolute;
+            right: 0.45rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.55);
+            cursor: pointer;
+            padding: 0.3rem 0.5rem;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+        .chord-search-clear:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.08);
+        }
+        .chord-search-wrap.has-text .chord-search-clear { display: block; }
+        .chord-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.9rem;
+            padding: 2.5rem 1rem;
+        }
         .chord-filters {
             display: flex;
             gap: 0.35rem;
@@ -840,6 +905,20 @@
             background: var(--green-mid);
             border-color: var(--green-mid);
             color: var(--white);
+        }
+        .chord-filter-level {
+            color: #e8c44a;
+            letter-spacing: 0.04em;
+            padding: 0.4rem 0.65rem;
+        }
+        .chord-filter-level:hover {
+            background: rgba(232, 196, 74, 0.15);
+            border-color: rgba(232, 196, 74, 0.4);
+        }
+        .chord-filter-level.active {
+            background: rgba(232, 196, 74, 0.25);
+            border-color: #e8c44a;
+            color: #fff4c4;
         }
         .chord-filter-wrap { position: relative; }
         .chord-filter-dd {
@@ -894,15 +973,16 @@
                Formula uses clamp() to keep column min-width between
                1/5 of container (prevents >5 cols on very wide screens) and
                1/2 of container (prevents <2 cols on very narrow phones),
-               with 170px as the natural preferred card width. */
-            grid-template-columns: repeat(auto-fill, minmax(clamp(calc((100% - 2.4rem) / 5), 170px, calc((100% - 0.6rem) / 2)), 1fr));
-            gap: 0.6rem;
+               with 150px as the natural preferred card width. */
+            grid-template-columns: repeat(auto-fill, minmax(clamp(calc((100% - 2.4rem) / 5), 150px, calc((100% - 0.6rem) / 2)), 1fr));
+            gap: 0.8rem;
+            justify-items: center;
         }
         .chord-card {
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.12);
             border-radius: 10px;
-            padding: 0.5rem;
+            padding: 0.7rem;
             text-align: center;
             cursor: pointer;
             transition: background 0.2s, border-color 0.2s, transform 0.15s;
@@ -910,6 +990,8 @@
             align-items: center;
             justify-content: center;
             aspect-ratio: 7 / 5;
+            width: 100%;
+            max-width: 175px;
         }
         .chord-card:hover {
             background: rgba(82, 168, 114, 0.15);
@@ -2375,8 +2457,17 @@
                 <h1>코드<br>라이브러리</h1>
             </div>
             <div class="tool-body">
+                <div class="chord-search-wrap">
+                    <i class="fas fa-search chord-search-icon"></i>
+                    <input type="text" class="chord-search-input" id="chordSearchInput" placeholder="코드 검색 (예: Cmaj7, m7, dim)" oninput="searchChords(this.value)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="코드 검색">
+                    <button class="chord-search-clear" id="chordSearchClear" onclick="clearChordSearch()" aria-label="검색 지우기" type="button"><i class="fas fa-times"></i></button>
+                </div>
                 <div class="chord-filters" id="chordFilters">
                     <button class="chord-filter active" data-filter="all" onclick="filterChords('all')">전체</button>
+                    <button class="chord-filter chord-filter-level" data-filter="level1" onclick="filterChords('level1')" title="초급 — 기본 오픈 코드">★</button>
+                    <button class="chord-filter chord-filter-level" data-filter="level2" onclick="filterChords('level2')" title="중급 — 부분 바레, 약간 어려운 오픈">★★</button>
+                    <button class="chord-filter chord-filter-level" data-filter="level3" onclick="filterChords('level3')" title="고급 — 풀 바레, 재즈 코드">★★★</button>
+                    <button class="chord-filter chord-filter-level" data-filter="level4" onclick="filterChords('level4')" title="전문가 — 희귀 포지션, 재즈 전용">★★★★</button>
                     <button class="chord-filter" data-filter="major" onclick="filterChords('major')">메이저</button>
                     <button class="chord-filter" data-filter="minor" onclick="filterChords('minor')">마이너</button>
                     <div class="chord-filter-wrap">
@@ -4076,22 +4167,22 @@
         // ========== CHORD LIBRARY ==========
         (function() {
             const CHORDS = [
-                { name: 'C',    cat: 'major', frets: [null, 3, 2, 0, 1, 0], fingers: [0, 3, 2, 0, 1, 0] },
-                { name: 'D',    cat: 'major', frets: [null, null, 0, 2, 3, 2], fingers: [0, 0, 0, 1, 3, 2] },
-                { name: 'E',    cat: 'major', frets: [0, 2, 2, 1, 0, 0], fingers: [0, 2, 3, 1, 0, 0] },
-                { name: 'F',    cat: 'major', frets: [1, 3, 3, 2, 1, 1], fingers: [1, 3, 4, 2, 1, 1] },
-                { name: 'G',    cat: 'major', frets: [3, 2, 0, 0, 0, 3], fingers: [2, 1, 0, 0, 0, 3] },
-                { name: 'A',    cat: 'major', frets: [null, 0, 2, 2, 2, 0], fingers: [0, 0, 1, 2, 3, 0] },
-                { name: 'B',    cat: 'major', frets: [null, 2, 4, 4, 4, 2], fingers: [0, 1, 2, 3, 4, 1] },
-                { name: 'Am',   cat: 'minor', frets: [null, 0, 2, 2, 1, 0], fingers: [0, 0, 2, 3, 1, 0] },
-                { name: 'Bm',   cat: 'minor', frets: [null, 2, 4, 4, 3, 2], fingers: [0, 1, 3, 4, 2, 1] },
-                { name: 'Cm',   cat: 'minor', frets: [null, 3, 5, 5, 4, 3], fingers: [0, 1, 3, 4, 2, 1] },
-                { name: 'Dm',   cat: 'minor', frets: [null, null, 0, 2, 3, 1], fingers: [0, 0, 0, 2, 3, 1] },
-                { name: 'Em',   cat: 'minor', frets: [0, 2, 2, 0, 0, 0], fingers: [0, 2, 3, 0, 0, 0] },
-                { name: 'Fm',   cat: 'minor', frets: [1, 3, 3, 1, 1, 1], fingers: [1, 3, 4, 1, 1, 1] },
-                { name: 'Gm',   cat: 'minor', frets: [3, 5, 5, 3, 3, 3], fingers: [1, 3, 4, 1, 1, 1] },
-                { name: 'Cmaj7',cat: 'maj7',  frets: [null, 3, 2, 0, 0, 0], fingers: [0, 3, 2, 0, 0, 0] },
-                { name: 'Dmaj7',cat: 'maj7',  frets: [null, null, 0, 2, 2, 2], fingers: [0, 0, 0, 1, 1, 1],
+                { name: 'C',    cat: 'major', level: 1, frets: [null, 3, 2, 0, 1, 0], fingers: [0, 3, 2, 0, 1, 0] },
+                { name: 'D',    cat: 'major', level: 1, frets: [null, null, 0, 2, 3, 2], fingers: [0, 0, 0, 1, 3, 2] },
+                { name: 'E',    cat: 'major', level: 1, frets: [0, 2, 2, 1, 0, 0], fingers: [0, 2, 3, 1, 0, 0] },
+                { name: 'F',    cat: 'major', level: 2, frets: [1, 3, 3, 2, 1, 1], fingers: [1, 3, 4, 2, 1, 1] },
+                { name: 'G',    cat: 'major', level: 1, frets: [3, 2, 0, 0, 0, 3], fingers: [2, 1, 0, 0, 0, 3] },
+                { name: 'A',    cat: 'major', level: 1, frets: [null, 0, 2, 2, 2, 0], fingers: [0, 0, 1, 2, 3, 0] },
+                { name: 'B',    cat: 'major', level: 3, frets: [null, 2, 4, 4, 4, 2], fingers: [0, 1, 2, 3, 4, 1] },
+                { name: 'Am',   cat: 'minor', level: 1, frets: [null, 0, 2, 2, 1, 0], fingers: [0, 0, 2, 3, 1, 0] },
+                { name: 'Bm',   cat: 'minor', level: 2, frets: [null, 2, 4, 4, 3, 2], fingers: [0, 1, 3, 4, 2, 1] },
+                { name: 'Cm',   cat: 'minor', level: 2, frets: [null, 3, 5, 5, 4, 3], fingers: [0, 1, 3, 4, 2, 1] },
+                { name: 'Dm',   cat: 'minor', level: 2, frets: [null, null, 0, 2, 3, 1], fingers: [0, 0, 0, 2, 3, 1] },
+                { name: 'Em',   cat: 'minor', level: 1, frets: [0, 2, 2, 0, 0, 0], fingers: [0, 2, 3, 0, 0, 0] },
+                { name: 'Fm',   cat: 'minor', level: 3, frets: [1, 3, 3, 1, 1, 1], fingers: [1, 3, 4, 1, 1, 1] },
+                { name: 'Gm',   cat: 'minor', level: 3, frets: [3, 5, 5, 3, 3, 3], fingers: [1, 3, 4, 1, 1, 1] },
+                { name: 'Cmaj7',cat: 'maj7',  level: 2, frets: [null, 3, 2, 0, 0, 0], fingers: [0, 3, 2, 0, 0, 0] },
+                { name: 'Dmaj7',cat: 'maj7',  level: 1, frets: [null, null, 0, 2, 2, 2], fingers: [0, 0, 0, 1, 1, 1],
                     defaultFingering: 1,
                     fingerings: [
                         { fingers: [0, 0, 0, 1, 2, 3] },
@@ -4099,45 +4190,45 @@
                         { fingers: [0, 0, 0, 2, 3, 4] }
                     ]
                 },
-                { name: 'Emaj7',cat: 'maj7',  frets: [0, 2, 1, 1, 0, 0], fingers: [0, 3, 1, 2, 0, 0] },
-                { name: 'Fmaj7',cat: 'maj7',  frets: [null, null, 3, 2, 1, 0], fingers: [0, 0, 3, 2, 1, 0] },
-                { name: 'Gmaj7',cat: 'maj7',  frets: [3, null, 0, 0, 3, 2], fingers: [3, 0, 0, 0, 4, 1] },
-                { name: 'Amaj7',cat: 'maj7',  frets: [null, 0, 2, 1, 2, 0], fingers: [0, 0, 2, 1, 3, 0] },
-                { name: 'Bmaj7',cat: 'maj7',  frets: [null, 2, 4, 3, 4, 2], fingers: [0, 1, 3, 2, 4, 1] },
-                { name: 'C7',   cat: '7th',   frets: [null, 3, 2, 3, 1, 0], fingers: [0, 3, 2, 4, 1, 0] },
-                { name: 'D7',   cat: '7th',   frets: [null, null, 0, 2, 1, 2], fingers: [0, 0, 0, 2, 1, 3] },
-                { name: 'E7',   cat: '7th',   frets: [0, 2, 0, 1, 0, 0], fingers: [0, 2, 0, 1, 0, 0] },
-                { name: 'F7',   cat: '7th',   frets: [1, 3, 1, 2, 1, 1], fingers: [1, 3, 1, 2, 1, 1] },
-                { name: 'G7',   cat: '7th',   frets: [3, 2, 0, 0, 0, 1], fingers: [3, 2, 0, 0, 0, 1] },
-                { name: 'A7',   cat: '7th',   frets: [null, 0, 2, 0, 2, 0], fingers: [0, 0, 2, 0, 3, 0] },
-                { name: 'B7',   cat: '7th',   frets: [null, 2, 1, 2, 0, 2], fingers: [0, 2, 1, 3, 0, 4] },
-                { name: 'Am7',  cat: 'm7',    frets: [null, 0, 2, 0, 1, 0], fingers: [0, 0, 2, 0, 1, 0] },
-                { name: 'Bm7',  cat: 'm7',    frets: [null, 2, 4, 2, 3, 2], fingers: [0, 1, 3, 1, 2, 1] },
-                { name: 'Cm7',  cat: 'm7',    frets: [null, 3, 5, 3, 4, 3], fingers: [0, 1, 3, 1, 2, 1] },
-                { name: 'Dm7',  cat: 'm7',    frets: [null, null, 0, 2, 1, 1], fingers: [0, 0, 0, 2, 1, 1] },
-                { name: 'Em7',  cat: 'm7',    frets: [0, 2, 0, 0, 0, 0], fingers: [0, 2, 0, 0, 0, 0] },
-                { name: 'Fm7',  cat: 'm7',    frets: [1, 3, 1, 1, 1, 1], fingers: [1, 3, 1, 1, 1, 1] },
-                { name: 'Gm7',  cat: 'm7',    frets: [3, null, 3, 3, 3, null], fingers: [1, 0, 2, 3, 4, 0],
+                { name: 'Emaj7',cat: 'maj7',  level: 2, frets: [0, 2, 1, 1, 0, 0], fingers: [0, 3, 1, 2, 0, 0] },
+                { name: 'Fmaj7',cat: 'maj7',  level: 1, frets: [null, null, 3, 2, 1, 0], fingers: [0, 0, 3, 2, 1, 0] },
+                { name: 'Gmaj7',cat: 'maj7',  level: 2, frets: [3, null, 0, 0, 3, 2], fingers: [3, 0, 0, 0, 4, 1] },
+                { name: 'Amaj7',cat: 'maj7',  level: 2, frets: [null, 0, 2, 1, 2, 0], fingers: [0, 0, 2, 1, 3, 0] },
+                { name: 'Bmaj7',cat: 'maj7',  level: 3, frets: [null, 2, 4, 3, 4, 2], fingers: [0, 1, 3, 2, 4, 1] },
+                { name: 'C7',   cat: '7th',   level: 2, frets: [null, 3, 2, 3, 1, 0], fingers: [0, 3, 2, 4, 1, 0] },
+                { name: 'D7',   cat: '7th',   level: 1, frets: [null, null, 0, 2, 1, 2], fingers: [0, 0, 0, 2, 1, 3] },
+                { name: 'E7',   cat: '7th',   level: 1, frets: [0, 2, 0, 1, 0, 0], fingers: [0, 2, 0, 1, 0, 0] },
+                { name: 'F7',   cat: '7th',   level: 3, frets: [1, 3, 1, 2, 1, 1], fingers: [1, 3, 1, 2, 1, 1] },
+                { name: 'G7',   cat: '7th',   level: 1, frets: [3, 2, 0, 0, 0, 1], fingers: [3, 2, 0, 0, 0, 1] },
+                { name: 'A7',   cat: '7th',   level: 1, frets: [null, 0, 2, 0, 2, 0], fingers: [0, 0, 2, 0, 3, 0] },
+                { name: 'B7',   cat: '7th',   level: 2, frets: [null, 2, 1, 2, 0, 2], fingers: [0, 2, 1, 3, 0, 4] },
+                { name: 'Am7',  cat: 'm7',    level: 1, frets: [null, 0, 2, 0, 1, 0], fingers: [0, 0, 2, 0, 1, 0] },
+                { name: 'Bm7',  cat: 'm7',    level: 2, frets: [null, 2, 4, 2, 3, 2], fingers: [0, 1, 3, 1, 2, 1] },
+                { name: 'Cm7',  cat: 'm7',    level: 2, frets: [null, 3, 5, 3, 4, 3], fingers: [0, 1, 3, 1, 2, 1] },
+                { name: 'Dm7',  cat: 'm7',    level: 2, frets: [null, null, 0, 2, 1, 1], fingers: [0, 0, 0, 2, 1, 1] },
+                { name: 'Em7',  cat: 'm7',    level: 1, frets: [0, 2, 0, 0, 0, 0], fingers: [0, 2, 0, 0, 0, 0] },
+                { name: 'Fm7',  cat: 'm7',    level: 3, frets: [1, 3, 1, 1, 1, 1], fingers: [1, 3, 1, 1, 1, 1] },
+                { name: 'Gm7',  cat: 'm7',    level: 2, frets: [3, null, 3, 3, 3, null], fingers: [1, 0, 2, 3, 4, 0],
                     fingerings: [
                         { fingers: [1, 0, 2, 3, 4, 0] },
                         { fingers: [2, 0, 3, 3, 3, 0] },
                         { fingers: [2, 0, 1, 1, 1, 0] }
                     ]
                 },
-                { name: 'Am7b5',cat: 'm7b5',  frets: [null, 0, 1, 0, 1, null], fingers: [0, 0, 1, 0, 2, 0] },
-                { name: 'Bm7b5',cat: 'm7b5',  frets: [null, 2, 3, 2, 3, null], fingers: [0, 1, 3, 2, 4, 0] },
-                { name: 'Cm7b5',cat: 'm7b5',  frets: [null, 3, 4, 3, 4, null], fingers: [0, 1, 3, 2, 4, 0] },
-                { name: 'Dm7b5',cat: 'm7b5',  frets: [null, null, 0, 1, 1, 1], fingers: [0, 0, 0, 1, 2, 3] },
-                { name: 'Em7b5',cat: 'm7b5',  frets: [null, null, 2, 3, 3, 3], fingers: [0, 0, 1, 2, 3, 4] },
-                { name: 'Fm7b5',cat: 'm7b5',  frets: [1, null, 1, 1, 0, null], fingers: [1, 0, 1, 1, 0, 0] },
-                { name: 'Gm7b5',cat: 'm7b5',  frets: [3, null, 3, 3, 2, null], fingers: [2, 0, 3, 4, 1, 0] },
-                { name: 'Cdim7',cat: 'dim',   frets: [null, 3, 4, 2, 4, null], fingers: [0, 2, 4, 1, 3, 0] },
-                { name: 'Ddim7',cat: 'dim',   frets: [null, null, 0, 1, 0, 1], fingers: [0, 0, 0, 2, 0, 3] },
-                { name: 'Edim', cat: 'dim',   frets: [null, null, 2, 3, 2, 3], fingers: [0, 0, 1, 3, 2, 4] },
-                { name: 'Fdim', cat: 'dim',   frets: [1, null, 0, 1, 0, null], fingers: [2, 0, 0, 1, 0, 0] },
-                { name: 'Gdim', cat: 'dim',   frets: [3, null, 2, 3, 2, null], fingers: [3, 0, 1, 4, 2, 0] },
-                { name: 'Adim', cat: 'dim',   frets: [null, 0, 4, 5, 4, null], fingers: [0, 0, 1, 3, 2, 0], startFret: 2, labelAt: 2 },
-                { name: 'Bdim7',cat: 'dim',   frets: [null, 2, 3, 1, 3, null], fingers: [0, 2, 4, 1, 3, 0] }
+                { name: 'Am7b5',cat: 'm7b5',  level: 3, frets: [null, 0, 1, 0, 1, null], fingers: [0, 0, 1, 0, 2, 0] },
+                { name: 'Bm7b5',cat: 'm7b5',  level: 4, frets: [null, 2, 3, 2, 3, null], fingers: [0, 1, 3, 2, 4, 0] },
+                { name: 'Cm7b5',cat: 'm7b5',  level: 4, frets: [null, 3, 4, 3, 4, null], fingers: [0, 1, 3, 2, 4, 0] },
+                { name: 'Dm7b5',cat: 'm7b5',  level: 3, frets: [null, null, 0, 1, 1, 1], fingers: [0, 0, 0, 1, 2, 3] },
+                { name: 'Em7b5',cat: 'm7b5',  level: 4, frets: [null, null, 2, 3, 3, 3], fingers: [0, 0, 1, 2, 3, 4] },
+                { name: 'Fm7b5',cat: 'm7b5',  level: 4, frets: [1, null, 1, 1, 0, null], fingers: [1, 0, 1, 1, 0, 0] },
+                { name: 'Gm7b5',cat: 'm7b5',  level: 4, frets: [3, null, 3, 3, 2, null], fingers: [2, 0, 3, 4, 1, 0] },
+                { name: 'Cdim7',cat: 'dim',   level: 3, frets: [null, 3, 4, 2, 4, null], fingers: [0, 2, 4, 1, 3, 0] },
+                { name: 'Ddim7',cat: 'dim',   level: 3, frets: [null, null, 0, 1, 0, 1], fingers: [0, 0, 0, 2, 0, 3] },
+                { name: 'Edim', cat: 'dim',   level: 3, frets: [null, null, 2, 3, 2, 3], fingers: [0, 0, 1, 3, 2, 4] },
+                { name: 'Fdim', cat: 'dim',   level: 4, frets: [1, null, 0, 1, 0, null], fingers: [2, 0, 0, 1, 0, 0] },
+                { name: 'Gdim', cat: 'dim',   level: 4, frets: [3, null, 2, 3, 2, null], fingers: [3, 0, 1, 4, 2, 0] },
+                { name: 'Adim', cat: 'dim',   level: 4, frets: [null, 0, 4, 5, 4, null], fingers: [0, 0, 1, 3, 2, 0], startFret: 2, labelAt: 2 },
+                { name: 'Bdim7',cat: 'dim',   level: 3, frets: [null, 2, 3, 1, 3, null], fingers: [0, 2, 4, 1, 3, 0] }
             ];
 
             window._CHORDS = CHORDS;
@@ -4232,6 +4323,7 @@
 
             let chordsRendered = false;
             let currentFilter = 'all';
+            let currentSearch = '';
             window.initChordLibrary = function() {
                 if (chordsRendered) return;
                 chordsRendered = true;
@@ -4241,7 +4333,27 @@
                 const grid = document.getElementById('chordGrid');
                 if (!grid) return;
                 grid.innerHTML = '';
-                const filtered = currentFilter === 'all' ? CHORDS : CHORDS.filter(c => c.cat === currentFilter);
+                let filtered;
+                if (currentFilter === 'all') {
+                    filtered = CHORDS;
+                } else if (currentFilter.startsWith('level')) {
+                    const lvl = parseInt(currentFilter.slice(5), 10);
+                    filtered = CHORDS.filter(c => c.level === lvl);
+                } else {
+                    filtered = CHORDS.filter(c => c.cat === currentFilter);
+                }
+                if (currentSearch) {
+                    filtered = filtered.filter(c => c.name.toLowerCase().includes(currentSearch));
+                }
+                if (filtered.length === 0) {
+                    const empty = document.createElement('div');
+                    empty.className = 'chord-empty';
+                    empty.textContent = currentSearch
+                        ? `"${currentSearch}" 와 일치하는 코드가 없어요.`
+                        : '해당 카테고리에 코드가 없어요.';
+                    grid.appendChild(empty);
+                    return;
+                }
                 filtered.forEach(ch => {
                     const card = document.createElement('div');
                     card.className = 'chord-card';
@@ -4276,6 +4388,28 @@
                 const wrap = document.querySelector('.chord-filter-wrap');
                 if (wrap) wrap.classList.remove('open');
                 renderGrid();
+            };
+            let _searchDebounceTimer = null;
+            window.searchChords = function(q) {
+                currentSearch = (q || '').trim().toLowerCase();
+                const wrap = document.querySelector('.chord-search-wrap');
+                if (wrap) wrap.classList.toggle('has-text', !!currentSearch);
+                renderGrid();
+                // Debounce GA so we don't fire on every keystroke
+                if (_searchDebounceTimer) clearTimeout(_searchDebounceTimer);
+                if (currentSearch) {
+                    _searchDebounceTimer = setTimeout(() => {
+                        try { if (window.gtag) window.gtag('event', 'chord_search', { query: currentSearch }); } catch (e) {}
+                    }, 700);
+                }
+            };
+            window.clearChordSearch = function() {
+                const input = document.getElementById('chordSearchInput');
+                if (input) {
+                    input.value = '';
+                    input.focus();
+                }
+                searchChords('');
             };
             window.toggle7thMenu = function(e) {
                 if (e) e.stopPropagation();
