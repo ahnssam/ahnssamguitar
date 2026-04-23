@@ -358,6 +358,58 @@ nav.scrolled .auth-btn:hover {
     let currentMode = 'login';
 
     // ------------------------------------------------------------
+    // Debug overlay — toggle by adding ?authdebug=1 to the URL.
+    // Shows auth lifecycle on screen (for mobile where devtools are
+    // hard to access). Lives until page navigation.
+    // ------------------------------------------------------------
+    const AUTH_DEBUG = (function() {
+        try {
+            return /[?&]authdebug=1/.test(window.location.search) ||
+                   window.localStorage.getItem('authdebug') === '1';
+        } catch (e) { return false; }
+    })();
+    const AUTH_JS_VERSION = 'v3-implicit-debug';
+    let _debugEl = null;
+    function debugLog(msg) {
+        try { console.log('[auth]', msg); } catch (e) {}
+        if (!AUTH_DEBUG) return;
+        if (!_debugEl) {
+            _debugEl = document.createElement('div');
+            _debugEl.id = 'authDebug';
+            _debugEl.style.cssText = 'position:fixed;bottom:0;left:0;right:0;max-height:45vh;overflow:auto;background:rgba(0,0,0,0.88);color:#9ef08c;font:11px/1.4 monospace;padding:8px 10px;z-index:99999;white-space:pre-wrap;word-break:break-all;';
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = '×';
+            closeBtn.style.cssText = 'position:absolute;top:2px;right:6px;background:none;border:none;color:#fff;font-size:18px;cursor:pointer;';
+            closeBtn.onclick = function() { _debugEl.remove(); try { localStorage.removeItem('authdebug'); } catch(e){} };
+            _debugEl.appendChild(closeBtn);
+            if (document.body) document.body.appendChild(_debugEl);
+            else document.addEventListener('DOMContentLoaded', () => document.body.appendChild(_debugEl));
+        }
+        const line = document.createElement('div');
+        const t = new Date().toISOString().slice(11, 19);
+        line.textContent = '[' + t + '] ' + msg;
+        _debugEl.appendChild(line);
+        _debugEl.scrollTop = _debugEl.scrollHeight;
+    }
+    // Persist debug mode once activated so it survives OAuth redirect
+    if (AUTH_DEBUG) { try { localStorage.setItem('authdebug', '1'); } catch(e) {} }
+
+    // Immediate marker: confirms this auth.js version is the one running.
+    // If the overlay doesn't appear, the file is cached or not deployed.
+    function showDebugOverlayNow() {
+        if (!AUTH_DEBUG) return;
+        function attach() {
+            if (document.getElementById('authDebug')) return;
+            debugLog('auth.js loaded — ' + AUTH_JS_VERSION);
+            debugLog('UA: ' + navigator.userAgent.slice(0, 90));
+            debugLog('URL: ' + window.location.href.slice(0, 200));
+        }
+        if (document.body) attach();
+        else document.addEventListener('DOMContentLoaded', attach);
+    }
+    showDebugOverlayNow();
+
+    // ------------------------------------------------------------
     // Bootstrap helpers
     // ------------------------------------------------------------
     function loadSDK() {
@@ -617,17 +669,25 @@ nav.scrolled .auth-btn:hover {
 
     async function oauth(provider) {
         clearMsg();
+        const redirectTo = window.location.origin + window.location.pathname;
+        debugLog('oauth(' + provider + ') redirectTo=' + redirectTo);
         try {
-            const { error } = await sb.auth.signInWithOAuth({
+            const { data, error } = await sb.auth.signInWithOAuth({
                 provider,
                 options: {
-                    redirectTo: window.location.origin + window.location.pathname,
+                    redirectTo,
                     queryParams: provider === 'google' ? { prompt: 'select_account' } : undefined,
                     scopes: provider === 'kakao' ? 'profile_nickname profile_image' : undefined
                 }
             });
-            if (error) setMsg(humanError(error), 'error');
+            if (error) {
+                debugLog('signInWithOAuth error: ' + error.message);
+                setMsg(humanError(error), 'error');
+            } else {
+                debugLog('OAuth redirect URL: ' + (data && data.url ? data.url.slice(0, 120) : '(none)'));
+            }
         } catch (err) {
+            debugLog('oauth() threw: ' + (err && err.message));
             setMsg(humanError(err), 'error');
         }
     }
@@ -767,28 +827,35 @@ nav.scrolled .auth-btn:hover {
             }
         });
 
+        debugLog('SDK loaded, client created (flow=implicit)');
+        debugLog('URL: ' + window.location.href.slice(0, 200));
+
         // Explicitly parse any OAuth callback tokens in the current URL.
-        // `detectSessionInUrl: true` normally handles this on createClient, but
-        // if our own hash router runs first it can clobber the fragment. This
-        // call is idempotent — no-op if there are no tokens in the URL.
         try {
             const hash = window.location.hash || '';
-            if (hash.includes('access_token=') || window.location.search.includes('code=')) {
-                console.log('[auth] OAuth callback detected, parsing session from URL');
+            const search = window.location.search || '';
+            if (hash.includes('access_token=')) {
+                debugLog('OAuth callback: access_token in hash (implicit flow)');
+            } else if (search.includes('code=')) {
+                debugLog('OAuth callback: code in query (PKCE flow) — unexpected with flowType:implicit');
+            } else {
+                debugLog('No OAuth tokens in URL');
             }
         } catch (e) {}
 
         const { data, error: sessionErr } = await sb.auth.getSession();
-        if (sessionErr) console.warn('[auth] getSession error:', sessionErr);
+        if (sessionErr) debugLog('getSession error: ' + sessionErr.message);
         currentSession = data.session || null;
         if (currentSession) {
-            console.log('[auth] Session restored for user:', currentSession.user.email);
+            debugLog('Session restored: ' + currentSession.user.email);
             await fetchProfile(currentSession.user.id);
+        } else {
+            debugLog('No session after getSession()');
         }
         renderSlot();
 
         sb.auth.onAuthStateChange(async (event, session) => {
-            console.log('[auth] state change:', event, session ? session.user.email : 'no session');
+            debugLog('state change: ' + event + ' / ' + (session ? session.user.email : 'no session'));
             currentSession = session || null;
             if (currentSession) {
                 await fetchProfile(currentSession.user.id);
