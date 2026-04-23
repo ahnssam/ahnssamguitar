@@ -434,6 +434,7 @@ nav.scrolled .auth-btn:hover {
                         <span class="auth-user-name">${escapeHtml(nick)}</span>
                     </button>
                     <div class="auth-user-menu" role="menu">
+                        <button type="button" data-auth-action="mypage">마이페이지</button>
                         <button type="button" data-auth-action="change-nickname">닉네임 변경</button>
                         <hr>
                         <button type="button" data-auth-action="signout">로그아웃</button>
@@ -453,6 +454,7 @@ nav.scrolled .auth-btn:hover {
                     menu.classList.remove('open');
                     if (a === 'signout') signOut();
                     else if (a === 'change-nickname') promptNicknameChange();
+                    else if (a === 'mypage') goToMypage();
                 });
                 slot.appendChild(container);
             } else {
@@ -632,6 +634,21 @@ nav.scrolled .auth-btn:hover {
             setMsg('비밀번호 재설정 링크를 메일로 보냈어요.', 'success');
         } catch (err) {
             setMsg(humanError(err), 'error');
+        }
+    }
+
+    function goToMypage() {
+        // If already on tools.html, just set hash; otherwise navigate
+        const path = window.location.pathname;
+        if (path.endsWith('/tools.html') || path.endsWith('/tools')) {
+            if (window.location.hash !== '#mypage') {
+                window.location.hash = '#mypage';
+            } else {
+                // force re-trigger
+                window.dispatchEvent(new HashChangeEvent('hashchange'));
+            }
+        } else {
+            window.location.href = 'tools.html#mypage';
         }
     }
 

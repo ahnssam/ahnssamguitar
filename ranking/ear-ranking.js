@@ -1143,7 +1143,7 @@
             selfCardHtml = `
 <div class="rank-loginCTA">
     로그인하면 내 기록도 랭킹에 올라가요.
-    <br><button onclick="window.ahnssamAuth && window.ahnssamAuth.openLogin()">로그인</button>
+    <br><button type="button" data-open-login="1">로그인</button>
 </div>`;
         }
 
@@ -1190,7 +1190,7 @@
             body.innerHTML = `
 <div class="rank-loginCTA">
     로그인하면 내 기록과<br>통계를 볼 수 있어요.
-    <br><button onclick="window.ahnssamAuth && window.ahnssamAuth.openLogin()">로그인</button>
+    <br><button type="button" data-open-login="1">로그인</button>
 </div>`;
             return;
         }
@@ -1334,6 +1334,30 @@ ${recentHtml}
         } else if (tries < 40) {
             setTimeout(() => waitForAuth(cb, tries + 1), 200);
         }
+    }
+
+    function openLoginModalSafe() {
+        function tryOpen(tries) {
+            if (window.ahnssamAuth && typeof window.ahnssamAuth.openLogin === 'function') {
+                window.ahnssamAuth.openLogin();
+            } else if (tries < 40) {
+                setTimeout(function () { tryOpen(tries + 1); }, 120);
+            } else {
+                alert('로그인 창을 여는 중 문제가 발생했어요. 페이지를 새로고침한 뒤 다시 시도해주세요.');
+            }
+        }
+        tryOpen(0);
+    }
+
+    // One-time delegated click handler for any [data-open-login] button rendered later.
+    if (!window.__earLoginDelegateInstalled) {
+        window.__earLoginDelegateInstalled = true;
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest && e.target.closest('[data-open-login]');
+            if (!btn) return;
+            e.preventDefault();
+            openLoginModalSafe();
+        });
     }
 
     function boot() {
