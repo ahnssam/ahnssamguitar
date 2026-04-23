@@ -95,16 +95,18 @@
         @media (max-width: 900px), (orientation: portrait) {
             .coupang-banner-desktop { display: none; }
             .coupang-banner-mobile { display: block; }
-            /* 728x90 carousel is wider than most phones — let users swipe horizontally
-               so all 6 products remain visible rather than cropping to 2. */
+            /* Mobile banner renders at 360px via Coupang G.js — fits the
+               phone viewport without horizontal scrolling.  Keep
+               overflow-x: auto as a belt-and-suspenders safety net for
+               phones narrower than 360 (old iPhone SE etc.). */
             .coupang-banner-mobile {
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
                 scrollbar-width: none;
                 padding: 10px 0;
+                text-align: center;
             }
             .coupang-banner-mobile::-webkit-scrollbar { display: none; }
-            .coupang-banner-mobile > script + * { display: inline-block; }
             .coupang-banner-mobile .coupang-disclaimer {
                 padding: 0 8px;
             }
@@ -2291,16 +2293,28 @@
             }
             .chord-card { max-width: none; width: 100%; }
 
-            /* ===== Tuner / general: stop forcing tall empty panels ===== */
-            /* Remove the artificial min-height that stretched tools-main to
-               fill the viewport, which created a large empty gap below the
-               tuner's short content.  The page becomes naturally scrollable
-               because tool-body + coupang banner still exceed the visible
-               viewport after Samsung Internet's chrome hides, but short
-               panels no longer leave a dead zone. */
+            /* ===== Tuner / general: natural drag-to-hide-address-bar ===== */
+            /* Use 100vh (NOT 100dvh) so the container is always at least as
+               tall as the max viewport (chrome hidden).  When Samsung
+               Internet's address bar is still visible, 100vh exceeds the
+               smaller visible area by ~chrome height → just enough overflow
+               for a drag gesture to scroll and hide the chrome.  With
+               100dvh the container shrinks to the visible viewport so there
+               is nothing to scroll and the address bar stays put (that was
+               the tuner bug). */
             .tools-main {
-                min-height: 0;
+                min-height: 100vh;
+                /* Explicitly override the base rule which sets 100dvh as a
+                   second declaration; without this the later 100dvh would
+                   win because both have the same specificity. */
+                min-height: 100lvh;
             }
+            /* Pin the Coupang banner to the bottom of the flex column
+               (tools-main).  Works like desktop.  This way short panels
+               (tuner, mypage before content loads) still show the banner
+               at the very bottom instead of floating right under the
+               content. */
+            .coupang-banner { margin: auto auto 0; }
 
             /* ===== Loop: keep chord text compact so cells don't grow ===== */
             /* minmax(0, 1fr) already bounds the column width, but the
@@ -2935,7 +2949,10 @@
             <p class="coupang-disclaimer">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
         </div>
         <div class="coupang-banner coupang-banner-mobile">
-            <script>if (window.PartnersCoupang) new PartnersCoupang.G({"id":982250,"template":"carousel","trackingCode":"AF9102087","width":"728","height":"90","tsource":""});</script>
+            <!-- Mobile uses a narrower carousel so it fits the phone
+                 viewport without horizontal scrolling.  The iframe dims
+                 are rigid pixel values from the Coupang G.js SDK. -->
+            <script>if (window.PartnersCoupang) new PartnersCoupang.G({"id":982250,"template":"carousel","trackingCode":"AF9102087","width":"360","height":"90","tsource":""});</script>
             <p class="coupang-disclaimer">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
         </div>
     </main>
