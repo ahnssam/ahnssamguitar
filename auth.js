@@ -712,11 +712,24 @@ nav.scrolled .auth-btn:hover {
     // Entry
     // ------------------------------------------------------------
     async function boot() {
-        // Phase 1 — synchronous UI setup so the login button shows up
-        // immediately, even before the Supabase SDK finishes loading.
+        // Phase 1 — synchronous UI setup so the login button + modal DOM
+        // exist immediately, even before the Supabase SDK finishes loading.
         injectStyles();
         injectModal();
         renderSlot();
+
+        // Expose the auth API up front. openLogin/openSignup only need the
+        // modal DOM (already present), so they work even before the SDK loads.
+        // supabase/getSession/getProfile/signOut will read `sb` and state
+        // which are filled in after Phase 2.
+        window.ahnssamAuth = {
+            get supabase() { return sb; },
+            getSession: () => currentSession,
+            getProfile: () => currentProfile,
+            openLogin: () => openModal('login'),
+            openSignup: () => openModal('signup'),
+            signOut: () => signOut(),
+        };
 
         // Phase 2 — load the SDK in the background and wire up session.
         try {
@@ -744,15 +757,6 @@ nav.scrolled .auth-btn:hover {
             renderSlot();
             if (event === 'SIGNED_IN') closeModal();
         });
-
-        window.ahnssamAuth = {
-            supabase: sb,
-            getSession: () => currentSession,
-            getProfile: () => currentProfile,
-            openLogin: () => openModal('login'),
-            openSignup: () => openModal('signup'),
-            signOut,
-        };
     }
 
     if (document.readyState === 'loading') {
