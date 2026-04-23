@@ -383,42 +383,6 @@
         }
         .tools-btn-mobile { display: none; }
 
-        /* Tools Drawer */
-        .tools-overlay {
-            position: fixed; inset: 0;
-            height: 100vh;
-            height: 100dvh;
-            background: rgba(0,0,0,0.5);
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s;
-            z-index: 1100;
-            touch-action: none;
-        }
-        .tools-overlay.open {
-            opacity: 1;
-            visibility: visible;
-        }
-        .tools-drawer {
-            position: fixed;
-            top: 0; right: 0;
-            width: 380px; max-width: 100vw;
-            height: 100vh;
-            height: 100dvh;
-            background: #1a2421;
-            color: var(--white);
-            transform: translateX(100%);
-            transition: transform 0.4s ease;
-            z-index: 1101;
-            display: flex;
-            flex-direction: column;
-            box-shadow: -10px 0 40px rgba(0,0,0,0.2);
-            color-scheme: dark;
-            forced-color-adjust: none;
-            overflow: hidden;
-            -webkit-overflow-scrolling: touch;
-        }
-        .tools-drawer.open { transform: translateX(0); }
         .tools-header {
             position: sticky;
             top: 0;
@@ -506,7 +470,7 @@
 
         .tools-tabs {
             position: sticky;
-            top: var(--drawer-header-h, 62px);
+            top: 62px;
             z-index: 5;
             background: #1a2421;
             display: flex;
@@ -3419,7 +3383,6 @@
                 border-color: rgba(42, 107, 74, 0.9);
             }
             .menu-toggle { display: block; }
-            .tools-drawer { width: 100vw; }
 
             /* Hide login button from mobile nav — it moves into the hamburger menu */
             nav#navbar > .auth-slot,
@@ -3604,55 +3567,6 @@
             }
         }
 
-        /* ==========================================================
-           Mobile tools-view: transform the drawer into a full page
-           on mobile so the browser URL bar auto-hides naturally on
-           document scroll. Desktop keeps the drawer behavior intact.
-           ========================================================== */
-        @media (max-width: 767px) {
-            body.mobile-tools-view {
-                /* Let the page scroll as normal so URL bar hides. */
-                overflow: auto !important;
-            }
-            body.mobile-tools-view > #navbar,
-            body.mobile-tools-view > #loader,
-            body.mobile-tools-view > .mobile-menu,
-            body.mobile-tools-view > .hero,
-            body.mobile-tools-view > .portfolio,
-            body.mobile-tools-view > .shop-section,
-            body.mobile-tools-view > .about,
-            body.mobile-tools-view > .contact,
-            body.mobile-tools-view > footer,
-            body.mobile-tools-view > .tools-overlay {
-                display: none !important;
-            }
-            body.mobile-tools-view .tools-drawer {
-                position: static !important;
-                inset: auto !important;
-                top: auto !important;
-                right: auto !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                height: auto !important;
-                /* Use 100vh (largest viewport) so the drawer is a bit
-                   taller than the currently visible viewport while the
-                   URL bar is showing. That small overflow is what
-                   enables the browser's URL bar auto-hide on short
-                   panels like the tuner. */
-                min-height: 100vh !important;
-                transform: none !important;
-                box-shadow: none !important;
-                overflow: visible !important;
-            }
-            body.mobile-tools-view .tools-drawer .tools-header {
-                position: sticky;
-                top: 0;
-            }
-            body.mobile-tools-view .tools-drawer .tools-content {
-                overflow: visible !important;
-                -webkit-overflow-scrolling: auto;
-            }
-        }
     </style>
     <!-- Supabase auth (shared) -->
     <script src="auth.js" defer></script>
@@ -4593,181 +4507,22 @@
 
     <!-- Practice Tools (Tuner + Metronome) -->
     <script>
-        // ========== Drawer toggle ==========
-        let _drawerHistoryAdded = false;
-        let _suppressHashOpen = false;
-        function getActiveTool() {
-            const activeTab = document.querySelector('.tools-tab.active');
-            return activeTab ? activeTab.dataset.tool : 'tuner';
-        }
-        function updateHashForTool(tool) {
-            try { history.replaceState(null, '', '#' + tool); } catch (e) {}
-        }
-        function clearHash() {
-            try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch (e) {}
-        }
-        function pushDrawerHistory(tool) {
-            if (_drawerHistoryAdded) return;
-            try {
-                history.pushState({ drawerOpen: true }, '', '#' + (tool || getActiveTool()));
-                _drawerHistoryAdded = true;
-            } catch (e) {}
-        }
-        // --- Body scroll lock helpers ---
-        // Use overflow:hidden on html+body instead of position:fixed,
-        // because position:fixed on body breaks range-input (slider)
-        // touch-drag on mobile browsers.
-        // Background touch-scroll is already blocked by the overlay's
-        // touch-action:none CSS + the touchmove preventDefault below.
-        let _savedScrollY = 0;
-        function lockBodyScroll() {
-            // We intentionally do NOT position:fixed the body anymore,
-            // because on mobile browsers (Samsung Internet, Chrome
-            // Android) that prevents the URL bar from auto-hiding when
-            // the user drags inside the drawer. We just remember the
-            // current scroll position so we can restore it on close.
-            if (document.body.dataset.scrollLocked === '1') return;
-            _savedScrollY = window.scrollY || window.pageYOffset || 0;
-            document.body.dataset.scrollLocked = '1';
-        }
-        function unlockBodyScroll() {
-            if (document.body.dataset.scrollLocked !== '1') return;
-            document.body.dataset.scrollLocked = '';
-            // Do not force-restore scroll position — the URL bar may
-            // have collapsed while the drawer was open, and jumping
-            // back to the old offset would look jarring. Leave the
-            // page wherever the user ended up.
-        }
-        // Prevent background scroll when interacting inside the drawer
-        (function blockDrawerScrollLeak() {
-            const overlay = document.getElementById('toolsOverlay');
-            const drawer = document.getElementById('toolsDrawer');
-            function isMobileToolsViewActive() {
-                return document.body.classList.contains('mobile-tools-view');
-            }
-            if (overlay) {
-                overlay.addEventListener('touchmove', function(e) {
-                    if (isMobileToolsViewActive()) return;
-                    e.preventDefault();
-                }, { passive: false });
-                overlay.addEventListener('wheel', function(e) {
-                    if (isMobileToolsViewActive()) return;
-                    e.preventDefault();
-                }, { passive: false });
-            }
-            if (drawer) {
-                function isScrollableArea(target) {
-                    while (target && target !== drawer) {
-                        if (target.classList && (target.classList.contains('chord-grid') || target.classList.contains('et-history-scroll') || target.classList.contains('capo-help-overlay') || target.classList.contains('tools-content'))) {
-                            var sh = target.scrollHeight;
-                            var ch = target.clientHeight;
-                            if (sh > ch) return true;
-                        }
-                        target = target.parentElement;
-                    }
-                    return false;
-                }
-                drawer.addEventListener('touchmove', function(e) {
-                    if (isMobileToolsViewActive()) return;
-                    if (!isScrollableArea(e.target)) e.preventDefault();
-                }, { passive: false });
-                drawer.addEventListener('wheel', function(e) {
-                    if (isMobileToolsViewActive()) return;
-                    if (!isScrollableArea(e.target)) e.preventDefault();
-                }, { passive: false });
-            }
-        })();
-
-        function doCloseDrawer() {
-            const drawer = document.getElementById('toolsDrawer');
-            const overlay = document.getElementById('toolsOverlay');
-            if (!drawer) return;
-            drawer.classList.remove('open');
-            if (overlay) overlay.classList.remove('open');
-            var wasMobileView = document.body.classList.contains('mobile-tools-view');
-            if (wasMobileView) {
-                document.body.classList.remove('mobile-tools-view');
-                // Restore the original scroll position so the user lands
-                // back where they were before opening tools.
-                try { window.scrollTo(0, _mobileToolsSavedScrollY || 0); } catch (e) {}
-            } else {
-                unlockBodyScroll();
-            }
-            if (window._tunerRunning) toggleTuner();
-            if (window._metroRunning) toggleMetronome();
-        }
-        // Remembers the document scroll-y at the moment we enter
-        // mobile tools-view, so we can restore it on close.
-        let _mobileToolsSavedScrollY = 0;
-        function isMobileToolsViewport() {
-            try {
-                return window.matchMedia('(max-width: 767px)').matches;
-            } catch (e) { return false; }
-        }
-        function toggleTools() {
-            const drawer = document.getElementById('toolsDrawer');
-            const overlay = document.getElementById('toolsOverlay');
-            const wasOpen = drawer.classList.contains('open');
-            if (!wasOpen) {
-                // Opening
-                if (isMobileToolsViewport()) {
-                    _mobileToolsSavedScrollY = window.scrollY || window.pageYOffset || 0;
-                    document.body.classList.add('mobile-tools-view');
-                    // Start at the top of the drawer page
-                    window.scrollTo(0, 0);
-                } else {
-                    lockBodyScroll();
-                }
-                drawer.classList.add('open');
-                overlay.classList.add('open');
-                gtag('event', 'tools_open');
-                // Measure header height for sticky tabs
-                var dh = document.querySelector('.tools-header');
-                if (dh) drawer.style.setProperty('--drawer-header-h', dh.offsetHeight + 'px');
-                updateHashForTool(getActiveTool());
-                pushDrawerHistory();
-            } else {
-                // Closing manually — suppress hash-based auto-reopen
-                // because history.back() will restore a tool hash and
-                // fire hashchange that would otherwise re-open the drawer.
-                _suppressHashOpen = true;
-                doCloseDrawer();
-                if (_drawerHistoryAdded) {
-                    _drawerHistoryAdded = false;
-                    // Pop our pushed entry first (this restores a tool hash briefly)
-                    try { history.back(); } catch (e) {}
-                }
-                // Then clear the hash so URL stays clean
-                setTimeout(() => {
-                    clearHash();
-                    _suppressHashOpen = false;
-                }, 50);
-            }
-        }
-        // Back button handler — close chord modal first, then drawer
+        // Back button handler — close chord modal
         window.addEventListener('popstate', function() {
             // If a close action already did the work and programmatically called
             // history.back(), skip this popstate so we don't cascade into closing
-            // the drawer too.
+            // the modal too.
             if (window._skipNextPopstate) {
                 window._skipNextPopstate = false;
                 return;
             }
-            // Priority 1: chord modal (stacked on top of drawer)
+            // Chord modal
             const chordModal = document.getElementById('chordModal');
             if (chordModal && chordModal.classList.contains('open')) {
                 window._chordModalHistoryAdded = false;
                 chordModal.classList.remove('open');
                 return;
             }
-            // Priority 2: drawer
-            const drawer = document.getElementById('toolsDrawer');
-            if (!drawer || !drawer.classList.contains('open')) return;
-            _drawerHistoryAdded = false;
-            _suppressHashOpen = true;
-            doCloseDrawer();
-            clearHash();
-            setTimeout(() => { _suppressHashOpen = false; }, 50);
         });
 
         // ========== Auto-open drawer from URL hash ==========
@@ -4786,7 +4541,6 @@
                 'ear': 'eartraining'
             };
             function openFromHash() {
-                if (_suppressHashOpen) return;
                 const raw = (window.location.hash || '').toLowerCase().replace('#', '');
                 const tool = HASH_MAP[raw];
                 if (!tool) return;
@@ -4829,16 +4583,8 @@
             }
             const panel = document.getElementById(tool + 'Panel');
             if (panel) panel.classList.add('active');
-            // Scroll drawer to top when switching tools
-            var dw = document.getElementById('toolsDrawer');
-            if (dw) dw.scrollTop = 0;
             // Close more menu if open
             closeMoreMenu();
-            // Update URL hash only when drawer is open
-            const drawer = document.getElementById('toolsDrawer');
-            if (drawer && drawer.classList.contains('open')) {
-                updateHashForTool(tool);
-            }
         }
         function updateMoreTabLabel(subtool) {
             const meta = SUB_TOOL_META[subtool];
@@ -7689,50 +7435,6 @@
             };
         })();
 
-        // Keyboard shortcuts when drawer is open
-        document.addEventListener('keydown', function(e) {
-            const drawer = document.getElementById('toolsDrawer');
-            if (!drawer || !drawer.classList.contains('open')) return;
-            const tag = document.activeElement.tagName;
-            if (['INPUT', 'SELECT', 'TEXTAREA'].includes(tag)) return;
-
-            // Detect active tool from the visible panel (works for both top-level and sub-tools)
-            const activePanel = document.querySelector('.tool-panel.active');
-            if (!activePanel) return;
-            const tool = (activePanel.id || '').replace('Panel', '');
-
-            // Tap tempo: any non-modifier key triggers a tap
-            if (tool === 'taptempo') {
-                if (e.metaKey || e.ctrlKey || e.altKey) return;
-                if (['Escape', 'Tab', 'Shift', 'Control', 'Alt', 'Meta',
-                     'CapsLock', 'NumLock', 'ScrollLock', 'ContextMenu',
-                     'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
-                     'PageUp', 'PageDown', 'Home', 'End',
-                     'F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12'
-                    ].includes(e.key)) return;
-                e.preventDefault();
-                window.bigTap();
-                if (document.activeElement && document.activeElement.blur) {
-                    document.activeElement.blur();
-                }
-                return;
-            }
-
-            if (e.code === 'Space') {
-                e.preventDefault();
-                if (tool === 'tuner') toggleTuner();
-                else if (tool === 'metronome') toggleMetronome();
-            } else if (e.code === 'Enter') {
-                // Enter only triggers tap tempo in metronome panel
-                if (tool !== 'metronome') return;
-                e.preventDefault();
-                window.metroTap();
-                // Blur any focused button so Enter doesn't also re-click it
-                if (document.activeElement && document.activeElement.blur) {
-                    document.activeElement.blur();
-                }
-            }
-        });
     </script>
 
     <!-- ========== GA Custom Event Tracking (link clicks) ========== -->
