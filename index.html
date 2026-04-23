@@ -78,13 +78,13 @@
         }
         #loader::before {
             content: ''; position: absolute; inset: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.07'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
             z-index: 0;
         }
         #loader.hidden { opacity: 0; visibility: hidden; }
         .loader-leaf {
             position: absolute; z-index: 0;
-            opacity: 0.15; color: var(--green-pale);
+            opacity: 0.28; color: var(--green-pale);
             animation: floatLeaf 15s ease-in-out infinite;
         }
         #loader .loader-text {
@@ -95,6 +95,39 @@
             animation: pulse 1.5s ease-in-out infinite;
         }
         @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+        /* ===== Tools page transition overlay =====
+           Fades in before navigating to tools.html, so the jump from
+           index → tools looks like one continuous fade (the tools loader
+           on the other side uses the same dark bg + cross pattern). */
+        #toolsTransition {
+            position: fixed; inset: 0; z-index: 10000;
+            background: #1a2421;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.5s ease-out, visibility 0s linear 0.5s;
+        }
+        #toolsTransition.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transition: opacity 0.5s ease-out, visibility 0s linear 0s;
+        }
+        #toolsTransition::before {
+            content: ''; position: absolute; inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.07'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            z-index: 0;
+        }
+        .trans-leaf {
+            position: absolute; z-index: 0;
+            opacity: 0.28; color: var(--green-pale);
+            animation: floatLeaf 15s ease-in-out infinite;
+        }
+        .trans-logo {
+            position: relative; z-index: 1;
+        }
 
         /* ===== NAVIGATION ===== */
         nav {
@@ -3628,6 +3661,15 @@
     </nav>
 
     <!-- Tools drawer removed; 연습도구 now links to tools.html -->
+
+    <!-- Tools page transition overlay (fades in before navigating) -->
+    <div id="toolsTransition" aria-hidden="true">
+        <i class="fas fa-leaf trans-leaf" style="top: 12%; left: 8%; font-size: 3rem; animation-delay: 0s;"></i>
+        <i class="fas fa-leaf trans-leaf" style="top: 55%; left: 5%; font-size: 2rem; animation-delay: 3s;"></i>
+        <i class="fas fa-seedling trans-leaf" style="top: 25%; right: 10%; font-size: 2.5rem; animation-delay: 6s;"></i>
+        <i class="fas fa-leaf trans-leaf" style="bottom: 18%; right: 12%; font-size: 1.8rem; animation-delay: 9s;"></i>
+        <div class="trans-logo"><img src="images/apple-touch-icon.png" alt="안쌤의 기타나무숲" style="height: 140px;"></div>
+    </div>
 
 
     <!-- Chord Modal (enlarged chord view) -->
@@ -7504,6 +7546,30 @@
                 origSwitchShop(tab);
             };
         }
+    })();
+    </script>
+
+    <!-- Fade-in transition overlay before navigating to tools.html -->
+    <script>
+    (function() {
+        const overlay = document.getElementById('toolsTransition');
+        if (!overlay) return;
+        const links = document.querySelectorAll('a[href="tools.html"], a[href^="tools.html#"]');
+        const FADE_MS = 500;
+        links.forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                // Let the browser handle new-tab/modifier clicks normally
+                if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                if (this.target === '_blank') return;
+                e.preventDefault();
+                const href = this.getAttribute('href');
+                // Force tools.html to show its loader (matches this fade visually)
+                try { sessionStorage.setItem('skipLoader', 'showLoader'); } catch (err) {}
+                overlay.classList.add('active');
+                try { if (window.gtag) window.gtag('event', 'tools_transition'); } catch (err) {}
+                setTimeout(function() { window.location.href = href; }, FADE_MS);
+            });
+        });
     })();
     </script>
 </body>

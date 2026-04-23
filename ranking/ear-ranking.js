@@ -1110,7 +1110,12 @@
         if (meCard) meCard.style.display = user ? '' : 'none';
 
         if (top.length === 0) {
-            content.innerHTML = `<div class="rank-empty">이 조건에는 아직 기록이 없어요.<br>첫 번째 기록의 주인공이 되어보세요.</div>`;
+            const emptyLoginCTA = !user ? `
+<div class="rank-loginCTA">
+    로그인하면 내 기록도 랭킹에 올라가요.
+    <br><button type="button" data-open-login="1">로그인</button>
+</div>` : '';
+            content.innerHTML = `<div class="rank-empty">이 조건에는 아직 기록이 없어요.<br>첫 번째 기록의 주인공이 되어보세요.</div>${emptyLoginCTA}`;
             return;
         }
 
