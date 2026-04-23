@@ -216,7 +216,7 @@ nav.scrolled .auth-btn:hover {
 
 .auth-form { display: flex; flex-direction: column; gap: 0.7rem; }
 .auth-field { display: flex; flex-direction: column; gap: 0.3rem; }
-.auth-field-nickname { margin-bottom: 0.8rem; }
+.auth-field-nickname { margin-bottom: 1.6rem; }
 .auth-label { font-size: 0.8rem; font-weight: 600; color: rgba(0,0,0,0.7); }
 .auth-input {
     padding: 0.75rem 0.9rem;
