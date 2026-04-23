@@ -645,6 +645,15 @@
             }
             .chord-filter-dd { padding: 0.35rem 0.45rem; }
             .chord-filter-level { padding: 0.35rem 0.5rem; }
+            /* Chord library body — relax the 680px cap on mobile */
+            #chordsPanel .tool-body { max-width: none; }
+            .chord-search-wrap { max-width: 100%; }
+            /* On narrow screens, fall back to auto-fit so cards don't get too tiny on phones */
+            .chord-grid {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                gap: 0.5rem;
+            }
+            .chord-card { max-width: 135px; }
         }
 
         /* ===== Capo Calculator ===== */
@@ -820,27 +829,34 @@
         }
 
         /* ===== Chord Library ===== */
+        /* Chord library body — constrained width for tighter layout */
+        #chordsPanel .tool-body {
+            max-width: 680px;
+            margin-left: auto;
+            margin-right: auto;
+        }
         .chord-search-wrap {
             position: relative;
             margin-bottom: 0.7rem;
+            max-width: 200px;
         }
         .chord-search-icon {
             position: absolute;
-            left: 0.85rem;
+            left: 0.7rem;
             top: 50%;
             transform: translateY(-50%);
             color: rgba(255,255,255,0.4);
-            font-size: 0.8rem;
+            font-size: 0.72rem;
             pointer-events: none;
         }
         .chord-search-input {
             width: 100%;
-            padding: 0.55rem 2.3rem 0.55rem 2.1rem;
+            padding: 0.4rem 1.9rem 0.4rem 1.8rem;
             background: rgba(255,255,255,0.06);
             border: 1px solid rgba(255,255,255,0.18);
-            border-radius: 10px;
+            border-radius: 8px;
             color: rgba(255,255,255,0.92);
-            font-size: 0.85rem;
+            font-size: 0.78rem;
             font-family: inherit;
             transition: border-color 0.2s, background 0.2s;
             box-sizing: border-box;
@@ -853,7 +869,7 @@
         .chord-search-input::placeholder { color: rgba(255,255,255,0.35); }
         .chord-search-clear {
             position: absolute;
-            right: 0.45rem;
+            right: 0.3rem;
             top: 50%;
             transform: translateY(-50%);
             display: none;
@@ -861,9 +877,9 @@
             border: none;
             color: rgba(255,255,255,0.55);
             cursor: pointer;
-            padding: 0.3rem 0.5rem;
-            font-size: 0.8rem;
-            border-radius: 6px;
+            padding: 0.25rem 0.4rem;
+            font-size: 0.72rem;
+            border-radius: 5px;
         }
         .chord-search-clear:hover {
             color: #fff;
@@ -876,6 +892,20 @@
             color: rgba(255,255,255,0.5);
             font-size: 0.9rem;
             padding: 2.5rem 1rem;
+        }
+        /* Top search match — standalone featured card above the grid */
+        .chord-top-match {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 0.9rem;
+            padding-bottom: 0.9rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .chord-top-match .chord-card {
+            max-width: 150px;
+            border-color: #e8c44a;
+            background: rgba(232, 196, 74, 0.08);
+            box-shadow: 0 0 16px rgba(232, 196, 74, 0.18);
         }
         .chord-filters {
             display: flex;
@@ -969,20 +999,17 @@
         }
         .chord-grid {
             display: grid;
-            /* Columns auto-scale: minimum 2, maximum 5.
-               Formula uses clamp() to keep column min-width between
-               1/5 of container (prevents >5 cols on very wide screens) and
-               1/2 of container (prevents <2 cols on very narrow phones),
-               with 150px as the natural preferred card width. */
-            grid-template-columns: repeat(auto-fill, minmax(clamp(calc((100% - 2.4rem) / 5), 150px, calc((100% - 0.6rem) / 2)), 1fr));
-            gap: 0.8rem;
+            /* Columns fixed to 5 on the constrained 680px body for tight, consistent layout.
+               On narrow phones (<700px) we auto-fill with smaller cards. */
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.55rem;
             justify-items: center;
         }
         .chord-card {
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 10px;
-            padding: 0.7rem;
+            border-radius: 9px;
+            padding: 0.45rem;
             text-align: center;
             cursor: pointer;
             transition: background 0.2s, border-color 0.2s, transform 0.15s;
@@ -991,7 +1018,7 @@
             justify-content: center;
             aspect-ratio: 7 / 5;
             width: 100%;
-            max-width: 175px;
+            max-width: 125px;
         }
         .chord-card:hover {
             background: rgba(82, 168, 114, 0.15);
@@ -2484,6 +2511,7 @@
                         </div>
                     </div>
                 </div>
+                <div class="chord-top-match" id="chordTopMatch" style="display:none;"></div>
                 <div class="chord-grid" id="chordGrid"></div>
             </div>
         </section>
@@ -4329,22 +4357,48 @@
                 chordsRendered = true;
                 renderGrid();
             };
+            function chordMatchScore(chord, q) {
+                // Higher score = better match. Returns -1 if no match.
+                const name = chord.name.toLowerCase();
+                if (name === q) return 1000;              // exact match
+                if (name.startsWith(q)) return 500 - name.length; // prefix, shorter wins
+                const idx = name.indexOf(q);
+                if (idx === -1) return -1;                // no substring match
+                return 100 - idx * 5 - name.length;       // earlier position + shorter name = higher score
+            }
+            function buildCard(ch) {
+                const card = document.createElement('div');
+                card.className = 'chord-card';
+                card.innerHTML = renderChordSVG(ch);
+                card.onclick = function() { showChordModal(ch); gtag('event', 'chord_view', { chord: ch.name }); };
+                return card;
+            }
             function renderGrid() {
                 const grid = document.getElementById('chordGrid');
+                const topWrap = document.getElementById('chordTopMatch');
                 if (!grid) return;
                 grid.innerHTML = '';
+                if (topWrap) { topWrap.innerHTML = ''; topWrap.style.display = 'none'; }
+
                 let filtered;
                 if (currentFilter === 'all') {
-                    filtered = CHORDS;
+                    filtered = CHORDS.slice();
                 } else if (currentFilter.startsWith('level')) {
                     const lvl = parseInt(currentFilter.slice(5), 10);
                     filtered = CHORDS.filter(c => c.level === lvl);
                 } else {
                     filtered = CHORDS.filter(c => c.cat === currentFilter);
                 }
+
                 if (currentSearch) {
-                    filtered = filtered.filter(c => c.name.toLowerCase().includes(currentSearch));
+                    // Score + filter out non-matches, then sort by score desc
+                    filtered = filtered
+                        .map(c => ({ c, score: chordMatchScore(c, currentSearch) }))
+                        .filter(o => o.score >= 0)
+                        .sort((a, b) => b.score - a.score)
+                        .map(o => o.c);
                 }
+
                 if (filtered.length === 0) {
                     const empty = document.createElement('div');
                     empty.className = 'chord-empty';
@@ -4354,13 +4408,17 @@
                     grid.appendChild(empty);
                     return;
                 }
-                filtered.forEach(ch => {
-                    const card = document.createElement('div');
-                    card.className = 'chord-card';
-                    card.innerHTML = renderChordSVG(ch);
-                    card.onclick = function() { showChordModal(ch); gtag('event', 'chord_view', { chord: ch.name }); };
-                    grid.appendChild(card);
-                });
+
+                // When searching AND there are multiple matches, pull the top match out
+                // into its own highlighted slot, render the rest in the grid below.
+                if (currentSearch && filtered.length > 1 && topWrap) {
+                    const best = filtered[0];
+                    topWrap.appendChild(buildCard(best));
+                    topWrap.style.display = 'flex';
+                    filtered.slice(1).forEach(ch => grid.appendChild(buildCard(ch)));
+                } else {
+                    filtered.forEach(ch => grid.appendChild(buildCard(ch)));
+                }
             }
             const SEVENTH_CATS = ['maj7', '7th', 'm7', 'm7b5', 'dim'];
             const SEVENTH_LABELS = {
