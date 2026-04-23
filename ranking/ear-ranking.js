@@ -264,6 +264,181 @@
     border: 1px dashed rgba(255,255,255,0.12);
     border-radius: 11px;
 }
+/* ---------- Ranking: scoring help button ---------- */
+.rank-help-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px;
+    margin-left: 0.45rem;
+    padding: 0;
+    vertical-align: middle;
+    font-size: 0.85rem; font-weight: 700;
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.7);
+    border: 1.5px solid rgba(255,255,255,0.25);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.rank-help-btn:hover {
+    background: rgba(82,168,114,0.2);
+    border-color: var(--green-light, #72c492);
+    color: var(--green-pale, #b5e6c8);
+}
+
+/* ---------- "내 누적" card above filters ---------- */
+.rank-me-card {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+    padding: 0.8rem 1rem;
+    background: linear-gradient(135deg, rgba(82,168,114,0.16), rgba(42,107,74,0.08));
+    border: 1px solid rgba(114,196,146,0.28);
+    border-radius: 12px;
+}
+.rank-me-label {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.15em;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+.rank-me-values {
+    display: flex; align-items: baseline; gap: 0.6rem;
+    flex: 1;
+    color: #fff;
+}
+.rank-me-values .rank-me-value {
+    font-size: 1.35rem; font-weight: 800; color: #fff;
+    letter-spacing: 0.01em;
+}
+.rank-me-values .rank-me-rounds { font-size: 0.95rem; color: rgba(255,255,255,0.7); font-weight: 600; }
+.rank-me-values .rank-me-sep { color: rgba(255,255,255,0.3); font-size: 0.9rem; }
+.rank-me-values .rank-me-unit {
+    font-size: 0.78rem; font-weight: 600;
+    color: rgba(181,230,200,0.7);
+    margin-left: 0.15rem; letter-spacing: 0.05em;
+}
+
+/* ---------- Filter pills (scope/mode/difficulty) ---------- */
+.rank-filters {
+    display: flex; flex-direction: column; gap: 0.6rem;
+    margin-bottom: 1rem;
+    padding: 0.7rem 0.9rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 11px;
+}
+.rank-filter-group {
+    display: flex; align-items: center; gap: 0.6rem;
+    flex-wrap: wrap;
+}
+.rank-filter-label {
+    flex: 0 0 auto;
+    width: 42px;
+    font-size: 0.75rem; font-weight: 600;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 0.05em;
+}
+.rank-pills {
+    display: flex; gap: 0.35rem;
+    flex-wrap: wrap;
+    flex: 1; min-width: 0;
+}
+.rank-pill {
+    padding: 0.38rem 0.78rem;
+    font-family: inherit;
+    font-size: 0.8rem; font-weight: 600;
+    color: rgba(255,255,255,0.62);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+.rank-pill:hover { background: rgba(82,168,114,0.12); color: #fff; border-color: rgba(114,196,146,0.3); }
+.rank-pill.active {
+    background: rgba(82,168,114,0.28);
+    color: var(--green-pale, #b5e6c8);
+    border-color: var(--green-light, #72c492);
+    box-shadow: 0 0 0 1px rgba(114,196,146,0.3);
+}
+
+/* ---------- Help popup ---------- */
+.rank-help-overlay {
+    position: fixed; inset: 0;
+    background: rgba(12, 22, 18, 0.72);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 10000;
+    padding: 1rem;
+    font-family: inherit;
+}
+.rank-help-overlay.open { display: flex; }
+.rank-help-card {
+    width: 100%; max-width: 460px;
+    background: linear-gradient(160deg, #1e2e28, #14221d);
+    border: 1px solid rgba(114,196,146,0.3);
+    border-radius: 16px;
+    padding: 1.6rem 1.6rem 1.3rem;
+    color: #fff;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    position: relative;
+    max-height: 90vh; overflow-y: auto;
+}
+.rank-help-card h3 {
+    font-size: 1rem; font-weight: 700;
+    color: var(--green-pale, #b5e6c8);
+    letter-spacing: 0.02em;
+    margin: 1rem 0 0.55rem;
+}
+.rank-help-card h3:first-of-type { margin-top: 0.2rem; }
+.rank-help-close {
+    position: absolute; top: 0.7rem; right: 0.7rem;
+    width: 32px; height: 32px;
+    font-size: 1.2rem;
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.55);
+    cursor: pointer; border-radius: 6px;
+}
+.rank-help-close:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.rank-help-line {
+    font-size: 0.88rem; color: rgba(255,255,255,0.82);
+    line-height: 1.6; margin: 0 0 0.6rem;
+}
+.rank-help-line b { color: #fff; font-weight: 700; }
+.rank-help-formula {
+    margin: 0.5rem 0 0.9rem;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.95rem; font-weight: 700;
+    text-align: center;
+    background: rgba(82,168,114,0.15);
+    border: 1px dashed rgba(114,196,146,0.35);
+    border-radius: 10px;
+    color: var(--green-pale, #b5e6c8);
+    letter-spacing: 0.03em;
+}
+.rank-help-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.3rem 1.2rem;
+    margin: 0.3rem 0 0.9rem;
+    padding-left: 0.3rem;
+    font-size: 0.86rem; color: rgba(255,255,255,0.78);
+}
+.rank-help-grid div:nth-child(odd) { font-weight: 700; color: #fff; }
+.rank-help-list {
+    margin: 0 0 0.5rem 1.1rem;
+    padding: 0;
+    font-size: 0.85rem; color: rgba(255,255,255,0.78);
+    line-height: 1.65;
+}
+.rank-help-list li { margin-bottom: 0.2rem; }
+.rank-help-list b { color: #fff; font-weight: 700; }
+
 .rank-loginCTA button {
     margin-top: 0.7rem;
     padding: 0.55rem 1.1rem;
@@ -367,6 +542,28 @@
     border-radius: 7px;
     cursor: pointer;
 }
+.mp-purchase {
+    margin-top: 1.4rem;
+    padding: 1rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 11px;
+}
+.mp-purchase-title { font-size: 0.82rem; font-weight: 700; color: var(--green-pale, #b5e6c8); margin-bottom: 0.4rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.mp-purchase-desc { font-size: 0.82rem; color: rgba(255,255,255,0.6); line-height: 1.55; margin-bottom: 0.8rem; }
+.mp-purchase-btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.55rem 1rem;
+    font-family: inherit; font-size: 0.82rem; font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, var(--green-mid, #52a872), var(--green-deep, #2a6b4a));
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    text-decoration: none;
+}
+.mp-purchase-btn:hover { filter: brightness(1.08); }
+.mp-purchase-btn i { font-size: 0.78rem; }
 .mp-delete-btn:hover { background: rgba(255, 122, 122, 0.1); }
 
 .mp-encouragement {
@@ -550,8 +747,8 @@
         const msg = (err && err.message) || String(err);
         const map = {
             auth_required: '로그인이 필요해요.',
-            session_must_be_10: '10문제 단위가 아닌 세션이에요.',
-            rate_limited: '너무 빠르게 세션을 제출했어요. 1분 후 다시 시도해주세요.',
+            session_must_be_10: '10문제 단위가 아닌 라운드이에요.',
+            rate_limited: '너무 빠르게 라운드를 제출했어요. 1분 후 다시 시도해주세요.',
             invalid_mode: '잘못된 모드에요.',
             invalid_difficulty: '잘못된 난이도에요.'
         };
@@ -586,7 +783,7 @@
         const pill = document.createElement('span');
         pill.id = id;
         pill.className = 'et-session-pill';
-        pill.innerHTML = `<span class="dot"></span><span>세션 ${tracker.answers.length}/${SESSION_SIZE}</span>`;
+        pill.innerHTML = `<span class="dot"></span><span>라운드 ${tracker.answers.length}/${SESSION_SIZE}</span>`;
         if (resetBtn) row.insertBefore(pill, resetBtn); else row.appendChild(pill);
     }
 
@@ -599,14 +796,14 @@
         wrap.innerHTML = `
 <div class="sum-overlay" id="earSumOverlay">
     <div class="sum-card">
-        <div class="sum-title">SESSION COMPLETE</div>
+        <div class="sum-title">라운드 완료</div>
         <div class="sum-mode" id="sumMode"></div>
         <div class="sum-score"><span id="sumScore">0</span><span class="sum-pts">PTS</span></div>
         <div class="sum-acc" id="sumAcc"></div>
         <div class="sum-note" id="sumNote"></div>
         <div class="sum-actions">
             <button class="sum-btn ghost" id="sumCloseBtn">닫기</button>
-            <button class="sum-btn primary" id="sumContinueBtn">다음 세션</button>
+            <button class="sum-btn primary" id="sumContinueBtn">다음 라운드</button>
         </div>
     </div>
 </div>
@@ -653,7 +850,7 @@
                 if (window.ahnssamAuth && window.ahnssamAuth.openLogin) window.ahnssamAuth.openLogin();
             };
         } else {
-            continueBtn.textContent = '다음 세션';
+            continueBtn.textContent = '다음 라운드';
             continueBtn.onclick = closeSummary;
         }
         document.getElementById('earSumOverlay').classList.add('open');
@@ -763,6 +960,8 @@
     // Rankings panel
     // ------------------------------------------------------------
     let _rankScope = 'daily';
+    let _rankMode = 'all';
+    let _rankDiff = 'all';
 
     function renderRankingsShell() {
         const panel = document.getElementById('rankingPanel');
@@ -770,13 +969,44 @@
         panel.innerHTML = `
 <div class="tool-header">
     <div class="tool-header-icon"><i class="fas fa-trophy"></i></div>
-    <h1>랭킹</h1>
+    <h1>랭킹 <button class="rank-help-btn" type="button" aria-label="점수 산정 방식" title="점수 산정 방식">?</button></h1>
 </div>
 <div class="tool-body">
-    <div class="rank-tabs">
-        <button class="rank-tab active" data-scope="daily">오늘</button>
-        <button class="rank-tab" data-scope="weekly">이번 주</button>
-        <button class="rank-tab" data-scope="total">전체</button>
+    <div class="rank-me-card" id="rankMeCard">
+        <div class="rank-me-label">내 누적</div>
+        <div class="rank-me-values">
+            <div class="rank-me-value"><span id="rankMyGrand">0</span><span class="rank-me-unit">점</span></div>
+            <div class="rank-me-sep">·</div>
+            <div class="rank-me-rounds"><span id="rankMyRounds">0</span><span class="rank-me-unit"> 라운드</span></div>
+        </div>
+    </div>
+    <div class="rank-filters">
+        <div class="rank-filter-group">
+            <span class="rank-filter-label">기간</span>
+            <div class="rank-pills">
+                <button class="rank-pill active" data-scope="daily">오늘</button>
+                <button class="rank-pill" data-scope="weekly">이번 주</button>
+                <button class="rank-pill" data-scope="total">전체</button>
+            </div>
+        </div>
+        <div class="rank-filter-group">
+            <span class="rank-filter-label">모드</span>
+            <div class="rank-pills">
+                <button class="rank-pill active" data-mode="all">전체</button>
+                <button class="rank-pill" data-mode="ear_single">음 맞추기</button>
+                <button class="rank-pill" data-mode="ear_compare">두 음 비교</button>
+                <button class="rank-pill" data-mode="ear_chord">코드 맞추기</button>
+            </div>
+        </div>
+        <div class="rank-filter-group">
+            <span class="rank-filter-label">난이도</span>
+            <div class="rank-pills">
+                <button class="rank-pill active" data-diff="all">전체</button>
+                <button class="rank-pill" data-diff="easy">쉬움</button>
+                <button class="rank-pill" data-diff="medium">보통</button>
+                <button class="rank-pill" data-diff="hard">어려움</button>
+            </div>
+        </div>
     </div>
     <div class="rank-meta">
         <span id="rankScopeLabel">오늘 획득한 점수</span>
@@ -784,17 +1014,78 @@
     </div>
     <div id="rankContent"></div>
 </div>
+
+<!-- Scoring help popup -->
+<div class="rank-help-overlay" id="rankHelpOverlay">
+    <div class="rank-help-card">
+        <button class="rank-help-close" aria-label="닫기">&times;</button>
+        <h3>점수는 어떻게 계산되나요?</h3>
+        <p class="rank-help-line">
+            한 <b>라운드</b>는 <b>10문제</b>로 이루어집니다. 라운드가 끝나면 아래 공식으로 점수가 매겨져요.
+        </p>
+        <div class="rank-help-formula">
+            점수 = 정답 수 × 10 × 난이도 계수
+        </div>
+        <div class="rank-help-grid">
+            <div>쉬움</div><div>× 1.0</div>
+            <div>보통</div><div>× 1.5</div>
+            <div>어려움</div><div>× 2.0</div>
+        </div>
+        <p class="rank-help-line">
+            예: <b>어려움</b>에서 10문제 모두 맞히면 <b>10 × 10 × 2.0 = 200점</b>
+        </p>
+        <h3>랭킹 집계</h3>
+        <ul class="rank-help-list">
+            <li><b>오늘</b> — 오늘(한국 시간) 획득한 점수의 합</li>
+            <li><b>이번 주</b> — 이번 주 월~일 획득 점수의 합</li>
+            <li><b>전체</b> — 가입 이후 누적 점수</li>
+            <li>모드/난이도 필터로 세부 랭킹을 볼 수 있어요.</li>
+        </ul>
+        <h3>주의사항</h3>
+        <ul class="rank-help-list">
+            <li>응답 시간 0.3초 미만인 문제는 찍기로 간주되어 점수에서 제외됩니다.</li>
+            <li>1분 내에 5회 이상 라운드를 제출하면 일시적으로 저장이 거부됩니다.</li>
+        </ul>
+    </div>
+</div>
 `;
-        panel.querySelectorAll('.rank-tab').forEach((t) => {
+        function reload() { loadRankings(); }
+        panel.querySelectorAll('.rank-pill[data-scope]').forEach((t) => {
             t.addEventListener('click', () => {
                 _rankScope = t.getAttribute('data-scope');
-                panel.querySelectorAll('.rank-tab').forEach((x) => x.classList.toggle('active', x === t));
+                panel.querySelectorAll('.rank-pill[data-scope]').forEach((x) => x.classList.toggle('active', x === t));
                 const label = { daily: '오늘 획득한 점수', weekly: '이번 주 획득한 점수', total: '누적 점수' }[_rankScope];
                 panel.querySelector('#rankScopeLabel').textContent = label;
-                loadRankings();
+                reload();
             });
         });
-        panel.querySelector('#rankRefresh').addEventListener('click', loadRankings);
+        panel.querySelectorAll('.rank-pill[data-mode]').forEach((t) => {
+            t.addEventListener('click', () => {
+                _rankMode = t.getAttribute('data-mode');
+                panel.querySelectorAll('.rank-pill[data-mode]').forEach((x) => x.classList.toggle('active', x === t));
+                reload();
+            });
+        });
+        panel.querySelectorAll('.rank-pill[data-diff]').forEach((t) => {
+            t.addEventListener('click', () => {
+                _rankDiff = t.getAttribute('data-diff');
+                panel.querySelectorAll('.rank-pill[data-diff]').forEach((x) => x.classList.toggle('active', x === t));
+                reload();
+            });
+        });
+        panel.querySelector('#rankRefresh').addEventListener('click', reload);
+
+        // Help popup wiring
+        const helpBtn = panel.querySelector('.rank-help-btn');
+        const helpOverlay = panel.querySelector('#rankHelpOverlay');
+        const helpClose = panel.querySelector('.rank-help-close');
+        if (helpBtn && helpOverlay) {
+            helpBtn.addEventListener('click', () => helpOverlay.classList.add('open'));
+            helpClose && helpClose.addEventListener('click', () => helpOverlay.classList.remove('open'));
+            helpOverlay.addEventListener('click', (e) => {
+                if (e.target === helpOverlay) helpOverlay.classList.remove('open');
+            });
+        }
     }
 
     async function loadRankings() {
@@ -803,7 +1094,11 @@
         content.innerHTML = '<div class="rank-empty">불러오는 중…</div>';
         const client = sb();
         if (!client) { content.innerHTML = '<div class="rank-empty">준비 중…</div>'; return; }
-        const { data, error } = await client.rpc('get_ranking', { p_scope: _rankScope });
+        const { data, error } = await client.rpc('get_ranking', {
+            p_scope: _rankScope,
+            p_mode: _rankMode,
+            p_difficulty: _rankDiff
+        });
         if (error) {
             content.innerHTML = '<div class="rank-empty">랭킹을 불러올 수 없어요.</div>';
             return;
@@ -813,8 +1108,16 @@
         const myScore = data && data.my_score;
         const user = currentUser();
 
+        // Update "내 누적" header values
+        const grandTotalEl = document.getElementById('rankMyGrand');
+        const grandRoundsEl = document.getElementById('rankMyRounds');
+        if (grandTotalEl) grandTotalEl.textContent = ((data && data.my_grand_total) || 0).toLocaleString();
+        if (grandRoundsEl) grandRoundsEl.textContent = ((data && data.my_grand_rounds) || 0).toLocaleString();
+        const meCard = document.getElementById('rankMeCard');
+        if (meCard) meCard.style.display = user ? '' : 'none';
+
         if (top.length === 0) {
-            content.innerHTML = `<div class="rank-empty">아직 등재된 기록이 없어요.<br>첫 번째 기록의 주인공이 되어보세요.</div>`;
+            content.innerHTML = `<div class="rank-empty">이 조건에는 아직 기록이 없어요.<br>첫 번째 기록의 주인공이 되어보세요.</div>`;
             return;
         }
 
@@ -857,7 +1160,7 @@
 <div class="rank-row ${isSelf ? 'self' : ''}">
     <div class="rank-pos ${rankClass}">${r.rank}</div>
     <div class="rank-ava">${avatar}</div>
-    <div class="rank-name">${escapeHtml(r.nickname || '익명')}<span class="rank-session-count">· ${r.session_count}세션</span></div>
+    <div class="rank-name">${escapeHtml(r.nickname || '익명')}<span class="rank-session-count">· ${r.round_count || r.session_count}라운드</span></div>
     <div class="rank-score">${r.total_score.toLocaleString()}점</div>
 </div>`;
     }
@@ -910,7 +1213,7 @@
         const joinedDate = p.created_at ? new Date(p.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
 
         const recentHtml = recent.length === 0
-            ? '<div class="rank-empty">아직 기록이 없어요. 첫 세션을 시작해보세요.</div>'
+            ? '<div class="rank-empty">아직 기록이 없어요. 첫 라운드를 시작해보세요.</div>'
             : '<div class="mp-session-list">' + recent.map(r => {
                 const d = new Date(r.created_at);
                 const when = d.toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -926,7 +1229,7 @@
             ? (s.avg_accuracy >= 70 ? '꾸준히 잘 쌓아가고 있어요.' :
                s.avg_accuracy >= 40 ? '천천히, 꾸준히. 귀는 반복으로 열려요.' :
                '아직 시작 단계에요. 하루 한 세션도 큰 변화를 만들어요.')
-            : '첫 세션을 시작해보세요.';
+            : '첫 라운드를 시작해보세요.';
 
         body.innerHTML = `
 <div class="mp-header">
@@ -944,7 +1247,7 @@
     </div>
     <div class="mp-stat">
         <div class="mp-stat-value">${(s.session_count || 0).toLocaleString()}</div>
-        <div class="mp-stat-label">완료 세션</div>
+        <div class="mp-stat-label">완료 라운드</div>
     </div>
     <div class="mp-stat">
         <div class="mp-stat-value">${(s.avg_accuracy || 0)}%</div>
@@ -952,11 +1255,16 @@
     </div>
 </div>
 <div class="mp-encouragement">${encouragement}</div>
-<div class="mp-section-title">최근 10 세션</div>
+<div class="mp-section-title">최근 10 라운드</div>
 ${recentHtml}
+<div class="mp-purchase">
+    <div class="mp-purchase-title">구매 내역</div>
+    <div class="mp-purchase-desc">TAB 악보·교본 구매 내역은 Lemon Squeezy 고객 포털에서 확인할 수 있어요. 버튼을 누르면 구매 시 사용하신 이메일로 매직 링크가 전송돼요.</div>
+    <a href="https://ahnssamguitar.lemonsqueezy.com/billing" target="_blank" rel="noopener" class="mp-purchase-btn"><i class="fas fa-external-link-alt"></i> 구매 내역 확인하기</a>
+</div>
 <div class="mp-danger">
     <div class="mp-danger-title">계정 탈퇴</div>
-    <div class="mp-danger-desc">탈퇴 시 프로필 정보(닉네임·이메일·프로필 사진)는 즉시 익명화되고, 30일 내 완전 삭제됩니다. 세션 기록은 익명 처리되어 랭킹 계산에서 제외돼요.</div>
+    <div class="mp-danger-desc">탈퇴 시 프로필 정보(닉네임·이메일·프로필 사진)는 즉시 익명화되고, 30일 내 완전 삭제됩니다. 라운드 기록은 익명 처리되어 랭킹 계산에서 제외돼요.</div>
     <button class="mp-delete-btn" id="mpDeleteBtn">계정 탈퇴하기</button>
 </div>
 `;
