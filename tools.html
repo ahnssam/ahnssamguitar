@@ -831,14 +831,14 @@
         /* ===== Chord Library ===== */
         /* Chord library body — constrained width for tighter layout */
         #chordsPanel .tool-body {
-            max-width: 680px;
+            max-width: 860px;
             margin-left: auto;
             margin-right: auto;
         }
         .chord-search-wrap {
             position: relative;
             margin-bottom: 0.7rem;
-            max-width: 200px;
+            max-width: 220px;
         }
         .chord-search-icon {
             position: absolute;
@@ -902,7 +902,7 @@
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
         .chord-top-match .chord-card {
-            max-width: 150px;
+            max-width: 175px;
             border-color: #e8c44a;
             background: rgba(232, 196, 74, 0.08);
             box-shadow: 0 0 16px rgba(232, 196, 74, 0.18);
@@ -999,17 +999,17 @@
         }
         .chord-grid {
             display: grid;
-            /* Columns fixed to 5 on the constrained 680px body for tight, consistent layout.
-               On narrow phones (<700px) we auto-fill with smaller cards. */
+            /* Columns fixed to 5 on the constrained body for tight, consistent layout.
+               On narrow phones (<768px) we auto-fill with smaller cards. */
             grid-template-columns: repeat(5, 1fr);
-            gap: 0.55rem;
+            gap: 0.7rem;
             justify-items: center;
         }
         .chord-card {
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 9px;
-            padding: 0.45rem;
+            border-radius: 10px;
+            padding: 0.55rem;
             text-align: center;
             cursor: pointer;
             transition: background 0.2s, border-color 0.2s, transform 0.15s;
@@ -1018,7 +1018,7 @@
             justify-content: center;
             aspect-ratio: 7 / 5;
             width: 100%;
-            max-width: 125px;
+            max-width: 150px;
         }
         .chord-card:hover {
             background: rgba(82, 168, 114, 0.15);
@@ -4357,6 +4357,26 @@
                 chordsRendered = true;
                 renderGrid();
             };
+            // ---- Hangul → English QWERTY mapping for typo-tolerant chord search ----
+            // If user searches "으" while in Korean IME, convert to "dm" before matching.
+            const HANGUL_INITIALS = ['r','R','s','e','E','f','a','q','Q','t','T','d','w','W','c','z','x','v','g'];
+            const HANGUL_VOWELS   = ['k','o','i','O','j','p','u','P','h','hk','ho','hl','y','n','nj','np','nl','b','m','ml','l'];
+            const HANGUL_FINALS   = ['','r','R','rt','s','sw','sg','e','f','fr','fa','fq','ft','fx','fv','fg','a','q','qt','t','T','d','w','c','z','x','v','g'];
+            function hangulToEn(str) {
+                let out = '';
+                for (let i = 0; i < str.length; i++) {
+                    const code = str.charCodeAt(i);
+                    if (code >= 0xAC00 && code <= 0xD7A3) {
+                        const idx = code - 0xAC00;
+                        out += HANGUL_INITIALS[Math.floor(idx / 588)];
+                        out += HANGUL_VOWELS[Math.floor((idx % 588) / 28)];
+                        out += HANGUL_FINALS[idx % 28];
+                    } else {
+                        out += str[i];
+                    }
+                }
+                return out;
+            }
             function chordMatchScore(chord, q) {
                 // Higher score = better match. Returns -1 if no match.
                 const name = chord.name.toLowerCase();
@@ -4449,15 +4469,18 @@
             };
             let _searchDebounceTimer = null;
             window.searchChords = function(q) {
-                currentSearch = (q || '').trim().toLowerCase();
+                const raw = (q || '').trim();
+                // Convert any Hangul (Korean IME typos) to the English QWERTY equivalent
+                // so that "으" matches "Dm", "르머" matches "Fmaj7", etc.
+                currentSearch = hangulToEn(raw).toLowerCase();
                 const wrap = document.querySelector('.chord-search-wrap');
-                if (wrap) wrap.classList.toggle('has-text', !!currentSearch);
+                if (wrap) wrap.classList.toggle('has-text', !!raw);
                 renderGrid();
                 // Debounce GA so we don't fire on every keystroke
                 if (_searchDebounceTimer) clearTimeout(_searchDebounceTimer);
                 if (currentSearch) {
                     _searchDebounceTimer = setTimeout(() => {
-                        try { if (window.gtag) window.gtag('event', 'chord_search', { query: currentSearch }); } catch (e) {}
+                        try { if (window.gtag) window.gtag('event', 'chord_search', { query: currentSearch, raw: raw }); } catch (e) {}
                     }, 700);
                 }
             };
