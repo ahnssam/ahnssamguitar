@@ -35,8 +35,8 @@
 .auth-btn .auth-btn-icon { font-size: 0.82rem; }
 
 .auth-user {
-    display: inline-flex; align-items: center; gap: 0.55rem;
-    padding: 0.35rem 0.55rem 0.35rem 0.9rem;
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.55rem;
+    padding: 0.35rem 0.9rem;
     font-family: inherit; font-size: 0.88rem; font-weight: 600;
     color: var(--green-deep, #2a6b4a);
     background: rgba(255,255,255,0.96);
@@ -45,6 +45,13 @@
     cursor: pointer;
     position: relative;
     white-space: nowrap;
+    max-width: 180px;
+}
+.auth-user .auth-user-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
 }
 .auth-user:hover { background: #fff; }
 .auth-user .auth-user-avatar {
@@ -599,7 +606,8 @@ nav.scrolled .auth-btn:hover {
                 provider,
                 options: {
                     redirectTo: window.location.origin + window.location.pathname,
-                    queryParams: provider === 'google' ? { prompt: 'select_account' } : undefined
+                    queryParams: provider === 'google' ? { prompt: 'select_account' } : undefined,
+                    scopes: provider === 'kakao' ? 'profile_nickname profile_image' : undefined
                 }
             });
             if (error) setMsg(humanError(error), 'error');

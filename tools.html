@@ -391,6 +391,13 @@
         /* .tool-panel.active styled above */
         /* Chord library uses a wider panel so up to 7 columns can appear on desktop */
         #chordsPanel .tool-body { max-width: 1160px; }
+        /* Chord library header: two-line h1 with "코드" aligned to icon top */
+        #chordsPanel .tool-header { align-items: flex-start; }
+        #chordsPanel .tool-header h1 {
+            height: auto;
+            line-height: 1.15;
+            display: block;
+        }
 
         .tool-body {
             background: var(--bg-panel);
@@ -859,7 +866,7 @@
                1/7 of container (prevents >7 cols on very wide screens) and
                1/2 of container (prevents <2 cols on very narrow phones),
                with 150px as the natural preferred card width. */
-            grid-template-columns: repeat(auto-fill, minmax(clamp(calc((100% - 3.6rem) / 7), 150px, calc((100% - 0.6rem) / 2)), 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(clamp(calc((100% - 3rem) / 6), 150px, calc((100% - 0.6rem) / 2)), 1fr));
             gap: 0.6rem;
         }
         .chord-card {
@@ -2334,7 +2341,7 @@
         <section class="tool-panel" id="chordsPanel">
             <div class="tool-header">
                 <div class="tool-header-icon"><i class="fas fa-guitar"></i></div>
-                <h1>코드 라이브러리</h1>
+                <h1>코드<br>라이브러리</h1>
             </div>
             <div class="tool-body">
                 <div class="chord-filters" id="chordFilters">
@@ -2519,7 +2526,28 @@
 
             if (isMobile()) closeSidebarMobile();
             window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Update URL hash (e.g., #metronome) — silently, no scroll jump
+            try {
+                const desired = '#' + tool;
+                if (window.location.hash !== desired) {
+                    history.replaceState(null, '', desired);
+                }
+            } catch (e) {}
         }
+
+        // Sync with URL hash on load + on back/forward navigation
+        (function() {
+            const VALID = new Set(['tuner','metronome','eartraining','chords','capo','taptempo','ranking','mypage']);
+            function applyHash() {
+                const raw = (window.location.hash || '').replace('#','').toLowerCase();
+                if (VALID.has(raw) && typeof switchTool === 'function') {
+                    switchTool(raw);
+                }
+            }
+            window.addEventListener('DOMContentLoaded', applyHash);
+            window.addEventListener('hashchange', applyHash);
+        })();
 
         // Reset sidebar state on resize across breakpoint
         let lastMobile = isMobile();
