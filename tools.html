@@ -2398,6 +2398,88 @@
                 min-height: 100px;
             }
         }
+
+        /* ================================================================
+           Samsung Internet extra-contrast shim.
+           Applies when <html> has class "ua-samsung" (set by the UA sniff
+           in the inline script near the top of <body>).  Samsung's 야간
+           모드 re-darkens the page on top of our dark theme, so borders
+           at rgba(255,255,255,0.14) fade to ~8% effective and panel
+           edges vanish.  We bump those specific borders / dividers up to
+           ~38% so they survive the extra tint and stay distinguishable
+           from adjacent dark surfaces.  Non-Samsung users never see
+           these rules.
+           ================================================================ */
+        .ua-samsung .tool-body {
+            border-color: rgba(255,255,255,0.42);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.08) inset;
+        }
+        .ua-samsung .mobile-tab-strip {
+            border-bottom-color: rgba(255,255,255,0.38);
+        }
+        .ua-samsung .mobile-tab.active {
+            border-bottom-color: var(--green-light);
+        }
+        .ua-samsung .sidebar {
+            border-left-color: rgba(255,255,255,0.32);
+            border-right-color: rgba(255,255,255,0.32);
+        }
+        .ua-samsung .menu-item {
+            border-color: rgba(255,255,255,0.18);
+        }
+        /* Buttons, cards, input fields — give them all a clearly visible
+           edge so users can tell where tappable areas begin/end. */
+        .ua-samsung .chord-filter,
+        .ua-samsung .chord-card,
+        .ua-samsung .chord-search-input,
+        .ua-samsung .capo-key-btn,
+        .ua-samsung .tuner-btn,
+        .ua-samsung .metronome-btn,
+        .ua-samsung .loop-cell,
+        .ua-samsung .sound-toggle-btn,
+        .ua-samsung .et-play-btn,
+        .ua-samsung .et-next-btn,
+        .ua-samsung .et-reset-btn-inline,
+        .ua-samsung .et-session-pill,
+        .ua-samsung .et-choice-btn,
+        .ua-samsung .et-dir-btn,
+        .ua-samsung .et-pdiff-btn,
+        .ua-samsung .et-pcount-btn,
+        .ua-samsung .et-mode-tab,
+        .ua-samsung .loop-rhythm-toggle,
+        .ua-samsung .time-sig-btn,
+        .ua-samsung .loop-measures-btns button,
+        .ua-samsung .auth-btn,
+        .ua-samsung .auth-user,
+        .ua-samsung .master-vol {
+            border-color: rgba(255,255,255,0.42);
+        }
+        .ua-samsung .chord-filter.active,
+        .ua-samsung .time-sig-btn.active,
+        .ua-samsung .sound-toggle-btn.active,
+        .ua-samsung .loop-measures-btns button.active {
+            border-color: var(--green-mid);
+        }
+        /* Inner dividers (between halves of a loop cell, between intro
+           sections, etc.) need their own brightening pass. */
+        .ua-samsung .loop-cell-half + .loop-cell-half {
+            border-left-color: rgba(255,255,255,0.32);
+        }
+        .ua-samsung .tuner-meter-track {
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+        .ua-samsung .capo-intro {
+            border-bottom-color: rgba(255,255,255,0.32);
+        }
+        /* Secondary / subtle text that would otherwise fade out — push
+           its alpha up so it's still readable after Samsung darkens it. */
+        .ua-samsung .et-score-label,
+        .ua-samsung .capo-label,
+        .ua-samsung .tuner-hint,
+        .ua-samsung .coupang-disclaimer {
+            color: rgba(255,255,255,0.72);
+        }
     </style>
     <!-- Coupang Partners SDK — loaded synchronously (no async) so that
          PartnersCoupang is guaranteed to be defined by the time the
@@ -2977,6 +3059,22 @@
     <script>
         // ========== Analytics stub (no-op) ==========
         window.gtag = window.gtag || function() {};
+
+        // ========== Samsung Internet night-mode compensation ==========
+        // Samsung Internet's 야간 모드 forcibly re-tints pages even when the
+        // site already declares color-scheme: only dark.  There's no CSS
+        // opt-out that works reliably across versions, but we CAN detect
+        // Samsung's browser via UA and preemptively brighten borders to
+        // survive the extra darkening pass.  Tag <html> so CSS (further
+        // down in <style>) can target .ua-samsung with stronger rules.
+        (function () {
+            try {
+                var ua = navigator.userAgent || '';
+                if (/SamsungBrowser/i.test(ua)) {
+                    document.documentElement.classList.add('ua-samsung');
+                }
+            } catch (e) { /* ignore */ }
+        })();
 
         // ========== Shell: sidebar + tool switching ==========
         const MOBILE_BREAKPOINT = 900;
