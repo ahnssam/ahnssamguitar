@@ -44,10 +44,26 @@
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
             height: 100%;
-            background: var(--bg-darker);
+            background-color: var(--bg-darker);
+            /* Ambient cross pattern in all the empty dark space around the tool body.
+               The tool-body's own solid background covers this pattern underneath,
+               so the crosses only show in the side/margin areas. */
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.045'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
             color: var(--white);
             font-family: 'Noto Sans KR', sans-serif;
             overflow-x: hidden;
+        }
+        /* Ambient floating leaves decorating the empty side areas */
+        .ambient-leaf {
+            position: fixed;
+            color: var(--green-pale, #b5e6c8);
+            opacity: 0.09;
+            z-index: 0;
+            pointer-events: none;
+            animation: floatLeaf 18s ease-in-out infinite;
+        }
+        @media (max-width: 900px), (orientation: portrait) {
+            .ambient-leaf { opacity: 0.08; font-size: 1.6rem; }
         }
         a { color: inherit; text-decoration: none; }
         button { font-family: inherit; }
@@ -74,6 +90,19 @@
         @media (max-width: 900px), (orientation: portrait) {
             .coupang-banner-desktop { display: none; }
             .coupang-banner-mobile { display: block; }
+            /* 728x90 carousel is wider than most phones — let users swipe horizontally
+               so all 6 products remain visible rather than cropping to 2. */
+            .coupang-banner-mobile {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                padding: 10px 0;
+            }
+            .coupang-banner-mobile::-webkit-scrollbar { display: none; }
+            .coupang-banner-mobile > script + * { display: inline-block; }
+            .coupang-banner-mobile .coupang-disclaimer {
+                padding: 0 8px;
+            }
         }
 
         /* ===== Desktop (>900px): hamburger pinned to top-left, bigger, always visible ===== */
@@ -449,33 +478,6 @@
             display: flex;
             flex-direction: column;
         }
-
-        /* Diagonal fade-in for ear training and capo calculator panels when they become active.
-           Re-triggers every time the user switches in because switchTool() removes+re-adds .active. */
-        #eartrainingPanel.active .tool-body,
-        #capoPanel.active .tool-body {
-            animation: panelDiagIn 0.38s cubic-bezier(0.2, 0.8, 0.3, 1) both;
-        }
-        @keyframes panelDiagIn {
-            0%   { opacity: 0; transform: translate(-14px, 14px) scale(0.97); }
-            100% { opacity: 1; transform: translate(0, 0) scale(1); }
-        }
-        /* Capo play-key buttons — stagger in diagonally each time the user picks a song key */
-        #capoPlayKey .capo-key-btn {
-            animation: capoKeyIn 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) both;
-            animation-delay: calc(var(--capo-i, 0) * 22ms);
-        }
-        @keyframes capoKeyIn {
-            0%   { opacity: 0; transform: translate(-10px, 10px) scale(0.92); }
-            100% { opacity: 1; transform: translate(0, 0) scale(1); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-            #eartrainingPanel.active .tool-body,
-            #capoPanel.active .tool-body,
-            #capoPlayKey .capo-key-btn {
-                animation: none;
-            }
-        }
         /* .tool-panel.active styled above */
         /* Chord library uses a wider panel so up to 7 columns can appear on desktop */
         #chordsPanel .tool-body { max-width: 1160px; }
@@ -654,6 +656,17 @@
             .tools-main {
                 margin-left: 0;
                 padding: calc(var(--topbar-h) + 48px + 0.8rem) 0.9rem 0;
+            }
+
+            /* Tuner content is very short and fits inside a single viewport, so Samsung
+               Internet / mobile browsers think there's nothing to scroll and refuse to
+               hide their address bar when you drag up. Force the tuner body to fill the
+               FULL (large) viewport so the page is always slightly taller than the
+               visible area when the address bar is showing — giving the browser room
+               to do its slide-up gesture. Other panels already have enough content to
+               overflow naturally. */
+            #tunerPanel .tool-body {
+                min-height: calc(100vh - var(--topbar-h) - 48px);
             }
 
             /* Hide the per-tool title + icon on mobile — the tab/menu already shows what's selected.
@@ -2695,7 +2708,7 @@
             <p class="coupang-disclaimer">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
         </div>
         <div class="coupang-banner coupang-banner-mobile">
-            <script>if (window.PartnersCoupang) new PartnersCoupang.G({"id":982250,"template":"carousel","trackingCode":"AF9102087","width":"320","height":"100","tsource":""});</script>
+            <script>if (window.PartnersCoupang) new PartnersCoupang.G({"id":982250,"template":"carousel","trackingCode":"AF9102087","width":"728","height":"90","tsource":""});</script>
             <p class="coupang-disclaimer">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
         </div>
     </main>
@@ -4228,7 +4241,7 @@
                     if (aOk !== bOk) return aOk - bOk;
                     return a.capo - b.capo;
                 });
-                all.forEach(function(item, i) {
+                all.forEach(function(item) {
                     var btn = document.createElement('button');
                     btn.className = 'capo-key-btn' + (item.idx === playKeyIdx ? ' active' : '');
                     if (!item.natural || item.capo > 5) btn.classList.add('capo-key-dim');
@@ -4239,7 +4252,6 @@
                         badge.textContent = item.capo;
                         btn.appendChild(badge);
                     }
-                    btn.style.setProperty('--capo-i', Math.min(i, 10));
                     btn.onclick = function() {
                         playKeyIdx = item.idx;
                         renderPlayKeyButtons(container);
@@ -4677,6 +4689,24 @@
         // ========== Ear Training ==========
         (function() {
             const _etCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Unlock the audio context on the very first user gesture anywhere on
+            // the page. Browsers create AudioContext in 'suspended' state until a
+            // user interaction, and resume() is async — so if the first gesture is
+            // the same click that schedules a tone, the tone can be scheduled before
+            // the context is actually running and end up silent. This pre-unlock
+            // avoids the "first try no sound" bug.
+            (function unlockEtAudio() {
+                function unlock() {
+                    if (_etCtx.state === 'suspended') _etCtx.resume();
+                    document.removeEventListener('pointerdown', unlock, true);
+                    document.removeEventListener('touchstart', unlock, true);
+                    document.removeEventListener('keydown', unlock, true);
+                }
+                document.addEventListener('pointerdown', unlock, true);
+                document.addEventListener('touchstart', unlock, true);
+                document.addEventListener('keydown', unlock, true);
+            })();
 
             const ALL_INTERVALS = [
                 { semitones: 1, name: '단2도', nameEn: 'm2' },
