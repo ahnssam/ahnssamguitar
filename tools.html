@@ -1231,9 +1231,10 @@
             display: block;
         }
 
-        /* ===== Fretboard & Scales ===== */
+        /* ===== Fretboard & Scales & Piano ===== */
         #fretboardPanel .tool-body,
-        #scalesPanel .tool-body { max-width: 1160px; }
+        #scalesPanel .tool-body,
+        #pianoPanel .tool-body { max-width: 1160px; }
 
         /* Top row — mode tabs centered + instrument dropdown on right (desktop);
            tabs on left + dropdown on right (mobile/portrait). */
@@ -1395,6 +1396,104 @@
         }
         .fb-inst-option.active i { color: #fff; }
 
+        /* Scale panel: instrument dropdown ~2× larger for visibility */
+        #scalesPanel .fb-inst-current {
+            padding: 0.8rem 1.4rem;
+            font-size: 1.05rem;
+            gap: 0.7rem;
+            border-radius: 28px;
+        }
+        #scalesPanel .fb-inst-icon { font-size: 1.3rem; }
+        #scalesPanel .fb-inst-chev { font-size: 0.95rem; }
+        #scalesPanel .fb-inst-menu { padding: 6px; min-width: 200px; }
+        #scalesPanel .fb-inst-option {
+            padding: 0.7rem 1rem;
+            font-size: 0.95rem;
+            gap: 0.6rem;
+        }
+        #scalesPanel .fb-inst-option i { font-size: 1.05rem; }
+        /* Piano SVG icon (uses currentColor so it themes with the text) */
+        #scalesPanel .fb-inst-option .cwk-icon,
+        #scalesPanel .fb-inst-current .cwk-icon.fb-inst-icon {
+            display: inline-flex;
+            align-items: center;
+            color: var(--green-deep);
+        }
+        #scalesPanel .fb-inst-option .cwk-icon svg { width: 18px; height: 18px; display: block; }
+        #scalesPanel .fb-inst-current .cwk-icon.fb-inst-icon svg { width: 22px; height: 22px; display: block; }
+        #scalesPanel .fb-inst-option.active .cwk-icon { color: #ffffff; }
+
+        @media (max-width: 900px), (orientation: portrait) {
+            #scalesPanel .fb-inst-current { padding: 0.6rem 1rem; font-size: 0.9rem; }
+            #scalesPanel .fb-inst-icon { font-size: 1.05rem; }
+        }
+
+        /* Fretboard root highlighter (12-key row) */
+        .fb-root-row {
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .fb-root-label {
+            font-size: 0.72rem;
+            color: rgba(26, 36, 33, 0.55);
+            letter-spacing: 0.04em;
+            flex-shrink: 0;
+        }
+        .fb-root-grid {
+            display: flex;
+            gap: 0.28rem;
+            flex-wrap: wrap;
+        }
+        .fb-root-btn {
+            min-width: 30px;
+            height: 30px;
+            padding: 0 0.45rem;
+            border-radius: 50%;
+            border: 1px solid rgba(42, 107, 74, 0.22);
+            background: #fff;
+            color: var(--text-mid);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.76rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+        }
+        .fb-root-btn:hover {
+            background: rgba(82, 168, 114, 0.15);
+            color: var(--green-deep);
+            border-color: rgba(82, 168, 114, 0.5);
+        }
+        .fb-root-btn.active {
+            background: var(--green-deep);
+            color: #ffffff;
+            border-color: var(--green-deep);
+        }
+
+        /* Piano keyboard SVG container */
+        .sc-piano-svg {
+            display: block;
+            max-width: 100%;
+            /* Disable native touch gestures so we can handle drag-slide
+               note playback without the browser pre-empting it. */
+            touch-action: none;
+        }
+        .sc-piano-key { touch-action: none; }
+        /* Center piano keyboard inside the scroller (fretboard stays
+           left-aligned because it overflows anyway). */
+        .fb-board-wrap.piano-mode {
+            display: block;
+            text-align: center;
+            width: 100%;
+        }
+        .fb-board-wrap.piano-mode .sc-piano-svg {
+            display: inline-block;
+            margin: 0 auto;
+        }
+
         /* Instrument toggle pill (legacy — kept for back-compat, not rendered now) */
         .fb-inst-toggle {
             display: inline-flex;
@@ -1520,6 +1619,78 @@
             border-radius: 12px;
             padding: 0.8rem;
         }
+        /* 피아노 키보드 건반 — 옥타브 시프트 컨트롤 */
+        .pn-octave-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 0.9rem;
+        }
+        .pn-octave-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.55rem 1rem;
+            font-family: inherit;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--green-deep);
+            background: rgba(42, 107, 74, 0.08);
+            border: 1px solid rgba(42, 107, 74, 0.22);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pn-octave-btn:hover {
+            background: rgba(42, 107, 74, 0.16);
+            border-color: rgba(42, 107, 74, 0.45);
+        }
+        .pn-octave-btn:disabled {
+            opacity: 0.38;
+            cursor: not-allowed;
+        }
+        .pn-octave-label {
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: rgba(26, 36, 33, 0.6);
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.02em;
+        }
+
+        /* 피아노 모드 탭 (기본 / 키보드 건반) */
+        .pn-mode-tabs {
+            display: flex;
+            gap: 0.4rem;
+            margin-bottom: 0.8rem;
+            padding: 0.25rem;
+            background: rgba(26, 36, 33, 0.04);
+            border-radius: 10px;
+        }
+        .pn-mode-tab {
+            flex: 1;
+            padding: 0.55rem 0.9rem;
+            font-family: inherit;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: rgba(26, 36, 33, 0.6);
+            background: transparent;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .pn-mode-tab:hover {
+            color: var(--green-deep);
+            background: rgba(82, 168, 114, 0.08);
+        }
+        .pn-mode-tab.active {
+            background: #fff;
+            color: var(--green-deep);
+            box-shadow: 0 2px 6px rgba(42, 107, 74, 0.12);
+        }
+
         /* 피아노 건반 — 인터랙션 */
         .pn-key { cursor: pointer; transition: fill 0.1s; }
         .pn-white:hover { fill: #f0f7f3; }
@@ -1588,6 +1759,14 @@
             text-align: center;
         }
         .fb-board-wrap.vertical .fb-svg {
+            margin: 0 auto;
+        }
+        /* Piano 키보드 건반 모드 — SVG 를 body 가로 중앙에 정렬 */
+        .fb-board-wrap.pn-kbd-mode {
+            display: block;
+            text-align: center;
+        }
+        .fb-board-wrap.pn-kbd-mode .fb-svg {
             margin: 0 auto;
         }
 
@@ -1702,68 +1881,73 @@
             padding: 0.7rem 0.9rem;
             margin-bottom: 0.7rem;
         }
-        .fb-train-main {
+        /* ── 프렛보드 트레이닝 Topbar ── */
+        /* 통계(왼쪽 클러스터) + 1~5 단계(오른쪽)를 한 줄에 배치.
+           넓은 화면은 flex row 로 space-between, 좁으면 wrap. */
+        .fb-train-topbar {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 0.9rem;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.25rem;
         }
-        .fb-train-left {
+        .fb-train-stats {
             display: flex;
             align-items: center;
-            gap: 0.9rem;
-            flex: 1;
-            min-width: 0;
+            gap: 0.55rem;
+            flex-shrink: 0;
+        }
+        .fb-train-stat {
+            text-align: center;
+            min-width: 2.4rem;
+            line-height: 1.05;
+        }
+        .fb-train-stat-label {
+            display: block;
+            font-size: 0.62rem;
+            color: rgba(26, 36, 33, 0.5);
+            letter-spacing: 0.04em;
+            margin-bottom: 0.08rem;
+        }
+        .fb-train-stat-value {
+            display: block;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.02rem;
+            font-weight: 700;
+            color: var(--green-deep);
+            font-variant-numeric: tabular-nums;
+        }
+        /* Prompt row: "지판에서 찾아보세요" (왼쪽) + 음정 (정중앙) */
+        .fb-train-prompt {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.3rem;
         }
         .fb-train-hint {
-            font-size: 0.92rem;
+            justify-self: start;
+            font-size: 0.9rem;
             color: var(--text-mid);
             font-weight: 500;
         }
         .fb-train-note-big {
+            justify-self: center;
             font-family: 'Playfair Display', serif;
-            font-size: 3.4rem;
+            font-size: 3.2rem;
             font-weight: 700;
             color: var(--green-deep);
             line-height: 1;
             min-width: 1.4ch;
             text-align: center;
-            display: inline-block;
             letter-spacing: -0.02em;
         }
-        .fb-train-actions-col {
-            display: flex;
-            flex-direction: column;
-            gap: 0.3rem;
-            flex-shrink: 0;
-        }
-        .fb-train-btn-main {
-            padding: 0.38rem 0.8rem;
-            border-radius: 18px;
-            border: none;
-            background: var(--green-deep);
-            color: #fff;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 0.76rem;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.35rem;
-            white-space: nowrap;
-            transition: background 0.15s, border-color 0.15s;
-        }
-        .fb-train-btn-main:hover { background: var(--green-dark); }
-        .fb-train-btn-main.fb-train-btn-ghost {
-            background: transparent;
-            color: var(--green-deep);
-            border: 1px solid rgba(42, 107, 74, 0.3);
-            padding: 0.34rem 0.8rem; /* compensate for border */
-        }
-        .fb-train-btn-main.fb-train-btn-ghost:hover {
-            background: rgba(82, 168, 114, 0.15);
-            border-color: rgba(82, 168, 114, 0.55);
+        .fb-train-prompt-spacer { /* 3rd grid column — keeps 음정 perfectly centered */ }
+        /* 액션 버튼 묶음 — et-play-row 기본 margin-bottom 제거하고 간격 조정 */
+        .fb-train-actions-row {
+            margin-top: 0.6rem;
+            margin-bottom: 0;
         }
 
         .fb-train-feedback {
@@ -1779,17 +1963,17 @@
         .fb-train-feedback.ok { color: var(--green-deep); }
         .fb-train-feedback.bad { color: #c44034; }
 
-        /* 5-level difficulty — narrow, centered row (no grid stretching) */
+        /* 5-level difficulty — topbar 왼쪽에 클러스터 배치 */
         .fb-train-levels {
             display: flex;
             flex-wrap: wrap;
-            justify-content: center;
-            gap: 0.3rem;
-            margin-top: 0.3rem;
+            justify-content: flex-start;
+            gap: 0.25rem;
+            flex-shrink: 0;
         }
         .fb-train-level {
-            padding: 0.35rem 0.65rem;
-            font-size: 0.74rem;
+            padding: 0.3rem 0.55rem;
+            font-size: 0.72rem;
             font-weight: 500;
             border-radius: 14px;
             border: 1px solid rgba(42, 107, 74, 0.22);
@@ -1811,8 +1995,9 @@
             border-color: var(--green-deep);
         }
         .fb-train-level-desc {
-            margin-top: 0.35rem;
-            text-align: center;
+            margin-top: 0.15rem;
+            margin-bottom: 0.35rem;
+            text-align: left;
             font-size: 0.7rem;
             color: rgba(26, 36, 33, 0.55);
             letter-spacing: 0.03em;
@@ -1821,8 +2006,6 @@
         @media (max-width: 520px) {
             .fb-train-note-big { font-size: 2.6rem; }
             .fb-train-hint { font-size: 0.82rem; }
-            .fb-train-left { gap: 0.6rem; }
-            .fb-train-btn-main { font-size: 0.72rem; padding: 0.32rem 0.6rem; }
             .fb-train-level { font-size: 0.68rem; padding: 0.32rem 0.5rem; }
         }
 
@@ -2016,6 +2199,82 @@
             color: var(--green-deep);
             letter-spacing: 0.05em;
         }
+        /* Scale-notes row: speaker button + circular note buttons */
+        .sc-notes-row {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            margin-top: 0.35rem;
+            flex-wrap: wrap;
+        }
+        .sc-scale-play {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: none;
+            background: var(--green-deep);
+            color: #fff;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: inherit;
+            font-size: 0.82rem;
+            flex-shrink: 0;
+            transition: background 0.15s, transform 0.1s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+        }
+        .sc-scale-play:hover { background: var(--green-dark); }
+        .sc-scale-play:active { transform: scale(0.94); }
+        .sc-note-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+            align-items: center;
+        }
+        .sc-note-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1.5px solid var(--green-mid);
+            background: #fff;
+            color: var(--green-deep);
+            cursor: pointer;
+            font-family: 'Playfair Display', serif;
+            font-size: 0.88rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.12s, color 0.12s, transform 0.1s;
+            padding: 0;
+        }
+        .sc-note-btn.root {
+            background: var(--green-deep);
+            color: #fff;
+            border-color: var(--green-deep);
+        }
+        .sc-note-btn:hover {
+            background: rgba(82, 168, 114, 0.25);
+            color: var(--green-deep);
+            transform: scale(1.06);
+        }
+        .sc-note-btn.root:hover {
+            background: var(--green-dark);
+            color: #fff;
+        }
+        .sc-note-btn:active { transform: scale(0.94); }
+        .sc-note-btn.playing {
+            background: var(--green-mid);
+            color: #fff;
+            border-color: var(--green-mid);
+            transform: scale(1.14);
+            box-shadow: 0 0 0 3px rgba(82, 168, 114, 0.3);
+        }
+        .sc-note-btn.root.playing {
+            background: var(--green-deep);
+            border-color: var(--green-deep);
+        }
 
         /* Fret dot tap animation */
         @keyframes fbDotPulse {
@@ -2034,7 +2293,8 @@
 
         @media (max-width: 900px), (orientation: portrait) {
             #fretboardPanel .tool-body,
-            #scalesPanel .tool-body { max-width: none; }
+            #scalesPanel .tool-body,
+            #pianoPanel .tool-body { max-width: none; }
             .sc-select-row {
                 grid-template-columns: 1fr;
             }
@@ -3364,7 +3624,7 @@
         <a href="index.html" class="topbar-logo-link" aria-label="홈으로">
             <img src="images/logo-vertical.webp" alt="안쌤의 기타나무숲" class="topbar-logo">
         </a>
-        <span class="topbar-section-label" id="topbarSectionLabel">연습도구</span>
+        <span class="topbar-section-label" id="topbarSectionLabel">연습 도구</span>
         <div class="topbar-spacer"></div>
         <!-- Desktop auth slot: login button / profile (left of volume) -->
         <div class="auth-slot topbar-auth-slot"></div>
@@ -3392,8 +3652,8 @@
 
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
-        <!-- 1. 연주 보조 — 실시간 유틸리티 (튜너 / 메트로놈 / 탭템포 / 카포) -->
-        <div class="sidebar-section-label">연주 보조</div>
+        <!-- 1. 연습 도구 — 실시간 유틸리티 + 코드/피아노 참조 -->
+        <div class="sidebar-section-label">연습 도구</div>
         <nav class="sidebar-menu">
             <button class="menu-item active" data-tool="tuner" onclick="switchTool('tuner')">
                 <i class="fas fa-microphone"></i><span>튜너</span>
@@ -3407,28 +3667,28 @@
             <button class="menu-item" data-tool="capo" onclick="switchTool('capo')">
                 <i class="fas fa-sliders-h"></i><span>카포 계산기</span>
             </button>
-        </nav>
-        <!-- 2. 지판 & 이론 — 시각 참조/탐색 (코드라이브러리 / 프렛보드 / 스케일 / 피아노) -->
-        <div class="sidebar-section-label" style="margin-top:0.6rem;">지판 &amp; 이론</div>
-        <nav class="sidebar-menu">
             <button class="menu-item" data-tool="chords" onclick="switchTool('chords')">
                 <i class="fas fa-guitar"></i><span>코드 라이브러리</span>
-            </button>
-            <button class="menu-item" data-tool="fretboard" onclick="switchTool('fretboard')">
-                <span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="3" width="15" height="10" fill="none" stroke="currentColor" stroke-width="1.2" rx="0.6"/><line x1="2" y1="3" x2="2" y2="13" stroke="currentColor" stroke-width="1.6"/><line x1="5.5" y1="3" x2="5.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="9" y1="3" x2="9" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="12.5" y1="3" x2="12.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="0.5" y1="5" x2="15.5" y2="5" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="7" x2="15.5" y2="7" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="9" x2="15.5" y2="9" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="11" x2="15.5" y2="11" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><circle cx="7.25" cy="8" r="0.85" fill="currentColor" opacity="0.75"/></svg></span><span>프렛보드</span>
-            </button>
-            <button class="menu-item" data-tool="scales" onclick="switchTool('scales')">
-                <i class="fas fa-music"></i><span>스케일</span>
             </button>
             <button class="menu-item" data-tool="piano" onclick="switchTool('piano')">
                 <span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="2.5" width="15" height="12" fill="none" stroke="currentColor" stroke-width="1.1" rx="1"/><line x1="4.25" y1="2.5" x2="4.25" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="8" y1="2.5" x2="8" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="11.75" y1="2.5" x2="11.75" y2="14.5" stroke="currentColor" stroke-width="0.8"/><rect x="2.8" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="6.55" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="10.3" y="2.5" width="2.9" height="7" fill="currentColor"/></svg></span><span>피아노</span>
             </button>
         </nav>
-        <!-- 3. 청음 훈련 — 채점형 (음정 트레이닝) -->
-        <div class="sidebar-section-label" style="margin-top:0.6rem;">청음 훈련</div>
+        <!-- 2. 이론 — 스케일 등 이론 참조 -->
+        <div class="sidebar-section-label" style="margin-top:0.6rem;">이론</div>
+        <nav class="sidebar-menu">
+            <button class="menu-item" data-tool="scales" onclick="switchTool('scales')">
+                <i class="fas fa-music"></i><span>스케일</span>
+            </button>
+        </nav>
+        <!-- 3. 트레이닝 — 채점/훈련 (음정 트레이닝 / 프렛보드) -->
+        <div class="sidebar-section-label" style="margin-top:0.6rem;">트레이닝</div>
         <nav class="sidebar-menu">
             <button class="menu-item" data-tool="eartraining" onclick="switchTool('eartraining')">
                 <i class="fas fa-headphones"></i><span>음정 트레이닝</span>
+            </button>
+            <button class="menu-item" data-tool="fretboard" onclick="switchTool('fretboard')">
+                <span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="3" width="15" height="10" fill="none" stroke="currentColor" stroke-width="1.2" rx="0.6"/><line x1="2" y1="3" x2="2" y2="13" stroke="currentColor" stroke-width="1.6"/><line x1="5.5" y1="3" x2="5.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="9" y1="3" x2="9" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="12.5" y1="3" x2="12.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="0.5" y1="5" x2="15.5" y2="5" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="7" x2="15.5" y2="7" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="9" x2="15.5" y2="9" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="11" x2="15.5" y2="11" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><circle cx="7.25" cy="8" r="0.85" fill="currentColor" opacity="0.75"/></svg></span><span>프렛보드</span>
             </button>
         </nav>
         <div class="sidebar-section-label" style="margin-top:0.6rem;">내 기록</div>
@@ -3856,35 +4116,62 @@
                             <span class="fb-switch-label">세로로 회전</span>
                         </label>
                     </div>
+                    <div class="fb-control-row fb-root-row">
+                        <span class="fb-root-label">근음 강조</span>
+                        <div class="fb-root-grid" id="fbRootGrid"></div>
+                    </div>
                 </div>
 
                 <!-- Training panel (hidden in explore mode) -->
                 <div class="fb-training-panel" id="fbTrainingPanel" style="display:none;">
-                    <!-- Single row: label + big letter on LEFT, action buttons stacked on RIGHT -->
-                    <div class="fb-train-main">
-                        <div class="fb-train-left">
-                            <span class="fb-train-hint">지판에서 찾아보세요</span>
-                            <span class="fb-train-note-big" id="fbTrainNote">—</span>
+                    <!-- 1) Topbar — 1~5 단계 버튼(왼쪽) + 통계(오른쪽, 클러스터)을 한 줄에 -->
+                    <div class="fb-train-topbar">
+                        <div class="fb-train-levels" role="tablist" aria-label="난이도">
+                            <button class="fb-train-level active" data-level="1" onclick="fbSetLevel(1)">1단계</button>
+                            <button class="fb-train-level" data-level="2" onclick="fbSetLevel(2)">2단계</button>
+                            <button class="fb-train-level" data-level="3" onclick="fbSetLevel(3)">3단계</button>
+                            <button class="fb-train-level" data-level="4" onclick="fbSetLevel(4)">4단계</button>
+                            <button class="fb-train-level" data-level="5" onclick="fbSetLevel(5)">5단계</button>
                         </div>
-                        <div class="fb-train-actions-col">
-                            <button class="fb-train-btn-main" onclick="fbReplayTarget()">
-                                <i class="fas fa-volume-up"></i> 다시 듣기
-                            </button>
-                            <button class="fb-train-btn-main fb-train-btn-ghost" onclick="fbNextTrainingNote()">
-                                <i class="fas fa-forward"></i> 다음 문제
-                            </button>
+                        <div class="fb-train-stats">
+                            <div class="fb-train-stat">
+                                <span class="fb-train-stat-label">점수</span>
+                                <span class="fb-train-stat-value" id="fbTrainCorrect">0</span>
+                            </div>
+                            <div class="fb-train-stat">
+                                <span class="fb-train-stat-label">연속</span>
+                                <span class="fb-train-stat-value" id="fbTrainStreak">0</span>
+                            </div>
+                            <div class="fb-train-stat">
+                                <span class="fb-train-stat-label">정답률</span>
+                                <span class="fb-train-stat-value" id="fbTrainAcc">0%</span>
+                            </div>
+                            <div class="fb-train-stat">
+                                <span class="fb-train-stat-label">라운드</span>
+                                <span class="fb-train-stat-value" id="fbTrainRound">0/10</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="fb-train-feedback" id="fbTrainFeedback"></div>
-                    <!-- 5-level difficulty selector (narrow, centered) -->
-                    <div class="fb-train-levels" role="tablist" aria-label="난이도">
-                        <button class="fb-train-level active" data-level="1" onclick="fbSetLevel(1)">1단계</button>
-                        <button class="fb-train-level" data-level="2" onclick="fbSetLevel(2)">2단계</button>
-                        <button class="fb-train-level" data-level="3" onclick="fbSetLevel(3)">3단계</button>
-                        <button class="fb-train-level" data-level="4" onclick="fbSetLevel(4)">4단계</button>
-                        <button class="fb-train-level" data-level="5" onclick="fbSetLevel(5)">5단계</button>
                     </div>
                     <div class="fb-train-level-desc" id="fbTrainLevelDesc">전체 지판</div>
+                    <!-- 2) Prompt — "지판에서 찾아보세요" (왼쪽) + 음정 (중앙) -->
+                    <div class="fb-train-prompt">
+                        <span class="fb-train-hint">지판에서 찾아보세요</span>
+                        <span class="fb-train-note-big" id="fbTrainNote">—</span>
+                        <span class="fb-train-prompt-spacer" aria-hidden="true"></span>
+                    </div>
+                    <!-- 3) Feedback -->
+                    <div class="fb-train-feedback" id="fbTrainFeedback"></div>
+                    <!-- 4) 액션 버튼 — 음정 트레이닝의 et-play-btn / et-next-btn 스타일 -->
+                    <div class="et-play-row fb-train-actions-row">
+                        <button class="et-play-btn" type="button" onclick="fbReplayTarget()">
+                            <i class="fas fa-volume-up"></i>
+                            <span>다시 듣기</span>
+                        </button>
+                        <button class="et-next-btn" id="fbTrainNextBtn" type="button" onclick="fbNextTrainingNote()">
+                            <i class="fas fa-forward"></i>
+                            <span>다음 문제</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Fretboard display -->
@@ -3929,6 +4216,7 @@
                             <button class="fb-inst-option active" data-inst="guitar" onclick="scSetInstrument('guitar')"><i class="fas fa-guitar"></i> 기타</button>
                             <button class="fb-inst-option" data-inst="bass4" onclick="scSetInstrument('bass4')"><i class="fas fa-guitar"></i> 베이스 4현</button>
                             <button class="fb-inst-option" data-inst="bass5" onclick="scSetInstrument('bass5')"><i class="fas fa-guitar"></i> 베이스 5현</button>
+                            <button class="fb-inst-option" data-inst="piano" onclick="scSetInstrument('piano')"><span class="cwk-icon sc-inst-piano-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="2.5" width="15" height="12" fill="none" stroke="currentColor" stroke-width="1.1" rx="1"/><line x1="4.25" y1="2.5" x2="4.25" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="8" y1="2.5" x2="8" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="11.75" y1="2.5" x2="11.75" y2="14.5" stroke="currentColor" stroke-width="0.8"/><rect x="2.8" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="6.55" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="10.3" y="2.5" width="2.9" height="7" fill="currentColor"/></svg></span> 피아노</button>
                         </div>
                     </div>
                 </div>
@@ -4000,6 +4288,7 @@
                     <div class="fb-scroller" id="scScroller">
                         <div class="fb-board-wrap" id="scBoardWrap">
                             <svg class="fb-svg" id="scSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+                            <svg class="fb-svg sc-piano-svg" id="scPianoSvg" style="display:none" xmlns="http://www.w3.org/2000/svg"></svg>
                         </div>
                     </div>
                     <div class="fb-scrollbar" id="scScrollbar" aria-label="지판 좌우 이동">
@@ -4022,12 +4311,22 @@
                 <h1>피아노</h1>
             </div>
             <div class="tool-body">
+                <!-- 모드 탭 — "기본" (88키 스크롤) / "키보드 건반" (C3~F4 컴퓨터 키보드 매핑) -->
+                <div class="pn-mode-tabs">
+                    <button class="pn-mode-tab active" data-pn-mode="default" type="button" onclick="pnSwitchMode('default')">기본</button>
+                    <button class="pn-mode-tab" data-pn-mode="keyboard" type="button" onclick="pnSwitchMode('keyboard')">키보드 건반</button>
+                </div>
                 <div class="fb-controls">
                     <div class="fb-control-row fb-control-row-switches">
                         <label class="fb-switch">
                             <input type="checkbox" id="pnShowNotes" checked onchange="pnToggleShowNotes(this.checked)">
                             <span class="fb-switch-slider"></span>
                             <span class="fb-switch-label">음정 보기</span>
+                        </label>
+                        <label class="fb-switch">
+                            <input type="checkbox" id="pnVertical" onchange="pnToggleVertical(this.checked)">
+                            <span class="fb-switch-slider"></span>
+                            <span class="fb-switch-label">세로로 회전</span>
                         </label>
                     </div>
                 </div>
@@ -4049,6 +4348,18 @@
                         </div>
                         <button class="fb-scroll-arrow fb-scroll-arrow-right" aria-label="오른쪽으로"><i class="fas fa-chevron-right"></i></button>
                     </div>
+                </div>
+                <!-- 키보드 건반 모드 전용 옥타브 컨트롤 -->
+                <div class="pn-octave-controls" id="pnOctaveControls" style="display:none;">
+                    <button class="pn-octave-btn pn-octave-down" type="button" onclick="pnKbdShiftOctave(-1)" aria-label="옥타브 낮추기">
+                        <i class="fas fa-chevron-left"></i>
+                        <span>옥타브 낮추기</span>
+                    </button>
+                    <span class="pn-octave-label" id="pnOctaveLabel">C3 – F4</span>
+                    <button class="pn-octave-btn pn-octave-up" type="button" onclick="pnKbdShiftOctave(1)" aria-label="옥타브 올리기">
+                        <span>옥타브 올리기</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
                 </div>
             </div>
         </section>
@@ -4209,9 +4520,14 @@
                 // NOTE: ranking/mypage deliberately NOT here — they don't replace the dynamic tab
             };
             // Topbar section label: "연습도구" for tools, "내 기록" for ranking/mypage
-            const SECTION_LBL = { ranking: '내 기록', mypage: '내 기록' };
+            const SECTION_LBL = {
+                ranking: '내 기록', mypage: '내 기록',
+                scales: '이론',
+                eartraining: '트레이닝', fretboard: '트레이닝'
+                // 나머지(tuner/metronome/taptempo/capo/chords/piano)는 기본값 "연습 도구"
+            };
             const tsl = document.getElementById('topbarSectionLabel');
-            if (tsl) tsl.textContent = SECTION_LBL[tool] || '연습도구';
+            if (tsl) tsl.textContent = SECTION_LBL[tool] || '연습 도구';
             const dynTab = document.getElementById('mobileDynamicTab');
             if (dynTab && DYN[tool]) {
                 dynTab.dataset.tool = tool;
@@ -7470,7 +7786,101 @@
                 if (_activePluckNodes.length > 10) _activePluckNodes.shift();
             }
 
+            // --- Piano synth --------------------------------------------
+            // Mirrors the main 피아노 도구의 pnPlayMidi: stretched-harmonic
+            // additive synthesis + brightness lowpass + bandpassed hammer
+            // noise. Sounds closer to a real piano than simple 3-osc add.
+            function playPianoNote(midi) {
+                const ctx = ensureAudio();
+                if (!ctx) return;
+                if (ctx.state === 'suspended') ctx.resume().catch(function(){});
+                stopAllPlucks();
+                const freq = midiToFreq(midi);
+                const t0 = ctx.currentTime;
+                const dur = 2.6;
+
+                // Master envelope — sharp attack, rapid initial drop, long tail
+                const master = ctx.createGain();
+                master.gain.setValueAtTime(0.0001, t0);
+                master.gain.exponentialRampToValueAtTime(0.42 * getMasterGainValue(), t0 + 0.004);
+                master.gain.exponentialRampToValueAtTime(0.22 * getMasterGainValue(), t0 + 0.08);
+                master.gain.exponentialRampToValueAtTime(0.0005, t0 + dur);
+
+                // Brightness — lowpass cutoff that rolls off over time
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.Q.value = 0.7;
+                const initCut = Math.min(8000, freq * 12);
+                const tailCut = Math.max(500, freq * 2.2);
+                filter.frequency.setValueAtTime(initCut, t0);
+                filter.frequency.exponentialRampToValueAtTime(freq * 5, t0 + 0.35);
+                filter.frequency.exponentialRampToValueAtTime(tailCut, t0 + dur);
+                filter.connect(master);
+                master.connect(ctx.destination);
+
+                // Inharmonicity coefficient — higher B above middle C
+                const B = 0.00025 + Math.max(0, (midi - 60)) * 0.0000045;
+
+                // Partials 1..8 with 1/n-ish amplitude taper.
+                const partials = [
+                    { n: 1, vol: 1.00 },
+                    { n: 2, vol: 0.55 },
+                    { n: 3, vol: 0.35 },
+                    { n: 4, vol: 0.22 },
+                    { n: 5, vol: 0.13 },
+                    { n: 6, vol: 0.08 },
+                    { n: 7, vol: 0.05 },
+                    { n: 8, vol: 0.03 },
+                ];
+                let mainOsc = null;
+                partials.forEach(function(p) {
+                    const stretched = freq * p.n * Math.sqrt(1 + B * p.n * p.n);
+                    if (stretched > 15000) return; // inaudible
+                    const osc = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = stretched;
+                    g.gain.setValueAtTime(p.vol, t0);
+                    const partialDur = Math.max(0.4, dur / Math.sqrt(p.n));
+                    g.gain.exponentialRampToValueAtTime(0.0005, t0 + partialDur);
+                    osc.connect(g); g.connect(filter);
+                    osc.start(t0);
+                    osc.stop(t0 + partialDur + 0.05);
+                    if (p.n === 1) mainOsc = osc;
+                });
+
+                // Hammer attack — 28 ms bandpassed noise burst
+                const noiseDur = 0.028;
+                const nbuf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * noiseDur), ctx.sampleRate);
+                const nd = nbuf.getChannelData(0);
+                for (let i = 0; i < nd.length; i++) {
+                    nd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / nd.length, 1.8);
+                }
+                const noiseSrc = ctx.createBufferSource();
+                noiseSrc.buffer = nbuf;
+                const noiseBp = ctx.createBiquadFilter();
+                noiseBp.type = 'bandpass';
+                noiseBp.frequency.value = Math.min(5000, freq * 3.5);
+                noiseBp.Q.value = 0.9;
+                const noiseGain = ctx.createGain();
+                const noiseVol = 0.09 + Math.min(0.14, Math.max(0, (midi - 40) * 0.004));
+                noiseGain.gain.setValueAtTime(noiseVol, t0);
+                noiseGain.gain.exponentialRampToValueAtTime(0.0005, t0 + noiseDur);
+                noiseSrc.connect(noiseBp);
+                noiseBp.connect(noiseGain);
+                noiseGain.connect(master);
+                noiseSrc.start(t0);
+                noiseSrc.stop(t0 + noiseDur + 0.02);
+
+                _activePluckNodes.push({ gain: master, src: mainOsc || noiseSrc });
+                if (_activePluckNodes.length > 10) _activePluckNodes.shift();
+            }
+
             function playNoteOnInstrument(inst, midi) {
+                if (inst === 'piano') {
+                    playPianoNote(midi);
+                    return;
+                }
                 if (inst === 'guitar') {
                     playGuitarPluck(midi);
                 } else {
@@ -7512,9 +7922,11 @@
                     highlights: null,
                     rootPc: null,
                     highlightRoot: false,
-                    activeHighlights: null, // Map midi -> true (pressed dots)
+                    activeHighlights: null, // Map "sIdx_fret" -> true (주황/빨강 표시)
                     trainingRange: null,    // { stringMin, stringMax, fretMin, fretMax }
                     zoom: 1,                // visual scale factor (1 = 기본, 1.75 = 75% 확대)
+                    keepAllDots: false,     // true 면 highlights 함수가 있어도 비-하이라이트 도트를 숨기지 않음
+                    wrongPick: null,        // { sIdx, fret } — 프렛보드 트레이닝 오답 프렛을 연한 붉은색으로
                     onFretClick: null,
                 }, options);
 
@@ -7684,37 +8096,49 @@
 
                         svgContent += '<g class="fb-dot-group fb-open-btn" data-sidx="' + idx +
                             '" data-fret="0" data-midi="' + s.midi + '" style="cursor:pointer"' + opStr + '>';
-                        svgContent += '<circle cx="' + cx + '" cy="' + y + '" r="13" fill="transparent"/>';
-                        svgContent += '<circle cx="' + cx + '" cy="' + y + '" r="10" ' +
+                        svgContent += '<circle cx="' + cx + '" cy="' + y + '" r="14" fill="transparent"/>';
+                        // Root on an open string also gets the larger radius
+                        const openR = isRoot ? 12 : 10;
+                        svgContent += '<circle cx="' + cx + '" cy="' + y + '" r="' + openR + '" ' +
                             'fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.2"/>';
                         svgContent += '<text x="' + cx + '" y="' + (y + 3.5) +
                             '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" ' +
-                            'font-size="10" font-weight="700" fill="' + textColor + '"' + textT +
+                            'font-size="' + (isRoot ? '11' : '10') + '" font-weight="700" fill="' + textColor + '"' + textT +
                             ' pointer-events="none">' + pc + '</text>';
                         svgContent += '</g>';
                     });
 
-                    // --- Inlays (below the board, between board and fret-number row) ---
-                    // Singles at 3,5,7,9,15,17,19,21; doubles at 12 and 24.
-                    // Because inlays live INSIDE the rotated group, they rotate
-                    // with the board — which is exactly what we want for the
-                    // pair-of-dots at fret 12 (horizontal pair in landscape →
-                    // vertical pair after rotation).
+                    // --- Inlays — Font Awesome fa-leaf 글리프를 보드 위에 표시 ---
+                    // 홈 페이지 <i class="fas fa-leaf"> 와 동일한 디자인 재사용.
+                    // SVG <text> 에 FA Unicode \uf06c 를 찍고 font-family /
+                    // font-weight(900) 을 solid variant 에 맞춤.
+                    //   · 단일 (3/5/7/9/15/17/19/21) → 보드 세로 중심에 잎 1개
+                    //   · 더블 (12, 24) → 보드 중심 위/아래로 잎 2개
+                    // 회전 group 안에 있어 세로 모드에서도 같이 돌아감.
+                    const boardCenterY = padT + (nStrings - 1) * stringGap / 2;
+                    function inlayLeaf(cx, cy, size, rot) {
+                        return '<text x="' + cx + '" y="' + cy + '" ' +
+                               'text-anchor="middle" dominant-baseline="central" ' +
+                               'font-family="&quot;Font Awesome 6 Free&quot;, &quot;FontAwesome&quot;" ' +
+                               'font-weight="900" font-size="' + size + '" ' +
+                               'fill="#3a8a5c" opacity="0.72" ' +
+                               'transform="rotate(' + rot + ' ' + cx + ' ' + cy + ')">' +
+                               '&#xf06c;' +
+                               '</text>';
+                    }
+                    const leafSize = 15;
                     INLAY_FRETS.forEach(function(f) {
                         if (f > nFrets) return;
-                        svgContent += '<circle cx="' + fretMidX(f) + '" cy="' + inlayStripCenterY +
-                            '" r="3.4" fill="#bfae85" opacity="0.9"/>';
+                        // 프렛마다 살짝 다른 기울기 — 숲 바닥에 떨어진 잎사귀 느낌
+                        const tilt = (f % 4 === 0 || f % 3 === 0) ? -18 : 22;
+                        svgContent += inlayLeaf(fretMidX(f), boardCenterY, leafSize, tilt);
                     });
                     DOUBLE_INLAY_FRETS.forEach(function(f) {
                         if (f > nFrets) return;
-                        // Offset the pair along the FRET (x) axis so that in
-                        // horizontal mode they sit side-by-side; in vertical
-                        // mode (rotated) they become a vertical pair.
-                        const off = 7;
-                        svgContent += '<circle cx="' + (fretMidX(f) - off) + '" cy="' + inlayStripCenterY +
-                            '" r="3.4" fill="#bfae85" opacity="0.9"/>';
-                        svgContent += '<circle cx="' + (fretMidX(f) + off) + '" cy="' + inlayStripCenterY +
-                            '" r="3.4" fill="#bfae85" opacity="0.9"/>';
+                        // 12 / 24 프렛은 잎사귀 2장을 보드 세로로 스택
+                        const offY = stringGap * 0.9;
+                        svgContent += inlayLeaf(fretMidX(f), boardCenterY - offY, leafSize, -18);
+                        svgContent += inlayLeaf(fretMidX(f), boardCenterY + offY, leafSize, 24);
                     });
 
                     // --- Note dots (interactive) ---
@@ -7760,8 +8184,11 @@
                                 '" width="' + cellW + '" height="' + hitH +
                                 '" fill="transparent"/>';
 
-                            if (inScaleMode && !highlight && !isActive) {
+                            if (inScaleMode && !highlight && !isActive && !cfg.keepAllDots) {
                                 // Scale mode, non-scale note: no visible dot
+                                // (keepAllDots === true 면 비-하이라이트 도트도 그대로 유지.
+                                //  프렛보드 트레이닝에서 정답 하이라이트를 띄울 때
+                                //  다른 프렛의 작은 클릭 도트가 사라지지 않도록 하기 위함.)
                                 svgContent += '</g>';
                                 continue;
                             }
@@ -7775,10 +8202,16 @@
                             //      ONLY by showNotes (or isActive). This lets the
                             //      "음정 보기" toggle hide text even while scale
                             //      dots remain visible.
-                            const bigDot  = cfg.showNotes || highlight || isRoot || isActive;
-                            const showText = cfg.showNotes || isActive;
+                            const isWrongPickMark = cfg.wrongPick &&
+                                cfg.wrongPick.sIdx === sIdx &&
+                                cfg.wrongPick.fret === f;
+                            const bigDot  = cfg.showNotes || highlight || isRoot || isActive || isWrongPickMark;
+                            // Root dots always show the pitch letter so the
+                            // highlighted key is legible without "음정 보기".
+                            const showText = cfg.showNotes || isActive || isRoot;
 
-                            const r = bigDot ? 10.5 : 5.5;
+                            // Root is drawn slightly larger for emphasis
+                            const r = isRoot ? 12.5 : (bigDot ? 10.5 : 5.5);
                             let fillColor = '#ffffff';
                             let strokeColor = 'rgba(42, 107, 74, 0.55)';
                             let textColor = '#1a2421';
@@ -7800,6 +8233,12 @@
                             if (isActive) {
                                 fillColor = '#c44034';
                                 strokeColor = '#c44034';
+                                textColor = '#ffffff';
+                            }
+                            // 프렛보드 트레이닝 오답 프렛 — 연한 붉은색 (약간 붉은 정도)
+                            if (isWrongPickMark) {
+                                fillColor = '#e8836f';       // 연한 붉은색 배경
+                                strokeColor = '#c44034';     // 좀 진한 테두리
                                 textColor = '#ffffff';
                             }
                             svgContent += '<circle cx="' + cx + '" cy="' + cy +
@@ -7928,6 +8367,188 @@
                         ripple.setAttribute('class', 'fb-click-indicator');
                         if (g) g.appendChild(ripple); else svg.appendChild(ripple);
                         setTimeout(function() { ripple.remove(); }, 600);
+                    },
+                };
+            }
+
+            // =============================================================
+            //  PIANO KEYBOARD RENDERING ENGINE
+            //  2-octave visual keyboard (C3..C5). Scale tones highlighted.
+            // =============================================================
+            function createPianoKeyboard(options) {
+                const svg = options.svg;
+                let cfg = Object.assign({
+                    rootPc: 'C',
+                    intervals: [0,2,4,5,7,9,11],
+                    showNotes: true,
+                    highlightRoot: true,
+                    onKeyClick: null,
+                }, options);
+
+                const WHITE_PCS_IN_OCT = ['C','D','E','F','G','A','B'];
+                const WHITE_SEMIS = [0, 2, 4, 5, 7, 9, 11];
+                const BLACK_INFO = [
+                    { after: 0, pc: 'C#', semi: 1 },
+                    { after: 1, pc: 'D#', semi: 3 },
+                    { after: 3, pc: 'F#', semi: 6 },
+                    { after: 4, pc: 'G#', semi: 8 },
+                    { after: 5, pc: 'A#', semi: 10 },
+                ];
+                const NUM_OCTAVES = 2;
+                const BASE_MIDI = 48; // C3
+
+                function draw() {
+                    const W_W = 42, W_H = 150, B_W = 26, B_H = 96;
+                    const padX = 12, padY = 10;
+                    const totalW = (NUM_OCTAVES * 7 + 1) * W_W;
+                    const viewW = totalW + padX * 2;
+                    const viewH = W_H + padY * 2;
+
+                    svg.setAttribute('viewBox', '0 0 ' + viewW + ' ' + viewH);
+                    svg.setAttribute('width', viewW);
+                    svg.setAttribute('height', viewH);
+
+                    const rootIdx = CHROMATIC.indexOf(cfg.rootPc);
+                    const scaleSet = new Set((cfg.intervals || []).map(function(s) {
+                        return (rootIdx + s) % 12;
+                    }));
+
+                    let content = '';
+
+                    // Helper: render a dot marker for a scale note
+                    function renderWhiteKey(globalIdx, pc, midi, isScale, isRoot) {
+                        const x = padX + globalIdx * W_W;
+                        const y = padY;
+                        let out = '<g class="sc-piano-key sc-piano-white" data-midi="' + midi + '" data-pc="' + pc + '" style="cursor:pointer">';
+                        // Plain white key — no body fill change
+                        out += '<rect x="' + x + '" y="' + y + '" width="' + W_W + '" height="' + W_H +
+                            '" fill="#ffffff" stroke="#2a2a2a" stroke-width="1" rx="3"/>';
+                        // Small dot indicator for scale tones (root is bolder)
+                        if (isScale) {
+                            const cx = x + W_W / 2;
+                            const cy = y + W_H - 34;
+                            if (isRoot) {
+                                out += '<circle cx="' + cx + '" cy="' + cy + '" r="8.5" ' +
+                                    'fill="#2a6b4a"/>';
+                            } else {
+                                out += '<circle cx="' + cx + '" cy="' + cy + '" r="5.5" ' +
+                                    'fill="#72c492" stroke="#3a8a5c" stroke-width="1"/>';
+                            }
+                        }
+                        // Note label at the very bottom of the key
+                        if (isScale || cfg.showNotes) {
+                            const labelColor = isScale ? 'rgba(26,36,33,0.85)' : 'rgba(26,36,33,0.5)';
+                            out += '<text x="' + (x + W_W/2) + '" y="' + (y + W_H - 14) +
+                                '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" ' +
+                                'font-size="12" font-weight="' + (isRoot ? '700' : '500') +
+                                '" fill="' + labelColor + '" pointer-events="none">' + pc + '</text>';
+                        }
+                        out += '</g>';
+                        return out;
+                    }
+
+                    function renderBlackKey(x, y, pc, midi, isScale, isRoot) {
+                        let out = '<g class="sc-piano-key sc-piano-black" data-midi="' + midi + '" data-pc="' + pc + '" style="cursor:pointer">';
+                        out += '<rect x="' + x + '" y="' + y + '" width="' + B_W + '" height="' + B_H +
+                            '" fill="#1a1a1a" stroke="#000" stroke-width="0.5" rx="2"/>';
+                        if (isScale) {
+                            const cx = x + B_W / 2;
+                            const cy = y + B_H - 18;
+                            if (isRoot) {
+                                out += '<circle cx="' + cx + '" cy="' + cy + '" r="7" ' +
+                                    'fill="#2a6b4a" stroke="#ffffff" stroke-width="1.2"/>';
+                            } else {
+                                out += '<circle cx="' + cx + '" cy="' + cy + '" r="5" ' +
+                                    'fill="#72c492"/>';
+                            }
+                        }
+                        out += '</g>';
+                        return out;
+                    }
+
+                    // --- White keys ---
+                    for (let o = 0; o < NUM_OCTAVES; o++) {
+                        for (let w = 0; w < 7; w++) {
+                            const globalIdx = o * 7 + w;
+                            const pc = WHITE_PCS_IN_OCT[w];
+                            const pcIdx = CHROMATIC.indexOf(pc);
+                            const midi = BASE_MIDI + o * 12 + WHITE_SEMIS[w];
+                            const isScale = scaleSet.has(pcIdx);
+                            const isRoot = cfg.highlightRoot && pc === cfg.rootPc;
+                            content += renderWhiteKey(globalIdx, pc, midi, isScale, isRoot);
+                        }
+                    }
+                    // Closing upper C
+                    {
+                        const globalIdx = NUM_OCTAVES * 7;
+                        const midi = BASE_MIDI + NUM_OCTAVES * 12;
+                        const isScale = scaleSet.has(0);
+                        const isRoot = cfg.highlightRoot && cfg.rootPc === 'C';
+                        content += renderWhiteKey(globalIdx, 'C', midi, isScale, isRoot);
+                    }
+
+                    // --- Black keys on top of whites ---
+                    for (let o = 0; o < NUM_OCTAVES; o++) {
+                        for (let k = 0; k < BLACK_INFO.length; k++) {
+                            const info = BLACK_INFO[k];
+                            const whiteIdx = o * 7 + info.after;
+                            const midi = BASE_MIDI + o * 12 + info.semi;
+                            const x = padX + (whiteIdx + 1) * W_W - B_W / 2;
+                            const y = padY;
+                            const pc = info.pc;
+                            const pcIdx = CHROMATIC.indexOf(pc);
+                            const isScale = scaleSet.has(pcIdx);
+                            const isRoot = cfg.highlightRoot && pc === cfg.rootPc;
+                            content += renderBlackKey(x, y, pc, midi, isScale, isRoot);
+                        }
+                    }
+
+                    svg.innerHTML = content;
+
+                    // Bind ONCE. Supports both single press and drag-slide:
+                    //  - pointerdown on a key → play, enter drag mode
+                    //  - pointermove (doc-wide) → if we entered a different
+                    //    key, play that key (gives the natural 도→레→미 slide)
+                    //  - pointerup → exit drag mode
+                    if (!svg._pianoBound) {
+                        svg._pianoBound = true;
+                        let activeKey = null;
+                        function fireKey(el) {
+                            const midi = parseInt(el.dataset.midi, 10);
+                            if (typeof cfg.onKeyClick === 'function') {
+                                cfg.onKeyClick(midi);
+                            }
+                        }
+                        svg.addEventListener('pointerdown', function(e) {
+                            const tgt = e.target.closest('.sc-piano-key');
+                            if (!tgt) return;
+                            e.stopPropagation();
+                            activeKey = tgt;
+                            fireKey(tgt);
+                        });
+                        document.addEventListener('pointermove', function(e) {
+                            if (!activeKey) return;
+                            if (!svg.contains(activeKey)) { activeKey = null; return; }
+                            const el = document.elementFromPoint(e.clientX, e.clientY);
+                            if (!el || !svg.contains(el)) return;
+                            const key = el.closest('.sc-piano-key');
+                            if (!key || key === activeKey) return;
+                            activeKey = key;
+                            fireKey(key);
+                        });
+                        const endDrag = function() { activeKey = null; };
+                        document.addEventListener('pointerup', endDrag);
+                        document.addEventListener('pointercancel', endDrag);
+                    }
+                }
+
+                draw();
+
+                return {
+                    svg: svg,
+                    redraw: function(newCfg) {
+                        Object.assign(cfg, newCfg || {});
+                        draw();
                     },
                 };
             }
@@ -8088,12 +8709,21 @@
                 vertical: false,
                 zoom: 1,               // 1 = 기본 / 1.75 = +75% 확대
                 mode: 'explore',       // 'explore' | 'training'
+                rootPc: null,          // null | 'C' | 'C#' | ... — highlight all instances
                 training: {
                     active: false,
                     targetPc: null,    // pitch class to find
-                    correct: 0,
-                    wrong: 0,
-                    attemptedThisRound: false,
+                    // 통계 (음정 트레이닝과 동일한 지표)
+                    correct: 0,        // 정답 수 (첫 시도 기준)
+                    total: 0,          // 문제 수 (첫 시도 기준)
+                    streak: 0,         // 연속 정답
+                    // 한 문제의 상태 — 첫 시도로 점수가 산정된 뒤에는 더 눌러도
+                    // 점수에 반영되지 않고(잠김), "다음 문제" 를 눌러야 새 문제로 진행.
+                    locked: false,
+                    // 정답/오답 직후 target pc 의 모든 프렛을 초록으로 공개
+                    revealCorrect: false,
+                    // 오답 시 실제로 눌렀던 프렛 위치 — 연한 붉은색으로 표시
+                    wrongPick: null,   // { sIdx, fret } | null
                     // Practice limits — null = no limit
                     stringRange: null, // { from, to } — string indices (0 = top/thinnest)
                     fretRange:   null, // { from, to } — fret numbers (0 = open)
@@ -8124,6 +8754,24 @@
                 const svgEl = document.getElementById('fbSvg');
                 if (!svgEl) return;
                 const tr = fbCurrentTrainingRange();
+                // 정답/오답 직후 target pc 의 모든 프렛 위치를 초록으로 공개
+                const reveal = (fbState.mode === 'training' &&
+                                fbState.training.revealCorrect &&
+                                fbState.training.targetPc);
+                const targetPc = fbState.training.targetPc;
+                const revealHighlights = reveal ? function(midi, pc, sIdx, f) {
+                    if (pc !== targetPc) return null;
+                    if (tr) {
+                        if (sIdx < tr.stringMin || sIdx > tr.stringMax) return null;
+                        if (f < tr.fretMin || f > tr.fretMax) return null;
+                    }
+                    return { color: '#72c492', stroke: '#3a8a5c', textColor: '#1a2421' };
+                } : null;
+                // reveal 중엔 target 외 프렛의 작은 클릭 도트가 사라지지 않도록
+                // keepAllDots 활성화 — 그래야 "맞출 때나 틀릴 때나 다른 프렛 원들
+                // 이 유지" 됨.
+                const keepAllDots = !!reveal;
+                const wrongPick = fbState.mode === 'training' ? fbState.training.wrongPick : null;
                 if (!fbState.fb) {
                     fbState.fb = createFretboard({
                         svg: svgEl,
@@ -8133,6 +8781,11 @@
                         vertical: fbState.vertical,
                         zoom: fbState.zoom,
                         trainingRange: tr,
+                        highlights: revealHighlights,
+                        keepAllDots: keepAllDots,
+                        wrongPick: wrongPick,
+                        rootPc: fbState.rootPc,
+                        highlightRoot: !!fbState.rootPc,
                         onFretClick: fbHandleClick,
                     });
                 } else {
@@ -8143,6 +8796,11 @@
                         vertical: fbState.vertical,
                         zoom: fbState.zoom,
                         trainingRange: tr,
+                        highlights: revealHighlights,
+                        keepAllDots: keepAllDots,
+                        wrongPick: wrongPick,
+                        rootPc: fbState.rootPc,
+                        highlightRoot: !!fbState.rootPc,
                     });
                 }
                 // Drag-to-scroll on empty areas + custom scrollbar
@@ -8164,36 +8822,101 @@
             }
 
             function fbHandleClick(sIdx, fret, midi) {
-                // Always play the note
+                // 소리는 항상 재생 (탐색·트레이닝 공통)
                 playNoteOnInstrument(fbState.inst, midi);
 
-                if (fbState.mode === 'training' && fbState.training.active) {
-                    const pc = midiToPitchClass(midi);
-                    const target = fbState.training.targetPc;
-                    const feedback = document.getElementById('fbTrainFeedback');
-                    if (!target) return;
-                    const inRange = fbInRange(sIdx, fret);
-                    if (pc === target && inRange) {
-                        if (feedback) {
-                            feedback.textContent = '정답!';
-                            feedback.className = 'fb-train-feedback ok';
-                        }
-                        fbState.fb.flashDot(sIdx, fret, 'ok');
-                        setTimeout(function() { fbNextTrainingNote(); }, 550);
-                    } else {
-                        if (feedback) {
-                            if (!inRange) {
-                                feedback.textContent = '범위 밖이에요';
-                            } else {
-                                feedback.textContent = '그 자리는 ' + pc + ' 이에요';
-                            }
-                            feedback.className = 'fb-train-feedback bad';
-                        }
-                        fbState.fb.flashDot(sIdx, fret, 'bad');
+                if (fbState.mode !== 'training' || !fbState.training.active) {
+                    fbState.fb.flashDot(sIdx, fret, 'ok');
+                    return;
+                }
+
+                const pc = midiToPitchClass(midi);
+                const target = fbState.training.targetPc;
+                const feedback = document.getElementById('fbTrainFeedback');
+                if (!target) return;
+                const inRange = fbInRange(sIdx, fret);
+                const isCorrect = (pc === target && inRange);
+
+                // 이미 답안 잠긴 상태 — 단순 사운드/플래시만 (점수 반영 X)
+                if (fbState.training.locked) {
+                    fbState.fb.flashDot(sIdx, fret, isCorrect ? 'ok' : 'bad');
+                    return;
+                }
+
+                // 첫 시도 — 점수 반영 + 잠금 + 피드백 + 다음 버튼 활성화
+                fbState.training.locked = true;
+                fbState.training.total++;
+                // 정답·오답 모두 target pc 의 다른 프렛 위치들을 모두 초록으로
+                // 공개 (학습 목적). 단, 작은 클릭 도트들은 사라지지 않도록
+                // fbRender() 가 keepAllDots 를 켜서 다시 그린다.
+                fbState.training.revealCorrect = true;
+                if (isCorrect) {
+                    fbState.training.correct++;
+                    fbState.training.streak++;
+                    fbState.training.wrongPick = null;
+                    if (feedback) {
+                        feedback.textContent = '정답! 다른 포지션도 초록으로 표시했어요. 다음 문제 버튼을 누르세요.';
+                        feedback.className = 'fb-train-feedback ok';
                     }
                 } else {
-                    fbState.fb.flashDot(sIdx, fret, 'ok');
+                    fbState.training.streak = 0;
+                    // 오답 프렛 위치 — 연한 붉은색으로 표시
+                    fbState.training.wrongPick = { sIdx: sIdx, fret: fret };
+                    if (feedback) {
+                        if (!inRange) {
+                            feedback.textContent = '범위 밖이에요. 정답 위치는 초록, 누른 프렛은 빨강으로 표시됩니다.';
+                        } else {
+                            feedback.textContent = '그 자리는 ' + pc + '. 정답 위치는 초록, 누른 프렛은 빨강으로 표시됩니다.';
+                        }
+                        feedback.className = 'fb-train-feedback bad';
+                    }
                 }
+                // 다음 문제 버튼 먼저 활성화 — 뒤의 fbRender / flashDot 중
+                // 어떤 단계에서 예외가 터져도 버튼 상태는 확실히 .show 가 되게.
+                const nextBtn = document.getElementById('fbTrainNextBtn');
+                if (nextBtn) nextBtn.classList.add('show');
+                // reveal + keepAllDots + wrongPick 적용된 새 SVG 로 리드로우 후
+                // ripple 효과는 새 SVG 위에 그린다 (innerHTML 재작성에 덮이지
+                // 않도록 순서 주의).
+                fbRender();
+                fbState.fb.flashDot(sIdx, fret, isCorrect ? 'ok' : 'bad');
+                fbUpdateTrainingStats();
+            }
+
+            function fbUpdateTrainingStats() {
+                const tr = fbState.training;
+                const c = document.getElementById('fbTrainCorrect');
+                const s = document.getElementById('fbTrainStreak');
+                const a = document.getElementById('fbTrainAcc');
+                const r = document.getElementById('fbTrainRound');
+                if (c) c.textContent = tr.correct;
+                if (s) s.textContent = tr.streak;
+                if (a) a.textContent = tr.total
+                    ? Math.round(tr.correct * 100 / tr.total) + '%'
+                    : '0%';
+                if (r) {
+                    // 음정 트레이닝과 동일 — 10문제 단위 라운드 진행도
+                    // 0,1,...,9,10 → 10이 되면 다음 답변 때 1로 롤오버
+                    let inRound;
+                    if (tr.total === 0) inRound = 0;
+                    else if (tr.total % 10 === 0) inRound = 10;
+                    else inRound = tr.total % 10;
+                    r.textContent = inRound + '/10';
+                }
+            }
+
+            function fbResetTrainingStats() {
+                fbState.training.correct = 0;
+                fbState.training.total = 0;
+                fbState.training.streak = 0;
+                fbState.training.locked = false;
+                fbState.training.revealCorrect = false;
+                fbState.training.wrongPick = null;
+                fbUpdateTrainingStats();
+                const fb = document.getElementById('fbTrainFeedback');
+                if (fb) { fb.textContent = ''; fb.className = 'fb-train-feedback'; }
+                const nextBtn = document.getElementById('fbTrainNextBtn');
+                if (nextBtn) nextBtn.classList.remove('show');
             }
 
             window.fbSwitchMode = function(mode) {
@@ -8207,14 +8930,19 @@
                     // Force showNotes OFF during training (dots become hit targets)
                     const cb = document.getElementById('fbShowNotes');
                     if (cb) { cb.checked = false; fbState.showNotes = false; }
+                    // 트레이닝 모드 진입 시 통계 초기화 + active=true 보장.
+                    // (이전에 탐색 모드로 나갔다가 돌아온 경우에도 active 가 false
+                    //  로 고착돼 클릭이 무시되는 일이 없도록 — 이전 버그 수정.)
+                    fbResetTrainingStats();
+                    fbState.training.active = true;
                     fbRender();
-                    // Auto-start: pick first question
                     if (!fbState.training.targetPc) {
                         fbNextTrainingNote();
                     }
                 } else {
                     fbState.training.active = false;
-                    fbRender(); // redraw without training-range dim
+                    fbState.training.revealCorrect = false;
+                    fbRender(); // redraw without training-range dim / reveal
                 }
             };
 
@@ -8223,7 +8951,20 @@
                 guitar: '기타',
                 bass4:  '베이스 4현',
                 bass5:  '베이스 5현',
+                piano:  '피아노',
             };
+
+            // Piano SVG (matches the main 피아노 tool's icon) — embedded here
+            // so the Scale dropdown can show it as the selected instrument.
+            const SC_PIANO_ICON_SVG = '<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">' +
+                '<rect x="0.5" y="2.5" width="15" height="12" fill="none" stroke="currentColor" stroke-width="1.1" rx="1"/>' +
+                '<line x1="4.25" y1="2.5" x2="4.25" y2="14.5" stroke="currentColor" stroke-width="0.8"/>' +
+                '<line x1="8" y1="2.5" x2="8" y2="14.5" stroke="currentColor" stroke-width="0.8"/>' +
+                '<line x1="11.75" y1="2.5" x2="11.75" y2="14.5" stroke="currentColor" stroke-width="0.8"/>' +
+                '<rect x="2.8" y="2.5" width="2.9" height="7" fill="currentColor"/>' +
+                '<rect x="6.55" y="2.5" width="2.9" height="7" fill="currentColor"/>' +
+                '<rect x="10.3" y="2.5" width="2.9" height="7" fill="currentColor"/>' +
+                '</svg>';
 
             function syncInstDropdown(panelSel, inst) {
                 const root = document.querySelector(panelSel + ' .fb-inst-dropdown');
@@ -8233,6 +8974,31 @@
                 if (btn) btn.setAttribute('aria-expanded', 'false');
                 const lbl = root.querySelector('.fb-inst-current-label');
                 if (lbl) lbl.textContent = INST_LABEL[inst] || inst;
+                // Swap the leading icon in the "current" button so piano gets
+                // a piano SVG and strings get the guitar icon.
+                const iconEl = root.querySelector('.fb-inst-current .fb-inst-icon');
+                if (iconEl) {
+                    if (inst === 'piano') {
+                        if (iconEl.tagName.toLowerCase() !== 'span') {
+                            const span = document.createElement('span');
+                            span.className = 'cwk-icon fb-inst-icon';
+                            span.setAttribute('aria-hidden', 'true');
+                            span.innerHTML = SC_PIANO_ICON_SVG;
+                            iconEl.replaceWith(span);
+                        } else {
+                            iconEl.innerHTML = SC_PIANO_ICON_SVG;
+                        }
+                    } else {
+                        if (iconEl.tagName.toLowerCase() !== 'i') {
+                            const i = document.createElement('i');
+                            i.className = 'fas fa-guitar fb-inst-icon';
+                            iconEl.replaceWith(i);
+                        } else {
+                            iconEl.className = 'fas fa-guitar fb-inst-icon';
+                            iconEl.innerHTML = '';
+                        }
+                    }
+                }
                 root.querySelectorAll('.fb-inst-option').forEach(function(o) {
                     o.classList.toggle('active', o.dataset.inst === inst);
                 });
@@ -8381,11 +9147,11 @@
             window.fbSetLevel = function(lv) {
                 fbState.training.level = lv;
                 fbApplyCurrentLevel();
-                fbRender();
-                // Always reset: activate training, forget any existing target,
-                // and fire a fresh question matching the new level's range.
+                // 난이도가 바뀌면 통계 + 문제 상태 모두 초기화 후 새 문제
                 fbState.training.active = true;
                 fbState.training.targetPc = null;
+                fbResetTrainingStats();
+                fbRender();
                 fbNextTrainingNote();
             };
 
@@ -8404,6 +9170,11 @@
 
             window.fbNextTrainingNote = function() {
                 fbState.training.active = true;
+                // 다음 문제 이전 상태 초기화 — 잠금 해제 + 정답 하이라이트 / 오답
+                // 프렛 빨강 마크 모두 제거
+                fbState.training.locked = false;
+                fbState.training.revealCorrect = false;
+                fbState.training.wrongPick = null;
                 const pool = fbAvailablePitchClasses();
                 const prev = fbState.training.targetPc;
                 let pick;
@@ -8421,14 +9192,42 @@
                 if (el) el.textContent = pick;
                 const feedback = document.getElementById('fbTrainFeedback');
                 if (feedback) { feedback.textContent = ''; feedback.className = 'fb-train-feedback'; }
-                // Auto-play the target sound (so user can identify by ear too)
+                // 다음 문제 버튼 비활성화 (정답/오답 후 다시 활성화됨)
+                const nextBtn = document.getElementById('fbTrainNextBtn');
+                if (nextBtn) nextBtn.classList.remove('show');
+                // 정답 하이라이트 제거를 반영해 지판 리드로우
+                fbRender();
+                // Auto-play the target sound (user can also identify by ear)
                 setTimeout(function() { window.fbReplayTarget(); }, 60);
+            };
+
+            // Build the 12-key root highlight grid once per page load
+            function fbBuildRootGrid() {
+                const grid = document.getElementById('fbRootGrid');
+                if (!grid || grid.dataset.built) return;
+                grid.innerHTML = CHROMATIC.map(function(pc) {
+                    return '<button class="fb-root-btn" data-pc="' + pc +
+                        '" onclick="fbSetRoot(\'' + pc + '\')">' + pc + '</button>';
+                }).join('');
+                grid.dataset.built = '1';
+            }
+
+            // Toggle a root pitch-class highlight. Clicking the already-active
+            // button clears the highlight.
+            window.fbSetRoot = function(pc) {
+                if (fbState.rootPc === pc) pc = null;
+                fbState.rootPc = pc;
+                document.querySelectorAll('#fbRootGrid .fb-root-btn').forEach(function(b) {
+                    b.classList.toggle('active', pc && b.dataset.pc === pc);
+                });
+                fbRender();
             };
 
             window.initFretboard = function() {
                 // Default to level 1, apply once so UI matches state
                 if (!fbState.training.level) fbState.training.level = 1;
                 fbApplyCurrentLevel();
+                fbBuildRootGrid();
                 fbRender();
             };
 
@@ -8482,63 +9281,95 @@
                 highlightRoot: true,
                 vertical: false,
                 zoom: 1,            // 1 = 기본 / 1.75 = +75% 확대
-                rootPc: 'A',
-                category: 'minor',
-                scaleId: 'nat_minor',
+                rootPc: 'C',
+                category: 'major',
+                scaleId: 'major',
                 fb: null,
+                piano: null,        // piano keyboard instance (lazy)
             };
 
             function scRender() {
                 const svgEl = document.getElementById('scSvg');
+                const pianoSvgEl = document.getElementById('scPianoSvg');
                 if (!svgEl) return;
                 const scale = scGetScale();
                 if (!scale) return;
                 const rootPcIdx = CHROMATIC.indexOf(scState.rootPc);
                 if (rootPcIdx < 0) return;
-                // Build a pitchclass → highlight lookup
-                const pcHighlights = {};
-                scale.intervals.forEach(function(semi) {
-                    const pc = CHROMATIC[(rootPcIdx + semi) % 12];
-                    pcHighlights[pc] = { semi: semi, isRoot: semi === 0 };
-                });
 
-                // Highlight function returns only the scale-note color. The
-                // "root" coloring is handled by the isRoot override in the
-                // fretboard draw function so the "루트 강조" toggle (which
-                // flips cfg.highlightRoot) actually takes effect.
-                const highlightsFn = function(midi, pc) {
-                    const h = pcHighlights[pc];
-                    if (!h) return null;
-                    return { color: '#72c492', stroke: '#3a8a5c', textColor: '#1a2421' };
-                };
-
-                if (!scState.fb) {
-                    scState.fb = createFretboard({
-                        svg: svgEl,
-                        inst: scState.inst,
-                        maxFret: scState.maxFret,
-                        showNotes: scState.showNotes,
-                        vertical: scState.vertical,
-                        zoom: scState.zoom,
-                        rootPc: scState.rootPc,
-                        highlightRoot: scState.highlightRoot,
-                        highlights: highlightsFn,
-                        onFretClick: function(sIdx, fret, midi) {
-                            playNoteOnInstrument(scState.inst, midi);
-                            scState.fb.flashDot(sIdx, fret, 'ok');
-                        },
-                    });
+                // Swap between fretboard/piano renderers based on instrument
+                const scWrap = document.getElementById('scBoardWrap');
+                if (scState.inst === 'piano') {
+                    if (scWrap) scWrap.classList.add('piano-mode');
+                    svgEl.style.display = 'none';
+                    if (pianoSvgEl) pianoSvgEl.style.display = '';
+                    if (!scState.piano) {
+                        scState.piano = createPianoKeyboard({
+                            svg: pianoSvgEl,
+                            rootPc: scState.rootPc,
+                            intervals: scale.intervals,
+                            showNotes: scState.showNotes,
+                            highlightRoot: scState.highlightRoot,
+                            onKeyClick: function(midi) {
+                                playNoteOnInstrument('piano', midi);
+                            },
+                        });
+                    } else {
+                        scState.piano.redraw({
+                            rootPc: scState.rootPc,
+                            intervals: scale.intervals,
+                            showNotes: scState.showNotes,
+                            highlightRoot: scState.highlightRoot,
+                        });
+                    }
                 } else {
-                    scState.fb.redraw({
-                        inst: scState.inst,
-                        maxFret: scState.maxFret,
-                        showNotes: scState.showNotes,
-                        vertical: scState.vertical,
-                        zoom: scState.zoom,
-                        rootPc: scState.rootPc,
-                        highlightRoot: scState.highlightRoot,
-                        highlights: highlightsFn,
+                    if (scWrap) scWrap.classList.remove('piano-mode');
+                    if (pianoSvgEl) pianoSvgEl.style.display = 'none';
+                    svgEl.style.display = '';
+
+                    // Build a pitchclass → highlight lookup
+                    const pcHighlights = {};
+                    scale.intervals.forEach(function(semi) {
+                        const pc = CHROMATIC[(rootPcIdx + semi) % 12];
+                        pcHighlights[pc] = { semi: semi, isRoot: semi === 0 };
                     });
+                    const highlightsFn = function(midi, pc) {
+                        const h = pcHighlights[pc];
+                        if (!h) return null;
+                        // 루트 외 구성음 — 하얀 배경 + 짙은 녹색 테두리 + 어두운
+                        // 텍스트. 루트는 draw() 내부의 isRoot override 에서
+                        // 짙은 녹색 배경 + 흰 글씨로 덮어씀 → 대비가 명확해짐.
+                        return { color: '#ffffff', stroke: '#2a6b4a', textColor: '#1a2421' };
+                    };
+
+                    if (!scState.fb) {
+                        scState.fb = createFretboard({
+                            svg: svgEl,
+                            inst: scState.inst,
+                            maxFret: scState.maxFret,
+                            showNotes: scState.showNotes,
+                            vertical: scState.vertical,
+                            zoom: scState.zoom,
+                            rootPc: scState.rootPc,
+                            highlightRoot: scState.highlightRoot,
+                            highlights: highlightsFn,
+                            onFretClick: function(sIdx, fret, midi) {
+                                playNoteOnInstrument(scState.inst, midi);
+                                scState.fb.flashDot(sIdx, fret, 'ok');
+                            },
+                        });
+                    } else {
+                        scState.fb.redraw({
+                            inst: scState.inst,
+                            maxFret: scState.maxFret,
+                            showNotes: scState.showNotes,
+                            vertical: scState.vertical,
+                            zoom: scState.zoom,
+                            rootPc: scState.rootPc,
+                            highlightRoot: scState.highlightRoot,
+                            highlights: highlightsFn,
+                        });
+                    }
                 }
                 // Drag-to-scroll on empty areas + custom scrollbar
                 const sc = document.getElementById('scScroller');
@@ -8557,6 +9388,19 @@
                     || list[0];
             }
 
+            // Reference MIDI for the scale's ROOT in each instrument —
+            // chosen so the whole ascending scale (plus octave) fits a
+            // comfortable mid-register.
+            function scRootMidi() {
+                const rIdx = CHROMATIC.indexOf(scState.rootPc);
+                if (scState.inst === 'guitar') {
+                    // Guitar: root in C3..B3 (midi 48..59)
+                    return 48 + rIdx;
+                }
+                // Bass: use sample reference octave so playback is clean
+                return (BASS_SAMPLE_REF_MIDI[scState.rootPc] || 36);
+            }
+
             function scUpdateInfo() {
                 const box = document.getElementById('scInfo');
                 if (!box) return;
@@ -8567,13 +9411,73 @@
                     return CHROMATIC[(rootPcIdx + s) % 12];
                 });
                 const degrees = scale.intervals.map(intervalLabel).join(' ');
+                const rootMidi = scRootMidi();
+                // Render each scale tone as a circular button; click plays
+                // that single note. Leading speaker button plays the whole
+                // scale in sequence.
+                const noteBtns = scale.intervals.map(function(semi, i) {
+                    const pc = notes[i];
+                    const midi = rootMidi + semi;
+                    const isRoot = semi === 0;
+                    return '<button class="sc-note-btn' + (isRoot ? ' root' : '') +
+                        '" data-idx="' + i + '" onclick="scPlayScaleNote(' + midi + ', ' + i + ')">' +
+                        pc + '</button>';
+                }).join('');
                 box.classList.add('show');
                 box.innerHTML =
                     '<div><b>' + scState.rootPc + ' ' + scale.name + '</b>' + (scale.desc || '') + '</div>' +
-                    '<div style="margin-top:0.3rem;font-size:0.72rem;color:rgba(26,36,33,0.45);">구성음</div>' +
-                    '<div class="sc-notes-list">' + notes.join(' – ') + '</div>' +
-                    '<div style="margin-top:0.2rem;font-size:0.72rem;color:rgba(26,36,33,0.45);">도수 &nbsp;' + degrees + '</div>';
+                    '<div style="margin-top:0.4rem;font-size:0.72rem;color:rgba(26,36,33,0.45);">구성음</div>' +
+                    '<div class="sc-notes-row">' +
+                        '<button class="sc-scale-play" onclick="scPlayScaleSequence()" aria-label="스케일 전체 재생" title="스케일 전체 재생">' +
+                            '<i class="fas fa-volume-up"></i>' +
+                        '</button>' +
+                        '<div class="sc-note-btns">' + noteBtns + '</div>' +
+                    '</div>' +
+                    '<div style="margin-top:0.35rem;font-size:0.72rem;color:rgba(26,36,33,0.45);">도수 &nbsp;' + degrees + '</div>';
             }
+
+            // Play a single scale tone + briefly light up its button
+            window.scPlayScaleNote = function(midi, idx) {
+                playNoteOnInstrument(scState.inst, midi);
+                const btns = document.querySelectorAll('#scInfo .sc-note-btn');
+                btns.forEach(function(b) { b.classList.remove('playing'); });
+                if (typeof idx === 'number' && btns[idx]) {
+                    btns[idx].classList.add('playing');
+                    setTimeout(function() {
+                        btns[idx] && btns[idx].classList.remove('playing');
+                    }, 350);
+                }
+            };
+
+            // Play the whole scale ascending at 90 bpm 8th-note tempo.
+            // (Each note ~333 ms apart; includes the upper-octave root so
+            // the sequence resolves naturally.)
+            let _scSeqTimers = [];
+            window.scPlayScaleSequence = function() {
+                const scale = scGetScale();
+                if (!scale) return;
+                // Cancel any in-flight sequence
+                _scSeqTimers.forEach(function(t) { clearTimeout(t); });
+                _scSeqTimers = [];
+                const rootMidi = scRootMidi();
+                const seq = scale.intervals.slice();
+                seq.push(12); // close with upper-octave root
+                const noteMs = 333; // ≈90 bpm, 8분음표 간격
+                const btns = document.querySelectorAll('#scInfo .sc-note-btn');
+                seq.forEach(function(semi, i) {
+                    const id = setTimeout(function() {
+                        playNoteOnInstrument(scState.inst, rootMidi + semi);
+                        btns.forEach(function(b) { b.classList.remove('playing'); });
+                        // Highlight matching scale button (octave note has no button)
+                        if (i < btns.length && btns[i]) btns[i].classList.add('playing');
+                    }, i * noteMs);
+                    _scSeqTimers.push(id);
+                });
+                // Clear highlights a moment after last note plays
+                _scSeqTimers.push(setTimeout(function() {
+                    btns.forEach(function(b) { b.classList.remove('playing'); });
+                }, seq.length * noteMs + 150));
+            };
 
             function scBuildRoots() {
                 const grid = document.getElementById('scRootGrid');
@@ -8755,14 +9659,58 @@
             // 있어 검은 건반 영역을 터치하면 검은 건반이 먼저 hit).
             const pnState = {
                 showNotes: true,
+                vertical: false,
                 zoom: 1,
+                viewMode: 'default',    // 'default' | 'keyboard'
+                kbdOctaveOffset: 0,     // 키보드 건반 모드 옥타브 시프트 (세미톤)
                 audioCtx: null,
             };
             const PN_FIRST_MIDI = 21;   // A0
             const PN_LAST_MIDI  = 108;  // C8
-            const PN_WHITE_W = 36;
+            // 키보드 건반 모드 — 컴퓨터 자판에 매핑되는 C3~F4 한 옥타브 + 4음
+            const PN_KBD_FIRST_MIDI = 48;  // C3
+            const PN_KBD_LAST_MIDI  = 65;  // F4
+            // Logic Pro 스타일 키 매핑 — a-row = 흰 건반, q/w-row = 검은 건반
+            //   a=C3  s=D3  d=E3  f=F3  g=G3  h=A3  j=B3
+            //   k=C4  l=D4  ;=E4  '=F4
+            //   w=C#3 e=D#3 t=F#3 y=G#3 u=A#3
+            //   o=C#4 p=D#4
+            // 키보드 레이아웃·IME 에 영향받지 않도록 실제 이벤트 인식은
+            // 하드웨어 기반 `e.code` (KeyboardEvent.code) 를 우선 사용한다.
+            // `PN_KEY_MAP` 은 e.code 가 없는 환경의 fallback + 한글 자모
+            // (2벌식) 로 입력될 때를 위한 보조 테이블.
+            const PN_CODE_MAP = {
+                'KeyA': 48, 'KeyW': 49, 'KeyS': 50, 'KeyE': 51, 'KeyD': 52,
+                'KeyF': 53, 'KeyT': 54, 'KeyG': 55, 'KeyY': 56, 'KeyH': 57,
+                'KeyU': 58, 'KeyJ': 59, 'KeyK': 60, 'KeyO': 61, 'KeyL': 62,
+                'KeyP': 63, 'Semicolon': 64, 'Quote': 65,
+            };
+            const PN_KEY_MAP = {
+                // 영문 레이아웃
+                'a': 48, 'w': 49, 's': 50, 'e': 51, 'd': 52, 'f': 53,
+                't': 54, 'g': 55, 'y': 56, 'h': 57, 'u': 58, 'j': 59,
+                'k': 60, 'o': 61, 'l': 62, 'p': 63, ';': 64, "'": 65,
+                // 한글 2벌식 자모 (IME 활성 시 같은 물리키가 이런 문자로 들어옴)
+                // ㅁ/ㅈ/ㄴ/ㄷ/ㅇ/ㄹ/ㅅ/ㅎ/ㅛ/ㅗ/ㅕ/ㅓ/ㅏ/ㅐ/ㅣ/ㅔ
+                'ㅁ': 48, 'ㅈ': 49, 'ㄴ': 50, 'ㄷ': 51, 'ㅇ': 52, 'ㄹ': 53,
+                'ㅅ': 54, 'ㅎ': 55, 'ㅛ': 56, 'ㅗ': 57, 'ㅕ': 58, 'ㅓ': 59,
+                'ㅏ': 60, 'ㅐ': 61, 'ㅣ': 62, 'ㅔ': 63,
+                // 한글 자판엔 ; / ' 에 해당하는 자모가 없음 — 영문으로만 인식
+            };
+            // 라벨 표시용: base MIDI → 영문 키 문자 (대문자)
+            const PN_MIDI_TO_LABEL = {
+                48:'A', 49:'W', 50:'S', 51:'E', 52:'D', 53:'F',
+                54:'T', 55:'G', 56:'Y', 57:'H', 58:'U', 59:'J',
+                60:'K', 61:'O', 62:'L', 63:'P', 64:';', 65:"'",
+            };
+            // 한 화면에 더 많은 키가 동시에 보이도록 건반 폭을 조정.
+            // 추가로 #pianoPanel .tool-body { max-width: 1200px } 로 패널
+            // 자체를 코드 라이브러리·스케일 수준으로 넓혀서 데스크톱에서
+            // ~30키가 한 눈에 들어오도록 함. 모바일(세로·900px 이하) 에선
+            // max-width: none 으로 뷰포트 전체를 쓴다.
+            const PN_WHITE_W = 40;   // (36→52→) 40 : 한 번에 보이는 키 수 증가
             const PN_WHITE_H = 150;
-            const PN_BLACK_W = 22;
+            const PN_BLACK_W = 24;   // 흰건반과 동일 비율 (0.60)
             const PN_BLACK_H = 96;
             const PN_LABEL_BAND = 22;   // label 영역 (흰 건반 하단)
             // 0=C 1=C# 2=D 3=D# 4=E 5=F 6=F# 7=G 8=G# 9=A 10=A# 11=B
@@ -8791,79 +9739,192 @@
                 return pnState.audioCtx;
             }
 
-            // 단순한 피아노 사운드 — 짧은 어택 + 지수 감쇠 + 몇 개의 배음.
+            // 피아노 사운드 — "얇은 기본 배음 + 배음별 감쇠 + 밝기 감쇠 LPF
+            // + 해머 어택 노이즈" 4요소로 피아노 톤에 가깝게 합성.
+            //   · Inharmonicity: 실제 피아노 줄은 강성 때문에 상위 부분음이
+            //     정수 배수보다 살짝 샤프해진다. f_n = n·f₀·√(1+B·n²) 근사.
+            //   · Brightness envelope: 어택 직후 상위 배음이 많다가 시간이
+            //     지나며 급격히 어두워지는 특성 → master 위에 lowpass filter
+            //     를 두고 cutoff 를 감쇠.
+            //   · Partial-specific decay: 높은 배음일수록 빠르게 감쇠 (1/√n).
+            //   · Hammer attack: 2-30ms 짧은 밴드패스 노이즈 burst 로 "땡"
+            //     하는 타현음을 더한다.
             function pnPlayMidi(midi) {
                 const ctx = pnEnsureAudio();
                 if (!ctx) return;
                 const freq = 440 * Math.pow(2, (midi - 69) / 12);
                 const t0 = ctx.currentTime;
-                const dur = 1.6;
+                const dur = 2.6;
+
+                // Master envelope — 샤프 어택 → 빠른 초기 감쇠 → 긴 지수 테일
                 const master = ctx.createGain();
                 master.gain.setValueAtTime(0.0001, t0);
-                master.gain.exponentialRampToValueAtTime(0.35, t0 + 0.008);
-                master.gain.exponentialRampToValueAtTime(0.18, t0 + 0.12);
+                master.gain.exponentialRampToValueAtTime(0.42, t0 + 0.004);
+                master.gain.exponentialRampToValueAtTime(0.22, t0 + 0.08);
                 master.gain.exponentialRampToValueAtTime(0.0005, t0 + dur);
+
+                // Brightness lowpass — cutoff 가 시간에 따라 내려옴
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.Q.value = 0.7;
+                const initCut = Math.min(8000, freq * 12);
+                const tailCut = Math.max(500, freq * 2.2);
+                filter.frequency.setValueAtTime(initCut, t0);
+                filter.frequency.exponentialRampToValueAtTime(freq * 5, t0 + 0.35);
+                filter.frequency.exponentialRampToValueAtTime(tailCut, t0 + dur);
+                filter.connect(master);
                 master.connect(ctx.destination);
-                const harmonics = [
-                    { mult: 1,    vol: 1,    type: 'triangle' },
-                    { mult: 2,    vol: 0.35, type: 'sine' },
-                    { mult: 3,    vol: 0.12, type: 'sine' },
-                    { mult: 4,    vol: 0.06, type: 'sine' },
-                    { mult: 5.01, vol: 0.03, type: 'sine' }
+
+                // Inharmonicity coefficient (작을수록 덜 샤프). 실제 피아노는
+                // 고음역에서 더 큼 — 조금 변화 주자.
+                const B = 0.00025 + Math.max(0, (midi - 60)) * 0.0000045;
+
+                // Partials — 1..8. 진폭은 1/n 근사, 5·6 번은 더 약하게.
+                const partials = [
+                    { n: 1, vol: 1.00 },
+                    { n: 2, vol: 0.55 },
+                    { n: 3, vol: 0.35 },
+                    { n: 4, vol: 0.22 },
+                    { n: 5, vol: 0.13 },
+                    { n: 6, vol: 0.08 },
+                    { n: 7, vol: 0.05 },
+                    { n: 8, vol: 0.03 },
                 ];
-                harmonics.forEach(function(h) {
+                partials.forEach(function(p) {
+                    const stretchedFreq = freq * p.n * Math.sqrt(1 + B * p.n * p.n);
+                    // 가청 범위(>~15kHz) 초과 배음은 생략
+                    if (stretchedFreq > 15000) return;
                     const osc = ctx.createOscillator();
                     const g = ctx.createGain();
-                    osc.type = h.type;
-                    osc.frequency.value = freq * h.mult;
-                    g.gain.value = h.vol;
+                    osc.type = 'sine';
+                    osc.frequency.value = stretchedFreq;
+                    g.gain.setValueAtTime(p.vol, t0);
+                    // 높은 배음일수록 빠르게 감쇠
+                    const partialDur = Math.max(0.4, dur / Math.sqrt(p.n));
+                    g.gain.exponentialRampToValueAtTime(0.0005, t0 + partialDur);
                     osc.connect(g);
-                    g.connect(master);
+                    g.connect(filter);
                     osc.start(t0);
-                    osc.stop(t0 + dur + 0.05);
+                    osc.stop(t0 + partialDur + 0.05);
                 });
+
+                // Hammer attack noise — 25ms 밴드패스 노이즈 burst (타현 성분)
+                const noiseDur = 0.028;
+                const noiseBuf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * noiseDur), ctx.sampleRate);
+                const noiseData = noiseBuf.getChannelData(0);
+                for (let i = 0; i < noiseData.length; i++) {
+                    // 디케이 프로파일이 있는 화이트노이즈
+                    noiseData[i] = (Math.random() * 2 - 1) *
+                        Math.pow(1 - i / noiseData.length, 1.8);
+                }
+                const noiseSrc = ctx.createBufferSource();
+                noiseSrc.buffer = noiseBuf;
+                const noiseBp = ctx.createBiquadFilter();
+                noiseBp.type = 'bandpass';
+                noiseBp.frequency.value = Math.min(5000, freq * 3.5);
+                noiseBp.Q.value = 0.9;
+                const noiseGain = ctx.createGain();
+                // 고음일수록 어택 노이즈 약간 크게 (밝음 강조)
+                const noiseVol = 0.09 + Math.min(0.14, Math.max(0, (midi - 40) * 0.004));
+                noiseGain.gain.setValueAtTime(noiseVol, t0);
+                noiseGain.gain.exponentialRampToValueAtTime(0.0005, t0 + noiseDur);
+                noiseSrc.connect(noiseBp);
+                noiseBp.connect(noiseGain);
+                noiseGain.connect(master);
+                noiseSrc.start(t0);
+                noiseSrc.stop(t0 + noiseDur + 0.02);
             }
 
-            // 88키 중 흰 건반만 순서대로 반환
+            // 현재 모드에 맞는 첫/끝 MIDI 반환 (키보드 모드는 옥타브 오프셋 반영)
+            function pnRangeForMode() {
+                if (pnState.viewMode === 'keyboard') {
+                    const off = pnState.kbdOctaveOffset || 0;
+                    return {
+                        first: PN_KBD_FIRST_MIDI + off,
+                        last:  PN_KBD_LAST_MIDI + off,
+                    };
+                }
+                return { first: PN_FIRST_MIDI, last: PN_LAST_MIDI };
+            }
+            // 주어진 MIDI 에 매핑된 키보드 글자 (라벨용) 반환
+            function pnKeyLabelForMidi(midi) {
+                const off = pnState.kbdOctaveOffset || 0;
+                return PN_MIDI_TO_LABEL[midi - off] || null;
+            }
+            // 현재 모드의 흰 건반 MIDI 리스트
             function pnWhiteMidis() {
+                const r = pnRangeForMode();
                 const out = [];
-                for (let m = PN_FIRST_MIDI; m <= PN_LAST_MIDI; m++) {
+                for (let m = r.first; m <= r.last; m++) {
                     if (!pnIsBlack(m)) out.push(m);
                 }
                 return out;
+            }
+            // 모드별 건반 크기 (키보드 모드는 자판 라벨 + 음정 라벨 두 줄 → 더 큼)
+            function pnKeySizes() {
+                if (pnState.viewMode === 'keyboard') {
+                    return { whiteW: 86, whiteH: 210, blackW: 52, blackH: 134 };
+                }
+                return { whiteW: PN_WHITE_W, whiteH: PN_WHITE_H,
+                         blackW: PN_BLACK_W, blackH: PN_BLACK_H };
             }
 
             function pnRender() {
                 const svg = document.getElementById('pnSvg');
                 if (!svg) return;
+                const isKbd = pnState.viewMode === 'keyboard';
+                const range = pnRangeForMode();
                 const whites = pnWhiteMidis();
                 const nWhites = whites.length;
-                const viewW = nWhites * PN_WHITE_W;
-                const viewH = PN_WHITE_H;
+                const sizes = pnKeySizes();
+                const whiteW = sizes.whiteW, whiteH = sizes.whiteH;
+                const blackW = sizes.blackW, blackH = sizes.blackH;
+                // 원본(가로) 좌표계 크기
+                const contentW = nWhites * whiteW;
+                const contentH = whiteH;
+                // 세로 모드에선 viewBox 축이 바뀜
+                const rotate = !!pnState.vertical;
+                const viewW = rotate ? contentH : contentW;
+                const viewH = rotate ? contentW : contentH;
 
                 const zoom = pnState.zoom || 1;
                 svg.setAttribute('viewBox', '0 0 ' + viewW + ' ' + viewH);
                 svg.setAttribute('width', viewW * zoom);
                 svg.setAttribute('height', viewH * zoom);
 
-                let html = '';
+                // rotate(90) + translate 로 원본 좌표계를 세로 viewBox 에 매핑.
+                const groupTransform = rotate ? ('translate(' + contentH + ', 0) rotate(90)') : '';
+                let html = '<g' + (groupTransform ? ' transform="' + groupTransform + '"' : '') + '>';
+                const NOTE_LABELS = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
                 // 흰 건반 먼저 (검은 건반 아래에 깔림)
                 whites.forEach(function(midi, i) {
-                    const x = i * PN_WHITE_W;
+                    const x = i * whiteW;
                     const pc = midi % 12;
                     const isC = pc === 0;
                     html += '<rect class="pn-key pn-white" data-midi="' + midi +
-                        '" x="' + (x + 0.5) + '" y="0" width="' + (PN_WHITE_W - 1) +
-                        '" height="' + PN_WHITE_H + '" fill="#ffffff" stroke="#2a3a35" stroke-width="1" rx="2"/>';
-                    // C 에는 옥타브 마커 + 라벨(항상). 다른 흰 건반은 showNotes 에 따라.
+                        '" x="' + (x + 0.5) + '" y="0" width="' + (whiteW - 1) +
+                        '" height="' + whiteH + '" fill="#ffffff" stroke="#2a3a35" stroke-width="1" rx="2"/>';
+                    // Note label (항상 C, 나머지는 showNotes 에 따라)
                     if (pnState.showNotes || isC) {
-                        const labelY = PN_WHITE_H - 10;
-                        const label = isC ? pnPitchLabel(midi) : ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'][pc];
+                        // 키보드 모드는 하단에 자판 글자 영역이 있으므로 note 라벨을
+                        // 자판 글자 위쪽에 올린다.
+                        const labelY = isKbd ? (whiteH - 48) : (whiteH - 10);
+                        const label = isC ? pnPitchLabel(midi) : NOTE_LABELS[pc];
                         const color = isC ? '#2a6b4a' : 'rgba(26,36,33,0.55)';
                         const weight = isC ? '700' : '500';
-                        html += '<text x="' + (x + PN_WHITE_W/2) + '" y="' + labelY +
-                            '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="10" ' +
+                        const fs = isKbd ? 13 : 10;
+                        html += '<text x="' + (x + whiteW/2) + '" y="' + labelY +
+                            '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="' + fs + '" ' +
                             'font-weight="' + weight + '" fill="' + color + '" pointer-events="none">' + label + '</text>';
+                    }
+                    // 키보드 건반 모드 — 자판 글자 라벨 (흰 건반 하단)
+                    if (isKbd) {
+                        const kbdKey = pnKeyLabelForMidi(midi);
+                        if (kbdKey) {
+                            html += '<text x="' + (x + whiteW/2) + '" y="' + (whiteH - 18) +
+                                '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="22" ' +
+                                'font-weight="700" fill="#2a3a35" pointer-events="none">' + kbdKey + '</text>';
+                        }
                     }
                 });
 
@@ -8873,21 +9934,40 @@
                     const hasBlackAfter = [0, 2, 5, 7, 9].indexOf(pc) !== -1;
                     if (!hasBlackAfter) return;
                     const blackMidi = midi + 1;
-                    if (blackMidi > PN_LAST_MIDI) return;
-                    const bx = (i + 1) * PN_WHITE_W - PN_BLACK_W / 2;
+                    if (blackMidi > range.last) return;
+                    const bx = (i + 1) * whiteW - blackW / 2;
                     html += '<rect class="pn-key pn-black" data-midi="' + blackMidi +
-                        '" x="' + bx + '" y="0" width="' + PN_BLACK_W +
-                        '" height="' + PN_BLACK_H + '" fill="#1a2421" stroke="#0a1410" stroke-width="1" rx="2"/>';
+                        '" x="' + bx + '" y="0" width="' + blackW +
+                        '" height="' + blackH + '" fill="#1a2421" stroke="#0a1410" stroke-width="1" rx="2"/>';
                     if (pnState.showNotes) {
                         const bpc = blackMidi % 12;
-                        const blabel = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'][bpc];
-                        html += '<text x="' + (bx + PN_BLACK_W/2) + '" y="' + (PN_BLACK_H - 7) +
-                            '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="8" ' +
+                        const blabel = NOTE_LABELS[bpc];
+                        const blabelY = isKbd ? (blackH - 34) : (blackH - 7);
+                        const bfs = isKbd ? 10 : 8;
+                        html += '<text x="' + (bx + blackW/2) + '" y="' + blabelY +
+                            '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="' + bfs + '" ' +
                             'font-weight="600" fill="rgba(255,255,255,0.78)" pointer-events="none">' + blabel + '</text>';
+                    }
+                    // 키보드 모드 — 자판 글자 라벨 (검은 건반 하단)
+                    if (isKbd) {
+                        const kbdKey = pnKeyLabelForMidi(blackMidi);
+                        if (kbdKey) {
+                            html += '<text x="' + (bx + blackW/2) + '" y="' + (blackH - 12) +
+                                '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="16" ' +
+                                'font-weight="700" fill="#ffffff" pointer-events="none">' + kbdKey + '</text>';
+                        }
                     }
                 });
 
+                html += '</g>';  // close rotation group
                 svg.innerHTML = html;
+
+                // board-wrap 클래스 동기화 (CSS 중앙 정렬 트리거)
+                const wrap = document.getElementById('pnBoardWrap');
+                if (wrap) {
+                    wrap.classList.toggle('vertical', rotate);
+                    wrap.classList.toggle('pn-kbd-mode', isKbd);
+                }
 
                 // 이벤트 바인딩 — 한 번만
                 if (!svg._pnBound) {
@@ -8940,6 +10020,13 @@
                 pnRender();
             };
 
+            window.pnToggleVertical = function(checked) {
+                pnState.vertical = !!checked;
+                pnRender();
+                // 회전 직후 C4 가 중앙에 오도록 스크롤 재조정
+                pnScrollToC4();
+            };
+
             window.pnToggleZoom = function() {
                 const zoomedIn = pnState.zoom > 1;
                 pnState.zoom = zoomedIn ? 1 : 1.75;
@@ -8954,19 +10041,127 @@
                 pnRender();
             };
 
+            function pnScrollToC4() {
+                const sc = document.getElementById('pnScroller');
+                if (!sc) return;
+                // 키보드 모드는 스크롤 필요 없음 (전체가 뷰포트에 들어감)
+                if (pnState.viewMode === 'keyboard') {
+                    sc.scrollLeft = 0;
+                    sc.scrollTop = 0;
+                    return;
+                }
+                const whites = pnWhiteMidis();
+                let cIdx = whites.indexOf(60);
+                if (cIdx < 0) cIdx = Math.floor(whites.length / 2);
+                const zoom = pnState.zoom || 1;
+                const whiteW = pnKeySizes().whiteW;
+                // 회전 기준: C4 가 원본 좌표계에서 차지하는 "가로 위치" 는
+                // 세로 모드에선 실제 DOM 상 "세로 위치" 로 매핑됨.
+                const pos = (cIdx * whiteW + whiteW / 2) * zoom;
+                if (pnState.vertical) {
+                    const center = Math.max(0, pos - sc.clientHeight / 2);
+                    sc.scrollTop = center;
+                    sc.scrollLeft = 0;
+                } else {
+                    const center = Math.max(0, pos - sc.clientWidth / 2);
+                    sc.scrollLeft = center;
+                    sc.scrollTop = 0;
+                }
+            }
+
+            // 모드 전환 — "기본"(88키 스크롤) ↔ "키보드 건반"(C3~F4 매핑)
+            window.pnSwitchMode = function(mode) {
+                if (mode !== 'default' && mode !== 'keyboard') mode = 'default';
+                pnState.viewMode = mode;
+                document.querySelectorAll('#pianoPanel .pn-mode-tab').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.pnMode === mode);
+                });
+                const oct = document.getElementById('pnOctaveControls');
+                if (oct) oct.style.display = mode === 'keyboard' ? 'flex' : 'none';
+                pnRender();
+                pnUpdateOctaveLabel();
+                setTimeout(pnScrollToC4, 20);
+            };
+
+            // 옥타브 시프트 — delta 는 +1 (올리기) / -1 (낮추기), 1옥타브 = 12세미톤
+            const PN_OCT_MIN = -24;   // C1-F2 까지
+            const PN_OCT_MAX = 24;    // C5-F6 까지
+            window.pnKbdShiftOctave = function(delta) {
+                const next = (pnState.kbdOctaveOffset || 0) + delta * 12;
+                pnState.kbdOctaveOffset = Math.max(PN_OCT_MIN, Math.min(PN_OCT_MAX, next));
+                pnRender();
+                pnUpdateOctaveLabel();
+                pnUpdateOctaveBtnState();
+            };
+            function pnUpdateOctaveLabel() {
+                const el = document.getElementById('pnOctaveLabel');
+                if (!el) return;
+                const off = pnState.kbdOctaveOffset || 0;
+                const first = PN_KBD_FIRST_MIDI + off;
+                const last  = PN_KBD_LAST_MIDI + off;
+                el.textContent = pnPitchLabel(first) + ' – ' + pnPitchLabel(last);
+            }
+            function pnUpdateOctaveBtnState() {
+                const down = document.querySelector('#pnOctaveControls .pn-octave-down');
+                const up   = document.querySelector('#pnOctaveControls .pn-octave-up');
+                const off = pnState.kbdOctaveOffset || 0;
+                if (down) down.disabled = off <= PN_OCT_MIN;
+                if (up)   up.disabled   = off >= PN_OCT_MAX;
+            }
+
+            // 키보드 → 피아노 매핑 — 키보드 건반 모드에서만 동작
+            // e.code (하드웨어 기반) 를 1순위로 봐서 영문/한글 IME 와 무관하게
+            // 물리 키에 매핑하고, 실패하면 e.key → PN_KEY_MAP 로 fallback.
+            // 옥타브 오프셋은 항상 base MIDI 에 가산.
+            function pnKeyFromEvent(e) {
+                const ae = document.activeElement;
+                if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' ||
+                           ae.isContentEditable)) return null;
+                if (e.ctrlKey || e.metaKey || e.altKey) return null;
+                if (pnState.viewMode !== 'keyboard') return null;
+                const panel = document.getElementById('pianoPanel');
+                if (!panel || !panel.classList.contains('active')) return null;
+                let baseMidi;
+                if (e.code && PN_CODE_MAP[e.code] !== undefined) {
+                    baseMidi = PN_CODE_MAP[e.code];
+                } else {
+                    const k = e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key;
+                    baseMidi = PN_KEY_MAP[k];
+                }
+                if (baseMidi === undefined) return null;
+                return baseMidi + (pnState.kbdOctaveOffset || 0);
+            }
+            document.addEventListener('keydown', function(e) {
+                const midi = pnKeyFromEvent(e);
+                if (midi === undefined || midi === null) return;
+                if (e.repeat) { e.preventDefault(); return; }
+                e.preventDefault();
+                pnPlayMidi(midi);
+                const svg = document.getElementById('pnSvg');
+                const keyEl = svg && svg.querySelector('.pn-key[data-midi="' + midi + '"]');
+                if (keyEl) keyEl.classList.add('pn-key-active');
+            });
+            // keyup 은 모드/패널 조건과 무관하게 해제 (키 누른 사이 모드가
+            // 바뀌어도 하이라이트가 고착되지 않게). 옥타브 오프셋 반영.
+            document.addEventListener('keyup', function(e) {
+                let baseMidi;
+                if (e.code && PN_CODE_MAP[e.code] !== undefined) {
+                    baseMidi = PN_CODE_MAP[e.code];
+                } else {
+                    const k = e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key;
+                    baseMidi = PN_KEY_MAP[k];
+                }
+                if (baseMidi === undefined) return;
+                const midi = baseMidi + (pnState.kbdOctaveOffset || 0);
+                const svg = document.getElementById('pnSvg');
+                const keyEl = svg && svg.querySelector('.pn-key[data-midi="' + midi + '"]');
+                if (keyEl) keyEl.classList.remove('pn-key-active');
+            });
+
             window.initPiano = function() {
                 pnRender();
-                // 처음 진입 시 C4(MIDI 60) 주변이 보이도록 스크롤 초기화
-                const sc = document.getElementById('pnScroller');
-                if (sc) {
-                    const whites = pnWhiteMidis();
-                    // C4 = midi 60 이 whites 의 몇 번째인지 찾기
-                    let cIdx = whites.indexOf(60);
-                    if (cIdx < 0) cIdx = Math.floor(whites.length / 2);
-                    const targetX = cIdx * PN_WHITE_W * (pnState.zoom || 1);
-                    const center = Math.max(0, targetX - sc.clientWidth / 2 + PN_WHITE_W / 2);
-                    sc.scrollLeft = center;
-                }
+                // 레이아웃이 자리 잡은 후 한 틱 뒤에 스크롤 정렬
+                setTimeout(pnScrollToC4, 20);
             };
 
             // Redraw on resize (so vertical layouts stay centered)

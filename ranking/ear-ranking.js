@@ -264,7 +264,8 @@
     border: 1px dashed rgba(26, 36, 33, 0.12);
     border-radius: 11px;
 }
-/* ---------- Ranking: scoring help button ---------- */
+/* ---------- Ranking: scoring help buttons ---------- */
+/* (legacy — kept in case something still references .rank-help-btn) */
 .rank-help-btn {
     display: inline-flex; align-items: center; justify-content: center;
     width: 26px; height: 26px;
@@ -284,6 +285,57 @@
     border-color: var(--green-deep, #2a6b4a);
     color: var(--green-mid, #62b682);
 }
+/* Round "?" button in the ranking header (right of the title). */
+#rankingPanel .tool-header .rank-help-hdr-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    margin-left: 0.5rem;
+    padding: 0;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 700;
+    background: rgba(42, 107, 74, 0.1);
+    color: var(--green-deep, #2a6b4a);
+    border: 1.5px solid rgba(42, 107, 74, 0.32);
+    border-radius: 50%;
+    cursor: pointer;
+    /* Parent .tool-header disables pointer events on desktop — re-enable here. */
+    pointer-events: auto;
+    flex-shrink: 0;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+#rankingPanel .tool-header .rank-help-hdr-btn:hover {
+    background: rgba(82, 168, 114, 0.25);
+    border-color: var(--green-deep, #2a6b4a);
+    color: var(--green-deep, #2a6b4a);
+}
+
+/* Pill-style "점수 집계방법" button inside the me-card. */
+.rank-help-info-btn {
+    padding: 0.42rem 0.85rem;
+    background: rgba(82, 168, 114, 0.12);
+    color: var(--green-deep, #2a6b4a);
+    border: 1px solid rgba(42, 107, 74, 0.32);
+    border-radius: 18px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s;
+    margin-left: auto;
+}
+.rank-help-info-btn:hover {
+    background: rgba(82, 168, 114, 0.25);
+    border-color: var(--green-mid, #62b682);
+}
+.rank-help-info-btn i { font-size: 0.85rem; }
 
 /* ---------- "내 누적" card above filters ---------- */
 .rank-me-card {
@@ -992,6 +1044,7 @@
 <div class="tool-header">
     <div class="tool-header-icon"><i class="fas fa-trophy"></i></div>
     <h1>랭킹</h1>
+    <button class="rank-help-open rank-help-hdr-btn" type="button" aria-label="점수 집계 방법" title="점수 집계 방법">?</button>
 </div>
 <div class="tool-body">
     <div class="rank-me-card" id="rankMeCard">
@@ -1003,7 +1056,9 @@
             <span class="rank-me-num" id="rankMyRounds">0</span>
             <span class="rank-me-unit">라운드</span>
         </div>
-        <button class="rank-help-btn" type="button" aria-label="점수 산정 방식" title="점수 산정 방식">?</button>
+        <button class="rank-help-open rank-help-info-btn" type="button" title="점수 집계 방법">
+            <i class="fas fa-circle-info"></i> 점수 집계방법
+        </button>
     </div>
     <div class="rank-filters">
         <div class="rank-filter-group">
@@ -1095,12 +1150,13 @@
         });
         panel.querySelector('#rankRefresh').addEventListener('click', reload);
 
-        // Help popup wiring
-        const helpBtn = panel.querySelector('.rank-help-btn');
+        // Help popup wiring — supports any button with .rank-help-open
+        // (header ? icon + "점수 집계방법" text button) plus legacy .rank-help-btn.
         const helpOverlay = panel.querySelector('#rankHelpOverlay');
         const helpClose = panel.querySelector('.rank-help-close');
-        if (helpBtn && helpOverlay) {
-            helpBtn.addEventListener('click', () => helpOverlay.classList.add('open'));
+        const helpBtns = panel.querySelectorAll('.rank-help-open, .rank-help-btn');
+        if (helpBtns.length && helpOverlay) {
+            helpBtns.forEach((b) => b.addEventListener('click', () => helpOverlay.classList.add('open')));
             helpClose && helpClose.addEventListener('click', () => helpOverlay.classList.remove('open'));
             helpOverlay.addEventListener('click', (e) => {
                 if (e.target === helpOverlay) helpOverlay.classList.remove('open');
