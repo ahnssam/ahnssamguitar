@@ -2382,32 +2382,48 @@
                 aspect-ratio: 2.2;
             }
 
-            /* ===== Ear-training (음정 테스트): pill reserved space ===== */
-            /* Idle pill was previously so faint it looked invisible, giving
-               the impression that "라운드 0/10" pops in mid-game.  Keep it
-               visibly present from the start, and reserve enough horizontal
-               room (~4.8rem) so the absolutely-positioned .et-reset-col
-               never overlaps the score boxes.
-               Layout choices:
-               - justify-content: flex-end  anchors 정답률 against the
-                 right-padding edge so it never moves as its digits change.
-               - min-width on each box is sized to fit the widest state
-                 ("100%" ≈ 62px at 1.6rem Playfair tabular-nums).  With a
-                 fixed floor, 점수 / 연속 / 정답률 never resize and the
-                 whole row stops jittering when accuracy ticks up.
-               - Larger gap gives the row more breathing room overall. */
+            /* ===== Ear-training (음정 테스트): score row layout ===== */
+            /* In portrait / narrow viewports we distribute 점수 / 연속 /
+               정답률 across the row using a fixed 3-column grid so their
+               positions never shift as the viewport resizes:
+                 - 점수   → justify-self: start  (moderately near the left)
+                 - 연속   → justify-self: center (true row / screen center)
+                 - 정답률 → justify-self: end    (moderately near the right)
+               The reset column (round pill + 초기화 button) is flattened
+               into a compact horizontal pair floating at the top-right so
+               it no longer eats horizontal space from 정답률.  The score
+               boxes are bottom-aligned within the row, which keeps them
+               clear of the reset pill above.  min-width on each box stays
+               at 0 so tabular-nums handles digit width — combined with
+               grid placement this keeps every box locked in place as the
+               digits change ("0" vs "100%") or the viewport resizes. */
             .et-score-row {
-                padding-right: 4.8rem;
-                gap: 1.1rem;
-                min-height: 64px;
-                justify-content: flex-end;
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                align-items: end;
+                padding: 1.7rem 0.9rem 0;
+                gap: 0;
+                min-height: 76px;
+                justify-content: normal;
             }
+            .et-score-row > .et-score-box:nth-of-type(1) { justify-self: start; }
+            .et-score-row > .et-score-box:nth-of-type(2) { justify-self: center; }
+            .et-score-row > .et-score-box:nth-of-type(3) { justify-self: end; }
             .et-score-box {
-                min-width: 72px;
+                min-width: 0;
                 flex: 0 0 auto;
             }
             .et-reset-col {
+                /* Flatten to a horizontal pill + button at the top-right
+                   corner of the score row — frees the row below for the
+                   three score boxes to spread across the full width. */
+                top: 0.35rem;
+                right: 0.6rem;
+                bottom: auto;
+                transform: none;
+                flex-direction: row;
                 gap: 0.45rem;
+                align-items: center;
             }
             .et-reset-col .et-session-pill {
                 padding: 0.22rem 0.6rem;
