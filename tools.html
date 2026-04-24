@@ -1411,20 +1411,30 @@
             gap: 0.3rem;
         }
         .et-reset-btn-inline {
-            background: none;
-            border: 1px solid rgba(42, 107, 74, 0.12);
-            color: rgba(26, 36, 33, 0.35);
-            width: 28px; height: 28px;
-            border-radius: 50%;
+            /* Pill-style button: 돌아가는 아이콘 + "초기화" 텍스트를 한
+               테두리 안에 묶어 시각적으로 의미를 분명히 한다. */
+            background: rgba(42, 107, 74, 0.04);
+            border: 1px solid rgba(42, 107, 74, 0.2);
+            color: rgba(26, 36, 33, 0.6);
+            padding: 0.3rem 0.6rem;
+            border-radius: 14px;
             cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.65rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.32rem;
+            font-size: 0.7rem;
+            font-family: inherit;
+            line-height: 1;
             transition: all 0.2s;
             flex-shrink: 0;
+            white-space: nowrap;
         }
+        .et-reset-btn-inline i { font-size: 0.68rem; }
         .et-reset-btn-inline:hover {
-            background: rgba(42, 107, 74, 0.08);
-            color: rgba(26, 36, 33, 0.7);
+            background: rgba(42, 107, 74, 0.1);
+            color: rgba(26, 36, 33, 0.8);
+            border-color: rgba(42, 107, 74, 0.32);
         }
         /* Override ear-ranking.js's default pill margin-left: auto so that when
            the pill sits inside .et-reset-col it doesn't try to push itself away.
@@ -2383,46 +2393,44 @@
             }
 
             /* ===== Ear-training (음정 테스트): score row layout ===== */
-            /* In portrait / narrow viewports we distribute 점수 / 연속 /
-               정답률 across the row using a fixed 3-column grid so their
+            /* In portrait / narrow viewports we lay out four items in a
+               single row using a 4-column grid so their relative
                positions never shift as the viewport resizes:
-                 - 점수   → justify-self: start  (moderately near the left)
-                 - 연속   → justify-self: center (true row / screen center)
-                 - 정답률 → justify-self: end    (moderately near the right)
-               The reset column (round pill + 초기화 button) is flattened
-               into a compact horizontal pair floating at the top-right so
-               it no longer eats horizontal space from 정답률.  The score
-               boxes are bottom-aligned within the row, which keeps them
-               clear of the reset pill above.  min-width on each box stays
-               at 0 so tabular-nums handles digit width — combined with
-               grid placement this keeps every box locked in place as the
-               digits change ("0" vs "100%") or the viewport resizes. */
+                 col 1 → 점수
+                 col 2 → 연속
+                 col 3 → 정답률
+                 col 4 → 라운드 pill + 초기화 버튼 (vertical stack)
+               Each 1fr column centers its child (justify-items: center),
+               so the four items sit at ~12.5% / 37.5% / 62.5% / 87.5%
+               of the row — evenly spaced, with every item "moderately"
+               in from both edges rather than flush against them.
+               min-width: 0 on the score boxes lets tabular-nums manage
+               digit width while the grid cells keep every item locked
+               in place as digits change ("0" vs "100%"). */
             .et-score-row {
                 display: grid;
-                grid-template-columns: 1fr 1fr 1fr;
-                align-items: end;
-                padding: 1.7rem 0.9rem 0;
+                grid-template-columns: 1fr 1fr 1fr 1fr;
+                align-items: center;
+                justify-items: center;
+                padding: 0 0.5rem;
                 gap: 0;
-                min-height: 76px;
+                min-height: 72px;
                 justify-content: normal;
             }
-            .et-score-row > .et-score-box:nth-of-type(1) { justify-self: start; }
-            .et-score-row > .et-score-box:nth-of-type(2) { justify-self: center; }
-            .et-score-row > .et-score-box:nth-of-type(3) { justify-self: end; }
             .et-score-box {
                 min-width: 0;
                 flex: 0 0 auto;
             }
             .et-reset-col {
-                /* Flatten to a horizontal pill + button at the top-right
-                   corner of the score row — frees the row below for the
-                   three score boxes to spread across the full width. */
-                top: 0.35rem;
-                right: 0.6rem;
-                bottom: auto;
+                /* Join the grid flow as the 4th column (not absolute).
+                   Keep the round pill stacked on top of the 초기화
+                   button — vertical column layout. */
+                position: static;
+                right: auto;
+                top: auto;
                 transform: none;
-                flex-direction: row;
-                gap: 0.45rem;
+                flex-direction: column;
+                gap: 0.4rem;
                 align-items: center;
             }
             .et-reset-col .et-session-pill {
@@ -2731,7 +2739,7 @@
                         </div>
                         <div class="et-reset-col">
                             <span class="et-session-pill idle" id="etSessionPill_interval"><span class="dot"></span><span>라운드 0/10</span></span>
-                            <button class="et-reset-btn-inline" onclick="etReset()" title="초기화"><i class="fas fa-redo"></i></button>
+                            <button class="et-reset-btn-inline" onclick="etReset()" title="초기화"><i class="fas fa-redo"></i><span>초기화</span></button>
                         </div>
                     </div>
                     <div class="et-feedback" id="etFeedback"></div>
@@ -2794,7 +2802,7 @@
                         </div>
                         <div class="et-reset-col">
                             <span class="et-session-pill idle" id="etSessionPill_pitch"><span class="dot"></span><span>라운드 0/10</span></span>
-                            <button class="et-reset-btn-inline" onclick="etPitchReset()" title="초기화"><i class="fas fa-redo"></i></button>
+                            <button class="et-reset-btn-inline" onclick="etPitchReset()" title="초기화"><i class="fas fa-redo"></i><span>초기화</span></button>
                         </div>
                     </div>
                     <div class="et-feedback" id="etPitchFeedback"></div>
@@ -2850,7 +2858,7 @@
                         </div>
                         <div class="et-reset-col">
                             <span class="et-session-pill idle" id="etSessionPill_chord"><span class="dot"></span><span>라운드 0/10</span></span>
-                            <button class="et-reset-btn-inline" onclick="etChordReset()" title="초기화"><i class="fas fa-redo"></i></button>
+                            <button class="et-reset-btn-inline" onclick="etChordReset()" title="초기화"><i class="fas fa-redo"></i><span>초기화</span></button>
                         </div>
                     </div>
                     <div class="et-feedback" id="etChordFeedback"></div>
