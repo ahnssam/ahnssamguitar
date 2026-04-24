@@ -302,21 +302,32 @@
     text-transform: uppercase;
     flex-shrink: 0;
 }
+/* 숫자와 단위(점/라운드)를 한 줄에 baseline 으로 정렬해서
+   '내 누적' 라벨과도 시각적으로 같은 가로선 위에 놓이도록 한다. */
 .rank-me-values {
-    display: flex; align-items: baseline; gap: 0.6rem;
+    display: flex; align-items: baseline;
+    gap: 0.3rem;
     flex: 1;
     color: var(--text-primary, #1a2421);
+    flex-wrap: wrap;
 }
-.rank-me-values .rank-me-value {
-    font-size: 1.35rem; font-weight: 800; color: var(--text-primary, #1a2421);
+.rank-me-values .rank-me-num {
+    font-size: 1.35rem; font-weight: 800;
+    color: var(--text-primary, #1a2421);
     letter-spacing: 0.01em;
+    font-variant-numeric: tabular-nums;
 }
-.rank-me-values .rank-me-rounds { font-size: 0.95rem; color: rgba(26, 36, 33, 0.7); font-weight: 600; }
-.rank-me-values .rank-me-sep { color: rgba(26, 36, 33, 0.3); font-size: 0.9rem; }
+.rank-me-values .rank-me-sep {
+    color: rgba(26, 36, 33, 0.3);
+    font-size: 0.95rem;
+    margin: 0 0.3rem;
+}
 .rank-me-values .rank-me-unit {
-    font-size: 0.78rem; font-weight: 600;
-    color: rgba(181,230,200,0.7);
-    margin-left: 0.15rem; letter-spacing: 0.05em;
+    font-size: 0.82rem; font-weight: 600;
+    /* 연한 민트 배경 위에서도 읽히도록 충분히 어두운 회색톤 */
+    color: rgba(26, 36, 33, 0.6);
+    letter-spacing: 0.04em;
+    margin-right: 0.2rem;
 }
 
 /* ---------- Filter pills (scope/mode/difficulty) ---------- */
@@ -362,6 +373,23 @@
     color: var(--green-mid, #62b682);
     border-color: var(--green-deep, #2a6b4a);
     box-shadow: 0 0 0 1px rgba(114,196,146,0.3);
+}
+/* 지옥 난이도 pill — 음정 트레이닝의 지옥 버튼과 동일 톤 */
+.rank-pill[data-diff="hell"] {
+    border-color: rgba(196, 64, 52, 0.28);
+    background: rgba(196, 64, 52, 0.06);
+    color: rgba(148, 42, 34, 0.72);
+}
+.rank-pill[data-diff="hell"]:hover {
+    background: rgba(196, 64, 52, 0.12);
+    color: rgba(148, 42, 34, 0.9);
+    border-color: rgba(196, 64, 52, 0.45);
+}
+.rank-pill[data-diff="hell"].active {
+    background: #c44034;
+    color: #ffffff;
+    border-color: #c44034;
+    box-shadow: 0 0 0 1px rgba(196, 64, 52, 0.3);
 }
 
 /* ---------- Help popup ---------- */
@@ -430,6 +458,8 @@
     font-size: 0.86rem; color: rgba(26, 36, 33, 0.78);
 }
 .rank-help-grid div:nth-child(odd) { font-weight: 700; color: var(--text-primary, #1a2421); }
+/* 지옥 난이도 행은 살짝 붉은 톤으로 경고 느낌 유지 */
+.rank-help-grid .rank-help-hell-row { color: #b83a2e; font-weight: 700; }
 .rank-help-list {
     margin: 0 0 0.5rem 1.1rem;
     padding: 0;
@@ -594,8 +624,8 @@
         ear_compare: '두 음 비교',
         ear_chord: '코드 맞추기'
     };
-    const DIFF_LABELS = { easy: '쉬움', medium: '보통', hard: '어려움' };
-    const DIFF_COEF = { easy: 1.0, medium: 1.5, hard: 2.0 };
+    const DIFF_LABELS = { easy: '쉬움', medium: '보통', hard: '어려움', hell: '지옥' };
+    const DIFF_COEF = { easy: 1.0, medium: 1.5, hard: 2.0, hell: 3.0 };
     const SESSION_SIZE = 10;
 
     // ------------------------------------------------------------
@@ -961,16 +991,19 @@
         panel.innerHTML = `
 <div class="tool-header">
     <div class="tool-header-icon"><i class="fas fa-trophy"></i></div>
-    <h1>랭킹 <button class="rank-help-btn" type="button" aria-label="점수 산정 방식" title="점수 산정 방식">?</button></h1>
+    <h1>랭킹</h1>
 </div>
 <div class="tool-body">
     <div class="rank-me-card" id="rankMeCard">
         <div class="rank-me-label">내 누적</div>
         <div class="rank-me-values">
-            <div class="rank-me-value"><span id="rankMyGrand">0</span><span class="rank-me-unit">점</span></div>
-            <div class="rank-me-sep">·</div>
-            <div class="rank-me-rounds"><span id="rankMyRounds">0</span><span class="rank-me-unit"> 라운드</span></div>
+            <span class="rank-me-num" id="rankMyGrand">0</span>
+            <span class="rank-me-unit">점</span>
+            <span class="rank-me-sep">·</span>
+            <span class="rank-me-num" id="rankMyRounds">0</span>
+            <span class="rank-me-unit">라운드</span>
         </div>
+        <button class="rank-help-btn" type="button" aria-label="점수 산정 방식" title="점수 산정 방식">?</button>
     </div>
     <div class="rank-filters">
         <div class="rank-filter-group">
@@ -997,6 +1030,7 @@
                 <button class="rank-pill" data-diff="easy">쉬움</button>
                 <button class="rank-pill" data-diff="medium">보통</button>
                 <button class="rank-pill" data-diff="hard">어려움</button>
+                <button class="rank-pill" data-diff="hell">지옥</button>
             </div>
         </div>
     </div>
@@ -1022,9 +1056,10 @@
             <div>쉬움</div><div>× 1.0</div>
             <div>보통</div><div>× 1.5</div>
             <div>어려움</div><div>× 2.0</div>
+            <div class="rank-help-hell-row">지옥</div><div class="rank-help-hell-row">× 3.0</div>
         </div>
         <p class="rank-help-line">
-            예: <b>어려움</b>에서 10문제 모두 맞히면 <b>10 × 10 × 2.0 = 200점</b>
+            예: <b>지옥</b>에서 10문제 모두 맞히면 <b>10 × 10 × 3.0 = 300점</b>
         </p>
         <h3>주의사항</h3>
         <ul class="rank-help-list">

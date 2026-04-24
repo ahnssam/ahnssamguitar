@@ -431,6 +431,26 @@
             transition: color 0.18s;
             flex-shrink: 0;
         }
+        /* 커스텀 SVG 아이콘 (FA 에 없는 피아노/프렛보드) — menu-item i 와 같은
+           크기·색 규칙을 공유. currentColor 로 칠해서 hover/active 시 색 전환. */
+        .menu-item .cwk-icon {
+            width: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(26, 36, 33, 0.55);
+            flex-shrink: 0;
+            transition: color 0.18s;
+        }
+        .menu-item .cwk-icon svg { width: 16px; height: 16px; display: block; }
+        .menu-item:hover .cwk-icon,
+        .menu-item.active .cwk-icon { color: var(--green-deep); }
+        /* tool-header (패널 상단 48x48 뱃지) 내부 — 조금 크게 */
+        .tool-header-icon .cwk-icon { display: inline-flex; }
+        .tool-header-icon .cwk-icon svg { width: 24px; height: 24px; display: block; }
+        /* 모바일 tab strip dynamic 탭 — 세로 아이콘 */
+        .mobile-tab .cwk-icon { display: inline-flex; justify-content: center; }
+        .mobile-tab .cwk-icon svg { width: 18px; height: 18px; display: block; }
         .menu-item:hover {
             background: rgba(82, 168, 114, 0.12);
             color: var(--text-primary);
@@ -1209,6 +1229,832 @@
             width: 100%;
             height: 100%;
             display: block;
+        }
+
+        /* ===== Fretboard & Scales ===== */
+        #fretboardPanel .tool-body,
+        #scalesPanel .tool-body { max-width: 1160px; }
+
+        /* Top row — mode tabs centered + instrument dropdown on right (desktop);
+           tabs on left + dropdown on right (mobile/portrait). */
+        .fb-topbar {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .fb-topbar .fb-mode-tabs {
+            grid-column: 2;
+            justify-self: center;
+            margin-bottom: 0;
+        }
+        .fb-topbar .fb-inst-dropdown {
+            grid-column: 3;
+            justify-self: end;
+        }
+        /* Scale panel uses same topbar but without mode tabs — empty div in col 1
+           still occupies 1fr, dropdown stays right */
+        #scalesPanel .fb-topbar {
+            grid-template-columns: 1fr auto;
+        }
+        #scalesPanel .fb-topbar .fb-inst-dropdown {
+            grid-column: 2;
+        }
+
+        /* Mode tabs (Explore/Training) */
+        .fb-mode-tabs {
+            display: inline-flex;
+            gap: 0;
+            background: rgba(42, 107, 74, 0.06);
+            border: 1px solid rgba(42, 107, 74, 0.12);
+            border-radius: 24px;
+            padding: 3px;
+            margin-bottom: 1rem;
+        }
+        .fb-mode-tab {
+            border: none;
+            background: transparent;
+            color: rgba(26, 36, 33, 0.55);
+            padding: 0.45rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s;
+        }
+        .fb-mode-tab.active {
+            background: var(--green-mid);
+            color: #fff;
+        }
+        .fb-mode-tab:hover:not(.active) {
+            color: var(--green-deep);
+            background: rgba(82, 168, 114, 0.12);
+        }
+
+        /* Controls */
+        .fb-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            margin-bottom: 1.2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(42, 107, 74, 0.1);
+        }
+        .fb-control-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .fb-control-row-switches {
+            justify-content: space-between;
+        }
+
+        /* Instrument dropdown (replaces old 3-button pill) */
+        .fb-inst-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .fb-inst-current {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 0.85rem;
+            background: rgba(42, 107, 74, 0.06);
+            border: 1px solid rgba(42, 107, 74, 0.22);
+            border-radius: 22px;
+            color: var(--text-primary);
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .fb-inst-current:hover {
+            background: rgba(82, 168, 114, 0.15);
+            border-color: rgba(82, 168, 114, 0.45);
+        }
+        .fb-inst-icon {
+            color: var(--green-deep);
+            font-size: 0.9rem;
+        }
+        .fb-inst-chev {
+            font-size: 0.7rem;
+            color: rgba(26, 36, 33, 0.55);
+            transition: transform 0.2s;
+        }
+        .fb-inst-dropdown[data-open="true"] .fb-inst-chev {
+            transform: rotate(180deg);
+        }
+        .fb-inst-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            min-width: 100%;
+            background: #fff;
+            border: 1px solid rgba(42, 107, 74, 0.2);
+            border-radius: 12px;
+            padding: 4px;
+            box-shadow: 0 6px 20px rgba(42, 107, 74, 0.18);
+            display: none;
+            z-index: 40;
+            white-space: nowrap;
+        }
+        .fb-inst-dropdown[data-open="true"] .fb-inst-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .fb-inst-option {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.85rem;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: var(--text-mid);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.82rem;
+            text-align: left;
+            transition: background 0.12s, color 0.12s;
+        }
+        .fb-inst-option i { color: var(--green-deep); font-size: 0.85rem; }
+        .fb-inst-option:hover {
+            background: rgba(82, 168, 114, 0.15);
+            color: var(--green-deep);
+        }
+        .fb-inst-option.active {
+            background: var(--green-deep);
+            color: #fff;
+        }
+        .fb-inst-option.active i { color: #fff; }
+
+        /* Instrument toggle pill (legacy — kept for back-compat, not rendered now) */
+        .fb-inst-toggle {
+            display: inline-flex;
+            background: rgba(42, 107, 74, 0.06);
+            border: 1px solid rgba(42, 107, 74, 0.12);
+            border-radius: 24px;
+            padding: 3px;
+        }
+        .fb-inst-btn {
+            border: none;
+            background: transparent;
+            color: rgba(26, 36, 33, 0.6);
+            padding: 0.42rem 0.9rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .fb-inst-btn.active {
+            background: var(--green-deep);
+            color: #fff;
+        }
+        .fb-inst-btn:hover:not(.active) {
+            color: var(--green-deep);
+        }
+
+        /* Toggle switch */
+        .fb-switch {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            user-select: none;
+        }
+        .fb-switch input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .fb-switch-slider {
+            position: relative;
+            width: 38px;
+            height: 22px;
+            background: rgba(42, 107, 74, 0.18);
+            border-radius: 22px;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .fb-switch-slider::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            transition: transform 0.22s cubic-bezier(.5,0,.3,1.2);
+        }
+        .fb-switch input:checked + .fb-switch-slider {
+            background: var(--green-mid);
+        }
+        .fb-switch input:checked + .fb-switch-slider::before {
+            transform: translateX(16px);
+        }
+        .fb-switch-label {
+            font-size: 0.82rem;
+            color: var(--text-mid);
+        }
+
+        /* Fret range buttons */
+        .fb-fretrange {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .fb-fretrange-label {
+            font-size: 0.75rem;
+            color: rgba(26, 36, 33, 0.5);
+            margin-right: 0.25rem;
+        }
+        .fb-fretrange-btn {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.75rem;
+            border-radius: 14px;
+            border: 1px solid rgba(42, 107, 74, 0.18);
+            background: rgba(42, 107, 74, 0.06);
+            color: rgba(26, 36, 33, 0.55);
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .fb-fretrange-btn.active {
+            background: var(--green-mid);
+            color: #fff;
+            border-color: var(--green-mid);
+        }
+        .fb-fretrange-expand {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 1px solid rgba(42, 107, 74, 0.18);
+            background: rgba(42, 107, 74, 0.06);
+            color: var(--green-deep);
+            cursor: pointer;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .fb-fretrange-expand:hover {
+            background: rgba(82, 168, 114, 0.2);
+        }
+
+        /* Fretboard stage */
+        .fb-stage {
+            position: relative;
+            background: #f9fcfa;
+            border: 1px solid rgba(42, 107, 74, 0.1);
+            border-radius: 12px;
+            padding: 0.8rem;
+        }
+        /* 피아노 건반 — 인터랙션 */
+        .pn-key { cursor: pointer; transition: fill 0.1s; }
+        .pn-white:hover { fill: #f0f7f3; }
+        .pn-black:hover { fill: #2e3d38; }
+        .pn-key-active.pn-white { fill: #c8ecd6 !important; }
+        .pn-key-active.pn-black { fill: #52a872 !important; }
+
+        /* 지판 확대/축소 돋보기 버튼 — .fb-stage 우상단 플로팅 */
+        .fb-zoom-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 5;
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border-radius: 50%;
+            border: 1px solid rgba(42, 107, 74, 0.28);
+            background: rgba(255, 255, 255, 0.92);
+            color: var(--green-deep);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+        .fb-zoom-btn:hover {
+            background: #fff;
+            border-color: rgba(42, 107, 74, 0.55);
+        }
+        .fb-zoom-btn.zoomed {
+            background: var(--green-deep);
+            border-color: var(--green-deep);
+            color: #fff;
+        }
+        .fb-scroller {
+            overflow-x: auto;
+            overflow-y: auto;
+            cursor: grab;
+            /* Hide native scrollbar — we draw our own below */
+            scrollbar-width: none;            /* Firefox */
+            -ms-overflow-style: none;         /* IE/Edge legacy */
+            -webkit-overflow-scrolling: touch;
+            max-height: 70vh;
+            /* Disable default touch gestures so we can handle drag-to-play */
+            touch-action: pan-x pan-y;
+        }
+        .fb-scroller::-webkit-scrollbar { display: none; width: 0; height: 0; }
+        .fb-scroller.dragging { cursor: grabbing; }
+        .fb-board-wrap {
+            display: inline-block;
+            min-width: 100%;
+        }
+        .fb-svg {
+            display: block;
+            user-select: none;
+            -webkit-user-select: none;
+            /* Enable drag gesture — we prevent default scroll from touch start */
+            touch-action: none;
+        }
+        /* Vertical rotation mode: center and cap width */
+        .fb-board-wrap.vertical {
+            display: block;
+            text-align: center;
+        }
+        .fb-board-wrap.vertical .fb-svg {
+            margin: 0 auto;
+        }
+
+        /* Custom always-visible scrollbar */
+        .fb-scrollbar {
+            display: flex;
+            align-items: stretch;
+            gap: 6px;
+            margin-top: 10px;
+            user-select: none;
+            -webkit-user-select: none;
+            /* Stop the browser from hijacking horizontal drags as
+               swipe-back / native scroll gestures (those fire
+               pointercancel and kill our drag). */
+            touch-action: none;
+        }
+        .fb-scroll-arrow {
+            width: 32px;
+            height: 28px;
+            border: 1px solid rgba(42, 107, 74, 0.22);
+            background: rgba(42, 107, 74, 0.08);
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(26, 36, 33, 0.7);
+            font-size: 0.75rem;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+            flex-shrink: 0;
+            font-family: inherit;
+        }
+        .fb-scroll-arrow:hover {
+            background: rgba(82, 168, 114, 0.22);
+            border-color: rgba(82, 168, 114, 0.5);
+            color: var(--green-deep);
+        }
+        .fb-scroll-arrow:active {
+            background: rgba(82, 168, 114, 0.35);
+        }
+        .fb-scroll-arrow:disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
+        .fb-scrollbar-track {
+            flex: 1;
+            height: 28px;
+            background: rgba(42, 107, 74, 0.08);
+            border: 1px solid rgba(42, 107, 74, 0.18);
+            border-radius: 8px;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            touch-action: none;
+        }
+        .fb-scrollbar-thumb {
+            position: absolute;
+            top: 2px;
+            bottom: 2px;
+            left: 0;
+            width: 100px;
+            min-width: 56px;
+            background: var(--green-mid);
+            border-radius: 6px;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            transition: background 0.12s;
+            touch-action: none;
+        }
+        .fb-scrollbar-thumb:hover {
+            background: var(--green-dark);
+        }
+        .fb-scrollbar-thumb.dragging {
+            cursor: grabbing;
+            background: var(--green-deep);
+        }
+        .fb-scrollbar-grip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 0.65rem;
+            pointer-events: none;
+        }
+        .fb-scrollbar-grip i:first-child,
+        .fb-scrollbar-grip i:last-child { font-size: 0.7rem; }
+        .fb-scrollbar-grip i:nth-child(2) {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+        /* Disabled state — still visible but no movement possible */
+        .fb-scrollbar.disabled .fb-scrollbar-thumb {
+            background: rgba(42, 107, 74, 0.18);
+            cursor: default;
+        }
+        .fb-scrollbar.disabled .fb-scrollbar-grip {
+            color: rgba(26, 36, 33, 0.35);
+        }
+        .fb-scrollbar.disabled .fb-scroll-arrow {
+            opacity: 0.4;
+            cursor: default;
+        }
+
+        /* Training panel — compact, single-row prompt */
+        .fb-training-panel {
+            background: rgba(82, 168, 114, 0.08);
+            border: 1px solid rgba(82, 168, 114, 0.25);
+            border-radius: 12px;
+            padding: 0.7rem 0.9rem;
+            margin-bottom: 0.7rem;
+        }
+        .fb-train-main {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.9rem;
+        }
+        .fb-train-left {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            flex: 1;
+            min-width: 0;
+        }
+        .fb-train-hint {
+            font-size: 0.92rem;
+            color: var(--text-mid);
+            font-weight: 500;
+        }
+        .fb-train-note-big {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.4rem;
+            font-weight: 700;
+            color: var(--green-deep);
+            line-height: 1;
+            min-width: 1.4ch;
+            text-align: center;
+            display: inline-block;
+            letter-spacing: -0.02em;
+        }
+        .fb-train-actions-col {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            flex-shrink: 0;
+        }
+        .fb-train-btn-main {
+            padding: 0.38rem 0.8rem;
+            border-radius: 18px;
+            border: none;
+            background: var(--green-deep);
+            color: #fff;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.76rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            white-space: nowrap;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .fb-train-btn-main:hover { background: var(--green-dark); }
+        .fb-train-btn-main.fb-train-btn-ghost {
+            background: transparent;
+            color: var(--green-deep);
+            border: 1px solid rgba(42, 107, 74, 0.3);
+            padding: 0.34rem 0.8rem; /* compensate for border */
+        }
+        .fb-train-btn-main.fb-train-btn-ghost:hover {
+            background: rgba(82, 168, 114, 0.15);
+            border-color: rgba(82, 168, 114, 0.55);
+        }
+
+        .fb-train-feedback {
+            margin: 0.35rem 0 0.5rem;
+            text-align: center;
+            font-size: 0.82rem;
+            min-height: 1rem;
+            line-height: 1;
+            font-weight: 500;
+            color: transparent;
+            transition: color 0.12s;
+        }
+        .fb-train-feedback.ok { color: var(--green-deep); }
+        .fb-train-feedback.bad { color: #c44034; }
+
+        /* 5-level difficulty — narrow, centered row (no grid stretching) */
+        .fb-train-levels {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.3rem;
+            margin-top: 0.3rem;
+        }
+        .fb-train-level {
+            padding: 0.35rem 0.65rem;
+            font-size: 0.74rem;
+            font-weight: 500;
+            border-radius: 14px;
+            border: 1px solid rgba(42, 107, 74, 0.22);
+            background: #fff;
+            color: var(--text-mid);
+            cursor: pointer;
+            font-family: inherit;
+            flex: 0 0 auto;
+            transition: all 0.15s;
+        }
+        .fb-train-level:hover {
+            background: rgba(82, 168, 114, 0.14);
+            color: var(--green-deep);
+            border-color: rgba(82, 168, 114, 0.5);
+        }
+        .fb-train-level.active {
+            background: var(--green-deep);
+            color: #fff;
+            border-color: var(--green-deep);
+        }
+        .fb-train-level-desc {
+            margin-top: 0.35rem;
+            text-align: center;
+            font-size: 0.7rem;
+            color: rgba(26, 36, 33, 0.55);
+            letter-spacing: 0.03em;
+        }
+
+        @media (max-width: 520px) {
+            .fb-train-note-big { font-size: 2.6rem; }
+            .fb-train-hint { font-size: 0.82rem; }
+            .fb-train-left { gap: 0.6rem; }
+            .fb-train-btn-main { font-size: 0.72rem; padding: 0.32rem 0.6rem; }
+            .fb-train-level { font-size: 0.68rem; padding: 0.32rem 0.5rem; }
+        }
+
+        /* Scales picker */
+        .sc-select-row {
+            display: grid;
+            /* 루트 / 스케일 양쪽이 비슷한 비율(1:1)을 차지하도록 한다.
+               기존엔 auto 1fr 이라 루트는 max-width(280px)에 고정되고 스케일이
+               남은 공간을 전부 먹어 한쪽이 지나치게 넓어 보였다. */
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            align-items: start;
+        }
+        .sc-select-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            min-width: 0;
+        }
+        .sc-select-label {
+            font-size: 0.72rem;
+            color: rgba(26, 36, 33, 0.45);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        .sc-root-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.25rem;
+            /* max-width 제거 — 루트 칸이 그리드 컬럼 폭을 그대로 쓰도록 한다.
+               (각 버튼이 더 큼직해지고 탭 타겟이 좋아짐) */
+            width: 100%;
+        }
+        .sc-root-btn {
+            padding: 0.4rem 0;
+            font-size: 0.78rem;
+            border-radius: 8px;
+            border: 1px solid rgba(42, 107, 74, 0.18);
+            background: rgba(42, 107, 74, 0.06);
+            color: rgba(26, 36, 33, 0.7);
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+        .sc-root-btn:hover {
+            background: rgba(82, 168, 114, 0.18);
+            color: var(--green-deep);
+        }
+        .sc-root-btn.active {
+            background: var(--green-deep);
+            color: #fff;
+            border-color: var(--green-deep);
+        }
+        .sc-scale-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+        }
+        .sc-scale-tab {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.75rem;
+            border-radius: 16px;
+            border: 1px solid rgba(42, 107, 74, 0.18);
+            background: rgba(42, 107, 74, 0.06);
+            color: rgba(26, 36, 33, 0.6);
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+        .sc-scale-tab:hover { background: rgba(82, 168, 114, 0.15); }
+        .sc-scale-tab.active {
+            background: var(--green-mid);
+            color: #fff;
+            border-color: var(--green-mid);
+        }
+        /* 스케일 섹션: 카테고리 드롭다운 + 세부 스케일 드롭다운을
+           가로로 나란히 배치 (label 들이 짧아서 세로로 쌓을 필요 X). */
+        .sc-scale-dropdowns {
+            display: flex;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+        .sc-scale-dropdowns > .sc-scale-dropdown {
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* Scale dropdown (one per category) */
+        .sc-scale-dropdown {
+            position: relative;
+            display: block;
+        }
+        .sc-scale-dropdown.hidden { display: none; }
+        .sc-scale-current {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0.55rem 0.85rem;
+            width: 100%;
+            background: #fff;
+            border: 1px solid rgba(42, 107, 74, 0.28);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 0.86rem;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: inherit;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .sc-scale-current:hover {
+            background: rgba(82, 168, 114, 0.08);
+            border-color: rgba(82, 168, 114, 0.55);
+        }
+        .sc-scale-chev {
+            font-size: 0.72rem;
+            color: rgba(26,36,33,0.55);
+            transition: transform 0.2s;
+        }
+        .sc-scale-dropdown[data-open="true"] .sc-scale-chev {
+            transform: rotate(180deg);
+        }
+        .sc-scale-dropdown.single .sc-scale-current {
+            cursor: default;
+        }
+        .sc-scale-dropdown.single .sc-scale-chev {
+            display: none;
+        }
+        .sc-scale-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid rgba(42, 107, 74, 0.22);
+            border-radius: 10px;
+            padding: 4px;
+            box-shadow: 0 8px 26px rgba(42, 107, 74, 0.16);
+            display: none;
+            z-index: 40;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .sc-scale-dropdown[data-open="true"] .sc-scale-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .sc-scale-menu-item {
+            padding: 0.55rem 0.8rem;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: var(--text-mid);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-align: left;
+            transition: background 0.12s, color 0.12s;
+        }
+        .sc-scale-menu-item:hover {
+            background: rgba(82, 168, 114, 0.14);
+            color: var(--green-deep);
+        }
+        .sc-scale-menu-item.active {
+            background: var(--green-deep);
+            color: #fff;
+        }
+        .sc-info {
+            background: rgba(42, 107, 74, 0.04);
+            border: 1px solid rgba(42, 107, 74, 0.1);
+            border-radius: 10px;
+            padding: 0.7rem 0.9rem;
+            margin-bottom: 1rem;
+            font-size: 0.82rem;
+            color: var(--text-mid);
+            line-height: 1.5;
+            display: none;
+        }
+        .sc-info.show { display: block; }
+        .sc-info b {
+            color: var(--green-deep);
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+        .sc-info .sc-notes-list {
+            margin-top: 0.3rem;
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            color: var(--green-deep);
+            letter-spacing: 0.05em;
+        }
+
+        /* Fret dot tap animation */
+        @keyframes fbDotPulse {
+            0%   { r: var(--fb-dot-r, 9); opacity: 0.9; }
+            50%  { r: calc(var(--fb-dot-r, 9) * 1.5); opacity: 1; }
+            100% { r: var(--fb-dot-r, 9); opacity: 0.9; }
+        }
+        .fb-click-indicator {
+            animation: fbRippleFade 0.6s ease-out forwards;
+            pointer-events: none;
+        }
+        @keyframes fbRippleFade {
+            0%   { opacity: 0.6; r: 5; }
+            100% { opacity: 0; r: 34; }
+        }
+
+        @media (max-width: 900px), (orientation: portrait) {
+            #fretboardPanel .tool-body,
+            #scalesPanel .tool-body { max-width: none; }
+            .sc-select-row {
+                grid-template-columns: 1fr;
+            }
+            .sc-root-grid { max-width: 100%; }
+            .fb-control-row-switches { gap: 0.6rem; }
+            .fb-switch-label { font-size: 0.75rem; }
+            .fb-train-note { font-size: 2rem; }
+            .fb-train-top { flex-direction: column; align-items: flex-start; }
+            .fb-train-actions { width: 100%; }
+            .fb-train-actions .fb-train-btn { flex: 1; justify-content: center; }
+
+            /* Topbar: tabs LEFT, dropdown RIGHT */
+            .fb-topbar { grid-template-columns: auto 1fr; }
+            .fb-topbar .fb-mode-tabs { grid-column: 1; justify-self: start; }
+            .fb-topbar .fb-inst-dropdown { grid-column: 2; justify-self: end; }
+            #scalesPanel .fb-topbar { grid-template-columns: 1fr; }
+            #scalesPanel .fb-topbar .fb-inst-dropdown { grid-column: 1; justify-self: end; }
+
+            .fb-mode-tab { padding: 0.4rem 0.75rem; font-size: 0.76rem; }
+            .fb-inst-current { padding: 0.4rem 0.7rem; font-size: 0.76rem; }
         }
 
         /* ===== Chord Modal ===== */
@@ -2546,7 +3392,8 @@
 
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-section-label">연습 도구</div>
+        <!-- 1. 연주 보조 — 실시간 유틸리티 (튜너 / 메트로놈 / 탭템포 / 카포) -->
+        <div class="sidebar-section-label">연주 보조</div>
         <nav class="sidebar-menu">
             <button class="menu-item active" data-tool="tuner" onclick="switchTool('tuner')">
                 <i class="fas fa-microphone"></i><span>튜너</span>
@@ -2554,17 +3401,34 @@
             <button class="menu-item" data-tool="metronome" onclick="switchTool('metronome')">
                 <i class="fas fa-stopwatch"></i><span>메트로놈</span>
             </button>
-            <button class="menu-item" data-tool="eartraining" onclick="switchTool('eartraining')">
-                <i class="fas fa-headphones"></i><span>음정 트레이닝</span>
-            </button>
-            <button class="menu-item" data-tool="chords" onclick="switchTool('chords')">
-                <i class="fas fa-guitar"></i><span>코드 라이브러리</span>
+            <button class="menu-item" data-tool="taptempo" onclick="switchTool('taptempo')">
+                <i class="fas fa-hand-pointer"></i><span>탭템포</span>
             </button>
             <button class="menu-item" data-tool="capo" onclick="switchTool('capo')">
                 <i class="fas fa-sliders-h"></i><span>카포 계산기</span>
             </button>
-            <button class="menu-item" data-tool="taptempo" onclick="switchTool('taptempo')">
-                <i class="fas fa-hand-pointer"></i><span>탭템포</span>
+        </nav>
+        <!-- 2. 지판 & 이론 — 시각 참조/탐색 (코드라이브러리 / 프렛보드 / 스케일 / 피아노) -->
+        <div class="sidebar-section-label" style="margin-top:0.6rem;">지판 &amp; 이론</div>
+        <nav class="sidebar-menu">
+            <button class="menu-item" data-tool="chords" onclick="switchTool('chords')">
+                <i class="fas fa-guitar"></i><span>코드 라이브러리</span>
+            </button>
+            <button class="menu-item" data-tool="fretboard" onclick="switchTool('fretboard')">
+                <span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="3" width="15" height="10" fill="none" stroke="currentColor" stroke-width="1.2" rx="0.6"/><line x1="2" y1="3" x2="2" y2="13" stroke="currentColor" stroke-width="1.6"/><line x1="5.5" y1="3" x2="5.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="9" y1="3" x2="9" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="12.5" y1="3" x2="12.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="0.5" y1="5" x2="15.5" y2="5" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="7" x2="15.5" y2="7" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="9" x2="15.5" y2="9" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="11" x2="15.5" y2="11" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><circle cx="7.25" cy="8" r="0.85" fill="currentColor" opacity="0.75"/></svg></span><span>프렛보드</span>
+            </button>
+            <button class="menu-item" data-tool="scales" onclick="switchTool('scales')">
+                <i class="fas fa-music"></i><span>스케일</span>
+            </button>
+            <button class="menu-item" data-tool="piano" onclick="switchTool('piano')">
+                <span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="2.5" width="15" height="12" fill="none" stroke="currentColor" stroke-width="1.1" rx="1"/><line x1="4.25" y1="2.5" x2="4.25" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="8" y1="2.5" x2="8" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="11.75" y1="2.5" x2="11.75" y2="14.5" stroke="currentColor" stroke-width="0.8"/><rect x="2.8" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="6.55" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="10.3" y="2.5" width="2.9" height="7" fill="currentColor"/></svg></span><span>피아노</span>
+            </button>
+        </nav>
+        <!-- 3. 청음 훈련 — 채점형 (음정 트레이닝) -->
+        <div class="sidebar-section-label" style="margin-top:0.6rem;">청음 훈련</div>
+        <nav class="sidebar-menu">
+            <button class="menu-item" data-tool="eartraining" onclick="switchTool('eartraining')">
+                <i class="fas fa-headphones"></i><span>음정 트레이닝</span>
             </button>
         </nav>
         <div class="sidebar-section-label" style="margin-top:0.6rem;">내 기록</div>
@@ -2947,6 +3811,248 @@
             </div>
         </section>
 
+        <!-- Fretboard (지판) -->
+        <section class="tool-panel" id="fretboardPanel">
+            <div class="tool-header">
+                <div class="tool-header-icon"><span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="3" width="15" height="10" fill="none" stroke="currentColor" stroke-width="1.2" rx="0.6"/><line x1="2" y1="3" x2="2" y2="13" stroke="currentColor" stroke-width="1.6"/><line x1="5.5" y1="3" x2="5.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="9" y1="3" x2="9" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="12.5" y1="3" x2="12.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="0.5" y1="5" x2="15.5" y2="5" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="7" x2="15.5" y2="7" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="9" x2="15.5" y2="9" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="11" x2="15.5" y2="11" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><circle cx="7.25" cy="8" r="0.85" fill="currentColor" opacity="0.75"/></svg></span></div>
+                <h1>프렛보드</h1>
+            </div>
+            <div class="tool-body">
+                <!-- Top row: mode tabs (centered on desktop, left on mobile) + instrument dropdown (far right) -->
+                <div class="fb-topbar">
+                    <div class="fb-mode-tabs">
+                        <button class="fb-mode-tab active" data-mode="explore" onclick="fbSwitchMode('explore')">
+                            <i class="fas fa-hand-pointer"></i> 탐색
+                        </button>
+                        <button class="fb-mode-tab" data-mode="training" onclick="fbSwitchMode('training')">
+                            <i class="fas fa-bullseye"></i> 트레이닝
+                        </button>
+                    </div>
+                    <div class="fb-inst-dropdown" id="fbInstDropdown">
+                        <button class="fb-inst-current" type="button" onclick="fbToggleInstMenu(event)" aria-haspopup="listbox" aria-expanded="false">
+                            <i class="fas fa-guitar fb-inst-icon"></i>
+                            <span class="fb-inst-current-label">기타</span>
+                            <i class="fas fa-chevron-down fb-inst-chev"></i>
+                        </button>
+                        <div class="fb-inst-menu" role="listbox">
+                            <button class="fb-inst-option active" data-inst="guitar" onclick="fbSetInstrument('guitar')"><i class="fas fa-guitar"></i> 기타</button>
+                            <button class="fb-inst-option" data-inst="bass4" onclick="fbSetInstrument('bass4')"><i class="fas fa-guitar"></i> 베이스 4현</button>
+                            <button class="fb-inst-option" data-inst="bass5" onclick="fbSetInstrument('bass5')"><i class="fas fa-guitar"></i> 베이스 5현</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="fb-controls">
+                    <div class="fb-control-row fb-control-row-switches">
+                        <label class="fb-switch">
+                            <input type="checkbox" id="fbShowNotes" checked onchange="fbToggleShowNotes(this.checked)">
+                            <span class="fb-switch-slider"></span>
+                            <span class="fb-switch-label">음정 보기</span>
+                        </label>
+                        <label class="fb-switch">
+                            <input type="checkbox" id="fbVertical" onchange="fbToggleVertical(this.checked)">
+                            <span class="fb-switch-slider"></span>
+                            <span class="fb-switch-label">세로로 회전</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Training panel (hidden in explore mode) -->
+                <div class="fb-training-panel" id="fbTrainingPanel" style="display:none;">
+                    <!-- Single row: label + big letter on LEFT, action buttons stacked on RIGHT -->
+                    <div class="fb-train-main">
+                        <div class="fb-train-left">
+                            <span class="fb-train-hint">지판에서 찾아보세요</span>
+                            <span class="fb-train-note-big" id="fbTrainNote">—</span>
+                        </div>
+                        <div class="fb-train-actions-col">
+                            <button class="fb-train-btn-main" onclick="fbReplayTarget()">
+                                <i class="fas fa-volume-up"></i> 다시 듣기
+                            </button>
+                            <button class="fb-train-btn-main fb-train-btn-ghost" onclick="fbNextTrainingNote()">
+                                <i class="fas fa-forward"></i> 다음 문제
+                            </button>
+                        </div>
+                    </div>
+                    <div class="fb-train-feedback" id="fbTrainFeedback"></div>
+                    <!-- 5-level difficulty selector (narrow, centered) -->
+                    <div class="fb-train-levels" role="tablist" aria-label="난이도">
+                        <button class="fb-train-level active" data-level="1" onclick="fbSetLevel(1)">1단계</button>
+                        <button class="fb-train-level" data-level="2" onclick="fbSetLevel(2)">2단계</button>
+                        <button class="fb-train-level" data-level="3" onclick="fbSetLevel(3)">3단계</button>
+                        <button class="fb-train-level" data-level="4" onclick="fbSetLevel(4)">4단계</button>
+                        <button class="fb-train-level" data-level="5" onclick="fbSetLevel(5)">5단계</button>
+                    </div>
+                    <div class="fb-train-level-desc" id="fbTrainLevelDesc">전체 지판</div>
+                </div>
+
+                <!-- Fretboard display -->
+                <div class="fb-stage">
+                    <button class="fb-zoom-btn" id="fbZoomBtn" type="button" onclick="fbToggleZoom()" aria-label="확대/축소" title="확대/축소">
+                        <i class="fas fa-magnifying-glass-plus"></i>
+                    </button>
+                    <div class="fb-scroller" id="fbScroller">
+                        <div class="fb-board-wrap" id="fbBoardWrap">
+                            <svg class="fb-svg" id="fbSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+                        </div>
+                    </div>
+                    <div class="fb-scrollbar" id="fbScrollbar" aria-label="지판 좌우 이동">
+                        <button class="fb-scroll-arrow fb-scroll-arrow-left" aria-label="왼쪽으로"><i class="fas fa-chevron-left"></i></button>
+                        <div class="fb-scrollbar-track">
+                            <div class="fb-scrollbar-thumb">
+                                <span class="fb-scrollbar-grip"><i class="fas fa-chevron-left"></i><i class="fas fa-grip-lines-vertical"></i><i class="fas fa-chevron-right"></i></span>
+                            </div>
+                        </div>
+                        <button class="fb-scroll-arrow fb-scroll-arrow-right" aria-label="오른쪽으로"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Scales (스케일) -->
+        <section class="tool-panel" id="scalesPanel">
+            <div class="tool-header">
+                <div class="tool-header-icon"><i class="fas fa-music"></i></div>
+                <h1>스케일</h1>
+            </div>
+            <div class="tool-body">
+                <div class="fb-topbar">
+                    <div></div>
+                    <div class="fb-inst-dropdown" id="scInstDropdown">
+                        <button class="fb-inst-current" type="button" onclick="scToggleInstMenu(event)" aria-haspopup="listbox" aria-expanded="false">
+                            <i class="fas fa-guitar fb-inst-icon"></i>
+                            <span class="fb-inst-current-label">기타</span>
+                            <i class="fas fa-chevron-down fb-inst-chev"></i>
+                        </button>
+                        <div class="fb-inst-menu" role="listbox">
+                            <button class="fb-inst-option active" data-inst="guitar" onclick="scSetInstrument('guitar')"><i class="fas fa-guitar"></i> 기타</button>
+                            <button class="fb-inst-option" data-inst="bass4" onclick="scSetInstrument('bass4')"><i class="fas fa-guitar"></i> 베이스 4현</button>
+                            <button class="fb-inst-option" data-inst="bass5" onclick="scSetInstrument('bass5')"><i class="fas fa-guitar"></i> 베이스 5현</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fb-controls">
+                    <div class="sc-select-row">
+                        <div class="sc-select-group">
+                            <label class="sc-select-label">루트</label>
+                            <div class="sc-root-grid" id="scRootGrid"></div>
+                        </div>
+                        <div class="sc-select-group">
+                            <label class="sc-select-label">스케일</label>
+                            <!-- 카테고리(큰 범주) 드롭다운과 세부 스케일 드롭다운을
+                                 세로로 쌓지 않고 옆으로 배치 (short label 들이라
+                                 가로 공간이 아깝지 않음). -->
+                            <div class="sc-scale-dropdowns">
+                                <!-- Category drawer -->
+                                <div class="sc-scale-dropdown sc-cat-dropdown" id="scCategoryDropdown" data-open="false">
+                                    <button class="sc-scale-current" type="button" onclick="scToggleCategoryMenu(event)" aria-haspopup="listbox" aria-expanded="false">
+                                        <span class="sc-scale-current-label" id="scCategoryCurrentLabel">메이저</span>
+                                        <i class="fas fa-chevron-down sc-scale-chev"></i>
+                                    </button>
+                                    <div class="sc-scale-menu" id="scCategoryMenu" role="listbox">
+                                        <button class="sc-scale-menu-item active" data-cat="major" onclick="scSetCategory('major')">메이저</button>
+                                        <button class="sc-scale-menu-item" data-cat="minor" onclick="scSetCategory('minor')">마이너</button>
+                                        <button class="sc-scale-menu-item" data-cat="pent" onclick="scSetCategory('pent')">펜타/블루스</button>
+                                        <button class="sc-scale-menu-item" data-cat="modes" onclick="scSetCategory('modes')">모드</button>
+                                        <button class="sc-scale-menu-item" data-cat="exotic" onclick="scSetCategory('exotic')">특이 스케일</button>
+                                    </div>
+                                </div>
+                                <!-- 세부 스케일 dropdown. 단일 스케일 카테고리
+                                     (메이저 등)에선 static label 로 표시. -->
+                                <div class="sc-scale-dropdown" id="scScaleDropdown" data-open="false">
+                                    <button class="sc-scale-current" type="button" onclick="scToggleScaleMenu(event)" aria-haspopup="listbox" aria-expanded="false">
+                                        <span class="sc-scale-current-label" id="scScaleCurrentLabel">메이저 스케일</span>
+                                        <i class="fas fa-chevron-down sc-scale-chev"></i>
+                                    </button>
+                                    <div class="sc-scale-menu" id="scScaleMenu" role="listbox"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="fb-control-row fb-control-row-switches">
+                        <label class="fb-switch">
+                            <input type="checkbox" id="scShowNotes" checked onchange="scToggleShowNotes(this.checked)">
+                            <span class="fb-switch-slider"></span>
+                            <span class="fb-switch-label">음정 보기</span>
+                        </label>
+                        <label class="fb-switch">
+                            <input type="checkbox" id="scHighlightRoot" checked onchange="scToggleHighlightRoot(this.checked)">
+                            <span class="fb-switch-slider"></span>
+                            <span class="fb-switch-label">루트 강조</span>
+                        </label>
+                        <label class="fb-switch">
+                            <input type="checkbox" id="scVertical" onchange="scToggleVertical(this.checked)">
+                            <span class="fb-switch-slider"></span>
+                            <span class="fb-switch-label">세로로 회전</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="sc-info" id="scInfo"></div>
+
+                <div class="fb-stage">
+                    <button class="fb-zoom-btn" id="scZoomBtn" type="button" onclick="scToggleZoom()" aria-label="확대/축소" title="확대/축소">
+                        <i class="fas fa-magnifying-glass-plus"></i>
+                    </button>
+                    <div class="fb-scroller" id="scScroller">
+                        <div class="fb-board-wrap" id="scBoardWrap">
+                            <svg class="fb-svg" id="scSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+                        </div>
+                    </div>
+                    <div class="fb-scrollbar" id="scScrollbar" aria-label="지판 좌우 이동">
+                        <button class="fb-scroll-arrow fb-scroll-arrow-left" aria-label="왼쪽으로"><i class="fas fa-chevron-left"></i></button>
+                        <div class="fb-scrollbar-track">
+                            <div class="fb-scrollbar-thumb">
+                                <span class="fb-scrollbar-grip"><i class="fas fa-chevron-left"></i><i class="fas fa-grip-lines-vertical"></i><i class="fas fa-chevron-right"></i></span>
+                            </div>
+                        </div>
+                        <button class="fb-scroll-arrow fb-scroll-arrow-right" aria-label="오른쪽으로"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Piano (피아노) -->
+        <section class="tool-panel" id="pianoPanel">
+            <div class="tool-header">
+                <div class="tool-header-icon"><span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="2.5" width="15" height="12" fill="none" stroke="currentColor" stroke-width="1.1" rx="1"/><line x1="4.25" y1="2.5" x2="4.25" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="8" y1="2.5" x2="8" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="11.75" y1="2.5" x2="11.75" y2="14.5" stroke="currentColor" stroke-width="0.8"/><rect x="2.8" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="6.55" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="10.3" y="2.5" width="2.9" height="7" fill="currentColor"/></svg></span></div>
+                <h1>피아노</h1>
+            </div>
+            <div class="tool-body">
+                <div class="fb-controls">
+                    <div class="fb-control-row fb-control-row-switches">
+                        <label class="fb-switch">
+                            <input type="checkbox" id="pnShowNotes" checked onchange="pnToggleShowNotes(this.checked)">
+                            <span class="fb-switch-slider"></span>
+                            <span class="fb-switch-label">음정 보기</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="fb-stage">
+                    <button class="fb-zoom-btn" id="pnZoomBtn" type="button" onclick="pnToggleZoom()" aria-label="확대/축소" title="확대/축소">
+                        <i class="fas fa-magnifying-glass-plus"></i>
+                    </button>
+                    <div class="fb-scroller" id="pnScroller">
+                        <div class="fb-board-wrap" id="pnBoardWrap">
+                            <svg class="fb-svg" id="pnSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+                        </div>
+                    </div>
+                    <div class="fb-scrollbar" id="pnScrollbar" aria-label="건반 좌우 이동">
+                        <button class="fb-scroll-arrow fb-scroll-arrow-left" aria-label="왼쪽으로"><i class="fas fa-chevron-left"></i></button>
+                        <div class="fb-scrollbar-track">
+                            <div class="fb-scrollbar-thumb">
+                                <span class="fb-scrollbar-grip"><i class="fas fa-chevron-left"></i><i class="fas fa-grip-lines-vertical"></i><i class="fas fa-chevron-right"></i></span>
+                            </div>
+                        </div>
+                        <button class="fb-scroll-arrow fb-scroll-arrow-right" aria-label="오른쪽으로"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Capo Calculator -->
         <section class="tool-panel" id="capoPanel" style="position:relative;">
             <div class="tool-header">
@@ -3088,9 +4194,16 @@
             if (btn) btn.classList.add('active');
             if (panel) panel.classList.add('active');
             // Sync mobile 3-tab strip — 3rd tab is dynamic
+            // 피아노·프렛보드는 커스텀 SVG, 나머지는 FA 클래스명.
+            // iconHtml 가 있으면 그걸 쓰고 없으면 <i class="fas ..."> 로 폴백.
+            const FB_SVG = '<span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="3" width="15" height="10" fill="none" stroke="currentColor" stroke-width="1.2" rx="0.6"/><line x1="2" y1="3" x2="2" y2="13" stroke="currentColor" stroke-width="1.6"/><line x1="5.5" y1="3" x2="5.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="9" y1="3" x2="9" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="12.5" y1="3" x2="12.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="0.5" y1="5" x2="15.5" y2="5" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="7" x2="15.5" y2="7" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="9" x2="15.5" y2="9" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="11" x2="15.5" y2="11" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><circle cx="7.25" cy="8" r="0.85" fill="currentColor" opacity="0.75"/></svg></span>';
+            const PN_SVG = '<span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="2.5" width="15" height="12" fill="none" stroke="currentColor" stroke-width="1.1" rx="1"/><line x1="4.25" y1="2.5" x2="4.25" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="8" y1="2.5" x2="8" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="11.75" y1="2.5" x2="11.75" y2="14.5" stroke="currentColor" stroke-width="0.8"/><rect x="2.8" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="6.55" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="10.3" y="2.5" width="2.9" height="7" fill="currentColor"/></svg></span>';
             const DYN = {
                 eartraining: { label: '음정',   icon: 'fa-headphones' },
                 chords:      { label: '코드',   icon: 'fa-guitar' },
+                fretboard:   { label: '지판',   iconHtml: FB_SVG },
+                scales:      { label: '스케일', icon: 'fa-music' },
+                piano:       { label: '피아노', iconHtml: PN_SVG },
                 capo:        { label: '카포',   icon: 'fa-sliders-h' },
                 taptempo:    { label: '탭템포', icon: 'fa-hand-pointer' }
                 // NOTE: ranking/mypage deliberately NOT here — they don't replace the dynamic tab
@@ -3102,7 +4215,9 @@
             const dynTab = document.getElementById('mobileDynamicTab');
             if (dynTab && DYN[tool]) {
                 dynTab.dataset.tool = tool;
-                dynTab.innerHTML = '<i class="fas ' + DYN[tool].icon + '"></i><span>' + DYN[tool].label + '</span>';
+                const iconMarkup = DYN[tool].iconHtml ||
+                    ('<i class="fas ' + DYN[tool].icon + '"></i>');
+                dynTab.innerHTML = iconMarkup + '<span>' + DYN[tool].label + '</span>';
             }
             const mbtn = document.querySelector('.mobile-tab[data-tool="' + tool + '"]');
             if (mbtn) mbtn.classList.add('active');
@@ -3111,6 +4226,9 @@
             if (tool === 'chords' && typeof window.initChordLibrary === 'function') window.initChordLibrary();
             if (tool === 'eartraining' && typeof window.initEarTraining === 'function') window.initEarTraining();
             if (tool === 'capo' && typeof window.initCapo === 'function') window.initCapo();
+            if (tool === 'fretboard' && typeof window.initFretboard === 'function') window.initFretboard();
+            if (tool === 'scales' && typeof window.initScales === 'function') window.initScales();
+            if (tool === 'piano' && typeof window.initPiano === 'function') window.initPiano();
 
             if (isMobile()) closeSidebarMobile();
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -3126,7 +4244,7 @@
 
         // Sync with URL hash on load + on back/forward navigation
         (function() {
-            const VALID = new Set(['tuner','metronome','eartraining','chords','capo','taptempo','ranking','mypage']);
+            const VALID = new Set(['tuner','metronome','eartraining','chords','fretboard','scales','piano','capo','taptempo','ranking','mypage']);
             function applyHash() {
                 const raw = (window.location.hash || '').replace('#','').toLowerCase();
                 if (VALID.has(raw) && typeof switchTool === 'function') {
@@ -6009,6 +7127,1867 @@
                 }
             }
         });
+    </script>
+
+    <script>
+        // ==================================================================
+        //  FRETBOARD & SCALES MODULE
+        //  - Guitar (6 strings) / Bass 4-string / Bass 5-string
+        //  - Click a fret → hear the note (synth pluck for guitar,
+        //    sample-based with octave pitch-shift for bass)
+        //  - Toggle note names / rotation (horizontal ↔ vertical)
+        //  - Training mode: "Find the note"
+        //  - Scale overlay mode (shared engine)
+        // ==================================================================
+        (function(){
+            // ---- Music theory constants ---------------------------------
+            const CHROMATIC = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+            // MIDI helpers
+            function noteNameToMidi(name) {
+                // Accepts "C#4" etc.
+                const m = name.match(/^([A-G][#b]?)(-?\d+)$/);
+                if (!m) return 0;
+                const pcMap = {'C':0,'C#':1,'Db':1,'D':2,'D#':3,'Eb':3,'E':4,'F':5,
+                               'F#':6,'Gb':6,'G':7,'G#':8,'Ab':8,'A':9,'A#':10,'Bb':10,'B':11};
+                const pc = pcMap[m[1]];
+                const oct = parseInt(m[2], 10);
+                return (oct + 1) * 12 + pc;
+            }
+            function midiToName(midi) {
+                const pc = ((midi % 12) + 12) % 12;
+                const oct = Math.floor(midi / 12) - 1;
+                return CHROMATIC[pc] + oct;
+            }
+            function midiToPitchClass(midi) {
+                return CHROMATIC[((midi % 12) + 12) % 12];
+            }
+            function midiToFreq(midi) {
+                return 440 * Math.pow(2, (midi - 69) / 12);
+            }
+
+            // ---- Instrument tuning definitions --------------------------
+            // Strings listed from THICKEST (visually at TOP of horizontal board)
+            // to THINNEST (visually at BOTTOM). This matches the "guitar lying
+            // face-up" view a lot of players intuit.
+            // Strings are listed from THINNEST (top of horizontal board) to
+            // THICKEST (bottom) — TAB-notation convention.
+            //   Top row     = 1st string (high E for guitar, G for bass)
+            //   Bottom row  = 6th string (low E for guitar, E/B for bass)
+            const TUNINGS = {
+                guitar: {
+                    label: '기타 (6현, 표준)',
+                    strings: [
+                        { name: 'E4', midi: 64, thickness: 0.38 }, // high E, 1st — TOP
+                        { name: 'B3', midi: 59, thickness: 0.45 },
+                        { name: 'G3', midi: 55, thickness: 0.55 },
+                        { name: 'D3', midi: 50, thickness: 0.70 },
+                        { name: 'A2', midi: 45, thickness: 0.85 },
+                        { name: 'E2', midi: 40, thickness: 1.00 }, // low E, 6th — BOTTOM
+                    ],
+                    maxFrets: 24,
+                    isBass: false,
+                },
+                bass4: {
+                    label: '베이스 (4현, 표준)',
+                    strings: [
+                        { name: 'G2', midi: 43, thickness: 0.70 },  // TOP
+                        { name: 'D2', midi: 38, thickness: 0.85 },
+                        { name: 'A1', midi: 33, thickness: 1.00 },
+                        { name: 'E1', midi: 28, thickness: 1.20 },  // BOTTOM
+                    ],
+                    maxFrets: 24,
+                    isBass: true,
+                },
+                bass5: {
+                    label: '베이스 (5현, 표준)',
+                    strings: [
+                        { name: 'G2', midi: 43, thickness: 0.70 },  // TOP
+                        { name: 'D2', midi: 38, thickness: 0.85 },
+                        { name: 'A1', midi: 33, thickness: 1.00 },
+                        { name: 'E1', midi: 28, thickness: 1.20 },
+                        { name: 'B0', midi: 23, thickness: 1.35 },  // BOTTOM
+                    ],
+                    maxFrets: 24,
+                    isBass: true,
+                },
+            };
+
+            // Fret inlay positions (single dot) and double-dot (at 12, 24)
+            const INLAY_FRETS = [3, 5, 7, 9, 15, 17, 19, 21];
+            const DOUBLE_INLAY_FRETS = [12, 24];
+
+            // ---- Audio engine -------------------------------------------
+            let audioCtx = null;
+            const bassSampleBuffers = {}; // pitch-class -> AudioBuffer
+            const BASS_SAMPLE_REF_MIDI = {
+                // Assume samples were recorded around the bass's 2nd octave
+                // (E2 = 40, A2 = 45...). We store the pitch class, then
+                // pitch-shift using playbackRate to play any target octave.
+                'C':  36, 'C#': 37, 'D':  38, 'D#': 39,
+                'E':  40, 'F':  41, 'F#': 42, 'G':  43,
+                'G#': 44, 'A':  45, 'A#': 46, 'B':  47,
+            };
+            let bassSamplesLoading = false;
+            let bassSamplesLoaded = false;
+
+            function ensureAudio() {
+                if (audioCtx) return audioCtx;
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                } catch(e) { return null; }
+                // Share with existing masterGain if present
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume().catch(function(){});
+                }
+                return audioCtx;
+            }
+
+            function loadBassSamples() {
+                if (bassSamplesLoaded || bassSamplesLoading) return Promise.resolve();
+                const ctx = ensureAudio();
+                if (!ctx) return Promise.resolve();
+                bassSamplesLoading = true;
+                const notes = Object.keys(BASS_SAMPLE_REF_MIDI);
+                const jobs = notes.map(function(n) {
+                    return fetch('sounds/Bass_' + n + '.mp3')
+                        .then(function(r) { return r.arrayBuffer(); })
+                        .then(function(ab) {
+                            return new Promise(function(res) {
+                                ctx.decodeAudioData(ab, function(buf) {
+                                    bassSampleBuffers[n] = buf;
+                                    res();
+                                }, function(){ res(); });
+                            });
+                        })
+                        .catch(function(){});
+                });
+                return Promise.all(jobs).then(function() {
+                    bassSamplesLoaded = true;
+                    bassSamplesLoading = false;
+                });
+            }
+
+            // Simple volume getter — respect master volume if present
+            function getMasterGainValue() {
+                try {
+                    const slider = document.getElementById('masterVolSlider');
+                    if (slider) return (parseInt(slider.value, 10) / 100);
+                } catch(e) {}
+                return 1.0;
+            }
+
+            // Track currently playing notes so we can stop them
+            let _activePluckNodes = [];
+            function stopAllPlucks() {
+                const ctx = audioCtx;
+                if (!ctx) return;
+                const t = ctx.currentTime;
+                _activePluckNodes.forEach(function(n) {
+                    try { n.gain.cancelScheduledValues(t); } catch(e) {}
+                    // Fast but click-free fade (~35 ms audible, time const 0.012 s)
+                    try { n.gain.setTargetAtTime(0.0001, t, 0.012); } catch(e) {}
+                    try { setTimeout(function(){ try{ n.src.stop(); }catch(e){} }, 120); } catch(e) {}
+                });
+                _activePluckNodes = [];
+            }
+
+            // --- Karplus-Strong plucked-string (guitar) -----------------
+            // Classic physical-modeling synthesis:
+            //   1. Fill a delay line (length = 1 period of the target pitch)
+            //      with white noise — this is the initial "pluck" transient.
+            //   2. Each output sample is read from the head of the delay
+            //      line; the cell is then overwritten with the average of
+            //      itself and its neighbour (a 1-pole lowpass in the
+            //      feedback loop) times a per-cycle decay factor. The
+            //      averaging is what turns noise into a bright attack that
+            //      decays into a pure tone — exactly like a real string.
+            //   3. The waveform is routed through body-resonance EQ to add
+            //      acoustic-guitar warmth.
+            function playGuitarPluck(midi) {
+                const ctx = ensureAudio();
+                if (!ctx) return;
+                if (ctx.state === 'suspended') ctx.resume().catch(function(){});
+                // Monophonic behaviour — silence any still-ringing notes
+                // so a new note always kills the previous one.
+                stopAllPlucks();
+                const freq = midiToFreq(midi);
+                const now = ctx.currentTime;
+                const sampleRate = ctx.sampleRate;
+                const duration = 2.8;
+                const frames = Math.floor(sampleRate * duration);
+                const buf = ctx.createBuffer(1, frames, sampleRate);
+                const data = buf.getChannelData(0);
+
+                // Delay line length ≈ one period of the target frequency
+                const N = Math.max(2, Math.round(sampleRate / freq));
+                const delay = new Float32Array(N);
+                for (let i = 0; i < N; i++) delay[i] = Math.random() * 2 - 1;
+                // Multiple smoothing passes — each pass is a 1-pole lowpass
+                // on the initial noise seed. More passes = softer attack
+                // with less of the "zing" of a hard-plucked taut string.
+                for (let pass = 0; pass < 3; pass++) {
+                    let prev = delay[N - 1];
+                    for (let i = 0; i < N; i++) {
+                        const v = delay[i];
+                        delay[i] = (v + prev) * 0.5;
+                        prev = v;
+                    }
+                }
+
+                // Per-cycle decay — low notes sustain longer than high notes
+                // (matches real-string damping). Amp reaches ~10 % of peak
+                // after `decaySec` seconds.
+                const decaySec = Math.max(1.6, 3.6 - freq * 0.0018);
+                const decayPerCycle = Math.pow(0.1, 1 / Math.max(60, freq * decaySec));
+
+                let idx = 0;
+                for (let i = 0; i < frames; i++) {
+                    const cur = delay[idx];
+                    data[i] = cur;
+                    const nxt = delay[(idx + 1) % N];
+                    // Lowpass-averaged feedback + per-cycle decay
+                    delay[idx] = (cur + nxt) * 0.5 * decayPerCycle;
+                    idx = (idx + 1) % N;
+                }
+
+                // Longer attack ramp — softer onset, less percussive "pluck"
+                const attackSamples = Math.min(frames, Math.floor(sampleRate * 0.008));
+                for (let i = 0; i < attackSamples; i++) data[i] *= i / attackSamples;
+                // Soft tail so end-of-buffer doesn't click
+                const tailSamples = Math.min(frames, Math.floor(sampleRate * 0.18));
+                for (let i = Math.max(0, frames - tailSamples); i < frames; i++) {
+                    data[i] *= (frames - i) / tailSamples;
+                }
+
+                // --- Signal chain: HP → body resonance → mid-cut → air → master ---
+                const src = ctx.createBufferSource();
+                src.buffer = buf;
+
+                const hp = ctx.createBiquadFilter();
+                hp.type = 'highpass';
+                hp.frequency.value = 55;
+                hp.Q.value = 0.7;
+
+                // Low-shelf boost — thickens the bottom so the tone is
+                // warmer rather than wiry
+                const lo = ctx.createBiquadFilter();
+                lo.type = 'lowshelf';
+                lo.frequency.value = 180;
+                lo.gain.value = 3;
+
+                // Acoustic body resonance (sound-box peak around 100-180 Hz)
+                const body = ctx.createBiquadFilter();
+                body.type = 'peaking';
+                body.frequency.value = 150;
+                body.Q.value = 1.3;
+                body.gain.value = 5;
+
+                // Slight mid-cut removes boxiness
+                const midCut = ctx.createBiquadFilter();
+                midCut.type = 'peaking';
+                midCut.frequency.value = 500;
+                midCut.Q.value = 1.1;
+                midCut.gain.value = -2;
+
+                // Presence cut — tames 1-3 kHz (reduces wiry/nasal character)
+                // Q≈0.7 at 1.7 kHz → -3 dB points roughly at 1 k and 3 k.
+                const presenceCut = ctx.createBiquadFilter();
+                presenceCut.type = 'peaking';
+                presenceCut.frequency.value = 1700;
+                presenceCut.Q.value = 0.7;
+                presenceCut.gain.value = -2;
+
+                // Treble roll-off
+                const hi = ctx.createBiquadFilter();
+                hi.type = 'highshelf';
+                hi.frequency.value = 3200;
+                hi.gain.value = -2.5;
+
+                // Gentle lowpass at ~2.8 kHz — smooths out any remaining
+                // "zing" from the Karplus-Strong string tension, making the
+                // tone feel more like fingertip on a loose string rather
+                // than a sharp pick on a tight one.
+                const lp = ctx.createBiquadFilter();
+                lp.type = 'lowpass';
+                lp.frequency.value = 2800;
+                lp.Q.value = 0.5;
+
+                const master = ctx.createGain();
+                master.gain.value = 0.45 * getMasterGainValue();
+
+                src.connect(hp);
+                hp.connect(lo);
+                lo.connect(body);
+                body.connect(midCut);
+                midCut.connect(presenceCut);
+                presenceCut.connect(hi);
+                hi.connect(lp);
+                lp.connect(master);
+                master.connect(ctx.destination);
+
+                src.start(now);
+                src.stop(now + duration + 0.1);
+
+                _activePluckNodes.push({ gain: master, src: src });
+                if (_activePluckNodes.length > 10) _activePluckNodes.shift();
+            }
+
+            // --- Sample-based bass playback ------------------------------
+            function playBassNote(midi) {
+                const ctx = ensureAudio();
+                if (!ctx) return;
+                if (ctx.state === 'suspended') ctx.resume().catch(function(){});
+                // Monophonic — stop any previous note first
+                stopAllPlucks();
+                const pc = midiToPitchClass(midi);
+                const buf = bassSampleBuffers[pc];
+                if (!buf) {
+                    // Samples not yet loaded → fall back to synth pluck
+                    playGuitarPluck(midi);
+                    // Try loading so subsequent clicks work
+                    loadBassSamples();
+                    return;
+                }
+                const refMidi = BASS_SAMPLE_REF_MIDI[pc];
+                const rate = Math.pow(2, (midi - refMidi) / 12);
+
+                const now = ctx.currentTime;
+                const master = ctx.createGain();
+                master.gain.value = 0.55 * getMasterGainValue();
+                master.connect(ctx.destination);
+                // Slight envelope tail
+                master.gain.setValueAtTime(0.55 * getMasterGainValue(), now);
+                master.gain.setTargetAtTime(0.0001, now + 1.8, 0.25);
+
+                const src = ctx.createBufferSource();
+                src.buffer = buf;
+                src.playbackRate.value = rate;
+                src.connect(master);
+                src.start(now);
+                src.stop(now + 3.0);
+
+                _activePluckNodes.push({ gain: master, src: src });
+                if (_activePluckNodes.length > 10) _activePluckNodes.shift();
+            }
+
+            function playNoteOnInstrument(inst, midi) {
+                if (inst === 'guitar') {
+                    playGuitarPluck(midi);
+                } else {
+                    // bass: lazy load samples on first play
+                    if (!bassSamplesLoaded && !bassSamplesLoading) {
+                        loadBassSamples().then(function() {
+                            // user may have already moved on; playBassNote handles
+                        });
+                    }
+                    playBassNote(midi);
+                }
+            }
+
+            // =============================================================
+            //  FRETBOARD RENDERING ENGINE
+            // =============================================================
+            // A reusable renderer. Creates an SVG for a given instrument +
+            // fret range, wiring click events back through a callback.
+            //
+            // options:
+            //   inst           'guitar' | 'bass4' | 'bass5'
+            //   maxFret        int (0..24)
+            //   showNotes      bool
+            //   vertical       bool
+            //   highlights     { midiNote: {color,label,size} } map (for scales)
+            //                  OR a function(midi) -> null | highlight object
+            //   rootPc         string (pitch class like 'C') — for scale mode
+            //   highlightRoot  bool
+            //   onFretClick    function(stringIdx, fret, midi)  { ... }
+            //
+            // Returns { svg, redraw } — call redraw(newOptions) to rebuild.
+            function createFretboard(options) {
+                const svg = options.svg;
+                let cfg = Object.assign({
+                    inst: 'guitar',
+                    maxFret: 15,
+                    showNotes: true,
+                    vertical: false,
+                    highlights: null,
+                    rootPc: null,
+                    highlightRoot: false,
+                    activeHighlights: null, // Map midi -> true (pressed dots)
+                    trainingRange: null,    // { stringMin, stringMax, fretMin, fretMax }
+                    zoom: 1,                // visual scale factor (1 = 기본, 1.75 = 75% 확대)
+                    onFretClick: null,
+                }, options);
+
+                function draw() {
+                    const t = TUNINGS[cfg.inst];
+                    if (!t) return;
+                    const strings = t.strings;
+                    const nStrings = strings.length;
+                    const nFrets = Math.max(1, Math.min(cfg.maxFret, t.maxFrets));
+
+                    // Layout metrics (horizontal default)
+                    const padL = 52;     // left padding (room for open-string labels + nut)
+                    const padR = 24;
+                    const padT = 52;     // generous empty zone above — drag here to scroll
+                    const padBBoard = 12; // space between last string and inlay strip
+                    const padBInlay = 16; // inlay strip height
+                    const padBNum = 22;   // fret number row height
+                    const padBExtra = 28; // empty zone after numbers — drag here to scroll
+                    const stringGap = 26;
+
+                    // --- Logarithmic fret spacing (real-guitar physics) ---
+                    // Position from nut of fret N = scale × (1 - 2^(-N/12))
+                    // Pick SCALE_LEN so the visual first fret is ~72px wide.
+                    // Total board length (to fret 24) = SCALE_LEN × 0.75.
+                    const SCALE_LEN = 1320;
+                    function fretPos(f) {
+                        return SCALE_LEN * (1 - Math.pow(2, -f/12));
+                    }
+
+                    const boardLenPx = fretPos(nFrets);
+                    const boardW = padL + padR + boardLenPx;
+                    const stringAreaH = stringGap * (nStrings - 1);
+                    const inlayStripCenterY = padT + stringAreaH + padBBoard + padBInlay / 2;
+                    const fretNumY = padT + stringAreaH + padBBoard + padBInlay + padBNum - 6;
+                    const boardH = padT + stringAreaH + padBBoard + padBInlay + padBNum + padBExtra;
+
+                    // Fret cell helpers
+                    // NOTE-DOT press position: shifted to the RIGHT of the cell
+                    // (near the higher-numbered fret wire) — matches how a
+                    // finger actually sits right behind the fret.
+                    // 기존 0.82 는 프렛 와이어에 너무 붙어 보여 0.68 로 살짝
+                    // 왼쪽 (셀 중앙과 오른쪽 끝 사이) 으로 당겼다. 프렛보드·
+                    // 스케일 패널 모두 이 상수를 공유.
+                    const PRESS_RATIO = 0.68;
+                    function fretCenterX(fret) {
+                        if (fret === 0) return padL - 26; // open-string indicator area (left of nut)
+                        const a = fretPos(fret - 1);
+                        const b = fretPos(fret);
+                        return padL + a + (b - a) * PRESS_RATIO;
+                    }
+                    // Geometric CENTER of the fret cell — used for inlay markers
+                    // and fret-number labels (which should sit dead-center, not
+                    // at the finger-press position).
+                    function fretMidX(fret) {
+                        if (fret === 0) return padL - 26;
+                        return padL + (fretPos(fret - 1) + fretPos(fret)) / 2;
+                    }
+                    function fretLineX(fret) {
+                        return padL + fretPos(fret);
+                    }
+                    function stringY(sIdx) {
+                        return padT + sIdx * stringGap;
+                    }
+
+                    // Decide rotation
+                    const rotate = !!cfg.vertical;
+                    // Non-rotated fret number row adds height; in rotated mode
+                    // we place numbers in a side column, so we need horizontal
+                    // space for it.
+                    const viewW = rotate ? (boardH + 4) : boardW;
+                    const viewH = rotate ? (boardW) : boardH;
+
+                    // viewBox 는 고정 — 내부 좌표계가 바뀌면 드래그/탭 히트 영역
+                    // 계산이 어긋나므로, 화면상의 width/height 만 zoom 배율로 키운다.
+                    const zoom = cfg.zoom || 1;
+                    svg.setAttribute('viewBox', '0 0 ' + viewW + ' ' + viewH);
+                    svg.setAttribute('width', viewW * zoom);
+                    svg.setAttribute('height', viewH * zoom);
+
+                    // Main rotated group — holds everything EXCEPT fret numbers.
+                    // rotate(90) + translate(boardH, 0) maps (x, y) → (boardH - y, x).
+                    //   · Original LEFT (nut)     → TOP in rotated view
+                    //   · Original RIGHT (fret N) → BOTTOM in rotated view
+                    //   · Original TOP (thin str) → RIGHT in rotated view
+                    //   · Original BOTTOM (thick)→ LEFT  in rotated view
+                    const groupTransform = rotate ? ('translate(' + boardH + ', 0) rotate(90)') : '';
+
+                    let svgContent = '';
+                    svgContent += '<g transform="' + groupTransform + '">';
+
+                    // Board background (just the string area — the inlay/number
+                    // strip lives OUTSIDE the wood)
+                    const boardBgX = padL;
+                    const boardBgY = padT - 10;
+                    const boardBgW = boardLenPx;
+                    const boardBgH = stringAreaH + 20;
+                    svgContent += '<rect x="' + boardBgX + '" y="' + boardBgY + '" ' +
+                        'width="' + boardBgW + '" height="' + boardBgH + '" ' +
+                        'fill="#f2ebe0" rx="4"/>';
+                    svgContent += '<rect x="' + boardBgX + '" y="' + boardBgY + '" ' +
+                        'width="' + boardBgW + '" height="' + boardBgH + '" ' +
+                        'fill="url(#fbWood)" opacity="0.45" rx="4"/>';
+
+                    // Nut (left of fret 1)
+                    svgContent += '<rect x="' + (padL - 4) + '" y="' + boardBgY + '" ' +
+                        'width="5" height="' + boardBgH + '" fill="#3a3a3a" rx="1"/>';
+
+                    // Fret lines
+                    for (let f = 1; f <= nFrets; f++) {
+                        const x = fretLineX(f);
+                        svgContent += '<line x1="' + x + '" y1="' + boardBgY +
+                            '" x2="' + x + '" y2="' + (boardBgY + boardBgH) +
+                            '" stroke="#bfb8a7" stroke-width="1.5"/>';
+                    }
+
+                    // Strings (on top of frets)
+                    strings.forEach(function(s, idx) {
+                        const y = stringY(idx);
+                        const sw = 0.8 + s.thickness * 1.6;
+                        svgContent += '<line x1="' + padL + '" y1="' + y +
+                            '" x2="' + (padL + boardLenPx) + '" y2="' + y +
+                            '" stroke="#3d3424" stroke-width="' + sw.toFixed(2) + '" opacity="0.85"/>';
+                    });
+
+                    // Open-string CLICK BUTTONS (left of nut) — always clickable,
+                    // play the string's open-note. In scale mode, they also show
+                    // the scale/root colors so the picture is consistent across
+                    // fret 0 and the rest of the board.
+                    const inScaleModeOpen = typeof cfg.highlights === 'function';
+                    const trOpen = cfg.trainingRange;
+                    strings.forEach(function(s, idx) {
+                        const pc = midiToPitchClass(s.midi);
+                        const y = stringY(idx);
+                        const cx = padL - 26;
+                        // 세로 모드에서 "전체가 같이 돌게" — 텍스트도 보드와 함께
+                        // 90° 회전시키기 위해 counter-rotate 를 제거.
+                        const textT = '';
+
+                        let highlight = null;
+                        if (inScaleModeOpen) {
+                            highlight = cfg.highlights(s.midi, pc, idx, 0);
+                        }
+                        const isRoot = cfg.highlightRoot && cfg.rootPc && pc === cfg.rootPc;
+
+                        // Default (non-scale-highlight) palette — muted green
+                        // button so users see it's a pressable control.
+                        let fill = 'rgba(82, 168, 114, 0.18)';
+                        let stroke = 'rgba(42, 107, 74, 0.55)';
+                        let textColor = 'rgba(26,36,33,0.82)';
+                        if (highlight) {
+                            fill = highlight.color;
+                            stroke = highlight.stroke;
+                            textColor = highlight.textColor;
+                        }
+                        if (isRoot) {
+                            fill = '#2a6b4a';
+                            stroke = '#2a6b4a';
+                            textColor = '#ffffff';
+                        }
+
+                        // Training-range dim (fret 0 on string idx)
+                        const outOfRange = trOpen && (
+                            idx < trOpen.stringMin || idx > trOpen.stringMax ||
+                            0 < trOpen.fretMin
+                        );
+                        const opStr = outOfRange ? ' opacity="0.22"' : '';
+
+                        svgContent += '<g class="fb-dot-group fb-open-btn" data-sidx="' + idx +
+                            '" data-fret="0" data-midi="' + s.midi + '" style="cursor:pointer"' + opStr + '>';
+                        svgContent += '<circle cx="' + cx + '" cy="' + y + '" r="13" fill="transparent"/>';
+                        svgContent += '<circle cx="' + cx + '" cy="' + y + '" r="10" ' +
+                            'fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.2"/>';
+                        svgContent += '<text x="' + cx + '" y="' + (y + 3.5) +
+                            '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" ' +
+                            'font-size="10" font-weight="700" fill="' + textColor + '"' + textT +
+                            ' pointer-events="none">' + pc + '</text>';
+                        svgContent += '</g>';
+                    });
+
+                    // --- Inlays (below the board, between board and fret-number row) ---
+                    // Singles at 3,5,7,9,15,17,19,21; doubles at 12 and 24.
+                    // Because inlays live INSIDE the rotated group, they rotate
+                    // with the board — which is exactly what we want for the
+                    // pair-of-dots at fret 12 (horizontal pair in landscape →
+                    // vertical pair after rotation).
+                    INLAY_FRETS.forEach(function(f) {
+                        if (f > nFrets) return;
+                        svgContent += '<circle cx="' + fretMidX(f) + '" cy="' + inlayStripCenterY +
+                            '" r="3.4" fill="#bfae85" opacity="0.9"/>';
+                    });
+                    DOUBLE_INLAY_FRETS.forEach(function(f) {
+                        if (f > nFrets) return;
+                        // Offset the pair along the FRET (x) axis so that in
+                        // horizontal mode they sit side-by-side; in vertical
+                        // mode (rotated) they become a vertical pair.
+                        const off = 7;
+                        svgContent += '<circle cx="' + (fretMidX(f) - off) + '" cy="' + inlayStripCenterY +
+                            '" r="3.4" fill="#bfae85" opacity="0.9"/>';
+                        svgContent += '<circle cx="' + (fretMidX(f) + off) + '" cy="' + inlayStripCenterY +
+                            '" r="3.4" fill="#bfae85" opacity="0.9"/>';
+                    });
+
+                    // --- Note dots (interactive) ---
+                    // Fret 0 is handled by the open-string buttons above — skip it here.
+                    const inScaleMode = typeof cfg.highlights === 'function';
+                    const tr = cfg.trainingRange;
+                    function inTrainRange(sI, fr) {
+                        if (!tr) return true;
+                        return sI >= tr.stringMin && sI <= tr.stringMax &&
+                               fr >= tr.fretMin && fr <= tr.fretMax;
+                    }
+                    strings.forEach(function(s, sIdx) {
+                        for (let f = 1; f <= nFrets; f++) {
+                            const midi = s.midi + f;
+                            const pc = midiToPitchClass(midi);
+                            let highlight = null;
+                            if (inScaleMode) {
+                                highlight = cfg.highlights(midi, pc, sIdx, f);
+                            }
+                            const isRoot = cfg.highlightRoot && cfg.rootPc && pc === cfg.rootPc;
+                            const isActive = cfg.activeHighlights && cfg.activeHighlights[sIdx + '_' + f];
+                            const outOfRange = !inTrainRange(sIdx, f);
+
+                            const cx = fretCenterX(f);
+                            const cy = stringY(sIdx);
+
+                            // Transparent hit target = 해당 프렛 셀 전체(string
+                            // 높이 × 프렛 폭) 를 덮어서, 시각 도트(0.68 위치)
+                            // 가 아니어도 프렛 안 어느 지점을 눌러도 소리가
+                            // 나게 한다. 인접 셀 경계는 후입선승(bottom 쪽,
+                            // 늦게 그려진 element 가 히트) 으로 모호성 처리.
+                            // Out-of-training-range dots are dimmed (but still
+                            // clickable, for exploration).
+                            const dotOpacity = outOfRange ? '0.22' : '1';
+                            const cellX = padL + fretPos(f - 1);
+                            const cellW = fretPos(f) - fretPos(f - 1);
+                            const hitH = stringGap; // string 위아래로 ±stringGap/2
+                            const hitY = cy - hitH / 2;
+                            svgContent += '<g class="fb-dot-group" data-sidx="' + sIdx +
+                                '" data-fret="' + f + '" data-midi="' + midi +
+                                '" style="cursor:pointer" opacity="' + dotOpacity + '">';
+                            svgContent += '<rect x="' + cellX + '" y="' + hitY +
+                                '" width="' + cellW + '" height="' + hitH +
+                                '" fill="transparent"/>';
+
+                            if (inScaleMode && !highlight && !isActive) {
+                                // Scale mode, non-scale note: no visible dot
+                                svgContent += '</g>';
+                                continue;
+                            }
+
+                            // Two independent decisions:
+                            //   1. "bigDot": full-size meaningful circle. True when
+                            //      there IS something to show (scale note, root,
+                            //      active, OR showNotes) — otherwise we shrink
+                            //      to a tiny click target.
+                            //   2. "showText": the letter inside the dot. Controlled
+                            //      ONLY by showNotes (or isActive). This lets the
+                            //      "음정 보기" toggle hide text even while scale
+                            //      dots remain visible.
+                            const bigDot  = cfg.showNotes || highlight || isRoot || isActive;
+                            const showText = cfg.showNotes || isActive;
+
+                            const r = bigDot ? 10.5 : 5.5;
+                            let fillColor = '#ffffff';
+                            let strokeColor = 'rgba(42, 107, 74, 0.55)';
+                            let textColor = '#1a2421';
+                            if (!bigDot) {
+                                // Muted small click target
+                                fillColor = 'rgba(42, 107, 74, 0.5)';
+                                strokeColor = 'rgba(42, 107, 74, 0.65)';
+                            }
+                            if (highlight) {
+                                fillColor = highlight.color || '#52a872';
+                                strokeColor = highlight.stroke || '#2a6b4a';
+                                textColor = highlight.textColor || '#ffffff';
+                            }
+                            if (isRoot) {
+                                fillColor = '#2a6b4a';
+                                strokeColor = '#2a6b4a';
+                                textColor = '#ffffff';
+                            }
+                            if (isActive) {
+                                fillColor = '#c44034';
+                                strokeColor = '#c44034';
+                                textColor = '#ffffff';
+                            }
+                            svgContent += '<circle cx="' + cx + '" cy="' + cy +
+                                '" r="' + r + '" fill="' + fillColor + '" stroke="' + strokeColor +
+                                '" stroke-width="1.2"/>';
+
+                            if (showText && bigDot) {
+                                // 세로 모드에서 도트 위의 음 이름도 보드와 같이
+                                // 90° 회전 — counter-rotate 제거.
+                                svgContent += '<text x="' + cx + '" y="' + (cy + 3.5) +
+                                    '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" ' +
+                                    'font-size="10" font-weight="700" fill="' + textColor + '"' +
+                                    ' pointer-events="none">' + pc + '</text>';
+                            }
+                            svgContent += '</g>';
+                        }
+                    });
+
+                    // --- Fret numbers — 회전 그룹 안에 포함시켜 세로 모드에서
+                    // 전체(알파벳·도트 텍스트 포함)가 같이 90° 돌도록 한다.
+                    const allInlay = INLAY_FRETS.concat(DOUBLE_INLAY_FRETS);
+                    for (let f = 1; f <= nFrets; f++) {
+                        if (allInlay.indexOf(f) === -1) continue;
+                        // Fret numbers use geometric center (not finger-press position)
+                        const midX = fretMidX(f);
+                        svgContent += '<text x="' + midX + '" y="' + (fretNumY + 4) +
+                            '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" ' +
+                            'font-size="11" fill="rgba(26,36,33,0.55)" font-weight="500">' +
+                            f + '</text>';
+                    }
+
+                    svgContent += '</g>'; // end rotated group
+
+                    // SVG defs (wood gradient)
+                    const defs = '<defs>' +
+                        '<linearGradient id="fbWood" x1="0" y1="0" x2="1" y2="0">' +
+                        '<stop offset="0%" stop-color="#e8dcc0"/>' +
+                        '<stop offset="50%" stop-color="#efe5cd"/>' +
+                        '<stop offset="100%" stop-color="#e8dcc0"/>' +
+                        '</linearGradient>' +
+                        '</defs>';
+                    svg.innerHTML = defs + svgContent;
+
+                    // Attach interaction handlers ONCE per SVG.
+                    //  - pointerdown on a dot  → play immediately + enter drag-play mode
+                    //  - pointermove (document)→ if still dragging, play any new dot crossed
+                    //  - pointerup             → exit drag-play mode
+                    //  - drag on empty board  → scrolls (handled in enableDragScroll)
+                    if (!svg._fbBound) {
+                        svg._fbBound = true;
+                        let activeDot = null;
+                        function fireAt(target) {
+                            const sIdx = parseInt(target.dataset.sidx, 10);
+                            const fret = parseInt(target.dataset.fret, 10);
+                            const midi = parseInt(target.dataset.midi, 10);
+                            if (typeof cfg.onFretClick === 'function') {
+                                cfg.onFretClick(sIdx, fret, midi);
+                            }
+                        }
+                        svg.addEventListener('pointerdown', function(e) {
+                            const target = e.target.closest('.fb-dot-group, .fb-hit');
+                            if (!target) return;  // let enableDragScroll handle empty drag
+                            // Stop bubbling so scroller's pointerdown doesn't
+                            // treat this as a scroll-drag.
+                            e.stopPropagation();
+                            activeDot = target;
+                            fireAt(target);
+                        });
+                        // Document-level move/up so we keep tracking even if
+                        // the pointer drifts outside the original dot.
+                        document.addEventListener('pointermove', function(e) {
+                            if (!activeDot) return;
+                            if (!svg.contains(activeDot)) { activeDot = null; return; }
+                            const el = document.elementFromPoint(e.clientX, e.clientY);
+                            if (!el || !svg.contains(el)) return;
+                            const dot = el.closest('.fb-dot-group, .fb-hit');
+                            if (!dot || dot === activeDot) return;
+                            activeDot = dot;
+                            fireAt(dot);
+                        });
+                        const endDrag = function() { activeDot = null; };
+                        document.addEventListener('pointerup', endDrag);
+                        document.addEventListener('pointercancel', endDrag);
+                    }
+                }
+
+                // Set wrap vertical class (for centering)
+                function applyWrapClass() {
+                    const wrap = svg.parentElement;
+                    if (!wrap) return;
+                    if (cfg.vertical) wrap.classList.add('vertical');
+                    else wrap.classList.remove('vertical');
+                }
+
+                draw();
+                applyWrapClass();
+
+                return {
+                    svg: svg,
+                    redraw: function(newCfg) {
+                        Object.assign(cfg, newCfg || {});
+                        draw();
+                        applyWrapClass();
+                    },
+                    getCfg: function() { return cfg; },
+                    flashDot: function(sIdx, fret, okOrBad) {
+                        // Visual feedback on correct/wrong training click
+                        const target = svg.querySelector('.fb-dot-group[data-sidx="' + sIdx + '"][data-fret="' + fret + '"]')
+                            || svg.querySelector('.fb-hit[data-sidx="' + sIdx + '"][data-fret="' + fret + '"]');
+                        if (!target) return;
+                        const cx = target.querySelector('circle')
+                            ? +target.querySelector('circle').getAttribute('cx')
+                            : +target.getAttribute('cx');
+                        const cy = target.querySelector('circle')
+                            ? +target.querySelector('circle').getAttribute('cy')
+                            : +target.getAttribute('cy');
+                        const color = okOrBad === 'ok' ? '#2a6b4a' : '#c44034';
+                        const g = svg.querySelector('g');
+                        const ripple = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                        ripple.setAttribute('cx', cx);
+                        ripple.setAttribute('cy', cy);
+                        ripple.setAttribute('r', 5);
+                        ripple.setAttribute('fill', 'none');
+                        ripple.setAttribute('stroke', color);
+                        ripple.setAttribute('stroke-width', 2.5);
+                        ripple.setAttribute('class', 'fb-click-indicator');
+                        if (g) g.appendChild(ripple); else svg.appendChild(ripple);
+                        setTimeout(function() { ripple.remove(); }, 600);
+                    },
+                };
+            }
+
+            // =============================================================
+            //  Drag-to-scroll: active only when pointerdown happens on an
+            //  EMPTY area (not a note dot). Note-dot drag-play is handled
+            //  inside createFretboard.
+            // =============================================================
+            function enableDragScroll(scroller) {
+                if (scroller._dragBound) return;
+                scroller._dragBound = true;
+                let isDown = false;
+                let startX, startY, scrollL, scrollT, pointerId;
+                scroller.addEventListener('pointerdown', function(e) {
+                    // Skip if pointer landed on a note dot — that gets handled
+                    // by the note-drag logic inside createFretboard (which
+                    // will also stopPropagation upward to us).
+                    if (e.target.closest('.fb-dot-group, .fb-hit')) return;
+                    // Skip if pointer landed on the custom scrollbar widget
+                    if (e.target.closest('.fb-scrollbar')) return;
+                    isDown = true;
+                    scroller.classList.add('dragging');
+                    startX = e.pageX;
+                    startY = e.pageY;
+                    scrollL = scroller.scrollLeft;
+                    scrollT = scroller.scrollTop;
+                    pointerId = e.pointerId;
+                    try { scroller.setPointerCapture(e.pointerId); } catch(err) {}
+                });
+                const endDrag = function() {
+                    if (!isDown) return;
+                    isDown = false;
+                    scroller.classList.remove('dragging');
+                    try { if (pointerId != null) scroller.releasePointerCapture(pointerId); } catch(err) {}
+                };
+                scroller.addEventListener('pointerup', endDrag);
+                scroller.addEventListener('pointercancel', endDrag);
+                scroller.addEventListener('pointerleave', endDrag);
+                scroller.addEventListener('pointermove', function(e) {
+                    if (!isDown) return;
+                    e.preventDefault();
+                    scroller.scrollLeft = scrollL - (e.pageX - startX);
+                    scroller.scrollTop  = scrollT - (e.pageY - startY);
+                });
+            }
+
+            // =============================================================
+            //  Custom always-visible scrollbar binder
+            //  Syncs thumb ↔ scroller scrollLeft, handles arrow buttons.
+            // =============================================================
+            function bindScrollbar(scroller, scrollbar) {
+                if (!scroller || !scrollbar || scrollbar._bound) return;
+                scrollbar._bound = true;
+                const track = scrollbar.querySelector('.fb-scrollbar-track');
+                const thumb = scrollbar.querySelector('.fb-scrollbar-thumb');
+                const leftBtn = scrollbar.querySelector('.fb-scroll-arrow-left');
+                const rightBtn = scrollbar.querySelector('.fb-scroll-arrow-right');
+
+                function update() {
+                    const overflow = scroller.scrollWidth - scroller.clientWidth;
+                    if (overflow <= 1) {
+                        // No horizontal overflow — keep bar visible but show
+                        // a full-width disabled thumb.
+                        scrollbar.classList.add('disabled');
+                        thumb.style.width = '100%';
+                        thumb.style.left = '0';
+                        return;
+                    }
+                    scrollbar.classList.remove('disabled');
+                    const trackW = track.clientWidth;
+                    const ratio = scroller.clientWidth / scroller.scrollWidth;
+                    const thumbW = Math.max(56, Math.min(trackW, trackW * ratio));
+                    const maxLeft = trackW - thumbW;
+                    const pct = scroller.scrollLeft / overflow;
+                    thumb.style.width = thumbW + 'px';
+                    thumb.style.left = (pct * maxLeft) + 'px';
+                }
+                scrollbar._update = update;
+                scroller.addEventListener('scroll', update);
+                window.addEventListener('resize', update);
+
+                // Thumb drag — attach document listeners on pointerdown,
+                // detach on pointerup. Avoids stale global listeners and
+                // makes the drag state very simple.
+                thumb.addEventListener('pointerdown', function(e) {
+                    // Only primary button for mouse
+                    if (e.button && e.button !== 0) return;
+                    const thumbStartX = e.clientX;
+                    const startScrollL = scroller.scrollLeft;
+                    thumb.classList.add('dragging');
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    function onMove(ev) {
+                        const overflow = scroller.scrollWidth - scroller.clientWidth;
+                        if (overflow <= 0) return;
+                        const trackW = track.clientWidth;
+                        const thumbW = thumb.offsetWidth;
+                        const maxLeft = Math.max(1, trackW - thumbW);
+                        const dx = ev.clientX - thumbStartX;
+                        scroller.scrollLeft = startScrollL + dx * overflow / maxLeft;
+                    }
+                    function cleanup() {
+                        thumb.classList.remove('dragging');
+                        document.removeEventListener('pointermove', onMove);
+                        document.removeEventListener('pointerup', cleanup);
+                        document.removeEventListener('pointercancel', cleanup);
+                        // Also fall back to mouse events in case the browser
+                        // stops issuing pointer events mid-drag.
+                        document.removeEventListener('mousemove', onMove);
+                        document.removeEventListener('mouseup', cleanup);
+                    }
+                    document.addEventListener('pointermove', onMove);
+                    document.addEventListener('pointerup', cleanup);
+                    document.addEventListener('pointercancel', cleanup);
+                    // Mouse fallback — fires even if the browser cancels
+                    // pointer events due to a gesture.
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', cleanup);
+                });
+
+                // Click on empty track area → jump
+                track.addEventListener('pointerdown', function(e) {
+                    if (e.target === thumb || thumb.contains(e.target)) return;
+                    const rect = track.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const thumbW = thumb.offsetWidth;
+                    const trackW = rect.width;
+                    const newLeft = Math.max(0, Math.min(trackW - thumbW, x - thumbW / 2));
+                    const overflow = scroller.scrollWidth - scroller.clientWidth;
+                    const maxLeft = Math.max(1, trackW - thumbW);
+                    scroller.scrollLeft = (newLeft / maxLeft) * overflow;
+                });
+
+                // Arrow buttons — step scroll
+                function nudge(delta) {
+                    const target = Math.max(0, Math.min(
+                        scroller.scrollWidth - scroller.clientWidth,
+                        scroller.scrollLeft + delta
+                    ));
+                    scroller.scrollTo({ left: target, behavior: 'smooth' });
+                }
+                leftBtn.addEventListener('click', function() { nudge(-140); });
+                rightBtn.addEventListener('click', function() { nudge(140); });
+
+                // Initial update — may need the SVG to have been laid out
+                setTimeout(update, 20);
+            }
+
+            // =============================================================
+            //  FRETBOARD TOOL (탐색 + 트레이닝)
+            // =============================================================
+            const fbState = {
+                inst: 'guitar',
+                maxFret: 24,
+                showNotes: true,
+                vertical: false,
+                zoom: 1,               // 1 = 기본 / 1.75 = +75% 확대
+                mode: 'explore',       // 'explore' | 'training'
+                training: {
+                    active: false,
+                    targetPc: null,    // pitch class to find
+                    correct: 0,
+                    wrong: 0,
+                    attemptedThisRound: false,
+                    // Practice limits — null = no limit
+                    stringRange: null, // { from, to } — string indices (0 = top/thinnest)
+                    fretRange:   null, // { from, to } — fret numbers (0 = open)
+                },
+                fb: null,              // fretboard instance
+            };
+
+            // Build a "training range" config only when the user actually
+            // limited the practice area AND we're in training mode.
+            function fbCurrentTrainingRange() {
+                if (fbState.mode !== 'training') return null;
+                const sr = fbState.training.stringRange;
+                const fr = fbState.training.fretRange;
+                const t = TUNINGS[fbState.inst];
+                if (!t) return null;
+                const sMin = sr ? sr.from : 0;
+                const sMax = sr ? sr.to : (t.strings.length - 1);
+                const fMin = fr ? fr.from : 0;
+                const fMax = fr ? fr.to : t.maxFrets;
+                // Only return a range object if it's actually narrower than default
+                const isDefault = sMin === 0 && sMax === t.strings.length - 1 &&
+                                  fMin === 0 && fMax === t.maxFrets;
+                if (isDefault) return null;
+                return { stringMin: sMin, stringMax: sMax, fretMin: fMin, fretMax: fMax };
+            }
+
+            function fbRender() {
+                const svgEl = document.getElementById('fbSvg');
+                if (!svgEl) return;
+                const tr = fbCurrentTrainingRange();
+                if (!fbState.fb) {
+                    fbState.fb = createFretboard({
+                        svg: svgEl,
+                        inst: fbState.inst,
+                        maxFret: fbState.maxFret,
+                        showNotes: fbState.showNotes,
+                        vertical: fbState.vertical,
+                        zoom: fbState.zoom,
+                        trainingRange: tr,
+                        onFretClick: fbHandleClick,
+                    });
+                } else {
+                    fbState.fb.redraw({
+                        inst: fbState.inst,
+                        maxFret: fbState.maxFret,
+                        showNotes: fbState.showNotes,
+                        vertical: fbState.vertical,
+                        zoom: fbState.zoom,
+                        trainingRange: tr,
+                    });
+                }
+                // Drag-to-scroll on empty areas + custom scrollbar
+                const sc = document.getElementById('fbScroller');
+                const bar = document.getElementById('fbScrollbar');
+                if (sc) enableDragScroll(sc);
+                if (sc && bar) {
+                    bindScrollbar(sc, bar);
+                    // Run update after layout settles
+                    if (bar._update) setTimeout(bar._update, 30);
+                }
+            }
+
+            function fbInRange(sIdx, fret) {
+                const tr = fbCurrentTrainingRange();
+                if (!tr) return true;
+                return sIdx >= tr.stringMin && sIdx <= tr.stringMax &&
+                       fret  >= tr.fretMin   && fret  <= tr.fretMax;
+            }
+
+            function fbHandleClick(sIdx, fret, midi) {
+                // Always play the note
+                playNoteOnInstrument(fbState.inst, midi);
+
+                if (fbState.mode === 'training' && fbState.training.active) {
+                    const pc = midiToPitchClass(midi);
+                    const target = fbState.training.targetPc;
+                    const feedback = document.getElementById('fbTrainFeedback');
+                    if (!target) return;
+                    const inRange = fbInRange(sIdx, fret);
+                    if (pc === target && inRange) {
+                        if (feedback) {
+                            feedback.textContent = '정답!';
+                            feedback.className = 'fb-train-feedback ok';
+                        }
+                        fbState.fb.flashDot(sIdx, fret, 'ok');
+                        setTimeout(function() { fbNextTrainingNote(); }, 550);
+                    } else {
+                        if (feedback) {
+                            if (!inRange) {
+                                feedback.textContent = '범위 밖이에요';
+                            } else {
+                                feedback.textContent = '그 자리는 ' + pc + ' 이에요';
+                            }
+                            feedback.className = 'fb-train-feedback bad';
+                        }
+                        fbState.fb.flashDot(sIdx, fret, 'bad');
+                    }
+                } else {
+                    fbState.fb.flashDot(sIdx, fret, 'ok');
+                }
+            }
+
+            window.fbSwitchMode = function(mode) {
+                fbState.mode = mode;
+                document.querySelectorAll('.fb-mode-tab').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.mode === mode);
+                });
+                const tp = document.getElementById('fbTrainingPanel');
+                if (tp) tp.style.display = mode === 'training' ? 'block' : 'none';
+                if (mode === 'training') {
+                    // Force showNotes OFF during training (dots become hit targets)
+                    const cb = document.getElementById('fbShowNotes');
+                    if (cb) { cb.checked = false; fbState.showNotes = false; }
+                    fbRender();
+                    // Auto-start: pick first question
+                    if (!fbState.training.targetPc) {
+                        fbNextTrainingNote();
+                    }
+                } else {
+                    fbState.training.active = false;
+                    fbRender(); // redraw without training-range dim
+                }
+            };
+
+            // Pretty labels for dropdown display
+            const INST_LABEL = {
+                guitar: '기타',
+                bass4:  '베이스 4현',
+                bass5:  '베이스 5현',
+            };
+
+            function syncInstDropdown(panelSel, inst) {
+                const root = document.querySelector(panelSel + ' .fb-inst-dropdown');
+                if (!root) return;
+                root.setAttribute('data-open', 'false');
+                const btn = root.querySelector('.fb-inst-current');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+                const lbl = root.querySelector('.fb-inst-current-label');
+                if (lbl) lbl.textContent = INST_LABEL[inst] || inst;
+                root.querySelectorAll('.fb-inst-option').forEach(function(o) {
+                    o.classList.toggle('active', o.dataset.inst === inst);
+                });
+            }
+
+            function toggleDropdown(root) {
+                if (!root) return;
+                const open = root.getAttribute('data-open') === 'true';
+                // Close all open dropdowns first
+                document.querySelectorAll('.fb-inst-dropdown[data-open="true"]').forEach(function(d) {
+                    d.setAttribute('data-open', 'false');
+                    const b = d.querySelector('.fb-inst-current');
+                    if (b) b.setAttribute('aria-expanded', 'false');
+                });
+                if (!open) {
+                    root.setAttribute('data-open', 'true');
+                    const b = root.querySelector('.fb-inst-current');
+                    if (b) b.setAttribute('aria-expanded', 'true');
+                }
+            }
+
+            // Close any open dropdown when clicking outside it
+            document.addEventListener('pointerdown', function(e) {
+                const sel = '.fb-inst-dropdown[data-open="true"], .sc-scale-dropdown[data-open="true"]';
+                document.querySelectorAll(sel).forEach(function(d) {
+                    if (!d.contains(e.target)) {
+                        d.setAttribute('data-open', 'false');
+                        const b = d.querySelector('.fb-inst-current, .sc-scale-current');
+                        if (b) b.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            });
+
+            window.fbToggleInstMenu = function(e) {
+                if (e && e.stopPropagation) e.stopPropagation();
+                toggleDropdown(document.getElementById('fbInstDropdown'));
+            };
+            window.scToggleInstMenu = function(e) {
+                if (e && e.stopPropagation) e.stopPropagation();
+                toggleDropdown(document.getElementById('scInstDropdown'));
+            };
+
+            window.fbSetInstrument = function(inst) {
+                fbState.inst = inst;
+                syncInstDropdown('#fretboardPanel', inst);
+                // String count may change → re-cap the current level's string range
+                fbApplyCurrentLevel();
+                // Preload bass samples if switching to bass
+                if (inst !== 'guitar') loadBassSamples();
+                fbRender();
+            };
+
+            window.fbToggleShowNotes = function(checked) {
+                fbState.showNotes = !!checked;
+                fbRender();
+            };
+
+            window.fbToggleVertical = function(checked) {
+                fbState.vertical = !!checked;
+                fbRender();
+            };
+
+            // 확대(+75%) ↔ 원래 크기 토글. 버튼 아이콘도 함께 교체.
+            window.fbToggleZoom = function() {
+                const zoomedIn = fbState.zoom > 1;
+                fbState.zoom = zoomedIn ? 1 : 1.75;
+                const btn = document.getElementById('fbZoomBtn');
+                if (btn) {
+                    btn.classList.toggle('zoomed', !zoomedIn);
+                    const icon = btn.querySelector('i');
+                    if (icon) {
+                        icon.className = 'fas fa-magnifying-glass-' + (zoomedIn ? 'plus' : 'minus');
+                    }
+                }
+                fbRender();
+            };
+
+            window.fbSetMaxFret = function(n) {
+                fbState.maxFret = n;
+                document.querySelectorAll('#fretboardPanel .fb-fretrange-btn').forEach(function(b) {
+                    const bn = parseInt(b.textContent, 10);
+                    b.classList.toggle('active', bn === n);
+                });
+                fbRender();
+            };
+
+            window.fbExpandFrets = function() {
+                // Toggle 15 ↔ 24
+                const newN = fbState.maxFret >= 24 ? 15 : 24;
+                window.fbSetMaxFret(newN);
+            };
+
+            // Collect all pitch classes that appear inside the active range
+            function fbAvailablePitchClasses() {
+                const t = TUNINGS[fbState.inst];
+                if (!t) return CHROMATIC.slice();
+                const tr = fbCurrentTrainingRange() || {
+                    stringMin: 0, stringMax: t.strings.length - 1,
+                    fretMin: 0, fretMax: t.maxFrets,
+                };
+                const set = new Set();
+                for (let i = tr.stringMin; i <= tr.stringMax; i++) {
+                    for (let f = tr.fretMin; f <= tr.fretMax; f++) {
+                        set.add(midiToPitchClass(t.strings[i].midi + f));
+                    }
+                }
+                return [...set];
+            }
+
+            // 5-level presets — simple stepped difficulty.
+            //   1: 전체
+            //   2: 5~9프렛
+            //   3: 1~4번줄 (얇은 4현)
+            //   4: 7~12프렛
+            //   5: 5~12프렛 · 1~3번줄
+            const TRAIN_LEVELS = {
+                1: { name: '전체 지판',                  fret: null,      str: null },
+                2: { name: '5~9프렛만',                  fret: [5, 9],    str: null },
+                3: { name: '1~4번줄만 (얇은 4현)',       fret: null,      str: [0, 3] },
+                4: { name: '7~12프렛만',                 fret: [7, 12],   str: null },
+                5: { name: '5~12프렛 · 1~3번줄 (종합)',  fret: [5, 12],   str: [0, 2] },
+            };
+
+            function fbApplyCurrentLevel() {
+                const lv = fbState.training.level || 1;
+                const def = TRAIN_LEVELS[lv] || TRAIN_LEVELS[1];
+                fbState.training.fretRange = def.fret ? { from: def.fret[0], to: def.fret[1] } : null;
+                const t = TUNINGS[fbState.inst];
+                if (def.str && t) {
+                    const maxS = t.strings.length - 1;
+                    fbState.training.stringRange = {
+                        from: Math.min(def.str[0], maxS),
+                        to:   Math.min(def.str[1], maxS),
+                    };
+                } else {
+                    fbState.training.stringRange = null;
+                }
+                // Update button actives + desc
+                document.querySelectorAll('#fretboardPanel .fb-train-level').forEach(function(b) {
+                    b.classList.toggle('active', parseInt(b.dataset.level, 10) === lv);
+                });
+                const desc = document.getElementById('fbTrainLevelDesc');
+                if (desc) desc.textContent = def.name;
+            }
+
+            window.fbSetLevel = function(lv) {
+                fbState.training.level = lv;
+                fbApplyCurrentLevel();
+                fbRender();
+                // Always reset: activate training, forget any existing target,
+                // and fire a fresh question matching the new level's range.
+                fbState.training.active = true;
+                fbState.training.targetPc = null;
+                fbNextTrainingNote();
+            };
+
+            // Play the current target at a comfortable reference octave so
+            // the user can HEAR what they're looking for (mirrors the ear-
+            // training "다시 듣기" flow).
+            window.fbReplayTarget = function() {
+                const pc = fbState.training.targetPc;
+                if (!pc) return;
+                const pcIdx = CHROMATIC.indexOf(pc);
+                if (pcIdx < 0) return;
+                // Middle-register reference — guitar ~C4, bass ~C3
+                const ref = fbState.inst === 'guitar' ? 60 : 43;
+                playNoteOnInstrument(fbState.inst, ref + pcIdx);
+            };
+
+            window.fbNextTrainingNote = function() {
+                fbState.training.active = true;
+                const pool = fbAvailablePitchClasses();
+                const prev = fbState.training.targetPc;
+                let pick;
+                if (pool.length === 0) {
+                    pick = CHROMATIC[Math.floor(Math.random() * CHROMATIC.length)];
+                } else if (pool.length === 1) {
+                    pick = pool[0];
+                } else {
+                    do {
+                        pick = pool[Math.floor(Math.random() * pool.length)];
+                    } while (pick === prev);
+                }
+                fbState.training.targetPc = pick;
+                const el = document.getElementById('fbTrainNote');
+                if (el) el.textContent = pick;
+                const feedback = document.getElementById('fbTrainFeedback');
+                if (feedback) { feedback.textContent = ''; feedback.className = 'fb-train-feedback'; }
+                // Auto-play the target sound (so user can identify by ear too)
+                setTimeout(function() { window.fbReplayTarget(); }, 60);
+            };
+
+            window.initFretboard = function() {
+                // Default to level 1, apply once so UI matches state
+                if (!fbState.training.level) fbState.training.level = 1;
+                fbApplyCurrentLevel();
+                fbRender();
+            };
+
+            // =============================================================
+            //  SCALES
+            // =============================================================
+            // Scale library — semitone intervals from root
+            const SCALE_LIBRARY = {
+                major: [
+                    { id: 'major',        name: '메이저 스케일',           intervals: [0,2,4,5,7,9,11], desc: '가장 기본적인 장조 스케일. 7개 음으로 구성돼요.' },
+                ],
+                minor: [
+                    { id: 'nat_minor',    name: '내추럴 마이너 (Aeolian)', intervals: [0,2,3,5,7,8,10], desc: '가장 기본적인 단조 스케일. 어둡고 차분한 느낌.' },
+                    { id: 'harm_minor',   name: '하모닉 마이너',           intervals: [0,2,3,5,7,8,11], desc: '7음을 반음 올린 단조 — 극적이고 동양적인 느낌.' },
+                    { id: 'mel_minor',    name: '멜로딕 마이너 (재즈)',    intervals: [0,2,3,5,7,9,11], desc: '재즈에서 많이 쓰는 상행 멜로딕 마이너.' },
+                ],
+                pent: [
+                    { id: 'maj_pent',     name: '메이저 펜타토닉',         intervals: [0,2,4,7,9],       desc: '메이저의 4, 7을 뺀 5음 스케일. 가장 단순하고 선율적.' },
+                    { id: 'min_pent',     name: '마이너 펜타토닉',         intervals: [0,3,5,7,10],      desc: '록·블루스·발라드의 필수 5음 스케일.' },
+                    { id: 'blues',        name: '블루스 스케일',           intervals: [0,3,5,6,7,10],    desc: '마이너 펜타토닉에 ♭5(블루노트) 추가.' },
+                ],
+                modes: [
+                    { id: 'ionian',       name: 'Ionian (1번 모드)',       intervals: [0,2,4,5,7,9,11], desc: '= 메이저 스케일. 모드의 1번.' },
+                    { id: 'dorian',       name: 'Dorian (2번)',            intervals: [0,2,3,5,7,9,10], desc: '재즈/팝에서 애용하는 중간 톤의 마이너.' },
+                    { id: 'phrygian',     name: 'Phrygian (3번)',          intervals: [0,1,3,5,7,8,10], desc: '스페인·플라멩코 느낌의 어두운 모드.' },
+                    { id: 'lydian',       name: 'Lydian (4번)',            intervals: [0,2,4,6,7,9,11], desc: '#4가 들어간 몽환적인 메이저.' },
+                    { id: 'mixolydian',   name: 'Mixolydian (5번)',        intervals: [0,2,4,5,7,9,10], desc: '블루스·로큰롤의 ♭7 메이저.' },
+                    { id: 'aeolian',      name: 'Aeolian (6번)',           intervals: [0,2,3,5,7,8,10], desc: '= 내추럴 마이너.' },
+                    { id: 'locrian',      name: 'Locrian (7번)',           intervals: [0,1,3,5,6,8,10], desc: '♭2, ♭5가 들어간 가장 불안정한 모드.' },
+                ],
+                exotic: [
+                    { id: 'wholetone',    name: '홀톤 스케일',             intervals: [0,2,4,6,8,10],    desc: '모든 음 간격이 전음인 6음 스케일. 꿈속 같은 느낌.' },
+                    { id: 'dim_wh',       name: '디미니시드 (홀하프)',     intervals: [0,2,3,5,6,8,9,11], desc: '전음-반음이 반복되는 8음 스케일 (재즈).' },
+                    { id: 'dim_hw',       name: '디미니시드 (하프홀)',     intervals: [0,1,3,4,6,7,9,10], desc: '반음-전음이 반복되는 8음 스케일. 도미넌트 위에서 사용.' },
+                    { id: 'hungarian',    name: '헝가리안 마이너',         intervals: [0,2,3,6,7,8,11],  desc: '하모닉 마이너 + #4. 집시·동유럽 색깔.' },
+                    { id: 'phrygian_dom', name: 'Phrygian Dominant',       intervals: [0,1,4,5,7,8,10],  desc: '하모닉 마이너의 5번 모드. 플라멩코·메탈.' },
+                    { id: 'chromatic',    name: '크로매틱',                intervals: [0,1,2,3,4,5,6,7,8,9,10,11], desc: '12음 전부. 엄밀히는 모든 음 사이가 반음.' },
+                ],
+            };
+
+            // Format interval labels for display (e.g. 1, 2, ♭3, ...)
+            function intervalLabel(semi) {
+                const labels = {0:'1',1:'♭2',2:'2',3:'♭3',4:'3',5:'4',6:'♯4',7:'5',8:'♭6',9:'6',10:'♭7',11:'7'};
+                return labels[semi] || String(semi);
+            }
+
+            const scState = {
+                inst: 'guitar',
+                maxFret: 24,
+                showNotes: true,
+                highlightRoot: true,
+                vertical: false,
+                zoom: 1,            // 1 = 기본 / 1.75 = +75% 확대
+                rootPc: 'A',
+                category: 'minor',
+                scaleId: 'nat_minor',
+                fb: null,
+            };
+
+            function scRender() {
+                const svgEl = document.getElementById('scSvg');
+                if (!svgEl) return;
+                const scale = scGetScale();
+                if (!scale) return;
+                const rootPcIdx = CHROMATIC.indexOf(scState.rootPc);
+                if (rootPcIdx < 0) return;
+                // Build a pitchclass → highlight lookup
+                const pcHighlights = {};
+                scale.intervals.forEach(function(semi) {
+                    const pc = CHROMATIC[(rootPcIdx + semi) % 12];
+                    pcHighlights[pc] = { semi: semi, isRoot: semi === 0 };
+                });
+
+                // Highlight function returns only the scale-note color. The
+                // "root" coloring is handled by the isRoot override in the
+                // fretboard draw function so the "루트 강조" toggle (which
+                // flips cfg.highlightRoot) actually takes effect.
+                const highlightsFn = function(midi, pc) {
+                    const h = pcHighlights[pc];
+                    if (!h) return null;
+                    return { color: '#72c492', stroke: '#3a8a5c', textColor: '#1a2421' };
+                };
+
+                if (!scState.fb) {
+                    scState.fb = createFretboard({
+                        svg: svgEl,
+                        inst: scState.inst,
+                        maxFret: scState.maxFret,
+                        showNotes: scState.showNotes,
+                        vertical: scState.vertical,
+                        zoom: scState.zoom,
+                        rootPc: scState.rootPc,
+                        highlightRoot: scState.highlightRoot,
+                        highlights: highlightsFn,
+                        onFretClick: function(sIdx, fret, midi) {
+                            playNoteOnInstrument(scState.inst, midi);
+                            scState.fb.flashDot(sIdx, fret, 'ok');
+                        },
+                    });
+                } else {
+                    scState.fb.redraw({
+                        inst: scState.inst,
+                        maxFret: scState.maxFret,
+                        showNotes: scState.showNotes,
+                        vertical: scState.vertical,
+                        zoom: scState.zoom,
+                        rootPc: scState.rootPc,
+                        highlightRoot: scState.highlightRoot,
+                        highlights: highlightsFn,
+                    });
+                }
+                // Drag-to-scroll on empty areas + custom scrollbar
+                const sc = document.getElementById('scScroller');
+                const bar = document.getElementById('scScrollbar');
+                if (sc) enableDragScroll(sc);
+                if (sc && bar) {
+                    bindScrollbar(sc, bar);
+                    if (bar._update) setTimeout(bar._update, 30);
+                }
+                scUpdateInfo();
+            }
+
+            function scGetScale() {
+                const list = SCALE_LIBRARY[scState.category] || [];
+                return list.find(function(s) { return s.id === scState.scaleId; })
+                    || list[0];
+            }
+
+            function scUpdateInfo() {
+                const box = document.getElementById('scInfo');
+                if (!box) return;
+                const scale = scGetScale();
+                if (!scale) { box.classList.remove('show'); return; }
+                const rootPcIdx = CHROMATIC.indexOf(scState.rootPc);
+                const notes = scale.intervals.map(function(s) {
+                    return CHROMATIC[(rootPcIdx + s) % 12];
+                });
+                const degrees = scale.intervals.map(intervalLabel).join(' ');
+                box.classList.add('show');
+                box.innerHTML =
+                    '<div><b>' + scState.rootPc + ' ' + scale.name + '</b>' + (scale.desc || '') + '</div>' +
+                    '<div style="margin-top:0.3rem;font-size:0.72rem;color:rgba(26,36,33,0.45);">구성음</div>' +
+                    '<div class="sc-notes-list">' + notes.join(' – ') + '</div>' +
+                    '<div style="margin-top:0.2rem;font-size:0.72rem;color:rgba(26,36,33,0.45);">도수 &nbsp;' + degrees + '</div>';
+            }
+
+            function scBuildRoots() {
+                const grid = document.getElementById('scRootGrid');
+                if (!grid || grid.dataset.built) return;
+                grid.innerHTML = CHROMATIC.map(function(pc) {
+                    const cls = pc === scState.rootPc ? 'sc-root-btn active' : 'sc-root-btn';
+                    return '<button class="' + cls + '" data-pc="' + pc + '" onclick="scSetRoot(\'' + pc + '\')">' + pc + '</button>';
+                }).join('');
+                grid.dataset.built = '1';
+            }
+
+            function scBuildScaleMenu() {
+                const dd = document.getElementById('scScaleDropdown');
+                const menu = document.getElementById('scScaleMenu');
+                const label = document.getElementById('scScaleCurrentLabel');
+                if (!dd || !menu) return;
+                const scales = SCALE_LIBRARY[scState.category] || [];
+
+                // Make sure scState.scaleId is valid for this category;
+                // otherwise fall back to the first entry.
+                if (!scales.some(function(s){ return s.id === scState.scaleId; })) {
+                    scState.scaleId = scales[0] ? scales[0].id : null;
+                }
+                const cur = scales.find(function(s){ return s.id === scState.scaleId; });
+                if (label) label.textContent = cur ? cur.name : '—';
+
+                // Single-scale categories (e.g. 메이저) — display as static label
+                dd.classList.toggle('single', scales.length <= 1);
+                dd.setAttribute('data-open', 'false');
+
+                menu.innerHTML = scales.map(function(s) {
+                    const cls = s.id === scState.scaleId ? 'sc-scale-menu-item active' : 'sc-scale-menu-item';
+                    return '<button class="' + cls + '" data-id="' + s.id + '" onclick="scSetScale(\'' + s.id + '\')">' + s.name + '</button>';
+                }).join('');
+            }
+
+            window.scToggleScaleMenu = function(e) {
+                if (e && e.stopPropagation) e.stopPropagation();
+                const dd = document.getElementById('scScaleDropdown');
+                if (!dd) return;
+                // Single-item categories don't open
+                if (dd.classList.contains('single')) return;
+                const open = dd.getAttribute('data-open') === 'true';
+                // Close any other open dropdowns first
+                document.querySelectorAll('.fb-inst-dropdown[data-open="true"], .sc-scale-dropdown[data-open="true"]').forEach(function(d) {
+                    if (d !== dd) d.setAttribute('data-open', 'false');
+                });
+                dd.setAttribute('data-open', open ? 'false' : 'true');
+                const btn = dd.querySelector('.sc-scale-current');
+                if (btn) btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+            };
+
+            window.scSetInstrument = function(inst) {
+                scState.inst = inst;
+                syncInstDropdown('#scalesPanel', inst);
+                if (inst !== 'guitar') loadBassSamples();
+                scRender();
+            };
+
+            window.scSetRoot = function(pc) {
+                scState.rootPc = pc;
+                document.querySelectorAll('#scRootGrid .sc-root-btn').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.pc === pc);
+                });
+                scRender();
+            };
+
+            // Category 드롭다운용 라벨 매핑 (menu 안의 buttons 과 동일 텍스트)
+            const SC_CATEGORY_LABELS = {
+                major:  '메이저',
+                minor:  '마이너',
+                pent:   '펜타/블루스',
+                modes:  '모드',
+                exotic: '특이 스케일'
+            };
+
+            window.scToggleCategoryMenu = function(e) {
+                if (e && e.stopPropagation) e.stopPropagation();
+                const dd = document.getElementById('scCategoryDropdown');
+                if (!dd) return;
+                const open = dd.getAttribute('data-open') === 'true';
+                // 열려 있던 다른 드롭다운 (악기/스케일) 닫기
+                document.querySelectorAll('.fb-inst-dropdown[data-open="true"], .sc-scale-dropdown[data-open="true"]').forEach(function(d) {
+                    if (d !== dd) d.setAttribute('data-open', 'false');
+                });
+                dd.setAttribute('data-open', open ? 'false' : 'true');
+                const btn = dd.querySelector('.sc-scale-current');
+                if (btn) btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+            };
+
+            window.scSetCategory = function(cat) {
+                scState.category = cat;
+                const scales = SCALE_LIBRARY[cat] || [];
+                if (scales.length) scState.scaleId = scales[0].id;
+                // Category 드롭다운 라벨 + active 표시 + 메뉴 닫기
+                const catLabel = document.getElementById('scCategoryCurrentLabel');
+                if (catLabel) catLabel.textContent = SC_CATEGORY_LABELS[cat] || cat;
+                document.querySelectorAll('#scCategoryMenu .sc-scale-menu-item').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.cat === cat);
+                });
+                const catDd = document.getElementById('scCategoryDropdown');
+                if (catDd) catDd.setAttribute('data-open', 'false');
+                scBuildScaleMenu();
+                scRender();
+            };
+
+            window.scSetScale = function(id) {
+                scState.scaleId = id;
+                // Close menu + refresh labels/active state
+                const dd = document.getElementById('scScaleDropdown');
+                if (dd) dd.setAttribute('data-open', 'false');
+                scBuildScaleMenu();
+                scRender();
+            };
+
+            window.scToggleShowNotes = function(checked) {
+                scState.showNotes = !!checked;
+                scRender();
+            };
+
+            window.scToggleHighlightRoot = function(checked) {
+                scState.highlightRoot = !!checked;
+                scRender();
+            };
+
+            window.scToggleVertical = function(checked) {
+                scState.vertical = !!checked;
+                scRender();
+            };
+
+            // 확대(+75%) ↔ 원래 크기 토글. 버튼 아이콘도 함께 교체.
+            window.scToggleZoom = function() {
+                const zoomedIn = scState.zoom > 1;
+                scState.zoom = zoomedIn ? 1 : 1.75;
+                const btn = document.getElementById('scZoomBtn');
+                if (btn) {
+                    btn.classList.toggle('zoomed', !zoomedIn);
+                    const icon = btn.querySelector('i');
+                    if (icon) {
+                        icon.className = 'fas fa-magnifying-glass-' + (zoomedIn ? 'plus' : 'minus');
+                    }
+                }
+                scRender();
+            };
+
+            window.scSetMaxFret = function(n) {
+                scState.maxFret = n;
+                document.querySelectorAll('#scalesPanel .fb-fretrange-btn').forEach(function(b) {
+                    const bn = parseInt(b.textContent, 10);
+                    b.classList.toggle('active', bn === n);
+                });
+                scRender();
+            };
+
+            function scSyncCategoryDropdown() {
+                const cat = scState.category;
+                const label = document.getElementById('scCategoryCurrentLabel');
+                if (label) label.textContent = SC_CATEGORY_LABELS[cat] || cat;
+                document.querySelectorAll('#scCategoryMenu .sc-scale-menu-item').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.cat === cat);
+                });
+            }
+
+            window.initScales = function() {
+                scBuildRoots();
+                scSyncCategoryDropdown();
+                scBuildScaleMenu();
+                scRender();
+            };
+
+            // =============================================================
+            //  PIANO
+            // =============================================================
+            // 88키 피아노 (A0 = MIDI 21 ~ C8 = MIDI 108).
+            // 렌더링 철학은 fretboard 와 동일 — SVG viewBox 를 고정하고
+            // 줌은 width/height 속성에만 적용, 드래그/스크롤·히트판정은 모두
+            // viewBox 좌표계에서 일어남. 그래서 확대해도 정확히 눌러진 키가
+            // 울린다. 인접 키 경계는 후입선승 (검은 건반이 흰 건반 위에 덮여
+            // 있어 검은 건반 영역을 터치하면 검은 건반이 먼저 hit).
+            const pnState = {
+                showNotes: true,
+                zoom: 1,
+                audioCtx: null,
+            };
+            const PN_FIRST_MIDI = 21;   // A0
+            const PN_LAST_MIDI  = 108;  // C8
+            const PN_WHITE_W = 36;
+            const PN_WHITE_H = 150;
+            const PN_BLACK_W = 22;
+            const PN_BLACK_H = 96;
+            const PN_LABEL_BAND = 22;   // label 영역 (흰 건반 하단)
+            // 0=C 1=C# 2=D 3=D# 4=E 5=F 6=F# 7=G 8=G# 9=A 10=A# 11=B
+            const PN_WHITE_PCS = [0, 2, 4, 5, 7, 9, 11];
+
+            function pnIsBlack(midi) {
+                return PN_WHITE_PCS.indexOf(midi % 12) === -1;
+            }
+
+            function pnPitchLabel(midi) {
+                const pc = midi % 12;
+                const octave = Math.floor(midi / 12) - 1;
+                const names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+                return names[pc] + octave;
+            }
+
+            function pnEnsureAudio() {
+                if (!pnState.audioCtx) {
+                    try {
+                        pnState.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    } catch (e) { return null; }
+                }
+                if (pnState.audioCtx.state === 'suspended') {
+                    pnState.audioCtx.resume();
+                }
+                return pnState.audioCtx;
+            }
+
+            // 단순한 피아노 사운드 — 짧은 어택 + 지수 감쇠 + 몇 개의 배음.
+            function pnPlayMidi(midi) {
+                const ctx = pnEnsureAudio();
+                if (!ctx) return;
+                const freq = 440 * Math.pow(2, (midi - 69) / 12);
+                const t0 = ctx.currentTime;
+                const dur = 1.6;
+                const master = ctx.createGain();
+                master.gain.setValueAtTime(0.0001, t0);
+                master.gain.exponentialRampToValueAtTime(0.35, t0 + 0.008);
+                master.gain.exponentialRampToValueAtTime(0.18, t0 + 0.12);
+                master.gain.exponentialRampToValueAtTime(0.0005, t0 + dur);
+                master.connect(ctx.destination);
+                const harmonics = [
+                    { mult: 1,    vol: 1,    type: 'triangle' },
+                    { mult: 2,    vol: 0.35, type: 'sine' },
+                    { mult: 3,    vol: 0.12, type: 'sine' },
+                    { mult: 4,    vol: 0.06, type: 'sine' },
+                    { mult: 5.01, vol: 0.03, type: 'sine' }
+                ];
+                harmonics.forEach(function(h) {
+                    const osc = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    osc.type = h.type;
+                    osc.frequency.value = freq * h.mult;
+                    g.gain.value = h.vol;
+                    osc.connect(g);
+                    g.connect(master);
+                    osc.start(t0);
+                    osc.stop(t0 + dur + 0.05);
+                });
+            }
+
+            // 88키 중 흰 건반만 순서대로 반환
+            function pnWhiteMidis() {
+                const out = [];
+                for (let m = PN_FIRST_MIDI; m <= PN_LAST_MIDI; m++) {
+                    if (!pnIsBlack(m)) out.push(m);
+                }
+                return out;
+            }
+
+            function pnRender() {
+                const svg = document.getElementById('pnSvg');
+                if (!svg) return;
+                const whites = pnWhiteMidis();
+                const nWhites = whites.length;
+                const viewW = nWhites * PN_WHITE_W;
+                const viewH = PN_WHITE_H;
+
+                const zoom = pnState.zoom || 1;
+                svg.setAttribute('viewBox', '0 0 ' + viewW + ' ' + viewH);
+                svg.setAttribute('width', viewW * zoom);
+                svg.setAttribute('height', viewH * zoom);
+
+                let html = '';
+                // 흰 건반 먼저 (검은 건반 아래에 깔림)
+                whites.forEach(function(midi, i) {
+                    const x = i * PN_WHITE_W;
+                    const pc = midi % 12;
+                    const isC = pc === 0;
+                    html += '<rect class="pn-key pn-white" data-midi="' + midi +
+                        '" x="' + (x + 0.5) + '" y="0" width="' + (PN_WHITE_W - 1) +
+                        '" height="' + PN_WHITE_H + '" fill="#ffffff" stroke="#2a3a35" stroke-width="1" rx="2"/>';
+                    // C 에는 옥타브 마커 + 라벨(항상). 다른 흰 건반은 showNotes 에 따라.
+                    if (pnState.showNotes || isC) {
+                        const labelY = PN_WHITE_H - 10;
+                        const label = isC ? pnPitchLabel(midi) : ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'][pc];
+                        const color = isC ? '#2a6b4a' : 'rgba(26,36,33,0.55)';
+                        const weight = isC ? '700' : '500';
+                        html += '<text x="' + (x + PN_WHITE_W/2) + '" y="' + labelY +
+                            '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="10" ' +
+                            'font-weight="' + weight + '" fill="' + color + '" pointer-events="none">' + label + '</text>';
+                    }
+                });
+
+                // 검은 건반 — 특정 흰 건반의 오른쪽에 붙음 (C,D,F,G,A 다음)
+                whites.forEach(function(midi, i) {
+                    const pc = midi % 12;
+                    const hasBlackAfter = [0, 2, 5, 7, 9].indexOf(pc) !== -1;
+                    if (!hasBlackAfter) return;
+                    const blackMidi = midi + 1;
+                    if (blackMidi > PN_LAST_MIDI) return;
+                    const bx = (i + 1) * PN_WHITE_W - PN_BLACK_W / 2;
+                    html += '<rect class="pn-key pn-black" data-midi="' + blackMidi +
+                        '" x="' + bx + '" y="0" width="' + PN_BLACK_W +
+                        '" height="' + PN_BLACK_H + '" fill="#1a2421" stroke="#0a1410" stroke-width="1" rx="2"/>';
+                    if (pnState.showNotes) {
+                        const bpc = blackMidi % 12;
+                        const blabel = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'][bpc];
+                        html += '<text x="' + (bx + PN_BLACK_W/2) + '" y="' + (PN_BLACK_H - 7) +
+                            '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" font-size="8" ' +
+                            'font-weight="600" fill="rgba(255,255,255,0.78)" pointer-events="none">' + blabel + '</text>';
+                    }
+                });
+
+                svg.innerHTML = html;
+
+                // 이벤트 바인딩 — 한 번만
+                if (!svg._pnBound) {
+                    svg._pnBound = true;
+                    let activeKey = null;
+                    function fireAt(target) {
+                        const midi = parseInt(target.dataset.midi, 10);
+                        if (!isNaN(midi)) {
+                            pnPlayMidi(midi);
+                            target.classList.add('pn-key-active');
+                            setTimeout(function() { target.classList.remove('pn-key-active'); }, 180);
+                        }
+                    }
+                    svg.addEventListener('pointerdown', function(e) {
+                        const target = e.target.closest('.pn-key');
+                        if (!target) return;
+                        e.stopPropagation();
+                        activeKey = target;
+                        fireAt(target);
+                        try { svg.setPointerCapture(e.pointerId); } catch(err) {}
+                    });
+                    svg.addEventListener('pointermove', function(e) {
+                        if (!activeKey) return;
+                        const el = document.elementFromPoint(e.clientX, e.clientY);
+                        if (!el) return;
+                        const key = el.closest && el.closest('.pn-key');
+                        if (key && key !== activeKey) {
+                            activeKey = key;
+                            fireAt(key);
+                        }
+                    });
+                    const release = function() { activeKey = null; };
+                    svg.addEventListener('pointerup', release);
+                    svg.addEventListener('pointercancel', release);
+                    svg.addEventListener('pointerleave', release);
+                }
+
+                // 드래그 스크롤 + 커스텀 스크롤바 (프렛보드와 동일 인프라 재활용)
+                const sc = document.getElementById('pnScroller');
+                const bar = document.getElementById('pnScrollbar');
+                if (sc) enableDragScroll(sc);
+                if (sc && bar) {
+                    bindScrollbar(sc, bar);
+                    if (bar._update) setTimeout(bar._update, 30);
+                }
+            }
+
+            window.pnToggleShowNotes = function(checked) {
+                pnState.showNotes = !!checked;
+                pnRender();
+            };
+
+            window.pnToggleZoom = function() {
+                const zoomedIn = pnState.zoom > 1;
+                pnState.zoom = zoomedIn ? 1 : 1.75;
+                const btn = document.getElementById('pnZoomBtn');
+                if (btn) {
+                    btn.classList.toggle('zoomed', !zoomedIn);
+                    const icon = btn.querySelector('i');
+                    if (icon) {
+                        icon.className = 'fas fa-magnifying-glass-' + (zoomedIn ? 'plus' : 'minus');
+                    }
+                }
+                pnRender();
+            };
+
+            window.initPiano = function() {
+                pnRender();
+                // 처음 진입 시 C4(MIDI 60) 주변이 보이도록 스크롤 초기화
+                const sc = document.getElementById('pnScroller');
+                if (sc) {
+                    const whites = pnWhiteMidis();
+                    // C4 = midi 60 이 whites 의 몇 번째인지 찾기
+                    let cIdx = whites.indexOf(60);
+                    if (cIdx < 0) cIdx = Math.floor(whites.length / 2);
+                    const targetX = cIdx * PN_WHITE_W * (pnState.zoom || 1);
+                    const center = Math.max(0, targetX - sc.clientWidth / 2 + PN_WHITE_W / 2);
+                    sc.scrollLeft = center;
+                }
+            };
+
+            // Redraw on resize (so vertical layouts stay centered)
+            window.addEventListener('resize', function() {
+                if (document.getElementById('fretboardPanel').classList.contains('active')) {
+                    if (fbState.fb) fbRender();
+                }
+                if (document.getElementById('scalesPanel').classList.contains('active')) {
+                    if (scState.fb) scRender();
+                }
+                if (document.getElementById('pianoPanel').classList.contains('active')) {
+                    pnRender();
+                }
+            });
+
+            // If user lands directly on one of these via hash
+            const hash = (window.location.hash || '').replace('#','').toLowerCase();
+            if (hash === 'fretboard' || hash === 'scales') {
+                // switchTool in the earlier block will call initX
+            }
+        })();
     </script>
 
     <script>
