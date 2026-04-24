@@ -1354,6 +1354,22 @@
             color: var(--white);
             border-color: var(--green-mid);
         }
+        /* 지옥 난이도 — 살짝 붉은 톤으로 시각적 경고.
+           다른 난이도 버튼과 동일한 구조 유지하되 색만 red 계열로 swap. */
+        .et-diff-btn[data-cdiff="hell"] {
+            border-color: rgba(196, 64, 52, 0.28);
+            background: rgba(196, 64, 52, 0.06);
+            color: rgba(148, 42, 34, 0.72);
+        }
+        .et-diff-btn[data-cdiff="hell"]:hover {
+            background: rgba(196, 64, 52, 0.1);
+            color: rgba(148, 42, 34, 0.9);
+        }
+        .et-diff-btn[data-cdiff="hell"].active {
+            background: #c44034;
+            border-color: #c44034;
+            color: var(--white);
+        }
         .et-next-btn {
             display: flex;
             background: rgba(42, 107, 74, 0.04);
@@ -1622,6 +1638,9 @@
             gap: 0.5rem;
             margin-bottom: 1rem;
         }
+        /* 코드 맞추기는 난이도에 따라 선택지가 14개까지 늘어날 수 있어
+           1행 4버튼으로 표시한다 (인터벌·음정 모드는 기존 3열 유지). */
+        #etChordChoices { grid-template-columns: repeat(4, 1fr); }
         .et-choice-btn {
             padding: 0.7rem 0.3rem;
             border-radius: 10px;
@@ -2839,6 +2858,7 @@
                                 <button class="et-diff-btn active" data-cdiff="easy" onclick="setETChordDifficulty('easy')">쉬움</button>
                                 <button class="et-diff-btn" data-cdiff="medium" onclick="setETChordDifficulty('medium')">보통</button>
                                 <button class="et-diff-btn" data-cdiff="hard" onclick="setETChordDifficulty('hard')">어려움</button>
+                                <button class="et-diff-btn" data-cdiff="hell" onclick="setETChordDifficulty('hell')">지옥</button>
                             </div>
                         </div>
                     </div>
@@ -5039,16 +5059,50 @@
             const CHORD_TYPES = [
                 { name: '메이저', offsets: [0, 4, 7] },
                 { name: '마이너', offsets: [0, 3, 7] },
-                { name: '7th', offsets: [0, 4, 7, 10] },
-                { name: 'm7', offsets: [0, 3, 7, 10] },
-                { name: 'Maj7', offsets: [0, 4, 7, 11] },
-                { name: 'dim', offsets: [0, 3, 6] },
-                { name: 'sus4', offsets: [0, 5, 7] }
+                { name: '7th',    offsets: [0, 4, 7, 10] },
+                { name: 'm7',     offsets: [0, 3, 7, 10] },
+                { name: 'Maj7',   offsets: [0, 4, 7, 11] },
+                { name: 'dim',    offsets: [0, 3, 6] },
+                { name: 'sus4',   offsets: [0, 5, 7] },
+                // add9 — 사용자 지정: 메이저 스케일의 1·2·5음 (root, 2nd, 5th)
+                { name: 'add9',   offsets: [0, 2, 7] },
+                // m7b5 (half-diminished) — 1, b3, b5, b7
+                { name: 'm7b5',   offsets: [0, 3, 6, 10] },
+                // ---- 지옥 난이도 전용 추가 코드 ----
+                // m6 — 1, b3, 5, 6
+                { name: 'm6',     offsets: [0, 3, 7, 9] },
+                // 7b9 — 1, 3, 5, b7, b9 (b9 = root + 13 semitones, octave + minor 2nd)
+                { name: '7b9',    offsets: [0, 4, 7, 10, 13] },
+                // 7#9 (Hendrix chord) — 1, 3, 5, b7, #9 (#9 = root + 15 semitones)
+                { name: '7#9',    offsets: [0, 4, 7, 10, 15] },
+                // 13 — 1, 3, 5, b7, 13 (13 = 6도를 옥타브 위로 = root + 21 semitones)
+                { name: '13',     offsets: [0, 4, 7, 10, 21] },
+                // 7b13 — 1, 3, 5, b7, b13 (b13 = b6을 옥타브 위로 = root + 20 semitones)
+                { name: '7b13',   offsets: [0, 4, 7, 10, 20] }
             ];
+            // 표시 순서 = 4열 그리드에서 1열당 4버튼씩 위→아래로 채운 순서.
+            // 의도된 행 구성:
+            //   쉬움   | 메이저 · 마이너
+            //   보통   | 메이저 · 마이너 · sus4 · add9
+            //          | 7th · m7
+            //   어려움 | 메이저 · 마이너 · sus4 · add9
+            //          | 7th · m7 · Maj7 · m7b5
+            //          | dim
+            //   지옥   | 메이저 · 마이너 · sus4 · add9
+            //          | 7th · m7 · Maj7 · m7b5
+            //          | dim · m6 · 7b9 · 7#9
+            //          | 13 · 7b13
             const CHORD_DIFFICULTY = {
                 easy:   ['메이저', '마이너'],
-                medium: ['메이저', '마이너', '7th', 'm7'],
-                hard:   ['메이저', '마이너', '7th', 'm7', 'Maj7', 'dim', 'sus4']
+                medium: ['메이저', '마이너', 'sus4', 'add9',
+                         '7th', 'm7'],
+                hard:   ['메이저', '마이너', 'sus4', 'add9',
+                         '7th', 'm7', 'Maj7', 'm7b5',
+                         'dim'],
+                hell:   ['메이저', '마이너', 'sus4', 'add9',
+                         '7th', 'm7', 'Maj7', 'm7b5',
+                         'dim', 'm6', '7b9', '7#9',
+                         '13', '7b13']
             };
 
             let _etDiff = 'easy';
@@ -5344,7 +5398,11 @@
 
             function getActiveChordTypes() {
                 var names = CHORD_DIFFICULTY[_etChordDiff];
-                return CHORD_TYPES.filter(c => names.includes(c.name));
+                // CHORD_DIFFICULTY 의 나열 순서 그대로 표시되도록 names 기준으로 매핑
+                // (filter 을 쓰면 CHORD_TYPES 원본 순서가 나와버려 재배열이 무시됨).
+                return names.map(function(n) {
+                    return CHORD_TYPES.find(function(c) { return c.name === n; });
+                }).filter(Boolean);
             }
 
             function renderChordChoices() {
@@ -5410,7 +5468,11 @@
                 if (!window._CHORDS || !window._renderChordSVG) return '';
                 const suffixMap = {
                     '메이저': '', '마이너': 'm', '7th': '7', 'm7': 'm7',
-                    'Maj7': 'maj7', 'dim': 'dim', 'sus4': 'sus4'
+                    'Maj7': 'maj7', 'dim': 'dim', 'sus4': 'sus4',
+                    'm7b5': 'm7b5'
+                    // add9, m6, 7b9, 7#9, 13, 7b13 은 현재 코드 라이브러리에
+                    // 대응 엔트리가 없어 다이어그램을 렌더링하지 않는다.
+                    // (findChordDiagram 이 '' 을 반환 → UI 영향 없음)
                 };
                 const suffix = suffixMap[typeName];
                 if (suffix === undefined) return '';
