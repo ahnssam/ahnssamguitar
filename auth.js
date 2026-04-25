@@ -293,6 +293,70 @@ nav.scrolled .auth-btn:hover {
        Bump body min-height so signup matches login and the modal stays put. */
     .auth-body { min-height: 425px; }
 }
+
+/* ===== DARK MODE ===== */
+:root[data-theme="dark"] .auth-modal {
+    background: #1d2a26;
+    color: #e8f0ec;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+}
+:root[data-theme="dark"] .auth-modal-title { color: #d8e8df; }
+:root[data-theme="dark"] .auth-modal-sub { color: rgba(232, 240, 236, 0.55); }
+:root[data-theme="dark"] .auth-modal-close { color: rgba(232, 240, 236, 0.5); }
+:root[data-theme="dark"] .auth-modal-close:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(232, 240, 236, 0.9);
+}
+:root[data-theme="dark"] .auth-tabs { background: rgba(255, 255, 255, 0.05); }
+:root[data-theme="dark"] .auth-tab { color: rgba(232, 240, 236, 0.7); }
+:root[data-theme="dark"] .auth-tab.active {
+    background: rgba(82, 168, 114, 0.2);
+    color: #d8e8df;
+    box-shadow: none;
+}
+:root[data-theme="dark"] .auth-oauth-btn {
+    background: rgba(255, 255, 255, 0.05);
+    color: #d8e8df;
+    border-color: rgba(180, 230, 200, 0.18);
+}
+:root[data-theme="dark"] .auth-oauth-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(180, 230, 200, 0.32);
+}
+:root[data-theme="dark"] .auth-oauth-btn.google { color: #e8f0ec; }
+:root[data-theme="dark"] .auth-oauth-btn.kakao {
+    background: #FEE500;
+    color: #3a2c00;
+}
+:root[data-theme="dark"] .auth-divider { color: rgba(232, 240, 236, 0.4); }
+:root[data-theme="dark"] .auth-divider::before,
+:root[data-theme="dark"] .auth-divider::after {
+    background: rgba(180, 230, 200, 0.14);
+}
+:root[data-theme="dark"] .auth-label { color: rgba(232, 240, 236, 0.78); }
+:root[data-theme="dark"] .auth-input {
+    background: rgba(255, 255, 255, 0.04);
+    color: #e8f0ec;
+    border-color: rgba(180, 230, 200, 0.18);
+}
+:root[data-theme="dark"] .auth-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--green-mid);
+}
+:root[data-theme="dark"] .auth-msg.error { background: rgba(180, 60, 60, 0.18); color: #f4a8a4; }
+:root[data-theme="dark"] .auth-msg.success { background: rgba(82, 168, 114, 0.18); color: #b5e6c8; }
+:root[data-theme="dark"] .auth-user-menu {
+    background: #1d2a26;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+:root[data-theme="dark"] .auth-user-menu button { color: #d8e8df; }
+:root[data-theme="dark"] .auth-user-menu button:hover {
+    background: rgba(82, 168, 114, 0.18);
+    color: #fff;
+}
+:root[data-theme="dark"] .auth-user-menu hr {
+    border-top-color: rgba(180, 230, 200, 0.14);
+}
 `;
 
     // ------------------------------------------------------------
