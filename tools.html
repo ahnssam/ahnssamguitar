@@ -1477,10 +1477,13 @@
         .sc-piano-svg {
             display: block;
             max-width: 100%;
-            /* Disable native touch gestures so we can handle drag-slide
-               note playback without the browser pre-empting it. */
-            touch-action: none;
+            /* Inherit touch-action from .fb-svg (pan-y) so empty-area drags
+               can still scroll the page on mobile. Per-key elements override
+               with their own `touch-action: none` for drag-slide playback. */
         }
+        /* When zoomed in, let the piano grow past the container width and
+           the horizontal scroller take over — same model the fretboard uses. */
+        .sc-piano-svg.zoomed { max-width: none; }
         .sc-piano-key { touch-action: none; }
         /* Center piano keyboard inside the scroller (fretboard stays
            left-aligned because it overflows anyway). */
@@ -1737,8 +1740,10 @@
             -ms-overflow-style: none;         /* IE/Edge legacy */
             -webkit-overflow-scrolling: touch;
             max-height: 70vh;
-            /* Disable default touch gestures so we can handle drag-to-play */
-            touch-action: pan-x pan-y;
+            /* Vertical native pan stays enabled so empty-area up/down drags
+               can scroll the page when there's no internal vertical overflow.
+               Horizontal pan is handled by JS (enableDragScroll). */
+            touch-action: pan-y;
         }
         .fb-scroller::-webkit-scrollbar { display: none; width: 0; height: 0; }
         .fb-scroller.dragging { cursor: grabbing; }
@@ -1750,9 +1755,14 @@
             display: block;
             user-select: none;
             -webkit-user-select: none;
-            /* Enable drag gesture — we prevent default scroll from touch start */
-            touch-action: none;
+            /* Empty SVG area: allow native vertical pan (page scroll) on mobile.
+               Note dots / hit zones override this to `none` below so JS can
+               capture pointermove for drag-slide note playing. */
+            touch-action: pan-y;
         }
+        /* Note dots / hit areas — block native gestures so JS handles them */
+        .fb-svg .fb-dot-group,
+        .fb-svg .fb-hit { touch-action: none; }
         /* Vertical rotation mode: center and cap width */
         .fb-board-wrap.vertical {
             display: block;
@@ -8383,6 +8393,8 @@
                     showNotes: true,
                     highlightRoot: true,
                     onKeyClick: null,
+                    zoom: 1,
+                    vertical: false,
                 }, options);
 
                 const WHITE_PCS_IN_OCT = ['C','D','E','F','G','A','B'];
@@ -8401,12 +8413,23 @@
                     const W_W = 42, W_H = 150, B_W = 26, B_H = 96;
                     const padX = 12, padY = 10;
                     const totalW = (NUM_OCTAVES * 7 + 1) * W_W;
-                    const viewW = totalW + padX * 2;
-                    const viewH = W_H + padY * 2;
+                    const innerW = totalW + padX * 2;
+                    const innerH = W_H + padY * 2;
+
+                    // Vertical mode: swap viewBox dims, rotate inner content
+                    const rotate = !!cfg.vertical;
+                    const viewW = rotate ? innerH : innerW;
+                    const viewH = rotate ? innerW : innerH;
+                    const zoom = cfg.zoom || 1;
 
                     svg.setAttribute('viewBox', '0 0 ' + viewW + ' ' + viewH);
-                    svg.setAttribute('width', viewW);
-                    svg.setAttribute('height', viewH);
+                    svg.setAttribute('width', viewW * zoom);
+                    svg.setAttribute('height', viewH * zoom);
+
+                    // Rotation transform: rotate(90) + translate to keep content in view
+                    // 90도 회전 후엔 (x, y) → (innerH - y, x). 그래서 group 을
+                    // translate(innerH, 0) rotate(90) 로 감싼다.
+                    const groupTransform = rotate ? 'translate(' + innerH + ', 0) rotate(90)' : '';
 
                     const rootIdx = CHROMATIC.indexOf(cfg.rootPc);
                     const scaleSet = new Set((cfg.intervals || []).map(function(s) {
@@ -8503,7 +8526,18 @@
                         }
                     }
 
-                    svg.innerHTML = content;
+                    if (groupTransform) {
+                        svg.innerHTML = '<g transform="' + groupTransform + '">' + content + '</g>';
+                    } else {
+                        svg.innerHTML = content;
+                    }
+
+                    // Center vertically-rotated piano in its wrap (uses same
+                    // .vertical class as fretboard for consistent CSS).
+                    const wrap = svg.parentElement;
+                    if (wrap) wrap.classList.toggle('vertical', rotate);
+                    // Let zoom override the default "fit to container" max-width
+                    svg.classList.toggle('zoomed', zoom > 1);
 
                     // Bind ONCE. Supports both single press and drag-slide:
                     //  - pointerdown on a key → play, enter drag mode
@@ -8562,7 +8596,14 @@
                 if (scroller._dragBound) return;
                 scroller._dragBound = true;
                 let isDown = false;
+                // Direction lock: until the user moves a few px we don't know
+                // if they want horizontal drag-scroll or vertical page-scroll.
+                // Once decided, we lock for the rest of the gesture.
+                //   'h' → horizontal drag-scroll (JS)
+                //   'v' → vertical page scroll (browser handles natively)
+                let lockDir = null;
                 let startX, startY, scrollL, scrollT, pointerId;
+                const DIR_THRESH = 6;  // px of movement before we commit
                 scroller.addEventListener('pointerdown', function(e) {
                     // Skip if pointer landed on a note dot — that gets handled
                     // by the note-drag logic inside createFretboard (which
@@ -8571,17 +8612,23 @@
                     // Skip if pointer landed on the custom scrollbar widget
                     if (e.target.closest('.fb-scrollbar')) return;
                     isDown = true;
+                    lockDir = null;
                     scroller.classList.add('dragging');
                     startX = e.pageX;
                     startY = e.pageY;
                     scrollL = scroller.scrollLeft;
                     scrollT = scroller.scrollTop;
                     pointerId = e.pointerId;
-                    try { scroller.setPointerCapture(e.pointerId); } catch(err) {}
+                    // Only capture for mouse — for touch we wait until we know
+                    // direction so the browser can handle vertical pan natively.
+                    if (e.pointerType === 'mouse') {
+                        try { scroller.setPointerCapture(e.pointerId); } catch(err) {}
+                    }
                 });
                 const endDrag = function() {
                     if (!isDown) return;
                     isDown = false;
+                    lockDir = null;
                     scroller.classList.remove('dragging');
                     try { if (pointerId != null) scroller.releasePointerCapture(pointerId); } catch(err) {}
                 };
@@ -8590,9 +8637,32 @@
                 scroller.addEventListener('pointerleave', endDrag);
                 scroller.addEventListener('pointermove', function(e) {
                     if (!isDown) return;
-                    e.preventDefault();
-                    scroller.scrollLeft = scrollL - (e.pageX - startX);
-                    scroller.scrollTop  = scrollT - (e.pageY - startY);
+                    const dx = e.pageX - startX;
+                    const dy = e.pageY - startY;
+                    if (!lockDir) {
+                        if (Math.abs(dx) < DIR_THRESH && Math.abs(dy) < DIR_THRESH) return;
+                        // Vertical-dominant gesture → release control to the
+                        // browser so the page can scroll naturally. Only do this
+                        // for touch / pen; mouse always uses horizontal drag.
+                        if (e.pointerType !== 'mouse' && Math.abs(dy) > Math.abs(dx)) {
+                            endDrag();
+                            return;
+                        }
+                        lockDir = 'h';
+                        // Now that we've committed to horizontal drag, capture
+                        // the pointer (for touch) so further moves come to us.
+                        try { scroller.setPointerCapture(pointerId); } catch(err) {}
+                    }
+                    if (lockDir === 'h') {
+                        e.preventDefault();
+                        scroller.scrollLeft = scrollL - dx;
+                        // Also support 2D drag once we've locked horizontal —
+                        // helps mouse users who drag diagonally over a tall
+                        // board (vertical mode).
+                        if (scroller.scrollHeight - scroller.clientHeight > 1) {
+                            scroller.scrollTop = scrollT - dy;
+                        }
+                    }
                 });
             }
 
@@ -9310,6 +9380,8 @@
                             intervals: scale.intervals,
                             showNotes: scState.showNotes,
                             highlightRoot: scState.highlightRoot,
+                            zoom: scState.zoom,
+                            vertical: scState.vertical,
                             onKeyClick: function(midi) {
                                 playNoteOnInstrument('piano', midi);
                             },
@@ -9320,6 +9392,8 @@
                             intervals: scale.intervals,
                             showNotes: scState.showNotes,
                             highlightRoot: scState.highlightRoot,
+                            zoom: scState.zoom,
+                            vertical: scState.vertical,
                         });
                     }
                 } else {
