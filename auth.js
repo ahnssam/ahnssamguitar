@@ -733,7 +733,12 @@ nav.scrolled .auth-btn:hover {
 
     async function oauth(provider) {
         clearMsg();
-        const redirectTo = window.location.origin + window.location.pathname;
+        // Preserve the current page + query string so the user lands back on
+        // exactly the same tool / view after the OAuth round-trip.
+        // e.g. /tools.html?tool=scales — keeps "스케일" panel active on return.
+        const redirectTo = window.location.origin +
+                           window.location.pathname +
+                           (window.location.search || '');
         debugLog('oauth(' + provider + ') redirectTo=' + redirectTo);
         try {
             const { data, error } = await sb.auth.signInWithOAuth({
@@ -766,7 +771,9 @@ nav.scrolled .auth-btn:hover {
         }
         try {
             const { error } = await sb.auth.resetPasswordForEmail(email, {
-                redirectTo: window.location.origin + window.location.pathname
+                redirectTo: window.location.origin +
+                            window.location.pathname +
+                            (window.location.search || '')
             });
             if (error) { setMsg(humanError(error), 'error'); return; }
             setMsg('비밀번호 재설정 링크를 메일로 보냈어요.', 'success');
