@@ -829,6 +829,35 @@
 :root[data-theme="dark"] #rankRefresh {
     color: rgba(232, 240, 236, 0.78);
 }
+
+/* "내 누적 N점 · M 라운드" banner card */
+:root[data-theme="dark"] .rank-me-card {
+    background: linear-gradient(135deg, rgba(82, 168, 114, 0.18), rgba(180, 230, 200, 0.06));
+    border-color: rgba(180, 230, 200, 0.25);
+}
+:root[data-theme="dark"] .rank-me-label {
+    color: rgba(232, 240, 236, 0.65);
+}
+:root[data-theme="dark"] .rank-me-values,
+:root[data-theme="dark"] .rank-me-values .rank-me-num {
+    color: #e8f0ec;
+}
+:root[data-theme="dark"] .rank-me-values .rank-me-sep {
+    color: rgba(232, 240, 236, 0.35);
+}
+:root[data-theme="dark"] .rank-me-values .rank-me-unit {
+    color: rgba(232, 240, 236, 0.7);
+}
+/* "점수 집계방법" pill */
+:root[data-theme="dark"] .rank-help-info-btn {
+    background: rgba(180, 230, 200, 0.12);
+    color: #b5e6c8;
+    border-color: rgba(180, 230, 200, 0.32);
+}
+:root[data-theme="dark"] .rank-help-info-btn:hover {
+    background: rgba(180, 230, 200, 0.22);
+    border-color: rgba(180, 230, 200, 0.5);
+}
 `;
 
     const MODE_LABELS = {
