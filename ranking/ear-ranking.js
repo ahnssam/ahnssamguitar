@@ -477,11 +477,12 @@
 /* 숫자와 단위(점/라운드)를 한 줄에 baseline 으로 정렬해서
    '내 누적' 라벨과도 시각적으로 같은 가로선 위에 놓이도록 한다. */
 .rank-me-values {
-    display: flex; align-items: baseline;
+    display: flex; align-items: center;
     gap: 0.3rem;
     flex: 1;
     color: var(--text-primary, #1a2421);
     flex-wrap: wrap;
+    line-height: 1.1;
 }
 .rank-me-values .rank-me-num {
     font-size: 1.35rem; font-weight: 800;
@@ -1037,6 +1038,13 @@
 :root[data-theme="dark"] .rank-period-menu-item.is-active {
     background: rgba(82, 168, 114, 0.32);
     color: #fff;
+}
+
+/* 랭킹 행의 점수 (1,030점, 800점 ...) — 다크 배경의 초록 계열과 톤이 비슷해
+   잘 안 띄어서 흰색으로 또렷하게. 정답률(%) 은 보조 정보이므로 회색 유지. */
+:root[data-theme="dark"] .rank-score,
+:root[data-theme="dark"] .rank-score .rank-score-pts {
+    color: #ffffff;
 }
 
 /* 랭킹 행의 순위 숫자 (1, 2, 3 ...) */
