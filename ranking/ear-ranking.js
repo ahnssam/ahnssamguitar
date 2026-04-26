@@ -195,7 +195,10 @@
     box-shadow: 0 0 0 1px rgba(114,196,146,0.3);
 }
 
-/* ---------- Period navigator (단위 [일|주|월] · 이전 ← 라벨 → 다음) ---------- */
+/* ---------- Period navigator — 기간 그룹 안의 pill 아래에 위치 ---------- */
+.rank-filter-group-period { flex-direction: column; align-items: stretch; }
+.rank-filter-group-period > .rank-filter-label { margin-bottom: 0.3rem; }
+.rank-filter-group-period > .rank-pills { width: 100%; }
 .rank-period-nav {
     position: relative;
     display: flex;
@@ -203,34 +206,7 @@
     justify-content: center;
     flex-wrap: wrap;
     gap: 0.4rem;
-    margin: 0.2rem 0 0.6rem;
-}
-.rank-period-units {
-    display: inline-flex;
-    background: rgba(82, 168, 114, 0.06);
-    border: 1px solid rgba(82, 168, 114, 0.18);
-    border-radius: 999px;
-    padding: 3px;
-    gap: 0;
-    margin-right: 0.3rem;
-}
-.rank-period-unit {
-    padding: 0.32rem 0.7rem;
-    font-family: inherit;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: rgba(26, 36, 33, 0.55);
-    background: transparent;
-    border: none;
-    border-radius: 999px;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-    line-height: 1;
-}
-.rank-period-unit:hover { color: var(--green-deep, #2a6b4a); }
-.rank-period-unit.is-active {
-    background: var(--green-mid, #62b682);
-    color: #ffffff;
+    margin: 0.4rem 0 0.1rem;
 }
 .rank-period-arrow {
     width: 32px; height: 32px;
@@ -1019,20 +995,6 @@
     color: rgba(232, 240, 236, 0.7);
 }
 /* Period navigator — dark variant */
-:root[data-theme="dark"] .rank-period-units {
-    background: rgba(82, 168, 114, 0.14);
-    border-color: rgba(180, 230, 200, 0.28);
-}
-:root[data-theme="dark"] .rank-period-unit {
-    color: rgba(232, 240, 236, 0.7);
-}
-:root[data-theme="dark"] .rank-period-unit:hover {
-    color: #fff;
-}
-:root[data-theme="dark"] .rank-period-unit.is-active {
-    background: var(--green-mid);
-    color: #fff;
-}
 :root[data-theme="dark"] .rank-period-arrow {
     background: rgba(82, 168, 114, 0.18);
     color: #b5e6c8;
@@ -1674,12 +1636,12 @@
             const end = new Date(start); end.setUTCDate(end.getUTCDate() + 6);
             const sMd = (start.getUTCMonth() + 1) + '/' + start.getUTCDate();
             const eMd = (end.getUTCMonth() + 1) + '/' + end.getUTCDate();
-            const tag = offset === 0 ? '이번 주' : offset === -1 ? '지난 주' : (-offset) + '주 전';
+            const tag = offset === 0 ? '주간' : offset === -1 ? '지난 주' : (-offset) + '주 전';
             return sMd + ' ~ ' + eMd + ' (' + tag + ')';
         }
         if (scope === 'monthly') {
             const t = parseISO(computeAnchorDate('monthly', offset));
-            const tag = offset === 0 ? '이번 달' : offset === -1 ? '지난 달' : (-offset) + '달 전';
+            const tag = offset === 0 ? '월간' : offset === -1 ? '지난 달' : (-offset) + '달 전';
             return t.getUTCFullYear() + '년 ' + (t.getUTCMonth() + 1) + '월 (' + tag + ')';
         }
         return '';
@@ -1709,13 +1671,22 @@
         </button>
     </div>
     <div class="rank-filters">
-        <div class="rank-filter-group">
+        <div class="rank-filter-group rank-filter-group-period">
             <span class="rank-filter-label">기간</span>
             <div class="rank-pills">
                 <button class="rank-pill" data-scope="daily">오늘</button>
-                <button class="rank-pill active" data-scope="weekly">이번 주</button>
-                <button class="rank-pill" data-scope="monthly">이번 달</button>
+                <button class="rank-pill active" data-scope="weekly">주간</button>
+                <button class="rank-pill" data-scope="monthly">월간</button>
                 <button class="rank-pill" data-scope="total">전체</button>
+            </div>
+            <div class="rank-period-nav" id="rankPeriodNav">
+                <button class="rank-period-arrow" id="rankPeriodPrev" type="button" aria-label="이전 기간">‹</button>
+                <button class="rank-period-label" id="rankPeriodLabel" type="button" aria-label="기간 빠르게 선택">
+                    <span id="rankPeriodLabelText">주간</span>
+                    <i class="fas fa-caret-down"></i>
+                </button>
+                <button class="rank-period-arrow" id="rankPeriodNext" type="button" aria-label="다음 기간">›</button>
+                <div class="rank-period-menu" id="rankPeriodMenu" hidden></div>
             </div>
         </div>
         <div class="rank-filter-group">
@@ -1738,22 +1709,8 @@
             </div>
         </div>
     </div>
-    <div class="rank-period-nav" id="rankPeriodNav">
-        <div class="rank-period-units" role="tablist" aria-label="기간 단위">
-            <button class="rank-period-unit" data-unit="daily"   type="button">일</button>
-            <button class="rank-period-unit is-active" data-unit="weekly"  type="button">주</button>
-            <button class="rank-period-unit" data-unit="monthly" type="button">월</button>
-        </div>
-        <button class="rank-period-arrow" id="rankPeriodPrev" type="button" aria-label="이전 기간">‹</button>
-        <button class="rank-period-label" id="rankPeriodLabel" type="button" aria-label="기간 빠르게 선택">
-            <span id="rankPeriodLabelText">4/21 ~ 4/27 (이번 주)</span>
-            <i class="fas fa-caret-down"></i>
-        </button>
-        <button class="rank-period-arrow" id="rankPeriodNext" type="button" aria-label="다음 기간">›</button>
-        <div class="rank-period-menu" id="rankPeriodMenu" hidden></div>
-    </div>
     <div class="rank-meta">
-        <span id="rankScopeLabel">이번 주 획득한 점수</span>
+        <span id="rankScopeLabel">주간 점수</span>
         <span id="rankRefresh" style="cursor:pointer;">↻ 새로고침</span>
     </div>
     <div id="rankContent"></div>
@@ -1805,10 +1762,6 @@
             if (nextBtn) nextBtn.disabled = (_rankOffset >= 0);
             // 사이트 오픈일 이전이면 prev 도 막음
             if (prevBtn) prevBtn.disabled = !isOffsetReachable(_rankScope, _rankOffset - 1);
-            // 인라인 단위 토글 active 상태 동기화
-            panel.querySelectorAll('.rank-period-unit').forEach(function(btn) {
-                btn.classList.toggle('is-active', btn.getAttribute('data-unit') === _rankScope);
-            });
         }
         function applyScope(newScope) {
             if (_rankScope === newScope) return;
@@ -1820,8 +1773,8 @@
             });
             const label = {
                 daily: '오늘 획득한 점수',
-                weekly: '이번 주 획득한 점수',
-                monthly: '이번 달 획득한 점수',
+                weekly: '주간 점수',
+                monthly: '월간 점수',
                 total: '누적 점수'
             }[_rankScope];
             const lblEl = panel.querySelector('#rankScopeLabel');
@@ -1830,12 +1783,6 @@
             closePeriodMenu();
             reload();
         }
-        // 인라인 단위 토글 ([일|주|월])
-        panel.querySelectorAll('.rank-period-unit').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                applyScope(btn.getAttribute('data-unit'));
-            });
-        });
         panel.querySelectorAll('.rank-pill[data-scope]').forEach((t) => {
             t.addEventListener('click', () => {
                 _rankScope = t.getAttribute('data-scope');
@@ -1843,8 +1790,8 @@
                 panel.querySelectorAll('.rank-pill[data-scope]').forEach((x) => x.classList.toggle('active', x === t));
                 const label = {
                     daily: '오늘 획득한 점수',
-                    weekly: '이번 주 획득한 점수',
-                    monthly: '이번 달 획득한 점수',
+                    weekly: '주간 점수',
+                    monthly: '월간 점수',
                     total: '누적 점수'
                 }[_rankScope];
                 panel.querySelector('#rankScopeLabel').textContent = label;
