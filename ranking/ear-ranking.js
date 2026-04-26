@@ -669,6 +669,166 @@
     .mp-stat { padding: 0.7rem 0.4rem; }
     .mp-stat-value { font-size: 1.15rem; }
 }
+
+/* ===== DARK MODE ===== */
+:root[data-theme="dark"] .et-session-pill {
+    color: #b5e6c8;
+    background: rgba(82, 168, 114, 0.18);
+    border-color: rgba(180, 230, 200, 0.22);
+}
+:root[data-theme="dark"] .et-session-pill.warn {
+    color: #ffd089;
+    background: rgba(255, 190, 80, 0.18);
+    border-color: rgba(255, 190, 80, 0.32);
+}
+:root[data-theme="dark"] .summary-overlay {
+    background: rgba(0, 0, 0, 0.6);
+}
+:root[data-theme="dark"] .summary-card,
+:root[data-theme="dark"] .nick-card,
+:root[data-theme="dark"] .rank-card,
+:root[data-theme="dark"] .mp-card {
+    background: linear-gradient(160deg, #1d2a26, #15201c);
+    color: #e8f0ec;
+    border-color: rgba(180, 230, 200, 0.16);
+}
+:root[data-theme="dark"] .sum-title,
+:root[data-theme="dark"] .sum-acc strong,
+:root[data-theme="dark"] .sum-score,
+:root[data-theme="dark"] .nick-title,
+:root[data-theme="dark"] .mp-title,
+:root[data-theme="dark"] .rank-title {
+    color: #e8f0ec;
+}
+:root[data-theme="dark"] .sum-mode,
+:root[data-theme="dark"] .sum-acc,
+:root[data-theme="dark"] .sum-stats,
+:root[data-theme="dark"] .nick-sub {
+    color: rgba(232, 240, 236, 0.7);
+}
+:root[data-theme="dark"] .sum-stats {
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(232, 240, 236, 0.78);
+}
+:root[data-theme="dark"] .sum-btn.ghost {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(232, 240, 236, 0.78);
+}
+:root[data-theme="dark"] .sum-btn.ghost:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+:root[data-theme="dark"] .nick-overlay {
+    background: rgba(0, 0, 0, 0.6);
+}
+:root[data-theme="dark"] .nick-input {
+    background: rgba(255, 255, 255, 0.04);
+    color: #e8f0ec;
+    border-color: rgba(180, 230, 200, 0.18);
+}
+:root[data-theme="dark"] .nick-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--green-mid, #52a872);
+}
+:root[data-theme="dark"] .nick-hint { color: rgba(232, 240, 236, 0.5); }
+:root[data-theme="dark"] .nick-err { color: #f4a8a4; }
+
+/* Ranking + mypage rows */
+:root[data-theme="dark"] .rank-row,
+:root[data-theme="dark"] .mp-stat,
+:root[data-theme="dark"] .mp-recent-item {
+    background: rgba(255, 255, 255, 0.03);
+    color: #e8f0ec;
+    border-color: rgba(180, 230, 200, 0.12);
+}
+:root[data-theme="dark"] .rank-row:hover,
+:root[data-theme="dark"] .mp-recent-item:hover {
+    background: rgba(82, 168, 114, 0.1);
+}
+:root[data-theme="dark"] .rank-row.me {
+    background: rgba(82, 168, 114, 0.18);
+    border-color: rgba(180, 230, 200, 0.24);
+}
+:root[data-theme="dark"] .mp-stat-label,
+:root[data-theme="dark"] .mp-meta,
+:root[data-theme="dark"] .rank-meta {
+    color: rgba(232, 240, 236, 0.6);
+}
+:root[data-theme="dark"] .mp-stat-value {
+    color: #e8f0ec;
+}
+:root[data-theme="dark"] .rank-mode-tabs,
+:root[data-theme="dark"] .mp-mode-tabs {
+    background: rgba(255, 255, 255, 0.05);
+}
+:root[data-theme="dark"] .rank-mode-tab,
+:root[data-theme="dark"] .mp-mode-tab {
+    color: rgba(232, 240, 236, 0.65);
+}
+:root[data-theme="dark"] .rank-mode-tab:hover,
+:root[data-theme="dark"] .mp-mode-tab:hover {
+    background: rgba(82, 168, 114, 0.12);
+    color: #d8e8df;
+}
+:root[data-theme="dark"] .rank-mode-tab.active,
+:root[data-theme="dark"] .mp-mode-tab.active {
+    background: rgba(82, 168, 114, 0.22);
+    color: #fff;
+}
+:root[data-theme="dark"] .rank-loginCTA {
+    background: rgba(255, 255, 255, 0.04);
+    color: #e8f0ec;
+    border-color: rgba(180, 230, 200, 0.18);
+}
+
+/* Ranking filter UI (period / mode / difficulty pills) */
+:root[data-theme="dark"] .rank-filters {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(180, 230, 200, 0.12);
+}
+:root[data-theme="dark"] .rank-filter-label {
+    color: rgba(232, 240, 236, 0.6);
+}
+:root[data-theme="dark"] .rank-pill {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(232, 240, 236, 0.78);
+    border-color: rgba(180, 230, 200, 0.18);
+}
+:root[data-theme="dark"] .rank-pill:hover {
+    background: rgba(82, 168, 114, 0.18);
+    color: #d8e8df;
+    border-color: rgba(180, 230, 200, 0.4);
+}
+:root[data-theme="dark"] .rank-pill.active {
+    background: rgba(82, 168, 114, 0.28);
+    color: #d8e8df;
+    border-color: rgba(180, 230, 200, 0.55);
+    box-shadow: 0 0 0 1px rgba(180, 230, 200, 0.25);
+}
+/* 지옥 난이도 pill — 다크에서도 또렷한 빨강 */
+:root[data-theme="dark"] .rank-pill[data-diff="hell"] {
+    background: rgba(196, 64, 52, 0.14);
+    color: #ff9e94;
+    border-color: rgba(244, 168, 164, 0.4);
+}
+:root[data-theme="dark"] .rank-pill[data-diff="hell"]:hover {
+    background: rgba(196, 64, 52, 0.22);
+    color: #ffb8b0;
+    border-color: rgba(244, 168, 164, 0.6);
+}
+:root[data-theme="dark"] .rank-pill[data-diff="hell"].active {
+    background: rgba(196, 64, 52, 0.32);
+    color: #ffd0c8;
+    border-color: rgba(244, 168, 164, 0.7);
+}
+/* Empty state + meta row (refresh / scope label) */
+:root[data-theme="dark"] .rank-empty {
+    color: rgba(232, 240, 236, 0.55);
+}
+:root[data-theme="dark"] .rank-meta,
+:root[data-theme="dark"] #rankScopeLabel,
+:root[data-theme="dark"] #rankRefresh {
+    color: rgba(232, 240, 236, 0.78);
+}
 `;
 
     const MODE_LABELS = {
