@@ -194,6 +194,139 @@
     color: var(--green-mid, #62b682);
     box-shadow: 0 0 0 1px rgba(114,196,146,0.3);
 }
+
+/* ---------- Period navigator (단위 [일|주|월] · 이전 ← 라벨 → 다음) ---------- */
+.rank-period-nav {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0.2rem 0 0.6rem;
+}
+.rank-period-units {
+    display: inline-flex;
+    background: rgba(82, 168, 114, 0.06);
+    border: 1px solid rgba(82, 168, 114, 0.18);
+    border-radius: 999px;
+    padding: 3px;
+    gap: 0;
+    margin-right: 0.3rem;
+}
+.rank-period-unit {
+    padding: 0.32rem 0.7rem;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: rgba(26, 36, 33, 0.55);
+    background: transparent;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    line-height: 1;
+}
+.rank-period-unit:hover { color: var(--green-deep, #2a6b4a); }
+.rank-period-unit.is-active {
+    background: var(--green-mid, #62b682);
+    color: #ffffff;
+}
+.rank-period-arrow {
+    width: 32px; height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(42, 107, 74, 0.22);
+    background: rgba(82, 168, 114, 0.08);
+    color: var(--green-deep, #2a6b4a);
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.rank-period-arrow:hover:not(:disabled) {
+    background: rgba(82, 168, 114, 0.22);
+    border-color: rgba(82, 168, 114, 0.5);
+}
+.rank-period-arrow:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+.rank-period-label {
+    flex: 0 1 auto;
+    min-width: 180px;
+    padding: 0.45rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid rgba(82, 168, 114, 0.32);
+    background: rgba(82, 168, 114, 0.08);
+    color: var(--green-deep, #2a6b4a);
+    font-family: inherit;
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s;
+}
+.rank-period-label:hover {
+    background: rgba(82, 168, 114, 0.18);
+    border-color: rgba(82, 168, 114, 0.55);
+}
+.rank-period-label i {
+    font-size: 0.78rem;
+    opacity: 0.7;
+}
+.rank-period-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    min-width: 220px;
+    max-width: 90vw;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 0.4rem;
+    background: #ffffff;
+    border: 1px solid rgba(82, 168, 114, 0.28);
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+.rank-period-menu[hidden] { display: none; }
+.rank-period-menu-item {
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    font-family: inherit;
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: var(--text-primary, #1a2421);
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    white-space: nowrap;
+}
+.rank-period-menu-item:hover {
+    background: rgba(82, 168, 114, 0.14);
+    color: var(--green-deep, #2a6b4a);
+}
+.rank-period-menu-item.is-active {
+    background: rgba(82, 168, 114, 0.22);
+    color: var(--green-deep, #2a6b4a);
+    font-weight: 700;
+}
+
 .rank-meta {
     display: flex; justify-content: space-between; align-items: center;
     padding: 0 0.2rem 0.6rem;
@@ -258,6 +391,7 @@
 }
 .rank-self-card .rank-self-label { font-size: 0.78rem; color: rgba(26, 36, 33, 0.6); font-weight: 500; }
 .rank-self-card .rank-self-rank { font-size: 1.1rem; font-weight: 800; color: var(--green-mid, #62b682); }
+.rank-self-card .rank-self-empty { font-size: 0.92rem; color: rgba(26, 36, 33, 0.6); font-weight: 500; }
 .rank-loginCTA {
     padding: 1.4rem 1rem;
     text-align: center;
@@ -644,14 +778,15 @@
     display: inline-flex; align-items: center; gap: 0.4rem;
     padding: 0.55rem 1rem;
     font-family: inherit; font-size: 0.82rem; font-weight: 600;
-    color: var(--text-primary, #1a2421);
-    background: linear-gradient(135deg, var(--green-mid, #52a872), var(--green-deep, #2a6b4a));
+    color: #ffffff;
+    background: var(--green-mid, #52a872);
     border: none;
     border-radius: 7px;
     cursor: pointer;
     text-decoration: none;
+    transition: background 0.18s;
 }
-.mp-purchase-btn:hover { filter: brightness(1.08); }
+.mp-purchase-btn:hover { background: var(--green-dark, #3a8a5c); }
 .mp-purchase-btn i { font-size: 0.78rem; }
 .mp-delete-btn:hover { background: rgba(255, 122, 122, 0.1); }
 
@@ -851,7 +986,105 @@
 :root[data-theme="dark"] .rank-me-values .rank-me-unit {
     color: rgba(232, 240, 236, 0.7);
 }
-/* Mypage — section titles + recent rounds list */
+/* Period navigator — dark variant */
+:root[data-theme="dark"] .rank-period-units {
+    background: rgba(82, 168, 114, 0.14);
+    border-color: rgba(180, 230, 200, 0.28);
+}
+:root[data-theme="dark"] .rank-period-unit {
+    color: rgba(232, 240, 236, 0.7);
+}
+:root[data-theme="dark"] .rank-period-unit:hover {
+    color: #fff;
+}
+:root[data-theme="dark"] .rank-period-unit.is-active {
+    background: var(--green-mid);
+    color: #fff;
+}
+:root[data-theme="dark"] .rank-period-arrow {
+    background: rgba(82, 168, 114, 0.18);
+    color: #b5e6c8;
+    border-color: rgba(180, 230, 200, 0.32);
+}
+:root[data-theme="dark"] .rank-period-arrow:hover:not(:disabled) {
+    background: rgba(82, 168, 114, 0.32);
+    color: #fff;
+    border-color: rgba(180, 230, 200, 0.55);
+}
+:root[data-theme="dark"] .rank-period-label {
+    background: rgba(82, 168, 114, 0.18);
+    color: #b5e6c8;
+    border-color: rgba(180, 230, 200, 0.4);
+}
+:root[data-theme="dark"] .rank-period-label:hover {
+    background: rgba(82, 168, 114, 0.32);
+    color: #fff;
+    border-color: rgba(180, 230, 200, 0.6);
+}
+:root[data-theme="dark"] .rank-period-menu {
+    background: #1d2a26;
+    border-color: rgba(180, 230, 200, 0.25);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+:root[data-theme="dark"] .rank-period-menu-item {
+    color: rgba(232, 240, 236, 0.85);
+}
+:root[data-theme="dark"] .rank-period-menu-item:hover {
+    background: rgba(82, 168, 114, 0.22);
+    color: #fff;
+}
+:root[data-theme="dark"] .rank-period-menu-item.is-active {
+    background: rgba(82, 168, 114, 0.32);
+    color: #fff;
+}
+
+/* 랭킹 행의 순위 숫자 (1, 2, 3 ...) */
+:root[data-theme="dark"] .rank-pos {
+    color: rgba(232, 240, 236, 0.85);
+}
+:root[data-theme="dark"] .rank-pos.top1 {
+    color: #f5d36b;
+    text-shadow: 0 0 14px rgba(255, 220, 130, 0.6);
+}
+:root[data-theme="dark"] .rank-pos.top2 {
+    color: #b6c8d2;
+}
+:root[data-theme="dark"] .rank-pos.top3 {
+    color: #f5b787;
+}
+
+/* "내 순위" self-card (50등 밖 또는 기록 없음 안내) */
+:root[data-theme="dark"] .rank-self-card {
+    background: rgba(82, 168, 114, 0.18);
+    border-color: rgba(180, 230, 200, 0.32);
+}
+:root[data-theme="dark"] .rank-self-card .rank-self-label {
+    color: rgba(232, 240, 236, 0.7);
+}
+:root[data-theme="dark"] .rank-self-card .rank-self-rank {
+    color: #b5e6c8;
+}
+:root[data-theme="dark"] .rank-self-card .rank-self-empty {
+    color: rgba(232, 240, 236, 0.78);
+}
+
+/* Mypage — header, profile, section titles + recent rounds list */
+:root[data-theme="dark"] .mp-nick {
+    color: #e8f0ec;
+}
+:root[data-theme="dark"] .mp-since {
+    color: rgba(232, 240, 236, 0.65);
+}
+:root[data-theme="dark"] .mp-edit-btn {
+    background: rgba(82, 168, 114, 0.18);
+    color: #b5e6c8;
+    border-color: rgba(180, 230, 200, 0.32);
+}
+:root[data-theme="dark"] .mp-edit-btn:hover {
+    background: rgba(82, 168, 114, 0.32);
+    color: #fff;
+    border-color: rgba(180, 230, 200, 0.5);
+}
 :root[data-theme="dark"] .mp-section-title {
     color: rgba(232, 240, 236, 0.62);
 }
@@ -1323,6 +1556,102 @@
     let _rankScope = 'weekly';   // 기본: 이번 주
     let _rankMode = 'all';
     let _rankDiff = 'all';
+    // Offset relative to "now" — 0 이면 현재 기간, -1 이면 한 단위 이전 (지난 주, 어제, 지난 달).
+    // scope 가 바뀌거나 랭킹 탭 다시 진입 시 0 으로 리셋.
+    let _rankOffset = 0;
+    // Anchor 캘린더 dropdown 열림 상태
+    let _rankAnchorMenuOpen = false;
+
+    // ---- Anchor utilities ---------------------------------------------------
+    // Site went live 2026-04 — 그 이전 기간은 의미 없는 빈 데이터라 navigator
+    // 에서 노출 자체를 막는다. (오프셋이 이 날짜 미만으로 가면 prev 비활성)
+    const SITE_START_ISO = '2026-04-01';
+    // Asia/Seoul 기준 "오늘" 의 ISO 날짜 (YYYY-MM-DD)
+    function todayISO() {
+        const now = new Date();
+        // 사용자 PC 타임존이 KST 가 아닐 수도 있어서 UTC+9 로 명시 보정
+        const kstMs = now.getTime() + (now.getTimezoneOffset() + 9 * 60) * 60000;
+        const d = new Date(kstMs);
+        const y = d.getUTCFullYear();
+        const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(d.getUTCDate()).padStart(2, '0');
+        return y + '-' + m + '-' + day;
+    }
+    function parseISO(s) {
+        const [y, m, d] = s.split('-').map(Number);
+        return new Date(Date.UTC(y, m - 1, d));
+    }
+    function fmtISO(d) {
+        return d.getUTCFullYear() + '-' +
+               String(d.getUTCMonth() + 1).padStart(2, '0') + '-' +
+               String(d.getUTCDate()).padStart(2, '0');
+    }
+    // scope+offset → 그 기간 안에 들어가는 anchor date 한 개 반환 (SQL 함수가 그걸 보고 기간 결정)
+    function computeAnchorDate(scope, offset) {
+        const today = parseISO(todayISO());
+        if (scope === 'daily') {
+            today.setUTCDate(today.getUTCDate() + offset);
+            return fmtISO(today);
+        }
+        if (scope === 'weekly') {
+            // 이번 주 월요일을 기준으로 offset 주 만큼 이동
+            const dow = today.getUTCDay() === 0 ? 7 : today.getUTCDay(); // 1..7 (월=1, 일=7)
+            today.setUTCDate(today.getUTCDate() - (dow - 1) + offset * 7);
+            return fmtISO(today);
+        }
+        if (scope === 'monthly') {
+            // 이번 달 1일을 기준으로 offset 달 만큼 이동
+            const d = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + offset, 1));
+            return fmtISO(d);
+        }
+        return null;  // total 은 anchor 무시
+    }
+    // 주어진 (scope, offset) 의 기간 시작점이 사이트 오픈일(2026-04-01) 이후인지.
+    // false 면 "사이트 오픈 전" 이라 의미 없는 데이터라서 노출 안 함.
+    function isOffsetReachable(scope, offset) {
+        if (scope === 'total') return true;
+        const anchor = computeAnchorDate(scope, offset);
+        if (!anchor) return true;
+        let periodStartISO;
+        if (scope === 'daily') {
+            // daily: anchor 자체가 시작일
+            periodStartISO = anchor;
+        } else if (scope === 'weekly') {
+            // weekly: computeAnchorDate('weekly', ...) 이미 그 주 월요일을 반환
+            periodStartISO = anchor;
+        } else if (scope === 'monthly') {
+            // monthly: computeAnchorDate('monthly', ...) 이미 그 달 1일을 반환
+            periodStartISO = anchor;
+        } else {
+            return true;
+        }
+        return periodStartISO >= SITE_START_ISO;
+    }
+    // 표시용 라벨 ("4/21 ~ 4/27 (이번 주)" 같은)
+    function formatPeriodLabel(scope, offset) {
+        if (scope === 'total') return '전체 누적';
+        const today = parseISO(todayISO());
+        if (scope === 'daily') {
+            const t = parseISO(computeAnchorDate('daily', offset));
+            const md = (t.getUTCMonth() + 1) + '/' + t.getUTCDate();
+            const tag = offset === 0 ? '오늘' : offset === -1 ? '어제' : (-offset) + '일 전';
+            return md + ' (' + tag + ')';
+        }
+        if (scope === 'weekly') {
+            const start = parseISO(computeAnchorDate('weekly', offset));
+            const end = new Date(start); end.setUTCDate(end.getUTCDate() + 6);
+            const sMd = (start.getUTCMonth() + 1) + '/' + start.getUTCDate();
+            const eMd = (end.getUTCMonth() + 1) + '/' + end.getUTCDate();
+            const tag = offset === 0 ? '이번 주' : offset === -1 ? '지난 주' : (-offset) + '주 전';
+            return sMd + ' ~ ' + eMd + ' (' + tag + ')';
+        }
+        if (scope === 'monthly') {
+            const t = parseISO(computeAnchorDate('monthly', offset));
+            const tag = offset === 0 ? '이번 달' : offset === -1 ? '지난 달' : (-offset) + '달 전';
+            return t.getUTCFullYear() + '년 ' + (t.getUTCMonth() + 1) + '월 (' + tag + ')';
+        }
+        return '';
+    }
 
     function renderRankingsShell() {
         const panel = document.getElementById('rankingPanel');
@@ -1377,6 +1706,20 @@
             </div>
         </div>
     </div>
+    <div class="rank-period-nav" id="rankPeriodNav">
+        <div class="rank-period-units" role="tablist" aria-label="기간 단위">
+            <button class="rank-period-unit" data-unit="daily"   type="button">일</button>
+            <button class="rank-period-unit is-active" data-unit="weekly"  type="button">주</button>
+            <button class="rank-period-unit" data-unit="monthly" type="button">월</button>
+        </div>
+        <button class="rank-period-arrow" id="rankPeriodPrev" type="button" aria-label="이전 기간">‹</button>
+        <button class="rank-period-label" id="rankPeriodLabel" type="button" aria-label="기간 빠르게 선택">
+            <span id="rankPeriodLabelText">4/21 ~ 4/27 (이번 주)</span>
+            <i class="fas fa-caret-down"></i>
+        </button>
+        <button class="rank-period-arrow" id="rankPeriodNext" type="button" aria-label="다음 기간">›</button>
+        <div class="rank-period-menu" id="rankPeriodMenu" hidden></div>
+    </div>
     <div class="rank-meta">
         <span id="rankScopeLabel">이번 주 획득한 점수</span>
         <span id="rankRefresh" style="cursor:pointer;">↻ 새로고침</span>
@@ -1418,9 +1761,53 @@
 </div>
 `;
         function reload() { loadRankings(); }
+        function syncScopeUI() {
+            const navEl = panel.querySelector('#rankPeriodNav');
+            const labelEl = panel.querySelector('#rankPeriodLabelText');
+            const prevBtn = panel.querySelector('#rankPeriodPrev');
+            const nextBtn = panel.querySelector('#rankPeriodNext');
+            // total 은 기간 의미 없으니 navigator 숨김
+            if (navEl) navEl.style.display = (_rankScope === 'total') ? 'none' : '';
+            if (labelEl) labelEl.textContent = formatPeriodLabel(_rankScope, _rankOffset);
+            // 미래는 막음 (offset 이 0 보다 커지지 않도록)
+            if (nextBtn) nextBtn.disabled = (_rankOffset >= 0);
+            // 사이트 오픈일 이전이면 prev 도 막음
+            if (prevBtn) prevBtn.disabled = !isOffsetReachable(_rankScope, _rankOffset - 1);
+            // 인라인 단위 토글 active 상태 동기화
+            panel.querySelectorAll('.rank-period-unit').forEach(function(btn) {
+                btn.classList.toggle('is-active', btn.getAttribute('data-unit') === _rankScope);
+            });
+        }
+        function applyScope(newScope) {
+            if (_rankScope === newScope) return;
+            _rankScope = newScope;
+            _rankOffset = 0;
+            // 위쪽 필터 pill 도 같이 동기화 (시각적 일관성)
+            panel.querySelectorAll('.rank-pill[data-scope]').forEach(function(p) {
+                p.classList.toggle('active', p.getAttribute('data-scope') === newScope);
+            });
+            const label = {
+                daily: '오늘 획득한 점수',
+                weekly: '이번 주 획득한 점수',
+                monthly: '이번 달 획득한 점수',
+                total: '누적 점수'
+            }[_rankScope];
+            const lblEl = panel.querySelector('#rankScopeLabel');
+            if (lblEl) lblEl.textContent = label;
+            syncScopeUI();
+            closePeriodMenu();
+            reload();
+        }
+        // 인라인 단위 토글 ([일|주|월])
+        panel.querySelectorAll('.rank-period-unit').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                applyScope(btn.getAttribute('data-unit'));
+            });
+        });
         panel.querySelectorAll('.rank-pill[data-scope]').forEach((t) => {
             t.addEventListener('click', () => {
                 _rankScope = t.getAttribute('data-scope');
+                _rankOffset = 0;   // scope 변경 시 현재 기간으로 리셋
                 panel.querySelectorAll('.rank-pill[data-scope]').forEach((x) => x.classList.toggle('active', x === t));
                 const label = {
                     daily: '오늘 획득한 점수',
@@ -1429,8 +1816,77 @@
                     total: '누적 점수'
                 }[_rankScope];
                 panel.querySelector('#rankScopeLabel').textContent = label;
+                syncScopeUI();
+                closePeriodMenu();
                 reload();
             });
+        });
+        // ---- Period navigator (← 라벨 → 화살표 + 라벨 클릭 시 빠른 점프 메뉴) ----
+        function buildPeriodMenuItems() {
+            const menu = panel.querySelector('#rankPeriodMenu');
+            if (!menu) return;
+            const MAX_ITEMS = 12;   // 최근 12 단위 한도
+            let html = '';
+            // 사이트 오픈일 이후에 들어오는 offset 만 노출. 0 부터 -i 로 내려가며
+            // 도달 가능한 항목만 추가.
+            for (let i = 0; i < MAX_ITEMS; i++) {
+                const offset = -i;
+                if (!isOffsetReachable(_rankScope, offset)) break;
+                const label = formatPeriodLabel(_rankScope, offset);
+                const isActive = offset === _rankOffset ? ' is-active' : '';
+                html += '<button type="button" class="rank-period-menu-item' + isActive +
+                        '" data-offset="' + offset + '">' + label + '</button>';
+            }
+            menu.innerHTML = html;
+            menu.querySelectorAll('button[data-offset]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    _rankOffset = parseInt(btn.getAttribute('data-offset'), 10) || 0;
+                    closePeriodMenu();
+                    syncScopeUI();
+                    reload();
+                });
+            });
+        }
+        function openPeriodMenu() {
+            const menu = panel.querySelector('#rankPeriodMenu');
+            if (!menu || _rankScope === 'total') return;
+            buildPeriodMenuItems();
+            menu.hidden = false;
+            _rankAnchorMenuOpen = true;
+        }
+        function closePeriodMenu() {
+            const menu = panel.querySelector('#rankPeriodMenu');
+            if (menu) menu.hidden = true;
+            _rankAnchorMenuOpen = false;
+        }
+        const labelBtn = panel.querySelector('#rankPeriodLabel');
+        if (labelBtn) {
+            labelBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (_rankAnchorMenuOpen) closePeriodMenu();
+                else openPeriodMenu();
+            });
+        }
+        const prevBtn = panel.querySelector('#rankPeriodPrev');
+        if (prevBtn) prevBtn.addEventListener('click', function() {
+            // 사이트 오픈 이전 데이터는 의미 없음 — 방어 가드
+            if (!isOffsetReachable(_rankScope, _rankOffset - 1)) return;
+            _rankOffset -= 1;
+            syncScopeUI();
+            reload();
+        });
+        const nextBtn = panel.querySelector('#rankPeriodNext');
+        if (nextBtn) nextBtn.addEventListener('click', function() {
+            if (_rankOffset >= 0) return;   // 현재보다 미래로 못 감
+            _rankOffset += 1;
+            syncScopeUI();
+            reload();
+        });
+        // 다른 곳 클릭 시 메뉴 닫기
+        document.addEventListener('click', function(e) {
+            if (!_rankAnchorMenuOpen) return;
+            if (e.target.closest && e.target.closest('#rankPeriodNav')) return;
+            closePeriodMenu();
         });
         panel.querySelectorAll('.rank-pill[data-mode]').forEach((t) => {
             t.addEventListener('click', () => {
@@ -1447,6 +1903,8 @@
             });
         });
         panel.querySelector('#rankRefresh').addEventListener('click', reload);
+        // 초기 라벨 / nav 상태 동기화
+        syncScopeUI();
 
         // Help popup wiring — supports any button with .rank-help-open
         // (header ? icon + "점수 집계방법" text button) plus legacy .rank-help-btn.
@@ -1468,10 +1926,14 @@
         content.innerHTML = '<div class="rank-empty">불러오는 중…</div>';
         const client = sb();
         if (!client) { content.innerHTML = '<div class="rank-empty">준비 중…</div>'; return; }
+        const anchor = (_rankScope === 'total')
+            ? null
+            : computeAnchorDate(_rankScope, _rankOffset);
         const { data, error } = await client.rpc('get_ranking', {
             p_scope: _rankScope,
             p_mode: _rankMode,
-            p_difficulty: _rankDiff
+            p_difficulty: _rankDiff,
+            p_anchor_date: anchor
         });
         if (error) {
             content.innerHTML = '<div class="rank-empty">랭킹을 불러올 수 없어요.</div>';
@@ -1521,7 +1983,7 @@
                 selfCardHtml = `
 <div class="rank-self-card">
     <div class="rank-self-label">내 순위</div>
-    <div style="color:rgba(26,36,33,0.6);">아직 기록 없음</div>
+    <div class="rank-self-empty">아직 기록 없음</div>
     <div class="rank-score">
         <span class="rank-score-pts">0점</span>
     </div>
