@@ -819,16 +819,48 @@
     background: rgba(255, 190, 80, 0.18);
     border-color: rgba(255, 190, 80, 0.32);
 }
-:root[data-theme="dark"] .summary-overlay {
+/* Round-completion summary modal — was using a hardcoded white gradient */
+:root[data-theme="dark"] .sum-overlay {
     background: rgba(0, 0, 0, 0.6);
 }
-:root[data-theme="dark"] .summary-card,
-:root[data-theme="dark"] .nick-card,
-:root[data-theme="dark"] .rank-card,
-:root[data-theme="dark"] .mp-card {
+:root[data-theme="dark"] .sum-card,
+:root[data-theme="dark"] .nick-card {
     background: linear-gradient(160deg, #1d2a26, #15201c);
     color: #e8f0ec;
+    border-color: rgba(180, 230, 200, 0.18);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+}
+:root[data-theme="dark"] .sum-title {
+    color: #b5e6c8;
+}
+:root[data-theme="dark"] .sum-mode {
+    color: rgba(232, 240, 236, 0.7);
+}
+:root[data-theme="dark"] .sum-score {
+    color: #e8f0ec;
+}
+:root[data-theme="dark"] .sum-score .sum-pts {
+    color: #b5e6c8;
+}
+:root[data-theme="dark"] .sum-acc {
+    color: rgba(232, 240, 236, 0.85);
+}
+:root[data-theme="dark"] .sum-acc strong {
+    color: #fff;
+}
+:root[data-theme="dark"] .sum-note {
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(232, 240, 236, 0.78);
     border-color: rgba(180, 230, 200, 0.16);
+}
+:root[data-theme="dark"] .sum-btn.ghost {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(232, 240, 236, 0.78);
+    border-color: rgba(180, 230, 200, 0.22);
+}
+:root[data-theme="dark"] .sum-btn.ghost:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
 }
 :root[data-theme="dark"] .sum-title,
 :root[data-theme="dark"] .sum-acc strong,
