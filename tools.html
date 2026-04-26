@@ -306,6 +306,27 @@
         :root[data-theme="dark"] .fb-svg .fb-fret-num {
             fill: rgba(232, 240, 236, 0.7);
         }
+        /* Fretboard wood — Light: maple (cream), Dark: rosewood (deep brown) */
+        .fb-svg .fb-wood-base { fill: #f2ebe0; }
+        .fb-svg .fb-wood-overlay { fill: url(#fbWoodMaple); }
+        :root[data-theme="dark"] .fb-svg .fb-wood-base { fill: #3a251a; }
+        :root[data-theme="dark"] .fb-svg .fb-wood-overlay { fill: url(#fbWoodRosewood); }
+        /* Inlay dots — light: dark brown on cream maple / dark: cream on rosewood */
+        .fb-svg .fb-inlay-dot { fill: #6e5a3a; opacity: 0.55; }
+        :root[data-theme="dark"] .fb-svg .fb-inlay-dot { fill: #e8d8b0; opacity: 0.6; }
+        /* String lines — light: dark stroke on cream / dark: silver on rosewood */
+        .fb-svg .fb-string-line { stroke: #3d3424; }
+        :root[data-theme="dark"] .fb-svg .fb-string-line { stroke: #c8b89a; }
+        /* Side dots (넥 아래 inlay strip 의 포지션 마커) — 페이지 배경 위에 그려짐 */
+        .fb-svg .fb-side-dot { fill: rgba(42, 107, 74, 0.55); }
+        :root[data-theme="dark"] .fb-svg .fb-side-dot { fill: rgba(232, 240, 236, 0.7); }
+        /* Leaf inlay on the wood — light: deep green on cream maple,
+           dark: pale mint-green on dark rosewood (better visibility) */
+        .fb-svg .fb-inlay-leaf { fill: #3a8a5c; opacity: 0.72; }
+        :root[data-theme="dark"] .fb-svg .fb-inlay-leaf {
+            fill: #b5e6c8;
+            opacity: 0.55;
+        }
 
         /* Custom scrollbar (지판 좌우 이동) — 트랙·썸네·화살표 다 또렷이 */
         :root[data-theme="dark"] .fb-scrollbar {
@@ -459,6 +480,10 @@
             background: linear-gradient(135deg, var(--green-mid), var(--green-deep));
             color: #fff;
             border-color: var(--green-mid);
+        }
+        /* 음정 트레이닝 설정 라벨 ("난이도", "음 개수", "방향" 등) — 다크에서 묻혀 안 보임 */
+        :root[data-theme="dark"] .et-setting-label {
+            color: rgba(232, 240, 236, 0.65);
         }
         /* 답안 버튼의 selected / correct / wrong 상태 — 다크에서 호버와
            톤 차이가 거의 없어 클릭 피드백이 약했음. 채도 / 테두리 / 그림자를
@@ -1310,17 +1335,18 @@
         /* Sidebar item badge — small pill placed right after the label
            ("음정 트레이닝" 글자 끝 바로 옆 → "HOT") */
         .menu-badge {
-            margin-left: 0.4rem;
-            padding: 0.08rem 0.32rem;
-            font-size: 0.54rem;
+            /* .menu-item 의 gap: 0.9rem 을 상쇄해서 텍스트 바로 옆에 붙임 */
+            margin-left: -0.75rem;
+            padding: 0.05rem 0.24rem;
+            font-size: 0.46rem;
             font-weight: 800;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.04em;
             border-radius: 999px;
             line-height: 1;
             flex-shrink: 0;
             color: #fff;
             background: linear-gradient(135deg, #ff6a4a, #ff3b66);
-            box-shadow: 0 2px 6px rgba(255, 80, 80, 0.35);
+            box-shadow: 0 1px 4px rgba(255, 80, 80, 0.32);
             transform: translateY(-0.5px);
             animation: menuBadgePulse 2.4s ease-in-out infinite;
         }
@@ -9540,12 +9566,10 @@
                     const boardBgY = padT - 10;
                     const boardBgW = boardLenPx;
                     const boardBgH = stringAreaH + 20;
-                    svgContent += '<rect x="' + boardBgX + '" y="' + boardBgY + '" ' +
-                        'width="' + boardBgW + '" height="' + boardBgH + '" ' +
-                        'fill="#f2ebe0" rx="4"/>';
-                    svgContent += '<rect x="' + boardBgX + '" y="' + boardBgY + '" ' +
-                        'width="' + boardBgW + '" height="' + boardBgH + '" ' +
-                        'fill="url(#fbWood)" opacity="0.45" rx="4"/>';
+                    svgContent += '<rect class="fb-wood-base" x="' + boardBgX + '" y="' + boardBgY + '" ' +
+                        'width="' + boardBgW + '" height="' + boardBgH + '" rx="4"/>';
+                    svgContent += '<rect class="fb-wood-overlay" x="' + boardBgX + '" y="' + boardBgY + '" ' +
+                        'width="' + boardBgW + '" height="' + boardBgH + '" opacity="0.45" rx="4"/>';
 
                     // Nut (left of fret 1)
                     svgContent += '<rect x="' + (padL - 4) + '" y="' + boardBgY + '" ' +
@@ -9559,13 +9583,14 @@
                             '" stroke="#bfb8a7" stroke-width="1.5"/>';
                     }
 
-                    // Strings (on top of frets)
+                    // Strings (on top of frets) — class 로 칠해 라이트/다크 분기.
+                    // 메이플(크림) 위엔 어두운 stroke, 로즈우드(갈색) 위엔 밝은 stroke.
                     strings.forEach(function(s, idx) {
                         const y = stringY(idx);
                         const sw = 0.8 + s.thickness * 1.6;
-                        svgContent += '<line x1="' + padL + '" y1="' + y +
+                        svgContent += '<line class="fb-string-line" x1="' + padL + '" y1="' + y +
                             '" x2="' + (padL + boardLenPx) + '" y2="' + y +
-                            '" stroke="#3d3424" stroke-width="' + sw.toFixed(2) + '" opacity="0.85"/>';
+                            '" stroke-width="' + sw.toFixed(2) + '" opacity="0.9"/>';
                     });
 
                     // Open-string CLICK BUTTONS (left of nut) — always clickable,
@@ -9636,42 +9661,25 @@
                     // 회전 group 안에 있어 세로 모드에서도 같이 돌아감.
                     const boardCenterY = padT + (nStrings - 1) * stringGap / 2;
                     function inlayLeaf(cx, cy, size, rot) {
-                        return '<text x="' + cx + '" y="' + cy + '" ' +
+                        return '<text class="fb-inlay-leaf" x="' + cx + '" y="' + cy + '" ' +
                                'text-anchor="middle" dominant-baseline="central" ' +
                                'font-family="&quot;Font Awesome 6 Free&quot;, &quot;FontAwesome&quot;" ' +
                                'font-weight="900" font-size="' + size + '" ' +
-                               'fill="#3a8a5c" opacity="0.72" ' +
                                'transform="rotate(' + rot + ' ' + cx + ' ' + cy + ')">' +
                                '&#xf06c;' +
                                '</text>';
                     }
-                    // 전통적 인레이 점 — 잎사귀와 함께 표시. 점이 먼저 깔리고
-                    // 잎이 그 위에 살짝 오버레이. 색은 보드 우드 톤(크림)에서 잘
-                    // 보이는 진한 갈색 계열.
-                    function inlayDot(cx, cy, r) {
-                        return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" ' +
-                               'fill="#6e5a3a" opacity="0.55"/>';
-                    }
                     const leafSize = 15;
-                    const dotR = 4.2;       // 단일 인레이 점
-                    const dotR12 = 4.0;     // 12/24 더블 인레이 점
                     INLAY_FRETS.forEach(function(f) {
                         if (f > nFrets) return;
-                        const cx = fretMidX(f);
-                        // 점 → 잎 순서로 깔아 잎이 위에 보임
-                        svgContent += inlayDot(cx, boardCenterY, dotR);
                         const tilt = (f % 4 === 0 || f % 3 === 0) ? -18 : 22;
-                        svgContent += inlayLeaf(cx, boardCenterY, leafSize, tilt);
+                        svgContent += inlayLeaf(fretMidX(f), boardCenterY, leafSize, tilt);
                     });
                     DOUBLE_INLAY_FRETS.forEach(function(f) {
                         if (f > nFrets) return;
-                        const cx = fretMidX(f);
                         const offY = stringGap * 0.9;
-                        // 12 / 24 프렛 — 위·아래 두 점에 각각 잎 한 장씩
-                        svgContent += inlayDot(cx, boardCenterY - offY, dotR12);
-                        svgContent += inlayDot(cx, boardCenterY + offY, dotR12);
-                        svgContent += inlayLeaf(cx, boardCenterY - offY, leafSize, -18);
-                        svgContent += inlayLeaf(cx, boardCenterY + offY, leafSize, 24);
+                        svgContent += inlayLeaf(fretMidX(f), boardCenterY - offY, leafSize, -18);
+                        svgContent += inlayLeaf(fretMidX(f), boardCenterY + offY, leafSize, 24);
                     });
 
                     // --- Note dots (interactive) ---
@@ -9795,6 +9803,23 @@
                     // fill="currentColor" 사용 — .fb-svg 의 color 를 통해
                     // 라이트/다크 모드 자동 분기.
                     const allInlay = INLAY_FRETS.concat(DOUBLE_INLAY_FRETS);
+                    // --- Side dots (포지션 마커) ---
+                    // 넥 우드 아래·프렛 숫자 위 strip 영역에 그려지는 작은 점.
+                    // 단일 인레이 프렛(3,5,7,9,...) → 1 개
+                    // 더블 인레이 프렛(12, 24)        → 가로로 2 개
+                    INLAY_FRETS.forEach(function(f) {
+                        if (f > nFrets) return;
+                        svgContent += '<circle class="fb-side-dot" cx="' + fretMidX(f) +
+                            '" cy="' + inlayStripCenterY + '" r="2.6"/>';
+                    });
+                    DOUBLE_INLAY_FRETS.forEach(function(f) {
+                        if (f > nFrets) return;
+                        const midX = fretMidX(f);
+                        svgContent += '<circle class="fb-side-dot" cx="' + (midX - 5) +
+                            '" cy="' + inlayStripCenterY + '" r="2.6"/>';
+                        svgContent += '<circle class="fb-side-dot" cx="' + (midX + 5) +
+                            '" cy="' + inlayStripCenterY + '" r="2.6"/>';
+                    });
                     for (let f = 1; f <= nFrets; f++) {
                         if (allInlay.indexOf(f) === -1) continue;
                         // Fret numbers use geometric center (not finger-press position)
@@ -9807,12 +9832,18 @@
 
                     svgContent += '</g>'; // end rotated group
 
-                    // SVG defs (wood gradient)
+                    // SVG defs — two wood gradients (light: maple / dark: rosewood)
+                    // Selection happens in CSS via fill: url(#...) per theme.
                     const defs = '<defs>' +
-                        '<linearGradient id="fbWood" x1="0" y1="0" x2="1" y2="0">' +
+                        '<linearGradient id="fbWoodMaple" x1="0" y1="0" x2="1" y2="0">' +
                         '<stop offset="0%" stop-color="#e8dcc0"/>' +
                         '<stop offset="50%" stop-color="#efe5cd"/>' +
                         '<stop offset="100%" stop-color="#e8dcc0"/>' +
+                        '</linearGradient>' +
+                        '<linearGradient id="fbWoodRosewood" x1="0" y1="0" x2="1" y2="0">' +
+                        '<stop offset="0%" stop-color="#3a251a"/>' +
+                        '<stop offset="50%" stop-color="#5a3a28"/>' +
+                        '<stop offset="100%" stop-color="#3a251a"/>' +
                         '</linearGradient>' +
                         '</defs>';
                     svg.innerHTML = defs + svgContent;
