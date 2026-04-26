@@ -294,6 +294,50 @@
             background: rgba(82, 168, 114, 0.18);
         }
 
+        /* Fretboard open-string buttons (E B G D A E circles on the nut side).
+           SVG <text> 의 fill 이 'currentColor' 라 .fb-open-btn 의 color 만
+           바꿔주면 됨 — light/dark 자동 분기. */
+        .fb-svg .fb-open-btn { color: rgba(26, 36, 33, 0.82); }
+        :root[data-theme="dark"] .fb-svg .fb-open-btn {
+            color: rgba(232, 240, 236, 0.92);
+        }
+
+        /* Custom scrollbar (지판 좌우 이동) — 트랙·썸네·화살표 다 다크 톤 */
+        :root[data-theme="dark"] .fb-scrollbar {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        :root[data-theme="dark"] .fb-scrollbar-track {
+            background: rgba(180, 230, 200, 0.1);
+            border-color: rgba(180, 230, 200, 0.18);
+        }
+        :root[data-theme="dark"] .fb-scrollbar-thumb {
+            background: rgba(180, 230, 200, 0.3);
+            border-color: rgba(180, 230, 200, 0.5);
+        }
+        :root[data-theme="dark"] .fb-scrollbar-thumb:hover,
+        :root[data-theme="dark"] .fb-scrollbar-thumb.dragging {
+            background: rgba(180, 230, 200, 0.45);
+            border-color: rgba(180, 230, 200, 0.7);
+        }
+        :root[data-theme="dark"] .fb-scrollbar-grip,
+        :root[data-theme="dark"] .fb-scrollbar-grip i {
+            color: var(--bg-darker);
+        }
+        :root[data-theme="dark"] .fb-scroll-arrow {
+            background: rgba(180, 230, 200, 0.08);
+            color: rgba(232, 240, 236, 0.85);
+            border-color: rgba(180, 230, 200, 0.25);
+        }
+        :root[data-theme="dark"] .fb-scroll-arrow:hover {
+            background: rgba(82, 168, 114, 0.25);
+            color: #fff;
+            border-color: rgba(180, 230, 200, 0.5);
+        }
+        :root[data-theme="dark"] .fb-scrollbar.disabled .fb-scroll-arrow,
+        :root[data-theme="dark"] .fb-scrollbar.disabled .fb-scrollbar-thumb {
+            opacity: 0.45;
+        }
+
         /* Capo key buttons + scale root grid */
         :root[data-theme="dark"] .capo-key-btn,
         :root[data-theme="dark"] .sc-root-btn,
@@ -362,26 +406,33 @@
             color: #fff;
         }
 
-        /* Ear training — answer buttons / direction / parameters */
+        /* Ear training — answer buttons / direction / parameters
+           NOTE: includes .et-diff-btn (code-mode 쉬움/보통/어려움) which was
+           missing from the earlier override. */
         :root[data-theme="dark"] .et-mode-btn,
+        :root[data-theme="dark"] .et-diff-btn,
         :root[data-theme="dark"] .et-dir-btn,
         :root[data-theme="dark"] .et-pdiff-btn,
         :root[data-theme="dark"] .et-poct-btn,
         :root[data-theme="dark"] .et-pcount-btn,
         :root[data-theme="dark"] .et-choice-btn {
-            background: rgba(255, 255, 255, 0.04);
-            color: #d8e8df;
-            border-color: rgba(180, 230, 200, 0.18);
+            background: rgba(180, 230, 200, 0.06);
+            color: rgba(232, 240, 236, 0.85);
+            border-color: rgba(180, 230, 200, 0.28);
         }
         :root[data-theme="dark"] .et-mode-btn:hover,
+        :root[data-theme="dark"] .et-diff-btn:hover,
         :root[data-theme="dark"] .et-dir-btn:hover,
         :root[data-theme="dark"] .et-pdiff-btn:hover,
         :root[data-theme="dark"] .et-poct-btn:hover,
         :root[data-theme="dark"] .et-pcount-btn:hover,
         :root[data-theme="dark"] .et-choice-btn:hover {
-            background: rgba(82, 168, 114, 0.14);
+            background: rgba(82, 168, 114, 0.18);
+            color: #fff;
+            border-color: rgba(180, 230, 200, 0.45);
         }
         :root[data-theme="dark"] .et-mode-btn.active,
+        :root[data-theme="dark"] .et-diff-btn.active,
         :root[data-theme="dark"] .et-dir-btn.active,
         :root[data-theme="dark"] .et-pdiff-btn.active,
         :root[data-theme="dark"] .et-poct-btn.active,
@@ -389,6 +440,25 @@
             background: linear-gradient(135deg, var(--green-mid), var(--green-deep));
             color: #fff;
             border-color: var(--green-mid);
+        }
+        /* 지옥 난이도 — both .et-diff-btn[data-cdiff=hell] and .et-pdiff-btn[data-pdiff=hell] */
+        :root[data-theme="dark"] .et-diff-btn[data-cdiff="hell"],
+        :root[data-theme="dark"] .et-pdiff-btn[data-pdiff="hell"] {
+            background: rgba(196, 64, 52, 0.14);
+            color: #ff9e94;
+            border-color: rgba(244, 168, 164, 0.4);
+        }
+        :root[data-theme="dark"] .et-diff-btn[data-cdiff="hell"]:hover,
+        :root[data-theme="dark"] .et-pdiff-btn[data-pdiff="hell"]:hover {
+            background: rgba(196, 64, 52, 0.22);
+            color: #ffb8b0;
+            border-color: rgba(244, 168, 164, 0.6);
+        }
+        :root[data-theme="dark"] .et-diff-btn[data-cdiff="hell"].active,
+        :root[data-theme="dark"] .et-pdiff-btn[data-pdiff="hell"].active {
+            background: #c44034;
+            color: #fff;
+            border-color: #c44034;
         }
         :root[data-theme="dark"] .et-play-btn,
         :root[data-theme="dark"] .et-next-btn,
@@ -9404,7 +9474,8 @@
                         // button so users see it's a pressable control.
                         let fill = 'rgba(82, 168, 114, 0.18)';
                         let stroke = 'rgba(42, 107, 74, 0.55)';
-                        let textColor = 'rgba(26,36,33,0.82)';
+                        // null = use CSS-driven currentColor, so light/dark theme can flip
+                        let textColor = null;
                         if (highlight) {
                             fill = highlight.color;
                             stroke = highlight.stroke;
@@ -9415,6 +9486,7 @@
                             stroke = '#2a6b4a';
                             textColor = '#ffffff';
                         }
+                        const textFillAttr = textColor || 'currentColor';
 
                         // Training-range dim (fret 0 on string idx)
                         const outOfRange = trOpen && (
@@ -9432,7 +9504,7 @@
                             'fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.2"/>';
                         svgContent += '<text x="' + cx + '" y="' + (y + 3.5) +
                             '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" ' +
-                            'font-size="' + (isRoot ? '11' : '10') + '" font-weight="700" fill="' + textColor + '"' + textT +
+                            'font-size="' + (isRoot ? '11' : '10') + '" font-weight="700" fill="' + textFillAttr + '"' + textT +
                             ' pointer-events="none">' + pc + '</text>';
                         svgContent += '</g>';
                     });

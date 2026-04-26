@@ -240,7 +240,10 @@
 .rank-ava img { width: 100%; height: 100%; object-fit: cover; }
 .rank-name { font-weight: 600; color: var(--text-primary, #1a2421); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rank-name .rank-session-count { font-size: 0.75rem; font-weight: 500; color: rgba(26, 36, 33, 0.45); margin-left: 0.4rem; }
-.rank-score { font-family: inherit; font-weight: 700; font-size: 1rem; color: var(--green-mid, #62b682); letter-spacing: 0.02em; }
+.rank-score { font-family: inherit; font-weight: 700; font-size: 1rem; color: var(--green-mid, #62b682); letter-spacing: 0.02em; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+.rank-score .rank-score-pts { font-weight: 700; }
+.rank-score .rank-score-acc { font-size: 0.72rem; font-weight: 500; color: rgba(26, 36, 33, 0.55); margin-top: 0.05rem; }
+:root[data-theme="dark"] .rank-score .rank-score-acc { color: rgba(232, 240, 236, 0.55); }
 .rank-empty { padding: 3rem 1rem; text-align: center; color: rgba(26, 36, 33, 0.45); font-size: 0.92rem; }
 .rank-self-card {
     margin-top: 0.8rem;
@@ -848,6 +851,53 @@
 :root[data-theme="dark"] .rank-me-values .rank-me-unit {
     color: rgba(232, 240, 236, 0.7);
 }
+/* Mypage — section titles + recent rounds list */
+:root[data-theme="dark"] .mp-section-title {
+    color: rgba(232, 240, 236, 0.62);
+}
+:root[data-theme="dark"] .mp-stat-value {
+    color: #e8f0ec;
+}
+:root[data-theme="dark"] .mp-stat-label {
+    color: rgba(232, 240, 236, 0.6);
+}
+:root[data-theme="dark"] .mp-session-list {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(180, 230, 200, 0.14);
+}
+:root[data-theme="dark"] .mp-session-row {
+    border-bottom-color: rgba(180, 230, 200, 0.1);
+}
+:root[data-theme="dark"] .mp-session-mode {
+    color: #e8f0ec;
+}
+:root[data-theme="dark"] .mp-session-mode .mp-diff {
+    color: rgba(232, 240, 236, 0.65);
+}
+:root[data-theme="dark"] .mp-session-score {
+    color: #b5e6c8;
+}
+:root[data-theme="dark"] .mp-session-meta {
+    color: rgba(232, 240, 236, 0.55);
+}
+:root[data-theme="dark"] .mp-danger {
+    background: rgba(196, 64, 52, 0.12);
+    border-color: rgba(244, 168, 164, 0.32);
+}
+:root[data-theme="dark"] .mp-danger-desc {
+    color: rgba(232, 240, 236, 0.7);
+}
+:root[data-theme="dark"] .mp-purchase {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(180, 230, 200, 0.14);
+}
+:root[data-theme="dark"] .mp-purchase-desc {
+    color: rgba(232, 240, 236, 0.7);
+}
+:root[data-theme="dark"] .mp-encouragement {
+    color: rgba(232, 240, 236, 0.7);
+}
+
 /* "점수 집계방법" pill */
 :root[data-theme="dark"] .rank-help-info-btn {
     background: rgba(180, 230, 200, 0.12);
@@ -857,6 +907,54 @@
 :root[data-theme="dark"] .rank-help-info-btn:hover {
     background: rgba(180, 230, 200, 0.22);
     border-color: rgba(180, 230, 200, 0.5);
+}
+
+/* Score-help modal — was hardcoded to a near-white card so it stayed
+   light even in dark mode. Override card + every text element. */
+:root[data-theme="dark"] .rank-help-overlay {
+    background: rgba(0, 0, 0, 0.6);
+}
+:root[data-theme="dark"] .rank-help-card {
+    background: linear-gradient(160deg, #1d2a26, #15201c);
+    border-color: rgba(180, 230, 200, 0.18);
+    color: #e8f0ec;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+}
+:root[data-theme="dark"] .rank-help-card h3 {
+    color: #b5e6c8;
+}
+:root[data-theme="dark"] .rank-help-close {
+    color: rgba(232, 240, 236, 0.55);
+}
+:root[data-theme="dark"] .rank-help-close:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+:root[data-theme="dark"] .rank-help-line {
+    color: rgba(232, 240, 236, 0.85);
+}
+:root[data-theme="dark"] .rank-help-line b {
+    color: #fff;
+}
+:root[data-theme="dark"] .rank-help-formula {
+    background: rgba(82, 168, 114, 0.18);
+    border-color: rgba(180, 230, 200, 0.4);
+    color: #b5e6c8;
+}
+:root[data-theme="dark"] .rank-help-grid {
+    color: rgba(232, 240, 236, 0.82);
+}
+:root[data-theme="dark"] .rank-help-grid div:nth-child(odd) {
+    color: #fff;
+}
+:root[data-theme="dark"] .rank-help-grid .rank-help-hell-row {
+    color: #ff9e94;
+}
+:root[data-theme="dark"] .rank-help-list {
+    color: rgba(232, 240, 236, 0.82);
+}
+:root[data-theme="dark"] .rank-help-list b {
+    color: #fff;
 }
 `;
 
@@ -1222,7 +1320,7 @@
     // ------------------------------------------------------------
     // Rankings panel
     // ------------------------------------------------------------
-    let _rankScope = 'daily';
+    let _rankScope = 'weekly';   // 기본: 이번 주
     let _rankMode = 'all';
     let _rankDiff = 'all';
 
@@ -1253,8 +1351,9 @@
         <div class="rank-filter-group">
             <span class="rank-filter-label">기간</span>
             <div class="rank-pills">
-                <button class="rank-pill active" data-scope="daily">오늘</button>
-                <button class="rank-pill" data-scope="weekly">이번 주</button>
+                <button class="rank-pill" data-scope="daily">오늘</button>
+                <button class="rank-pill active" data-scope="weekly">이번 주</button>
+                <button class="rank-pill" data-scope="monthly">이번 달</button>
                 <button class="rank-pill" data-scope="total">전체</button>
             </div>
         </div>
@@ -1279,7 +1378,7 @@
         </div>
     </div>
     <div class="rank-meta">
-        <span id="rankScopeLabel">오늘 획득한 점수</span>
+        <span id="rankScopeLabel">이번 주 획득한 점수</span>
         <span id="rankRefresh" style="cursor:pointer;">↻ 새로고침</span>
     </div>
     <div id="rankContent"></div>
@@ -1305,6 +1404,11 @@
         <p class="rank-help-line">
             예: <b>지옥</b>에서 10문제 모두 맞히면 <b>10 × 10 × 3.0 = 300점</b>
         </p>
+        <h3>점수 아래 % 표시는?</h3>
+        <p class="rank-help-line">
+            랭킹 행에서 점수 아래 작게 표시되는 퍼센트는 <b>정답률</b>입니다.
+            지금까지 푼 모든 문제 중 맞춘 비율이에요.
+        </p>
         <h3>주의사항</h3>
         <ul class="rank-help-list">
             <li>응답 시간 0.3초 미만인 문제는 찍기로 간주되어 점수에서 제외됩니다.</li>
@@ -1318,7 +1422,12 @@
             t.addEventListener('click', () => {
                 _rankScope = t.getAttribute('data-scope');
                 panel.querySelectorAll('.rank-pill[data-scope]').forEach((x) => x.classList.toggle('active', x === t));
-                const label = { daily: '오늘 획득한 점수', weekly: '이번 주 획득한 점수', total: '누적 점수' }[_rankScope];
+                const label = {
+                    daily: '오늘 획득한 점수',
+                    weekly: '이번 주 획득한 점수',
+                    monthly: '이번 달 획득한 점수',
+                    total: '누적 점수'
+                }[_rankScope];
                 panel.querySelector('#rankScopeLabel').textContent = label;
                 reload();
             });
@@ -1392,6 +1501,10 @@
         }
 
         const rows = top.map(r => rankRowHtml(r, user)).join('');
+        const myAccuracy = data && data.my_accuracy;
+        const myAccuracyStr = (myAccuracy === null || myAccuracy === undefined)
+            ? '-'
+            : (Math.round(myAccuracy * 10) / 10) + '%';
         let selfCardHtml = '';
         if (user && (!myRank || myRank > 50)) {
             if (myRank) {
@@ -1399,14 +1512,19 @@
 <div class="rank-self-card">
     <div class="rank-self-label">내 순위</div>
     <div class="rank-self-rank">${myRank}위</div>
-    <div class="rank-score">${myScore || 0}점</div>
+    <div class="rank-score">
+        <span class="rank-score-pts">${myScore || 0}점</span>
+        <span class="rank-score-acc">${myAccuracyStr}</span>
+    </div>
 </div>`;
             } else {
                 selfCardHtml = `
 <div class="rank-self-card">
     <div class="rank-self-label">내 순위</div>
     <div style="color:rgba(26,36,33,0.6);">아직 기록 없음</div>
-    <div class="rank-score">0점</div>
+    <div class="rank-score">
+        <span class="rank-score-pts">0점</span>
+    </div>
 </div>`;
             }
         } else if (!user) {
@@ -1426,12 +1544,19 @@
         const avatar = r.profile_image_url
             ? `<img src="${escapeAttr(r.profile_image_url)}" alt="" onerror="this.style.display='none'; this.parentNode.innerHTML='${(r.nickname||'?').charAt(0).toUpperCase()}';">`
             : escapeHtml((r.nickname || '?').charAt(0).toUpperCase());
+        // 정답률 — null/undefined 인 경우 '-' 로 표시
+        const acc = (r.accuracy === null || r.accuracy === undefined)
+            ? '-'
+            : (Math.round(r.accuracy * 10) / 10) + '%';
         return `
 <div class="rank-row ${isSelf ? 'self' : ''}">
     <div class="rank-pos ${rankClass}">${r.rank}</div>
     <div class="rank-ava">${avatar}</div>
     <div class="rank-name">${escapeHtml(r.nickname || '익명')}<span class="rank-session-count">· ${r.round_count || r.session_count}라운드</span></div>
-    <div class="rank-score">${r.total_score.toLocaleString()}점</div>
+    <div class="rank-score">
+        <span class="rank-score-pts">${r.total_score.toLocaleString()}점</span>
+        <span class="rank-score-acc">${acc}</span>
+    </div>
 </div>`;
     }
 
@@ -1593,6 +1718,25 @@ ${recentHtml}
             return ret;
         };
     }
+
+    // Re-render the active panel when auth state settles. Without this,
+    // landing on /tools.html?tool=mypage shows "로그인 안 됨" briefly because
+    // the page renders before Supabase getSession() completes — even though
+    // the user IS logged in.
+    function getActivePanelTool() {
+        try {
+            if (document.getElementById('mypagePanel') &&
+                document.getElementById('mypagePanel').classList.contains('active')) return 'mypage';
+            if (document.getElementById('rankingPanel') &&
+                document.getElementById('rankingPanel').classList.contains('active')) return 'ranking';
+        } catch (e) {}
+        return null;
+    }
+    window.addEventListener('ahnssam-auth-settled', function () {
+        const t = getActivePanelTool();
+        if (t === 'mypage') loadMypage();
+        else if (t === 'ranking') loadRankings();
+    });
 
     // ------------------------------------------------------------
     // Boot

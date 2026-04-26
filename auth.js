@@ -924,6 +924,14 @@ nav.scrolled .auth-btn:hover {
             debugLog('No session after getSession()');
         }
         renderSlot();
+        // Notify other modules (ranking/mypage) that auth state has settled,
+        // so they can re-render any panel that read a stale (null) session
+        // before SDK boot finished.
+        try {
+            window.dispatchEvent(new CustomEvent('ahnssam-auth-settled', {
+                detail: { user: currentSession ? currentSession.user : null }
+            }));
+        } catch (e) {}
 
         sb.auth.onAuthStateChange(async (event, session) => {
             debugLog('state change: ' + event + ' / ' + (session ? session.user.email : 'no session'));
@@ -935,6 +943,11 @@ nav.scrolled .auth-btn:hover {
             }
             renderSlot();
             if (event === 'SIGNED_IN') closeModal();
+            try {
+                window.dispatchEvent(new CustomEvent('ahnssam-auth-settled', {
+                    detail: { user: currentSession ? currentSession.user : null, event: event }
+                }));
+            } catch (e) {}
         });
     }
 
