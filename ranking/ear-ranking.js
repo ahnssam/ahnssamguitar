@@ -195,18 +195,25 @@
     box-shadow: 0 0 0 1px rgba(114,196,146,0.3);
 }
 
-/* ---------- Period navigator — 기간 그룹 안의 pill 아래에 위치 ---------- */
-.rank-filter-group-period { flex-direction: column; align-items: stretch; }
-.rank-filter-group-period > .rank-filter-label { margin-bottom: 0.3rem; }
-.rank-filter-group-period > .rank-pills { width: 100%; }
+/* ---------- Period navigator — 기간 그룹 안의 pill 아래에 위치 ----------
+   "기간" 라벨은 다른 그룹들과 동일하게 왼쪽에 두고, 오른쪽 영역을 세로 스택
+   (pill row → navigator row) 으로 만들어 navigator 의 왼쪽 끝이 pill 첫 번째
+   ("오늘") 버튼과 같은 column 에 정렬되도록. */
+.rank-filter-group-period { flex-wrap: nowrap; }
+.rank-filter-group-period .rank-period-content {
+    flex: 1; min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
 .rank-period-nav {
     position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;   /* navigator 첫 요소 (‹) 가 좌측 정렬 */
     flex-wrap: wrap;
     gap: 0.4rem;
-    margin: 0.4rem 0 0.1rem;
+    margin: 0;
 }
 .rank-period-arrow {
     width: 32px; height: 32px;
@@ -1673,20 +1680,22 @@
     <div class="rank-filters">
         <div class="rank-filter-group rank-filter-group-period">
             <span class="rank-filter-label">기간</span>
-            <div class="rank-pills">
-                <button class="rank-pill" data-scope="daily">오늘</button>
-                <button class="rank-pill active" data-scope="weekly">주간</button>
-                <button class="rank-pill" data-scope="monthly">월간</button>
-                <button class="rank-pill" data-scope="total">전체</button>
-            </div>
-            <div class="rank-period-nav" id="rankPeriodNav">
-                <button class="rank-period-arrow" id="rankPeriodPrev" type="button" aria-label="이전 기간">‹</button>
-                <button class="rank-period-label" id="rankPeriodLabel" type="button" aria-label="기간 빠르게 선택">
-                    <span id="rankPeriodLabelText">주간</span>
-                    <i class="fas fa-caret-down"></i>
-                </button>
-                <button class="rank-period-arrow" id="rankPeriodNext" type="button" aria-label="다음 기간">›</button>
-                <div class="rank-period-menu" id="rankPeriodMenu" hidden></div>
+            <div class="rank-period-content">
+                <div class="rank-pills">
+                    <button class="rank-pill" data-scope="daily">오늘</button>
+                    <button class="rank-pill active" data-scope="weekly">주간</button>
+                    <button class="rank-pill" data-scope="monthly">월간</button>
+                    <button class="rank-pill" data-scope="total">전체</button>
+                </div>
+                <div class="rank-period-nav" id="rankPeriodNav">
+                    <button class="rank-period-arrow" id="rankPeriodPrev" type="button" aria-label="이전 기간">‹</button>
+                    <button class="rank-period-label" id="rankPeriodLabel" type="button" aria-label="기간 빠르게 선택">
+                        <span id="rankPeriodLabelText">주간</span>
+                        <i class="fas fa-caret-down"></i>
+                    </button>
+                    <button class="rank-period-arrow" id="rankPeriodNext" type="button" aria-label="다음 기간">›</button>
+                    <div class="rank-period-menu" id="rankPeriodMenu" hidden></div>
+                </div>
             </div>
         </div>
         <div class="rank-filter-group">
