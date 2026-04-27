@@ -1213,17 +1213,34 @@
         }
         .topbar-theme-toggle .theme-toggle-label {
             line-height: 1;
+            /* "라이트모드"(5자) 와 "다크모드"(4자) 중 더 긴 쪽 폭에 맞춤 — 모드 전환 시 좌우 레이아웃이 흔들리지 않도록 */
+            min-width: 5.4em;
+            text-align: center;
+            display: inline-block;
         }
-        .topbar-theme-toggle i {
-            font-size: 0.92rem;
+        .topbar-theme-toggle .theme-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
             transition: transform 0.25s;
         }
+        .topbar-theme-toggle .theme-icon svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        /* Show sun in light mode, moon in dark mode */
+        .topbar-theme-toggle .theme-icon-moon { display: none; }
+        :root[data-theme="dark"] .topbar-theme-toggle .theme-icon-sun { display: none; }
+        :root[data-theme="dark"] .topbar-theme-toggle .theme-icon-moon { display: inline-flex; }
         .topbar-theme-toggle:hover {
             background: var(--green-deep);
             color: #fff;
             border-color: var(--green-deep);
         }
-        .topbar-theme-toggle:hover i {
+        .topbar-theme-toggle:hover .theme-icon {
             transform: rotate(-15deg);
         }
         :root[data-theme="dark"] .topbar-theme-toggle {
@@ -1236,16 +1253,17 @@
             color: #fff;
             border-color: var(--green-mid);
         }
-        /* Mobile — keep just the icon (label hidden) so it fits next to volume */
+        /* Mobile — keep the same pill shape (icon + label) as desktop, just slightly tighter */
         @media (max-width: 768px) {
             .topbar-theme-toggle {
-                gap: 0;
-                padding: 0;
-                width: 34px;
-                border-radius: 50%;
+                height: 34px;
+                padding: 0 0.7rem 0 0.6rem;
+                gap: 0.35rem;
+                font-size: 0.78rem;
             }
-            .topbar-theme-toggle .theme-toggle-label {
-                display: none;
+            .topbar-theme-toggle .theme-icon {
+                width: 14px;
+                height: 14px;
             }
         }
         /* Topbar section label (shown to the right of the logo) — hidden per spec */
@@ -1796,13 +1814,18 @@
                the tab-strip's "more" button takes over */
             .topbar .hamburger { display: none; }
 
-            /* Compact topbar layout: logo, big volume, user avatar (right) */
+            /* Compact topbar layout: logo, theme toggle, user avatar (right). Volume hidden on mobile. */
             .topbar { padding: 0 0.6rem; gap: 0.5rem; }
             .topbar-logo-link { padding: 2px 4px; }
             .topbar-logo { height: 34px; }
-            .topbar-spacer { flex: 0 0 0.4rem; }
-            .master-vol { flex: 1 1 auto; min-width: 0; max-width: none; gap: 0.45rem; }
-            .master-vol i { font-size: 0.95rem; }
+            .topbar-spacer { flex: 1 1 auto; }
+            /* Hide the volume slider on mobile — keep it for PC only */
+            .topbar .master-vol { display: none; }
+            /* Theme toggle sits to the LEFT of the (compact) login avatar */
+            .topbar .topbar-theme-toggle {
+                margin-right: 0.35rem;
+                flex-shrink: 0;
+            }
 
             /* Hide the full-size desktop auth slot on mobile */
             .topbar > .auth-slot:not(.topbar-compact-auth) { display: none !important; }
@@ -5034,8 +5057,25 @@
         <!-- Desktop auth slot: login button / profile (left of volume) -->
         <div class="auth-slot topbar-auth-slot"></div>
         <button id="themeToggleBtn" class="topbar-theme-toggle" type="button" onclick="toggleTheme()" aria-label="다크/라이트 모드 전환" title="다크/라이트 모드 전환">
-            <i class="fas fa-moon" aria-hidden="true"></i>
-            <span class="theme-toggle-label">다크모드</span>
+            <span class="theme-icon theme-icon-sun" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="4.2"/>
+                    <line x1="12" y1="2.5" x2="12" y2="5"/>
+                    <line x1="12" y1="19" x2="12" y2="21.5"/>
+                    <line x1="2.5" y1="12" x2="5" y2="12"/>
+                    <line x1="19" y1="12" x2="21.5" y2="12"/>
+                    <line x1="5.3" y1="5.3" x2="7.1" y2="7.1"/>
+                    <line x1="16.9" y1="16.9" x2="18.7" y2="18.7"/>
+                    <line x1="5.3" y1="18.7" x2="7.1" y2="16.9"/>
+                    <line x1="16.9" y1="7.1" x2="18.7" y2="5.3"/>
+                </svg>
+            </span>
+            <span class="theme-icon theme-icon-moon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11Z"/>
+                </svg>
+            </span>
+            <span class="theme-toggle-label">라이트모드</span>
         </button>
         <div class="master-vol">
             <i id="masterVolIcon" class="fas fa-volume-up" onclick="toggleMute()" title="음소거 토글"></i>
@@ -5903,15 +5943,13 @@
         function _syncThemeIcon() {
             const btn = document.getElementById('themeToggleBtn');
             if (!btn) return;
-            const icon = btn.querySelector('i');
             const label = btn.querySelector('.theme-toggle-label');
-            if (!icon) return;
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            // Show what the button will switch TO so it's obvious what clicking does:
-            //   light mode now → label says "다크모드" (click → dark)
-            //   dark  mode now → label says "라이트모드" (click → light)
-            icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-            if (label) label.textContent = isDark ? '라이트모드' : '다크모드';
+            // 아이콘은 "지금 어떤 모드인지"를 표시 — 보자마자 인지 가능.
+            //   light mode  → ☀ sun 아이콘 + "라이트모드" 라벨
+            //   dark mode   → ☾ moon 아이콘 + "다크모드" 라벨
+            // 아이콘 자체는 CSS 가 [data-theme] 에 따라 sun/moon SVG 를 교차 표시해 줌.
+            if (label) label.textContent = isDark ? '다크모드' : '라이트모드';
             const aria = isDark ? '라이트 모드로 전환' : '다크 모드로 전환';
             btn.setAttribute('aria-label', aria);
             btn.setAttribute('title', aria);
