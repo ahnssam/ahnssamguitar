@@ -1741,6 +1741,83 @@
             }
             /* Hide when on ranking / mypage (their tool-header already shows) */
             .tool-help-mobile.hidden { display: none; }
+
+            /* When the floating ? sits inside a tool-specific inline slot,
+               drop the absolute/fixed positioning so it flows naturally. */
+            .tool-help-mobile.in-slot {
+                position: static;
+                top: auto;
+                right: auto;
+                z-index: auto;
+                box-shadow: none;
+            }
+            /* Same for the floating YT button when reparented into a slot */
+            .tool-yt-mobile.in-slot {
+                position: static;
+                top: auto;
+                right: auto;
+                z-index: auto;
+                box-shadow: none;
+            }
+        }
+
+        /* Per-tool inline slots — render on both desktop and mobile.
+           튜너/메트로놈은 h1 안 ?·YT 대신 이 슬롯들을 통해
+           ? 와 YT 를 박스 안/아래에 배치 (데스크탑·모바일 동일 위치). */
+        .tool-mobile-help-slot {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-top: 0.5rem;
+            margin-bottom: 0;
+        }
+        .tool-mobile-yt-slot {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-top: 0.65rem;
+            padding-right: 0.4rem;
+            /* .tool-body 박스 폭에 맞춰 가운데 정렬 — 우측 끝이 박스 우측과 일치 */
+            width: 100%;
+            max-width: 645px;
+            align-self: center;
+        }
+        /* ? / YT 를 .tool-body 우측 상단에 absolute 배치 (데스크탑·모바일 공통).
+           튜너·프렛보드·음정트레이닝·탭템포처럼 ? 만 단독으로 코너에 둘 때 사용. */
+        .tool-help-corner {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            z-index: 5;
+            margin-left: 0;
+        }
+        /* 스케일처럼 ? 와 YT 를 함께 코너에 둘 때 사용하는 래퍼 */
+        .tool-corner-actions {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            z-index: 5;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .tool-corner-actions .tool-help-btn,
+        .tool-corner-actions .tool-yt-btn {
+            margin-left: 0;
+        }
+        @media (max-width: 768px) {
+            .tool-help-corner,
+            .tool-corner-actions {
+                top: 10px;
+                right: 10px;
+            }
+            .tool-corner-actions { gap: 0.3rem; }
+        }
+        /* 메트로놈: ? 슬롯과 BPM 사이의 시각적 간격을 죈다. 데스크탑·모바일 동일.
+           5rem Playfair 글리프의 캡-하이트 위 여백까지 흡수하기 위해 큰 음수 margin 사용. */
+        #metronomePanel .metronome-bpm {
+            margin-top: -1.8rem;
+            margin-bottom: 0.4rem;
         }
 
         /* Reset tool-panel so it behaves in standalone page */
@@ -1817,7 +1894,7 @@
             /* Compact topbar layout: logo, theme toggle, user avatar (right). Volume hidden on mobile. */
             .topbar { padding: 0 0.6rem; gap: 0.5rem; }
             .topbar-logo-link { padding: 2px 4px; }
-            .topbar-logo { height: 34px; }
+            .topbar-logo { height: 48px; }
             .topbar-spacer { flex: 1 1 auto; }
             /* Hide the volume slider on mobile — keep it for PC only */
             .topbar .master-vol { display: none; }
@@ -2088,7 +2165,8 @@
             display: none;
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(15, 30, 22, 0.97);
+            /* 라이트모드 기본 배경 — 다크모드 오버라이드는 :root[data-theme="dark"] 에서 처리 */
+            background: rgba(255, 255, 255, 0.98);
             z-index: 20;
             padding: 1.2rem 1.5rem;
             overflow-y: auto;
@@ -5155,9 +5233,10 @@
         <section class="tool-panel active" id="tunerPanel">
             <div class="tool-header">
                 <div class="tool-header-icon"><i class="fas fa-microphone"></i></div>
-                <h1>튜너<button type="button" class="tool-help-btn" data-help="tuner" aria-label="튜너 도움말" aria-expanded="false">?</button><a class="tool-yt-btn" data-yt="tuner" href="#" target="_blank" rel="noopener" aria-label="튜너 관련 영상" title="관련 영상 보기"><i class="fab fa-youtube" aria-hidden="true"></i></a></h1>
+                <h1>튜너</h1>
             </div>
             <div class="tool-body">
+                <button type="button" class="tool-help-btn tool-help-corner" data-help="tuner" aria-label="튜너 도움말" aria-expanded="false">?</button>
                 <div class="tuner-display">
                     <div class="tuner-note" id="tunerNote">—</div>
                     <div class="tuner-freq" id="tunerFreq">0 Hz</div>
@@ -5179,19 +5258,27 @@
                 </button>
                 <p class="tuner-hint">마이크 권한을 허용해주세요. 기타 한 줄씩 천천히 쳐보세요.</p>
             </div>
+            <!-- YouTube link sits below the tuner box, right-aligned (both desktop & mobile) -->
+            <div class="tool-mobile-yt-slot" data-yt-tool="tuner">
+                <a class="tool-yt-btn tool-yt-corner" data-yt="tuner" href="#" target="_blank" rel="noopener" aria-label="튜너 관련 영상" title="관련 영상 보기"><i class="fab fa-youtube" aria-hidden="true"></i></a>
+            </div>
         </section>
 
         <!-- Metronome -->
         <section class="tool-panel" id="metronomePanel">
             <div class="tool-header">
                 <div class="tool-header-icon"><i class="fas fa-stopwatch"></i></div>
-                <h1>메트로놈<button type="button" class="tool-help-btn" data-help="metronome" aria-label="메트로놈 도움말" aria-expanded="false">?</button><a class="tool-yt-btn" data-yt="metronome" href="#" target="_blank" rel="noopener" aria-label="메트로놈 관련 영상" title="관련 영상 보기"><i class="fab fa-youtube" aria-hidden="true"></i></a></h1>
+                <h1>메트로놈</h1>
             </div>
             <div class="tool-body">
                 <div class="sound-toggle">
                     <button class="sound-toggle-btn active" data-sound="click" onclick="updateSoundMode('click')">클릭</button>
                     <button class="sound-toggle-btn" data-sound="drums" onclick="updateSoundMode('drums')">드럼</button>
                     <button class="sound-toggle-btn" data-sound="loop" onclick="updateSoundMode('loop')">루프</button>
+                </div>
+                <!-- ? help button sits right below the sound-mode tabs (both desktop & mobile) -->
+                <div class="tool-mobile-help-slot" data-help-tool="metronome">
+                    <button type="button" class="tool-help-btn tool-help-static" data-help="metronome" aria-label="메트로놈 도움말" aria-expanded="false">?</button>
                 </div>
                 <div class="loop-section" id="loopSection">
                     <div class="loop-top-row">
@@ -5273,15 +5360,20 @@
                     <span class="kbd-hint">SPACE</span>
                 </button>
             </div>
+            <!-- YouTube link sits below the metronome box, right-aligned (both desktop & mobile) -->
+            <div class="tool-mobile-yt-slot" data-yt-tool="metronome">
+                <a class="tool-yt-btn tool-yt-corner" data-yt="metronome" href="#" target="_blank" rel="noopener" aria-label="메트로놈 관련 영상" title="관련 영상 보기"><i class="fab fa-youtube" aria-hidden="true"></i></a>
+            </div>
         </section>
 
         <!-- Ear Training -->
         <section class="tool-panel" id="eartrainingPanel">
             <div class="tool-header">
                 <div class="tool-header-icon"><i class="fas fa-headphones"></i></div>
-                <h1>음정 트레이닝<button type="button" class="tool-help-btn" data-help="eartraining" aria-label="음정 트레이닝 도움말" aria-expanded="false">?</button></h1>
+                <h1>음정 트레이닝</h1>
             </div>
             <div class="tool-body">
+                <button type="button" class="tool-help-btn tool-help-corner" data-help="eartraining_pitch" aria-label="음정 트레이닝 도움말" aria-expanded="false">?</button>
                 <div class="et-mode-toggle">
                     <button class="et-mode-btn active" data-mode="pitch" onclick="switchETMode('pitch')"><span class="et-btn-word">음</span><span class="et-btn-sep"> </span><span class="et-btn-word">맞추기</span></button>
                     <button class="et-mode-btn" data-mode="interval" onclick="switchETMode('interval')"><span class="et-btn-word">두&nbsp;음</span><span class="et-btn-sep"> </span><span class="et-btn-word">비교</span></button>
@@ -5479,7 +5571,7 @@
         <section class="tool-panel" id="chordsPanel">
             <div class="tool-header">
                 <div class="tool-header-icon"><i class="fas fa-guitar"></i></div>
-                <h1>코드 라이브러리<button type="button" class="tool-help-btn" data-help="chords" aria-label="코드 라이브러리 도움말" aria-expanded="false">?</button><a class="tool-yt-btn" data-yt="chords" href="#" target="_blank" rel="noopener" aria-label="코드 라이브러리 관련 영상" title="관련 영상 보기"><i class="fab fa-youtube" aria-hidden="true"></i></a></h1>
+                <h1>코드 라이브러리</h1>
             </div>
             <div class="tool-body">
                 <div class="chord-search-row">
@@ -5524,9 +5616,10 @@
         <section class="tool-panel" id="fretboardPanel">
             <div class="tool-header">
                 <div class="tool-header-icon"><span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="3" width="15" height="10" fill="none" stroke="currentColor" stroke-width="1.2" rx="0.6"/><line x1="2" y1="3" x2="2" y2="13" stroke="currentColor" stroke-width="1.6"/><line x1="5.5" y1="3" x2="5.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="9" y1="3" x2="9" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="12.5" y1="3" x2="12.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="0.5" y1="5" x2="15.5" y2="5" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="7" x2="15.5" y2="7" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="9" x2="15.5" y2="9" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="11" x2="15.5" y2="11" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><circle cx="7.25" cy="8" r="0.85" fill="currentColor" opacity="0.75"/></svg></span></div>
-                <h1>프렛보드<button type="button" class="tool-help-btn" data-help="fretboard" aria-label="프렛보드 도움말" aria-expanded="false">?</button></h1>
+                <h1>프렛보드</h1>
             </div>
             <div class="tool-body">
+                <button type="button" class="tool-help-btn tool-help-corner" data-help="fretboard" aria-label="프렛보드 도움말" aria-expanded="false">?</button>
                 <!-- Mode tabs (탐색 / 트레이닝) — 상단에 단독으로 -->
                 <div class="fb-topbar fb-topbar-modes-only">
                     <div class="fb-mode-tabs">
@@ -5657,15 +5750,15 @@
                 <h1>스케일</h1>
             </div>
             <div class="tool-body">
+                <div class="tool-corner-actions">
+                    <button type="button" class="tool-help-btn" data-help="scales" aria-label="스케일 도움말" aria-expanded="false">?</button>
+                    <a class="tool-yt-btn" data-yt="scales" href="#" target="_blank" rel="noopener" aria-label="스케일 관련 영상" title="관련 영상 보기"><i class="fab fa-youtube" aria-hidden="true"></i></a>
+                </div>
                 <div class="fb-controls">
                     <div class="sc-select-row">
                         <div class="sc-select-group">
                             <div class="sc-select-label-row">
                                 <label class="sc-select-label">루트</label>
-                                <div class="sc-select-actions">
-                                    <button type="button" class="tool-help-btn" data-help="scales" aria-label="스케일 도움말" aria-expanded="false">?</button>
-                                    <a class="tool-yt-btn" data-yt="scales" href="#" target="_blank" rel="noopener" aria-label="스케일 관련 영상" title="관련 영상 보기"><i class="fab fa-youtube" aria-hidden="true"></i></a>
-                                </div>
                             </div>
                             <div class="sc-root-grid" id="scRootGrid"></div>
                         </div>
@@ -5767,7 +5860,7 @@
         <section class="tool-panel" id="pianoPanel">
             <div class="tool-header">
                 <div class="tool-header-icon"><span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="2.5" width="15" height="12" fill="none" stroke="currentColor" stroke-width="1.1" rx="1"/><line x1="4.25" y1="2.5" x2="4.25" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="8" y1="2.5" x2="8" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="11.75" y1="2.5" x2="11.75" y2="14.5" stroke="currentColor" stroke-width="0.8"/><rect x="2.8" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="6.55" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="10.3" y="2.5" width="2.9" height="7" fill="currentColor"/></svg></span></div>
-                <h1>피아노<button type="button" class="tool-help-btn" data-help="piano" aria-label="피아노 도움말" aria-expanded="false">?</button></h1>
+                <h1>피아노</h1>
             </div>
             <div class="tool-body">
                 <!-- 모드 탭 — "기본" (88키 스크롤) / "키보드 건반" (C3~F4 컴퓨터 키보드 매핑) -->
@@ -5828,11 +5921,12 @@
         <section class="tool-panel" id="capoPanel" style="position:relative;">
             <div class="tool-header">
                 <div class="tool-header-icon"><i class="fas fa-sliders-h"></i></div>
-                <h1>카포 계산기<button type="button" class="tool-help-btn" data-help="capo" aria-label="카포 계산기 도움말" aria-expanded="false">?</button></h1>
+                <h1>카포 계산기</h1>
             </div>
             <div class="tool-body" style="position:relative;">
+                <button type="button" class="tool-help-btn tool-help-corner" onclick="toggleCapoHelp()" aria-label="카포 계산기 사용법" title="카포 계산기 사용법">?</button>
                 <div class="capo-intro-row">
-                    <p class="capo-intro" style="margin-bottom:0; padding-bottom:0; border-bottom:none;">원곡 키와 편하게 칠 코드 모양 (키)를 고르면<br>카포 위치를 알려드려요 <button class="capo-help-btn" onclick="toggleCapoHelp()" title="도움말">?</button></p>
+                    <p class="capo-intro" style="margin-bottom:0; padding-bottom:0; border-bottom:none;">원곡 키와 편하게 칠 코드 모양 (키)를 고르면<br>카포 위치를 알려드려요</p>
                 </div>
                 <div style="border-bottom:1px solid rgba(42, 107, 74, 0.12); margin-bottom:1.4rem; padding-bottom:1rem;"></div>
                 <div class="capo-section">
@@ -5875,9 +5969,10 @@
         <section class="tool-panel" id="taptempoPanel">
             <div class="tool-header">
                 <div class="tool-header-icon"><i class="fas fa-hand-pointer"></i></div>
-                <h1>탭템포<button type="button" class="tool-help-btn" data-help="taptempo" aria-label="탭템포 도움말" aria-expanded="false">?</button></h1>
+                <h1>탭템포</h1>
             </div>
             <div class="tool-body">
+                <button type="button" class="tool-help-btn tool-help-corner" data-help="taptempo" aria-label="탭템포 도움말" aria-expanded="false">?</button>
                 <div class="tap-display">
                     <div class="tap-bpm" id="tapBpmValue">—</div>
                     <div class="tap-bpm-label">BPM</div>
@@ -6156,7 +6251,7 @@
         // help button to close.
         const TOOL_HELP_TEXT = {
             tuner: '기기 마이크로 들어오는 소리의 음높이를 분석해 정확한 튜닝을 알려줍니다. 기타·베이스·우쿨렐레·바이올린 모두 지원해요.',
-            metronome: '메트로놈 + 드럼 머신을 한 화면에. BPM·박자·강세 박 조절 + 8비트·16비트·셔플 등 다양한 드럼 패턴과 코드 진행 루프까지 함께 사용할 수 있어요.',
+            metronome: '메트로놈 : BPM에 맞춰 클릭이나 목소리가 나옵니다. 박자 기준점을 전환 가능합니다.\n\n드럼 : BPM에 맞춰 드럼 리듬이 나옵니다. 주로 쓰이는 드럼 리듬들을 모아봤습니다.\n\n루프 : 드럼 리듬에 베이스 연주를 추가하여 들을 수 있습니다. 4,8,12,16마디로 설정 가능하고 한 마디당 코드 두개까지 입력 가능합니다.',
             eartraining: '두 음 간격이나 코드를 듣고 맞히는 훈련. 정답이 누적되면 랭킹에 반영돼요. 절대음감보다 상대음감 훈련에 효과적이에요.',
             eartraining_pitch:    '음정을 듣고 무슨 음정인지 맞추는 연습이에요. 어려움 난이도부터는 샵(♯) 음계까지 함께 출제됩니다.',
             eartraining_interval: '낮은 음과 높은 음 사이 간격을 맞추는 연습이에요. 절대음감 없이도 음악을 분석할 수 있게 해주는 상대음감 트레이닝의 핵심 방식.',
@@ -6202,21 +6297,51 @@
             }
             // Expose updater so switchTool can call it
             window.__updateMobileHelp = function(toolKey) {
-                // 일부 도구는 floating 모바일 ? / YT 버튼을 안 띄움:
-                //  - capo: 사용법 모달 안에 큰 ? 가 이미 있어 중복
-                //  - chords: 검색바 옆에 inline ? + YT 가 이미 있음
-                //  - piano: 키보드 건반 탭 옆 ? 가 이미 있음
-                //  - scales: 루트 라벨 줄 우측에 inline ? + YT 가 이미 있음
-                const HIDE_FLOATING = new Set(['capo', 'chords', 'piano', 'scales']);
+                // 모든 도구가 자체 inline 또는 static ? / YT 를 가지고 있어
+                // 공통 floating 버튼은 더 이상 필요하지 않음 — 항상 숨김.
+                //  - capo:        사용법 모달 안에 ?
+                //  - chords:      검색바 옆 inline ? + YT
+                //  - piano:       키보드 건반 탭 옆 ?
+                //  - scales:      박스 우상단 ? + YT
+                //  - tuner:       박스 우상단 ? + 박스 아래 YT
+                //  - metronome:   sound-toggle 아래 ? + 박스 아래 YT
+                //  - fretboard:   박스 우상단 ?
+                //  - taptempo:    박스 우상단 ?
+                //  - eartraining: 박스 우상단 ? (모드별 동적 키)
+                const HIDE_FLOATING = new Set([
+                    'capo', 'chords', 'piano', 'scales',
+                    'tuner', 'metronome',
+                    'fretboard', 'taptempo', 'eartraining',
+                ]);
                 if (HIDE_FLOATING.has(toolKey)) {
                     mobileHelp.classList.add('hidden');
                     mobileYt.classList.add('hidden');
+                    // 음정 트레이닝: 활성 모드(pitch/interval/chord)에 따라 static ? 의
+                    // data-help 키를 동적 갱신 — 팝오버에 모드별 텍스트가 나오도록.
+                    if (toolKey === 'eartraining') {
+                        try {
+                            const panel = document.getElementById('eartrainingPanel');
+                            const activeMode = panel && panel.querySelector('.et-mode-content.active');
+                            const staticHelp = panel && panel.querySelector('.tool-help-corner');
+                            if (activeMode && staticHelp) {
+                                const modeKey =
+                                    activeMode.id === 'etPitchMode'    ? 'pitch' :
+                                    activeMode.id === 'etIntervalMode' ? 'interval' :
+                                    activeMode.id === 'etChordMode'    ? 'chord' : null;
+                                const dynKey = modeKey ? ('eartraining_' + modeKey) : 'eartraining';
+                                if (TOOL_HELP_TEXT[dynKey]) {
+                                    staticHelp.dataset.help = dynKey;
+                                }
+                            }
+                        } catch (e) {}
+                    }
                     return;
                 }
                 // 음정 트레이닝은 활성 모드(음 맞추기/두 음 비교/코드 맞추기)에 따라
                 // 다른 도움말 키 사용 (eartraining_pitch / _interval / _chord)
                 let helpKey = toolKey;
-                let anchor = null;
+                let anchor = null;       // ? 버튼이 들어갈 부모
+                let ytAnchor = null;     // YT 버튼이 들어갈 부모 (null = body 에 fixed)
                 try {
                     const panelId = toolKey + 'Panel';
                     const panel = document.getElementById(panelId);
@@ -6233,6 +6358,15 @@
                                 }
                                 anchor = activeMode.querySelector('.et-settings-box');
                             }
+                        }
+                        // 튜너: ? 는 .tool-body 우측 상단(기본), YT 는 박스 아래 슬롯
+                        if (toolKey === 'tuner') {
+                            ytAnchor = panel.querySelector('.tool-mobile-yt-slot');
+                        }
+                        // 메트로놈: ? 는 sound-toggle 아래 슬롯, YT 는 박스 아래 슬롯
+                        if (toolKey === 'metronome') {
+                            anchor = panel.querySelector('.tool-mobile-help-slot');
+                            ytAnchor = panel.querySelector('.tool-mobile-yt-slot');
                         }
                         if (!anchor) anchor = panel.querySelector('.tool-body');
                     }
@@ -6252,9 +6386,21 @@
                 } else {
                     mobileYt.classList.add('hidden');
                 }
-                // 버튼을 anchor 안 우측 상단으로 재배치 (모드 전환 포함)
+                // ? 버튼 재배치
                 if (anchor && mobileHelp.parentElement !== anchor) {
                     anchor.appendChild(mobileHelp);
+                }
+                // ? 가 슬롯(인라인) 안에 있으면 .in-slot 클래스로 fixed/absolute 해제
+                const helpInSlot = !!(anchor && anchor.classList && anchor.classList.contains('tool-mobile-help-slot'));
+                mobileHelp.classList.toggle('in-slot', helpInSlot);
+
+                // YT 버튼 재배치 — ytAnchor 가 있으면 슬롯 안 인라인, 없으면 body 에 fixed
+                if (ytAnchor) {
+                    if (mobileYt.parentElement !== ytAnchor) ytAnchor.appendChild(mobileYt);
+                    mobileYt.classList.add('in-slot');
+                } else {
+                    if (mobileYt.parentElement !== document.body) document.body.appendChild(mobileYt);
+                    mobileYt.classList.remove('in-slot');
                 }
             };
 
