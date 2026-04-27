@@ -211,9 +211,10 @@
     display: flex;
     align-items: center;
     justify-content: flex-start;   /* navigator 첫 요소 (‹) 가 좌측 정렬 */
-    flex-wrap: wrap;
+    flex-wrap: nowrap;             /* 좁은 화면에서도 한 줄 유지 */
     gap: 0.4rem;
     margin: 0;
+    min-width: 0;
 }
 .rank-period-arrow {
     width: 32px; height: 32px;
@@ -230,6 +231,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex: 0 0 auto;   /* 화살표는 줄어들지 않음 */
 }
 .rank-period-arrow:hover:not(:disabled) {
     background: rgba(82, 168, 114, 0.22);
@@ -240,8 +242,8 @@
     cursor: not-allowed;
 }
 .rank-period-label {
-    flex: 0 1 auto;
-    min-width: 180px;
+    flex: 1 1 auto;          /* 가운데 라벨이 남은 공간 다 차지 */
+    min-width: 0;            /* 좁아지면 줄어들 수 있게 */
     padding: 0.45rem 0.9rem;
     border-radius: 999px;
     border: 1px solid rgba(82, 168, 114, 0.32);
@@ -256,7 +258,13 @@
     justify-content: center;
     gap: 0.4rem;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     transition: background 0.15s, border-color 0.15s;
+}
+.rank-period-label > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .rank-period-label:hover {
     background: rgba(82, 168, 114, 0.18);
@@ -1639,11 +1647,12 @@
     // 표시용 라벨 ("4/21 ~ 4/27 (이번 주)" 같은)
     function formatPeriodLabel(scope, offset) {
         if (scope === 'total') return '전체 누적';
-        const today = parseISO(todayISO());
         if (scope === 'daily') {
             const t = parseISO(computeAnchorDate('daily', offset));
             const md = (t.getUTCMonth() + 1) + '/' + t.getUTCDate();
-            const tag = offset === 0 ? '오늘' : offset === -1 ? '어제' : (-offset) + '일 전';
+            // 오늘은 태그 없이 날짜만, 어제/N일 전은 태그 유지
+            if (offset === 0) return md;
+            const tag = offset === -1 ? '어제' : (-offset) + '일 전';
             return md + ' (' + tag + ')';
         }
         if (scope === 'weekly') {
@@ -1651,13 +1660,15 @@
             const end = new Date(start); end.setUTCDate(end.getUTCDate() + 6);
             const sMd = (start.getUTCMonth() + 1) + '/' + start.getUTCDate();
             const eMd = (end.getUTCMonth() + 1) + '/' + end.getUTCDate();
-            const tag = offset === 0 ? '주간' : offset === -1 ? '지난 주' : (-offset) + '주 전';
-            return sMd + ' ~ ' + eMd + ' (' + tag + ')';
+            // 그 주 시작일(월) 기준 월의 N주차 (예: 4/27 → 4주차)
+            const weekOfMonth = Math.ceil(start.getUTCDate() / 7);
+            return weekOfMonth + '주차 (' + sMd + ' ~ ' + eMd + ')';
         }
         if (scope === 'monthly') {
             const t = parseISO(computeAnchorDate('monthly', offset));
-            const tag = offset === 0 ? '월간' : offset === -1 ? '지난 달' : (-offset) + '달 전';
-            return t.getUTCFullYear() + '년 ' + (t.getUTCMonth() + 1) + '월 (' + tag + ')';
+            // 26 / 4월 형식 — 연도 끝 두 자리 + 월
+            const yearShort = String(t.getUTCFullYear()).slice(-2);
+            return yearShort + ' / ' + (t.getUTCMonth() + 1) + '월';
         }
         return '';
     }

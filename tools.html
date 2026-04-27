@@ -1639,6 +1639,7 @@
             border-radius: 10px;
             font-size: 0.86rem;
             line-height: 1.55;
+            white-space: pre-line;   /* \n 을 줄바꿈으로 렌더 */
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
             opacity: 0;
             visibility: hidden;
@@ -1931,6 +1932,10 @@
                 margin: 0 0 1.2rem;
                 padding: 0;
                 max-width: none;
+                /* 베이스 룰의 z-index:31 이 flex item 으로 적용돼 topbar 위로
+                   떠올라가는 문제 해결. auto 로 되돌려 일반 흐름에 합류시킴. */
+                z-index: auto;
+                pointer-events: auto;
             }
             #rankingPanel .tool-header-icon,
             #mypagePanel .tool-header-icon {
@@ -2455,6 +2460,11 @@
             gap: 0.5rem;
             margin-bottom: 1rem;
         }
+        /* 악기 드롭다운이 빠져 모드 탭만 남은 변형 — 단순 중앙 정렬 */
+        .fb-topbar-modes-only {
+            display: flex;
+            justify-content: center;
+        }
         .fb-topbar .fb-mode-tabs {
             grid-column: 2;
             justify-self: center;
@@ -2863,6 +2873,8 @@
             opacity: 0.38;
             cursor: not-allowed;
         }
+        /* 텍스트 한 줄 유지 — "옥타브 ↵ 낮추기" 가 좁은 화면에서도 안 깨짐 */
+        .pn-octave-text { white-space: nowrap; }
         .pn-octave-label {
             font-family: 'Playfair Display', serif;
             font-size: 1rem;
@@ -2872,6 +2884,20 @@
             letter-spacing: 0.02em;
         }
 
+        /* 키보드 건반 모드 탭 옆 ? 도움말 — 키보드 탭 활성 상태에서만 표시.
+           pn-mode-tabs 의 flex 자식이라 자동 정렬되며 탭 흐름을 깨지 않음. */
+        .pn-mode-tabs .pn-kbd-help-btn {
+            flex: 0 0 auto;
+            width: 28px;
+            height: 28px;
+            margin-left: 0.3rem;
+            align-self: center;
+            display: none;   /* 기본 숨김 */
+        }
+        /* 키보드 건반 탭이 활성일 때만 ? 표시 */
+        .pn-mode-tabs .pn-mode-tab[data-pn-mode="keyboard"].active ~ .pn-kbd-help-btn {
+            display: inline-flex;
+        }
         /* 피아노 모드 탭 (기본 / 키보드 건반) */
         .pn-mode-tabs {
             display: flex;
@@ -2882,7 +2908,8 @@
             border-radius: 10px;
         }
         .pn-mode-tab {
-            flex: 1;
+            flex: 1 1 0;
+            min-width: 0;        /* content 가 길어도 동일 폭 유지 */
             padding: 0.55rem 0.9rem;
             font-family: inherit;
             font-size: 0.88rem;
@@ -2893,6 +2920,8 @@
             border-radius: 7px;
             cursor: pointer;
             transition: all 0.15s;
+            white-space: nowrap;
+            text-align: center;
         }
         .pn-mode-tab:hover {
             color: var(--green-deep);
@@ -3250,6 +3279,31 @@
             color: rgba(26, 36, 33, 0.45);
             letter-spacing: 0.06em;
             text-transform: uppercase;
+        }
+        /* 루트 라벨 줄 — 라벨 좌측, ?/YT 액션 우측 끝 */
+        .sc-select-label-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            min-height: 28px;
+        }
+        .sc-select-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .sc-select-actions .tool-help-btn,
+        .sc-select-actions .tool-yt-btn {
+            margin-left: 0;
+            width: 26px;
+            height: 26px;
+        }
+        /* 악기 선택 행 — 프렛보드 바로 위에 배치, 우측 정렬 */
+        .sc-inst-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 0.5rem;
         }
         .sc-root-grid {
             display: grid;
@@ -5433,8 +5487,8 @@
                 <h1>프렛보드<button type="button" class="tool-help-btn" data-help="fretboard" aria-label="프렛보드 도움말" aria-expanded="false">?</button></h1>
             </div>
             <div class="tool-body">
-                <!-- Top row: mode tabs (centered on desktop, left on mobile) + instrument dropdown (far right) -->
-                <div class="fb-topbar">
+                <!-- Mode tabs (탐색 / 트레이닝) — 상단에 단독으로 -->
+                <div class="fb-topbar fb-topbar-modes-only">
                     <div class="fb-mode-tabs">
                         <button class="fb-mode-tab active" data-mode="explore" onclick="fbSwitchMode('explore')">
                             <i class="fas fa-hand-pointer"></i> 탐색
@@ -5442,18 +5496,6 @@
                         <button class="fb-mode-tab" data-mode="training" onclick="fbSwitchMode('training')">
                             <i class="fas fa-bullseye"></i> 트레이닝
                         </button>
-                    </div>
-                    <div class="fb-inst-dropdown" id="fbInstDropdown">
-                        <button class="fb-inst-current" type="button" onclick="fbToggleInstMenu(event)" aria-haspopup="listbox" aria-expanded="false">
-                            <i class="fas fa-guitar fb-inst-icon"></i>
-                            <span class="fb-inst-current-label">기타</span>
-                            <i class="fas fa-chevron-down fb-inst-chev"></i>
-                        </button>
-                        <div class="fb-inst-menu" role="listbox">
-                            <button class="fb-inst-option active" data-inst="guitar" onclick="fbSetInstrument('guitar')"><i class="fas fa-guitar"></i> 기타</button>
-                            <button class="fb-inst-option" data-inst="bass4" onclick="fbSetInstrument('bass4')"><i class="fas fa-guitar"></i> 베이스 4현</button>
-                            <button class="fb-inst-option" data-inst="bass5" onclick="fbSetInstrument('bass5')"><i class="fas fa-guitar"></i> 베이스 5현</button>
-                        </div>
                     </div>
                 </div>
 
@@ -5529,6 +5571,22 @@
                     </div>
                 </div>
 
+                <!-- 악기 선택 — 프렛보드 바로 위에 배치 -->
+                <div class="sc-inst-row">
+                    <div class="fb-inst-dropdown" id="fbInstDropdown">
+                        <button class="fb-inst-current" type="button" onclick="fbToggleInstMenu(event)" aria-haspopup="listbox" aria-expanded="false">
+                            <i class="fas fa-guitar fb-inst-icon"></i>
+                            <span class="fb-inst-current-label">기타</span>
+                            <i class="fas fa-chevron-down fb-inst-chev"></i>
+                        </button>
+                        <div class="fb-inst-menu" role="listbox">
+                            <button class="fb-inst-option active" data-inst="guitar" onclick="fbSetInstrument('guitar')"><i class="fas fa-guitar"></i> 기타</button>
+                            <button class="fb-inst-option" data-inst="bass4" onclick="fbSetInstrument('bass4')"><i class="fas fa-guitar"></i> 베이스 4현</button>
+                            <button class="fb-inst-option" data-inst="bass5" onclick="fbSetInstrument('bass5')"><i class="fas fa-guitar"></i> 베이스 5현</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Fretboard display -->
                 <div class="fb-stage">
                     <button class="fb-zoom-btn" id="fbZoomBtn" type="button" onclick="fbToggleZoom()" aria-label="확대/축소" title="확대/축소">
@@ -5556,30 +5614,19 @@
         <section class="tool-panel" id="scalesPanel">
             <div class="tool-header">
                 <div class="tool-header-icon"><i class="fas fa-music"></i></div>
-                <h1>스케일<button type="button" class="tool-help-btn" data-help="scales" aria-label="스케일 도움말" aria-expanded="false">?</button><a class="tool-yt-btn" data-yt="scales" href="#" target="_blank" rel="noopener" aria-label="스케일 관련 영상" title="관련 영상 보기"><i class="fab fa-youtube" aria-hidden="true"></i></a></h1>
+                <h1>스케일</h1>
             </div>
             <div class="tool-body">
-                <div class="fb-topbar">
-                    <div></div>
-                    <div class="fb-inst-dropdown" id="scInstDropdown">
-                        <button class="fb-inst-current" type="button" onclick="scToggleInstMenu(event)" aria-haspopup="listbox" aria-expanded="false">
-                            <i class="fas fa-guitar fb-inst-icon"></i>
-                            <span class="fb-inst-current-label">기타</span>
-                            <i class="fas fa-chevron-down fb-inst-chev"></i>
-                        </button>
-                        <div class="fb-inst-menu" role="listbox">
-                            <button class="fb-inst-option active" data-inst="guitar" onclick="scSetInstrument('guitar')"><i class="fas fa-guitar"></i> 기타</button>
-                            <button class="fb-inst-option" data-inst="bass4" onclick="scSetInstrument('bass4')"><i class="fas fa-guitar"></i> 베이스 4현</button>
-                            <button class="fb-inst-option" data-inst="bass5" onclick="scSetInstrument('bass5')"><i class="fas fa-guitar"></i> 베이스 5현</button>
-                            <button class="fb-inst-option" data-inst="piano" onclick="scSetInstrument('piano')"><span class="cwk-icon sc-inst-piano-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="2.5" width="15" height="12" fill="none" stroke="currentColor" stroke-width="1.1" rx="1"/><line x1="4.25" y1="2.5" x2="4.25" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="8" y1="2.5" x2="8" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="11.75" y1="2.5" x2="11.75" y2="14.5" stroke="currentColor" stroke-width="0.8"/><rect x="2.8" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="6.55" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="10.3" y="2.5" width="2.9" height="7" fill="currentColor"/></svg></span> 피아노</button>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="fb-controls">
                     <div class="sc-select-row">
                         <div class="sc-select-group">
-                            <label class="sc-select-label">루트</label>
+                            <div class="sc-select-label-row">
+                                <label class="sc-select-label">루트</label>
+                                <div class="sc-select-actions">
+                                    <button type="button" class="tool-help-btn" data-help="scales" aria-label="스케일 도움말" aria-expanded="false">?</button>
+                                    <a class="tool-yt-btn" data-yt="scales" href="#" target="_blank" rel="noopener" aria-label="스케일 관련 영상" title="관련 영상 보기"><i class="fab fa-youtube" aria-hidden="true"></i></a>
+                                </div>
+                            </div>
                             <div class="sc-root-grid" id="scRootGrid"></div>
                         </div>
                         <div class="sc-select-group">
@@ -5636,6 +5683,23 @@
 
                 <div class="sc-info" id="scInfo"></div>
 
+                <!-- 악기 선택 — 프렛보드 바로 위에 배치 -->
+                <div class="sc-inst-row">
+                    <div class="fb-inst-dropdown" id="scInstDropdown">
+                        <button class="fb-inst-current" type="button" onclick="scToggleInstMenu(event)" aria-haspopup="listbox" aria-expanded="false">
+                            <i class="fas fa-guitar fb-inst-icon"></i>
+                            <span class="fb-inst-current-label">기타</span>
+                            <i class="fas fa-chevron-down fb-inst-chev"></i>
+                        </button>
+                        <div class="fb-inst-menu" role="listbox">
+                            <button class="fb-inst-option active" data-inst="guitar" onclick="scSetInstrument('guitar')"><i class="fas fa-guitar"></i> 기타</button>
+                            <button class="fb-inst-option" data-inst="bass4" onclick="scSetInstrument('bass4')"><i class="fas fa-guitar"></i> 베이스 4현</button>
+                            <button class="fb-inst-option" data-inst="bass5" onclick="scSetInstrument('bass5')"><i class="fas fa-guitar"></i> 베이스 5현</button>
+                            <button class="fb-inst-option" data-inst="piano" onclick="scSetInstrument('piano')"><span class="cwk-icon sc-inst-piano-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="2.5" width="15" height="12" fill="none" stroke="currentColor" stroke-width="1.1" rx="1"/><line x1="4.25" y1="2.5" x2="4.25" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="8" y1="2.5" x2="8" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="11.75" y1="2.5" x2="11.75" y2="14.5" stroke="currentColor" stroke-width="0.8"/><rect x="2.8" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="6.55" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="10.3" y="2.5" width="2.9" height="7" fill="currentColor"/></svg></span> 피아노</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="fb-stage">
                     <button class="fb-zoom-btn" id="scZoomBtn" type="button" onclick="scToggleZoom()" aria-label="확대/축소" title="확대/축소">
                         <i class="fas fa-magnifying-glass-plus"></i>
@@ -5670,6 +5734,7 @@
                 <div class="pn-mode-tabs">
                     <button class="pn-mode-tab active" data-pn-mode="default" type="button" onclick="pnSwitchMode('default')">기본</button>
                     <button class="pn-mode-tab" data-pn-mode="keyboard" type="button" onclick="pnSwitchMode('keyboard')">키보드 건반</button>
+                    <button type="button" class="tool-help-btn pn-kbd-help-btn" data-help="piano_keyboard" aria-label="키보드 건반 도움말" aria-expanded="false">?</button>
                 </div>
                 <div class="fb-controls">
                     <div class="fb-control-row fb-control-row-switches">
@@ -5706,13 +5771,13 @@
                 </div>
                 <!-- 키보드 건반 모드 전용 옥타브 컨트롤 -->
                 <div class="pn-octave-controls" id="pnOctaveControls" style="display:none;">
-                    <button class="pn-octave-btn pn-octave-down" type="button" onclick="pnKbdShiftOctave(-1)" aria-label="옥타브 낮추기">
+                    <button class="pn-octave-btn pn-octave-down" type="button" onclick="pnKbdShiftOctave(-1)" aria-label="옥타브 한 단계 낮추기">
                         <i class="fas fa-chevron-left"></i>
-                        <span>옥타브 낮추기</span>
+                        <span class="pn-octave-text">옥타브 ↵ 낮추기</span>
                     </button>
                     <span class="pn-octave-label" id="pnOctaveLabel">C3 – F4</span>
-                    <button class="pn-octave-btn pn-octave-up" type="button" onclick="pnKbdShiftOctave(1)" aria-label="옥타브 올리기">
-                        <span>옥타브 올리기</span>
+                    <button class="pn-octave-btn pn-octave-up" type="button" onclick="pnKbdShiftOctave(1)" aria-label="옥타브 한 단계 올리기">
+                        <span class="pn-octave-text">옥타브 ↵ 올리기</span>
                         <i class="fas fa-chevron-right"></i>
                     </button>
                 </div>
@@ -6062,6 +6127,7 @@
             fretboard: '지판 위 모든 음의 위치를 시각화. 트레이닝 모드로 음 이름 맞추기 연습도 가능합니다.',
             scales: '메이저·마이너·펜타토닉·블루스·모드·특이 스케일까지 루트별로 시각화. 기타·베이스·피아노에서 동일 스케일을 비교할 수 있어요.',
             piano: '88건반 가상 피아노. 컴퓨터 키보드 a/s/d/f… 로 직접 연주할 수도 있고, 마우스/터치 드래그로 슬라이드 연주도 됩니다.',
+            piano_keyboard: 'PC 처럼 물리 키보드가 있는 기기 전용 모드입니다. 화면 건반에 표시된 알파벳 키를 누르면 해당 음이 재생돼요.\n\na=도, s=레, d=미, w=도♯ ...\n\n옥타브 전체를 한 단계 위/아래로 옮기려면 아래 ◀ 옥타브 낮추기 / 올리기 ▶ 버튼을 사용하세요.',
             capo: '원하는 키로 연주하기 위해 카포를 어디에 끼워야 하는지 자동 계산. 원곡 키와 원하는 키만 입력하면 끝.',
             taptempo: '곡의 박자에 맞춰 두드리면 BPM을 측정해줘요. 메트로놈에 그 BPM을 그대로 보낼 수도 있습니다.',
         };
@@ -6101,7 +6167,9 @@
                 // 일부 도구는 floating 모바일 ? / YT 버튼을 안 띄움:
                 //  - capo: 사용법 모달 안에 큰 ? 가 이미 있어 중복
                 //  - chords: 검색바 옆에 inline ? + YT 가 이미 있음
-                const HIDE_FLOATING = new Set(['capo', 'chords']);
+                //  - piano: 키보드 건반 탭 옆 ? 가 이미 있음
+                //  - scales: 루트 라벨 줄 우측에 inline ? + YT 가 이미 있음
+                const HIDE_FLOATING = new Set(['capo', 'chords', 'piano', 'scales']);
                 if (HIDE_FLOATING.has(toolKey)) {
                     mobileHelp.classList.add('hidden');
                     mobileYt.classList.add('hidden');
