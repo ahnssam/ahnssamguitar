@@ -10,7 +10,7 @@
 
     const SUPABASE_URL = 'https://qpcbrqgqylxkgdwoflku.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_5rr-OZ7Sqjk1nXn59R7XnQ_HInATuSV';
-    const SDK_CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js';
+    const SDK_CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/dist/umd/supabase.min.js';
 
     // ------------------------------------------------------------
     // Styles — injected once
@@ -914,8 +914,43 @@ nav.scrolled .auth-btn:hover {
             }
         } catch (e) {}
 
-        const { data, error: sessionErr } = await sb.auth.getSession();
+        let { data, error: sessionErr } = await sb.auth.getSession();
         if (sessionErr) debugLog('getSession error: ' + sessionErr.message);
+
+        // Fallback: detectSessionInUrl 이 어떤 이유로든 hash 를 처리하지 못한
+        // 경우(타이밍·SDK 버전·브라우저 차이 등) 직접 파싱해서 setSession 호출.
+        // 성공 시 URL 의 hash 를 깨끗이 제거.
+        if (!data.session && window.location.hash && window.location.hash.indexOf('access_token=') !== -1) {
+            try {
+                debugLog('Fallback: manually parsing OAuth hash');
+                const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+                const access_token = params.get('access_token');
+                const refresh_token = params.get('refresh_token');
+                if (access_token && refresh_token) {
+                    const { data: setData, error: setErr } = await sb.auth.setSession({
+                        access_token: access_token,
+                        refresh_token: refresh_token
+                    });
+                    if (setErr) {
+                        debugLog('Fallback setSession error: ' + setErr.message);
+                    } else {
+                        debugLog('Fallback setSession OK');
+                        data = setData;
+                    }
+                    // Clean the hash from the URL regardless — never leave OAuth
+                    // tokens visible in the address bar.
+                    try {
+                        const cleanUrl = window.location.origin +
+                                         window.location.pathname +
+                                         (window.location.search || '');
+                        window.history.replaceState(null, '', cleanUrl);
+                    } catch (e) {}
+                }
+            } catch (e) {
+                debugLog('Fallback OAuth parse threw: ' + (e && e.message));
+            }
+        }
+
         currentSession = data.session || null;
         if (currentSession) {
             debugLog('Session restored: ' + currentSession.user.email);
