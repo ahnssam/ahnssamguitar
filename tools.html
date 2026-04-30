@@ -4984,6 +4984,59 @@
             color: #fff;
             border-color: var(--green-deep);
         }
+        /* 서브 필터 행 — 정렬 모드(가나다/난이도/장르)에 따라 동적으로 채워짐.
+           내용이 없으면(아무 정렬도 항목이 없으면) 자체적으로 숨김. */
+        .loop-preset-subfilter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            padding: 0.4rem 0.5rem 0.5rem;
+            border-bottom: 1px solid rgba(42, 107, 74, 0.08);
+            margin: 0 -4px 4px;
+        }
+        .loop-preset-subfilter-row:empty { display: none; }
+        .loop-preset-subfilter-btn {
+            padding: 0.22rem 0.55rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border: 1px solid rgba(42, 107, 74, 0.15);
+            background: rgba(42, 107, 74, 0.04);
+            color: rgba(26, 36, 33, 0.65);
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.12s;
+        }
+        .loop-preset-subfilter-btn:hover:not(.active) {
+            background: rgba(82, 168, 114, 0.18);
+            color: var(--green-deep);
+        }
+        .loop-preset-subfilter-btn.active {
+            background: var(--green-mid);
+            color: #fff;
+            border-color: var(--green-mid);
+        }
+        :root[data-theme="dark"] .loop-preset-subfilter-row {
+            border-bottom-color: rgba(180, 230, 200, 0.1);
+        }
+        :root[data-theme="dark"] .loop-preset-subfilter-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(180, 230, 200, 0.2);
+            color: #cfe0d6;
+        }
+        :root[data-theme="dark"] .loop-preset-subfilter-btn.active {
+            background: var(--green-mid);
+            border-color: var(--green-mid);
+            color: #fff;
+        }
+        /* preset-bar 안 ? 버튼 — 토글(▼)에서 떨어뜨려 박스 맨 오른쪽으로 push */
+        .loop-preset-help-btn {
+            margin-left: auto;
+            width: 32px;
+            height: 32px;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
         /* 난이도 별 + 장르 배지 */
         .loop-preset-stars {
             color: #d4a52a;
@@ -6119,6 +6172,7 @@
                         <button class="loop-preset-toggle" id="loopPresetToggle" type="button" aria-label="프리셋 목록">
                             <i class="fas fa-chevron-down"></i>
                         </button>
+                        <button type="button" class="tool-help-btn loop-preset-help-btn" data-help="backing" aria-label="반주 도움말" aria-expanded="false">?</button>
                         <div class="loop-preset-list" id="loopPresetList">
                             <div class="loop-preset-sort-row" id="loopPresetSortRow">
                                 <span class="loop-preset-sort-label">정렬</span>
@@ -6126,6 +6180,7 @@
                                 <button type="button" class="loop-preset-sort-btn" data-sort="difficulty">난이도순</button>
                                 <button type="button" class="loop-preset-sort-btn" data-sort="genre">장르별</button>
                             </div>
+                            <div class="loop-preset-subfilter-row" id="loopPresetSubFilterRow"></div>
                             <div id="loopPresetItems"></div>
                         </div>
                     </div>
@@ -7184,8 +7239,8 @@
         // help button to close.
         const TOOL_HELP_TEXT = {
             tuner: '기기 마이크로 들어오는 소리의 음높이를 분석해 정확한 튜닝을 알려줍니다. 기타·베이스·우쿨렐레·바이올린 모두 지원해요.',
-            metronome: '메트로놈 : BPM에 맞춰 클릭이나 목소리가 나옵니다. 박자 기준점을 전환 가능합니다.\n\n드럼 : BPM에 맞춰 드럼 리듬이 나옵니다. 주로 쓰이는 드럼 리듬들을 모아봤습니다.',
-            backing: '코드 진행을 직접 짜서 드럼 + 베이스 자동 반주로 들을 수 있어요. 4·8·12·16마디 단위로 설정하고, 한 마디당 코드 두 개까지 입력 가능. 마디 번호를 드래그하면 그 구간만 반복 루프됩니다.',
+            metronome: '메트로놈 : BPM에 맞춰 클릭이나 목소리(1/2/3/4)가 나옵니다. 박자(2/4·3/4·4/4·6/8) 기준점을 전환 가능.\n\n드럼 : BPM에 맞춰 드럼 리듬이 재생됩니다. 8비트·16비트·셔플락 등 자주 쓰이는 패턴 모음.\n\n탭 BPM: 박자에 맞춰 키보드/버튼 누르면 BPM 자동 측정.',
+            backing: '코드 진행을 짜서 드럼 + 베이스 + 피아노 자동 반주를 들을 수 있어요.\n\n• 마디: 4 / 8 / 12 / 16 마디 — 한 마디 당 두 개까지 코드 입력. 마디 번호를 드래그하면 그 구간만 반복.\n\n• 코드 입력: 픽커(♯/♭, 장/단, 7·m7·M7·m7♭5·dim7 4화음 칩) 또는 직접입력 모드(타이핑) — 상단 토글로 전환.\n\n• 프리셋: 검색·드롭다운으로 노래별 셋팅 한 번에 적용. 정렬을 누르면 가나다·난이도·장르별 서브 필터가 펼쳐집니다.\n\n• 예비박: 토글 ON 시 시작 전 4박자 하이햇 카운트인.\n\n• 베이스/피아노 스타일: 드럼과 별도로 8/16비트 등 선택 가능. 우측 믹서로 각 악기 볼륨 조절.',
             eartraining: '두 음 간격이나 코드를 듣고 맞히는 훈련. 정답이 누적되면 랭킹에 반영돼요. 절대음감보다 상대음감 훈련에 효과적이에요.',
             eartraining_pitch:    '음정을 듣고 무슨 음정인지 맞추는 연습이에요. 어려움 난이도부터는 샵(♯) 음계까지 함께 출제됩니다.',
             eartraining_interval: '낮은 음과 높은 음 사이 간격을 맞추는 연습이에요. 절대음감 없이도 음악을 분석할 수 있게 해주는 상대음감 트레이닝의 핵심 방식.',
@@ -9086,6 +9141,10 @@
                 // 반주 모드 전용 — 볼륨 믹서 보이기
                 const loopMixRow = document.getElementById('loopMixRow');
                 if (loopMixRow) loopMixRow.classList.toggle('visible', mode === 'loop');
+                // 반주 모드에선 sound-toggle 아래 ? 슬롯을 숨김 (preset-bar 안에 ? 가 따로 있음).
+                // click/drum 모드에선 슬롯 표시 — 그대로 ? 가 노출.
+                const helpSlot = document.querySelector('#metronomePanel .tool-mobile-help-slot');
+                if (helpSlot) helpSlot.style.display = (mode === 'loop') ? 'none' : 'flex';
                 renderBeats();
                 currentBeat = 0;
                 loopMeasureIdx = 0;
@@ -9212,6 +9271,122 @@
             let _loopPresetsLoading = false;
             // 정렬 모드: 'alpha' (가나다, 영문 우선) | 'difficulty' | 'genre'
             let _loopPresetSort = 'alpha';
+            // 서브 필터 — 정렬 모드별 부속 필터.
+            //   alpha 모드: 'A' 같은 한 글자 (영문/한글 자음)
+            //   difficulty 모드: 1..5 (숫자)
+            //   genre 모드: 'Pop' 같은 장르명
+            // null = 서브 필터 비활성 (전체 표시)
+            let _loopPresetSubFilter = null;
+
+            // 한글 음절의 초성을 추출 (쌍자음은 단자음으로 정규화).
+            //   '가' → 'ㄱ', '땅' → 'ㄷ', '쌀' → 'ㅅ'
+            function _getKoreanInitial(ch) {
+                var code = ch.charCodeAt(0);
+                if (code >= 0xAC00 && code <= 0xD7A3) {
+                    var base = code - 0xAC00;
+                    var cho = Math.floor(base / 588);
+                    var consonants = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+                    var c = consonants[cho];
+                    var simplify = {'ㄲ':'ㄱ','ㄸ':'ㄷ','ㅃ':'ㅂ','ㅆ':'ㅅ','ㅉ':'ㅈ'};
+                    return simplify[c] || c;
+                }
+                if (/^[ㄱ-ㅎ]$/.test(ch)) return ch;
+                return ch;
+            }
+
+            // 현재 정렬 모드에 맞는 서브필터 옵션 목록 반환 (실제 데이터에 존재하는 키만).
+            function _computeSubFilterOptions() {
+                var presets = _loopPresetsCache || [];
+                if (presets.length === 0) return [];
+                if (_loopPresetSort === 'alpha') {
+                    var seen = new Set();
+                    presets.forEach(function(p) {
+                        var first = (p.name || '').charAt(0);
+                        if (!first) return;
+                        if (/[A-Za-z]/.test(first)) seen.add(first.toUpperCase());
+                        else if (/[ㄱ-힣]/.test(first)) seen.add(_getKoreanInitial(first));
+                    });
+                    // 정렬: 영문 → 한글 자음
+                    var arr = Array.from(seen);
+                    arr.sort(function(a, b) {
+                        var aEng = /^[A-Z]$/.test(a);
+                        var bEng = /^[A-Z]$/.test(b);
+                        if (aEng && !bEng) return -1;
+                        if (!aEng && bEng) return 1;
+                        return a.localeCompare(b, 'ko-KR');
+                    });
+                    return arr.map(function(c) { return { val: c, label: c }; });
+                }
+                if (_loopPresetSort === 'difficulty') {
+                    var diffs = new Set();
+                    presets.forEach(function(p) { if (p.difficulty) diffs.add(p.difficulty); });
+                    return Array.from(diffs).sort(function(a, b) { return a - b; }).map(function(d) {
+                        return { val: d, label: '★'.repeat(d) };
+                    });
+                }
+                if (_loopPresetSort === 'genre') {
+                    var genres = new Set();
+                    presets.forEach(function(p) { if (p.genre) genres.add(p.genre); });
+                    return Array.from(genres).sort().map(function(g) {
+                        return { val: g, label: g };
+                    });
+                }
+                return [];
+            }
+
+            // 서브필터 행 렌더 — 옵션 + 클릭 핸들러.
+            function renderSubFilterRow() {
+                var row = document.getElementById('loopPresetSubFilterRow');
+                if (!row) return;
+                var opts = _computeSubFilterOptions();
+                if (opts.length === 0) {
+                    row.innerHTML = '';
+                    return;
+                }
+                var html = '';
+                opts.forEach(function(o) {
+                    var active = String(_loopPresetSubFilter) === String(o.val);
+                    html += '<button type="button" class="loop-preset-subfilter-btn' +
+                            (active ? ' active' : '') + '" data-sub="' + _escHtml(String(o.val)) + '">' +
+                            _escHtml(o.label) + '</button>';
+                });
+                row.innerHTML = html;
+                row.querySelectorAll('.loop-preset-subfilter-btn').forEach(function(b) {
+                    b.onclick = function(e) {
+                        e.stopPropagation();
+                        var v = b.dataset.sub;
+                        // 같은 항목 다시 클릭 → 해제
+                        if (String(_loopPresetSubFilter) === v) _loopPresetSubFilter = null;
+                        else _loopPresetSubFilter = v;
+                        renderSubFilterRow();
+                        var s = document.getElementById('loopPresetSearch');
+                        renderLoopPresetList(s ? s.value : '');
+                    };
+                });
+            }
+
+            // 서브필터로 프리셋 배열 거름.
+            function _applySubFilter(presets) {
+                if (!_loopPresetSubFilter) return presets;
+                var f = _loopPresetSubFilter;
+                if (_loopPresetSort === 'alpha') {
+                    return presets.filter(function(p) {
+                        var first = (p.name || '').charAt(0);
+                        if (!first) return false;
+                        if (/[A-Za-z]/.test(first)) return first.toUpperCase() === f;
+                        if (/[ㄱ-힣]/.test(first)) return _getKoreanInitial(first) === f;
+                        return false;
+                    });
+                }
+                if (_loopPresetSort === 'difficulty') {
+                    var num = parseInt(f, 10);
+                    return presets.filter(function(p) { return (p.difficulty || 0) === num; });
+                }
+                if (_loopPresetSort === 'genre') {
+                    return presets.filter(function(p) { return (p.genre || '') === f; });
+                }
+                return presets;
+            }
 
             // 영문(A-Z) 먼저, 한글(가-하) 나중. 같은 그룹 안에서는 locale-aware 정렬.
             function _alphaCompare(a, b) {
@@ -9258,6 +9433,8 @@
                 } finally {
                     _loopPresetsLoading = false;
                 }
+                // 데이터 로드 끝났으니 서브필터 옵션도 갱신
+                try { renderSubFilterRow(); } catch (e) {}
                 return _loopPresetsCache;
             }
 
@@ -9298,7 +9475,7 @@
                 var filtered;
                 var isSearching = !!f;
                 if (!isSearching) {
-                    filtered = presets.slice();
+                    filtered = _applySubFilter(presets.slice());
                 } else {
                     // 검색 중일 때는 점수순 (name 가중치 높음, artist 낮음)
                     filtered = presets.map(function(p) {
@@ -9458,13 +9635,16 @@
                     btn.onclick = function(e) {
                         e.stopPropagation();
                         _loopPresetSort = btn.dataset.sort;
+                        _loopPresetSubFilter = null;   // 정렬 바뀌면 서브필터 초기화
                         document.querySelectorAll('.loop-preset-sort-btn').forEach(function(b) {
                             b.classList.toggle('active', b === btn);
                         });
+                        renderSubFilterRow();
                         var s = document.getElementById('loopPresetSearch');
                         renderLoopPresetList(s ? s.value : '');
                     };
                 });
+                renderSubFilterRow();
                 // 외부 클릭 시 닫기
                 document.addEventListener('pointerdown', function(e) {
                     if (!e.target.closest('.loop-preset-bar')) {
