@@ -484,6 +484,12 @@
             color: #b83a2e;
             border: 1px solid rgba(196, 64, 52, 0.35);
         }
+        .bd-feedback.info {
+            display: block;
+            background: rgba(42, 107, 74, 0.08);
+            color: var(--text-mid);
+            border: 1px solid rgba(42, 107, 74, 0.22);
+        }
 
         .bd-empty {
             text-align: center;
@@ -663,6 +669,9 @@
                     </button>
                     <button class="bd-btn bd-btn-ghost" id="testBtn">
                         <i class="fas fa-play"></i> 반주에서 미리보기
+                    </button>
+                    <button class="bd-btn bd-btn-ghost" id="duplicateBtn" style="display:none;" title="현재 설정을 그대로 복사한 새 프리셋 만들기">
+                        <i class="fas fa-clone"></i> 복제
                     </button>
                     <button class="bd-btn bd-btn-danger" id="deleteBtn" style="display:none;">
                         <i class="fas fa-trash"></i> 삭제
@@ -940,6 +949,7 @@
                 renderChords({}, {});
                 $('editForm').style.display = 'block';
                 $('deleteBtn').style.display = 'none';
+                $('duplicateBtn').style.display = 'none';
                 $('feedback').className = 'bd-feedback';
                 renderList();
                 $('fName').focus();
@@ -964,8 +974,30 @@
                 renderChords(p.chords_a || {}, p.chords_b || {});
                 $('editForm').style.display = 'block';
                 $('deleteBtn').style.display = 'inline-flex';
+                $('duplicateBtn').style.display = 'inline-flex';
                 $('feedback').className = 'bd-feedback';
                 renderList();
+            }
+
+            // 현재 편집 중인 프리셋의 모든 설정을 그대로 복사한 "새 프리셋" 으로 전환.
+            // editingId 를 null 로 초기화 → 저장 시 INSERT (UPDATE 가 아님).
+            // 코드 진행, 마디, BPM, 리듬, 베이스/피아노 스타일, 난이도, 장르 등 모든 폼 값이 유지됨.
+            // 사용자는 이름과 (필요하면) 코드 진행만 수정 후 저장.
+            function duplicateCurrent() {
+                editingId = null;
+                $('formTitle').textContent = '새 프리셋 (복제됨)';
+                var curName = ($('fName').value || '').trim();
+                // "Slow Blues in A" → "Slow Blues in A (복사)" — 사용자가 곧바로 in E 등으로 수정하기 좋게
+                if (curName && curName.indexOf('(복사)') === -1) {
+                    $('fName').value = curName + ' (복사)';
+                }
+                $('deleteBtn').style.display = 'none';
+                $('duplicateBtn').style.display = 'none';   // 새 프리셋 상태에선 다시 숨김 — 저장 후 편집 진입 시 다시 보임
+                $('feedback').className = 'bd-feedback';
+                showFeedback('복제됨 — 이름 / 코드 진행 등 수정 후 저장하세요', 'info');
+                $('fName').focus();
+                $('fName').select();
+                window.scrollTo({ top: $('editForm').offsetTop - 12, behavior: 'smooth' });
             }
 
             function renderDifficulty() {
@@ -1080,6 +1112,7 @@
                     editingId = res.data.id;
                     $('formTitle').textContent = '편집: ' + res.data.name;
                     $('deleteBtn').style.display = 'inline-flex';
+                    $('duplicateBtn').style.display = 'inline-flex';
                     showFeedback('저장 완료 ✓', 'success');
                     await loadPresets();
                 } catch (err) {
@@ -1120,6 +1153,7 @@
                 $('saveBtn').onclick = savePreset;
                 $('deleteBtn').onclick = deletePreset;
                 $('testBtn').onclick = testInTools;
+                $('duplicateBtn').onclick = duplicateCurrent;
 
                 document.querySelectorAll('#fBars .bd-pill').forEach(function(b) {
                     b.onclick = function() {
