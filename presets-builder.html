@@ -720,15 +720,55 @@
             // ═══════════════════════════════════════════════════════
             //  STAGE 2 — Auth
             // ═══════════════════════════════════════════════════════
+            // 깨끗한 redirect URL — 해시(#)가 누적되지 않도록 path 만 사용.
+            function cleanRedirectUrl() {
+                return window.location.origin + window.location.pathname;
+            }
+
             async function init() {
                 if (!window.supabase) {
                     $('gateError').textContent = 'Supabase SDK 로드 실패';
                     return;
                 }
-                sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                sb.auth.onAuthStateChange(function(event, session) { renderAuth(session); });
+                sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+                    auth: {
+                        detectSessionInUrl: true,
+                        persistSession: true,
+                        autoRefreshToken: true,
+                    }
+                });
+                sb.auth.onAuthStateChange(function(event, session) {
+                    renderAuth(session);
+                    // 로그인 직후 URL 에 남은 토큰 해시(#access_token=...)를 청소.
+                    // SDK 가 이미 토큰을 읽고 세션을 만들었으므로 안전하게 제거 가능.
+                    if (session && window.location.hash.indexOf('access_token') !== -1) {
+                        history.replaceState(null, '', cleanRedirectUrl());
+                    }
+                });
+                // 깨진 해시 (예: #foo#access_token=...) 가 있으면 SDK 가 파싱 실패하므로
+                // 직접 토큰을 추출해서 setSession 으로 강제 주입한다.
+                await tryRecoverSessionFromHash();
                 const result = await sb.auth.getSession();
                 renderAuth(result.data.session);
+            }
+
+            // 깨진 hash 에서 access_token / refresh_token 만 뽑아서 세션 복구.
+            async function tryRecoverSessionFromHash() {
+                var h = window.location.hash || '';
+                if (h.indexOf('access_token') === -1) return;
+                // 모든 # 을 & 로 바꿔서 일반 query 처럼 파싱
+                var normalized = h.replace(/^#/, '').replace(/#/g, '&');
+                var params = new URLSearchParams(normalized);
+                var at = params.get('access_token');
+                var rt = params.get('refresh_token');
+                if (!at || !rt) return;
+                try {
+                    await sb.auth.setSession({ access_token: at, refresh_token: rt });
+                } catch (e) {
+                    console.warn('[builder] hash recovery failed', e);
+                } finally {
+                    history.replaceState(null, '', cleanRedirectUrl());
+                }
             }
 
             function renderAuth(session) {
@@ -751,7 +791,7 @@
             async function startLogin() {
                 await sb.auth.signInWithOAuth({
                     provider: 'google',
-                    options: { redirectTo: window.location.href }
+                    options: { redirectTo: cleanRedirectUrl() }
                 });
             }
             async function logout() { await sb.auth.signOut(); }
