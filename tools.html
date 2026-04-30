@@ -89,8 +89,6 @@
             border-top: 1px solid rgba(42, 107, 74, 0.06);
             flex-shrink: 0;
         }
-        .coupang-banner-desktop { display: block; }
-        .coupang-banner-mobile { display: none; }
         .coupang-disclaimer {
             font-size: 0.65rem;
             color: rgba(26, 36, 33, 0.35);
@@ -98,21 +96,18 @@
             line-height: 1.45;
         }
         @media (max-width: 900px), (orientation: portrait) {
-            .coupang-banner-desktop { display: none; }
-            .coupang-banner-mobile { display: block; }
-            /* Mobile banner renders at 360px via Coupang G.js — fits the
-               phone viewport without horizontal scrolling.  Keep
-               overflow-x: auto as a belt-and-suspenders safety net for
-               phones narrower than 360 (old iPhone SE etc.). */
-            .coupang-banner-mobile {
+            /* On mobile the carousel renders at 360px via Coupang G.js —
+               keep overflow-x: auto as a safety net for phones narrower
+               than 360 (old iPhone SE, etc.). */
+            .coupang-banner {
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
                 scrollbar-width: none;
                 padding: 10px 0;
                 text-align: center;
             }
-            .coupang-banner-mobile::-webkit-scrollbar { display: none; }
-            .coupang-banner-mobile .coupang-disclaimer {
+            .coupang-banner::-webkit-scrollbar { display: none; }
+            .coupang-banner .coupang-disclaimer {
                 padding: 0 8px;
             }
         }
@@ -3279,7 +3274,10 @@
         .loop-grid.cols-16 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         .loop-cell {
             aspect-ratio: 2.4; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
+            /* halves 컨테이너가 cell 전체 높이를 채우도록 stretch. 이전엔
+               center 였는데, 그 경우 텍스트 영역만 hover/click hit 이 되고
+               아래쪽 빈 공간이 죽은 영역이 됨 → "박스 아래쪽 클릭 안 됨" 버그. */
+            align-items: stretch; justify-content: stretch;
             background: rgba(42, 107, 74, 0.06); border: 1px solid rgba(42, 107, 74, 0.15);
             border-radius: 6px; cursor: pointer; transition: all 0.2s;
             position: relative; user-select: none;
@@ -3298,10 +3296,49 @@
             box-shadow: 0 0 8px rgba(82, 168, 114, 0.4);
         }
         .loop-cell-num {
-            font-size: 0.55rem; color: rgba(26, 36, 33, 0.35);
-            position: absolute; top: 3px; left: 5px;
+            font-size: 0.6rem; color: rgba(26, 36, 33, 0.45);
+            position: absolute; top: 2px; left: 0;
+            /* 번호 라벨은 cell 좌상단에 떠 있는 hit 영역 — 클릭/드래그로
+               시작 마디 / 범위 선택. 충분히 크게 만들어 모바일에서도 누르기 쉽게. */
+            min-width: 22px; height: 18px;
+            display: inline-flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            border-bottom-right-radius: 6px;
+            transition: background 0.15s, color 0.15s;
+            z-index: 2;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
         }
-        .loop-cell-halves { display: flex; align-items: center; gap: 0; width: 100%; min-width: 0; }
+        .loop-cell-num:hover {
+            background: rgba(42, 107, 74, 0.18);
+            color: var(--green-deep);
+        }
+        /* 선택된 시작 마디 (단일 또는 범위의 시작) — 진한 녹색 라벨 */
+        .loop-cell.range-start .loop-cell-num,
+        .loop-cell.range-end   .loop-cell-num,
+        .loop-cell.in-range    .loop-cell-num {
+            background: var(--green-mid);
+            color: #fff;
+            font-weight: 700;
+        }
+        /* 선택 범위 안의 셀 — 옅은 녹색 배경으로 표시 */
+        .loop-cell.in-range {
+            background: rgba(82, 168, 114, 0.18);
+            border-color: rgba(82, 168, 114, 0.45);
+        }
+        .loop-cell.range-start, .loop-cell.range-end {
+            background: rgba(82, 168, 114, 0.28);
+            border-color: var(--green-mid);
+        }
+        .loop-cell-halves {
+            display: flex;
+            /* halves 도 cell 전체 높이를 채우게 — 그 안의 .loop-cell-half 가
+               flex item 으로 위아래 끝까지 stretch 됨 → hit 영역이 cell 전체. */
+            flex: 1 1 auto;
+            align-items: stretch;
+            gap: 0; width: 100%; min-width: 0;
+        }
         .loop-cell-half {
             flex: 1 1 0; min-width: 0; text-align: center; cursor: pointer;
             /* clamp(min, preferred, max): font scales smoothly with viewport width
@@ -3310,10 +3347,12 @@
             font-size: clamp(0.85rem, 3.2vw, 1.25rem);
             font-weight: 700; color: var(--text-primary);
             font-family: 'Playfair Display', serif;
-            padding: 0.15rem 0; border-radius: 3px;
+            padding: 0; border-radius: 3px;
             transition: background 0.15s;
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
             line-height: 1.1;
+            /* 텍스트를 셀 중앙 정렬 — flex 로 수직/수평 가운데 */
+            display: flex; align-items: center; justify-content: center;
         }
         .loop-cell-half:hover { background: rgba(82,168,114,0.2); }
         .loop-cell-half.empty {
@@ -3499,21 +3538,28 @@
                content. */
             .coupang-banner { margin: auto auto 0; }
 
-            /* ===== Loop: keep chord text compact so cells don't grow ===== */
-            /* minmax(0, 1fr) already bounds the column width, but the
-               clamp() min of 0.85rem still bumped 2-char chords like "Am" or
-               "Fm" to a height that made the cells visibly taller.  Lower
-               the min so scaling is driven purely by viewport width. */
+            /* ===== Loop: 모바일에서 셀을 위아래로 더 키움 (탭 hit 범위 확대) ===== */
+            /* 4열 grid 라 셀 가로 폭이 좁고, 기존 aspect-ratio 2.2 면 세로
+               40px 안팎으로 너무 납작해서 빈 마디 + / 코드 글자 영역이
+               손가락으로 누르기 어려웠음. ratio 를 1.3 정도로 낮춰 셀 자체를
+               세로로 키우고, min-height 도 안전망으로 64px 깔아둠. */
             .loop-cell-half {
-                font-size: clamp(0.7rem, 2.9vw, 1rem);
+                font-size: clamp(0.85rem, 3.4vw, 1.05rem);
                 line-height: 1.05;
-                padding: 0.1rem 0;
+                padding: 0.25rem 0;
             }
             .loop-cell-half.empty {
-                font-size: clamp(0.6rem, 2vw, 0.8rem);
+                font-size: clamp(0.85rem, 2.8vw, 1rem);
             }
             .loop-cell {
-                aspect-ratio: 2.2;
+                aspect-ratio: 1.3;
+                min-height: 64px;
+            }
+            /* 마디 번호 hit 영역 — 모바일에선 손끝으로 누르기 쉽게 더 크게 */
+            .loop-cell-num {
+                font-size: 0.7rem;
+                min-width: 28px;
+                height: 24px;
             }
 
             /* ===== Ear-training (음정 테스트): score row layout ===== */
@@ -3567,9 +3613,9 @@
                 border-color: rgba(26, 36, 33, 0.22);
             }
 
-            /* Coupang banner on mobile — make sure it's visible once the
-               SDK finishes loading (see script fix near the banner). */
-            .coupang-banner-mobile {
+            /* Reserve a small placeholder height so the layout doesn't
+               jump when the Coupang SDK iframe loads in. */
+            .coupang-banner {
                 min-height: 100px;
             }
         }
@@ -4443,18 +4489,36 @@
         <section class="tool-panel" id="mypagePanel"></section>
 
 
-        <!-- Coupang Partners banners — one per viewport -->
-        <div class="coupang-banner coupang-banner-desktop">
-            <script>if (window.PartnersCoupang) new PartnersCoupang.G({"id":982250,"template":"carousel","trackingCode":"AF9102087","width":"728","height":"90","tsource":""});</script>
+        <!-- Coupang Partners banner — single instance, viewport-aware.
+             Previously we shipped TWO banner divs (desktop + mobile) and
+             relied on CSS to hide one. That made BOTH G.js scripts run on
+             page load, which on first paint occasionally leaves the iframe
+             intended for the hidden viewport flickering at the top of the
+             page. Now we render the iframe ONCE, picking the carousel size
+             based on the current viewport. -->
+        <div class="coupang-banner" id="coupangBanner">
             <p class="coupang-disclaimer">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
         </div>
-        <div class="coupang-banner coupang-banner-mobile">
-            <!-- Mobile uses a narrower carousel so it fits the phone
-                 viewport without horizontal scrolling.  The iframe dims
-                 are rigid pixel values from the Coupang G.js SDK. -->
-            <script>if (window.PartnersCoupang) new PartnersCoupang.G({"id":982250,"template":"carousel","trackingCode":"AF9102087","width":"360","height":"61","tsource":""});</script>
-            <p class="coupang-disclaimer">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
-        </div>
+        <script>
+            (function() {
+                if (!window.PartnersCoupang) return;
+                var banner = document.getElementById('coupangBanner');
+                if (!banner) return;
+                var isMobile = window.matchMedia('(max-width: 900px), (orientation: portrait)').matches;
+                var w = isMobile ? '360' : '728';
+                var h = isMobile ? '61'  : '90';
+                // PartnersCoupang.G injects its iframe at the position of
+                // document.currentScript, so we append the carousel <script>
+                // BEFORE the disclaimer to keep the visual order:
+                //   [ iframe carousel ]
+                //   [ disclaimer text ]
+                var disclaimer = banner.querySelector('.coupang-disclaimer');
+                var s = document.createElement('script');
+                s.textContent = 'new PartnersCoupang.G({"id":982250,"template":"carousel","trackingCode":"AF9102087","width":"' +
+                    w + '","height":"' + h + '","tsource":""});';
+                banner.insertBefore(s, disclaimer);
+            })();
+        </script>
     </main>
 
     <!-- Chord Modal (enlarged chord view) -->
@@ -4754,6 +4818,16 @@
             let loopMeasureIdx = 0;
             let loopInitialized = false;
             let loopPickerCell = null;
+            // ──────────────────────────────────────────────────────────
+            // 마디 번호 클릭/드래그로 선택할 시작·끝 마디 (둘 다 null = 전체 루프).
+            // 둘 다 idx 가 같으면 한 마디만 무한 반복. 다르면 [start..end] 범위 루프.
+            // 재생을 시작하면 곧바로 start 마디부터 첫 박이 떨어지도록 beatNum 을 0 으로 리셋.
+            // ──────────────────────────────────────────────────────────
+            let loopRangeStart = null;
+            let loopRangeEnd   = null;
+            // 드래그 중 임시 상태
+            let _loopDragging   = false;
+            let _loopDragAnchor = null;
 
             const DRUM_PATTERNS = {
                 '8beat':    { ticksPerBeat: 2, beatsPerMeasure: 4,
@@ -5409,9 +5483,14 @@
                         highlightDot(dotIdx, time);
                     }
                     if (t === 0) {
-                        const totalTicks = measureLen * loopBars;
+                        // 선택 범위가 있으면 그 범위만 도는 partial loop, 없으면 전체 loop.
+                        // beatNum 은 재생 시작 시 0 으로 리셋되므로 mIdx 는 항상
+                        // 선택 시작 마디(rg.start) 부터 정확히 시작.
+                        var rg = getLoopRange();
+                        var effBars = rg.end - rg.start + 1;
+                        const totalTicks = measureLen * effBars;
                         const globalTick = beatNum % totalTicks;
-                        const mIdx = Math.floor(globalTick / measureLen);
+                        const mIdx = rg.start + Math.floor(globalTick / measureLen);
                         loopMeasureIdx = mIdx;
                         highlightLoopCell(mIdx, time);
                     }
@@ -5618,6 +5697,9 @@
                 document.addEventListener('click', function(e) {
                     if (!e.target.closest('.loop-cell') && !e.target.closest('.loop-chord-picker')) {
                         closeLoopPicker();
+                        // 마디 영역 밖 (그리고 picker 도 아닌) 을 누르면 선택 범위 해제 →
+                        // 다시 전체 루프로 돌아감.
+                        if (typeof window.clearLoopRange === 'function') window.clearLoopRange();
                     }
                     if (!e.target.closest('.loop-rhythm-picker')) {
                         closeLoopRhythmDrawer();
@@ -5688,13 +5770,34 @@
                 if (!grid) return;
                 grid.innerHTML = '';
                 grid.className = 'loop-grid cols-' + loopBars;
+                // 선택 범위가 loopBars 변경으로 무효해지면 정리
+                if (loopRangeStart != null && loopRangeStart >= loopBars) loopRangeStart = null;
+                if (loopRangeEnd   != null && loopRangeEnd   >= loopBars) loopRangeEnd   = null;
+                if (loopRangeStart == null) loopRangeEnd = null;
+
+                var rs = loopRangeStart, re = loopRangeEnd;
+                if (rs != null && re != null && rs > re) { var t = rs; rs = re; re = t; }
+
                 for (var i = 0; i < loopBars; i++) {
                     var cell = document.createElement('div');
                     cell.className = 'loop-cell';
                     cell.dataset.idx = i;
+                    // 선택 범위 시각 표시
+                    if (rs != null && re != null) {
+                        if (i === rs && i === re) {
+                            cell.classList.add('range-start', 'range-end');
+                        } else if (i === rs) {
+                            cell.classList.add('range-start', 'in-range');
+                        } else if (i === re) {
+                            cell.classList.add('range-end', 'in-range');
+                        } else if (i > rs && i < re) {
+                            cell.classList.add('in-range');
+                        }
+                    }
                     var num = document.createElement('span');
                     num.className = 'loop-cell-num';
                     num.textContent = (i + 1);
+                    num.dataset.numIdx = i;
                     cell.appendChild(num);
                     var halves = document.createElement('div');
                     halves.className = 'loop-cell-halves';
@@ -5731,7 +5834,79 @@
                     cell.appendChild(halves);
                     grid.appendChild(cell);
                 }
+                // 마디 번호 영역 — 클릭(시작 마디 선택) + 드래그(범위 선택) 핸들러 부착.
+                // grid 위임 방식으로 한 번에 처리.
+                _bindLoopNumberInteractions(grid);
             }
+
+            // ──────────────────────────────────────────────────────────
+            // 마디 번호 위 pointerdown → 시작점, drag → 범위, click(no drag) → 단일 선택
+            // ──────────────────────────────────────────────────────────
+            function _bindLoopNumberInteractions(grid) {
+                if (grid._loopNumBound) return;
+                grid._loopNumBound = true;
+                function idxFromPoint(x, y) {
+                    var el = document.elementFromPoint(x, y);
+                    if (!el) return null;
+                    var n = el.closest && el.closest('.loop-cell-num');
+                    if (!n) return null;
+                    var v = parseInt(n.dataset.numIdx, 10);
+                    return isNaN(v) ? null : v;
+                }
+                grid.addEventListener('pointerdown', function(e) {
+                    var n = e.target.closest('.loop-cell-num');
+                    if (!n) return;
+                    e.stopPropagation();
+                    e.preventDefault();
+                    closeLoopPicker();
+                    var i = parseInt(n.dataset.numIdx, 10);
+                    if (isNaN(i)) return;
+                    _loopDragging = true;
+                    _loopDragAnchor = i;
+                    loopRangeStart = i;
+                    loopRangeEnd   = i;
+                    try { grid.setPointerCapture(e.pointerId); } catch(err) {}
+                    renderLoopGrid();
+                });
+                grid.addEventListener('pointermove', function(e) {
+                    if (!_loopDragging) return;
+                    var i = idxFromPoint(e.clientX, e.clientY);
+                    if (i == null) return;
+                    if (i !== loopRangeEnd) {
+                        loopRangeEnd = i;
+                        renderLoopGrid();
+                    }
+                });
+                var endDrag = function(e) {
+                    if (!_loopDragging) return;
+                    _loopDragging = false;
+                    _loopDragAnchor = null;
+                    try { grid.releasePointerCapture(e.pointerId); } catch(err) {}
+                };
+                grid.addEventListener('pointerup', endDrag);
+                grid.addEventListener('pointercancel', endDrag);
+                grid.addEventListener('pointerleave', endDrag);
+            }
+
+            // 외부에서 선택 범위를 정규화해 가져갈 때 쓰는 헬퍼
+            function getLoopRange() {
+                if (loopRangeStart == null || loopRangeEnd == null) {
+                    return { start: 0, end: loopBars - 1, partial: false };
+                }
+                var s = loopRangeStart, e = loopRangeEnd;
+                if (s > e) { var t = s; s = e; e = t; }
+                s = Math.max(0, Math.min(loopBars - 1, s));
+                e = Math.max(0, Math.min(loopBars - 1, e));
+                return { start: s, end: e, partial: !(s === 0 && e === loopBars - 1) };
+            }
+
+            // 외부에서 선택 해제를 호출 (예: 빈 영역 클릭, 마디 수 변경 등)
+            window.clearLoopRange = function() {
+                if (loopRangeStart == null && loopRangeEnd == null) return;
+                loopRangeStart = null;
+                loopRangeEnd   = null;
+                renderLoopGrid();
+            };
             function toggleLoopPicker(idx, half, cellEl) {
                 closeLoopPicker();
                 closeLoopRhythmDrawer();
