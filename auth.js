@@ -902,28 +902,42 @@ nav.scrolled .auth-btn:hover {
         debugLog('URL: ' + window.location.href.slice(0, 200));
 
         // Explicitly parse any OAuth callback tokens in the current URL.
+        const hashStr = window.location.hash || '';
+        const searchStr = window.location.search || '';
+        const hasOAuthHash = hashStr.indexOf('access_token=') !== -1;
         try {
-            const hash = window.location.hash || '';
-            const search = window.location.search || '';
-            if (hash.includes('access_token=')) {
+            if (hasOAuthHash) {
                 debugLog('OAuth callback: access_token in hash (implicit flow)');
-            } else if (search.includes('code=')) {
+            } else if (searchStr.includes('code=')) {
                 debugLog('OAuth callback: code in query (PKCE flow) — unexpected with flowType:implicit');
             } else {
                 debugLog('No OAuth tokens in URL');
             }
         } catch (e) {}
 
-        let { data, error: sessionErr } = await sb.auth.getSession();
-        if (sessionErr) debugLog('getSession error: ' + sessionErr.message);
-
-        // Fallback: detectSessionInUrl 이 어떤 이유로든 hash 를 처리하지 못한
-        // 경우(타이밍·SDK 버전·브라우저 차이 등) 직접 파싱해서 setSession 호출.
-        // 성공 시 URL 의 hash 를 깨끗이 제거.
-        if (!data.session && window.location.hash && window.location.hash.indexOf('access_token=') !== -1) {
+        // ────────────────────────────────────────────────────────────
+        // Hash 우선 처리 — URL 에 OAuth hash 가 있으면 stale localStorage
+        // 토큰보다 먼저 처리한다. 이렇게 안 하면 (Supabase 마이그레이션 직후
+        // 등으로 인해) 만료되거나 무효화된 캐시 토큰을 SDK 가 먼저 시도하다
+        // 실패한 뒤 hash 의 새 토큰을 무시해 버리는 케이스가 있음.
+        //
+        // 절차:
+        //   1) 모든 sb-* localStorage 키 제거 (stale token 강제 정리)
+        //   2) hash 에서 access_token / refresh_token 파싱
+        //   3) sb.auth.setSession 으로 직접 세션 등록
+        //   4) URL 의 hash 정리
+        // ────────────────────────────────────────────────────────────
+        let data = { session: null };
+        let sessionErr = null;
+        if (hasOAuthHash) {
             try {
-                debugLog('Fallback: manually parsing OAuth hash');
-                const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+                debugLog('Hash priority: clearing stale sb-* localStorage');
+                Object.keys(window.localStorage).forEach(function(k) {
+                    if (k.indexOf('sb-') === 0 || k.indexOf('supabase.auth.token') === 0) {
+                        try { window.localStorage.removeItem(k); } catch (e) {}
+                    }
+                });
+                const params = new URLSearchParams(hashStr.replace(/^#/, ''));
                 const access_token = params.get('access_token');
                 const refresh_token = params.get('refresh_token');
                 if (access_token && refresh_token) {
@@ -932,23 +946,32 @@ nav.scrolled .auth-btn:hover {
                         refresh_token: refresh_token
                     });
                     if (setErr) {
-                        debugLog('Fallback setSession error: ' + setErr.message);
+                        debugLog('Hash priority setSession error: ' + setErr.message);
+                        sessionErr = setErr;
                     } else {
-                        debugLog('Fallback setSession OK');
+                        debugLog('Hash priority setSession OK');
                         data = setData;
                     }
-                    // Clean the hash from the URL regardless — never leave OAuth
-                    // tokens visible in the address bar.
-                    try {
-                        const cleanUrl = window.location.origin +
-                                         window.location.pathname +
-                                         (window.location.search || '');
-                        window.history.replaceState(null, '', cleanUrl);
-                    } catch (e) {}
                 }
+                try {
+                    const cleanUrl = window.location.origin +
+                                     window.location.pathname +
+                                     (window.location.search || '');
+                    window.history.replaceState(null, '', cleanUrl);
+                } catch (e) {}
             } catch (e) {
-                debugLog('Fallback OAuth parse threw: ' + (e && e.message));
+                debugLog('Hash priority handler threw: ' + (e && e.message));
             }
+        }
+
+        // hash 처리가 없거나 실패한 경우엔 기존 캐시된 세션을 시도.
+        if (!data.session) {
+            const got = await sb.auth.getSession();
+            if (got.error) {
+                debugLog('getSession error: ' + got.error.message);
+                sessionErr = got.error;
+            }
+            data = got.data || { session: null };
         }
 
         currentSession = data.session || null;
