@@ -669,6 +669,40 @@
             color: var(--text-mid);
             border: 1px solid rgba(42, 107, 74, 0.22);
         }
+        /* 드럼 리듬 4×3 그리드 — 메인 도구의 loop-rhythm-drawer 룩과 동일 */
+        .bd-rhythm-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.3rem;
+            background: rgba(42, 107, 74, 0.06);
+            border: 1px solid rgba(42, 107, 74, 0.18);
+            border-radius: 8px;
+            padding: 0.4rem;
+            margin-top: 0.3rem;
+        }
+        .bd-rhythm-btn {
+            padding: 0.5rem 0.3rem;
+            font-size: 0.74rem;
+            font-weight: 600;
+            border: 1px solid rgba(42, 107, 74, 0.15);
+            background: rgba(42, 107, 74, 0.04);
+            color: rgba(26, 36, 33, 0.7);
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            text-align: center;
+            white-space: nowrap;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+        .bd-rhythm-btn:hover:not(.active) {
+            background: rgba(82, 168, 114, 0.2);
+            color: var(--green-deep);
+        }
+        .bd-rhythm-btn.active {
+            background: var(--green-deep);
+            color: #fff;
+            border-color: var(--green-deep);
+        }
 
         .bd-empty {
             text-align: center;
@@ -801,20 +835,24 @@
                     </div>
                 </div>
 
-                <div class="bd-row">
-                    <div class="bd-field">
-                        <label>드럼 리듬</label>
-                        <select id="fRhythm">
-                            <option value="8beat">8비트 A</option>
-                            <option value="8beat2">8비트 B</option>
-                            <option value="4beat">4비트 A</option>
-                            <option value="4beat2">4비트 B</option>
-                            <option value="16beat">16비트 A</option>
-                            <option value="16beat2">16비트 B</option>
-                            <option value="16beatC">16비트 C</option>
-                            <option value="ballad">셔플락</option>
-                        </select>
+                <div class="bd-field" style="margin-top: 0.6rem;">
+                    <label>드럼 리듬</label>
+                    <div class="bd-rhythm-grid" id="fRhythmGrid">
+                        <button type="button" class="bd-rhythm-btn active" data-rhythm="8beat">8비트 A</button>
+                        <button type="button" class="bd-rhythm-btn" data-rhythm="8beat2">8비트 B</button>
+                        <button type="button" class="bd-rhythm-btn" data-rhythm="4beat">4비트 A</button>
+                        <button type="button" class="bd-rhythm-btn" data-rhythm="4beat2">4비트 B</button>
+                        <button type="button" class="bd-rhythm-btn" data-rhythm="16beat">16비트 A</button>
+                        <button type="button" class="bd-rhythm-btn" data-rhythm="16beat2">16비트 B</button>
+                        <button type="button" class="bd-rhythm-btn" data-rhythm="16beatC">16비트 C</button>
+                        <button type="button" class="bd-rhythm-btn" data-rhythm="ballad">셔플락</button>
+                        <button type="button" class="bd-rhythm-btn" data-rhythm="16beatSA">16비트s A</button>
+                        <button type="button" class="bd-rhythm-btn" data-rhythm="16beatSB">16비트s B</button>
+                        <button type="button" class="bd-rhythm-btn" data-rhythm="16beatSC">16비트s C</button>
+                        <button type="button" class="bd-rhythm-btn" data-rhythm="swing">스윙</button>
                     </div>
+                </div>
+                <div class="bd-row">
                     <div class="bd-field">
                         <label>베이스 스타일</label>
                         <select id="fBassStyle">
@@ -889,6 +927,15 @@
             let bars = 4;
             let listFilter = '';
             let difficulty = 0;  // 0 = 없음, 1~5 = 별 개수
+            let currentRhythm = '8beat';
+
+            // 리듬 그리드 — 선택된 버튼만 active 클래스.
+            function setRhythm(key) {
+                currentRhythm = key;
+                document.querySelectorAll('#fRhythmGrid .bd-rhythm-btn').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.rhythm === key);
+                });
+            }
 
             const $ = function(id) { return document.getElementById(id); };
 
@@ -1129,7 +1176,7 @@
                 $('fGenre').value = '';
                 bars = 4;
                 difficulty = 0;
-                $('fRhythm').value = '8beat';
+                setRhythm('8beat');
                 $('fBassStyle').value = 'default';
                 $('fPianoStyle').value = 'quarter';
                 renderBars();
@@ -1155,7 +1202,7 @@
                 $('fGenre').value = normalizeGenreForSelect(p.genre || '');
                 bars = p.bars || 4;
                 difficulty = p.difficulty || 0;
-                $('fRhythm').value = p.rhythm || '8beat';
+                setRhythm(p.rhythm || '8beat');
                 $('fBassStyle').value = p.bass_style || 'default';
                 $('fPianoStyle').value = p.piano_style || 'quarter';
                 renderBars();
@@ -1186,7 +1233,7 @@
                     bpm: parseInt($('fBpm').value, 10) || 90,
                     bars: bars,
                     difficulty: difficulty,
-                    rhythm: $('fRhythm').value,
+                    rhythm: currentRhythm,
                     bass_style: $('fBassStyle').value,
                     piano_style: $('fPianoStyle').value,
                     chords_a: chords.a,
@@ -1210,7 +1257,7 @@
                 $('fBpm').value = c.bpm || 90;
                 bars = c.bars || 4;
                 difficulty = c.difficulty || 0;
-                $('fRhythm').value = c.rhythm || '8beat';
+                setRhythm(c.rhythm || '8beat');
                 $('fBassStyle').value = c.bass_style || 'default';
                 $('fPianoStyle').value = c.piano_style || 'quarter';
                 $('fGenre').value = normalizeGenreForSelect(c.genre || '');
@@ -1588,7 +1635,7 @@
                     artist: $('fArtist').value.trim() || null,
                     bpm: parseInt($('fBpm').value, 10) || 90,
                     bars: bars,
-                    rhythm: $('fRhythm').value,
+                    rhythm: currentRhythm,
                     bass_style: $('fBassStyle').value,
                     piano_style: $('fPianoStyle').value,
                     chords_a: chords.a,
@@ -1662,6 +1709,11 @@
                 });
                 $('bdTipText').style.display   = bdInputMode === 'text'   ? 'inline' : 'none';
                 $('bdTipPicker').style.display = bdInputMode === 'picker' ? 'inline' : 'none';
+
+                // 드럼 리듬 4×3 그리드 — 버튼 클릭으로 currentRhythm 갱신
+                document.querySelectorAll('#fRhythmGrid .bd-rhythm-btn').forEach(function(b) {
+                    b.onclick = function() { setRhythm(b.dataset.rhythm); };
+                });
 
                 document.querySelectorAll('#fBars .bd-pill').forEach(function(b) {
                     b.onclick = function() {
