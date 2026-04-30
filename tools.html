@@ -7597,6 +7597,13 @@
                 return { root: m[1], minor: isMinor };
             }
             function chordRootOnly(name) { return parseChordName(name).root; }
+            // 플랫(♭) 표기를 BASS_FREQ / 샘플 키 와 호환되는 샤프(#) 표기로 정규화.
+            // 예: Db → C#, Eb → D#, Gb → F#, Ab → G#, Bb → A#
+            const FLAT_TO_SHARP = { 'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#' };
+            function normalizeRoot(root) {
+                if (!root) return root;
+                return FLAT_TO_SHARP[root] || root;
+            }
             // 악기별 볼륨 (0.0 ~ 1.0). 0 = 뮤트.
             let loopVolDrum  = 1.0;
             let loopVolBass  = 1.0;
@@ -8084,6 +8091,8 @@
             }
 
             function playBass(note, time, velLevel) {
+                // 플랫 표기(Bb 등)도 받아서 사하프 키(A# 등)로 변환 후 처리.
+                note = normalizeRoot(note);
                 if (!note || !BASS_FREQ[note]) return;
                 chokeBass(time);
                 var vol = velLevel ? 0.3 : 0.7;
@@ -8714,7 +8723,11 @@
             };
 
             // ========== LOOP FUNCTIONS ==========
-            const LOOP_ROOTS = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+            const LOOP_ROOTS_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+            const LOOP_ROOTS_FLAT  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+            const LOOP_ROOTS = LOOP_ROOTS_SHARP;
+            // 코드 픽커의 #/♭ sticky 상태 — 마지막 선택을 다음 picker 에서도 유지
+            let loopPickerAccidental = 'sharp';   // 'sharp' | 'flat'
             const LOOP_RHYTHM_LABELS = {
                 '4beat': '4비트 A', '4beat2': '4비트 B',
                 '8beat': '8비트 A', '8beat2': '8비트 B',
@@ -9239,10 +9252,33 @@
                 picker.className = 'loop-chord-picker open ' + posClass;
                 picker.onclick = function(e) { e.stopPropagation(); };
 
-                // 셀에 이미 코드가 있으면 그 코드의 quality 를 picker 의 초기 상태로 사용.
-                // 없으면 마지막 sticky quality 유지 (loopPickerQuality).
+                // 셀에 이미 코드가 있으면 그 코드의 quality / accidental 을 picker 의 초기 상태로 사용.
+                // 없으면 마지막 sticky 값 유지.
                 var existing = chordMap[idx];
-                if (existing) loopPickerQuality = parseChordName(existing).minor ? 'minor' : 'major';
+                if (existing) {
+                    var info = parseChordName(existing);
+                    loopPickerQuality = info.minor ? 'minor' : 'major';
+                    if (info.root && info.root.indexOf('b') !== -1) loopPickerAccidental = 'flat';
+                    else if (info.root && info.root.indexOf('#') !== -1) loopPickerAccidental = 'sharp';
+                }
+
+                // 현재 accidental 에 맞는 root 배열 반환
+                function currentRoots() {
+                    return loopPickerAccidental === 'flat' ? LOOP_ROOTS_FLAT : LOOP_ROOTS_SHARP;
+                }
+                // 픽커 내 모든 root 버튼 라벨/선택상태 재렌더 (quality / accidental 변경 시 호출)
+                function refreshRootButtons() {
+                    var roots = currentRoots();
+                    var btns = pickerGrid.querySelectorAll('.loop-chord-pick-btn');
+                    roots.forEach(function(note, i) {
+                        var b = btns[i];
+                        if (!b) return;
+                        var fullName = loopPickerQuality === 'minor' ? (note + 'm') : note;
+                        b.dataset.note = note;
+                        b.textContent = fullName;
+                        b.classList.toggle('selected', chordMap[idx] === fullName);
+                    });
+                }
 
                 // ─── 장/단 토글 ─────────────────────────────────────
                 var qualToggle = document.createElement('div');
@@ -9256,33 +9292,50 @@
                     qb.onclick = function(ev) {
                         ev.stopPropagation();
                         loopPickerQuality = q;
-                        // 토글 active 갱신
                         qualToggle.querySelectorAll('.loop-chord-quality-btn').forEach(function(b) {
                             b.classList.toggle('active', b.dataset.quality === q);
                         });
-                        // root 버튼 라벨/선택상태 갱신
-                        pickerGrid.querySelectorAll('.loop-chord-pick-btn').forEach(function(b) {
-                            var n = b.dataset.note;
-                            b.textContent = q === 'minor' ? (n + 'm') : n;
-                            var fullName = q === 'minor' ? (n + 'm') : n;
-                            b.classList.toggle('selected', chordMap[idx] === fullName);
-                        });
+                        refreshRootButtons();
                     };
                     qualToggle.appendChild(qb);
                 });
                 picker.appendChild(qualToggle);
 
+                // ─── #/♭ 토글 ────────────────────────────────────────
+                var accToggle = document.createElement('div');
+                accToggle.className = 'loop-chord-quality-toggle loop-chord-acc-toggle';
+                [['sharp','♯'], ['flat','♭']].forEach(function(pair) {
+                    var key = pair[0], lbl = pair[1];
+                    var ab = document.createElement('button');
+                    ab.type = 'button';
+                    ab.className = 'loop-chord-quality-btn' + (loopPickerAccidental === key ? ' active' : '');
+                    ab.dataset.acc = key;
+                    ab.textContent = lbl;
+                    ab.onclick = function(ev) {
+                        ev.stopPropagation();
+                        loopPickerAccidental = key;
+                        accToggle.querySelectorAll('.loop-chord-quality-btn').forEach(function(b) {
+                            b.classList.toggle('active', b.dataset.acc === key);
+                        });
+                        refreshRootButtons();
+                    };
+                    accToggle.appendChild(ab);
+                });
+                picker.appendChild(accToggle);
+
                 // ─── Root 그리드 ───────────────────────────────────
                 var pickerGrid = document.createElement('div');
                 pickerGrid.className = 'loop-chord-picker-grid';
-                LOOP_ROOTS.forEach(function(note) {
+                currentRoots().forEach(function(note) {
                     var btn = document.createElement('button');
                     btn.dataset.note = note;
                     var fullName = loopPickerQuality === 'minor' ? (note + 'm') : note;
                     btn.className = 'loop-chord-pick-btn' + (chordMap[idx] === fullName ? ' selected' : '');
                     btn.textContent = fullName;
                     btn.onclick = function() {
-                        var fn = loopPickerQuality === 'minor' ? (note + 'm') : note;
+                        // dataset.note 가 refresh 후 갱신되어 있으므로 클릭 시점 기준으로 재구성
+                        var n = btn.dataset.note;
+                        var fn = loopPickerQuality === 'minor' ? (n + 'm') : n;
                         chordMap[idx] = fn;
                         closeLoopPicker();
                         loopPickerCell = null;
