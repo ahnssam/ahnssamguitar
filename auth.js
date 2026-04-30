@@ -616,11 +616,26 @@ nav.scrolled .auth-btn:hover {
     // ------------------------------------------------------------
     // Modal
     // ------------------------------------------------------------
+    // 터치 전용 기기(모바일·태블릿) 감지 — input 자동 포커스를 주면 가상
+    // 키보드가 즉시 튀어 올라와 화면이 위로 밀리고, OAuth(구글/카카오) 같은
+    // 다른 로그인 옵션 사용자에게 거슬리는 동작이 됨. 데스크톱(마우스)에서만
+    // 편의상 자동 포커스 유지.
+    function _isTouchOnlyDevice() {
+        try {
+            return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+        } catch (e) {
+            return ('ontouchstart' in window);
+        }
+    }
+
     function openModal(mode) {
         currentMode = mode || 'login';
         updateModalMode();
         clearMsg();
         document.getElementById('authOverlay').classList.add('open');
+        // 모바일/터치 기기에선 자동 포커스 스킵 — 사용자가 직접 input 을 탭할
+        // 때만 키보드가 올라오도록.
+        if (_isTouchOnlyDevice()) return;
         setTimeout(() => {
             const emailInput = document.getElementById('authEmail');
             if (emailInput) emailInput.focus();
