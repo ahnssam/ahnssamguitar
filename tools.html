@@ -8666,18 +8666,48 @@
                 });
             }
 
+            // 매칭 점수 계산 — 첫 글자만 쳐도 매칭, 부분 매칭, 단어 시작 매칭 등을
+            // 가중치로 합산. 점수가 높은 것일수록 상단으로.
+            //   - 정확히 일치:       1000
+            //   - 시작이 일치:        700 - (전체 길이 - 쿼리 길이)  (짧을수록 +)
+            //   - 단어 시작이 일치:   500
+            //   - 어디든 포함:        300
+            //   - 비매칭:              0  (필터에서 제외)
+            function _scoreMatch(haystack, needle) {
+                if (!needle) return 1; // 검색어 없으면 모두 통과
+                if (!haystack) return 0;
+                var h = haystack.toLowerCase();
+                var n = needle.toLowerCase();
+                if (h === n) return 1000;
+                if (h.indexOf(n) === 0) return 700 - Math.min(99, h.length - n.length);
+                // 단어 시작 매칭 (공백 기준 토큰 분리)
+                var tokens = h.split(/\s+/);
+                for (var i = 0; i < tokens.length; i++) {
+                    if (tokens[i].indexOf(n) === 0) return 500 - i; // 앞쪽 토큰 우선
+                }
+                if (h.indexOf(n) !== -1) return 300;
+                return 0;
+            }
+
             function renderLoopPresetList(filter) {
                 var list = document.getElementById('loopPresetList');
                 if (!list) return;
                 var presets = _loopPresetsCache || [];
-                var f = (filter || '').trim().toLowerCase().replace(/\s+/g, '');
-                var filtered = presets;
-                if (f) {
-                    filtered = presets.filter(function(p) {
-                        var hay = ((p.name || '') + ' ' + (p.artist || ''))
-                            .toLowerCase().replace(/\s+/g, '');
-                        return hay.indexOf(f) !== -1;
-                    });
+                var f = (filter || '').trim();
+                var filtered;
+                if (!f) {
+                    filtered = presets.slice();
+                } else {
+                    // 점수 매기기 — name 가중치 높음, artist 가중치 낮음
+                    filtered = presets.map(function(p) {
+                        var s1 = _scoreMatch(p.name, f);
+                        var s2 = _scoreMatch(p.artist, f) * 0.6;
+                        return { preset: p, score: Math.max(s1, s2) };
+                    }).filter(function(x) {
+                        return x.score > 0;
+                    }).sort(function(a, b) {
+                        return b.score - a.score;
+                    }).map(function(x) { return x.preset; });
                 }
                 if (filtered.length === 0) {
                     list.innerHTML = '<div class="loop-preset-empty">' +

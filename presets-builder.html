@@ -35,7 +35,7 @@
         }
         .bd-wrap { max-width: 880px; margin: 0 auto; }
 
-        /* Header */
+        /* ───── Header ───── */
         .bd-header {
             display: flex;
             justify-content: space-between;
@@ -87,7 +87,7 @@
         }
         .bd-back:hover { color: var(--green-deep); }
 
-        /* Card */
+        /* ───── Card ───── */
         .bd-card {
             background: var(--card);
             border: 1px solid var(--border);
@@ -104,12 +104,52 @@
             margin-bottom: 0.6rem;
         }
 
-        /* Login CTA */
-        .bd-loginCTA {
+        /* ───── Passcode gate ───── */
+        .bd-gateCTA, .bd-loginCTA {
             text-align: center;
             padding: 2.5rem 1rem;
         }
-        .bd-loginCTA p { margin-bottom: 1rem; color: var(--text-mid); }
+        .bd-gateCTA p, .bd-loginCTA p { margin-bottom: 1rem; color: var(--text-mid); }
+        .bd-passcode-row {
+            display: flex;
+            justify-content: center;
+            gap: 0.55rem;
+            margin: 1.2rem auto;
+        }
+        .bd-passcode-input {
+            width: 56px;
+            height: 64px;
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+            color: var(--green-deep);
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .bd-passcode-input:focus {
+            border-color: var(--green-mid);
+            box-shadow: 0 0 0 3px rgba(82, 168, 114, 0.18);
+        }
+        .bd-passcode-input.error {
+            border-color: #c44034;
+            animation: bd-shake 0.4s;
+        }
+        @keyframes bd-shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+        .bd-gate-error {
+            color: #b83a2e;
+            font-size: 0.85rem;
+            margin-top: 0.7rem;
+            min-height: 1rem;
+        }
+
         .bd-loginCTA button {
             padding: 0.75rem 1.4rem;
             background: var(--green-deep);
@@ -128,8 +168,52 @@
             color: var(--text-light);
         }
 
-        /* Preset list */
-        .bd-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.6rem; }
+        /* ───── Preset list (with search) ───── */
+        .bd-list-search-wrap {
+            position: relative;
+            margin-bottom: 0.7rem;
+        }
+        .bd-list-search-icon {
+            position: absolute;
+            left: 0.7rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+        .bd-list-search {
+            width: 100%;
+            padding: 0.55rem 2rem 0.55rem 2.1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #fff;
+            font-family: inherit;
+            font-size: 0.88rem;
+            color: var(--text);
+            outline: none;
+        }
+        .bd-list-search:focus {
+            border-color: var(--green-mid);
+            box-shadow: 0 0 0 3px rgba(82, 168, 114, 0.15);
+        }
+        .bd-list-search-clear {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(42, 107, 74, 0.1);
+            color: var(--text-mid);
+            cursor: pointer;
+            font-size: 0.7rem;
+            display: none;
+        }
+        .bd-list-search-wrap.has-text .bd-list-search-clear { display: inline-flex; align-items: center; justify-content: center; }
+
+        .bd-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.6rem; max-height: 320px; overflow-y: auto; }
         .bd-list-item {
             display: flex;
             justify-content: space-between;
@@ -155,7 +239,7 @@
         .bd-list-item-meta { font-size: 0.72rem; opacity: 0.72; }
         .bd-list-item.selected .bd-list-item-meta { opacity: 0.85; }
 
-        /* Form */
+        /* ───── Form ───── */
         .bd-row {
             display: flex;
             flex-wrap: wrap;
@@ -219,50 +303,88 @@
             color: #fff;
         }
 
-        /* Chord progression grid */
+        /* ───── Chord progression — loop-grid 스타일 (반주 메뉴와 동일한 룩) ─────
+           tools.html 의 .loop-grid / .loop-cell / .loop-cell-half 룩을 그대로
+           가져오되 클릭 picker 대신 텍스트 input 으로 입력. */
         .bd-chords-wrap {
             background: rgba(42, 107, 74, 0.04);
             border: 1px solid var(--border);
             border-radius: 10px;
             padding: 0.7rem;
         }
-        .bd-chords-grid {
+        .bd-loop-grid {
             display: grid;
-            grid-template-columns: 30px 1fr 1fr;
-            gap: 0.4rem 0.5rem;
-            align-items: center;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.35rem;
         }
-        .bd-chord-header {
-            font-size: 0.68rem;
-            text-align: center;
+        .bd-loop-cell {
+            position: relative;
+            background: rgba(42, 107, 74, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            min-height: 76px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .bd-loop-cell-num {
+            position: absolute;
+            top: 4px;
+            left: 7px;
+            font-size: 0.72rem;
             color: var(--text-light);
             font-weight: 700;
-            letter-spacing: 0.04em;
+            pointer-events: none;
         }
-        .bd-chord-num {
+        .bd-loop-cell-halves {
+            display: flex;
+            flex: 1;
+            margin-top: 1rem;
+            min-height: 56px;
+        }
+        .bd-loop-cell-half-input {
+            flex: 1;
+            min-width: 0;
+            border: none;
+            background: transparent;
             text-align: center;
-            color: var(--text-light);
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-        .bd-chord-cell {
-            padding: 0.4rem 0.5rem;
-            font-size: 0.85rem;
             font-family: 'Playfair Display', serif;
-            font-weight: 600;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            background: #fff;
-            cursor: pointer;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text);
+            outline: none;
+            padding: 0.3rem 0.2rem;
+            cursor: text;
         }
-        .bd-chord-cell.has-value { border-color: var(--green-mid); color: var(--green-deep); }
+        .bd-loop-cell-half-input::placeholder {
+            color: rgba(26, 36, 33, 0.25);
+            font-weight: 500;
+        }
+        .bd-loop-cell-half-input:focus {
+            background: rgba(82, 168, 114, 0.18);
+            color: var(--green-deep);
+        }
+        .bd-loop-cell-half-input + .bd-loop-cell-half-input {
+            border-left: 1px solid rgba(42, 107, 74, 0.1);
+        }
+        .bd-loop-cell-half-input.has-value {
+            color: var(--green-deep);
+        }
         .bd-chords-tip {
             margin-top: 0.55rem;
             font-size: 0.72rem;
             color: var(--text-light);
         }
+        .bd-chords-tip code {
+            background: rgba(42, 107, 74, 0.08);
+            padding: 0.05rem 0.35rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: var(--green-deep);
+        }
 
-        /* Action buttons */
+        /* ───── Action buttons ───── */
         .bd-actions {
             display: flex;
             gap: 0.55rem;
@@ -301,7 +423,7 @@
             border-color: var(--green-mid);
         }
 
-        /* Feedback */
+        /* ───── Feedback ───── */
         .bd-feedback {
             margin-top: 0.7rem;
             padding: 0.55rem 0.8rem;
@@ -334,6 +456,9 @@
             .bd-card { padding: 0.9rem; }
             .bd-header h1 { font-size: 1.1rem; }
             .bd-row { gap: 0.5rem; }
+            .bd-passcode-input { width: 48px; height: 56px; font-size: 1.5rem; }
+            .bd-loop-cell { min-height: 68px; }
+            .bd-loop-cell-half-input { font-size: 0.95rem; }
         }
     </style>
 </head>
@@ -343,21 +468,38 @@
             <h1><i class="fas fa-music"></i> 프리셋 빌더</h1>
             <div class="bd-userinfo" id="userInfo">
                 <a class="bd-back" href="tools.html">← 도구로</a>
-                <span id="userEmail">로그인 필요</span>
+                <span id="userEmail">잠금됨</span>
             </div>
         </div>
 
-        <!-- Login CTA -->
-        <div class="bd-card bd-loginCTA" id="loginCard">
-            <p>관리자 전용 페이지입니다. 등록된 계정(<code>steveq2568@gmail.com</code>)으로 로그인하세요.</p>
-            <button id="loginBtn"><i class="fab fa-google"></i> Google로 로그인</button>
-            <div class="bd-tip">로그인 후 프리셋 추가/편집/삭제 → DB 즉시 반영 → 공개 페이지에서 바로 사용 가능</div>
+        <!-- Stage 1 — 패스코드 게이트 -->
+        <div class="bd-card bd-gateCTA" id="gateCard">
+            <p>관리자 전용 페이지입니다. 4자리 비밀번호를 입력하세요.</p>
+            <div class="bd-passcode-row" id="passcodeRow">
+                <input type="text" class="bd-passcode-input" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
+                <input type="text" class="bd-passcode-input" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
+                <input type="text" class="bd-passcode-input" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
+                <input type="text" class="bd-passcode-input" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
+            </div>
+            <div class="bd-gate-error" id="gateError"></div>
         </div>
 
-        <!-- Editor -->
+        <!-- Stage 2 — 로그인 (게이트 통과 후) -->
+        <div class="bd-card bd-loginCTA" id="loginCard" style="display:none;">
+            <p>비밀번호 통과! 등록된 계정(<code>steveq2568@gmail.com</code>)으로 로그인하세요.</p>
+            <button id="loginBtn"><i class="fab fa-google"></i> Google로 로그인</button>
+            <div class="bd-tip">로그인 후 프리셋 추가/편집/삭제 → DB 즉시 반영</div>
+        </div>
+
+        <!-- Stage 3 — 편집 화면 -->
         <div id="editorCard" style="display:none;">
             <div class="bd-card">
                 <div class="bd-section-label">프리셋 목록</div>
+                <div class="bd-list-search-wrap" id="listSearchWrap">
+                    <i class="fas fa-search bd-list-search-icon"></i>
+                    <input type="text" class="bd-list-search" id="listSearch" placeholder="검색…" autocomplete="off">
+                    <button type="button" class="bd-list-search-clear" id="listSearchClear" aria-label="검색 지우기"><i class="fas fa-times"></i></button>
+                </div>
                 <div class="bd-list" id="presetList">
                     <div class="bd-empty">로딩중…</div>
                 </div>
@@ -433,13 +575,12 @@
 
                 <div class="bd-section-label" style="margin-top:1.1rem;">코드 진행</div>
                 <div class="bd-chords-wrap">
-                    <div class="bd-chords-grid" id="fChordsHeader">
-                        <div></div>
-                        <div class="bd-chord-header">앞 절반</div>
-                        <div class="bd-chord-header">뒷 절반</div>
+                    <div class="bd-loop-grid" id="fChords"></div>
+                    <div class="bd-chords-tip">
+                        반주 메뉴와 동일한 그리드. 한 칸에 두 절반(앞/뒤)이 있어요.
+                        타이핑 입력: <code>C</code>, <code>Am</code>, <code>F#m</code> 등.
+                        뒷 절반 비우면 앞 절반이 마디 끝까지 이어짐.
                     </div>
-                    <div class="bd-chords-grid" id="fChords"></div>
-                    <div class="bd-chords-tip">한 마디 안에서 앞/뒤 절반에 코드를 다르게 줄 수 있어요. 뒷 절반을 비우면 앞 절반 코드가 마디 끝까지 이어집니다.</div>
                 </div>
 
                 <div class="bd-actions">
@@ -463,21 +604,24 @@
         (function() {
             'use strict';
 
+            // ─── 설정 ───────────────────────────────────────────────
             const SUPABASE_URL = 'https://qpcbrqgqylxkgdwoflku.supabase.co';
             const SUPABASE_KEY = 'sb_publishable_5rr-OZ7Sqjk1nXn59R7XnQ_HInATuSV';
             const ALLOWED_EMAIL = 'steveq2568@gmail.com';
-
-            const CHROMATIC = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+            // 4자리 비밀번호. 변경하려면 이 줄 숫자만 바꾸면 됨.
+            const PASSCODE = '2568';
+            const GATE_LS_KEY = 'ahnsamPresetsGateOK';
 
             let sb = null;
             let presets = [];
             let editingId = null;
             let bars = 4;
+            let listFilter = '';
 
             const $ = function(id) { return document.getElementById(id); };
 
             function escapeHtml(s) {
-                return String(s || '').replace(/[&<>"']/g, function(c) {
+                return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
                     return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
                 });
             }
@@ -491,16 +635,79 @@
                 }
             }
 
-            // ───── Auth ──────────────────────────────────────────────
+            // ═══════════════════════════════════════════════════════
+            //  STAGE 1 — Passcode gate
+            // ═══════════════════════════════════════════════════════
+            function setupPasscodeGate() {
+                if (localStorage.getItem(GATE_LS_KEY) === '1') {
+                    passGate();
+                    return;
+                }
+                const inputs = document.querySelectorAll('.bd-passcode-input');
+                inputs.forEach(function(inp, idx) {
+                    inp.addEventListener('input', function() {
+                        // Allow only digits
+                        inp.value = inp.value.replace(/[^0-9]/g, '');
+                        if (inp.value && idx < inputs.length - 1) {
+                            inputs[idx + 1].focus();
+                        }
+                        checkPasscode();
+                    });
+                    inp.addEventListener('keydown', function(e) {
+                        if (e.key === 'Backspace' && !inp.value && idx > 0) {
+                            inputs[idx - 1].focus();
+                        }
+                    });
+                    inp.addEventListener('paste', function(e) {
+                        e.preventDefault();
+                        const txt = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 4);
+                        for (let i = 0; i < txt.length && i < inputs.length; i++) {
+                            inputs[i].value = txt[i];
+                        }
+                        checkPasscode();
+                    });
+                });
+                inputs[0].focus();
+
+                function checkPasscode() {
+                    const entered = Array.from(inputs).map(function(i) { return i.value; }).join('');
+                    if (entered.length === 4) {
+                        if (entered === PASSCODE) {
+                            localStorage.setItem(GATE_LS_KEY, '1');
+                            passGate();
+                        } else {
+                            inputs.forEach(function(i) {
+                                i.classList.add('error');
+                                i.value = '';
+                            });
+                            $('gateError').textContent = '비밀번호가 틀렸습니다';
+                            setTimeout(function() {
+                                inputs.forEach(function(i) { i.classList.remove('error'); });
+                                inputs[0].focus();
+                            }, 500);
+                        }
+                    }
+                }
+            }
+
+            function passGate() {
+                $('gateCard').style.display = 'none';
+                $('loginCard').style.display = 'block';
+                init();
+            }
+
+            // ═══════════════════════════════════════════════════════
+            //  STAGE 2 — Auth
+            // ═══════════════════════════════════════════════════════
             async function init() {
                 if (!window.supabase) {
-                    showFeedback('Supabase SDK 로드 실패', 'error');
+                    $('gateError').textContent = 'Supabase SDK 로드 실패';
                     return;
                 }
                 sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                 sb.auth.onAuthStateChange(function(event, session) { renderAuth(session); });
-                const { data: { session } } = await sb.auth.getSession();
-                renderAuth(session);
+                const result = await sb.auth.getSession();
+                renderAuth(result.data.session);
             }
 
             function renderAuth(session) {
@@ -528,7 +735,9 @@
             }
             async function logout() { await sb.auth.signOut(); }
 
-            // ───── Data ──────────────────────────────────────────────
+            // ═══════════════════════════════════════════════════════
+            //  STAGE 3 — Presets CRUD
+            // ═══════════════════════════════════════════════════════
             async function loadPresets() {
                 const res = await sb.from('presets')
                     .select('*')
@@ -542,14 +751,46 @@
                 renderList();
             }
 
+            // ─── Search ranking (tools.html 과 동일 로직) ───
+            function _scoreMatch(haystack, needle) {
+                if (!needle) return 1;
+                if (!haystack) return 0;
+                var h = haystack.toLowerCase();
+                var n = needle.toLowerCase();
+                if (h === n) return 1000;
+                if (h.indexOf(n) === 0) return 700 - Math.min(99, h.length - n.length);
+                var tokens = h.split(/\s+/);
+                for (var i = 0; i < tokens.length; i++) {
+                    if (tokens[i].indexOf(n) === 0) return 500 - i;
+                }
+                if (h.indexOf(n) !== -1) return 300;
+                return 0;
+            }
+
             function renderList() {
                 const list = $('presetList');
-                if (presets.length === 0) {
-                    list.innerHTML = '<div class="bd-empty">아직 프리셋이 없어요. "새 프리셋" 으로 추가해보세요.</div>';
+                const f = (listFilter || '').trim();
+                let filtered;
+                if (!f) {
+                    filtered = presets.slice();
+                } else {
+                    filtered = presets.map(function(p) {
+                        var s1 = _scoreMatch(p.name, f);
+                        var s2 = _scoreMatch(p.artist, f) * 0.6;
+                        return { p: p, score: Math.max(s1, s2) };
+                    }).filter(function(x) { return x.score > 0; })
+                      .sort(function(a, b) { return b.score - a.score; })
+                      .map(function(x) { return x.p; });
+                }
+                if (filtered.length === 0) {
+                    list.innerHTML = '<div class="bd-empty">' +
+                        (f ? '"' + escapeHtml(f) + '" 에 맞는 프리셋이 없어요'
+                           : '아직 프리셋이 없어요. "새 프리셋" 으로 추가해보세요.') +
+                        '</div>';
                     return;
                 }
                 list.innerHTML = '';
-                presets.forEach(function(p) {
+                filtered.forEach(function(p) {
                     const item = document.createElement('div');
                     item.className = 'bd-list-item' + (p.id === editingId ? ' selected' : '');
                     item.innerHTML =
@@ -563,7 +804,7 @@
                 });
             }
 
-            // ───── Form ──────────────────────────────────────────────
+            // ─── Edit form ───
             function newPreset() {
                 editingId = null;
                 $('formTitle').textContent = '새 프리셋';
@@ -582,6 +823,7 @@
                 $('feedback').className = 'bd-feedback';
                 renderList();
                 $('fName').focus();
+                window.scrollTo({ top: $('editForm').offsetTop - 12, behavior: 'smooth' });
             }
 
             function loadEdit(p) {
@@ -609,54 +851,58 @@
                 });
             }
 
+            // ─── 코드 진행 그리드 (반주 메뉴와 동일한 룩, 입력은 타이핑) ───
             function renderChords(chordsA, chordsB) {
                 const grid = $('fChords');
                 grid.innerHTML = '';
                 for (let i = 0; i < bars; i++) {
-                    const num = document.createElement('div');
-                    num.className = 'bd-chord-num';
+                    const cell = document.createElement('div');
+                    cell.className = 'bd-loop-cell';
+
+                    const num = document.createElement('span');
+                    num.className = 'bd-loop-cell-num';
                     num.textContent = (i + 1);
-                    grid.appendChild(num);
-                    grid.appendChild(makeChordSelect(chordsA[String(i)] || '', i, 'a'));
-                    grid.appendChild(makeChordSelect(chordsB[String(i)] || '', i, 'b'));
+                    cell.appendChild(num);
+
+                    const halves = document.createElement('div');
+                    halves.className = 'bd-loop-cell-halves';
+                    halves.appendChild(makeHalfInput(chordsA[String(i)] || '', i, 'a'));
+                    halves.appendChild(makeHalfInput(chordsB[String(i)] || '', i, 'b'));
+
+                    cell.appendChild(halves);
+                    grid.appendChild(cell);
                 }
             }
 
-            function makeChordSelect(value, idx, half) {
-                const sel = document.createElement('select');
-                sel.className = 'bd-chord-cell' + (value ? ' has-value' : '');
-                sel.dataset.idx = idx;
-                sel.dataset.half = half;
-                sel.appendChild(makeOpt('', '—'));
-                CHROMATIC.forEach(function(pc) {
-                    sel.appendChild(makeOpt(pc, pc));
-                    sel.appendChild(makeOpt(pc + 'm', pc + 'm'));
-                });
-                sel.value = value;
-                sel.onchange = function() {
-                    sel.classList.toggle('has-value', !!sel.value);
+            function makeHalfInput(value, idx, half) {
+                const inp = document.createElement('input');
+                inp.type = 'text';
+                inp.className = 'bd-loop-cell-half-input' + (value ? ' has-value' : '');
+                inp.dataset.idx = idx;
+                inp.dataset.half = half;
+                inp.value = value;
+                inp.placeholder = half === 'a' ? '+' : '·';
+                inp.maxLength = 6;
+                inp.autocomplete = 'off';
+                inp.spellcheck = false;
+                inp.oninput = function() {
+                    inp.classList.toggle('has-value', !!inp.value.trim());
                 };
-                return sel;
-            }
-
-            function makeOpt(value, text) {
-                const o = document.createElement('option');
-                o.value = value;
-                o.textContent = text;
-                return o;
+                return inp;
             }
 
             function readChords() {
                 const a = {}, b = {};
-                document.querySelectorAll('#fChords select').forEach(function(sel) {
-                    if (!sel.value) return;
-                    if (sel.dataset.half === 'a') a[sel.dataset.idx] = sel.value;
-                    else b[sel.dataset.idx] = sel.value;
+                document.querySelectorAll('#fChords input').forEach(function(inp) {
+                    const v = inp.value.trim();
+                    if (!v) return;
+                    if (inp.dataset.half === 'a') a[inp.dataset.idx] = v;
+                    else b[inp.dataset.idx] = v;
                 });
                 return { a: a, b: b };
             }
 
-            // ───── Save / Delete ─────────────────────────────────────
+            // ─── Save / Delete ───
             async function savePreset() {
                 const name = $('fName').value.trim();
                 if (!name) { showFeedback('이름은 필수입니다', 'error'); return; }
@@ -713,13 +959,18 @@
                 window.open('tools.html?preset=' + editingId + '#backing', '_blank');
             }
 
-            // ───── Wire up ───────────────────────────────────────────
+            // ═══════════════════════════════════════════════════════
+            //  Wire up
+            // ═══════════════════════════════════════════════════════
             document.addEventListener('DOMContentLoaded', function() {
+                setupPasscodeGate();
+
                 $('loginBtn').onclick = startLogin;
                 $('newBtn').onclick = newPreset;
                 $('saveBtn').onclick = savePreset;
                 $('deleteBtn').onclick = deletePreset;
                 $('testBtn').onclick = testInTools;
+
                 document.querySelectorAll('#fBars .bd-pill').forEach(function(b) {
                     b.onclick = function() {
                         bars = parseInt(b.dataset.bars, 10);
@@ -728,7 +979,23 @@
                         renderChords(cur.a, cur.b);
                     };
                 });
-                init();
+
+                // 검색
+                const search = $('listSearch');
+                const searchClear = $('listSearchClear');
+                const searchWrap = $('listSearchWrap');
+                search.oninput = function() {
+                    listFilter = search.value;
+                    searchWrap.classList.toggle('has-text', !!listFilter);
+                    renderList();
+                };
+                searchClear.onclick = function() {
+                    search.value = '';
+                    listFilter = '';
+                    searchWrap.classList.remove('has-text');
+                    renderList();
+                    search.focus();
+                };
             });
         })();
     </script>
