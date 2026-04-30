@@ -4871,6 +4871,134 @@
         /* ===== Loop mode ===== */
         .loop-section { display: none; }
         .loop-section.visible { display: block; }
+
+        /* Preset bar — 노래 검색 + 적용 */
+        .loop-preset-bar {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.5rem 0.6rem;
+            background: rgba(82, 168, 114, 0.08);
+            border: 1px solid rgba(82, 168, 114, 0.25);
+            border-radius: 12px;
+            margin-bottom: 0.85rem;
+        }
+        .loop-preset-icon {
+            color: var(--green-deep);
+            font-size: 0.95rem;
+            margin-left: 0.2rem;
+        }
+        .loop-preset-search {
+            flex: 1;
+            min-width: 0;
+            padding: 0.42rem 0.6rem;
+            border: 1px solid rgba(42, 107, 74, 0.18);
+            border-radius: 8px;
+            background: #fff;
+            font-family: inherit;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            outline: none;
+        }
+        .loop-preset-search:focus {
+            border-color: var(--green-mid);
+            box-shadow: 0 0 0 2px rgba(82, 168, 114, 0.18);
+        }
+        .loop-preset-toggle {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border: 1px solid rgba(42, 107, 74, 0.22);
+            background: #fff;
+            color: var(--green-deep);
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.78rem;
+            flex-shrink: 0;
+        }
+        .loop-preset-toggle:hover {
+            background: rgba(82, 168, 114, 0.18);
+            border-color: var(--green-mid);
+        }
+        .loop-preset-toggle.open i { transform: rotate(180deg); }
+        .loop-preset-list {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 0.4rem;
+            background: #fff;
+            border: 1px solid rgba(42, 107, 74, 0.22);
+            border-radius: 10px;
+            padding: 4px;
+            max-height: 280px;
+            overflow-y: auto;
+            z-index: 30;
+            box-shadow: 0 8px 24px rgba(42, 107, 74, 0.18);
+        }
+        .loop-preset-list.open { display: block; }
+        .loop-preset-item {
+            padding: 0.55rem 0.7rem;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.85rem;
+            transition: background 0.12s;
+        }
+        .loop-preset-item:hover {
+            background: rgba(82, 168, 114, 0.18);
+        }
+        .loop-preset-item-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .loop-preset-item-meta {
+            font-size: 0.72rem;
+            color: rgba(26, 36, 33, 0.55);
+            white-space: nowrap;
+        }
+        .loop-preset-empty {
+            padding: 1.1rem;
+            text-align: center;
+            color: rgba(26, 36, 33, 0.5);
+            font-size: 0.82rem;
+        }
+        /* Dark mode */
+        :root[data-theme="dark"] .loop-preset-bar {
+            background: rgba(82, 168, 114, 0.1);
+            border-color: rgba(180, 230, 200, 0.25);
+        }
+        :root[data-theme="dark"] .loop-preset-icon { color: #b5e6c8; }
+        :root[data-theme="dark"] .loop-preset-search {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(180, 230, 200, 0.25);
+            color: #d8e8df;
+        }
+        :root[data-theme="dark"] .loop-preset-search::placeholder { color: rgba(232,240,236,0.45); }
+        :root[data-theme="dark"] .loop-preset-toggle {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(180, 230, 200, 0.25);
+            color: #b5e6c8;
+        }
+        :root[data-theme="dark"] .loop-preset-list {
+            background: rgba(20, 32, 28, 0.98);
+            border-color: rgba(180, 230, 200, 0.25);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+        }
+        :root[data-theme="dark"] .loop-preset-item:hover {
+            background: rgba(82, 168, 114, 0.25);
+        }
+        :root[data-theme="dark"] .loop-preset-item-name { color: #d8e8df; }
+        :root[data-theme="dark"] .loop-preset-item-meta { color: rgba(232, 240, 236, 0.6); }
+        :root[data-theme="dark"] .loop-preset-empty { color: rgba(232, 240, 236, 0.5); }
         .loop-top-row {
             display: flex; align-items: flex-start; gap: 1rem;
             margin-bottom: 0.8rem; font-size: 0.8rem; color: rgba(26, 36, 33, 0.6);
@@ -5692,6 +5820,15 @@
                     <button type="button" class="tool-help-btn tool-help-static" data-help="metronome" aria-label="메트로놈 도움말" aria-expanded="false">?</button>
                 </div>
                 <div class="loop-section" id="loopSection">
+                    <!-- 프리셋 — 노래 검색 + 클릭 한 번에 BPM/마디/리듬/코드 진행 일괄 적용 -->
+                    <div class="loop-preset-bar">
+                        <i class="fas fa-music loop-preset-icon"></i>
+                        <input type="text" class="loop-preset-search" id="loopPresetSearch" placeholder="프리셋 검색…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                        <button class="loop-preset-toggle" id="loopPresetToggle" type="button" aria-label="프리셋 목록">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="loop-preset-list" id="loopPresetList"></div>
+                    </div>
                     <div class="loop-top-row">
                         <div class="loop-measures-label">
                             <label>마디</label>
@@ -5725,6 +5862,7 @@
                             <label>피아노</label>
                             <div class="loop-style-btns" id="loopPianoStyleBtns">
                                 <button type="button" class="loop-style-btn active" data-pstyle="quarter" onclick="setLoopPianoStyle('quarter')">4분음표</button>
+                                <button type="button" class="loop-style-btn" data-pstyle="8beat" onclick="setLoopPianoStyle('8beat')">8비트</button>
                             </div>
                         </div>
                         <button type="button" class="loop-clear-all-btn" onclick="clearAllLoopChords()" title="입력한 모든 코드 삭제">
@@ -7564,7 +7702,7 @@
                 drumBus.attack.value = 0.002;
                 drumBus.release.value = 0.08;
                 drumMaster = audioCtx.createGain();
-                drumMaster.gain.value = 0.9 * loopVolDrum;
+                drumMaster.gain.value = LOOP_MIX_CEILINGS.drum * loopVolDrum;
                 drumBus.connect(drumMaster);
                 drumMaster.connect(getMasterOut());
                 return drumBus;
@@ -7791,7 +7929,8 @@
             };
             // 피아노 컴핑 스타일 — 16분음표 기준
             const PIANO_STYLES = {
-                'quarter': { sixteenthHits: [0, 4, 8, 12] }
+                'quarter': { sixteenthHits: [0, 4, 8, 12] },
+                '8beat':   { sixteenthHits: [0, 2, 4, 6, 8, 10, 12, 14] }
             };
 
             // 16분음표 위치 배열을 드럼 ticksPerBeat 에 맞춰 가용한 tick 위치로 변환.
@@ -7819,7 +7958,7 @@
                 comp.attack.value = 0.003;
                 comp.release.value = 0.15;
                 bassMaster = audioCtx.createGain();
-                bassMaster.gain.value = loopVolBass;
+                bassMaster.gain.value = LOOP_MIX_CEILINGS.bass * loopVolBass;
                 comp.connect(bassMaster);
                 bassMaster.connect(getMasterOut());
                 bassBusNode = comp;
@@ -7947,7 +8086,7 @@
             function getPianoBus() {
                 if (pianoBusNode) return pianoBusNode;
                 pianoBusNode = audioCtx.createGain();
-                pianoBusNode.gain.value = loopVolPiano;
+                pianoBusNode.gain.value = LOOP_MIX_CEILINGS.piano * loopVolPiano;
                 pianoBusNode.connect(getMasterOut());
                 return pianoBusNode;
             }
@@ -8032,33 +8171,36 @@
             }
 
             // 한 코드를 한 박자에 컴핑 (블록 코드).
-            // 메인 피아노 도구의 톤(스트레치드 파셜 + 해머 노이즈)을 가볍게 재현하되
-            // 동시에 여러 음을 내야 하므로 master gain 을 낮춰 합성된 출력이 클립되지
-            // 않게 한다.
-            function playPianoChord(chordName, time) {
+            // velMul : on/off-beat 강세 차별화에 사용 (1.0 기본, 0.55 약세 등)
+            function playPianoChord(chordName, time, velMul) {
                 if (!audioCtx) return;
+                if (typeof velMul !== 'number') velMul = 1.0;
                 var voicing = pickPianoVoicing(chordName, _prevPianoVoicing);
                 if (!voicing) return;
                 _prevPianoVoicing = voicing;
                 var bus = getPianoBus();
-                var dur = 0.55;            // 한 박 정도 sustain
-                var perVoiceGain = 0.18;   // 3음 동시 → 합쳐서 ~0.55
+                // 길게 울리는 sustain — 다음 박까지 자연스럽게 이어짐
+                var dur = 1.4;
+                var perVoiceGain = 0.18 * velMul;
 
                 voicing.forEach(function(midi) {
                     var freq = 440 * Math.pow(2, (midi - 69) / 12);
                     var t0 = time;
 
+                    // 어택 → 빠른 초기 감쇠 → 길게 sustain → 부드러운 release
                     var voiceGain = audioCtx.createGain();
                     voiceGain.gain.setValueAtTime(0.0001, t0);
                     voiceGain.gain.exponentialRampToValueAtTime(perVoiceGain, t0 + 0.005);
-                    voiceGain.gain.exponentialRampToValueAtTime(perVoiceGain * 0.45, t0 + 0.12);
+                    voiceGain.gain.exponentialRampToValueAtTime(perVoiceGain * 0.7, t0 + 0.18);
+                    voiceGain.gain.exponentialRampToValueAtTime(perVoiceGain * 0.42, t0 + 0.7);
                     voiceGain.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
 
                     var filt = audioCtx.createBiquadFilter();
                     filt.type = 'lowpass';
                     filt.Q.value = 0.7;
                     filt.frequency.setValueAtTime(Math.min(8000, freq * 10), t0);
-                    filt.frequency.exponentialRampToValueAtTime(Math.max(800, freq * 3), t0 + dur);
+                    // sustain 동안 cutoff 가 너무 빨리 떨어지지 않도록 천천히
+                    filt.frequency.exponentialRampToValueAtTime(Math.max(900, freq * 3.5), t0 + dur);
                     filt.connect(voiceGain);
                     voiceGain.connect(bus);
 
@@ -8079,7 +8221,8 @@
                         osc.type = 'sine';
                         osc.frequency.value = sf;
                         g.gain.setValueAtTime(p.vol, t0);
-                        var pdur = Math.max(0.25, dur / Math.sqrt(p.n));
+                        // sustain 길게 — 낮은 배음일수록 천천히 감쇠
+                        var pdur = Math.max(0.5, dur / Math.pow(p.n, 0.6));
                         g.gain.exponentialRampToValueAtTime(0.0008, t0 + pdur);
                         osc.connect(g);
                         g.connect(filt);
@@ -8087,7 +8230,7 @@
                         osc.stop(t0 + pdur + 0.05);
                     });
 
-                    // 해머 노이즈 (1번 음에만 — 합산 클립 방지)
+                    // 해머 노이즈 (1번 음에만 — 합산 클립 방지). off-beat 에선 더 작게.
                     if (midi === voicing[0]) {
                         var nDur = 0.022;
                         var nbuf = audioCtx.createBuffer(1, Math.ceil(audioCtx.sampleRate * nDur), audioCtx.sampleRate);
@@ -8102,7 +8245,7 @@
                         nbp.frequency.value = Math.min(4500, freq * 3);
                         nbp.Q.value = 0.9;
                         var ng = audioCtx.createGain();
-                        ng.gain.setValueAtTime(0.07, t0);
+                        ng.gain.setValueAtTime(0.07 * velMul, t0);
                         ng.gain.exponentialRampToValueAtTime(0.001, t0 + nDur);
                         ns.connect(nbp); nbp.connect(ng); ng.connect(bus);
                         ns.start(t0);
@@ -8274,11 +8417,18 @@
                     var pStyle = PIANO_STYLES[loopPianoStyle];
                     if (pStyle && loopVolPiano > 0.001) {
                         var pianoTicks = sixteenthsToTicks(pStyle.sixteenthHits, p.ticksPerBeat);
-                        if (pianoTicks.indexOf(t) !== -1) {
+                        var pidx = pianoTicks.indexOf(t);
+                        if (pidx !== -1) {
                             var midP = measureLen / 2;
                             var halfP = t < midP ? 'a' : 'b';
                             var rootP = getEffectiveRoot(loopMeasureIdx, halfP);
-                            if (rootP) playPianoChord(rootP, time);
+                            if (rootP) {
+                                // 8-beat 컴핑: on-beat (1·2·3·4 박) 은 강세, off-beat (1.5·2.5...) 은 약세.
+                                // 16분음표 위치 % 4 === 0 이면 on-beat.
+                                var sixteenthPos = pStyle.sixteenthHits[pidx];
+                                var velMul = (sixteenthPos % 4 === 0) ? 1.0 : 0.55;
+                                playPianoChord(rootP, time, velMul);
+                            }
                         }
                     }
                 } else if (soundMode === 'drums') {
@@ -8467,11 +8617,200 @@
                 '16beat': '16비트 A', '16beat2': '16비트 B', '16beatC': '16비트 C',
                 'ballad': '셔플락'
             };
+            // ─── 프리셋 (Supabase 연동) ─────────────────────────────
+            // 노래 이름을 검색해서 한 번에 BPM·마디·리듬·코드 진행을 적용.
+            // 데이터는 public.presets 테이블에서 읽어옴 (RLS: public read).
+            let _loopPresetsCache = null;
+            let _loopPresetsLoading = false;
+
+            async function getLoopPresetClient() {
+                // auth.js 가 로드한 Supabase SDK 가 준비될 때까지 대기 (최대 ~5초)
+                for (var i = 0; i < 50; i++) {
+                    if (window.supabase && window.supabase.createClient) break;
+                    await new Promise(function(r) { setTimeout(r, 100); });
+                }
+                if (!window.supabase || !window.supabase.createClient) return null;
+                if (window.ahnssamAuth && window.ahnssamAuth.supabase) {
+                    return window.ahnssamAuth.supabase;
+                }
+                return window.supabase.createClient(
+                    'https://qpcbrqgqylxkgdwoflku.supabase.co',
+                    'sb_publishable_5rr-OZ7Sqjk1nXn59R7XnQ_HInATuSV'
+                );
+            }
+
+            async function loadLoopPresets() {
+                if (_loopPresetsCache) return _loopPresetsCache;
+                if (_loopPresetsLoading) return null;
+                _loopPresetsLoading = true;
+                try {
+                    var sb = await getLoopPresetClient();
+                    if (!sb) return [];
+                    var res = await sb.from('presets')
+                        .select('*')
+                        .order('sort_order', { ascending: true })
+                        .order('created_at', { ascending: true });
+                    _loopPresetsCache = res.data || [];
+                } catch (e) {
+                    console.warn('[loop] preset load failed', e);
+                    _loopPresetsCache = [];
+                } finally {
+                    _loopPresetsLoading = false;
+                }
+                return _loopPresetsCache;
+            }
+
+            function _escHtml(s) {
+                return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+                    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+                });
+            }
+
+            function renderLoopPresetList(filter) {
+                var list = document.getElementById('loopPresetList');
+                if (!list) return;
+                var presets = _loopPresetsCache || [];
+                var f = (filter || '').trim().toLowerCase().replace(/\s+/g, '');
+                var filtered = presets;
+                if (f) {
+                    filtered = presets.filter(function(p) {
+                        var hay = ((p.name || '') + ' ' + (p.artist || ''))
+                            .toLowerCase().replace(/\s+/g, '');
+                        return hay.indexOf(f) !== -1;
+                    });
+                }
+                if (filtered.length === 0) {
+                    list.innerHTML = '<div class="loop-preset-empty">' +
+                        (f ? '"' + _escHtml(filter) + '"에 맞는 프리셋이 없어요'
+                           : '아직 프리셋이 없어요') + '</div>';
+                    return;
+                }
+                list.innerHTML = filtered.map(function(p) {
+                    return '<div class="loop-preset-item" data-id="' + _escHtml(p.id) + '">' +
+                        '<div>' +
+                            '<span class="loop-preset-item-name">' + _escHtml(p.name) + '</span>' +
+                            (p.artist ? ' <span class="loop-preset-item-meta">· ' + _escHtml(p.artist) + '</span>' : '') +
+                        '</div>' +
+                        '<span class="loop-preset-item-meta">' + (p.bpm || 90) + ' BPM · ' + (p.bars || 4) + '마디</span>' +
+                    '</div>';
+                }).join('');
+                list.querySelectorAll('.loop-preset-item').forEach(function(el) {
+                    el.onclick = function() {
+                        var id = el.dataset.id;
+                        var p = (_loopPresetsCache || []).find(function(x) { return x.id === id; });
+                        if (p) applyLoopPreset(p);
+                    };
+                });
+            }
+
+            function applyLoopPreset(p) {
+                if (!p) return;
+                // 마디
+                if (typeof window.setLoopBars === 'function') window.setLoopBars(p.bars || 4);
+                // 드럼 리듬
+                loopRhythm = p.rhythm || '8beat';
+                var lbl = document.getElementById('loopRhythmLabel');
+                if (lbl) lbl.textContent = (LOOP_RHYTHM_LABELS && LOOP_RHYTHM_LABELS[loopRhythm]) || loopRhythm;
+                renderLoopRhythms();
+                // BPM
+                if (typeof window.updateBPM === 'function') {
+                    window.updateBPM(p.bpm || 90);
+                    var slider = document.getElementById('bpmSlider');
+                    if (slider) slider.value = p.bpm || 90;
+                }
+                // 베이스/피아노 스타일
+                if (typeof window.setLoopBassStyle === 'function') window.setLoopBassStyle(p.bass_style || 'default');
+                if (typeof window.setLoopPianoStyle === 'function') window.setLoopPianoStyle(p.piano_style || 'quarter');
+                // 코드 진행
+                loopChords  = p.chords_a ? Object.assign({}, p.chords_a) : {};
+                loopChordsB = p.chords_b ? Object.assign({}, p.chords_b) : {};
+                renderLoopGrid();
+                if (typeof updateLoopStyleAvailability === 'function') updateLoopStyleAvailability();
+                // 재생 위치 리셋
+                _prevPianoVoicing = null;
+                currentBeat = 0;
+                loopMeasureIdx = 0;
+                if (window._metroRunning && audioCtx) nextNoteTime = audioCtx.currentTime + 0.05;
+                // UI 정리
+                closeLoopPresetList();
+                var search = document.getElementById('loopPresetSearch');
+                if (search) search.value = p.name;
+                gtag('event', 'loop_preset_apply', { id: p.id, name: p.name });
+            }
+
+            function openLoopPresetList() {
+                var list = document.getElementById('loopPresetList');
+                var toggle = document.getElementById('loopPresetToggle');
+                if (list) list.classList.add('open');
+                if (toggle) toggle.classList.add('open');
+            }
+            function closeLoopPresetList() {
+                var list = document.getElementById('loopPresetList');
+                var toggle = document.getElementById('loopPresetToggle');
+                if (list) list.classList.remove('open');
+                if (toggle) toggle.classList.remove('open');
+            }
+            window.toggleLoopPresetList = function() {
+                var list = document.getElementById('loopPresetList');
+                if (list && list.classList.contains('open')) closeLoopPresetList();
+                else openLoopPresetList();
+            };
+
+            // 한 번만 바인딩되도록 플래그
+            let _loopPresetUIBound = false;
+            function bindLoopPresetUI() {
+                if (_loopPresetUIBound) return;
+                _loopPresetUIBound = true;
+                var search = document.getElementById('loopPresetSearch');
+                var toggle = document.getElementById('loopPresetToggle');
+                if (search) {
+                    search.oninput = function() {
+                        renderLoopPresetList(search.value);
+                        openLoopPresetList();
+                    };
+                    search.onfocus = function() { openLoopPresetList(); };
+                    search.onkeydown = function(e) {
+                        if (e.key === 'Escape') {
+                            closeLoopPresetList();
+                            search.blur();
+                        }
+                    };
+                }
+                if (toggle) toggle.onclick = function(e) {
+                    e.stopPropagation();
+                    window.toggleLoopPresetList();
+                };
+                // 외부 클릭 시 닫기
+                document.addEventListener('pointerdown', function(e) {
+                    if (!e.target.closest('.loop-preset-bar')) {
+                        closeLoopPresetList();
+                    }
+                });
+            }
+
+            // URL 쿼리(?preset=ID)로 들어오면 자동 적용 — 빌더 페이지의 "미리보기" 링크용
+            async function maybeApplyPresetFromURL() {
+                try {
+                    var params = new URLSearchParams(window.location.search);
+                    var presetId = params.get('preset');
+                    if (!presetId) return;
+                    await loadLoopPresets();
+                    var p = (_loopPresetsCache || []).find(function(x) { return x.id === presetId; });
+                    if (p) applyLoopPreset(p);
+                } catch (e) {}
+            }
+
             function initLoop() {
                 if (loopInitialized) return;
                 loopInitialized = true;
                 renderLoopRhythms();
                 renderLoopGrid();
+                updateLoopStyleAvailability();
+                bindLoopPresetUI();
+                loadLoopPresets().then(function() {
+                    renderLoopPresetList('');
+                    maybeApplyPresetFromURL();
+                });
                 document.addEventListener('click', function(e) {
                     if (!e.target.closest('.loop-cell') && !e.target.closest('.loop-chord-picker')) {
                         closeLoopPicker();
@@ -8504,6 +8843,7 @@
                         loopMeasureIdx = 0;
                         if (window._metroRunning && audioCtx) nextNoteTime = audioCtx.currentTime + 0.05;
                         renderLoopRhythms();
+                        updateLoopStyleAvailability();
                     };
                     drawer.appendChild(btn);
                 });
@@ -8791,6 +9131,45 @@
                 gtag('event', 'loop_bass_style', { style: style });
             };
 
+            // 드럼 ticksPerBeat 에 따라 베이스/피아노 스타일 옵션을 조건부로 숨긴다.
+            //   - 8비트: ticksPerBeat ≥ 2 일 때만 의미 있음 (4비트 드럼이면 1tick/beat 라 동일하게 들림)
+            //   - 16비트: ticksPerBeat ≥ 4 일 때만 의미 있음 (8비트 드럼이면 8비트와 동일하게 들림)
+            // 현재 선택된 스타일이 invalid 가 되면 default 로 폴백한다.
+            function updateLoopStyleAvailability() {
+                var p = (typeof DRUM_PATTERNS !== 'undefined' && DRUM_PATTERNS[loopRhythm]) || null;
+                if (!p) return;
+                var tpb = p.ticksPerBeat;
+
+                var rules = {
+                    bass: {
+                        '8beat':  tpb >= 2,
+                        '16beat': tpb >= 4
+                    },
+                    piano: {
+                        '8beat':  tpb >= 2
+                    }
+                };
+
+                document.querySelectorAll('#loopBassStyleBtns .loop-style-btn').forEach(function(b) {
+                    var s = b.dataset.bstyle;
+                    var ok = !(s in rules.bass) || rules.bass[s];
+                    b.style.display = ok ? '' : 'none';
+                });
+                document.querySelectorAll('#loopPianoStyleBtns .loop-style-btn').forEach(function(b) {
+                    var s = b.dataset.pstyle;
+                    var ok = !(s in rules.piano) || rules.piano[s];
+                    b.style.display = ok ? '' : 'none';
+                });
+
+                // 현재 선택이 invalid 면 default 로 폴백
+                if (loopBassStyle in rules.bass && !rules.bass[loopBassStyle]) {
+                    window.setLoopBassStyle('default');
+                }
+                if (loopPianoStyle in rules.piano && !rules.piano[loopPianoStyle]) {
+                    window.setLoopPianoStyle('quarter');
+                }
+            }
+
             window.setLoopPianoStyle = function(style) {
                 if (!style) return;
                 loopPianoStyle = style;
@@ -8808,19 +9187,26 @@
                 _applyLoopVolume(kind, v);
             };
 
+            // 악기별 master ceiling — 슬라이더 100% 일 때 실제로 인가되는 gain.
+            // 드럼은 그대로, 베이스/피아노는 상대적으로 더 얌전하게 깔리도록 낮춤.
+            //   베이스 ceiling 0.75 → 슬라이더 75% 가 예전 100% 만큼 들림
+            //   피아노 ceiling 0.50 → 슬라이더 50% 가 예전 100% 만큼 들림
+            const LOOP_MIX_CEILINGS = { drum: 0.9, bass: 0.75, piano: 0.5 };
+
             // 슬라이더 + mute 버튼 상태를 한꺼번에 갱신.
             function _applyLoopVolume(kind, v) {
                 var sliderId = ({ drum: 'mixDrumSlider', bass: 'mixBassSlider', piano: 'mixPianoSlider' })[kind];
                 var slider = sliderId ? document.getElementById(sliderId) : null;
+                var ceiling = LOOP_MIX_CEILINGS[kind] || 1;
                 if (kind === 'drum') {
                     loopVolDrum = v;
-                    if (drumMaster) drumMaster.gain.value = 0.9 * v;
+                    if (drumMaster) drumMaster.gain.value = ceiling * v;
                 } else if (kind === 'bass') {
                     loopVolBass = v;
-                    if (bassMaster) bassMaster.gain.value = v;
+                    if (bassMaster) bassMaster.gain.value = ceiling * v;
                 } else if (kind === 'piano') {
                     loopVolPiano = v;
-                    if (pianoBusNode) pianoBusNode.gain.value = v;
+                    if (pianoBusNode) pianoBusNode.gain.value = ceiling * v;
                 }
                 if (slider) {
                     slider.classList.toggle('muted', v < 0.001);

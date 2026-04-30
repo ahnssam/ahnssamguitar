@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#e2f5ea">
+    <meta name="robots" content="noindex, nofollow">
+    <title>프리셋 빌더 | 안쌤의 기타나무숲</title>
+    <link rel="icon" href="images/favicon.ico" type="image/x-icon">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --green-deep: #2a6b4a;
+            --green-dark: #3a8a5c;
+            --green-mid: #52a872;
+            --green-light: #72c492;
+            --green-pale: #b5e6c8;
+            --green-faint: #e2f5ea;
+            --bg: #f5fbf7;
+            --card: #ffffff;
+            --text: #1a2421;
+            --text-mid: #4a5a52;
+            --text-light: #7a8a82;
+            --border: rgba(42, 107, 74, 0.18);
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 1rem;
+            line-height: 1.45;
+        }
+        .bd-wrap { max-width: 880px; margin: 0 auto; }
+
+        /* Header */
+        .bd-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 1rem 1.2rem;
+            background: var(--card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .bd-header h1 {
+            font-size: 1.25rem;
+            color: var(--green-deep);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .bd-header h1 i { font-size: 1.1rem; }
+        .bd-userinfo {
+            font-size: 0.82rem;
+            color: var(--text-mid);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .bd-userinfo button {
+            padding: 0.32rem 0.7rem;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-mid);
+            border-radius: 14px;
+            cursor: pointer;
+            font: inherit;
+            font-size: 0.74rem;
+        }
+        .bd-userinfo button:hover {
+            background: rgba(82, 168, 114, 0.1);
+            color: var(--green-deep);
+        }
+        .bd-back {
+            padding: 0.32rem 0.7rem;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            text-decoration: none;
+            color: var(--text-mid);
+            font-size: 0.74rem;
+        }
+        .bd-back:hover { color: var(--green-deep); }
+
+        /* Card */
+        .bd-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+        }
+        .bd-section-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-light);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.6rem;
+        }
+
+        /* Login CTA */
+        .bd-loginCTA {
+            text-align: center;
+            padding: 2.5rem 1rem;
+        }
+        .bd-loginCTA p { margin-bottom: 1rem; color: var(--text-mid); }
+        .bd-loginCTA button {
+            padding: 0.75rem 1.4rem;
+            background: var(--green-deep);
+            color: #fff;
+            border: none;
+            border-radius: 22px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .bd-loginCTA button:hover { background: var(--green-dark); }
+        .bd-loginCTA .bd-tip {
+            margin-top: 1rem;
+            font-size: 0.78rem;
+            color: var(--text-light);
+        }
+
+        /* Preset list */
+        .bd-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.6rem; }
+        .bd-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: rgba(42, 107, 74, 0.04);
+            cursor: pointer;
+            transition: all 0.15s;
+            gap: 0.7rem;
+        }
+        .bd-list-item:hover {
+            background: rgba(82, 168, 114, 0.15);
+            border-color: var(--green-mid);
+        }
+        .bd-list-item.selected {
+            background: var(--green-deep);
+            color: #fff;
+            border-color: var(--green-deep);
+        }
+        .bd-list-item-name { font-weight: 600; }
+        .bd-list-item-meta { font-size: 0.72rem; opacity: 0.72; }
+        .bd-list-item.selected .bd-list-item-meta { opacity: 0.85; }
+
+        /* Form */
+        .bd-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+            align-items: stretch;
+            margin-bottom: 0.7rem;
+        }
+        .bd-field {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 130px;
+        }
+        .bd-field label {
+            font-size: 0.7rem;
+            color: var(--text-mid);
+            margin-bottom: 0.22rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+        .bd-field input,
+        .bd-field select {
+            padding: 0.5rem 0.7rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #fff;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.88rem;
+        }
+        .bd-field input:focus,
+        .bd-field select:focus {
+            outline: none;
+            border-color: var(--green-mid);
+            box-shadow: 0 0 0 3px rgba(82, 168, 114, 0.15);
+        }
+        .bd-pills {
+            display: inline-flex;
+            background: rgba(42, 107, 74, 0.06);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 2px;
+        }
+        .bd-pill {
+            padding: 0.35rem 0.7rem;
+            border: none;
+            background: transparent;
+            color: var(--text-mid);
+            border-radius: 16px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
+        .bd-pill:hover:not(.active) {
+            background: rgba(82, 168, 114, 0.15);
+            color: var(--green-deep);
+        }
+        .bd-pill.active {
+            background: var(--green-deep);
+            color: #fff;
+        }
+
+        /* Chord progression grid */
+        .bd-chords-wrap {
+            background: rgba(42, 107, 74, 0.04);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.7rem;
+        }
+        .bd-chords-grid {
+            display: grid;
+            grid-template-columns: 30px 1fr 1fr;
+            gap: 0.4rem 0.5rem;
+            align-items: center;
+        }
+        .bd-chord-header {
+            font-size: 0.68rem;
+            text-align: center;
+            color: var(--text-light);
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        .bd-chord-num {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .bd-chord-cell {
+            padding: 0.4rem 0.5rem;
+            font-size: 0.85rem;
+            font-family: 'Playfair Display', serif;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: #fff;
+            cursor: pointer;
+        }
+        .bd-chord-cell.has-value { border-color: var(--green-mid); color: var(--green-deep); }
+        .bd-chords-tip {
+            margin-top: 0.55rem;
+            font-size: 0.72rem;
+            color: var(--text-light);
+        }
+
+        /* Action buttons */
+        .bd-actions {
+            display: flex;
+            gap: 0.55rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .bd-btn {
+            padding: 0.55rem 1rem;
+            border: none;
+            border-radius: 18px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.15s;
+            text-decoration: none;
+        }
+        .bd-btn-primary { background: var(--green-deep); color: #fff; }
+        .bd-btn-primary:hover { background: var(--green-dark); }
+        .bd-btn-danger {
+            background: rgba(196, 64, 52, 0.1);
+            color: #b83a2e;
+            border: 1px solid rgba(196, 64, 52, 0.3);
+        }
+        .bd-btn-danger:hover { background: rgba(196, 64, 52, 0.25); }
+        .bd-btn-ghost {
+            background: transparent;
+            color: var(--green-deep);
+            border: 1px solid rgba(42, 107, 74, 0.3);
+        }
+        .bd-btn-ghost:hover {
+            background: rgba(82, 168, 114, 0.15);
+            border-color: var(--green-mid);
+        }
+
+        /* Feedback */
+        .bd-feedback {
+            margin-top: 0.7rem;
+            padding: 0.55rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            display: none;
+        }
+        .bd-feedback.success {
+            display: block;
+            background: rgba(82, 168, 114, 0.18);
+            color: var(--green-deep);
+            border: 1px solid rgba(82, 168, 114, 0.45);
+        }
+        .bd-feedback.error {
+            display: block;
+            background: rgba(196, 64, 52, 0.1);
+            color: #b83a2e;
+            border: 1px solid rgba(196, 64, 52, 0.35);
+        }
+
+        .bd-empty {
+            text-align: center;
+            color: var(--text-light);
+            padding: 1.5rem;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 0.5rem; }
+            .bd-card { padding: 0.9rem; }
+            .bd-header h1 { font-size: 1.1rem; }
+            .bd-row { gap: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bd-wrap">
+        <div class="bd-header">
+            <h1><i class="fas fa-music"></i> 프리셋 빌더</h1>
+            <div class="bd-userinfo" id="userInfo">
+                <a class="bd-back" href="tools.html">← 도구로</a>
+                <span id="userEmail">로그인 필요</span>
+            </div>
+        </div>
+
+        <!-- Login CTA -->
+        <div class="bd-card bd-loginCTA" id="loginCard">
+            <p>관리자 전용 페이지입니다. 등록된 계정(<code>steveq2568@gmail.com</code>)으로 로그인하세요.</p>
+            <button id="loginBtn"><i class="fab fa-google"></i> Google로 로그인</button>
+            <div class="bd-tip">로그인 후 프리셋 추가/편집/삭제 → DB 즉시 반영 → 공개 페이지에서 바로 사용 가능</div>
+        </div>
+
+        <!-- Editor -->
+        <div id="editorCard" style="display:none;">
+            <div class="bd-card">
+                <div class="bd-section-label">프리셋 목록</div>
+                <div class="bd-list" id="presetList">
+                    <div class="bd-empty">로딩중…</div>
+                </div>
+                <button class="bd-btn bd-btn-ghost" id="newBtn">
+                    <i class="fas fa-plus"></i> 새 프리셋
+                </button>
+            </div>
+
+            <div class="bd-card" id="editForm" style="display:none;">
+                <div class="bd-section-label" id="formTitle">새 프리셋</div>
+
+                <div class="bd-row">
+                    <div class="bd-field">
+                        <label>노래 이름 *</label>
+                        <input type="text" id="fName" placeholder="예: Let It Be">
+                    </div>
+                    <div class="bd-field">
+                        <label>아티스트</label>
+                        <input type="text" id="fArtist" placeholder="예: Beatles">
+                    </div>
+                </div>
+
+                <div class="bd-row">
+                    <div class="bd-field" style="flex: 0 0 90px;">
+                        <label>BPM</label>
+                        <input type="number" id="fBpm" min="40" max="240" value="90">
+                    </div>
+                    <div class="bd-field" style="flex: 0 0 90px;">
+                        <label>정렬 순서</label>
+                        <input type="number" id="fSort" value="0">
+                    </div>
+                    <div class="bd-field" style="flex: 1 1 auto;">
+                        <label>마디</label>
+                        <div class="bd-pills" id="fBars">
+                            <button class="bd-pill" data-bars="4" type="button">4</button>
+                            <button class="bd-pill" data-bars="8" type="button">8</button>
+                            <button class="bd-pill" data-bars="12" type="button">12</button>
+                            <button class="bd-pill" data-bars="16" type="button">16</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bd-row">
+                    <div class="bd-field">
+                        <label>드럼 리듬</label>
+                        <select id="fRhythm">
+                            <option value="8beat">8비트 A</option>
+                            <option value="8beat2">8비트 B</option>
+                            <option value="4beat">4비트 A</option>
+                            <option value="4beat2">4비트 B</option>
+                            <option value="16beat">16비트 A</option>
+                            <option value="16beat2">16비트 B</option>
+                            <option value="16beatC">16비트 C</option>
+                            <option value="ballad">셔플락</option>
+                        </select>
+                    </div>
+                    <div class="bd-field">
+                        <label>베이스 스타일</label>
+                        <select id="fBassStyle">
+                            <option value="default">기본</option>
+                            <option value="8beat">8비트</option>
+                            <option value="16beat">16비트</option>
+                        </select>
+                    </div>
+                    <div class="bd-field">
+                        <label>피아노 스타일</label>
+                        <select id="fPianoStyle">
+                            <option value="quarter">4분음표</option>
+                            <option value="8beat">8비트</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="bd-section-label" style="margin-top:1.1rem;">코드 진행</div>
+                <div class="bd-chords-wrap">
+                    <div class="bd-chords-grid" id="fChordsHeader">
+                        <div></div>
+                        <div class="bd-chord-header">앞 절반</div>
+                        <div class="bd-chord-header">뒷 절반</div>
+                    </div>
+                    <div class="bd-chords-grid" id="fChords"></div>
+                    <div class="bd-chords-tip">한 마디 안에서 앞/뒤 절반에 코드를 다르게 줄 수 있어요. 뒷 절반을 비우면 앞 절반 코드가 마디 끝까지 이어집니다.</div>
+                </div>
+
+                <div class="bd-actions">
+                    <button class="bd-btn bd-btn-primary" id="saveBtn">
+                        <i class="fas fa-save"></i> 저장
+                    </button>
+                    <button class="bd-btn bd-btn-ghost" id="testBtn">
+                        <i class="fas fa-play"></i> 반주에서 미리보기
+                    </button>
+                    <button class="bd-btn bd-btn-danger" id="deleteBtn" style="display:none;">
+                        <i class="fas fa-trash"></i> 삭제
+                    </button>
+                </div>
+                <div class="bd-feedback" id="feedback"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/dist/umd/supabase.min.js"></script>
+    <script>
+        (function() {
+            'use strict';
+
+            const SUPABASE_URL = 'https://qpcbrqgqylxkgdwoflku.supabase.co';
+            const SUPABASE_KEY = 'sb_publishable_5rr-OZ7Sqjk1nXn59R7XnQ_HInATuSV';
+            const ALLOWED_EMAIL = 'steveq2568@gmail.com';
+
+            const CHROMATIC = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+            let sb = null;
+            let presets = [];
+            let editingId = null;
+            let bars = 4;
+
+            const $ = function(id) { return document.getElementById(id); };
+
+            function escapeHtml(s) {
+                return String(s || '').replace(/[&<>"']/g, function(c) {
+                    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+                });
+            }
+
+            function showFeedback(msg, kind) {
+                const el = $('feedback');
+                el.textContent = msg;
+                el.className = 'bd-feedback ' + kind;
+                if (kind !== 'error') {
+                    setTimeout(function() { el.className = 'bd-feedback'; }, 3500);
+                }
+            }
+
+            // ───── Auth ──────────────────────────────────────────────
+            async function init() {
+                if (!window.supabase) {
+                    showFeedback('Supabase SDK 로드 실패', 'error');
+                    return;
+                }
+                sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                sb.auth.onAuthStateChange(function(event, session) { renderAuth(session); });
+                const { data: { session } } = await sb.auth.getSession();
+                renderAuth(session);
+            }
+
+            function renderAuth(session) {
+                const user = session && session.user;
+                const isAdmin = user && user.email === ALLOWED_EMAIL;
+                $('loginCard').style.display = isAdmin ? 'none' : 'block';
+                $('editorCard').style.display = isAdmin ? 'block' : 'none';
+                if (user) {
+                    $('userEmail').innerHTML = escapeHtml(user.email) +
+                        (isAdmin ? ' <span style="color:var(--green-deep);font-weight:600;">· 관리자</span>' :
+                                   ' <span style="color:#b83a2e;">· 권한 없음</span>') +
+                        ' <button id="logoutBtn">로그아웃</button>';
+                    $('logoutBtn').onclick = logout;
+                } else {
+                    $('userEmail').textContent = '로그인 필요';
+                }
+                if (isAdmin) loadPresets();
+            }
+
+            async function startLogin() {
+                await sb.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: { redirectTo: window.location.href }
+                });
+            }
+            async function logout() { await sb.auth.signOut(); }
+
+            // ───── Data ──────────────────────────────────────────────
+            async function loadPresets() {
+                const res = await sb.from('presets')
+                    .select('*')
+                    .order('sort_order', { ascending: true })
+                    .order('created_at', { ascending: true });
+                if (res.error) {
+                    $('presetList').innerHTML = '<div class="bd-empty">로딩 실패: ' + escapeHtml(res.error.message) + '</div>';
+                    return;
+                }
+                presets = res.data || [];
+                renderList();
+            }
+
+            function renderList() {
+                const list = $('presetList');
+                if (presets.length === 0) {
+                    list.innerHTML = '<div class="bd-empty">아직 프리셋이 없어요. "새 프리셋" 으로 추가해보세요.</div>';
+                    return;
+                }
+                list.innerHTML = '';
+                presets.forEach(function(p) {
+                    const item = document.createElement('div');
+                    item.className = 'bd-list-item' + (p.id === editingId ? ' selected' : '');
+                    item.innerHTML =
+                        '<div>' +
+                            '<span class="bd-list-item-name">' + escapeHtml(p.name) + '</span>' +
+                            (p.artist ? ' <span class="bd-list-item-meta">· ' + escapeHtml(p.artist) + '</span>' : '') +
+                        '</div>' +
+                        '<span class="bd-list-item-meta">' + p.bpm + ' BPM · ' + p.bars + '마디</span>';
+                    item.onclick = function() { loadEdit(p); };
+                    list.appendChild(item);
+                });
+            }
+
+            // ───── Form ──────────────────────────────────────────────
+            function newPreset() {
+                editingId = null;
+                $('formTitle').textContent = '새 프리셋';
+                $('fName').value = '';
+                $('fArtist').value = '';
+                $('fBpm').value = 90;
+                $('fSort').value = (presets.length || 0) * 10;
+                bars = 4;
+                $('fRhythm').value = '8beat';
+                $('fBassStyle').value = 'default';
+                $('fPianoStyle').value = 'quarter';
+                renderBars();
+                renderChords({}, {});
+                $('editForm').style.display = 'block';
+                $('deleteBtn').style.display = 'none';
+                $('feedback').className = 'bd-feedback';
+                renderList();
+                $('fName').focus();
+            }
+
+            function loadEdit(p) {
+                editingId = p.id;
+                $('formTitle').textContent = '편집: ' + p.name;
+                $('fName').value = p.name || '';
+                $('fArtist').value = p.artist || '';
+                $('fBpm').value = p.bpm || 90;
+                $('fSort').value = p.sort_order || 0;
+                bars = p.bars || 4;
+                $('fRhythm').value = p.rhythm || '8beat';
+                $('fBassStyle').value = p.bass_style || 'default';
+                $('fPianoStyle').value = p.piano_style || 'quarter';
+                renderBars();
+                renderChords(p.chords_a || {}, p.chords_b || {});
+                $('editForm').style.display = 'block';
+                $('deleteBtn').style.display = 'inline-flex';
+                $('feedback').className = 'bd-feedback';
+                renderList();
+            }
+
+            function renderBars() {
+                document.querySelectorAll('#fBars .bd-pill').forEach(function(b) {
+                    b.classList.toggle('active', parseInt(b.dataset.bars, 10) === bars);
+                });
+            }
+
+            function renderChords(chordsA, chordsB) {
+                const grid = $('fChords');
+                grid.innerHTML = '';
+                for (let i = 0; i < bars; i++) {
+                    const num = document.createElement('div');
+                    num.className = 'bd-chord-num';
+                    num.textContent = (i + 1);
+                    grid.appendChild(num);
+                    grid.appendChild(makeChordSelect(chordsA[String(i)] || '', i, 'a'));
+                    grid.appendChild(makeChordSelect(chordsB[String(i)] || '', i, 'b'));
+                }
+            }
+
+            function makeChordSelect(value, idx, half) {
+                const sel = document.createElement('select');
+                sel.className = 'bd-chord-cell' + (value ? ' has-value' : '');
+                sel.dataset.idx = idx;
+                sel.dataset.half = half;
+                sel.appendChild(makeOpt('', '—'));
+                CHROMATIC.forEach(function(pc) {
+                    sel.appendChild(makeOpt(pc, pc));
+                    sel.appendChild(makeOpt(pc + 'm', pc + 'm'));
+                });
+                sel.value = value;
+                sel.onchange = function() {
+                    sel.classList.toggle('has-value', !!sel.value);
+                };
+                return sel;
+            }
+
+            function makeOpt(value, text) {
+                const o = document.createElement('option');
+                o.value = value;
+                o.textContent = text;
+                return o;
+            }
+
+            function readChords() {
+                const a = {}, b = {};
+                document.querySelectorAll('#fChords select').forEach(function(sel) {
+                    if (!sel.value) return;
+                    if (sel.dataset.half === 'a') a[sel.dataset.idx] = sel.value;
+                    else b[sel.dataset.idx] = sel.value;
+                });
+                return { a: a, b: b };
+            }
+
+            // ───── Save / Delete ─────────────────────────────────────
+            async function savePreset() {
+                const name = $('fName').value.trim();
+                if (!name) { showFeedback('이름은 필수입니다', 'error'); return; }
+                const chords = readChords();
+                const data = {
+                    name: name,
+                    artist: $('fArtist').value.trim() || null,
+                    bpm: parseInt($('fBpm').value, 10) || 90,
+                    bars: bars,
+                    rhythm: $('fRhythm').value,
+                    bass_style: $('fBassStyle').value,
+                    piano_style: $('fPianoStyle').value,
+                    chords_a: chords.a,
+                    chords_b: chords.b,
+                    sort_order: parseInt($('fSort').value, 10) || 0,
+                };
+                try {
+                    let res;
+                    if (editingId) {
+                        res = await sb.from('presets').update(data).eq('id', editingId).select().single();
+                    } else {
+                        res = await sb.from('presets').insert(data).select().single();
+                    }
+                    if (res.error) throw res.error;
+                    editingId = res.data.id;
+                    $('formTitle').textContent = '편집: ' + res.data.name;
+                    $('deleteBtn').style.display = 'inline-flex';
+                    showFeedback('저장 완료 ✓', 'success');
+                    await loadPresets();
+                } catch (err) {
+                    showFeedback('저장 실패: ' + (err.message || err), 'error');
+                }
+            }
+
+            async function deletePreset() {
+                if (!editingId) return;
+                if (!confirm('이 프리셋을 삭제할까요?')) return;
+                const res = await sb.from('presets').delete().eq('id', editingId);
+                if (res.error) {
+                    showFeedback('삭제 실패: ' + res.error.message, 'error');
+                    return;
+                }
+                showFeedback('삭제됨', 'success');
+                editingId = null;
+                $('editForm').style.display = 'none';
+                await loadPresets();
+            }
+
+            function testInTools() {
+                if (!editingId) {
+                    showFeedback('먼저 저장한 후에 미리보기 가능해요', 'error');
+                    return;
+                }
+                window.open('tools.html?preset=' + editingId + '#backing', '_blank');
+            }
+
+            // ───── Wire up ───────────────────────────────────────────
+            document.addEventListener('DOMContentLoaded', function() {
+                $('loginBtn').onclick = startLogin;
+                $('newBtn').onclick = newPreset;
+                $('saveBtn').onclick = savePreset;
+                $('deleteBtn').onclick = deletePreset;
+                $('testBtn').onclick = testInTools;
+                document.querySelectorAll('#fBars .bd-pill').forEach(function(b) {
+                    b.onclick = function() {
+                        bars = parseInt(b.dataset.bars, 10);
+                        renderBars();
+                        const cur = readChords();
+                        renderChords(cur.a, cur.b);
+                    };
+                });
+                init();
+            });
+        })();
+    </script>
+</body>
+</html>
