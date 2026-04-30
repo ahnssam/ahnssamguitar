@@ -2,6 +2,19 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <!-- OAuth hash 즉시 청소 — auth.js SDK 로드 전에 주소창의 #access_token=... 정리 -->
+    <script>
+    (function() {
+        try {
+            var h = window.location.hash || '';
+            if (h.indexOf('access_token=') !== -1) {
+                window.__pendingOAuthHash = h;
+                var clean = window.location.origin + window.location.pathname + (window.location.search || '');
+                window.history.replaceState(null, '', clean);
+            }
+        } catch (e) {}
+    })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#e2f5ea">
     <meta name="robots" content="noindex, nofollow">

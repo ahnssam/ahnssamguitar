@@ -2,6 +2,22 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <!-- OAuth hash 즉시 청소 — Supabase 콜백 URL 의 #access_token=... 을
+         SDK 로드 전에 주소창에서 즉시 제거. 토큰은 window.__pendingOAuthHash
+         에 보존됐다가 auth.js boot 에서 setSession 으로 처리됨.
+         이 스크립트는 다른 어떤 스크립트보다도 먼저 실행돼야 함. -->
+    <script>
+    (function() {
+        try {
+            var h = window.location.hash || '';
+            if (h.indexOf('access_token=') !== -1) {
+                window.__pendingOAuthHash = h;
+                var clean = window.location.origin + window.location.pathname + (window.location.search || '');
+                window.history.replaceState(null, '', clean);
+            }
+        } catch (e) {}
+    })();
+    </script>
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-B1HS5NH4L1"></script>
     <script>

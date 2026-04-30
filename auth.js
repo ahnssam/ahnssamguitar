@@ -916,8 +916,13 @@ nav.scrolled .auth-btn:hover {
         debugLog('SDK loaded, client created (flow=implicit)');
         debugLog('URL: ' + window.location.href.slice(0, 200));
 
-        // Explicitly parse any OAuth callback tokens in the current URL.
-        const hashStr = window.location.hash || '';
+        // OAuth hash 처리 — URL 의 hash 또는 페이지 부팅 시 미리 캐치한 글로벌
+        // 변수(window.__pendingOAuthHash) 양쪽에서 받음.
+        //   __pendingOAuthHash 는 index.html / tools.html 의 <head> 안 인라인
+        //   스크립트가 SDK 로드 전에 hash 를 즉시 청소·보존해 두는 값. 이렇게
+        //   하면 사용자 주소창에 토큰이 노출되는 시간을 거의 0 으로 줄임.
+        const earlyHash = (typeof window.__pendingOAuthHash === 'string') ? window.__pendingOAuthHash : '';
+        const hashStr = earlyHash || (window.location.hash || '');
         const searchStr = window.location.search || '';
         const hasOAuthHash = hashStr.indexOf('access_token=') !== -1;
         try {
@@ -974,6 +979,8 @@ nav.scrolled .auth-btn:hover {
                                      (window.location.search || '');
                     window.history.replaceState(null, '', cleanUrl);
                 } catch (e) {}
+                // 글로벌 보존 변수도 사용 후 제거 — 메모리 / 보안 청소
+                try { delete window.__pendingOAuthHash; } catch (e) { window.__pendingOAuthHash = null; }
             } catch (e) {
                 debugLog('Hash priority handler threw: ' + (e && e.message));
             }
