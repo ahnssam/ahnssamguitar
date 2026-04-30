@@ -3862,23 +3862,24 @@
             /* play-btn 과 50:50 비율로 — 둘 다 flex:1 */
             flex: 1;
             display: flex;
-            flex-direction: column;
             background: rgba(42, 107, 74, 0.04);
             color: rgba(26, 36, 33, 0.25);
             border: 1.5px solid rgba(42, 107, 74, 0.1);
             padding: 0.85rem 0.8rem;
-            /* 피드백 라인이 떴을 때(2줄) 높이에 맞춰 처음부터 고정 */
             min-height: 72px;
             border-radius: 12px;
             cursor: default;
             font-size: 0.85rem;
             font-family: inherit;
+            /* 액션(아이콘+라벨)은 항상 정중앙. 피드백 텍스트는 아래에서
+               position:absolute 로 위쪽에 띄워 레이아웃에 영향 안 줌. */
             align-items: center;
             justify-content: center;
-            gap: 0.18rem;
-            transition: all 0.3s;
+            transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
             pointer-events: none;
             outline: none;
+            position: relative;   /* feedback absolute 의 containing block */
+            overflow: hidden;     /* 긴 피드백이 버튼 밖으로 새어나가지 않게 */
         }
         .et-next-btn:focus { outline: none; }
         /* .show 가 없을 땐 어떤 상태(:hover, :focus, :active)에서도
@@ -3958,22 +3959,25 @@
             gap: 0.4rem;
             white-space: nowrap;
         }
-        /* 피드백 라인 — 정답 확인 후 위쪽에 표시 (작은 글씨, 강조 색).
-           ★ 빈 상태든 텍스트가 있는 상태든 항상 1줄 높이를 차지하도록 고정 →
-           버튼 전체 높이가 흔들리지 않아 액션 라인(아이콘 + 라벨) 위치도 변하지 않음.
-           긴 피드백이 들어오면 ellipsis 로 잘라서 다음 줄 이동 자체를 차단. */
+        /* 피드백 라인 — 정답 확인 후 표시 (작은 글씨, 강조 색).
+           ★ position: absolute 로 띄워서 버튼 콘텐츠 레이아웃에 전혀 영향 없게 함.
+           - 빈 상태: 보이는 게 없고 액션은 정중앙
+           - 채워진 상태: 위쪽에 1줄 텍스트가 떠 있고 액션은 여전히 정중앙
+           이렇게 하면 정답확인 누를 때 액션 위치가 흔들리지 않고, 버튼들 전체가
+           살짝 내려갔다가 돌아오는 현상도 사라진다. */
         .et-next-btn .et-next-feedback {
+            position: absolute;
+            top: 0.45rem;
+            left: 0.5rem;
+            right: 0.5rem;
             font-size: 0.74rem;
             font-weight: 700;
             line-height: 1.25;
             text-align: center;
-            min-width: 0;
-            max-width: 100%;
-            min-height: 1.25em;   /* 빈 상태에서도 1줄 공간 항상 확보 */
-            max-height: 1.25em;   /* 줄바꿈 방지 — 항상 정확히 1줄 */
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            pointer-events: none;
         }
         /* 라이트 모드 — 정답확인 활성 상태에서 그린 배경 위 → 밝은 텍스트로 가독성 확보 */
         .et-next-btn .et-next-feedback.correct {
