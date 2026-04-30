@@ -718,6 +718,117 @@
     text-transform: uppercase;
     margin: 1.4rem 0 0.6rem;
 }
+/* ── 마이페이지 — 연습 시간 섹션 ─────────────────────────── */
+.mp-practice-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem; margin-bottom: 0.9rem;
+}
+.mp-practice-stat {
+    padding: 0.7rem 0.6rem; text-align: center;
+    background: rgba(82, 168, 114, 0.08);
+    border: 1px solid rgba(82, 168, 114, 0.18);
+    border-radius: 11px;
+}
+.mp-practice-stat-value {
+    font-size: 1.1rem; font-weight: 800;
+    color: var(--green-deep, #2a6b4a); line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+.mp-practice-stat-label {
+    font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em;
+    color: rgba(26, 36, 33, 0.55); margin-top: 0.2rem;
+    text-transform: uppercase;
+}
+.mp-practice-sub-title {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em;
+    color: rgba(26, 36, 33, 0.5);
+    text-transform: uppercase;
+    margin: 0.9rem 0 0.45rem;
+}
+.mp-practice-empty {
+    padding: 1rem; text-align: center;
+    font-size: 0.85rem; color: rgba(26, 36, 33, 0.5);
+    background: rgba(26, 36, 33, 0.03);
+    border: 1px dashed rgba(26, 36, 33, 0.12);
+    border-radius: 10px;
+}
+/* 도구별 가로 막대 */
+.mp-tool-list {
+    display: flex; flex-direction: column; gap: 0.3rem;
+    background: rgba(26, 36, 33, 0.03);
+    border: 1px solid rgba(26, 36, 33, 0.07);
+    border-radius: 11px;
+    padding: 0.6rem 0.7rem;
+}
+.mp-tool-row {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr auto;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+}
+.mp-tool-name {
+    color: rgba(26, 36, 33, 0.75);
+    font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mp-tool-bar {
+    height: 8px;
+    background: rgba(26, 36, 33, 0.06);
+    border-radius: 4px; overflow: hidden;
+}
+.mp-tool-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green-mid, #62b682), var(--green-deep, #2a6b4a));
+    border-radius: 4px;
+    transition: width 0.25s ease;
+}
+.mp-tool-time {
+    font-variant-numeric: tabular-nums;
+    color: rgba(26, 36, 33, 0.65);
+    font-weight: 600;
+    min-width: 4rem; text-align: right;
+}
+/* 최근 7일 세로 막대 차트 */
+.mp-day-chart {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 0.35rem;
+    background: rgba(26, 36, 33, 0.03);
+    border: 1px solid rgba(26, 36, 33, 0.07);
+    border-radius: 11px;
+    padding: 0.6rem 0.6rem 0.5rem;
+    margin-bottom: 0.4rem;
+}
+.mp-day-col {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 0.2rem;
+    min-width: 0;
+}
+.mp-day-bar {
+    width: 100%; height: 60px;
+    background: rgba(26, 36, 33, 0.05);
+    border-radius: 4px;
+    position: relative; overflow: hidden;
+    display: flex; align-items: flex-end;
+}
+.mp-day-fill {
+    width: 100%;
+    background: linear-gradient(180deg, var(--green-mid, #62b682), var(--green-deep, #2a6b4a));
+    border-radius: 4px;
+    transition: height 0.25s ease;
+    min-height: 0;
+}
+.mp-day-num {
+    font-size: 0.78rem; font-weight: 700;
+    color: rgba(26, 36, 33, 0.7);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+.mp-day-dow {
+    font-size: 0.64rem; font-weight: 500;
+    color: rgba(26, 36, 33, 0.45);
+    line-height: 1;
+}
 .mp-session-list {
     display: flex; flex-direction: column;
     background: rgba(26, 36, 33, 0.03);
@@ -918,6 +1029,29 @@
 :root[data-theme="dark"] .mp-stat-value {
     color: #e8f0ec;
 }
+/* 마이페이지 — 연습 시간 섹션 다크모드 */
+:root[data-theme="dark"] .mp-practice-stat {
+    background: rgba(82, 168, 114, 0.14);
+    border-color: rgba(180, 230, 200, 0.2);
+}
+:root[data-theme="dark"] .mp-practice-stat-value { color: #b8e6c8; }
+:root[data-theme="dark"] .mp-practice-stat-label,
+:root[data-theme="dark"] .mp-practice-sub-title {
+    color: rgba(232, 240, 236, 0.6);
+}
+:root[data-theme="dark"] .mp-tool-list,
+:root[data-theme="dark"] .mp-day-chart,
+:root[data-theme="dark"] .mp-practice-empty {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(180, 230, 200, 0.12);
+    color: rgba(232, 240, 236, 0.78);
+}
+:root[data-theme="dark"] .mp-tool-name { color: rgba(232, 240, 236, 0.78); }
+:root[data-theme="dark"] .mp-tool-time { color: rgba(232, 240, 236, 0.65); }
+:root[data-theme="dark"] .mp-tool-bar,
+:root[data-theme="dark"] .mp-day-bar { background: rgba(255, 255, 255, 0.06); }
+:root[data-theme="dark"] .mp-day-num { color: rgba(232, 240, 236, 0.78); }
+:root[data-theme="dark"] .mp-day-dow { color: rgba(232, 240, 236, 0.5); }
 :root[data-theme="dark"] .rank-mode-tabs,
 :root[data-theme="dark"] .mp-mode-tabs {
     background: rgba(255, 255, 255, 0.05);
@@ -2061,11 +2195,17 @@
         body.innerHTML = '<div class="rank-empty">불러오는 중…</div>';
         const client = sb();
         if (!client) { body.innerHTML = '<div class="rank-empty">준비 중…</div>'; return; }
-        const { data, error } = await client.rpc('get_my_stats');
-        if (error) {
+        // 두 RPC 동시 호출 — 기존 마이페이지 통계 + 새 연습시간 통계
+        const [statsRes, practiceRes] = await Promise.all([
+            client.rpc('get_my_stats'),
+            client.rpc('get_practice_stats').catch(function() { return { data: null, error: { message: 'rpc_missing' } }; }),
+        ]);
+        if (statsRes.error) {
             body.innerHTML = '<div class="rank-empty">정보를 불러올 수 없어요.</div>';
             return;
         }
+        const data = statsRes.data;
+        const practice = (practiceRes && practiceRes.data) || null;
         const p = data.profile || {};
         const s = data.stats || {};
         const recent = data.recent || [];
@@ -2095,6 +2235,8 @@
                '아직 시작 단계에요. 하루 한 세션도 큰 변화를 만들어요.')
             : '첫 라운드를 시작해보세요.';
 
+        const practiceHtml = renderPracticeSection(practice);
+
         body.innerHTML = `
 <div class="mp-header">
     <div class="mp-avatar">${avatar}</div>
@@ -2119,6 +2261,7 @@
     </div>
 </div>
 <div class="mp-encouragement">${encouragement}</div>
+${practiceHtml}
 <div class="mp-section-title">최근 10 라운드</div>
 ${recentHtml}
 <div class="mp-purchase">
@@ -2134,6 +2277,102 @@ ${recentHtml}
 `;
         document.getElementById('mpEditNickBtn').addEventListener('click', onMpEditNick);
         document.getElementById('mpDeleteBtn').addEventListener('click', onMpDelete);
+    }
+
+    // ----------------------------------------------------------------
+    // Practice 섹션 — 마이페이지에 표시할 "오늘/주/누적 + 도구별 + 최근 7일"
+    // ----------------------------------------------------------------
+    const PRACTICE_TOOL_LABELS = {
+        tuner: '튜너', metronome: '메트로놈', taptempo: '탭템포',
+        capo: '카포', chords: '코드 라이브러리', scales: '스케일',
+        fretboard: '프렛보드', piano: '피아노', eartraining: '음정 트레이닝',
+    };
+
+    function fmtDuration(sec) {
+        sec = Math.max(0, parseInt(sec || 0, 10));
+        if (sec === 0) return '0분';
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        if (h > 0 && m > 0) return h + '시간 ' + m + '분';
+        if (h > 0) return h + '시간';
+        if (m > 0) return m + '분';
+        return sec + '초';
+    }
+
+    function lastNDays(n) {
+        const out = [];
+        const today = new Date();
+        // KST 기준 — 클라이언트가 KST 라고 가정 (서버 RPC 와 정렬)
+        for (let i = n - 1; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(today.getDate() - i);
+            const y = d.getFullYear();
+            const mo = String(d.getMonth() + 1).padStart(2, '0');
+            const da = String(d.getDate()).padStart(2, '0');
+            out.push({ key: y + '-' + mo + '-' + da, date: d });
+        }
+        return out;
+    }
+
+    function renderPracticeSection(p) {
+        if (!p) {
+            // RPC 가 없는 경우 — 스키마 미적용 환경에선 섹션 숨김
+            return '';
+        }
+        const today = parseInt(p.today_sec || 0, 10);
+        const week  = parseInt(p.week_sec  || 0, 10);
+        const total = parseInt(p.total_sec || 0, 10);
+        const byTool = (p.by_tool || []).filter(function(t) { return t.duration_sec > 0; });
+        const days = lastNDays(7);
+        const dayMap = {};
+        (p.last_7days || []).forEach(function(d) { dayMap[d.day] = parseInt(d.duration_sec || 0, 10); });
+        const dayMax = Math.max(1, Math.max.apply(null, days.map(function(d) { return dayMap[d.key] || 0; })));
+        const toolMax = Math.max(1, Math.max.apply(null, byTool.map(function(t) { return t.duration_sec; })));
+
+        // 가로 막대 — 도구별
+        const toolBars = byTool.map(function(t) {
+            const pct = Math.round(t.duration_sec * 100 / toolMax);
+            const label = PRACTICE_TOOL_LABELS[t.tool_name] || t.tool_name;
+            return (
+                '<div class="mp-tool-row">' +
+                  '<div class="mp-tool-name">' + escapeHtml(label) + '</div>' +
+                  '<div class="mp-tool-bar"><div class="mp-tool-fill" style="width:' + pct + '%"></div></div>' +
+                  '<div class="mp-tool-time">' + fmtDuration(t.duration_sec) + '</div>' +
+                '</div>'
+            );
+        }).join('');
+
+        // 세로 막대 — 최근 7일
+        const dayBars = days.map(function(d) {
+            const sec = dayMap[d.key] || 0;
+            const pct = Math.round(sec * 100 / dayMax);
+            const dow = ['일','월','화','수','목','금','토'][d.date.getDay()];
+            const dd  = d.date.getDate();
+            return (
+                '<div class="mp-day-col" title="' + d.key + ' · ' + fmtDuration(sec) + '">' +
+                  '<div class="mp-day-bar"><div class="mp-day-fill" style="height:' + pct + '%"></div></div>' +
+                  '<div class="mp-day-num">' + dd + '</div>' +
+                  '<div class="mp-day-dow">' + dow + '</div>' +
+                '</div>'
+            );
+        }).join('');
+
+        const toolBlock = byTool.length === 0
+            ? '<div class="mp-practice-empty">아직 도구 사용 기록이 없어요. 도구를 켜고 연습하면 자동으로 시간이 쌓여요.</div>'
+            : '<div class="mp-tool-list">' + toolBars + '</div>';
+
+        return (
+            '<div class="mp-section-title">연습 시간</div>' +
+            '<div class="mp-practice-grid">' +
+                '<div class="mp-practice-stat"><div class="mp-practice-stat-value">' + fmtDuration(today) + '</div><div class="mp-practice-stat-label">오늘</div></div>' +
+                '<div class="mp-practice-stat"><div class="mp-practice-stat-value">' + fmtDuration(week)  + '</div><div class="mp-practice-stat-label">최근 7일</div></div>' +
+                '<div class="mp-practice-stat"><div class="mp-practice-stat-value">' + fmtDuration(total) + '</div><div class="mp-practice-stat-label">전체 누적</div></div>' +
+            '</div>' +
+            '<div class="mp-practice-sub-title">최근 7일</div>' +
+            '<div class="mp-day-chart">' + dayBars + '</div>' +
+            '<div class="mp-practice-sub-title">도구별</div>' +
+            toolBlock
+        );
     }
 
     async function onMpEditNick() {
@@ -2181,11 +2420,171 @@ ${recentHtml}
         const origSwitch = window.switchTool;
         if (typeof origSwitch !== 'function') return;
         window.switchTool = function (tool) {
+            // Practice tracker — 도구 전환 시 이전 세션 마감 + 새 세션 시작
+            try { practiceOnToolChange(tool); } catch (e) {}
             const ret = origSwitch.apply(this, arguments);
             if (tool === 'ranking') loadRankings();
             else if (tool === 'mypage') loadMypage();
             return ret;
         };
+    }
+
+    // ================================================================
+    // Practice tracker — 도구별 사용 시간 누적
+    // ----------------------------------------------------------------
+    //   · switchTool 후크에서 도구가 바뀔 때마다 이전 세션을 닫고 새 세션 시작
+    //   · 페이지 hide / unload 시 sendBeacon 으로 안전 마감
+    //   · 5초 이하 세션은 무시 (잠깐 들어왔다 나간 경우)
+    //   · 한 세션 최대 4시간 (서버 check 제약과 맞춤)
+    //   · 비로그인 상태면 localStorage 큐에 쌓아뒀다 로그인 시 일괄 전송
+    //   · 로그인 직후·하트비트는 별도 RPC 없이 supabase REST insert 만 사용
+    // ================================================================
+    const PRACTICE_TOOLS = new Set([
+        'tuner','metronome','taptempo','capo',
+        'chords','scales','fretboard','piano',
+        'eartraining'
+    ]);
+    const PRACTICE_MIN_SEC = 5;          // 5초 이하 무시
+    const PRACTICE_MAX_SEC = 14400;      // 4시간 캡 (서버 check 와 일치)
+    const PRACTICE_QUEUE_KEY = 'ahnssam_practice_queue_v1';
+
+    let _practiceCurrent = null;   // { tool, startedAt: Date, lastActiveAt: Date }
+    let _practiceFlushing = false;
+
+    function practiceQueueRead() {
+        try {
+            const raw = window.localStorage.getItem(PRACTICE_QUEUE_KEY);
+            if (!raw) return [];
+            const arr = JSON.parse(raw);
+            return Array.isArray(arr) ? arr : [];
+        } catch (e) { return []; }
+    }
+    function practiceQueueWrite(arr) {
+        try { window.localStorage.setItem(PRACTICE_QUEUE_KEY, JSON.stringify(arr || [])); } catch (e) {}
+    }
+    function practiceQueueAdd(rec) {
+        const q = practiceQueueRead();
+        q.push(rec);
+        // 1000건 넘어가면 오래된 것부터 자른다 (이상치 방어)
+        if (q.length > 1000) q.splice(0, q.length - 1000);
+        practiceQueueWrite(q);
+    }
+
+    // 세션 종료 — duration 산출 → 5초 이상이면 저장 (또는 큐)
+    function practiceEndCurrent(opts) {
+        opts = opts || {};
+        const cur = _practiceCurrent;
+        if (!cur) return;
+        _practiceCurrent = null;
+        const ended = opts.endedAt instanceof Date ? opts.endedAt : new Date();
+        const ms = ended.getTime() - cur.startedAt.getTime();
+        const sec = Math.max(0, Math.floor(ms / 1000));
+        if (sec < PRACTICE_MIN_SEC) return;
+        const dur = Math.min(sec, PRACTICE_MAX_SEC);
+        const rec = {
+            tool_name: cur.tool,
+            started_at: cur.startedAt.toISOString(),
+            ended_at: ended.toISOString(),
+            duration_sec: dur,
+        };
+        const user = currentUser();
+        if (!user) {
+            practiceQueueAdd(rec);
+            return;
+        }
+        // 로그인 상태 — 즉시 insert 시도, 실패하면 큐에 보관
+        const client = sb();
+        if (!client) { practiceQueueAdd(rec); return; }
+        try {
+            client.from('practice_sessions').insert(rec).then(function(res) {
+                if (res && res.error) {
+                    console.warn('[practice] insert failed, queueing', res.error);
+                    practiceQueueAdd(rec);
+                }
+            }).catch(function() { practiceQueueAdd(rec); });
+        } catch (e) {
+            practiceQueueAdd(rec);
+        }
+    }
+
+    // 세션 시작 — 도구가 PRACTICE_TOOLS 안에 있을 때만
+    function practiceStart(tool) {
+        if (!tool || !PRACTICE_TOOLS.has(tool)) { _practiceCurrent = null; return; }
+        const now = new Date();
+        _practiceCurrent = { tool: tool, startedAt: now, lastActiveAt: now };
+    }
+
+    function practiceOnToolChange(tool) {
+        // 이전 세션 마감
+        practiceEndCurrent();
+        // 새 도구가 트래킹 대상이면 새 세션 시작
+        practiceStart(tool);
+    }
+
+    // visibilitychange / pagehide 시 즉시 마감 — 모바일 앱 전환·탭 닫기 등 대응
+    function practiceBindLifecycle() {
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') {
+                // 마감하되, 탭이 다시 보이면 (visible) 같은 도구로 새 세션 시작
+                const tool = _practiceCurrent && _practiceCurrent.tool;
+                practiceEndCurrent();
+                _pendingResume = tool;
+            } else if (document.visibilityState === 'visible' && _pendingResume) {
+                const t = _pendingResume;
+                _pendingResume = null;
+                if (PRACTICE_TOOLS.has(t)) practiceStart(t);
+                // 비로그인 상태로 쌓였던 큐가 있고 지금 로그인이라면 flush 시도
+                practiceFlushQueue();
+            }
+        });
+        // pagehide 는 모바일 사파리 / 일부 브라우저에서 더 잘 잡힘 (beforeunload 보다)
+        window.addEventListener('pagehide', function() { practiceEndCurrent(); });
+        // beforeunload — 데스크톱 일반 unload
+        window.addEventListener('beforeunload', function() { practiceEndCurrent(); });
+    }
+    let _pendingResume = null;
+
+    // 큐에 쌓인 익명 / 실패 세션을 일괄 전송
+    async function practiceFlushQueue() {
+        if (_practiceFlushing) return;
+        const user = currentUser();
+        if (!user) return;
+        const client = sb();
+        if (!client) return;
+        const q = practiceQueueRead();
+        if (q.length === 0) return;
+        _practiceFlushing = true;
+        try {
+            // 한 번에 너무 많이 보내지 않도록 묶어서 (50건씩)
+            for (let i = 0; i < q.length; i += 50) {
+                const batch = q.slice(i, i + 50);
+                const { error } = await client.from('practice_sessions').insert(batch);
+                if (error) {
+                    console.warn('[practice] flush batch failed', error);
+                    // 실패한 batch 는 큐에 남기고 중단
+                    practiceQueueWrite(q.slice(i));
+                    _practiceFlushing = false;
+                    return;
+                }
+            }
+            practiceQueueWrite([]);  // 모두 성공 → 큐 비움
+        } catch (e) {
+            console.warn('[practice] flush threw', e);
+        } finally {
+            _practiceFlushing = false;
+        }
+    }
+
+    // 초기 도구 (페이지 로드 직후 active 인 패널) 로 세션 시작
+    function practiceInitFromActivePanel() {
+        try {
+            const active = document.querySelector('.tool-panel.active');
+            if (!active) return;
+            const id = active.id || '';
+            // panelId → tool name (panelId 가 "<tool>Panel" 컨벤션을 따름)
+            const tool = id.replace(/Panel$/, '');
+            if (PRACTICE_TOOLS.has(tool)) practiceStart(tool);
+        } catch (e) {}
     }
 
     // Re-render the active panel when auth state settles. Without this,
@@ -2248,6 +2647,8 @@ ${recentHtml}
         renderRankingsShell();
         renderMypageShell();
         installSwitchToolHook();
+        practiceBindLifecycle();
+        practiceInitFromActivePanel();
 
         // Expose API for tools.html hooks + UI code
         window.earSession = {
@@ -2258,6 +2659,11 @@ ${recentHtml}
         };
         window.earRanking = { load: loadRankings };
         window.earMypage = { load: loadMypage };
+        window.practiceTracker = {
+            flushQueue: practiceFlushQueue,
+            endCurrent: practiceEndCurrent,
+            queueSize: () => practiceQueueRead().length,
+        };
 
         waitForAuth(() => {
             const sbClient = sb();
@@ -2265,13 +2671,17 @@ ${recentHtml}
             (async () => {
                 try {
                     const { data } = await sbClient.auth.getSession();
-                    if (data.session) checkAndPromptNickname();
+                    if (data.session) {
+                        checkAndPromptNickname();
+                        practiceFlushQueue();   // 익명 시절 쌓인 큐 즉시 전송
+                    }
                 } catch (e) {}
             })();
             // Listen for future auth state changes
             sbClient.auth.onAuthStateChange((event, session) => {
                 if (event === 'SIGNED_IN' && session) {
                     setTimeout(checkAndPromptNickname, 600);
+                    setTimeout(practiceFlushQueue, 800);
                 }
             });
         });
