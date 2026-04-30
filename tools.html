@@ -7240,7 +7240,7 @@
         const TOOL_HELP_TEXT = {
             tuner: '기기 마이크로 들어오는 소리의 음높이를 분석해 정확한 튜닝을 알려줍니다. 기타·베이스·우쿨렐레·바이올린 모두 지원해요.',
             metronome: '메트로놈 : BPM에 맞춰 클릭이나 목소리(1/2/3/4)가 나옵니다. 박자(2/4·3/4·4/4·6/8) 기준점을 전환 가능.\n\n드럼 : BPM에 맞춰 드럼 리듬이 재생됩니다. 8비트·16비트·셔플락 등 자주 쓰이는 패턴 모음.\n\n탭 BPM: 박자에 맞춰 키보드/버튼 누르면 BPM 자동 측정.',
-            backing: '코드 진행을 짜서 드럼 + 베이스 + 피아노 자동 반주를 들을 수 있어요.\n\n• 마디: 4 / 8 / 12 / 16 마디 — 한 마디 당 두 개까지 코드 입력. 마디 번호를 드래그하면 그 구간만 반복.\n\n• 코드 입력: 픽커(♯/♭, 장/단, 7·m7·M7·m7♭5·dim7 4화음 칩) 또는 직접입력 모드(타이핑) — 상단 토글로 전환.\n\n• 프리셋: 검색·드롭다운으로 노래별 셋팅 한 번에 적용. 정렬을 누르면 가나다·난이도·장르별 서브 필터가 펼쳐집니다.\n\n• 예비박: 토글 ON 시 시작 전 4박자 하이햇 카운트인.\n\n• 베이스/피아노 스타일: 드럼과 별도로 8/16비트 등 선택 가능. 우측 믹서로 각 악기 볼륨 조절.',
+            backing: '코드 진행을 짜서 드럼 + 베이스 + 피아노 자동 반주를 들을 수 있어요.\n\n• 마디: 4 / 8 / 12 / 16 마디 — 한 마디 당 두 개까지 코드 입력. 마디 번호를 드래그하면 그 구간만 반복.\n\n• 코드 입력: 픽커(♯/♭, 장/단, 7·m7·M7·m7♭5·dim7 4화음 칩) 또는 직접입력 모드(타이핑) — 상단 토글로 전환.\n  · 직접입력은 sus4, add9, 6, m6, 9, m9, M9, 11, 13, 7b9, 7#9, 7b13 같은 확장 코드까지 그대로 받아 보이싱 자동 생성.\n\n• 프리셋: 검색·드롭다운으로 노래별 셋팅 한 번에 적용. 정렬을 누르면 가나다·난이도·장르별 서브 필터가 펼쳐집니다.\n\n• 예비박: 토글 ON 시 시작 전 4박자 하이햇 카운트인.\n\n• 베이스/피아노 스타일: 드럼과 별도로 8/16비트 등 선택 가능. 우측 믹서로 각 악기 볼륨 조절.',
             eartraining: '두 음 간격이나 코드를 듣고 맞히는 훈련. 정답이 누적되면 랭킹에 반영돼요. 절대음감보다 상대음감 훈련에 효과적이에요.',
             eartraining_pitch:    '음정을 듣고 무슨 음정인지 맞추는 연습이에요. 어려움 난이도부터는 샵(♯) 음계까지 함께 출제됩니다.',
             eartraining_interval: '낮은 음과 높은 음 사이 간격을 맞추는 연습이에요. 절대음감 없이도 음악을 분석할 수 있게 해주는 상대음감 트레이닝의 핵심 방식.',
@@ -8598,19 +8598,77 @@
                 return (pc in flatMap) ? flatMap[pc] : -1;
             }
 
-            // 코드 이름(예: 'C', 'Am', 'CM7', 'Cm7', 'Bbm7♭5')을 받아 pitch-class 집합 반환.
-            //   triad: 1, 3(또는 ♭3), 5
-            //   7    : 1, 3, 5, ♭7        (도미넌트 7 — 항상 메이저 기반)
-            //   m7   : 1, ♭3, 5, ♭7       (마이너 7)
-            //   M7   : 1, 3(또는 ♭3), 5, 7
-            //   m7♭5: 1, ♭3, ♭5, ♭7
-            //   dim  : 1, ♭3, ♭5          (레거시 표기 호환)
-            //   dim7 : 1, ♭3, ♭5, ♭♭7
+            // ─── 확장 코드 suffix → 반음 오프셋 테이블 ───────────────
+            // 음정 테스트 지옥 난이도의 16종 + 자주 쓰이는 추가 변형들.
+            // 직접입력으로 'C9', 'Cm7b9', 'C7b13', 'Csus4' 같은 코드를
+            // 입력하면 피아노 보이싱이 텐션까지 포함해서 자동으로 깔린다.
+            //
+            // 키는 root 뒤 부분(예: 'C9' 의 '9'). pitch class 는 mod 12 라
+            // 9th(2), 13th(9) 같은 텐션은 옥타브 위에서 보이스 리딩이 골라줌.
+            const EXTENDED_CHORD_PCS = {
+                // sus / aug / power / add
+                'sus4':    [0, 5, 7],
+                'sus2':    [0, 2, 7],
+                'sus':     [0, 5, 7],
+                'aug':     [0, 4, 8],
+                '+':       [0, 4, 8],
+                '5':       [0, 7],
+                'add9':    [0, 4, 7, 2],
+                'madd9':   [0, 3, 7, 2],
+                'add11':   [0, 4, 7, 5],
+                // 6
+                '6':       [0, 4, 7, 9],
+                'm6':      [0, 3, 7, 9],
+                '6/9':     [0, 4, 7, 9, 2],
+                // 9 / 11 / 13 — 재즈 보이싱 관행대로 perfect-5 (7) 생략.
+                // mod-12 pc 라 옥타브를 보이싱 알고리즘이 알아서 고름. 노트 수가 적어
+                // 마디 간 음역대 변동이 더 자연스러움.
+                '9':       [0, 4, 10, 2],
+                'm9':      [0, 3, 10, 2],
+                'M9':      [0, 4, 11, 2],
+                'maj9':    [0, 4, 11, 2],
+                'mM9':     [0, 3, 11, 2],
+                '11':      [0, 4, 10, 2, 5],
+                'm11':     [0, 3, 10, 2, 5],
+                '13':      [0, 4, 10, 2, 9],
+                'm13':     [0, 3, 10, 2, 9],
+                'M13':     [0, 4, 11, 2, 9],
+                'maj13':   [0, 4, 11, 2, 9],
+                // 텐션 변경 (b/#)
+                '7b9':     [0, 4, 7, 10, 1],
+                '7#9':     [0, 4, 7, 10, 3],
+                '7b5':     [0, 4, 6, 10],
+                '7#5':     [0, 4, 8, 10],
+                '7b13':    [0, 4, 7, 10, 8],
+                'M7#11':   [0, 4, 7, 11, 6],
+                'maj7#11': [0, 4, 7, 11, 6],
+                'm7b9':    [0, 3, 7, 10, 1],
+                // 디미니시 / 하프디미니시 별칭
+                'ø':       [0, 3, 6, 10],
+                'ø7':      [0, 3, 6, 10],
+                'half-dim':[0, 3, 6, 10]
+            };
+
+            // 코드 이름 → pitch-class 집합.
+            //   1) suffix 가 EXTENDED_CHORD_PCS 에 정확히 매칭되면 그 오프셋 사용
+            //      (♭/♯ 유니코드는 b/# 로 정규화 후 룩업)
+            //   2) 그 외 케이스는 parseChordName 의 extension 기반 폴백
+            //      (트라이어드 / 7 / m7 / M7 / m7♭5 / dim / dim7)
             function chordPcsFromName(chordName) {
+                if (!chordName) return null;
+                var m = String(chordName).match(/^([A-G][#b]?)(.*)$/);
+                if (!m) return null;
+                var rIdx = _pcToIdx(m[1]);
+                if (rIdx < 0) return null;
+                var rest = (m[2] || '').trim();
+                // 유니코드 ♭/♯ → ASCII b/# 로 정규화 (룩업 일관성)
+                var restNorm = rest.replace(/♭/g, 'b').replace(/♯/g, '#');
+                if (EXTENDED_CHORD_PCS[restNorm]) {
+                    return EXTENDED_CHORD_PCS[restNorm].map(function(s) { return (rIdx + s) % 12; });
+                }
+                // 폴백 — 기존 parseChordName 기반 처리
                 var info = parseChordName(chordName);
                 if (!info.root) return null;
-                var rIdx = _pcToIdx(info.root);
-                if (rIdx < 0) return null;
                 var ext = info.extension || 'none';
                 var semis;
                 if (ext === 'dim') {
@@ -8682,27 +8740,37 @@
                     var lo = Math.min.apply(Math, voicing);
                     var hi = Math.max.apply(Math, voicing);
                     var spread = hi - lo;
-                    // 너무 wide (1옥타브 이상) 한 보이싱 페널티
-                    var spreadPenalty = spread > 12 ? (spread - 12) * 2 : 0;
+                    // 1옥타브 이상 spread 페널티 — *4 로 강화 (이전 *2)
+                    var spreadPenalty = spread > 12 ? (spread - 12) * 4 : 0;
+                    // 직전 voicing 과의 sorted-거리 합 (개별 음 voice leading) — *1.5 로 강화
                     var move = 0;
                     if (prev && prev.length === voicing.length) {
                         var s1 = voicing.slice().sort(function(a,b){return a-b;});
                         var s2 = prev.slice().sort(function(a,b){return a-b;});
                         for (var k = 0; k < s1.length; k++) move += Math.abs(s1[k] - s2[k]);
                     }
-                    // 항상 음역 중심 근처로 끌어당기는 페널티 — drift 방지.
-                    // 평균 음높이가 targetCenter 에서 멀수록 penalty 증가.
+                    move *= 1.5;
+                    // 음역 중심으로 끌어당기는 페널티 — *1.2 로 강화 (이전 *0.7)
                     var avg = 0;
                     for (var j = 0; j < voicing.length; j++) avg += voicing[j];
                     avg /= voicing.length;
-                    var centerPull = Math.abs(avg - targetCenter) * 0.7;
-                    var s = move + spreadPenalty + centerPull;
+                    var centerPull = Math.abs(avg - targetCenter) * 1.2;
+                    // 평균 음높이가 직전 voicing 평균에서 크게 벗어나는 걸 페널티.
+                    // — 코드 길이(노트 수)가 달라도 적용되므로, 트라이어드 → 13코드처럼
+                    //   노트 수가 바뀌는 케이스에서 음역대 점프를 막아줌.
+                    var avgShift = 0;
+                    if (prev && prev.length > 0) {
+                        var prevAvg = 0;
+                        for (var pj = 0; pj < prev.length; pj++) prevAvg += prev[pj];
+                        prevAvg /= prev.length;
+                        avgShift = Math.abs(avg - prevAvg) * 2.0;
+                    }
+                    var s = move + spreadPenalty + centerPull + avgShift;
                     if (options.varyForRepeat) {
                         // 동일 voicing 강한 페널티 (사실상 배제)
                         if (isIdenticalToPrev(voicing)) s += 1000;
-                        // "음 하나 정도만 변경" — 과도한 이동 (한 옥타브 이상 합산) 페널티.
-                        //   move ≈ 12 (한 음 옥타브 점프) 가 이상적.
-                        if (move > 20) s += (move - 20) * 1.5;
+                        // "음 하나 정도만 변경" — 과도한 이동 합산 페널티.
+                        if (move > 30) s += (move - 30) * 1.5;
                     }
                     return s;
                 }
