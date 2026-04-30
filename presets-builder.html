@@ -670,8 +670,11 @@
                     <button class="bd-btn bd-btn-ghost" id="testBtn">
                         <i class="fas fa-play"></i> 반주에서 미리보기
                     </button>
-                    <button class="bd-btn bd-btn-ghost" id="duplicateBtn" style="display:none;" title="현재 설정을 그대로 복사한 새 프리셋 만들기">
-                        <i class="fas fa-clone"></i> 복제
+                    <button class="bd-btn bd-btn-ghost" id="duplicateBtn" style="display:none;" title="이 프리셋의 모든 설정을 클립보드에 복사 — 새 프리셋에서 붙여넣기 가능">
+                        <i class="fas fa-copy"></i> 복제
+                    </button>
+                    <button class="bd-btn bd-btn-ghost" id="pasteBtn" style="display:none;" title="새 프리셋에 복제된 설정 붙여넣기" disabled>
+                        <i class="fas fa-paste"></i> 붙여넣기
                     </button>
                     <button class="bd-btn bd-btn-danger" id="deleteBtn" style="display:none;">
                         <i class="fas fa-trash"></i> 삭제
@@ -950,6 +953,7 @@
                 $('editForm').style.display = 'block';
                 $('deleteBtn').style.display = 'none';
                 $('duplicateBtn').style.display = 'none';
+                updatePasteBtnState();
                 $('feedback').className = 'bd-feedback';
                 renderList();
                 $('fName').focus();
@@ -975,29 +979,73 @@
                 $('editForm').style.display = 'block';
                 $('deleteBtn').style.display = 'inline-flex';
                 $('duplicateBtn').style.display = 'inline-flex';
+                updatePasteBtnState();
                 $('feedback').className = 'bd-feedback';
                 renderList();
             }
 
-            // 현재 편집 중인 프리셋의 모든 설정을 그대로 복사한 "새 프리셋" 으로 전환.
-            // editingId 를 null 로 초기화 → 저장 시 INSERT (UPDATE 가 아님).
-            // 코드 진행, 마디, BPM, 리듬, 베이스/피아노 스타일, 난이도, 장르 등 모든 폼 값이 유지됨.
-            // 사용자는 이름과 (필요하면) 코드 진행만 수정 후 저장.
+            // ─── 프리셋 클립보드 (복제/붙여넣기) ───────────────────
+            // 복제 버튼 → 현재 폼의 모든 값을 클립보드에 저장 (sessionStorage 영속).
+            // 새 프리셋 화면에서 "붙여넣기" 버튼이 활성화되어, 클릭 시 클립보드에서 폼을 채움.
+            let presetClipboard = null;
+            try {
+                var stored = sessionStorage.getItem('presetClipboard');
+                if (stored) presetClipboard = JSON.parse(stored);
+            } catch (e) {}
+
+            function snapshotForm() {
+                var chords = readChords();
+                return {
+                    name: $('fName').value || '',
+                    artist: $('fArtist').value || '',
+                    bpm: parseInt($('fBpm').value, 10) || 90,
+                    bars: bars,
+                    difficulty: difficulty,
+                    rhythm: $('fRhythm').value,
+                    bass_style: $('fBassStyle').value,
+                    piano_style: $('fPianoStyle').value,
+                    chords_a: chords.a,
+                    chords_b: chords.b,
+                    genre: $('fGenre').value || ''
+                };
+            }
+
             function duplicateCurrent() {
-                editingId = null;
-                $('formTitle').textContent = '새 프리셋 (복제됨)';
-                var curName = ($('fName').value || '').trim();
-                // "Slow Blues in A" → "Slow Blues in A (복사)" — 사용자가 곧바로 in E 등으로 수정하기 좋게
-                if (curName && curName.indexOf('(복사)') === -1) {
-                    $('fName').value = curName + ' (복사)';
+                presetClipboard = snapshotForm();
+                try { sessionStorage.setItem('presetClipboard', JSON.stringify(presetClipboard)); } catch (e) {}
+                showFeedback('복제됨 ✓ — 새 프리셋을 만든 뒤 [붙여넣기] 버튼을 누르세요', 'info');
+                updatePasteBtnState();
+            }
+
+            function pasteFromClipboard() {
+                if (!presetClipboard) return;
+                var c = presetClipboard;
+                $('fName').value = c.name || '';
+                $('fArtist').value = c.artist || '';
+                $('fBpm').value = c.bpm || 90;
+                bars = c.bars || 4;
+                difficulty = c.difficulty || 0;
+                $('fRhythm').value = c.rhythm || '8beat';
+                $('fBassStyle').value = c.bass_style || 'default';
+                $('fPianoStyle').value = c.piano_style || 'quarter';
+                $('fGenre').value = normalizeGenreForSelect(c.genre || '');
+                renderBars();
+                renderDifficulty();
+                renderChords(c.chords_a || {}, c.chords_b || {});
+                showFeedback('붙여넣음 ✓ — 이름·코드만 수정하고 저장하면 됩니다', 'success');
+            }
+
+            // 새 프리셋 모드(editingId == null) 일 때만 보이고,
+            // 클립보드가 있을 때만 활성. 편집 모드에선 숨김.
+            function updatePasteBtnState() {
+                var btn = $('pasteBtn');
+                if (!btn) return;
+                if (editingId == null) {
+                    btn.style.display = 'inline-flex';
+                    btn.disabled = !presetClipboard;
+                } else {
+                    btn.style.display = 'none';
                 }
-                $('deleteBtn').style.display = 'none';
-                $('duplicateBtn').style.display = 'none';   // 새 프리셋 상태에선 다시 숨김 — 저장 후 편집 진입 시 다시 보임
-                $('feedback').className = 'bd-feedback';
-                showFeedback('복제됨 — 이름 / 코드 진행 등 수정 후 저장하세요', 'info');
-                $('fName').focus();
-                $('fName').select();
-                window.scrollTo({ top: $('editForm').offsetTop - 12, behavior: 'smooth' });
             }
 
             function renderDifficulty() {
@@ -1113,6 +1161,7 @@
                     $('formTitle').textContent = '편집: ' + res.data.name;
                     $('deleteBtn').style.display = 'inline-flex';
                     $('duplicateBtn').style.display = 'inline-flex';
+                    updatePasteBtnState();
                     showFeedback('저장 완료 ✓', 'success');
                     await loadPresets();
                 } catch (err) {
@@ -1154,6 +1203,7 @@
                 $('deleteBtn').onclick = deletePreset;
                 $('testBtn').onclick = testInTools;
                 $('duplicateBtn').onclick = duplicateCurrent;
+                $('pasteBtn').onclick = pasteFromClipboard;
 
                 document.querySelectorAll('#fBars .bd-pill').forEach(function(b) {
                     b.onclick = function() {
