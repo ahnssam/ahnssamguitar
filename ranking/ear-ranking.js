@@ -85,9 +85,13 @@
 }
 .sum-btn.primary {
     color: #ffffff;
-    background: linear-gradient(135deg, var(--green-mid, #52a872), var(--green-deep, #2a6b4a));
+    /* 단색 — 그라데이션 대신 밝은 쪽(--green-mid) 으로 통일. 라운드 완료
+       다이얼로그의 다음 라운드 버튼이 깔끔하게 보이도록. */
+    background: var(--green-mid, #52a872);
 }
-.sum-btn.primary:hover { filter: brightness(1.08); }
+.sum-btn.primary:hover {
+    background: var(--green-deep, #2a6b4a);
+}
 .sum-btn.ghost {
     color: rgba(26, 36, 33, 0.75);
     background: rgba(26, 36, 33, 0.06);
