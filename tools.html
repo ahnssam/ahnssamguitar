@@ -8181,6 +8181,10 @@
                 }
             }
 
+            // 라이드 잔향이 길어서, 정지 시점에 일괄 cut 할 수 있도록 활성 보이스 트래킹.
+            //   각 항목: { gain, sources: [...] } — gain 한 번에 페이드 아웃 + 모든 source.stop().
+            var _rideActiveVoices = [];
+
             // 라이드 심벌 — 'swing' 12/8 리듬 메인 사운드.
             //   1) drumSamples.ride (sounds/ride.mp3) 가 로드되어 있으면 샘플 재생
             //   2) 없으면 신스 폴백 — 메탈릭한 ping + 약간의 wash 로 구현
@@ -8189,9 +8193,19 @@
             function playRide(time, level) {
                 if (typeof level !== 'number') level = 0;
                 var sampleVel = level === 1 ? 0.55 : 0.32;
-                if (playSample('ride', time, sampleVel)) return;
+                // 샘플 모드 — playSample 반환의 { source, gain } 트래킹.
+                var sampleResult = playSample('ride', time, sampleVel);
+                if (sampleResult) {
+                    _rideActiveVoices.push({ gain: sampleResult.gain, sources: [sampleResult.source] });
+                    return;
+                }
                 // ── 신스 라이드 폴백 ──
                 var bus = getDrumBus();
+                // 보이스용 마스터 게인 — choke 시 한 번에 fade
+                var voiceGain = audioCtx.createGain();
+                voiceGain.gain.value = 1.0;
+                voiceGain.connect(bus);
+                var voiceSources = [];
                 var bell = audioCtx.createOscillator();
                 bell.type = 'square';
                 var bellFreq = 5200;
@@ -8206,9 +8220,10 @@
                 bellHP.frequency.value = 4000;
                 bell.connect(bellHP);
                 bellHP.connect(bellG);
-                bellG.connect(bus);
+                bellG.connect(voiceGain);
                 bell.start(time);
                 bell.stop(time + 1.0);
+                voiceSources.push(bell);
                 // wash — 노이즈 밴드패스로 잔향 깔기
                 var dur = 0.85;
                 [{f:7000,q:1.5,g:0.05},{f:9500,q:2,g:0.04},{f:13000,q:2.5,g:0.025}].forEach(function(L){
@@ -8226,10 +8241,27 @@
                     g.gain.setTargetAtTime(0.0001, time + dur * 0.8, 0.18);
                     n.connect(bp);
                     bp.connect(g);
-                    g.connect(bus);
+                    g.connect(voiceGain);
                     n.start(time);
                     n.stop(time + dur + 0.1);
+                    voiceSources.push(n);
                 });
+                _rideActiveVoices.push({ gain: voiceGain, sources: voiceSources });
+            }
+            // 정지 시 라이드 잔향을 일괄 cut. 짧은 페이드(20ms) 후 source.stop().
+            function chokeRide(time) {
+                if (!_rideActiveVoices.length) return;
+                _rideActiveVoices.forEach(function(v) {
+                    try {
+                        v.gain.gain.cancelScheduledValues(time);
+                        v.gain.gain.setValueAtTime(v.gain.gain.value || 0.0001, time);
+                        v.gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.02);
+                    } catch (e) {}
+                    v.sources.forEach(function(s) {
+                        try { s.stop(time + 0.025); } catch (e) {}
+                    });
+                });
+                _rideActiveVoices = [];
             }
 
             let drumBus = null;
@@ -9067,8 +9099,9 @@
                 }
                 if (p.kick.includes(t))  playKick(time);
                 if (p.snare.includes(t)) {
-                    // quietSnare 플래그 — 스윙 12/8 처럼 스네어를 약하게 깔고 싶을 때
-                    var snareVol = p.quietSnare ? 0.18 : 1.0;
+                    // quietSnare 플래그 — 스윙 12/8 처럼 스네어를 고스트 노트 수준으로 깔고 싶을 때.
+                    // 라이드 위에 살짝 묻어가는 정도.
+                    var snareVol = p.quietSnare ? 0.08 : 1.0;
                     playSnare(time, snareVol);
                 }
             }
@@ -10542,6 +10575,7 @@
                     var now = audioCtx.currentTime;
                     try { chokeOpenHihat(now); } catch(e) {}
                     try { chokeBass(now); } catch(e) {}
+                    try { chokeRide(now); } catch(e) {}
                     try { chokePiano(now); } catch(e) {}
                 }
                 _openHihatNode = null;
