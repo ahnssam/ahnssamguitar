@@ -721,8 +721,7 @@
 
         /* Coupang banner — soften surroundings (banner content is 3rd-party,
            leave the iframe alone but the wrapper / disclaimer text fix) */
-        :root[data-theme="dark"] .coupang-banner,
-        :root[data-theme="dark"] .coupang-banner-mobile {
+        :root[data-theme="dark"] .coupang-banner {
             background: rgba(255, 255, 255, 0.02);
         }
         :root[data-theme="dark"] .coupang-disclaimer {
@@ -6066,28 +6065,28 @@
              page. Now we render the iframe ONCE, picking the carousel size
              based on the current viewport. -->
         <div class="coupang-banner" id="coupangBanner">
+            <!-- INLINE script — must stay inline so document.currentScript
+                 (which Coupang's G() uses to position the iframe) is non-
+                 null. A dynamically-injected <script> element resolves
+                 currentScript to null and the iframe gets appended to the
+                 wrong place (body end / head), which is what was breaking
+                 the centering and apparent size. -->
+            <script>
+                (function() {
+                    if (!window.PartnersCoupang) return;
+                    var isMobile = window.matchMedia('(max-width: 900px), (orientation: portrait)').matches;
+                    new PartnersCoupang.G({
+                        id: 982250,
+                        template: 'carousel',
+                        trackingCode: 'AF9102087',
+                        width: isMobile ? '360' : '728',
+                        height: isMobile ? '61'  : '90',
+                        tsource: ''
+                    });
+                })();
+            </script>
             <p class="coupang-disclaimer">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
         </div>
-        <script>
-            (function() {
-                if (!window.PartnersCoupang) return;
-                var banner = document.getElementById('coupangBanner');
-                if (!banner) return;
-                var isMobile = window.matchMedia('(max-width: 900px), (orientation: portrait)').matches;
-                var w = isMobile ? '360' : '728';
-                var h = isMobile ? '61'  : '90';
-                // PartnersCoupang.G injects its iframe at the position of
-                // document.currentScript, so we append the carousel <script>
-                // BEFORE the disclaimer to keep the visual order:
-                //   [ iframe carousel ]
-                //   [ disclaimer text ]
-                var disclaimer = banner.querySelector('.coupang-disclaimer');
-                var s = document.createElement('script');
-                s.textContent = 'new PartnersCoupang.G({"id":982250,"template":"carousel","trackingCode":"AF9102087","width":"' +
-                    w + '","height":"' + h + '","tsource":""});';
-                banner.insertBefore(s, disclaimer);
-            })();
-        </script>
     </main>
 
     <!-- Chord Modal (enlarged chord view) -->
