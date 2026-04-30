@@ -2287,9 +2287,10 @@ ${recentHtml}
     // Practice 섹션 — 마이페이지에 표시할 "오늘/주/누적 + 도구별 + 최근 7일"
     // ----------------------------------------------------------------
     const PRACTICE_TOOL_LABELS = {
-        tuner: '튜너', metronome: '메트로놈', taptempo: '탭템포',
-        capo: '카포', chords: '코드 라이브러리', scales: '스케일',
-        fretboard: '프렛보드', piano: '피아노', eartraining: '음정 트레이닝',
+        tuner: '튜너', metronome: '메트로놈', backing: '반주',
+        taptempo: '탭템포', capo: '카포', chords: '코드 라이브러리',
+        scales: '스케일', fretboard: '프렛보드', piano: '피아노',
+        eartraining: '음정 트레이닝',
     };
 
     function fmtDuration(sec) {
@@ -2444,7 +2445,7 @@ ${recentHtml}
     //   · 로그인 직후·하트비트는 별도 RPC 없이 supabase REST insert 만 사용
     // ================================================================
     const PRACTICE_TOOLS = new Set([
-        'tuner','metronome','taptempo','capo',
+        'tuner','metronome','backing','taptempo','capo',
         'chords','scales','fretboard','piano',
         'eartraining'
     ]);
@@ -2582,12 +2583,28 @@ ${recentHtml}
     // 초기 도구 (페이지 로드 직후 active 인 패널) 로 세션 시작
     function practiceInitFromActivePanel() {
         try {
-            const active = document.querySelector('.tool-panel.active');
-            if (!active) return;
-            const id = active.id || '';
-            // panelId → tool name (panelId 가 "<tool>Panel" 컨벤션을 따름)
-            const tool = id.replace(/Panel$/, '');
-            if (PRACTICE_TOOLS.has(tool)) practiceStart(tool);
+            // 1순위 — URL 의 ?tool= 파라미터 (panelId 와 다를 수 있음.
+            //         backing 도구는 panelId='metronome' 이지만 tool='backing' 임)
+            let tool = null;
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const q = (params.get('tool') || '').toLowerCase();
+                if (q && PRACTICE_TOOLS.has(q)) tool = q;
+            } catch (e) {}
+            if (!tool) {
+                const h = (window.location.hash || '').replace('#','').toLowerCase();
+                if (h && PRACTICE_TOOLS.has(h)) tool = h;
+            }
+            // 2순위 — active panel id 에서 추출
+            if (!tool) {
+                const active = document.querySelector('.tool-panel.active');
+                if (active) {
+                    const id = active.id || '';
+                    const t = id.replace(/Panel$/, '');
+                    if (PRACTICE_TOOLS.has(t)) tool = t;
+                }
+            }
+            if (tool) practiceStart(tool);
         } catch (e) {}
     }
 
