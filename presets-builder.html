@@ -603,7 +603,16 @@
                 <div class="bd-row">
                     <div class="bd-field">
                         <label>장르</label>
-                        <input type="text" id="fGenre" placeholder="예: 발라드, 팝, 락 …" autocomplete="off">
+                        <select id="fGenre">
+                            <option value="">선택 안함</option>
+                            <option value="Pop">Pop</option>
+                            <option value="Rock">Rock</option>
+                            <option value="Ballad">Ballad</option>
+                            <option value="Blues">Blues</option>
+                            <option value="Jazz">Jazz</option>
+                            <option value="Funk">Funk</option>
+                            <option value="Folk">Folk</option>
+                        </select>
                     </div>
                 </div>
 
@@ -943,7 +952,8 @@
                 $('fName').value = p.name || '';
                 $('fArtist').value = p.artist || '';
                 $('fBpm').value = p.bpm || 90;
-                $('fGenre').value = p.genre || '';
+                // 기존에 한글/소문자 등으로 저장된 값과 새 옵션 값 매칭 — 호환 매핑
+                $('fGenre').value = normalizeGenreForSelect(p.genre || '');
                 bars = p.bars || 4;
                 difficulty = p.difficulty || 0;
                 $('fRhythm').value = p.rhythm || '8beat';
@@ -968,6 +978,26 @@
                 document.querySelectorAll('#fBars .bd-pill').forEach(function(b) {
                     b.classList.toggle('active', parseInt(b.dataset.bars, 10) === bars);
                 });
+            }
+
+            // ─── 장르 호환 매핑 (구버전 텍스트 입력 → 새 셀렉트 옵션) ───
+            //   대소문자 차이, 한글 표기 등을 흡수해서 select 의 정확한 value 와 매칭.
+            //   매칭 안 되면 빈 문자열 반환 → 셀렉트가 "선택 안함" 으로 떨어짐.
+            function normalizeGenreForSelect(raw) {
+                if (!raw) return '';
+                var s = String(raw).trim();
+                if (!s) return '';
+                var lower = s.toLowerCase();
+                var map = {
+                    'pop': 'Pop',     '팝': 'Pop', 'k-pop': 'Pop',
+                    'rock': 'Rock',   '락': 'Rock', '록': 'Rock',
+                    'ballad': 'Ballad', '발라드': 'Ballad',
+                    'blues': 'Blues', '블루스': 'Blues',
+                    'jazz': 'Jazz',   '재즈': 'Jazz',
+                    'funk': 'Funk',   '펑크': 'Funk', '훵크': 'Funk',
+                    'folk': 'Folk',   '포크': 'Folk', '어쿠스틱': 'Folk', 'acoustic': 'Folk'
+                };
+                return map[lower] || map[s] || '';
             }
 
             // ─── 코드 진행 그리드 (반주 메뉴와 동일한 룩, 입력은 타이핑) ───

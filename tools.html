@@ -4890,8 +4890,10 @@
             margin-left: 0.2rem;
         }
         .loop-preset-search {
-            flex: 1;
+            /* 검색 인풋 폭을 박스의 절반 정도로 제한 — 너무 넓어 보였던 문제 해결 */
+            flex: 0 1 50%;
             min-width: 0;
+            max-width: 50%;
             padding: 0.42rem 0.6rem;
             border: 1px solid rgba(42, 107, 74, 0.18);
             border-radius: 8px;
@@ -5131,6 +5133,52 @@
             border-color: rgba(196, 64, 52, 0.55);
         }
         .loop-clear-all-btn i { font-size: 0.7rem; }
+        /* iOS-style 작은 토글 스위치 — 예비박 on/off 같은 boolean 옵션용 */
+        .loop-toggle {
+            position: relative;
+            display: inline-block;
+            width: 38px;
+            height: 22px;
+            cursor: pointer;
+            flex-shrink: 0;
+            vertical-align: middle;
+        }
+        .loop-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            position: absolute;
+        }
+        .loop-toggle-track {
+            position: absolute;
+            inset: 0;
+            background: rgba(42, 107, 74, 0.18);
+            border-radius: 22px;
+            transition: background 0.2s;
+        }
+        .loop-toggle-thumb {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            left: 2px;
+            top: 2px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        .loop-toggle input:checked + .loop-toggle-track {
+            background: var(--green-mid);
+        }
+        .loop-toggle input:checked + .loop-toggle-track .loop-toggle-thumb {
+            transform: translateX(16px);
+        }
+        :root[data-theme="dark"] .loop-toggle-track {
+            background: rgba(180, 230, 200, 0.18);
+        }
+        :root[data-theme="dark"] .loop-toggle-thumb {
+            background: #d8e8df;
+        }
         .loop-style-group {
             display: flex;
             align-items: center;
@@ -5266,6 +5314,52 @@
         .loop-mix-slider.muted::-moz-range-thumb { background: rgba(26, 36, 33, 0.35); }
         .loop-measures-label {
             display: flex; align-items: center; gap: 0.5rem;
+        }
+        /* 코드 입력 모드 토글 (픽커 / 직접입력) — 마디·리듬과 같은 행에 배치 */
+        .loop-input-mode {
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .loop-input-mode label {
+            white-space: nowrap;
+            font-size: 0.78rem;
+            color: rgba(26, 36, 33, 0.6);
+        }
+        .loop-input-mode-btns {
+            display: inline-flex;
+            background: rgba(42, 107, 74, 0.06);
+            border: 1px solid rgba(42, 107, 74, 0.18);
+            border-radius: 14px;
+            padding: 2px;
+        }
+        .loop-input-mode-btns button {
+            padding: 0.28rem 0.65rem;
+            border: none;
+            background: transparent;
+            color: rgba(26, 36, 33, 0.65);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        .loop-input-mode-btns button:hover:not(.active) {
+            background: rgba(82, 168, 114, 0.15);
+            color: var(--green-deep);
+        }
+        .loop-input-mode-btns button.active {
+            background: var(--green-deep);
+            color: #fff;
+        }
+        :root[data-theme="dark"] .loop-input-mode label { color: #cfe0d6; }
+        :root[data-theme="dark"] .loop-input-mode-btns {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(180, 230, 200, 0.2);
+        }
+        :root[data-theme="dark"] .loop-input-mode-btns button { color: #cfe0d6; }
+        :root[data-theme="dark"] .loop-input-mode-btns button.active {
+            background: var(--green-mid);
+            color: #fff;
         }
         .loop-measures-label label { white-space: nowrap; }
         .loop-measures-btns { display: flex; gap: 0.3rem; }
@@ -5458,6 +5552,108 @@
         .loop-chord-quality-btn.active {
             background: var(--green-deep);
             color: #fff;
+        }
+        /* 4화음 확장이 quality 를 강제할 때(예: m7♭5/dim/dim7) 토글 비활성 표시 */
+        .loop-chord-quality-toggle.disabled {
+            opacity: 0.45;
+            pointer-events: none;
+        }
+        /* 픽커 우상단 ✎ 직접입력 버튼 */
+        .loop-chord-picker-header {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 0.4rem;
+        }
+        .loop-chord-edit-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            padding: 0;
+            border-radius: 50%;
+            border: 1px solid rgba(42, 107, 74, 0.25);
+            background: rgba(255, 255, 255, 0.85);
+            color: var(--green-deep);
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+        .loop-chord-edit-btn:hover {
+            background: var(--green-deep);
+            color: #fff;
+            border-color: var(--green-deep);
+        }
+        :root[data-theme="dark"] .loop-chord-edit-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(180, 230, 200, 0.3);
+            color: #d8e8df;
+        }
+        /* 4화음 확장 칩 행 — 토글 아래, root 그리드 위 */
+        .loop-chord-ext-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+            margin-bottom: 0.55rem;
+        }
+        .loop-chord-ext-chip {
+            flex: 0 0 auto;
+            padding: 0.32rem 0.62rem;
+            border: 1px solid rgba(42, 107, 74, 0.18);
+            background: rgba(42, 107, 74, 0.06);
+            color: rgba(26, 36, 33, 0.7);
+            border-radius: 14px;
+            font-family: inherit;
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+        .loop-chord-ext-chip:hover:not(.active) {
+            background: rgba(82, 168, 114, 0.18);
+            color: var(--green-deep);
+            border-color: rgba(82, 168, 114, 0.45);
+        }
+        .loop-chord-ext-chip.active {
+            background: var(--green-deep);
+            color: #fff;
+            border-color: var(--green-deep);
+        }
+        :root[data-theme="dark"] .loop-chord-ext-chip {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(180, 230, 200, 0.2);
+            color: #cfe0d6;
+        }
+        :root[data-theme="dark"] .loop-chord-ext-chip.active {
+            background: var(--green-mid);
+            border-color: var(--green-mid);
+            color: #fff;
+        }
+        /* 셀 인라인 텍스트 입력 — ✎ 모드 시 cell-half 자리에 끼워넣음 */
+        .loop-cell-half-input {
+            flex: 1;
+            min-width: 0;
+            width: 100%;
+            border: none;
+            background: rgba(82, 168, 114, 0.18);
+            outline: 2px solid var(--green-deep);
+            outline-offset: -2px;
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--green-deep);
+            padding: 0.3rem 0.2rem;
+            border-radius: 4px;
+        }
+        .loop-cell-half-input::placeholder {
+            color: rgba(26, 36, 33, 0.3);
+            font-weight: 500;
+        }
+        :root[data-theme="dark"] .loop-cell-half-input {
+            background: rgba(180, 230, 200, 0.12);
+            color: #d8e8df;
+            outline-color: var(--green-mid);
         }
         .loop-chord-picker-grid {
             display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.25rem;
@@ -5951,6 +6147,13 @@
                             </button>
                             <div class="loop-rhythm-drawer" id="loopRhythmDrawer"></div>
                         </div>
+                        <div class="loop-input-mode" title="코드 칸을 클릭했을 때의 기본 입력 방식">
+                            <label>입력</label>
+                            <div class="loop-input-mode-btns" id="loopInputModeBtns">
+                                <button type="button" class="active" data-mode="picker" onclick="setLoopInputMode('picker')">픽커</button>
+                                <button type="button" data-mode="text" onclick="setLoopInputMode('text')">직접입력</button>
+                            </div>
+                        </div>
                     </div>
                     <!-- 베이스/피아노 스타일 셀렉터 — 드럼 리듬과 별개로 동작 -->
                     <div class="loop-style-row">
@@ -5965,9 +6168,17 @@
                         <div class="loop-style-group">
                             <label>피아노</label>
                             <div class="loop-style-btns" id="loopPianoStyleBtns">
-                                <button type="button" class="loop-style-btn active" data-pstyle="quarter" onclick="setLoopPianoStyle('quarter')">4비트</button>
+                                <button type="button" class="loop-style-btn active" data-pstyle="default" onclick="setLoopPianoStyle('default')">기본</button>
+                                <button type="button" class="loop-style-btn" data-pstyle="quarter" onclick="setLoopPianoStyle('quarter')">4비트</button>
                                 <button type="button" class="loop-style-btn" data-pstyle="8beat" onclick="setLoopPianoStyle('8beat')">8비트</button>
                             </div>
+                        </div>
+                        <div class="loop-style-group" title="시작 전 4박자 카운트인을 하이햇으로 들려줍니다">
+                            <label>예비박</label>
+                            <label class="loop-toggle">
+                                <input type="checkbox" id="loopCountInToggle" onchange="setLoopCountIn(this.checked)" aria-label="예비박 토글">
+                                <span class="loop-toggle-track"><span class="loop-toggle-thumb"></span></span>
+                            </label>
                         </div>
                         <button type="button" class="loop-clear-all-btn" onclick="clearAllLoopChords()" title="입력한 모든 코드 삭제">
                             <i class="fas fa-trash"></i> 전체 삭제
@@ -7574,29 +7785,102 @@
             let loopRhythm = '8beat';
             let loopChords = {};
             let loopChordsB = {};
+            // 예비박(카운트인) — ON 일 때 시작 직전에 4박자 하이햇 클릭이 먼저 나간 뒤
+            // 본 패턴이 이어진다. localStorage 에 저장되어 다음 방문에도 유지.
+            let loopCountInEnabled = false;
+            try { loopCountInEnabled = localStorage.getItem('loopCountIn') === '1'; } catch (e) {}
+            window.setLoopCountIn = function(v) {
+                loopCountInEnabled = !!v;
+                try { localStorage.setItem('loopCountIn', v ? '1' : '0'); } catch (e) {}
+                gtag('event', 'loop_count_in_toggle', { enabled: !!v });
+            };
+            // 부팅 시 토글 체크 상태 동기화
+            document.addEventListener('DOMContentLoaded', function() {
+                var t = document.getElementById('loopCountInToggle');
+                if (t) t.checked = loopCountInEnabled;
+            });
             let loopMeasureIdx = 0;
             let loopInitialized = false;
             let loopPickerCell = null;
             // 베이스/피아노 스타일 — 드럼 리듬과 독립
             //   bass: 'default' | '8beat' | '16beat'
-            //   piano: 'quarter' (현재 1종, 추후 확장 가능)
+            //   piano: 'default' | 'quarter' | '8beat'
+            //          'default' = 드럼 리듬 매칭 패턴 (셔플락은 셔플 패턴, 그 외는 quarter 폴백)
             let loopBassStyle  = 'default';
-            let loopPianoStyle = 'quarter';
+            let loopPianoStyle = 'default';
             // 코드 픽커의 장/단 sticky 상태 — 마지막 선택을 다음 picker 에서도 유지
             let loopPickerQuality = 'major';
 
-            // 코드 이름 파싱: "C" → {root:'C', minor:false}, "Cm" → {root:'C', minor:true}
-            // 추후 7th/maj7 확장 시에도 root 추출은 동일하게 동작.
+            // 코드 이름 파싱: 트라이어드(C/Cm) + 흔한 4화음까지 지원.
+            //   반환: { root, minor, extension }
+            //     extension ∈ 'none' | '7' | 'maj7' | 'm7b5' | 'dim' | 'dim7'
+            //   예) Cmaj7 → { root:'C',  minor:false, extension:'maj7' }
+            //       Bbm7  → { root:'Bb', minor:true,  extension:'7' }
+            //       Cm7♭5 → { root:'C',  minor:true,  extension:'m7b5' }
+            //       Cdim7 → { root:'C',  minor:false, extension:'dim7' }
+            //   .minor 필드는 하위 호환을 위해 유지 (구 코드가 .minor 만 본다면 트라이어드처럼 처리).
             function parseChordName(name) {
-                if (!name) return { root: null, minor: false };
+                if (!name) return { root: null, minor: false, extension: 'none' };
                 var m = String(name).match(/^([A-G][#b]?)(.*)$/);
-                if (!m) return { root: null, minor: false };
-                var rest = m[2] || '';
-                // "m" 으로 시작하되 "maj" 가 아니면 minor.
-                var isMinor = /^m(?!aj)/i.test(rest);
-                return { root: m[1], minor: isMinor };
+                if (!m) return { root: null, minor: false, extension: 'none' };
+                var root = m[1];
+                var rest = (m[2] || '').trim();
+                var lower = rest.toLowerCase();
+                if (lower === 'dim7' || rest === '°7' || rest === 'o7') {
+                    return { root: root, minor: false, extension: 'dim7' };
+                }
+                if (lower === 'dim' || rest === '°' || rest === 'o') {
+                    // 레거시 트라이어드 dim — UI 에선 더 이상 픽 불가, 파싱은 유지
+                    return { root: root, minor: false, extension: 'dim' };
+                }
+                if (lower === 'm7b5' || rest === 'm7♭5' || rest === 'ø7' || rest === 'ø' ||
+                    lower === 'min7b5' || lower === 'half-dim' || lower === 'halfdim') {
+                    return { root: root, minor: true, extension: 'm7b5' };
+                }
+                // 마이너 + M7 (mM7 / m(maj7) / mmaj7 / minMaj7)
+                if (lower === 'm(maj7)' || lower === 'mmaj7' || lower === 'mΔ7' ||
+                    rest === 'mM7' || lower === 'minmaj7') {
+                    return { root: root, minor: true, extension: 'M7' };
+                }
+                // 메이저 + M7 (M7 / maj7 / Δ7) — 레거시 maj7 표기도 받아줌
+                if (lower === 'maj7' || rest === 'M7' || rest === 'Δ7' || rest === '△7' || rest === 'Δ') {
+                    return { root: root, minor: false, extension: 'M7' };
+                }
+                if (lower === 'm7' || lower === 'min7') {
+                    return { root: root, minor: true, extension: 'm7' };
+                }
+                if (lower === '7' || lower === 'dom7') {
+                    return { root: root, minor: false, extension: '7' };
+                }
+                if (/^m(in)?$/i.test(rest)) {
+                    return { root: root, minor: true, extension: 'none' };
+                }
+                if (/^m(?!aj)/i.test(rest)) {
+                    return { root: root, minor: true, extension: 'none' };
+                }
+                return { root: root, minor: false, extension: 'none' };
             }
             function chordRootOnly(name) { return parseChordName(name).root; }
+            // root + quality + extension 조합 → 표시용 코드 이름 빌드
+            //   ('C', false, 'none')  → 'C'
+            //   ('C', true,  'none')  → 'Cm'
+            //   ('C', *,     '7')     → 'C7'         (도미넌트 7 — quality 무시)
+            //   ('C', *,     'm7')    → 'Cm7'        (마이너 7 — quality 무시)
+            //   ('C', false, 'M7')    → 'CM7'
+            //   ('C', true,  'M7')    → 'CmM7'
+            //   ('C', *,     'm7b5')  → 'Cm7♭5'
+            //   ('C', *,     'dim7')  → 'Cdim7'
+            function buildChordName(root, quality, extension) {
+                if (!root) return '';
+                if (extension === 'm7b5') return root + 'm7♭5';
+                if (extension === 'dim7') return root + 'dim7';
+                if (extension === '7')    return root + '7';
+                if (extension === 'm7')   return root + 'm7';
+                var isMinor = quality === 'minor';
+                if (extension === 'M7')   return root + (isMinor ? 'mM7' : 'M7');
+                // none → 트라이어드
+                return root + (isMinor ? 'm' : '');
+            }
             // 플랫(♭) 표기를 BASS_FREQ / 샘플 키 와 호환되는 샤프(#) 표기로 정규화.
             // 예: Db → C#, Eb → D#, Gb → F#, Ab → G#, Bb → A#
             const FLAT_TO_SHARP = { 'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#' };
@@ -7611,6 +7895,15 @@
             // 직전 피아노 코드 보이싱 (보이스 리딩 — 다음 코드 인버전 선택에 사용)
             //   배열 형태의 MIDI 노트 [root, third, fifth] 등.
             let _prevPianoVoicing = null;
+            // 직전에 처리한 코드 세그먼트의 (마디idx | half) 키와 코드 이름.
+            //   같은 코드가 새 세그먼트(다음 마디 등) 에 다시 등장하면
+            //   살짝 보이싱을 변형 (인버전 한 음 정도 점프) 하기 위함.
+            let _lastPianoSegmentKey = null;
+            let _lastPianoSegmentChord = null;
+            // 현재 울리고 있는 피아노 코드들 — choke (음 끊기) 관리용.
+            //   각 항목: { gain: chordGain, sources: [oscNodes...], endTime: ... }
+            //   셔플락 패턴에서 특정 박에 음을 끊거나, 메트로놈 정지 시 일괄 정리.
+            let _activePianoChords = [];
             // ──────────────────────────────────────────────────────────
             // 마디 번호 클릭/드래그로 선택할 시작·끝 마디 (둘 다 null = 전체 루프).
             // 둘 다 idx 가 같으면 한 마디만 무한 반복. 다르면 [start..end] 범위 루프.
@@ -8040,8 +8333,21 @@
             };
             // 피아노 컴핑 스타일 — 16분음표 기준
             const PIANO_STYLES = {
+                // '기본' — 드럼 리듬에 따라 패턴이 바뀌는 동적 스타일.
+                //   PIANO_DEFAULT_PATTERNS 에 정의된 리듬은 해당 패턴을,
+                //   그 외 리듬은 quarter (4비트) 로 폴백.
+                'default': { dynamic: true },
                 'quarter': { sixteenthHits: [0, 4, 8, 12] },
                 '8beat':   { sixteenthHits: [0, 2, 4, 6, 8, 10, 12, 14] }
+            };
+            // '기본' 스타일 — 드럼 리듬별 피아노 컴핑 패턴.
+            // tick 위치는 해당 드럼 리듬의 ticksPerBeat 기준 (16분 변환 X).
+            //   ballad (셔플락, ticksPerBeat=3, 한 마디=12tick):
+            //     beats →  1=0  1na=2  2=3  2a=5  3=6  3a=8  4=9  4a=11
+            //     hits  : 0(1박), 2(1의 a), 5(2의 a), 9(4박)
+            //     chokes: 3(2박에서 음 끊기)
+            const PIANO_DEFAULT_PATTERNS = {
+                'ballad': { hits: [0, 2, 5, 9], chokes: [3] }
             };
 
             // 16분음표 위치 배열을 드럼 ticksPerBeat 에 맞춰 가용한 tick 위치로 변환.
@@ -8204,6 +8510,30 @@
                 return pianoBusNode;
             }
 
+            // 울리고 있는 모든 피아노 코드를 즉시 끊는다.
+            //   - 코드별 chordGain 을 짧게 ramp-down → 0 으로 감쇠
+            //   - 그 뒤에 시작 예정이거나 진행 중인 oscillator 들도 .stop()
+            // 셔플락 패턴에서 박 사이에 음을 끊거나, 메트로놈 정지 시 호출.
+            function chokePiano(time) {
+                if (!_activePianoChords || _activePianoChords.length === 0) return;
+                var t = (typeof time === 'number') ? time : (audioCtx ? audioCtx.currentTime : 0);
+                _activePianoChords.forEach(function(c) {
+                    try {
+                        c.gain.gain.cancelScheduledValues(t);
+                        // setValueAtTime on a possibly-not-yet-started ramp: use current value safely.
+                        var v = c.gain.gain.value;
+                        c.gain.gain.setValueAtTime(v > 0.0001 ? v : 0.0001, t);
+                        c.gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+                    } catch (e) {}
+                    if (c.sources) {
+                        c.sources.forEach(function(s) {
+                            try { s.stop(t + 0.06); } catch (e) {}
+                        });
+                    }
+                });
+                _activePianoChords = [];
+            }
+
             const _PC_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
             function _pcToIdx(pc) {
                 var i = _PC_NAMES.indexOf(pc);
@@ -8213,16 +8543,38 @@
                 return (pc in flatMap) ? flatMap[pc] : -1;
             }
 
-            // 코드 이름(예: 'C', 'Am', 'F#')을 받아 트라이어드의 pitch-class 집합 반환.
-            //   minor → 1, ♭3, 5
-            //   major → 1, 3, 5
+            // 코드 이름(예: 'C', 'Am', 'CM7', 'Cm7', 'Bbm7♭5')을 받아 pitch-class 집합 반환.
+            //   triad: 1, 3(또는 ♭3), 5
+            //   7    : 1, 3, 5, ♭7        (도미넌트 7 — 항상 메이저 기반)
+            //   m7   : 1, ♭3, 5, ♭7       (마이너 7)
+            //   M7   : 1, 3(또는 ♭3), 5, 7
+            //   m7♭5: 1, ♭3, ♭5, ♭7
+            //   dim  : 1, ♭3, ♭5          (레거시 표기 호환)
+            //   dim7 : 1, ♭3, ♭5, ♭♭7
             function chordPcsFromName(chordName) {
                 var info = parseChordName(chordName);
                 if (!info.root) return null;
                 var rIdx = _pcToIdx(info.root);
                 if (rIdx < 0) return null;
-                var third = info.minor ? 3 : 4;
-                return [(rIdx) % 12, (rIdx + third) % 12, (rIdx + 7) % 12];
+                var ext = info.extension || 'none';
+                var semis;
+                if (ext === 'dim') {
+                    semis = [0, 3, 6];
+                } else if (ext === 'dim7') {
+                    semis = [0, 3, 6, 9];
+                } else if (ext === 'm7b5') {
+                    semis = [0, 3, 6, 10];
+                } else if (ext === 'M7') {
+                    semis = info.minor ? [0, 3, 7, 11] : [0, 4, 7, 11];
+                } else if (ext === '7') {
+                    semis = [0, 4, 7, 10];
+                } else if (ext === 'm7') {
+                    semis = [0, 3, 7, 10];
+                } else {
+                    var third = info.minor ? 3 : 4;
+                    semis = [0, third, 7];
+                }
+                return semis.map(function(s) { return (rIdx + s) % 12; });
             }
             // (호환성 — 혹시 다른 곳에서 root-only 호출 시)
             function chordPcsForRoot(rootName) { return chordPcsFromName(rootName); }
@@ -8232,12 +8584,30 @@
             //   - 코드 톤 각 pitch class 의 가능한 옥타브들로 후보 voicing 만들기
             //   - 직전 voicing 과의 총 semitone 거리가 최소인 voicing 선택
             //   - 가까운 후보가 여럿이면 음역 가운데(72)에 가까운 쪽 우선
-            function pickPianoVoicing(chordName, prev) {
+            //
+            // options:
+            //   varyForRepeat — true 면 "같은 코드 반복" 시 보이싱을 살짝 변형.
+            //     · 직전 voicing 과 동일한 보이싱은 강한 페널티 (배제)
+            //     · 직전 평균 음높이의 반대 방향으로 살짝 끌어당김 (낮으면 위로)
+            //     · "음 하나만 옥타브 점프" 가 자연스럽게 되도록 과한 이동도 페널티
+            function pickPianoVoicing(chordName, prev, options) {
+                options = options || {};
                 var pcs = chordPcsFromName(chordName);
                 if (!pcs) return null;
                 // 음역대 1.5옥타브 (D4..G5) — drift 가 누적되지 않도록 좁힘
                 var LOW = 62, HIGH = 79;
                 var CENTER = 70; // Bb4 근처
+                // 반복 코드 — 직전 voicing 의 평균 음높이로 변화 방향 결정.
+                //   prev avg 가 CENTER 보다 낮으면 → 위로 끌어당김 (positive bias)
+                //   prev avg 가 CENTER 보다 높으면 → 아래로 끌어당김 (negative bias)
+                var directionBias = 0;
+                if (options.varyForRepeat && prev && prev.length > 0) {
+                    var prevAvg = 0;
+                    for (var pi = 0; pi < prev.length; pi++) prevAvg += prev[pi];
+                    prevAvg /= prev.length;
+                    directionBias = (CENTER - prevAvg) * 0.6;
+                }
+                var targetCenter = CENTER + directionBias;
                 // 각 pitch-class 의 가능한 MIDI 후보들
                 var candidatesPerPc = pcs.map(function(pc) {
                     var arr = [];
@@ -8246,6 +8616,13 @@
                 });
                 // 모든 조합 (3개의 pc → 보통 5*5*5 = 125 조합 미만). 합리적 크기.
                 var best = null, bestScore = Infinity;
+                function isIdenticalToPrev(voicing) {
+                    if (!prev || prev.length !== voicing.length) return false;
+                    var s1 = voicing.slice().sort(function(a,b){return a-b;});
+                    var s2 = prev.slice().sort(function(a,b){return a-b;});
+                    for (var k = 0; k < s1.length; k++) if (s1[k] !== s2[k]) return false;
+                    return true;
+                }
                 function score(voicing) {
                     var lo = Math.min.apply(Math, voicing);
                     var hi = Math.max.apply(Math, voicing);
@@ -8259,12 +8636,20 @@
                         for (var k = 0; k < s1.length; k++) move += Math.abs(s1[k] - s2[k]);
                     }
                     // 항상 음역 중심 근처로 끌어당기는 페널티 — drift 방지.
-                    // 평균 음높이가 CENTER 에서 멀수록 penalty 증가.
+                    // 평균 음높이가 targetCenter 에서 멀수록 penalty 증가.
                     var avg = 0;
                     for (var j = 0; j < voicing.length; j++) avg += voicing[j];
                     avg /= voicing.length;
-                    var centerPull = Math.abs(avg - CENTER) * 0.7;
-                    return move + spreadPenalty + centerPull;
+                    var centerPull = Math.abs(avg - targetCenter) * 0.7;
+                    var s = move + spreadPenalty + centerPull;
+                    if (options.varyForRepeat) {
+                        // 동일 voicing 강한 페널티 (사실상 배제)
+                        if (isIdenticalToPrev(voicing)) s += 1000;
+                        // "음 하나 정도만 변경" — 과도한 이동 (한 옥타브 이상 합산) 페널티.
+                        //   move ≈ 12 (한 음 옥타브 점프) 가 이상적.
+                        if (move > 20) s += (move - 20) * 1.5;
+                    }
+                    return s;
                 }
                 function recurse(idx, current) {
                     if (idx === candidatesPerPc.length) {
@@ -8285,16 +8670,25 @@
 
             // 한 코드를 한 박자에 컴핑 (블록 코드).
             // velMul : on/off-beat 강세 차별화에 사용 (1.0 기본, 0.55 약세 등)
-            function playPianoChord(chordName, time, velMul) {
+            // opts.vary : true 면 직전 보이싱과 다른 (살짝 변형된) 보이싱 선호
+            //             — 같은 코드가 다음 마디에 다시 나올 때 사용.
+            function playPianoChord(chordName, time, velMul, opts) {
                 if (!audioCtx) return;
                 if (typeof velMul !== 'number') velMul = 1.0;
-                var voicing = pickPianoVoicing(chordName, _prevPianoVoicing);
+                opts = opts || {};
+                var voicing = pickPianoVoicing(chordName, _prevPianoVoicing, { varyForRepeat: !!opts.vary });
                 if (!voicing) return;
                 _prevPianoVoicing = voicing;
                 var bus = getPianoBus();
                 // 길게 울리는 sustain — 다음 박까지 자연스럽게 이어짐
                 var dur = 1.4;
                 var perVoiceGain = 0.18 * velMul;
+
+                // 코드 단위 마스터 게인 — choke (음 끊기) 시 한 번에 0 으로 감쇠.
+                var chordGain = audioCtx.createGain();
+                chordGain.gain.value = 1.0;
+                chordGain.connect(bus);
+                var chordSources = [];
 
                 voicing.forEach(function(midi) {
                     var freq = 440 * Math.pow(2, (midi - 69) / 12);
@@ -8315,7 +8709,7 @@
                     // sustain 동안 cutoff 가 너무 빨리 떨어지지 않도록 천천히
                     filt.frequency.exponentialRampToValueAtTime(Math.max(900, freq * 3.5), t0 + dur);
                     filt.connect(voiceGain);
-                    voiceGain.connect(bus);
+                    voiceGain.connect(chordGain);
 
                     var B = 0.00025 + Math.max(0, (midi - 60)) * 0.0000045;
                     var partials = [
@@ -8341,6 +8735,7 @@
                         g.connect(filt);
                         osc.start(t0);
                         osc.stop(t0 + pdur + 0.05);
+                        chordSources.push(osc);
                     });
 
                     // 해머 노이즈 (1번 음에만 — 합산 클립 방지). off-beat 에선 더 작게.
@@ -8360,11 +8755,22 @@
                         var ng = audioCtx.createGain();
                         ng.gain.setValueAtTime(0.07 * velMul, t0);
                         ng.gain.exponentialRampToValueAtTime(0.001, t0 + nDur);
-                        ns.connect(nbp); nbp.connect(ng); ng.connect(bus);
+                        ns.connect(nbp); nbp.connect(ng); ng.connect(chordGain);
                         ns.start(t0);
                         ns.stop(t0 + nDur + 0.01);
+                        chordSources.push(ns);
                     }
                 });
+
+                // 활성 코드 목록에 등록 (choke 가능). 너무 오래된 항목은 정리.
+                var endTime = time + dur + 0.2;
+                _activePianoChords.push({ gain: chordGain, sources: chordSources, endTime: endTime });
+                if (_activePianoChords.length > 8) {
+                    var nowAc = audioCtx.currentTime;
+                    _activePianoChords = _activePianoChords.filter(function(c) {
+                        return c.endTime > nowAc - 0.5;
+                    });
+                }
             }
 
             function getVoiceNum(beatNum) {
@@ -8529,18 +8935,56 @@
                     // ─── 피아노 컴핑 ───────────────────────────────────
                     var pStyle = PIANO_STYLES[loopPianoStyle];
                     if (pStyle && loopVolPiano > 0.001) {
-                        var pianoTicks = sixteenthsToTicks(pStyle.sixteenthHits, p.ticksPerBeat);
+                        var pianoTicks, pianoChokes = [], pianoHitMeta = null;
+                        if (pStyle.dynamic) {
+                            // '기본' — 드럼 리듬에 매칭된 패턴 사용. 없으면 quarter 폴백.
+                            var pdp = PIANO_DEFAULT_PATTERNS[r];
+                            if (pdp) {
+                                pianoTicks = pdp.hits;
+                                pianoChokes = pdp.chokes || [];
+                                pianoHitMeta = 'default';
+                            } else {
+                                pianoTicks = sixteenthsToTicks(PIANO_STYLES.quarter.sixteenthHits, p.ticksPerBeat);
+                                pianoHitMeta = 'quarter';
+                            }
+                        } else {
+                            pianoTicks = sixteenthsToTicks(pStyle.sixteenthHits, p.ticksPerBeat);
+                            pianoHitMeta = pStyle;
+                        }
+                        // choke 가 같은 tick 에 hit 와 함께 있을 일은 없지만,
+                        // 안전하게 hit 처리보다 먼저 실행 (먼저 끊고 새로 치는 경우 대비).
+                        if (pianoChokes.indexOf(t) !== -1) {
+                            chokePiano(time);
+                        }
                         var pidx = pianoTicks.indexOf(t);
                         if (pidx !== -1) {
                             var midP = measureLen / 2;
                             var halfP = t < midP ? 'a' : 'b';
                             var rootP = getEffectiveRoot(loopMeasureIdx, halfP);
                             if (rootP) {
-                                // 8-beat 컴핑: on-beat (1·2·3·4 박) 은 강세, off-beat (1.5·2.5...) 은 약세.
-                                // 16분음표 위치 % 4 === 0 이면 on-beat.
-                                var sixteenthPos = pStyle.sixteenthHits[pidx];
-                                var velMul = (sixteenthPos % 4 === 0) ? 1.0 : 0.55;
-                                playPianoChord(rootP, time, velMul);
+                                // velocity — on-beat 강세, off-beat 약세.
+                                var velMul;
+                                if (pianoHitMeta === 'default') {
+                                    // 박의 첫 tick (tick % ticksPerBeat === 0) 은 on-beat.
+                                    velMul = (t % p.ticksPerBeat === 0) ? 1.0 : 0.55;
+                                } else if (pianoHitMeta === 'quarter') {
+                                    velMul = 1.0;
+                                } else {
+                                    var sixteenthPos = pianoHitMeta.sixteenthHits[pidx];
+                                    velMul = (sixteenthPos % 4 === 0) ? 1.0 : 0.55;
+                                }
+                                // 세그먼트 식별: 마디 인덱스 + half (a/b).
+                                // 새 세그먼트로 진입했고 직전 세그먼트와 코드가 같으면
+                                // 보이싱을 살짝 변형 (인버전 한 음 점프).
+                                var segKey = loopMeasureIdx + '|' + halfP;
+                                var prevSegChord = _lastPianoSegmentChord;
+                                var isNewSeg = (segKey !== _lastPianoSegmentKey);
+                                if (isNewSeg) {
+                                    _lastPianoSegmentKey = segKey;
+                                    _lastPianoSegmentChord = rootP;
+                                }
+                                var shouldVary = isNewSeg && prevSegChord === rootP;
+                                playPianoChord(rootP, time, velMul, { vary: shouldVary });
                             }
                         }
                     }
@@ -8728,6 +9172,33 @@
             const LOOP_ROOTS = LOOP_ROOTS_SHARP;
             // 코드 픽커의 #/♭ sticky 상태 — 마지막 선택을 다음 picker 에서도 유지
             let loopPickerAccidental = 'sharp';   // 'sharp' | 'flat'
+            // 코드 픽커의 4화음 확장 — 마지막 선택을 다음 picker 에서도 유지
+            //   'none' | '7' | 'm7' | 'M7' | 'm7b5' | 'dim' | 'dim7'
+            let loopPickerExtension = 'none';
+            // 코드 칸 클릭 시 어떤 입력 방식을 띄울지 — 'picker' | 'text'
+            // localStorage 저장돼 다음 방문에도 유지.
+            let loopInputMode = 'picker';
+            try {
+                var savedMode = localStorage.getItem('loopInputMode');
+                if (savedMode === 'text' || savedMode === 'picker') loopInputMode = savedMode;
+            } catch (e) {}
+            window.setLoopInputMode = function(mode) {
+                if (mode !== 'picker' && mode !== 'text') return;
+                loopInputMode = mode;
+                try { localStorage.setItem('loopInputMode', mode); } catch (e) {}
+                document.querySelectorAll('#loopInputModeBtns button').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.mode === mode);
+                });
+                // 모드 바뀌면 열려있던 픽커는 닫기
+                if (typeof closeLoopPicker === 'function') closeLoopPicker();
+                gtag('event', 'loop_input_mode', { mode: mode });
+            };
+            // 부팅 시 토글 동기화
+            document.addEventListener('DOMContentLoaded', function() {
+                document.querySelectorAll('#loopInputModeBtns button').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.mode === loopInputMode);
+                });
+            });
             const LOOP_RHYTHM_LABELS = {
                 '4beat': '4비트 A', '4beat2': '4비트 B',
                 '8beat': '8비트 A', '8beat2': '8비트 B',
@@ -8928,6 +9399,8 @@
                 if (typeof updateLoopStyleAvailability === 'function') updateLoopStyleAvailability();
                 // 재생 위치 리셋
                 _prevPianoVoicing = null;
+                _lastPianoSegmentKey = null;
+                _lastPianoSegmentChord = null;
                 currentBeat = 0;
                 loopMeasureIdx = 0;
                 if (window._metroRunning && audioCtx) nextNoteTime = audioCtx.currentTime + 0.05;
@@ -9150,14 +9623,16 @@
                         halfB.textContent = '+';
                     }
                     (function(idx, elA, elB) {
-                        elA.onclick = function(e) {
-                            e.stopPropagation();
-                            toggleLoopPicker(idx, 'a', elA.parentElement.parentElement);
-                        };
-                        elB.onclick = function(e) {
-                            e.stopPropagation();
-                            toggleLoopPicker(idx, 'b', elB.parentElement.parentElement);
-                        };
+                        function handleClick(half, el) {
+                            if (loopInputMode === 'text') {
+                                closeLoopPicker();
+                                openInlineChordInput(idx, half);
+                            } else {
+                                toggleLoopPicker(idx, half, el.parentElement.parentElement);
+                            }
+                        }
+                        elA.onclick = function(e) { e.stopPropagation(); handleClick('a', elA); };
+                        elB.onclick = function(e) { e.stopPropagation(); handleClick('b', elB); };
                     })(i, halfA, halfB);
                     halves.appendChild(halfA);
                     halves.appendChild(halfB);
@@ -9252,7 +9727,7 @@
                 picker.className = 'loop-chord-picker open ' + posClass;
                 picker.onclick = function(e) { e.stopPropagation(); };
 
-                // 셀에 이미 코드가 있으면 그 코드의 quality / accidental 을 picker 의 초기 상태로 사용.
+                // 셀에 이미 코드가 있으면 그 코드의 quality / accidental / extension 으로 picker 초기화.
                 // 없으면 마지막 sticky 값 유지.
                 var existing = chordMap[idx];
                 if (existing) {
@@ -9260,46 +9735,35 @@
                     loopPickerQuality = info.minor ? 'minor' : 'major';
                     if (info.root && info.root.indexOf('b') !== -1) loopPickerAccidental = 'flat';
                     else if (info.root && info.root.indexOf('#') !== -1) loopPickerAccidental = 'sharp';
+                    loopPickerExtension = info.extension || 'none';
                 }
 
                 // 현재 accidental 에 맞는 root 배열 반환
                 function currentRoots() {
                     return loopPickerAccidental === 'flat' ? LOOP_ROOTS_FLAT : LOOP_ROOTS_SHARP;
                 }
-                // 픽커 내 모든 root 버튼 라벨/선택상태 재렌더 (quality / accidental 변경 시 호출)
+                // 7 / m7 / m7♭5 / dim7 은 quality 가 이미 픽스됨 → 장/단 토글 비활성.
+                // M7 와 삼화음(none) 은 토글 활성 (예: M7 + 단조 = mM7)
+                function qualityLockedByExtension() {
+                    return loopPickerExtension === '7'    ||
+                           loopPickerExtension === 'm7'   ||
+                           loopPickerExtension === 'm7b5' ||
+                           loopPickerExtension === 'dim'  ||
+                           loopPickerExtension === 'dim7';
+                }
+                // 픽커 내 모든 root 버튼 라벨/선택상태 재렌더 (quality / accidental / extension 변경 시 호출)
                 function refreshRootButtons() {
                     var roots = currentRoots();
                     var btns = pickerGrid.querySelectorAll('.loop-chord-pick-btn');
                     roots.forEach(function(note, i) {
                         var b = btns[i];
                         if (!b) return;
-                        var fullName = loopPickerQuality === 'minor' ? (note + 'm') : note;
+                        var fullName = buildChordName(note, loopPickerQuality, loopPickerExtension);
                         b.dataset.note = note;
                         b.textContent = fullName;
                         b.classList.toggle('selected', chordMap[idx] === fullName);
                     });
                 }
-
-                // ─── 장/단 토글 ─────────────────────────────────────
-                var qualToggle = document.createElement('div');
-                qualToggle.className = 'loop-chord-quality-toggle';
-                ['major', 'minor'].forEach(function(q) {
-                    var qb = document.createElement('button');
-                    qb.type = 'button';
-                    qb.className = 'loop-chord-quality-btn' + (loopPickerQuality === q ? ' active' : '');
-                    qb.dataset.quality = q;
-                    qb.textContent = q === 'major' ? '장조' : '단조';
-                    qb.onclick = function(ev) {
-                        ev.stopPropagation();
-                        loopPickerQuality = q;
-                        qualToggle.querySelectorAll('.loop-chord-quality-btn').forEach(function(b) {
-                            b.classList.toggle('active', b.dataset.quality === q);
-                        });
-                        refreshRootButtons();
-                    };
-                    qualToggle.appendChild(qb);
-                });
-                picker.appendChild(qualToggle);
 
                 // ─── #/♭ 토글 ────────────────────────────────────────
                 var accToggle = document.createElement('div');
@@ -9323,19 +9787,85 @@
                 });
                 picker.appendChild(accToggle);
 
+                // ─── 장/단 토글 ─────────────────────────────────────
+                var qualToggle = document.createElement('div');
+                qualToggle.className = 'loop-chord-quality-toggle loop-chord-qual-toggle';
+                ['major', 'minor'].forEach(function(q) {
+                    var qb = document.createElement('button');
+                    qb.type = 'button';
+                    qb.className = 'loop-chord-quality-btn' + (loopPickerQuality === q ? ' active' : '');
+                    qb.dataset.quality = q;
+                    qb.textContent = q === 'major' ? '장조' : '단조';
+                    qb.onclick = function(ev) {
+                        ev.stopPropagation();
+                        if (qualityLockedByExtension()) return;
+                        loopPickerQuality = q;
+                        qualToggle.querySelectorAll('.loop-chord-quality-btn').forEach(function(b) {
+                            b.classList.toggle('active', b.dataset.quality === q);
+                        });
+                        refreshRootButtons();
+                    };
+                    qualToggle.appendChild(qb);
+                });
+                picker.appendChild(qualToggle);
+                // 4화음에서 quality 가 강제될 때 비활성 표시
+                if (qualityLockedByExtension()) qualToggle.classList.add('disabled');
+
+                // ─── 화음 종류 칩 (4화음 확장) ────────────────────────
+                var extRow = document.createElement('div');
+                extRow.className = 'loop-chord-ext-chips';
+                var EXT_OPTIONS = [
+                    { key: 'none',  label: '삼화음' },
+                    { key: '7',     label: '7' },
+                    { key: 'm7',    label: 'm7' },
+                    { key: 'M7',    label: 'M7' },
+                    { key: 'm7b5',  label: 'm7♭5' },
+                    { key: 'dim7',  label: 'dim7' }
+                ];
+                EXT_OPTIONS.forEach(function(opt) {
+                    var eb = document.createElement('button');
+                    eb.type = 'button';
+                    eb.className = 'loop-chord-ext-chip' + (loopPickerExtension === opt.key ? ' active' : '');
+                    eb.dataset.ext = opt.key;
+                    eb.textContent = opt.label;
+                    eb.onclick = function(ev) {
+                        ev.stopPropagation();
+                        loopPickerExtension = opt.key;
+                        extRow.querySelectorAll('.loop-chord-ext-chip').forEach(function(b) {
+                            b.classList.toggle('active', b.dataset.ext === opt.key);
+                        });
+                        // 칩이 quality 를 강제하는 경우 자동 동기화
+                        //   7  → 메이저 강제 (도미넌트 7)
+                        //   m7 → 마이너 강제 (마이너 7)
+                        //   m7♭5 → 마이너 강제
+                        //   dim7 → quality 와 무관 (표시는 그대로 유지)
+                        if (opt.key === '7')    loopPickerQuality = 'major';
+                        if (opt.key === 'm7')   loopPickerQuality = 'minor';
+                        if (opt.key === 'm7b5') loopPickerQuality = 'minor';
+                        // 토글 활성/비활성 시각 갱신
+                        var locked = qualityLockedByExtension();
+                        qualToggle.classList.toggle('disabled', locked);
+                        qualToggle.querySelectorAll('.loop-chord-quality-btn').forEach(function(b) {
+                            b.classList.toggle('active', b.dataset.quality === loopPickerQuality);
+                        });
+                        refreshRootButtons();
+                    };
+                    extRow.appendChild(eb);
+                });
+                picker.appendChild(extRow);
+
                 // ─── Root 그리드 ───────────────────────────────────
                 var pickerGrid = document.createElement('div');
                 pickerGrid.className = 'loop-chord-picker-grid';
                 currentRoots().forEach(function(note) {
                     var btn = document.createElement('button');
                     btn.dataset.note = note;
-                    var fullName = loopPickerQuality === 'minor' ? (note + 'm') : note;
+                    var fullName = buildChordName(note, loopPickerQuality, loopPickerExtension);
                     btn.className = 'loop-chord-pick-btn' + (chordMap[idx] === fullName ? ' selected' : '');
                     btn.textContent = fullName;
                     btn.onclick = function() {
-                        // dataset.note 가 refresh 후 갱신되어 있으므로 클릭 시점 기준으로 재구성
                         var n = btn.dataset.note;
-                        var fn = loopPickerQuality === 'minor' ? (n + 'm') : n;
+                        var fn = buildChordName(n, loopPickerQuality, loopPickerExtension);
                         chordMap[idx] = fn;
                         closeLoopPicker();
                         loopPickerCell = null;
@@ -9359,6 +9889,61 @@
                 cellEl.style.position = 'relative';
                 cellEl.appendChild(picker);
             }
+            // 인라인 텍스트 입력 모드 — 셀의 한 절반(half) 을 input 으로 변신.
+            //   엔터 / blur → 저장. Esc → 취소.
+            //   Tab → 다음 절반으로 자연 이동(브라우저 기본 동작).
+            function openInlineChordInput(idx, half) {
+                var grid = document.getElementById('loopGrid');
+                if (!grid) return;
+                var cell = grid.querySelector('.loop-cell[data-idx="' + idx + '"]');
+                if (!cell) return;
+                var halves = cell.querySelector('.loop-cell-halves');
+                if (!halves) return;
+                var spans = halves.querySelectorAll('.loop-cell-half');
+                var span = half === 'b' ? spans[1] : spans[0];
+                if (!span) return;
+                var chordMap = half === 'b' ? loopChordsB : loopChords;
+                var initial = chordMap[idx] || '';
+                var input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'loop-cell-half-input';
+                input.value = initial;
+                input.maxLength = 12;
+                input.autocomplete = 'off';
+                input.spellcheck = false;
+                input.placeholder = '예: Cmaj7';
+                input.dataset.idx = String(idx);
+                input.dataset.half = half;
+                // 기존 span 자리에 input 끼워넣기
+                span.replaceWith(input);
+                input.focus();
+                input.select();
+                var committed = false;
+                function commit() {
+                    if (committed) return;
+                    committed = true;
+                    var v = (input.value || '').trim();
+                    if (v) chordMap[idx] = v;
+                    else delete chordMap[idx];
+                    renderLoopGrid();
+                }
+                function cancel() {
+                    if (committed) return;
+                    committed = true;
+                    renderLoopGrid();   // 변경 없이 다시 그림
+                }
+                input.addEventListener('blur', commit);
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        commit();
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        cancel();
+                    }
+                });
+            }
+            window.openInlineChordInput = openInlineChordInput;
             function closeLoopPicker() {
                 document.querySelectorAll('.loop-chord-picker').forEach(function(p) { p.remove(); });
             }
@@ -9418,7 +10003,7 @@
                     window.setLoopBassStyle('default');
                 }
                 if (loopPianoStyle in rules.piano && !rules.piano[loopPianoStyle]) {
-                    window.setLoopPianoStyle('quarter');
+                    window.setLoopPianoStyle('default');
                 }
             }
 
@@ -9430,6 +10015,8 @@
                 });
                 // 피아노 스타일 바뀌면 보이싱 새로 시작
                 _prevPianoVoicing = null;
+                _lastPianoSegmentKey = null;
+                _lastPianoSegmentChord = null;
                 gtag('event', 'loop_piano_style', { style: style });
             };
 
@@ -9492,6 +10079,8 @@
                 loopChords = {};
                 loopChordsB = {};
                 _prevPianoVoicing = null;
+                _lastPianoSegmentKey = null;
+                _lastPianoSegmentChord = null;
                 renderLoopGrid();
                 gtag('event', 'loop_clear_all');
             };
@@ -9535,7 +10124,22 @@
                 currentBeat = 0;
                 // 새 재생 시작 시 직전 피아노 보이싱 초기화 (첫 코드는 미들 옥타브에서 시작)
                 _prevPianoVoicing = null;
-                nextNoteTime = audioCtx.currentTime + 0.05;
+                _lastPianoSegmentKey = null;
+                _lastPianoSegmentChord = null;
+                var firstNoteTime = audioCtx.currentTime + 0.05;
+                // 예비박(카운트인) — 루프 모드에서 토글 ON 일 때만.
+                // 4 박자만큼 하이햇 클릭(첫 박은 강세) + 비트 dot 깜빡임 후 본 패턴 시작.
+                if (soundMode === 'loop' && loopCountInEnabled) {
+                    var quarterDur = 60.0 / bpm;
+                    for (var ci = 0; ci < 4; ci++) {
+                        var t = firstNoteTime + ci * quarterDur;
+                        // 첫 박은 더 강하게(level 2), 나머지는 일반(level 1) — 박자 감 잡기 쉽게
+                        playHiHat(t, ci === 0 ? 2 : 1);
+                        try { highlightDot(ci, t); } catch (e) {}
+                    }
+                    firstNoteTime += 4 * quarterDur;
+                }
+                nextNoteTime = firstNoteTime;
                 timerId = setInterval(scheduler, lookahead);
                 setupMediaSession();
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
@@ -9553,6 +10157,7 @@
                     var now = audioCtx.currentTime;
                     try { chokeOpenHihat(now); } catch(e) {}
                     try { chokeBass(now); } catch(e) {}
+                    try { chokePiano(now); } catch(e) {}
                 }
                 _openHihatNode = null;
                 _openHihatGain = null;
@@ -9560,6 +10165,9 @@
                 bassMaster = null;
                 pianoBusNode = null;
                 _prevPianoVoicing = null;
+                _lastPianoSegmentKey = null;
+                _lastPianoSegmentChord = null;
+                _activePianoChords = [];
                 masterGainNode = null;
                 if (silentAudio) silentAudio.pause();
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
