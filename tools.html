@@ -4942,6 +4942,102 @@
             box-shadow: 0 8px 24px rgba(42, 107, 74, 0.18);
         }
         .loop-preset-list.open { display: block; }
+        /* 정렬 셀렉터 — 드롭다운 상단에 sticky */
+        .loop-preset-sort-row {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.4rem 0.5rem;
+            position: sticky;
+            top: -4px;
+            background: #fff;
+            border-bottom: 1px solid rgba(42, 107, 74, 0.1);
+            margin: -4px -4px 4px;
+        }
+        .loop-preset-sort-label {
+            font-size: 0.7rem;
+            color: rgba(26, 36, 33, 0.55);
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            margin-right: 0.2rem;
+        }
+        .loop-preset-sort-btn {
+            padding: 0.28rem 0.6rem;
+            font-size: 0.72rem;
+            font-weight: 500;
+            border: 1px solid rgba(42, 107, 74, 0.18);
+            background: rgba(42, 107, 74, 0.04);
+            color: rgba(26, 36, 33, 0.65);
+            border-radius: 14px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.12s;
+        }
+        .loop-preset-sort-btn:hover:not(.active) {
+            background: rgba(82, 168, 114, 0.18);
+            color: var(--green-deep);
+        }
+        .loop-preset-sort-btn.active {
+            background: var(--green-deep);
+            color: #fff;
+            border-color: var(--green-deep);
+        }
+        /* 난이도 별 + 장르 배지 */
+        .loop-preset-stars {
+            color: #d4a52a;
+            font-size: 0.74rem;
+            letter-spacing: 0;
+            margin-left: 0.3rem;
+        }
+        .loop-preset-genre {
+            display: inline-block;
+            margin-left: 0.3rem;
+            padding: 0.05rem 0.4rem;
+            font-size: 0.66rem;
+            font-weight: 600;
+            color: var(--green-deep);
+            background: rgba(82, 168, 114, 0.18);
+            border-radius: 8px;
+            letter-spacing: 0.02em;
+        }
+        /* 장르 그룹 헤더 */
+        .loop-preset-group {
+            padding: 0.4rem 0.7rem 0.2rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--green-deep);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            border-top: 1px dashed rgba(42, 107, 74, 0.15);
+            margin-top: 0.3rem;
+        }
+        .loop-preset-group:first-child { border-top: none; margin-top: 0; }
+        /* dark mode */
+        :root[data-theme="dark"] .loop-preset-sort-row {
+            background: rgba(20, 32, 28, 0.98);
+            border-bottom-color: rgba(180, 230, 200, 0.18);
+        }
+        :root[data-theme="dark"] .loop-preset-sort-label { color: rgba(232,240,236,0.7); }
+        :root[data-theme="dark"] .loop-preset-sort-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(180, 230, 200, 0.22);
+            color: rgba(232, 240, 236, 0.78);
+        }
+        :root[data-theme="dark"] .loop-preset-sort-btn:hover:not(.active) {
+            background: rgba(82, 168, 114, 0.28);
+            color: #b5e6c8;
+        }
+        :root[data-theme="dark"] .loop-preset-sort-btn.active {
+            background: linear-gradient(135deg, var(--green-mid), var(--green-deep));
+            color: #fff;
+            border-color: var(--green-mid);
+        }
+        :root[data-theme="dark"] .loop-preset-stars { color: #f0c14a; }
+        :root[data-theme="dark"] .loop-preset-genre { background: rgba(82, 168, 114, 0.32); color: #b5e6c8; }
+        :root[data-theme="dark"] .loop-preset-group {
+            color: #b5e6c8;
+            border-top-color: rgba(180, 230, 200, 0.22);
+        }
         .loop-preset-item {
             padding: 0.55rem 0.7rem;
             border-radius: 6px;
@@ -5827,7 +5923,15 @@
                         <button class="loop-preset-toggle" id="loopPresetToggle" type="button" aria-label="프리셋 목록">
                             <i class="fas fa-chevron-down"></i>
                         </button>
-                        <div class="loop-preset-list" id="loopPresetList"></div>
+                        <div class="loop-preset-list" id="loopPresetList">
+                            <div class="loop-preset-sort-row" id="loopPresetSortRow">
+                                <span class="loop-preset-sort-label">정렬</span>
+                                <button type="button" class="loop-preset-sort-btn active" data-sort="alpha">가나다순</button>
+                                <button type="button" class="loop-preset-sort-btn" data-sort="difficulty">난이도순</button>
+                                <button type="button" class="loop-preset-sort-btn" data-sort="genre">장르별</button>
+                            </div>
+                            <div id="loopPresetItems"></div>
+                        </div>
                     </div>
                     <div class="loop-top-row">
                         <div class="loop-measures-label">
@@ -5861,7 +5965,7 @@
                         <div class="loop-style-group">
                             <label>피아노</label>
                             <div class="loop-style-btns" id="loopPianoStyleBtns">
-                                <button type="button" class="loop-style-btn active" data-pstyle="quarter" onclick="setLoopPianoStyle('quarter')">4분음표</button>
+                                <button type="button" class="loop-style-btn active" data-pstyle="quarter" onclick="setLoopPianoStyle('quarter')">4비트</button>
                                 <button type="button" class="loop-style-btn" data-pstyle="8beat" onclick="setLoopPianoStyle('8beat')">8비트</button>
                             </div>
                         </div>
@@ -8622,6 +8726,19 @@
             // 데이터는 public.presets 테이블에서 읽어옴 (RLS: public read).
             let _loopPresetsCache = null;
             let _loopPresetsLoading = false;
+            // 정렬 모드: 'alpha' (가나다, 영문 우선) | 'difficulty' | 'genre'
+            let _loopPresetSort = 'alpha';
+
+            // 영문(A-Z) 먼저, 한글(가-하) 나중. 같은 그룹 안에서는 locale-aware 정렬.
+            function _alphaCompare(a, b) {
+                var sa = String(a || '');
+                var sb = String(b || '');
+                var aIsKor = /^[ㄱ-힝]/.test(sa);
+                var bIsKor = /^[ㄱ-힝]/.test(sb);
+                if (aIsKor && !bIsKor) return 1;
+                if (!aIsKor && bIsKor) return -1;
+                return sa.localeCompare(sb, 'ko-KR', { sensitivity: 'base' });
+            }
 
             async function getLoopPresetClient() {
                 // auth.js 가 로드한 Supabase SDK 가 준비될 때까지 대기 (최대 ~5초)
@@ -8690,15 +8807,16 @@
             }
 
             function renderLoopPresetList(filter) {
-                var list = document.getElementById('loopPresetList');
-                if (!list) return;
+                var itemsEl = document.getElementById('loopPresetItems');
+                if (!itemsEl) return;
                 var presets = _loopPresetsCache || [];
                 var f = (filter || '').trim();
                 var filtered;
-                if (!f) {
+                var isSearching = !!f;
+                if (!isSearching) {
                     filtered = presets.slice();
                 } else {
-                    // 점수 매기기 — name 가중치 높음, artist 가중치 낮음
+                    // 검색 중일 때는 점수순 (name 가중치 높음, artist 낮음)
                     filtered = presets.map(function(p) {
                         var s1 = _scoreMatch(p.name, f);
                         var s2 = _scoreMatch(p.artist, f) * 0.6;
@@ -8710,21 +8828,60 @@
                     }).map(function(x) { return x.preset; });
                 }
                 if (filtered.length === 0) {
-                    list.innerHTML = '<div class="loop-preset-empty">' +
+                    itemsEl.innerHTML = '<div class="loop-preset-empty">' +
                         (f ? '"' + _escHtml(filter) + '"에 맞는 프리셋이 없어요'
                            : '아직 프리셋이 없어요') + '</div>';
                     return;
                 }
-                list.innerHTML = filtered.map(function(p) {
-                    return '<div class="loop-preset-item" data-id="' + _escHtml(p.id) + '">' +
+
+                // 검색 모드가 아닐 때만 정렬 모드 적용 (검색 중에는 점수 순서 우선)
+                if (!isSearching) {
+                    if (_loopPresetSort === 'alpha') {
+                        filtered.sort(function(a, b) { return _alphaCompare(a.name, b.name); });
+                    } else if (_loopPresetSort === 'difficulty') {
+                        filtered.sort(function(a, b) {
+                            var da = a.difficulty || 99;
+                            var db = b.difficulty || 99;
+                            if (da !== db) return da - db;
+                            return _alphaCompare(a.name, b.name);
+                        });
+                    } else if (_loopPresetSort === 'genre') {
+                        // 장르별 그룹 정렬 (장르 없으면 마지막 "기타")
+                        filtered.sort(function(a, b) {
+                            var ga = a.genre || '￿';
+                            var gb = b.genre || '￿';
+                            var c = _alphaCompare(ga, gb);
+                            if (c !== 0) return c;
+                            return _alphaCompare(a.name, b.name);
+                        });
+                    }
+                }
+
+                // 렌더링 — 장르별 모드 + 검색 안 할 때만 그룹 헤더 삽입
+                var html = '';
+                var lastGenre = null;
+                var groupMode = (!isSearching && _loopPresetSort === 'genre');
+                filtered.forEach(function(p) {
+                    if (groupMode) {
+                        var g = p.genre || '기타';
+                        if (g !== lastGenre) {
+                            html += '<div class="loop-preset-group">' + _escHtml(g) + '</div>';
+                            lastGenre = g;
+                        }
+                    }
+                    var stars = (p.difficulty && p.difficulty > 0) ? '★'.repeat(p.difficulty) : '';
+                    html += '<div class="loop-preset-item" data-id="' + _escHtml(p.id) + '">' +
                         '<div>' +
                             '<span class="loop-preset-item-name">' + _escHtml(p.name) + '</span>' +
                             (p.artist ? ' <span class="loop-preset-item-meta">· ' + _escHtml(p.artist) + '</span>' : '') +
+                            (stars ? ' <span class="loop-preset-stars">' + stars + '</span>' : '') +
+                            (p.genre && !groupMode ? ' <span class="loop-preset-genre">' + _escHtml(p.genre) + '</span>' : '') +
                         '</div>' +
                         '<span class="loop-preset-item-meta">' + (p.bpm || 90) + ' BPM · ' + (p.bars || 4) + '마디</span>' +
                     '</div>';
-                }).join('');
-                list.querySelectorAll('.loop-preset-item').forEach(function(el) {
+                });
+                itemsEl.innerHTML = html;
+                itemsEl.querySelectorAll('.loop-preset-item').forEach(function(el) {
                     el.onclick = function() {
                         var id = el.dataset.id;
                         var p = (_loopPresetsCache || []).find(function(x) { return x.id === id; });
@@ -8810,6 +8967,18 @@
                     e.stopPropagation();
                     window.toggleLoopPresetList();
                 };
+                // 정렬 셀렉터
+                document.querySelectorAll('.loop-preset-sort-btn').forEach(function(btn) {
+                    btn.onclick = function(e) {
+                        e.stopPropagation();
+                        _loopPresetSort = btn.dataset.sort;
+                        document.querySelectorAll('.loop-preset-sort-btn').forEach(function(b) {
+                            b.classList.toggle('active', b === btn);
+                        });
+                        var s = document.getElementById('loopPresetSearch');
+                        renderLoopPresetList(s ? s.value : '');
+                    };
+                });
                 // 외부 클릭 시 닫기
                 document.addEventListener('pointerdown', function(e) {
                     if (!e.target.closest('.loop-preset-bar')) {

@@ -302,6 +302,10 @@
             background: var(--green-deep);
             color: #fff;
         }
+        .bd-pills-stars .bd-pill { letter-spacing: 0; }
+        .bd-pills-stars .bd-pill[data-diff="0"] { color: var(--text-light); }
+        .bd-pills-stars .bd-pill:not([data-diff="0"]) { color: #d4a52a; font-size: 0.74rem; }
+        .bd-pills-stars .bd-pill.active { color: #fff !important; }
 
         /* ───── Chord progression — loop-grid 스타일 (반주 메뉴와 동일한 룩) ─────
            tools.html 의 .loop-grid / .loop-cell / .loop-cell-half 룩을 그대로
@@ -527,10 +531,6 @@
                         <label>BPM</label>
                         <input type="number" id="fBpm" min="40" max="240" value="90">
                     </div>
-                    <div class="bd-field" style="flex: 0 0 90px;">
-                        <label>정렬 순서</label>
-                        <input type="number" id="fSort" value="0">
-                    </div>
                     <div class="bd-field" style="flex: 1 1 auto;">
                         <label>마디</label>
                         <div class="bd-pills" id="fBars">
@@ -539,6 +539,26 @@
                             <button class="bd-pill" data-bars="12" type="button">12</button>
                             <button class="bd-pill" data-bars="16" type="button">16</button>
                         </div>
+                    </div>
+                </div>
+
+                <div class="bd-row">
+                    <div class="bd-field" style="flex: 1 1 auto;">
+                        <label>난이도</label>
+                        <div class="bd-pills bd-pills-stars" id="fDifficulty">
+                            <button class="bd-pill" data-diff="0" type="button">없음</button>
+                            <button class="bd-pill" data-diff="1" type="button">★</button>
+                            <button class="bd-pill" data-diff="2" type="button">★★</button>
+                            <button class="bd-pill" data-diff="3" type="button">★★★</button>
+                            <button class="bd-pill" data-diff="4" type="button">★★★★</button>
+                            <button class="bd-pill" data-diff="5" type="button">★★★★★</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="bd-row">
+                    <div class="bd-field">
+                        <label>장르</label>
+                        <input type="text" id="fGenre" placeholder="예: 발라드, 팝, 락 …" autocomplete="off">
                     </div>
                 </div>
 
@@ -567,7 +587,7 @@
                     <div class="bd-field">
                         <label>피아노 스타일</label>
                         <select id="fPianoStyle">
-                            <option value="quarter">4분음표</option>
+                            <option value="quarter">4비트</option>
                             <option value="8beat">8비트</option>
                         </select>
                     </div>
@@ -617,6 +637,7 @@
             let editingId = null;
             let bars = 4;
             let listFilter = '';
+            let difficulty = 0;  // 0 = 없음, 1~5 = 별 개수
 
             const $ = function(id) { return document.getElementById(id); };
 
@@ -793,10 +814,13 @@
                 filtered.forEach(function(p) {
                     const item = document.createElement('div');
                     item.className = 'bd-list-item' + (p.id === editingId ? ' selected' : '');
+                    var stars = (p.difficulty && p.difficulty > 0) ? ' '.repeat(0) + '★'.repeat(p.difficulty) : '';
                     item.innerHTML =
                         '<div>' +
                             '<span class="bd-list-item-name">' + escapeHtml(p.name) + '</span>' +
                             (p.artist ? ' <span class="bd-list-item-meta">· ' + escapeHtml(p.artist) + '</span>' : '') +
+                            (p.genre ? ' <span class="bd-list-item-meta">· ' + escapeHtml(p.genre) + '</span>' : '') +
+                            (stars ? ' <span class="bd-list-item-meta" style="color:#d4a52a;">' + stars + '</span>' : '') +
                         '</div>' +
                         '<span class="bd-list-item-meta">' + p.bpm + ' BPM · ' + p.bars + '마디</span>';
                     item.onclick = function() { loadEdit(p); };
@@ -811,12 +835,14 @@
                 $('fName').value = '';
                 $('fArtist').value = '';
                 $('fBpm').value = 90;
-                $('fSort').value = (presets.length || 0) * 10;
+                $('fGenre').value = '';
                 bars = 4;
+                difficulty = 0;
                 $('fRhythm').value = '8beat';
                 $('fBassStyle').value = 'default';
                 $('fPianoStyle').value = 'quarter';
                 renderBars();
+                renderDifficulty();
                 renderChords({}, {});
                 $('editForm').style.display = 'block';
                 $('deleteBtn').style.display = 'none';
@@ -832,17 +858,25 @@
                 $('fName').value = p.name || '';
                 $('fArtist').value = p.artist || '';
                 $('fBpm').value = p.bpm || 90;
-                $('fSort').value = p.sort_order || 0;
+                $('fGenre').value = p.genre || '';
                 bars = p.bars || 4;
+                difficulty = p.difficulty || 0;
                 $('fRhythm').value = p.rhythm || '8beat';
                 $('fBassStyle').value = p.bass_style || 'default';
                 $('fPianoStyle').value = p.piano_style || 'quarter';
                 renderBars();
+                renderDifficulty();
                 renderChords(p.chords_a || {}, p.chords_b || {});
                 $('editForm').style.display = 'block';
                 $('deleteBtn').style.display = 'inline-flex';
                 $('feedback').className = 'bd-feedback';
                 renderList();
+            }
+
+            function renderDifficulty() {
+                document.querySelectorAll('#fDifficulty .bd-pill').forEach(function(b) {
+                    b.classList.toggle('active', parseInt(b.dataset.diff, 10) === difficulty);
+                });
             }
 
             function renderBars() {
@@ -917,7 +951,8 @@
                     piano_style: $('fPianoStyle').value,
                     chords_a: chords.a,
                     chords_b: chords.b,
-                    sort_order: parseInt($('fSort').value, 10) || 0,
+                    difficulty: difficulty > 0 ? difficulty : null,
+                    genre: $('fGenre').value.trim() || null,
                 };
                 try {
                     let res;
@@ -977,6 +1012,12 @@
                         renderBars();
                         const cur = readChords();
                         renderChords(cur.a, cur.b);
+                    };
+                });
+                document.querySelectorAll('#fDifficulty .bd-pill').forEach(function(b) {
+                    b.onclick = function() {
+                        difficulty = parseInt(b.dataset.diff, 10);
+                        renderDifficulty();
                     };
                 });
 
