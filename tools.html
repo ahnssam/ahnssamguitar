@@ -8649,11 +8649,14 @@
                 'half-dim':[0, 3, 6, 10]
             };
 
-            // 코드 이름 → pitch-class 집합.
+            // 코드 이름 → pitch-class 집합 (피아노 보이싱용).
             //   1) suffix 가 EXTENDED_CHORD_PCS 에 정확히 매칭되면 그 오프셋 사용
             //      (♭/♯ 유니코드는 b/# 로 정규화 후 룩업)
             //   2) 그 외 케이스는 parseChordName 의 extension 기반 폴백
             //      (트라이어드 / 7 / m7 / M7 / m7♭5 / dim / dim7)
+            //   3) 4음 이상 코드는 root 생략 (rootless voicing) — 베이스가 이미 근음을
+            //      연주하니 피아노가 중복할 필요 없음. 트라이어드(3음)는 너무 빈약해져
+            //      그대로 유지.
             function chordPcsFromName(chordName) {
                 if (!chordName) return null;
                 var m = String(chordName).match(/^([A-G][#b]?)(.*)$/);
@@ -8663,29 +8666,30 @@
                 var rest = (m[2] || '').trim();
                 // 유니코드 ♭/♯ → ASCII b/# 로 정규화 (룩업 일관성)
                 var restNorm = rest.replace(/♭/g, 'b').replace(/♯/g, '#');
-                if (EXTENDED_CHORD_PCS[restNorm]) {
-                    return EXTENDED_CHORD_PCS[restNorm].map(function(s) { return (rIdx + s) % 12; });
-                }
-                // 폴백 — 기존 parseChordName 기반 처리
-                var info = parseChordName(chordName);
-                if (!info.root) return null;
-                var ext = info.extension || 'none';
                 var semis;
-                if (ext === 'dim') {
-                    semis = [0, 3, 6];
-                } else if (ext === 'dim7') {
-                    semis = [0, 3, 6, 9];
-                } else if (ext === 'm7b5') {
-                    semis = [0, 3, 6, 10];
-                } else if (ext === 'M7') {
-                    semis = info.minor ? [0, 3, 7, 11] : [0, 4, 7, 11];
-                } else if (ext === '7') {
-                    semis = [0, 4, 7, 10];
-                } else if (ext === 'm7') {
-                    semis = [0, 3, 7, 10];
+                if (EXTENDED_CHORD_PCS[restNorm]) {
+                    semis = EXTENDED_CHORD_PCS[restNorm];
                 } else {
-                    var third = info.minor ? 3 : 4;
-                    semis = [0, third, 7];
+                    // 폴백 — 기존 parseChordName 기반
+                    var info = parseChordName(chordName);
+                    if (!info.root) return null;
+                    var ext = info.extension || 'none';
+                    if (ext === 'dim')        semis = [0, 3, 6];
+                    else if (ext === 'dim7')  semis = [0, 3, 6, 9];
+                    else if (ext === 'm7b5')  semis = [0, 3, 6, 10];
+                    else if (ext === 'M7')    semis = info.minor ? [0, 3, 7, 11] : [0, 4, 7, 11];
+                    else if (ext === '7')     semis = [0, 4, 7, 10];
+                    else if (ext === 'm7')    semis = [0, 3, 7, 10];
+                    else {
+                        var third = info.minor ? 3 : 4;
+                        semis = [0, third, 7];
+                    }
+                }
+                // Rootless voicing — 4음 이상이고 첫 오프셋이 root(0) 인 경우만.
+                // 베이스가 root 를 연주하므로 피아노에서 중복 제거 → 보이싱이 더 컴팩트해지고
+                // 텐션(3, 7, 9, 13)이 명확하게 들림.
+                if (semis.length >= 4 && semis[0] === 0) {
+                    semis = semis.slice(1);
                 }
                 return semis.map(function(s) { return (rIdx + s) % 12; });
             }
