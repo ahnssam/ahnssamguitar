@@ -8022,12 +8022,14 @@
                 //   ticksPerBeat=3 (한 박당 3등분), beatsPerMeasure=4 → 12 ticks
                 //   beat 1 = 0,1,2 / beat 2 = 3,4,5 / beat 3 = 6,7,8 / beat 4 = 9,10,11
                 //   라이드 패턴: 1, 2, 2a, 3, 4, 4a → 0, 3, 5, 6, 9, 11
-                //   스네어:    2, 3a → 3, 8 (약하게 — quietSnare 플래그)
+                //   스네어:    2, 3a → 3, 8 (고스트 노트 — quietSnare 플래그)
+                //   하이햇:    2, 4 → 3, 9 (페달 하이햇 — softHihat 플래그)
                 'swing':    { ticksPerBeat: 3, beatsPerMeasure: 4,
                               kick: [], snare: [3, 8],
-                              hihat: [],
+                              hihat: [3, 9],
                               ride: [0, 3, 5, 6, 9, 11],
-                              quietSnare: true }
+                              quietSnare: true,
+                              softHihat: true }
             };
             let timerId = null;
             let silentAudio = null;
@@ -9090,6 +9092,8 @@
                     } else {
                         level = sub === 0 ? 2 : 0;
                     }
+                    // softHihat 플래그 — 페달 하이햇 느낌으로 항상 medium 볼륨 (level 1)
+                    if (p.softHihat) level = 1;
                     playHiHat(time, level);
                 }
                 // 라이드 — swing 12/8 등 라이드 메인 리듬용. 박의 첫 tick (sub === 0) 은 강세.
@@ -9099,9 +9103,9 @@
                 }
                 if (p.kick.includes(t))  playKick(time);
                 if (p.snare.includes(t)) {
-                    // quietSnare 플래그 — 스윙 12/8 처럼 스네어를 고스트 노트 수준으로 깔고 싶을 때.
-                    // 라이드 위에 살짝 묻어가는 정도.
-                    var snareVol = p.quietSnare ? 0.08 : 1.0;
+                    // quietSnare 플래그 — 스윙 12/8 처럼 스네어를 고스트 노트로 깔 때.
+                    // 라이드 위에 거의 안 보이는 수준의 액센트.
+                    var snareVol = p.quietSnare ? 0.04 : 1.0;
                     playSnare(time, snareVol);
                 }
             }
