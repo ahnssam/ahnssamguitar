@@ -9429,14 +9429,33 @@
                         if (_seqRoot === null) _seqRoot = getRootWithOffset(loopMeasureIdx, _seqHalf, _seqOffset);
                         return _seqRoot;
                     };
+                    // 싱코페이션 — 직전 segment 에서 chordOffset=+1 로 코드를 미리 땡겨쳤으면,
+                    // 그 코드가 원래 등장해야 할 위치(= 다음 segment 의 첫 tick) 는 자동 silence.
+                    //   case 1: t === measureLen/2 → 'a' 의 어딘가에서 +1 이 있었으면 'b' 첫 박 silence
+                    //   case 2: t === 0           → (직전 마디의 'b' 어딘가에서 +1) ← 패턴이 매 마디 반복되므로
+                    //                                같은 chordOffset 배열의 'b' 구간을 본다
+                    var _stolenByPrevAnticipation = false;
+                    if (_seqPat && Array.isArray(_seqPat.chordOffset) && _seqPat.chordOffset.length === measureLen) {
+                        var _mid = measureLen / 2;
+                        var _co = _seqPat.chordOffset;
+                        if (t === _mid) {
+                            for (var _ai = 0; _ai < _mid && !_stolenByPrevAnticipation; _ai++) {
+                                if ((_co[_ai] | 0) === 1) _stolenByPrevAnticipation = true;
+                            }
+                        } else if (t === 0) {
+                            for (var _aj = _mid; _aj < measureLen && !_stolenByPrevAnticipation; _aj++) {
+                                if ((_co[_aj] | 0) === 1) _stolenByPrevAnticipation = true;
+                            }
+                        }
+                    }
                     // ─── 베이스 ───────────────────────────────────────
                     // 'custom' — 빌더에서 짠 시퀀서 (bassRoot/bassFifth) 로 직접 트리거. 뮤트(3) → choke.
                     // 'default' — 드럼 리듬에 매칭된 기존 BASS_PATTERNS.
                     // '8beat' / '16beat' — 16분음표 기반 독립 패턴을 ticksPerBeat 에 맞춰.
                     if (loopBassStyle === 'custom' && _seqPat && Array.isArray(_seqPat.bassRoot)
                         && _sIdx >= 0 && _sIdx < _seqPat.bassRoot.length) {
-                        var sBR = _seqNormalize(_seqPat.bassRoot[_sIdx]);
-                        var sBF = _seqNormalize(_seqPat.bassFifth ? _seqPat.bassFifth[_sIdx] : 0);
+                        var sBR = _stolenByPrevAnticipation ? 0 : _seqNormalize(_seqPat.bassRoot[_sIdx]);
+                        var sBF = _stolenByPrevAnticipation ? 0 : _seqNormalize(_seqPat.bassFifth ? _seqPat.bassFifth[_sIdx] : 0);
                         // 뮤트 (3) — 그 지점에서 베이스 sustain 확실히 끊기
                         if (sBR === 3 || sBF === 3) chokeBass(swungTime);
                         // velLevel 인자: 0 = 강(센 음), 1 = 약(부드러운 음).
@@ -9486,8 +9505,8 @@
                     // 'custom' — 빌더 시퀀서 (pianoMain/pianoSingle). 뮤트(3) → chokePiano.
                     if (loopPianoStyle === 'custom' && _seqPat && Array.isArray(_seqPat.pianoMain)
                         && _sIdx >= 0 && _sIdx < _seqPat.pianoMain.length && loopVolPiano > 0.001) {
-                        var sPM = _seqNormalize(_seqPat.pianoMain[_sIdx]);
-                        var sPS = _seqNormalize(_seqPat.pianoSingle ? _seqPat.pianoSingle[_sIdx] : 0);
+                        var sPM = _stolenByPrevAnticipation ? 0 : _seqNormalize(_seqPat.pianoMain[_sIdx]);
+                        var sPS = _stolenByPrevAnticipation ? 0 : _seqNormalize(_seqPat.pianoSingle ? _seqPat.pianoSingle[_sIdx] : 0);
                         if (sPM === 3 || sPS === 3) chokePiano(swungTime);
                         // 1 = on, 2 = accent, 4 = quiet (약하게)
                         if (sPM === 1 || sPM === 2 || sPM === 4) {
