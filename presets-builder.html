@@ -682,6 +682,98 @@
             color: var(--text-mid);
             border: 1px solid rgba(42, 107, 74, 0.22);
         }
+        /* 인플레이스 재생용 숨김 iframe — 보이지 않지만 살아있어서 오디오 재생 가능 */
+        .bd-preview-iframe {
+            position: fixed;
+            bottom: 0; right: 0;
+            width: 1px; height: 1px;
+            border: 0;
+            opacity: 0;
+            pointer-events: none;
+            z-index: -1;
+        }
+        /* 재생 중일 때 버튼 강조 */
+        #previewPlayBtn.playing {
+            background: var(--green-deep);
+            color: #fff;
+            border-color: var(--green-deep);
+        }
+        #previewPlayBtn.playing i { animation: bd-preview-pulse 0.9s ease-in-out infinite; }
+        @keyframes bd-preview-pulse {
+            0%, 100% { transform: scale(1); }
+            50%      { transform: scale(1.18); }
+        }
+
+        /* 변형 셋팅 — 같은 프리셋 안에 리듬/베이스/피아노 셋트를 여러 개 묶어 저장 */
+        .bd-variations-wrap {
+            background: rgba(42, 107, 74, 0.03);
+            border: 1px dashed rgba(42, 107, 74, 0.22);
+            border-radius: 10px;
+            padding: 0.6rem;
+        }
+        .bd-variation-card {
+            background: #fff;
+            border: 1px solid rgba(42, 107, 74, 0.15);
+            border-radius: 8px;
+            padding: 0.7rem;
+            margin-bottom: 0.6rem;
+        }
+        .bd-variation-card:last-child { margin-bottom: 0.6rem; }
+        .bd-variation-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.6rem;
+        }
+        .bd-variation-name {
+            flex: 1;
+            padding: 0.4rem 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: #fff;
+            font-family: inherit;
+            font-size: 0.85rem;
+            color: var(--text);
+            outline: none;
+        }
+        .bd-variation-name:focus {
+            border-color: var(--green-mid);
+            box-shadow: 0 0 0 2px rgba(82, 168, 114, 0.15);
+        }
+        .bd-variation-remove {
+            width: 30px; height: 30px;
+            border: 1px solid rgba(196, 64, 52, 0.3);
+            background: rgba(196, 64, 52, 0.08);
+            color: #b83a2e;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 1.05rem;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .bd-variation-remove:hover {
+            background: rgba(196, 64, 52, 0.18);
+        }
+        .bd-variation-card label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-light);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 0.3rem;
+            display: block;
+        }
+        .bd-variation-card .bd-rhythm-grid { margin-top: 0; }
+        .bd-add-variation {
+            width: 100%;
+            justify-content: center;
+            margin-top: 0;
+        }
+
         /* 드럼 리듬 4×3 그리드 — 메인 도구의 loop-rhythm-drawer 룩과 동일 */
         .bd-rhythm-grid {
             display: grid;
@@ -883,6 +975,17 @@
                     </div>
                 </div>
 
+                <div class="bd-section-label" style="margin-top:1.2rem;">
+                    변형 셋팅
+                    <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem;color:var(--text-light);margin-left:0.5rem;">같은 곡, 다른 그루브 (선택)</span>
+                </div>
+                <div class="bd-variations-wrap">
+                    <div id="fVariations"></div>
+                    <button type="button" class="bd-btn bd-btn-ghost bd-add-variation" id="fAddVariation">
+                        <i class="fas fa-plus"></i> 변형 추가
+                    </button>
+                </div>
+
                 <div class="bd-section-label" style="margin-top:1.1rem;">
                     코드 진행
                     <div class="bd-input-mode">
@@ -903,8 +1006,11 @@
                     <button class="bd-btn bd-btn-primary" id="saveBtn">
                         <i class="fas fa-save"></i> 저장
                     </button>
+                    <button class="bd-btn bd-btn-ghost" id="previewPlayBtn" title="현재 셋팅을 이 자리에서 재생/정지">
+                        <i class="fas fa-play"></i> <span id="previewPlayLabel">재생</span>
+                    </button>
                     <button class="bd-btn bd-btn-ghost" id="testBtn">
-                        <i class="fas fa-play"></i> 반주에서 미리보기
+                        <i class="fas fa-external-link-alt"></i> 반주 페이지로 열기
                     </button>
                     <button class="bd-btn bd-btn-ghost" id="duplicateBtn" style="display:none;" title="이 프리셋의 모든 설정을 클립보드에 복사 — 새 프리셋에서 붙여넣기 가능">
                         <i class="fas fa-copy"></i> 복제
@@ -917,6 +1023,8 @@
                     </button>
                 </div>
                 <div class="bd-feedback" id="feedback"></div>
+                <!-- 인플레이스 재생용 숨김 iframe — tools.html 의 오디오 엔진을 그대로 재사용 -->
+                <iframe id="previewIframe" class="bd-preview-iframe" src="" title="preview" aria-hidden="true"></iframe>
             </div>
         </div>
     </div>
@@ -941,6 +1049,130 @@
             let listFilter = '';
             let difficulty = 0;  // 0 = 없음, 1~5 = 별 개수
             let currentRhythm = '8beat';
+            let bdVariations = []; // [{name, rhythm, bass_style, piano_style}]
+
+            const RHYTHM_KEYS_ORDERED = [
+                '8beat','8beat2','4beat','4beat2',
+                '16beat','16beat2','16beatC','ballad',
+                '16beatSA','16beatSB','16beatSC','swing'
+            ];
+            const RHYTHM_LABELS = {
+                '8beat': '8비트 A', '8beat2': '8비트 B',
+                '4beat': '4비트 A', '4beat2': '4비트 B',
+                '16beat': '16비트 A', '16beat2': '16비트 B', '16beatC': '16비트 C',
+                'ballad': '셔플락',
+                '16beatSA': '16비트s A', '16beatSB': '16비트s B', '16beatSC': '16비트s C',
+                'swing': '스윙'
+            };
+
+            // 새 변형 추가 — 현재 메인 셋팅을 그대로 복사한 변형 생성
+            function addVariation() {
+                bdVariations.push({
+                    name: '',
+                    rhythm: currentRhythm,
+                    bass_style: $('fBassStyle').value,
+                    piano_style: $('fPianoStyle').value
+                });
+                renderVariations();
+                // 새로 만든 변형의 이름 인풋에 포커스
+                var inputs = document.querySelectorAll('#fVariations .bd-variation-name');
+                if (inputs.length) inputs[inputs.length - 1].focus();
+            }
+
+            function removeVariation(idx) {
+                bdVariations.splice(idx, 1);
+                renderVariations();
+            }
+
+            function renderVariations() {
+                var container = $('fVariations');
+                if (!container) return;
+                if (bdVariations.length === 0) {
+                    container.innerHTML = '';
+                    return;
+                }
+                var html = bdVariations.map(function(v, idx) {
+                    var rhythmHtml = RHYTHM_KEYS_ORDERED.map(function(k) {
+                        return '<button type="button" class="bd-rhythm-btn' +
+                               (k === v.rhythm ? ' active' : '') +
+                               '" data-rhythm="' + k + '">' +
+                               escapeHtml(RHYTHM_LABELS[k]) + '</button>';
+                    }).join('');
+                    var nameVal = escapeHtml(v.name || '');
+                    return '<div class="bd-variation-card" data-idx="' + idx + '">' +
+                        '<div class="bd-variation-header">' +
+                            '<input type="text" class="bd-variation-name" placeholder="변형 이름 (예: 스윙 ver)" value="' + nameVal + '" data-field="name" maxlength="30">' +
+                            '<button type="button" class="bd-variation-remove" data-action="remove" title="이 변형 삭제">×</button>' +
+                        '</div>' +
+                        '<label>리듬</label>' +
+                        '<div class="bd-rhythm-grid">' + rhythmHtml + '</div>' +
+                        '<div class="bd-row" style="margin-top:0.6rem;">' +
+                            '<div class="bd-field">' +
+                                '<label>베이스</label>' +
+                                '<select data-field="bass_style">' +
+                                    '<option value="default"' + (v.bass_style === 'default' ? ' selected' : '') + '>기본</option>' +
+                                    '<option value="8beat"' + (v.bass_style === '8beat' ? ' selected' : '') + '>8비트</option>' +
+                                    '<option value="16beat"' + (v.bass_style === '16beat' ? ' selected' : '') + '>16비트</option>' +
+                                '</select>' +
+                            '</div>' +
+                            '<div class="bd-field">' +
+                                '<label>피아노</label>' +
+                                '<select data-field="piano_style">' +
+                                    '<option value="quarter"' + (v.piano_style === 'quarter' ? ' selected' : '') + '>4비트</option>' +
+                                    '<option value="8beat"' + (v.piano_style === '8beat' ? ' selected' : '') + '>8비트</option>' +
+                                '</select>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+                }).join('');
+                container.innerHTML = html;
+            }
+
+            // 이벤트 위임 — 변형 카드 안 모든 인풋·버튼 처리
+            function setupVariationsEvents() {
+                var container = $('fVariations');
+                if (!container || container._wired) return;
+                container._wired = true;
+
+                container.addEventListener('click', function(e) {
+                    var card = e.target.closest('.bd-variation-card');
+                    if (!card) return;
+                    var idx = parseInt(card.dataset.idx, 10);
+                    if (isNaN(idx) || !bdVariations[idx]) return;
+
+                    var rhythmBtn = e.target.closest('.bd-rhythm-btn[data-rhythm]');
+                    if (rhythmBtn) {
+                        bdVariations[idx].rhythm = rhythmBtn.dataset.rhythm;
+                        // 같은 카드 안 버튼들 active 토글
+                        card.querySelectorAll('.bd-rhythm-btn').forEach(function(b) {
+                            b.classList.toggle('active', b === rhythmBtn);
+                        });
+                        return;
+                    }
+                    if (e.target.closest('button[data-action="remove"]')) {
+                        if (confirm('이 변형을 삭제할까요?')) removeVariation(idx);
+                        return;
+                    }
+                });
+
+                container.addEventListener('input', function(e) {
+                    var t = e.target;
+                    if (!t.matches('input[data-field="name"]')) return;
+                    var card = t.closest('.bd-variation-card');
+                    var idx = parseInt(card.dataset.idx, 10);
+                    if (!isNaN(idx) && bdVariations[idx]) bdVariations[idx].name = t.value;
+                });
+
+                container.addEventListener('change', function(e) {
+                    var t = e.target;
+                    if (t.tagName !== 'SELECT') return;
+                    var field = t.dataset.field;
+                    if (field !== 'bass_style' && field !== 'piano_style') return;
+                    var card = t.closest('.bd-variation-card');
+                    var idx = parseInt(card.dataset.idx, 10);
+                    if (!isNaN(idx) && bdVariations[idx]) bdVariations[idx][field] = t.value;
+                });
+            }
 
             // 리듬 그리드 — 선택된 버튼만 active 클래스.
             function setRhythm(key) {
@@ -1226,6 +1458,8 @@
                 setRhythm('8beat');
                 $('fBassStyle').value = 'default';
                 $('fPianoStyle').value = 'quarter';
+                bdVariations = [];
+                renderVariations();
                 renderBars();
                 renderDifficulty();
                 renderChords({}, {});
@@ -1252,6 +1486,18 @@
                 setRhythm(p.rhythm || '8beat');
                 $('fBassStyle').value = p.bass_style || 'default';
                 $('fPianoStyle').value = p.piano_style || 'quarter';
+                // 변형 — 배열 형태로 저장된 추가 셋팅. 깊은 복사로 가져옴.
+                bdVariations = Array.isArray(p.variations)
+                    ? p.variations.map(function(v) {
+                        return {
+                            name: v.name || '',
+                            rhythm: v.rhythm || '8beat',
+                            bass_style: v.bass_style || 'default',
+                            piano_style: v.piano_style || 'quarter'
+                        };
+                    })
+                    : [];
+                renderVariations();
                 renderBars();
                 renderDifficulty();
                 renderChords(p.chords_a || {}, p.chords_b || {});
@@ -1285,7 +1531,8 @@
                     piano_style: $('fPianoStyle').value,
                     chords_a: chords.a,
                     chords_b: chords.b,
-                    genre: $('fGenre').value || ''
+                    genre: $('fGenre').value || '',
+                    variations: bdVariations.map(function(v) { return Object.assign({}, v); })
                 };
             }
 
@@ -1308,6 +1555,10 @@
                 $('fBassStyle').value = c.bass_style || 'default';
                 $('fPianoStyle').value = c.piano_style || 'quarter';
                 $('fGenre').value = normalizeGenreForSelect(c.genre || '');
+                bdVariations = Array.isArray(c.variations)
+                    ? c.variations.map(function(v) { return Object.assign({}, v); })
+                    : [];
+                renderVariations();
                 renderBars();
                 renderDifficulty();
                 renderChords(c.chords_a || {}, c.chords_b || {});
@@ -1689,6 +1940,17 @@
                     chords_b: chords.b,
                     difficulty: difficulty > 0 ? difficulty : null,
                     genre: $('fGenre').value.trim() || null,
+                    // 변형 — 빈 배열도 그대로 저장 (DB 컬럼 default '[]'::jsonb 와 일치)
+                    variations: bdVariations
+                        .filter(function(v) { return v && (v.name || '').trim() !== ''; })
+                        .map(function(v) {
+                            return {
+                                name: (v.name || '').trim(),
+                                rhythm: v.rhythm || '8beat',
+                                bass_style: v.bass_style || 'default',
+                                piano_style: v.piano_style || 'quarter'
+                            };
+                        }),
                 };
                 try {
                     let res;
@@ -1726,11 +1988,117 @@
 
             function testInTools() {
                 if (!editingId) {
-                    showFeedback('먼저 저장한 후에 미리보기 가능해요', 'error');
+                    showFeedback('먼저 저장한 후에 새 탭으로 열기 가능해요', 'error');
                     return;
                 }
                 window.open('tools.html?preset=' + editingId + '#backing', '_blank');
             }
+
+            // ─── 인플레이스 재생 — tools.html 을 숨김 iframe 으로 띄워 postMessage 로 컨트롤 ───
+            //   첫 클릭 시 iframe src 설정. iframe load 완료 후 폼 데이터 전송 + 시작.
+            //   재생 중 클릭하면 정지 메시지 전송. 폼 변경 후 재생 다시 누르면 새 데이터 적용.
+            var _previewIframeReady = false;
+            var _previewIframeLoading = false;
+            var _previewQueue = null;        // iframe 준비 전에 대기 중인 명령
+            var _previewPlaying = false;
+
+            function buildPresetForPreview() {
+                var snap = snapshotForm();
+                // 프리셋 적용 함수가 기대하는 형식으로 변환
+                return {
+                    id: 'preview',
+                    name: snap.name || '미리보기',
+                    artist: snap.artist || '',
+                    bpm: snap.bpm || 90,
+                    bars: snap.bars || 4,
+                    rhythm: snap.rhythm || '8beat',
+                    bass_style: snap.bass_style || 'default',
+                    piano_style: snap.piano_style || 'quarter',
+                    chords_a: snap.chords_a || {},
+                    chords_b: snap.chords_b || {},
+                    difficulty: snap.difficulty,
+                    genre: snap.genre,
+                    variations: snap.variations || []
+                };
+            }
+            function previewSendCommand(cmd) {
+                var iframe = $('previewIframe');
+                if (!iframe || !iframe.contentWindow) return;
+                if (!_previewIframeReady) {
+                    _previewQueue = cmd;
+                    return;
+                }
+                try {
+                    if (cmd.type === 'apply+start') {
+                        iframe.contentWindow.postMessage({ type: 'loop:apply', preset: cmd.preset }, '*');
+                        // 적용 후 약간 기다린 뒤 시작 (BPM/리듬 업데이트가 비동기적)
+                        setTimeout(function() {
+                            iframe.contentWindow.postMessage({ type: 'loop:start' }, '*');
+                        }, 100);
+                    } else if (cmd.type === 'stop') {
+                        iframe.contentWindow.postMessage({ type: 'loop:stop' }, '*');
+                    }
+                } catch (e) { console.warn('[builder] postMessage failed', e); }
+            }
+            function ensurePreviewIframeLoaded(onReady) {
+                var iframe = $('previewIframe');
+                if (!iframe) return;
+                if (_previewIframeReady) { onReady && onReady(); return; }
+                if (_previewIframeLoading) {
+                    // 이미 로딩 중 — load 이벤트에 후속 콜백 등록
+                    var prevReady = iframe._readyCb;
+                    iframe._readyCb = function() {
+                        if (prevReady) try { prevReady(); } catch (e) {}
+                        onReady && onReady();
+                    };
+                    return;
+                }
+                _previewIframeLoading = true;
+                iframe._readyCb = onReady;
+                iframe.onload = function() {
+                    _previewIframeLoading = false;
+                    _previewIframeReady = true;
+                    var cb = iframe._readyCb;
+                    if (cb) try { cb(); } catch (e) {}
+                    if (_previewQueue) {
+                        var q = _previewQueue;
+                        _previewQueue = null;
+                        previewSendCommand(q);
+                    }
+                };
+                iframe.src = 'tools.html?tool=metronome';
+            }
+            function startPreview() {
+                var preset = buildPresetForPreview();
+                ensurePreviewIframeLoaded(function() {
+                    previewSendCommand({ type: 'apply+start', preset: preset });
+                });
+                _previewPlaying = true;
+                var btn = $('previewPlayBtn');
+                if (btn) {
+                    btn.classList.add('playing');
+                    btn.querySelector('i').className = 'fas fa-stop';
+                    $('previewPlayLabel').textContent = '정지';
+                }
+            }
+            function stopPreview() {
+                previewSendCommand({ type: 'stop' });
+                _previewPlaying = false;
+                var btn = $('previewPlayBtn');
+                if (btn) {
+                    btn.classList.remove('playing');
+                    btn.querySelector('i').className = 'fas fa-play';
+                    $('previewPlayLabel').textContent = '재생';
+                }
+            }
+            function togglePreview() {
+                if (_previewPlaying) stopPreview();
+                else startPreview();
+            }
+            // 페이지 떠날 때 / 다른 페이지로 이동 시 재생 정지
+            window.addEventListener('beforeunload', function() {
+                if (_previewPlaying) stopPreview();
+            });
 
             // ═══════════════════════════════════════════════════════
             //  Wire up
@@ -1743,6 +2111,7 @@
                 $('saveBtn').onclick = savePreset;
                 $('deleteBtn').onclick = deletePreset;
                 $('testBtn').onclick = testInTools;
+                $('previewPlayBtn').onclick = togglePreview;
                 $('duplicateBtn').onclick = duplicateCurrent;
                 $('pasteBtn').onclick = pasteFromClipboard;
 
@@ -1761,6 +2130,10 @@
                 document.querySelectorAll('#fRhythmGrid .bd-rhythm-btn').forEach(function(b) {
                     b.onclick = function() { setRhythm(b.dataset.rhythm); };
                 });
+
+                // 변형 셋팅 — 추가 버튼 + 이벤트 위임 한 번 wire-up
+                $('fAddVariation').onclick = addVariation;
+                setupVariationsEvents();
 
                 document.querySelectorAll('#fBars .bd-pill').forEach(function(b) {
                     b.onclick = function() {

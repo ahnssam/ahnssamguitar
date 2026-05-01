@@ -1407,6 +1407,11 @@
         if (!mode || !diff) return;
         // If mode/diff changed, drop in-flight session
         if (tracker.mode !== mode || tracker.difficulty !== diff) {
+            if (tracker.answers.length > 0) {
+                console.log('[earSession] mode/diff 변경으로 진행 중 라운드 폐기',
+                    { from: { mode: tracker.mode, diff: tracker.difficulty, answered: tracker.answers.length },
+                      to:   { mode: mode, diff: diff } });
+            }
             resetTracker(mode, diff);
         }
         if (!tracker.startedAt) tracker.startedAt = new Date();
@@ -1416,23 +1421,35 @@
 
     // Called when answer is graded
     function recordAnswer(correct) {
-        if (!tracker.mode || !tracker.questionStartedAt) return;
+        if (!tracker.mode || !tracker.questionStartedAt) {
+            console.warn('[earSession] recordAnswer 무시 — tracker 미초기화',
+                { mode: tracker.mode, questionStartedAt: tracker.questionStartedAt });
+            return;
+        }
         const responseMs = Math.max(0, Date.now() - tracker.questionStartedAt.getTime());
         tracker.answers.push({ correct: !!correct, response_ms: responseMs });
+        console.log('[earSession] answer recorded',
+            { mode: tracker.mode, diff: tracker.difficulty, n: tracker.answers.length, total: SESSION_SIZE, correct: !!correct });
         updatePill();
         if (tracker.answers.length >= SESSION_SIZE) {
+            console.log('[earSession] 10문제 도달 → finishSession 호출');
             finishSession();
         }
     }
 
     async function finishSession() {
-        if (tracker.submitting) return;
+        if (tracker.submitting) {
+            console.warn('[earSession] finishSession 재진입 차단 (이미 제출 중)');
+            return;
+        }
         tracker.submitting = true;
         const mode = tracker.mode;
         const diff = tracker.difficulty;
         const answers = tracker.answers.slice(0, SESSION_SIZE);
         const startedAt = tracker.startedAt || new Date();
         const endedAt = new Date();
+        console.log('[earSession] finishSession 시작',
+            { mode: mode, diff: diff, answers: answers.length, durationMs: endedAt - startedAt });
 
         const correctCount = answers.filter(a => a.correct).length;
         const validCorrect = answers.filter(a => a.correct && a.response_ms >= 300).length;
@@ -1451,6 +1468,7 @@
         // If not logged in → show login CTA
         const user = currentUser();
         if (!user) {
+            console.warn('[earSession] 미로그인 상태 — 점수 저장 스킵');
             tracker.submitting = false;
             showSummary({
                 mode, diff,
@@ -1471,6 +1489,7 @@
         let errMsg = null;
         if (client) {
             try {
+                console.log('[earSession] submit_ear_session 호출 중...', { mode: mode, diff: diff });
                 const { data, error } = await client.rpc('submit_ear_session', {
                     p_mode: mode,
                     p_difficulty: diff,
@@ -1479,14 +1498,18 @@
                     p_answers: answers
                 });
                 if (error) {
+                    console.error('[earSession] submit_ear_session 실패', error);
                     errMsg = humanizeRpcError(error);
                 } else {
+                    console.log('[earSession] submit_ear_session 성공', data);
                     serverResult = data;
                 }
             } catch (e) {
+                console.error('[earSession] submit_ear_session 예외', e);
                 errMsg = (e && e.message) || String(e);
             }
         } else {
+            console.warn('[earSession] supabase client 없음 — 점수 저장 안 됨');
             errMsg = '인증 SDK가 아직 로드되지 않았어요.';
         }
 
@@ -2065,6 +2088,17 @@
         }
     }
 
+    function _renderRankingError(msg) {
+        var safe = String(msg || '').replace(/[<>&]/g, '');
+        return '<div class="rank-empty">랭킹을 불러올 수 없어요.<br>' +
+            '<small style="opacity:0.6;font-size:0.78em;">' + safe + '</small><br><br>' +
+            '<button type="button" class="rank-retry-btn" ' +
+            'style="background:transparent;border:1px solid currentColor;border-radius:6px;' +
+            'padding:6px 14px;font-size:0.85em;cursor:pointer;color:inherit;opacity:0.85;" ' +
+            'onclick="window.earRanking && window.earRanking.load && window.earRanking.load()">↻ 다시 시도</button>' +
+            '</div>';
+    }
+
     async function loadRankings() {
         const content = document.getElementById('rankContent');
         if (!content) return;
@@ -2079,29 +2113,34 @@
             ? null
             : computeAnchorDate(_rankScope, _rankOffset);
 
-        // RPC 가 멈추는 경우 사용자에게 알리도록 10초 타임아웃 적용.
+        console.log('[ranking] loadRankings start', { scope: _rankScope, mode: _rankMode, diff: _rankDiff, anchor: anchor });
+
+        // RPC 가 멈추는 경우 사용자에게 알리도록 20초 타임아웃 적용.
+        // (모바일 데이터/저속 와이파이에서 10초 타임아웃은 너무 짧음)
         var timeoutId = null;
         const timeoutPromise = new Promise(function(_, reject) {
             timeoutId = setTimeout(function() {
-                reject(new Error('타임아웃 — 서버 응답이 없습니다 (네트워크 또는 RLS 정책 확인 필요).'));
-            }, 10000);
+                reject(new Error('네트워크가 느려요 — 잠시 후 다시 시도해주세요.'));
+            }, 20000);
         });
-        const rpcPromise = client.rpc('get_ranking', {
+        // Promise.resolve 로 감싸 supabase-js builder 의 then() 을 즉시 트리거.
+        const rpcPromise = Promise.resolve(client.rpc('get_ranking', {
             p_scope: _rankScope,
             p_mode: _rankMode,
             p_difficulty: _rankDiff,
             p_anchor_date: anchor
-        });
+        }));
 
         let data, error;
+        const t0 = Date.now();
         try {
             const result = await Promise.race([rpcPromise, timeoutPromise]);
             data = result.data;
             error = result.error;
+            console.log('[ranking] get_ranking result', { ms: Date.now() - t0, hasData: !!data, hasError: !!error });
         } catch (e) {
-            console.error('[ranking] get_ranking timeout/threw', e);
-            content.innerHTML = '<div class="rank-empty">랭킹을 불러올 수 없어요.<br><small style="opacity:0.6;font-size:0.78em;">' +
-                String(e.message || e).replace(/[<>&]/g, '') + '</small></div>';
+            console.error('[ranking] get_ranking timeout/threw', { ms: Date.now() - t0, error: e });
+            content.innerHTML = _renderRankingError(e.message || e);
             return;
         } finally {
             if (timeoutId) clearTimeout(timeoutId);
@@ -2110,8 +2149,7 @@
         if (error) {
             console.error('[ranking] get_ranking failed', error);
             var msg = (error && error.message) ? error.message : String(error);
-            content.innerHTML = '<div class="rank-empty">랭킹을 불러올 수 없어요.<br><small style="opacity:0.6;font-size:0.78em;">' +
-                msg.replace(/[<>&]/g, '') + '</small></div>';
+            content.innerHTML = _renderRankingError(msg);
             return;
         }
         const top = (data && data.top) || [];
