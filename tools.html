@@ -5162,6 +5162,20 @@
             border-color: var(--green-light);
         }
 
+        /* 커스텀 리듬 — 프리셋 시퀀서가 정의돼 있을 때 리듬 드로어 첫 자리. 살짝 강조 */
+        .loop-rhythm-drawer .rhythm-custom-btn {
+            background: linear-gradient(135deg, rgba(245, 179, 30, 0.18), rgba(82, 168, 114, 0.18));
+            border-color: rgba(245, 179, 30, 0.5);
+            color: var(--green-deep);
+            font-weight: 700;
+        }
+        .loop-rhythm-drawer .rhythm-custom-btn.active {
+            background: linear-gradient(135deg, #f5b31e, var(--green-deep));
+            color: #fff;
+            border-color: var(--green-deep);
+        }
+        :root[data-theme="dark"] .loop-rhythm-drawer .rhythm-custom-btn { color: #b5e6c8; }
+
         /* 적용된 프리셋의 변형(variations) 칩 행 — preset-bar 바로 아래에 표시 */
         .loop-variation-row {
             display: flex;
@@ -6374,8 +6388,6 @@
                             <div id="loopPresetItems"></div>
                         </div>
                     </div>
-                    <!-- 변형 셋팅 칩 — 적용된 프리셋이 변형을 가지고 있을 때만 표시 -->
-                    <div class="loop-variation-row" id="loopVariationRow" style="display:none;"></div>
                     <div class="loop-top-row">
                         <div class="loop-measures-label">
                             <label>마디</label>
@@ -6427,28 +6439,11 @@
                                 <span class="loop-toggle-track"><span class="loop-toggle-thumb"></span></span>
                             </label>
                         </div>
-                        <button type="button" class="loop-clear-all-btn" onclick="clearAllLoopChords()" title="입력한 모든 코드 삭제">
-                            <i class="fas fa-trash"></i> 전체 삭제
+                        <button type="button" class="loop-clear-all-btn" onclick="resetLoopAll()" title="프리셋 해제 + 모든 코드 비움">
+                            <i class="fas fa-redo"></i> 초기화
                         </button>
                     </div>
                     <div class="loop-grid cols-4" id="loopGrid"></div>
-                    <!-- 시퀀서 — 베이스/피아노 각 2 라인. 비트 위치마다 클릭 토글 -->
-                    <div class="loop-seq-section" id="loopSeqSection">
-                        <div class="loop-seq-header">
-                            <label class="loop-seq-toggle-row">
-                                <span class="loop-seq-title">시퀀서</span>
-                                <label class="loop-toggle">
-                                    <input type="checkbox" id="loopSeqEnabled">
-                                    <span class="loop-toggle-track"><span class="loop-toggle-thumb"></span></span>
-                                </label>
-                            </label>
-                            <span class="loop-seq-base-label" id="loopSeqBaseLabel"></span>
-                        </div>
-                        <div class="loop-seq-rows" id="loopSeqRows"></div>
-                        <div class="loop-seq-tip">
-                            활성화하면 기본 베이스·피아노 스타일은 비활성. 셀 클릭으로 박자 토글.
-                        </div>
-                    </div>
                 </div>
                 <div class="metronome-bpm">
                     <div class="metronome-bpm-value" id="bpmValue">90</div>
@@ -9368,7 +9363,9 @@
                 } catch (e) {}
                 if (soundMode === 'loop') {
                     const r = loopRhythm;
-                    const p = DRUM_PATTERNS[r] || DRUM_PATTERNS['8beat'];
+                    // 커스텀이 선택돼 있으면 드럼은 프리셋의 원래 리듬을 사용
+                    const effectiveR = (r === 'custom') ? (_loopActivePresetRhythm || '8beat') : r;
+                    const p = DRUM_PATTERNS[effectiveR] || DRUM_PATTERNS['8beat'];
                     const measureLen = p.ticksPerBeat * p.beatsPerMeasure;
                     const t = beatNum % measureLen;
                     // 스윙 16비트 — e·a 박(tick%4 == 1, 3)을 1/3 16분음표(= 1/12 박)만큼 뒤로.
@@ -9398,15 +9395,14 @@
                         loopMeasureIdx = mIdx;
                         highlightLoopCell(mIdx, time);
                     }
-                    // ─── 시퀀서 활성 분기 ─────────────────────────────────
-                    // 사용자 시퀀서가 켜져 있으면 기본 베이스/피아노 스타일은 모두 비활성화하고
-                    // 4 라인 시퀀서 패턴이 직접 노트를 트리거.
-                    if (userSeq.enabled) {
-                        var seqBase = currentSeqBase();
-                        var seqPat = userSeq.patterns[seqBase];
+                    // ─── 커스텀 리듬 분기 ─────────────────────────────────
+                    // 프리셋의 시퀀서 패턴이 활성화되어 있으면 (loopRhythm === 'custom') 기본
+                    // 베이스/피아노는 모두 비활성. 4 라인 시퀀서가 직접 노트 트리거.
+                    if (r === 'custom' && _loopActivePresetSequencer) {
+                        var seqPat = _loopActivePresetSequencer;
                         // 시퀀서 그리드 인덱스 = 현재 tick (둘 다 measureLen 과 일치)
                         var sIdx = t;
-                        if (seqPat && sIdx >= 0 && sIdx < seqPat.pianoMain.length) {
+                        if (seqPat && sIdx >= 0 && Array.isArray(seqPat.pianoMain) && sIdx < seqPat.pianoMain.length) {
                             var midSeq = measureLen / 2;
                             var halfSeq = t < midSeq ? 'a' : 'b';
                             var rootSeq = getEffectiveRoot(loopMeasureIdx, halfSeq);
@@ -10049,84 +10045,17 @@
                 });
             }
 
-            // ─── 시퀀서 (베이스 / 피아노 4 라인) ─────────────────────────
-            //   라인 4개:
-            //     pianoMain   — 풀 보이싱 코드 (rootless)
-            //     pianoSingle — 보이싱 맨 아래 단음 한 음
-            //     bassRoot    — 코드 근음
-            //     bassFifth   — 근음의 완전 5도 (dim/m7♭5/dim7 은 감5도)
-            //   리듬 베이스에 따라 그리드 칸 수 자동:
-            //     '4'  = 4 cells (4비트 패밀리)
-            //     '8'  = 8 cells (8비트 패밀리)
-            //     '12' = 12 cells (셔플락 / 스윙 — 12/8)
-            //     '16' = 16 cells (16비트 패밀리, 스윙 16비트 포함)
-            const SEQ_LINES = ['pianoMain', 'pianoSingle', 'bassRoot', 'bassFifth'];
-            const SEQ_LINE_LABELS = {
-                pianoMain:   '피아노 코드',
-                pianoSingle: '피아노 단음',
-                bassRoot:    '베이스 근음',
-                bassFifth:   '베이스 5도'
-            };
-            const SEQ_BASE_LABELS = {
-                '4':  '4분음표 기준 · 4 cells',
-                '8':  '8분음표 기준 · 8 cells',
-                '12': '8분 셋잇단음 기준 · 12 cells',
-                '16': '16분음표 기준 · 16 cells'
-            };
-            // 셀 값 — 0 = off, 1 = on(보통), 2 = accent(강세, 1.4× 볼륨)
-            // 마이그레이션 호환: 기존 boolean 패턴(true/false)도 그대로 0/1 로 동작.
-            function _seqEmptyPattern(steps) {
-                var p = {};
-                SEQ_LINES.forEach(function(k) { p[k] = new Array(steps).fill(0); });
-                return p;
-            }
-            // boolean / number 입력을 모두 0/1/2 로 정규화
+            // ─── 커스텀 시퀀서 헬퍼 (빌더에서 만든 sequencer_pattern 재생용) ──────
+            //   빌더 페이지에서 정의한 4 라인 패턴 (pianoMain / pianoSingle / bassRoot / bassFifth) 을
+            //   loopRhythm === 'custom' 일 때 스케줄러가 사용. 셀 값 0(off) / 1(on) / 2(accent).
+
+            // 셀 값 정규화 (0/1/2). 빌더 시퀀서가 저장한 패턴을 스케줄러가 읽을 때 사용.
             function _seqNormalize(v) {
                 if (v === true) return 1;
                 if (v === false || v == null) return 0;
                 v = parseInt(v, 10);
                 if (v === 1 || v === 2) return v;
                 return 0;
-            }
-            let userSeq = {
-                enabled: false,
-                patterns: {
-                    '4':  _seqEmptyPattern(4),
-                    '8':  _seqEmptyPattern(8),
-                    '12': _seqEmptyPattern(12),
-                    '16': _seqEmptyPattern(16)
-                }
-            };
-            try {
-                var savedSeq = localStorage.getItem('loopUserSeq');
-                if (savedSeq) {
-                    var ps = JSON.parse(savedSeq);
-                    if (ps && typeof ps === 'object') {
-                        userSeq.enabled = !!ps.enabled;
-                        ['4','8','12','16'].forEach(function(b) {
-                            if (ps.patterns && ps.patterns[b]) {
-                                SEQ_LINES.forEach(function(line) {
-                                    if (Array.isArray(ps.patterns[b][line]) &&
-                                        ps.patterns[b][line].length === userSeq.patterns[b][line].length) {
-                                        userSeq.patterns[b][line] = ps.patterns[b][line].map(_seqNormalize);
-                                    }
-                                });
-                            }
-                        });
-                    }
-                }
-            } catch (e) {}
-            function saveUserSeq() {
-                try { localStorage.setItem('loopUserSeq', JSON.stringify(userSeq)); } catch (e) {}
-            }
-            function currentSeqBase() {
-                var p = (typeof DRUM_PATTERNS !== 'undefined') ? DRUM_PATTERNS[loopRhythm] : null;
-                if (!p) return '8';
-                var len = p.ticksPerBeat * p.beatsPerMeasure;
-                if (len === 4)  return '4';
-                if (len === 12) return '12';
-                if (len === 16) return '16';
-                return '8';
             }
             // 코드의 5도 음 이름 (BASS_FREQ 키와 호환되도록 sharp 표기)
             function getChordFifthName(chordName) {
@@ -10168,87 +10097,14 @@
                 var lowestMidi = Math.min.apply(Math, voicing);
                 playPianoSingleNote(lowestMidi, time, velMul);
             }
-            function renderUserSeq() {
-                var rows = document.getElementById('loopSeqRows');
-                if (!rows) return;
-                var base = currentSeqBase();
-                var pat = userSeq.patterns[base];
-                var html = '';
-                SEQ_LINES.forEach(function(line) {
-                    var cellsHtml = '';
-                    var arr = pat[line];
-                    var beatTicks = (base === '16') ? 4 :
-                                    (base === '12') ? 3 :
-                                    (base === '8')  ? 2 : 1;
-                    for (var i = 0; i < arr.length; i++) {
-                        var v = _seqNormalize(arr[i]);
-                        var classes = 'loop-seq-cell';
-                        if (v === 1) classes += ' on';
-                        else if (v === 2) classes += ' accent';
-                        if (i % beatTicks === 0) classes += ' beat-start';
-                        cellsHtml += '<button type="button" class="' + classes + '" data-step="' + i + '" aria-label="' +
-                                     SEQ_LINE_LABELS[line] + ' ' + (i+1) + '"></button>';
-                    }
-                    html += '<div class="loop-seq-row" data-line="' + line + '">' +
-                              '<span class="loop-seq-row-label">' + SEQ_LINE_LABELS[line] + '</span>' +
-                              '<div class="loop-seq-cells">' + cellsHtml + '</div>' +
-                            '</div>';
-                });
-                rows.innerHTML = html;
-                var lbl = document.getElementById('loopSeqBaseLabel');
-                if (lbl) lbl.textContent = SEQ_BASE_LABELS[base] || '';
-                // 활성/비활성 시각 토글
-                var section = document.getElementById('loopSeqSection');
-                if (section) section.classList.toggle('disabled', !userSeq.enabled);
-                var enabled = document.getElementById('loopSeqEnabled');
-                if (enabled) enabled.checked = userSeq.enabled;
-            }
-            function setupUserSeqUI() {
-                var rows = document.getElementById('loopSeqRows');
-                if (rows && !rows._wired) {
-                    rows._wired = true;
-                    rows.addEventListener('click', function(e) {
-                        var cell = e.target.closest('.loop-seq-cell');
-                        if (!cell) return;
-                        var row = cell.closest('.loop-seq-row');
-                        if (!row) return;
-                        var line = row.dataset.line;
-                        var step = parseInt(cell.dataset.step, 10);
-                        var base = currentSeqBase();
-                        var arr = userSeq.patterns[base][line];
-                        if (!arr || isNaN(step) || step < 0 || step >= arr.length) return;
-                        // 3단계 순환: 0(off) → 1(on) → 2(accent) → 0
-                        var cur = _seqNormalize(arr[step]);
-                        var next = (cur + 1) % 3;
-                        arr[step] = next;
-                        cell.classList.remove('on', 'accent');
-                        if (next === 1) cell.classList.add('on');
-                        else if (next === 2) cell.classList.add('accent');
-                        saveUserSeq();
-                    });
-                }
-                var toggle = document.getElementById('loopSeqEnabled');
-                if (toggle && !toggle._wired) {
-                    toggle._wired = true;
-                    toggle.addEventListener('change', function() {
-                        userSeq.enabled = this.checked;
-                        var section = document.getElementById('loopSeqSection');
-                        if (section) section.classList.toggle('disabled', !userSeq.enabled);
-                        saveUserSeq();
-                        gtag('event', 'loop_seq_toggle', { enabled: userSeq.enabled });
-                    });
-                }
-                renderUserSeq();
-            }
-            // 리듬 변경 시 그리드 다시 그림 (베이스 칸 수 변경)
-            function refreshUserSeqOnRhythmChange() {
-                renderUserSeq();
-            }
-
-            // 현재 적용된 프리셋의 변형 목록 — 칩 클릭 시 사용
-            // [{name, rhythm, bass_style, piano_style}, ...]  (0번은 항상 "기본" = 프리셋의 메인 셋팅)
-            var _loopActiveVariations = [];
+            // 현재 적용된 프리셋의 커스텀 시퀀서 — sequencer_pattern JSONB.
+            //   { pianoMain: [...], pianoSingle: [...], bassRoot: [...], bassFifth: [...] }
+            //   배열 길이 = 프리셋의 드럼 리듬 measureLen.
+            //   null 이면 커스텀 없음 → 리듬 드로어에 "커스텀" 항목 미노출.
+            var _loopActivePresetSequencer = null;
             var _loopActivePresetId = null;
+            // 커스텀이 선택됐을 때 사용할 드럼 리듬 (프리셋의 원래 rhythm).
+            var _loopActivePresetRhythm = null;
 
             // ─── postMessage API — 빌더 페이지가 iframe 으로 띄워서 인플레이스 재생할 때 사용 ───
             //   { type: 'loop:apply', preset } — 프리셋 적용 (빌더의 폼 데이터)
@@ -10284,12 +10140,16 @@
             function applyLoopPreset(p) {
                 if (!p) return;
                 _loopActivePresetId = p.id;
+                _loopActivePresetRhythm = p.rhythm || '8beat';
+                // 커스텀 시퀀서 패턴 저장 — 있으면 리듬 드로어에 "커스텀" 첫 자리 노출
+                _loopActivePresetSequencer = (p.sequencer_pattern && typeof p.sequencer_pattern === 'object')
+                    ? p.sequencer_pattern : null;
                 // 마디
                 if (typeof window.setLoopBars === 'function') window.setLoopBars(p.bars || 4);
-                // 드럼 리듬
-                loopRhythm = p.rhythm || '8beat';
+                // 드럼 리듬 — 커스텀이 있으면 그게 우선 자동 선택, 없으면 프리셋의 원래 리듬
+                loopRhythm = _loopActivePresetSequencer ? 'custom' : (p.rhythm || '8beat');
                 var lbl = document.getElementById('loopRhythmLabel');
-                if (lbl) lbl.textContent = (LOOP_RHYTHM_LABELS && LOOP_RHYTHM_LABELS[loopRhythm]) || loopRhythm;
+                if (lbl) lbl.textContent = (LOOP_RHYTHM_LABELS && LOOP_RHYTHM_LABELS[loopRhythm]) || (loopRhythm === 'custom' ? '커스텀' : loopRhythm);
                 renderLoopRhythms();
                 // BPM
                 if (typeof window.updateBPM === 'function') {
@@ -10297,7 +10157,7 @@
                     var slider = document.getElementById('bpmSlider');
                     if (slider) slider.value = p.bpm || 90;
                 }
-                // 베이스/피아노 스타일
+                // 베이스/피아노 스타일 (커스텀일 땐 시퀀서가 덮어쓸 거라 의미 없지만 일관성 유지)
                 if (typeof window.setLoopBassStyle === 'function') window.setLoopBassStyle(p.bass_style || 'default');
                 if (typeof window.setLoopPianoStyle === 'function') window.setLoopPianoStyle(p.piano_style || 'quarter');
                 // 코드 진행
@@ -10305,19 +10165,6 @@
                 loopChordsB = p.chords_b ? Object.assign({}, p.chords_b) : {};
                 renderLoopGrid();
                 if (typeof updateLoopStyleAvailability === 'function') updateLoopStyleAvailability();
-                // 변형 칩 갱신 — 0번은 항상 "기본"(메인 셋팅), 1+번은 추가 변형
-                var extras = Array.isArray(p.variations) ? p.variations : [];
-                _loopActiveVariations = [
-                    { name: '기본', rhythm: p.rhythm || '8beat', bass_style: p.bass_style || 'default', piano_style: p.piano_style || 'quarter' }
-                ].concat(extras.map(function(v) {
-                    return {
-                        name: v.name || '변형',
-                        rhythm: v.rhythm || '8beat',
-                        bass_style: v.bass_style || 'default',
-                        piano_style: v.piano_style || 'quarter'
-                    };
-                }));
-                renderLoopVariationChips(0);
                 // 재생 위치 리셋
                 _prevPianoVoicing = null;
                 _lastPianoSegmentKey = null;
@@ -10329,49 +10176,7 @@
                 closeLoopPresetList();
                 var search = document.getElementById('loopPresetSearch');
                 if (search) search.value = p.name;
-                gtag('event', 'loop_preset_apply', { id: p.id, name: p.name });
-            }
-
-            // 변형 칩 행 — 변형이 1개(기본만) 면 숨기고, 2개 이상이면 펼쳐서 보여줌.
-            function renderLoopVariationChips(activeIdx) {
-                var row = document.getElementById('loopVariationRow');
-                if (!row) return;
-                if (!_loopActiveVariations || _loopActiveVariations.length <= 1) {
-                    row.innerHTML = '';
-                    row.style.display = 'none';
-                    return;
-                }
-                row.style.display = 'flex';
-                var html = '<span class="loop-variation-label">버전</span>' +
-                    _loopActiveVariations.map(function(v, idx) {
-                        return '<button type="button" class="loop-variation-chip' +
-                               (idx === activeIdx ? ' active' : '') +
-                               '" data-var-idx="' + idx + '">' +
-                               _escHtml(v.name) + '</button>';
-                    }).join('');
-                row.innerHTML = html;
-                row.querySelectorAll('.loop-variation-chip').forEach(function(c) {
-                    c.onclick = function() { applyLoopVariation(parseInt(c.dataset.varIdx, 10)); };
-                });
-            }
-
-            // 칩 클릭 — 그 변형의 리듬/베이스/피아노로 즉시 전환. 코드 진행 / BPM / 마디는 유지.
-            function applyLoopVariation(idx) {
-                if (idx < 0 || !_loopActiveVariations[idx]) return;
-                var v = _loopActiveVariations[idx];
-                loopRhythm = v.rhythm || '8beat';
-                var lbl = document.getElementById('loopRhythmLabel');
-                if (lbl) lbl.textContent = (LOOP_RHYTHM_LABELS && LOOP_RHYTHM_LABELS[loopRhythm]) || loopRhythm;
-                renderLoopRhythms();
-                if (typeof window.setLoopBassStyle === 'function') window.setLoopBassStyle(v.bass_style || 'default');
-                if (typeof window.setLoopPianoStyle === 'function') window.setLoopPianoStyle(v.piano_style || 'quarter');
-                if (typeof updateLoopStyleAvailability === 'function') updateLoopStyleAvailability();
-                // 칩 active 갱신
-                document.querySelectorAll('.loop-variation-chip').forEach(function(c) {
-                    c.classList.toggle('active', parseInt(c.dataset.varIdx, 10) === idx);
-                });
-                if (window._metroRunning && audioCtx) nextNoteTime = audioCtx.currentTime + 0.05;
-                gtag('event', 'loop_variation_apply', { idx: idx, name: v.name });
+                gtag('event', 'loop_preset_apply', { id: p.id, name: p.name, hasCustom: !!_loopActivePresetSequencer });
             }
 
             function openLoopPresetList() {
@@ -10457,7 +10262,6 @@
                 renderLoopRhythms();
                 renderLoopGrid();
                 updateLoopStyleAvailability();
-                setupUserSeqUI();
                 bindLoopPresetUI();
                 loadLoopPresets().then(function() {
                     renderLoopPresetList('');
@@ -10479,15 +10283,19 @@
                 var drawer = document.getElementById('loopRhythmDrawer');
                 if (!drawer) return;
                 drawer.innerHTML = '';
-                var order = ['8beat','8beat2','4beat','4beat2','16beat','16beat2','16beatC','ballad','16beatSA','16beatSB','16beatSC','swing'];
+                // 적용된 프리셋이 커스텀 시퀀서를 가지고 있으면 첫 자리에 "커스텀" 칩
+                var order = [];
+                if (_loopActivePresetSequencer) order.push('custom');
+                order = order.concat(['8beat','8beat2','4beat','4beat2','16beat','16beat2','16beatC','ballad','16beatSA','16beatSB','16beatSC','swing']);
                 order.forEach(function(key) {
                     var btn = document.createElement('button');
-                    btn.textContent = LOOP_RHYTHM_LABELS[key] || key;
+                    btn.textContent = (key === 'custom') ? '커스텀' : (LOOP_RHYTHM_LABELS[key] || key);
+                    if (key === 'custom') btn.classList.add('rhythm-custom-btn');
                     if (key === loopRhythm) btn.classList.add('active');
                     btn.onclick = function(e) {
                         e.stopPropagation();
                         loopRhythm = key;
-                        document.getElementById('loopRhythmLabel').textContent = LOOP_RHYTHM_LABELS[key] || key;
+                        document.getElementById('loopRhythmLabel').textContent = (key === 'custom') ? '커스텀' : (LOOP_RHYTHM_LABELS[key] || key);
                         closeLoopRhythmDrawer();
                         gtag('event', 'loop_rhythm_change', { rhythm: key });
                         renderBeats();
@@ -10496,7 +10304,6 @@
                         if (window._metroRunning && audioCtx) nextNoteTime = audioCtx.currentTime + 0.05;
                         renderLoopRhythms();
                         updateLoopStyleAvailability();
-                        refreshUserSeqOnRhythmChange();
                     };
                     drawer.appendChild(btn);
                 });
@@ -11042,7 +10849,7 @@
                 }
             };
 
-            // 입력한 코드 진행 전부 지우기 (전체 삭제 버튼)
+            // 입력한 코드 진행 전부 지우기 (내부 헬퍼)
             window.clearAllLoopChords = function() {
                 loopChords = {};
                 loopChordsB = {};
@@ -11051,6 +10858,25 @@
                 _lastPianoSegmentChord = null;
                 renderLoopGrid();
                 gtag('event', 'loop_clear_all');
+            };
+            // 초기화 — 적용된 프리셋 해제 + 모든 코드 비움 + 검색 인풋 비움 + 커스텀 시퀀서 정리
+            window.resetLoopAll = function() {
+                _loopActivePresetSequencer = null;
+                _loopActivePresetId = null;
+                _loopActivePresetRhythm = null;
+                if (loopRhythm === 'custom') {
+                    // 커스텀이 선택돼 있었으면 기본 8비트로 폴백
+                    loopRhythm = '8beat';
+                    var lbl = document.getElementById('loopRhythmLabel');
+                    if (lbl) lbl.textContent = LOOP_RHYTHM_LABELS['8beat'];
+                }
+                renderLoopRhythms();
+                window.clearAllLoopChords();
+                var search = document.getElementById('loopPresetSearch');
+                if (search) search.value = '';
+                if (typeof closeLoopPresetList === 'function') closeLoopPresetList();
+                if (typeof clearLoopRange === 'function') clearLoopRange();
+                gtag('event', 'loop_reset_all');
             };
 
             window.updateTimeSig = function(ts) {
