@@ -1063,11 +1063,13 @@
                 renderAuth(result.data.session);
             }
 
-            // 깨진 hash 에서 access_token / refresh_token 만 뽑아서 세션 복구.
+            // OAuth 콜백 hash 에서 access_token / refresh_token 추출해 세션 복구.
+            //   1) <head> 인라인 스크립트가 미리 캐치한 window.__pendingOAuthHash 우선
+            //   2) 그 외 케이스는 window.location.hash 직접 읽기
             async function tryRecoverSessionFromHash() {
-                var h = window.location.hash || '';
+                var h = (typeof window.__pendingOAuthHash === 'string' && window.__pendingOAuthHash) ||
+                        (window.location.hash || '');
                 if (h.indexOf('access_token') === -1) return;
-                // 모든 # 을 & 로 바꿔서 일반 query 처럼 파싱
                 var normalized = h.replace(/^#/, '').replace(/#/g, '&');
                 var params = new URLSearchParams(normalized);
                 var at = params.get('access_token');
@@ -1078,6 +1080,7 @@
                 } catch (e) {
                     console.warn('[builder] hash recovery failed', e);
                 } finally {
+                    try { delete window.__pendingOAuthHash; } catch (e) { window.__pendingOAuthHash = null; }
                     history.replaceState(null, '', cleanRedirectUrl());
                 }
             }
@@ -1100,10 +1103,41 @@
             }
 
             async function startLogin() {
-                await sb.auth.signInWithOAuth({
-                    provider: 'google',
-                    options: { redirectTo: cleanRedirectUrl() }
-                });
+                // sb 가 아직 준비 안 됐으면(init 비동기 중) 사용자에게 알리고 한 번 더 시도.
+                if (!sb) {
+                    try { await init(); } catch (e) {}
+                }
+                if (!sb) {
+                    alert('Supabase SDK 로드 실패 — 페이지 새로고침 후 다시 시도해 주세요.');
+                    return;
+                }
+                try {
+                    var result = await sb.auth.signInWithOAuth({
+                        provider: 'google',
+                        options: {
+                            redirectTo: cleanRedirectUrl(),
+                            queryParams: { prompt: 'select_account' }
+                        }
+                    });
+                    if (result && result.error) {
+                        console.error('[builder] signInWithOAuth error:', result.error);
+                        alert('로그인 시작 실패: ' + result.error.message);
+                        return;
+                    }
+                    // SDK 가 자동 리다이렉트 안 하는 환경 폴백 — data.url 로 수동 이동
+                    if (result && result.data && result.data.url) {
+                        // signInWithOAuth 가 보통 자동으로 navigate 하지만,
+                        // 일부 브라우저/환경에서 약 200ms 뒤에도 페이지가 그대로면 강제 이동.
+                        setTimeout(function() {
+                            if (document.visibilityState === 'visible') {
+                                window.location.href = result.data.url;
+                            }
+                        }, 250);
+                    }
+                } catch (err) {
+                    console.error('[builder] startLogin threw:', err);
+                    alert('로그인 오류: ' + (err && err.message ? err.message : err));
+                }
             }
             async function logout() { await sb.auth.signOut(); }
 

@@ -2070,18 +2070,48 @@
         if (!content) return;
         content.innerHTML = '<div class="rank-empty">불러오는 중…</div>';
         const client = sb();
-        if (!client) { content.innerHTML = '<div class="rank-empty">준비 중…</div>'; return; }
+        if (!client) {
+            // SDK 가 아직 로드 안 됐을 수 있음 — auth-settled 이벤트로 재시도하도록 폴백.
+            content.innerHTML = '<div class="rank-empty">준비 중…<br><small style="opacity:0.6;font-size:0.78em;">SDK 로드 대기</small></div>';
+            return;
+        }
         const anchor = (_rankScope === 'total')
             ? null
             : computeAnchorDate(_rankScope, _rankOffset);
-        const { data, error } = await client.rpc('get_ranking', {
+
+        // RPC 가 멈추는 경우 사용자에게 알리도록 10초 타임아웃 적용.
+        var timeoutId = null;
+        const timeoutPromise = new Promise(function(_, reject) {
+            timeoutId = setTimeout(function() {
+                reject(new Error('타임아웃 — 서버 응답이 없습니다 (네트워크 또는 RLS 정책 확인 필요).'));
+            }, 10000);
+        });
+        const rpcPromise = client.rpc('get_ranking', {
             p_scope: _rankScope,
             p_mode: _rankMode,
             p_difficulty: _rankDiff,
             p_anchor_date: anchor
         });
+
+        let data, error;
+        try {
+            const result = await Promise.race([rpcPromise, timeoutPromise]);
+            data = result.data;
+            error = result.error;
+        } catch (e) {
+            console.error('[ranking] get_ranking timeout/threw', e);
+            content.innerHTML = '<div class="rank-empty">랭킹을 불러올 수 없어요.<br><small style="opacity:0.6;font-size:0.78em;">' +
+                String(e.message || e).replace(/[<>&]/g, '') + '</small></div>';
+            return;
+        } finally {
+            if (timeoutId) clearTimeout(timeoutId);
+        }
+
         if (error) {
-            content.innerHTML = '<div class="rank-empty">랭킹을 불러올 수 없어요.</div>';
+            console.error('[ranking] get_ranking failed', error);
+            var msg = (error && error.message) ? error.message : String(error);
+            content.innerHTML = '<div class="rank-empty">랭킹을 불러올 수 없어요.<br><small style="opacity:0.6;font-size:0.78em;">' +
+                msg.replace(/[<>&]/g, '') + '</small></div>';
             return;
         }
         const top = (data && data.top) || [];
