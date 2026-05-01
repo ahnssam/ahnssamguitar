@@ -774,6 +774,36 @@
             color: #fff;
         }
         .bd-seq-cell.mute.beat-start { background: #5a5a5a; }
+        /* 약하게(quiet) 셀 — 흐릿한 초록. 일반 on 보다 살짝 옅게 */
+        .bd-seq-cell.quiet {
+            background: rgba(82, 168, 114, 0.45);
+            border-color: rgba(82, 168, 114, 0.55);
+        }
+        .bd-seq-cell.quiet.beat-start {
+            background: rgba(82, 168, 114, 0.6);
+            border-color: rgba(82, 168, 114, 0.7);
+        }
+        /* anticipate 마커 — 코드를 미리 땡겨 치는 칸. 셀 우상단에 작은 → */
+        .bd-seq-cell.anticipate::before {
+            content: '→';
+            position: absolute;
+            top: 0;
+            right: 1px;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1;
+            color: #f5b31e;
+            text-shadow: 0 0 2px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+        .bd-seq-cell { position: relative; }
+        /* 셀 hit zone 보강 — 길게 누르기 중 OS 동작 차단 */
+        .bd-seq-cell {
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
         .bd-seq-tip {
             margin-top: 0.55rem;
             font-size: 0.7rem;
@@ -970,6 +1000,78 @@
             font-size: 0.85rem;
         }
 
+        /* ───── 파이 메뉴 (4분면 마킹 메뉴) ───── */
+        .bd-pie-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            pointer-events: none; /* 셀 캡처가 처리하므로 자체 클릭 안 받음 */
+        }
+        .bd-pie-anchor-line {
+            position: absolute;
+            border-top: 1px dashed rgba(255, 255, 255, 0.6);
+            transform-origin: 0 0;
+            opacity: 0.7;
+        }
+        .bd-pie-svg {
+            position: absolute;
+            width: 110px;
+            height: 110px;
+            transform: translate(-55px, -55px) scale(0.8);
+            opacity: 0;
+            transition: transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 100ms ease;
+            filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
+            pointer-events: none;
+        }
+        .bd-pie-svg.open {
+            transform: translate(-55px, -55px) scale(1);
+            opacity: 1;
+        }
+        .bd-pie-bg {
+            fill: rgba(20, 28, 26, 0.92);
+        }
+        .bd-pie-segment {
+            fill: rgba(42, 107, 74, 0.0);
+            stroke: rgba(255, 255, 255, 0.18);
+            stroke-width: 1;
+            transition: fill 80ms ease;
+        }
+        .bd-pie-segment.active {
+            fill: var(--green-deep);
+        }
+        .bd-pie-divider {
+            stroke: rgba(255, 255, 255, 0.18);
+            stroke-width: 1;
+            fill: none;
+        }
+        .bd-pie-center {
+            fill: rgba(20, 28, 26, 0.95);
+            stroke: rgba(255, 255, 255, 0.25);
+            stroke-width: 1;
+        }
+        .bd-pie-label {
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: 700;
+            fill: #fff;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            pointer-events: none;
+            letter-spacing: 0.02em;
+        }
+        .bd-pie-icon {
+            font-size: 16px;
+            font-weight: 700;
+            fill: #fff;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            pointer-events: none;
+        }
+        .bd-pie-svg.open .bd-pie-segment.active ~ .bd-pie-label,
+        .bd-pie-segment.active + .bd-pie-icon {
+            fill: #fff;
+        }
+
         @media (max-width: 600px) {
             body { padding: 0.5rem; }
             .bd-card { padding: 0.9rem; }
@@ -1130,8 +1232,8 @@
                         <div class="bd-seq-wrap">
                             <div class="bd-seq-rows" id="bdSeqRowsBass"></div>
                             <div class="bd-seq-tip">
-                                셀 클릭: 끔 → 켬 → 강세 → 뮤트.
-                                근음/5도 두 라인. 뮤트는 sustain을 확실히 끊습니다.
+                                <b>탭</b>: on/off 토글. <b>길게 누르기</b> → 4분면 메뉴 (↑뮤트 / →강세 / ←약하게 / ↓땡겨치기).
+                                근음/5도 두 라인.
                                 <button type="button" class="bd-btn bd-btn-ghost" id="bdSeqClearBassBtn" style="float:right;font-size:0.7rem;padding:0.25rem 0.55rem;margin-top:-0.2rem;">초기화</button>
                             </div>
                         </div>
@@ -1157,8 +1259,8 @@
                         <div class="bd-seq-wrap">
                             <div class="bd-seq-rows" id="bdSeqRowsPiano"></div>
                             <div class="bd-seq-tip">
-                                셀 클릭: 끔 → 켬 → 강세 → 뮤트.
-                                코드/단음 두 라인. 뮤트는 sustain을 확실히 끊습니다.
+                                <b>탭</b>: on/off 토글. <b>길게 누르기</b> → 4분면 메뉴 (↑뮤트 / →강세 / ←약하게 / ↓땡겨치기).
+                                코드/단음 두 라인.
                                 <button type="button" class="bd-btn bd-btn-ghost" id="bdSeqClearPianoBtn" style="float:right;font-size:0.7rem;padding:0.25rem 0.55rem;margin-top:-0.2rem;">초기화</button>
                             </div>
                         </div>
@@ -1206,6 +1308,8 @@
                 <iframe id="previewIframe" class="bd-preview-iframe" src="" title="preview" aria-hidden="true"></iframe>
             </div>
         </div>
+        <!-- 파이 메뉴 (마킹 메뉴) — 셀 길게 누를 때 동적으로 띄움 -->
+        <div class="bd-pie-overlay" id="bdPieOverlay" hidden></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/dist/umd/supabase.min.js"></script>
@@ -1229,9 +1333,13 @@
             let difficulty = 0;  // 0 = 없음, 1~5 = 별 개수
             let currentRhythm = '8beat';
             // 커스텀 시퀀서 — 4 라인 (피아노 코드 / 피아노 단음 / 베이스 근음 / 베이스 5도)
-            // 각 셀 값: 0 = off, 1 = on, 2 = accent
-            // 칸 수는 현재 currentRhythm 의 measureLen (ticksPerBeat × beatsPerMeasure) 와 일치.
-            // 한 칸이라도 0 이 아닌 값이 있으면 "커스텀이 정의됨" 으로 간주.
+            // 각 셀 값:
+            //   0 = off, 1 = on(기본), 2 = accent(강하게), 3 = mute(×), 4 = quiet(약하게)
+            // 추가로 chordOffset[] — per-tick (라인 공유) 코드 미리 땡겨치기 (싱코페이션):
+            //   0 = 그 tick segment 의 기본 코드 사용
+            //   +1 = 다음 segment(반박자 단위)의 코드 미리 가져와 사용
+            //   -1 = 이전 segment 코드 (드물게 사용)
+            // 칸 수는 현재 currentRhythm 의 measureLen 와 일치.
             const BD_SEQ_LINES = ['pianoMain', 'pianoSingle', 'bassRoot', 'bassFifth'];
             const BD_SEQ_LINE_LABELS = {
                 pianoMain:   '피아노 코드',
@@ -1254,15 +1362,19 @@
                 var len = bdSeqMeasureLen();
                 var p = {};
                 BD_SEQ_LINES.forEach(function(k) { p[k] = new Array(len).fill(0); });
+                p.chordOffset = new Array(len).fill(0);
                 return p;
             }
-            // 현재 시퀀서 패턴 — { pianoMain: [...], pianoSingle: [...], bassRoot: [...], bassFifth: [...] }
+            // 현재 시퀀서 패턴 — { pianoMain, pianoSingle, bassRoot, bassFifth, chordOffset }
             let bdSeq = bdSeqEmpty();
-            // 시퀀서가 비어있는지 (한 칸이라도 켜져있는지) 체크
+            // 시퀀서가 비어있는지 (셀에 한 칸이라도 값이 있거나, chordOffset 이 설정돼 있으면 false)
             function bdSeqIsEmpty() {
-                return BD_SEQ_LINES.every(function(line) {
+                var linesEmpty = BD_SEQ_LINES.every(function(line) {
                     return (bdSeq[line] || []).every(function(v) { return !v; });
                 });
+                var offsetEmpty = !Array.isArray(bdSeq.chordOffset) ||
+                    bdSeq.chordOffset.every(function(v) { return !v; });
+                return linesEmpty && offsetEmpty;
             }
 
             const RHYTHM_KEYS_ORDERED = [
@@ -1296,6 +1408,9 @@
                         bdSeq[line] = new Array(len).fill(0);
                     }
                 });
+                if (!Array.isArray(bdSeq.chordOffset) || bdSeq.chordOffset.length !== len) {
+                    bdSeq.chordOffset = new Array(len).fill(0);
+                }
                 var beatTicks = (len === 16) ? 4 : (len === 12 ? 3 : (len === 8 ? 2 : 1));
                 var html = lines.map(function(line) {
                     var arr = bdSeq[line];
@@ -1306,7 +1421,9 @@
                         if (v === 1) classes += ' on';
                         else if (v === 2) classes += ' accent';
                         else if (v === 3) classes += ' mute';
+                        else if (v === 4) classes += ' quiet';
                         if (i % beatTicks === 0) classes += ' beat-start';
+                        if (bdSeq.chordOffset[i]) classes += ' anticipate';
                         cellsHtml += '<button type="button" class="' + classes + '" data-step="' + i + '"></button>';
                     }
                     return '<div class="bd-seq-row" data-line="' + line + '">' +
@@ -1316,36 +1433,272 @@
                 }).join('');
                 rows.innerHTML = html;
             }
+            // 셀 하나의 시각 클래스만 갱신 (전체 재렌더 X)
+            function _refreshCellClass(line, step) {
+                var len = bdSeqMeasureLen();
+                var beatTicks = (len === 16) ? 4 : (len === 12 ? 3 : (len === 8 ? 2 : 1));
+                var v = (bdSeq[line] || [])[step] | 0;
+                var off = (bdSeq.chordOffset || [])[step] | 0;
+                document.querySelectorAll('.bd-seq-row[data-line="' + line + '"] .bd-seq-cell[data-step="' + step + '"]').forEach(function(cell) {
+                    cell.classList.remove('on', 'accent', 'mute', 'quiet');
+                    if (v === 1) cell.classList.add('on');
+                    else if (v === 2) cell.classList.add('accent');
+                    else if (v === 3) cell.classList.add('mute');
+                    else if (v === 4) cell.classList.add('quiet');
+                    cell.classList.toggle('anticipate', !!off);
+                });
+            }
+            // 한 tick 의 모든 라인에서 anticipate 클래스 동기화 (chordOffset 은 라인 공유)
+            function _refreshAnticipateColumn(step) {
+                var off = (bdSeq.chordOffset || [])[step] | 0;
+                document.querySelectorAll('.bd-seq-cell[data-step="' + step + '"]').forEach(function(cell) {
+                    cell.classList.toggle('anticipate', !!off);
+                });
+            }
             function renderBdSeq() {
                 _renderBdSeqGroup('bdSeqRowsBass',  BD_SEQ_GROUPS.bass);
                 _renderBdSeqGroup('bdSeqRowsPiano', BD_SEQ_GROUPS.piano);
             }
-            function _wireSeqRowsClicks(rowsId) {
-                var rows = $(rowsId);
-                if (!rows || rows._wired) return;
-                rows._wired = true;
-                rows.addEventListener('click', function(e) {
+            // ─── 셀 인터랙션 — 짧은 탭 = on/off 토글, 길게 누르기 = 파이 메뉴 ───
+            //
+            // 흐름 (pointer 이벤트 통합):
+            //   pointerdown: 타이머 시작(LONG_PRESS_MS=300ms), 시작 좌표 저장
+            //   pointermove(타이머 만료 전 + 이동 < CANCEL_PX): 타이머 살아있음
+            //   pointermove(타이머 만료 전 + 이동 ≥ CANCEL_PX): 타이머 취소, 그냥 짧은 탭으로 처리됨
+            //   타이머 만료: 파이 메뉴 띄움, capture 모드 진입
+            //   pointermove(메뉴 떠있음): 시작 좌표 기준 각도로 4분면 하이라이트
+            //   pointerup(메뉴 떠있음): 가리키는 분면 액션 실행 (가운데 데드존 = 취소)
+            //   pointerup(메뉴 안 뜸 + 이동 거의 없음): 짧은 탭 = on/off 토글
+            //
+            // 기본 클릭 핸들러는 안 씀 (pointerup 에서 직접 처리). 셀의 type=button 은
+            // 폼 submit 방지용으로 유지.
+            const LONG_PRESS_MS = 300;
+            const CANCEL_PX = 8;          // pre-menu 시점에 이만큼 이상 이동하면 long-press 취소 → 짧은 탭으로 처리
+            const PIE_DEAD_PX = 18;       // 메뉴 가운데 데드존 (취소)
+
+            // 현재 진행 중인 셀 인터랙션 상태
+            let _bdPress = null;
+            // 파이 메뉴 4분면 정의 (12시 부터 시계방향: 위/오른/아래/왼)
+            // 각도 (atan2 기준, y 가 화면 아래 양수): 위=-π/2, 오른=0, 아래=π/2, 왼=±π
+            //   각도 → 분면 매핑은 _angleToQuadrant 에서 처리
+            const PIE_ACTIONS = {
+                up:    { label: '뮤트',   icon: '×', kind: 'state', value: 3 },
+                right: { label: '강하게', icon: '◆', kind: 'state', value: 2 },
+                down:  { label: '땡겨',   icon: '→', kind: 'anticipate' },
+                left:  { label: '약하게', icon: '·', kind: 'state', value: 4 }
+            };
+
+            function _angleToQuadrant(dx, dy) {
+                if (Math.hypot(dx, dy) < PIE_DEAD_PX) return null;
+                var ang = Math.atan2(dy, dx);  // -π..π
+                // -π/4 ~ π/4    : right
+                // π/4  ~ 3π/4   : down
+                // 3π/4 ~ π or -π~-3π/4 : left
+                // -3π/4 ~ -π/4  : up
+                if (ang > -Math.PI/4 && ang <= Math.PI/4) return 'right';
+                if (ang > Math.PI/4 && ang <= 3*Math.PI/4) return 'down';
+                if (ang > -3*Math.PI/4 && ang <= -Math.PI/4) return 'up';
+                return 'left';
+            }
+
+            // 파이 메뉴 SVG 생성
+            function _buildPieSvg() {
+                // 4 segment paths (도넛 형태). 외경 50, 내경 18, 각 90°.
+                // 12시(-π/2) 부터 시계방향: up / right / down / left
+                var segments = [
+                    { key: 'up',    a0: -Math.PI*3/4, a1: -Math.PI/4, label: PIE_ACTIONS.up.label,    icon: PIE_ACTIONS.up.icon,    cx: 0,  cy: -28 },
+                    { key: 'right', a0: -Math.PI/4,   a1:  Math.PI/4, label: PIE_ACTIONS.right.label, icon: PIE_ACTIONS.right.icon, cx: 28, cy: 0   },
+                    { key: 'down',  a0:  Math.PI/4,   a1:  Math.PI*3/4, label: PIE_ACTIONS.down.label, icon: PIE_ACTIONS.down.icon, cx: 0,  cy: 28  },
+                    { key: 'left',  a0:  Math.PI*3/4, a1:  Math.PI*5/4, label: PIE_ACTIONS.left.label, icon: PIE_ACTIONS.left.icon, cx: -28, cy: 0  }
+                ];
+                var R_OUT = 52;
+                var R_IN = 18;
+                function pathArc(a0, a1) {
+                    var x0 = Math.cos(a0) * R_OUT, y0 = Math.sin(a0) * R_OUT;
+                    var x1 = Math.cos(a1) * R_OUT, y1 = Math.sin(a1) * R_OUT;
+                    var x2 = Math.cos(a1) * R_IN,  y2 = Math.sin(a1) * R_IN;
+                    var x3 = Math.cos(a0) * R_IN,  y3 = Math.sin(a0) * R_IN;
+                    var large = (a1 - a0) > Math.PI ? 1 : 0;
+                    return 'M ' + x0 + ' ' + y0 +
+                           ' A ' + R_OUT + ' ' + R_OUT + ' 0 ' + large + ' 1 ' + x1 + ' ' + y1 +
+                           ' L ' + x2 + ' ' + y2 +
+                           ' A ' + R_IN + ' ' + R_IN + ' 0 ' + large + ' 0 ' + x3 + ' ' + y3 +
+                           ' Z';
+                }
+                var paths = segments.map(function(s) {
+                    return '<path class="bd-pie-segment" data-quad="' + s.key + '" d="' + pathArc(s.a0, s.a1) + '"></path>' +
+                           '<text class="bd-pie-icon" x="' + s.cx + '" y="' + (s.cy - 6) + '">' + s.icon + '</text>' +
+                           '<text class="bd-pie-label" x="' + s.cx + '" y="' + (s.cy + 8) + '">' + s.label + '</text>';
+                }).join('');
+                return '<svg class="bd-pie-svg" viewBox="-55 -55 110 110">' +
+                          '<circle class="bd-pie-bg" cx="0" cy="0" r="' + R_OUT + '"/>' +
+                          paths +
+                          '<circle class="bd-pie-center" cx="0" cy="0" r="' + R_IN + '"/>' +
+                       '</svg>';
+            }
+
+            function _showPieAt(menuX, menuY, pressX, pressY) {
+                var ov = $('bdPieOverlay');
+                if (!ov) return null;
+                ov.hidden = false;
+                ov.innerHTML = '';
+                // 점선 보조선 (press 시작점 → 메뉴 중심)
+                var dx = menuX - pressX, dy = menuY - pressY;
+                var dist = Math.hypot(dx, dy);
+                if (dist > 6) {
+                    var line = document.createElement('div');
+                    line.className = 'bd-pie-anchor-line';
+                    line.style.left = pressX + 'px';
+                    line.style.top  = pressY + 'px';
+                    line.style.width = dist + 'px';
+                    line.style.transform = 'rotate(' + Math.atan2(dy, dx) + 'rad)';
+                    ov.appendChild(line);
+                }
+                // 메뉴 자체
+                var wrap = document.createElement('div');
+                wrap.style.position = 'absolute';
+                wrap.style.left = menuX + 'px';
+                wrap.style.top  = menuY + 'px';
+                wrap.innerHTML = _buildPieSvg();
+                ov.appendChild(wrap);
+                // 다음 프레임에 .open 추가해서 transition 발생
+                requestAnimationFrame(function() {
+                    var svg = wrap.querySelector('.bd-pie-svg');
+                    if (svg) svg.classList.add('open');
+                });
+                return wrap.querySelector('.bd-pie-svg');
+            }
+
+            function _hidePie() {
+                var ov = $('bdPieOverlay');
+                if (!ov) return;
+                ov.hidden = true;
+                ov.innerHTML = '';
+            }
+
+            function _highlightPieQuadrant(svgEl, quad) {
+                if (!svgEl) return;
+                svgEl.querySelectorAll('.bd-pie-segment').forEach(function(seg) {
+                    seg.classList.toggle('active', quad && seg.dataset.quad === quad);
+                });
+            }
+
+            function _applyPieAction(quad, line, step) {
+                var def = PIE_ACTIONS[quad];
+                if (!def) return;
+                if (def.kind === 'state') {
+                    var arr = bdSeq[line];
+                    if (!arr || step < 0 || step >= arr.length) return;
+                    // 같은 상태를 다시 선택하면 off 로 토글
+                    arr[step] = (arr[step] === def.value) ? 0 : def.value;
+                    _refreshCellClass(line, step);
+                } else if (def.kind === 'anticipate') {
+                    if (!Array.isArray(bdSeq.chordOffset)) bdSeq.chordOffset = new Array(bdSeqMeasureLen()).fill(0);
+                    // 0 ↔ +1 토글 (필요 시 -1 도 향후 추가)
+                    bdSeq.chordOffset[step] = bdSeq.chordOffset[step] ? 0 : 1;
+                    _refreshAnticipateColumn(step);
+                }
+            }
+
+            function _bdAttachCellPointer(rowsEl) {
+                if (!rowsEl || rowsEl._wiredPtr) return;
+                rowsEl._wiredPtr = true;
+
+                rowsEl.addEventListener('pointerdown', function(e) {
                     var cell = e.target.closest('.bd-seq-cell');
                     if (!cell) return;
                     var row = cell.closest('.bd-seq-row');
                     if (!row) return;
                     var line = row.dataset.line;
                     var step = parseInt(cell.dataset.step, 10);
-                    var arr = bdSeq[line];
-                    if (!arr || isNaN(step) || step < 0 || step >= arr.length) return;
-                    // 4-state cycle: 0(off) → 1(on) → 2(accent) → 3(mute) → 0
-                    var cur = arr[step] | 0;
-                    var next = (cur + 1) % 4;
-                    arr[step] = next;
-                    cell.classList.remove('on', 'accent', 'mute');
-                    if (next === 1) cell.classList.add('on');
-                    else if (next === 2) cell.classList.add('accent');
-                    else if (next === 3) cell.classList.add('mute');
+                    if (!bdSeq[line] || isNaN(step)) return;
+
+                    e.preventDefault();
+                    cell.setPointerCapture(e.pointerId);
+
+                    var rect = cell.getBoundingClientRect();
+                    var pressX = rect.left + rect.width / 2;
+                    var pressY = rect.top + rect.height / 2;
+                    _bdPress = {
+                        cell: cell, line: line, step: step,
+                        pointerId: e.pointerId,
+                        pressX: pressX, pressY: pressY,
+                        startX: e.clientX, startY: e.clientY,
+                        moved: false,
+                        menuOpen: false,
+                        menuSvg: null,
+                        currentQuad: null,
+                        timerId: setTimeout(_openPieFromCurrentPress, LONG_PRESS_MS)
+                    };
                 });
+
+                rowsEl.addEventListener('pointermove', function(e) {
+                    if (!_bdPress || _bdPress.pointerId !== e.pointerId) return;
+                    var dx = e.clientX - _bdPress.pressX;
+                    var dy = e.clientY - _bdPress.pressY;
+                    if (_bdPress.menuOpen) {
+                        var quad = _angleToQuadrant(dx, dy);
+                        if (quad !== _bdPress.currentQuad) {
+                            _bdPress.currentQuad = quad;
+                            _highlightPieQuadrant(_bdPress.menuSvg, quad);
+                        }
+                    } else {
+                        var moveDist = Math.hypot(e.clientX - _bdPress.startX, e.clientY - _bdPress.startY);
+                        if (moveDist > CANCEL_PX) {
+                            // long-press 발동 전 큰 이동 → 타이머 취소, 짧은 탭도 무시
+                            if (_bdPress.timerId) clearTimeout(_bdPress.timerId);
+                            _bdPress.timerId = null;
+                            _bdPress.moved = true;
+                        }
+                    }
+                });
+
+                function endPointer(e) {
+                    if (!_bdPress || _bdPress.pointerId !== e.pointerId) return;
+                    if (_bdPress.timerId) clearTimeout(_bdPress.timerId);
+                    if (_bdPress.menuOpen) {
+                        if (_bdPress.currentQuad) {
+                            _applyPieAction(_bdPress.currentQuad, _bdPress.line, _bdPress.step);
+                        }
+                        _hidePie();
+                    } else if (!_bdPress.moved) {
+                        // 짧은 탭 — on/off 토글 (state 1)
+                        var arr = bdSeq[_bdPress.line];
+                        if (arr) {
+                            arr[_bdPress.step] = arr[_bdPress.step] ? 0 : 1;
+                            _refreshCellClass(_bdPress.line, _bdPress.step);
+                        }
+                    }
+                    try { _bdPress.cell.releasePointerCapture(_bdPress.pointerId); } catch (err) {}
+                    _bdPress = null;
+                }
+                rowsEl.addEventListener('pointerup', endPointer);
+                rowsEl.addEventListener('pointercancel', endPointer);
+            }
+
+            function _openPieFromCurrentPress() {
+                if (!_bdPress) return;
+                _bdPress.timerId = null;
+                // 메뉴 좌표 클램프 (가장자리 잘림 방지)
+                var R = 55, M = 8;
+                var menuX = Math.max(R + M, Math.min(window.innerWidth  - R - M, _bdPress.pressX));
+                var menuY = Math.max(R + M, Math.min(window.innerHeight - R - M, _bdPress.pressY));
+                _bdPress.menuOpen = true;
+                _bdPress.menuSvg = _showPieAt(menuX, menuY, _bdPress.pressX, _bdPress.pressY);
+                // 햅틱
+                try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) {}
+            }
+
+            function _wireSeqRowsClicks(rowsId) {
+                var rows = $(rowsId);
+                if (!rows) return;
+                _bdAttachCellPointer(rows);
             }
             function _clearGroup(lines) {
                 var len = bdSeqMeasureLen();
                 lines.forEach(function(line) { bdSeq[line] = new Array(len).fill(0); });
+                // chordOffset 은 라인 공유라 그룹 단위 초기화에선 건드리지 않음
+                // (전체 비우기는 bdSeqEmpty 가 수행)
             }
             // 베이스/피아노 커스텀 토글 상태
             let bdBassCustom  = false;
@@ -1724,9 +2077,18 @@
                     BD_SEQ_LINES.forEach(function(line) {
                         var saved = sp[line];
                         if (Array.isArray(saved) && saved.length === len) {
-                            bdSeq[line] = saved.map(function(v) { return (v === 1 || v === 2 || v === 3) ? v : 0; });
+                            bdSeq[line] = saved.map(function(v) {
+                                v = v | 0;
+                                return (v >= 1 && v <= 4) ? v : 0;
+                            });
                         }
                     });
+                    if (Array.isArray(sp.chordOffset) && sp.chordOffset.length === len) {
+                        bdSeq.chordOffset = sp.chordOffset.map(function(v) {
+                            v = v | 0;
+                            return (v === 1 || v === -1) ? v : 0;
+                        });
+                    }
                 }
                 // 커스텀 토글 — 명시 플래그(pianoCustom/bassCustom) 우선, 없으면 셀에 값이 있으면 자동 ON.
                 bdBassCustom = sp && typeof sp.bassCustom === 'boolean'
@@ -1766,6 +2128,7 @@
                 // 시퀀서 — 비어있고 토글도 둘 다 OFF 면 null, 그 외엔 객체로 저장.
                 //   - 토글이 ON 인 쪽은 셀이 비어있어도 의도(커스텀 사용)를 유지하기 위해 저장.
                 //   - 토글이 OFF 인 쪽 셀 데이터는 보존(다음에 다시 켜면 복원되도록).
+                //   - chordOffset (싱코페이션) 도 함께 저장.
                 var seqOut = null;
                 if (!bdSeqIsEmpty() || bdBassCustom || bdPianoCustom) {
                     seqOut = {
@@ -1775,6 +2138,9 @@
                     BD_SEQ_LINES.forEach(function(line) {
                         seqOut[line] = (bdSeq[line] || []).slice();
                     });
+                    if (Array.isArray(bdSeq.chordOffset) && bdSeq.chordOffset.some(function(v) { return v && v !== 0; })) {
+                        seqOut.chordOffset = bdSeq.chordOffset.slice();
+                    }
                 }
                 return {
                     name: $('fName').value || '',
@@ -1818,9 +2184,18 @@
                     BD_SEQ_LINES.forEach(function(line) {
                         var saved = spC[line];
                         if (Array.isArray(saved) && saved.length === lenC) {
-                            bdSeq[line] = saved.map(function(v) { return (v === 1 || v === 2 || v === 3) ? v : 0; });
+                            bdSeq[line] = saved.map(function(v) {
+                                v = v | 0;
+                                return (v >= 1 && v <= 4) ? v : 0;
+                            });
                         }
                     });
+                    if (Array.isArray(spC.chordOffset) && spC.chordOffset.length === lenC) {
+                        bdSeq.chordOffset = spC.chordOffset.map(function(v) {
+                            v = v | 0;
+                            return (v === 1 || v === -1) ? v : 0;
+                        });
+                    }
                 }
                 bdBassCustom = spC && typeof spC.bassCustom === 'boolean'
                     ? spC.bassCustom
@@ -2206,6 +2581,7 @@
                 // 시퀀서 — 비어있고 토글 둘 다 OFF 면 null. 그 외엔 저장.
                 //   - 토글 ON 인 쪽은 셀이 비어있어도 의도(커스텀 사용)를 보존.
                 //   - 토글 OFF 인 쪽 셀은 보존(나중에 다시 켜면 복원).
+                //   - chordOffset (싱코페이션) 도 함께 저장.
                 var seqToSave = null;
                 if (!bdSeqIsEmpty() || bdBassCustom || bdPianoCustom) {
                     seqToSave = {
@@ -2215,6 +2591,9 @@
                     BD_SEQ_LINES.forEach(function(line) {
                         seqToSave[line] = (bdSeq[line] || []).slice();
                     });
+                    if (Array.isArray(bdSeq.chordOffset) && bdSeq.chordOffset.some(function(v) { return v && v !== 0; })) {
+                        seqToSave.chordOffset = bdSeq.chordOffset.slice();
+                    }
                 }
                 const data = {
                     name: name,
