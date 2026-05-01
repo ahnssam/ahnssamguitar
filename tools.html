@@ -5175,6 +5175,19 @@
             border-color: var(--green-deep);
         }
         :root[data-theme="dark"] .loop-rhythm-drawer .rhythm-custom-btn { color: #b5e6c8; }
+        /* 베이스/피아노 스타일 row 의 "커스텀" 버튼 — 프리셋이 커스텀 시퀀서를 가질 때만 동적 노출. */
+        .loop-style-btn.rhythm-custom-btn {
+            background: linear-gradient(135deg, rgba(245, 179, 30, 0.18), rgba(82, 168, 114, 0.18));
+            border-color: rgba(245, 179, 30, 0.5);
+            color: var(--green-deep);
+            font-weight: 700;
+        }
+        .loop-style-btn.rhythm-custom-btn.active {
+            background: linear-gradient(135deg, #f5b31e, var(--green-deep));
+            color: #fff;
+            border-color: var(--green-deep);
+        }
+        :root[data-theme="dark"] .loop-style-btn.rhythm-custom-btn { color: #b5e6c8; }
 
         /* 적용된 프리셋의 변형(variations) 칩 행 — preset-bar 바로 아래에 표시 */
         .loop-variation-row {
@@ -9362,10 +9375,13 @@
                     }
                 } catch (e) {}
                 if (soundMode === 'loop') {
+                    // ─ legacy 호환: 예전엔 loopRhythm === 'custom' 으로 저장된 경우가 있을 수 있음.
+                    //   드럼 리듬은 항상 실제 패턴이어야 하므로 'custom' 이면 프리셋 원래 리듬으로 폴백.
+                    if (loopRhythm === 'custom') {
+                        loopRhythm = _loopActivePresetRhythm || '8beat';
+                    }
                     const r = loopRhythm;
-                    // 커스텀이 선택돼 있으면 드럼은 프리셋의 원래 리듬을 사용
-                    const effectiveR = (r === 'custom') ? (_loopActivePresetRhythm || '8beat') : r;
-                    const p = DRUM_PATTERNS[effectiveR] || DRUM_PATTERNS['8beat'];
+                    const p = DRUM_PATTERNS[r] || DRUM_PATTERNS['8beat'];
                     const measureLen = p.ticksPerBeat * p.beatsPerMeasure;
                     const t = beatNum % measureLen;
                     // 스윙 16비트 — e·a 박(tick%4 == 1, 3)을 1/3 16분음표(= 1/12 박)만큼 뒤로.
@@ -9395,55 +9411,42 @@
                         loopMeasureIdx = mIdx;
                         highlightLoopCell(mIdx, time);
                     }
-                    // ─── 커스텀 리듬 분기 ─────────────────────────────────
-                    // 프리셋의 시퀀서 패턴이 활성화되어 있으면 (loopRhythm === 'custom') 기본
-                    // 베이스/피아노는 모두 비활성. 4 라인 시퀀서가 직접 노트 트리거.
-                    if (r === 'custom' && _loopActivePresetSequencer) {
-                        var seqPat = _loopActivePresetSequencer;
-                        // 시퀀서 그리드 인덱스 = 현재 tick (둘 다 measureLen 과 일치)
-                        var sIdx = t;
-                        if (seqPat && sIdx >= 0 && Array.isArray(seqPat.pianoMain) && sIdx < seqPat.pianoMain.length) {
-                            var midSeq = measureLen / 2;
-                            var halfSeq = t < midSeq ? 'a' : 'b';
-                            var rootSeq = getEffectiveRoot(loopMeasureIdx, halfSeq);
-                            // 셀 값 — 0(off) / 1(on) / 2(accent, 1.4× 볼륨)
-                            var vBR = _seqNormalize(seqPat.bassRoot[sIdx]);
-                            var vBF = _seqNormalize(seqPat.bassFifth[sIdx]);
-                            var vPM = _seqNormalize(seqPat.pianoMain[sIdx]);
-                            var vPS = _seqNormalize(seqPat.pianoSingle[sIdx]);
-                            // 베이스 — 근음. velLevel 인자: 1=약, 0=강. accent 면 강세(0).
-                            if (vBR && rootSeq) {
-                                var bR = chordRootOnly(rootSeq);
-                                if (bR) playBass(bR, swungTime, vBR === 2 ? 0 : 1);
-                            }
-                            // 베이스 — 5도 (5도는 약하게 깔리는 게 자연스러우니 default 1=약, accent 면 0=강)
-                            if (vBF && rootSeq) {
-                                var b5 = getChordFifthName(rootSeq);
-                                if (b5) playBass(b5, swungTime, vBF === 2 ? 0 : 1);
-                            }
-                            // 피아노 — 메인 코드. velMul 1.0 기본, accent 면 1.4×
-                            if (vPM && rootSeq && loopVolPiano > 0.001) {
-                                var velSeq = (sIdx % p.ticksPerBeat === 0) ? 1.0 : 0.6;
-                                if (vPM === 2) velSeq *= 1.4;
-                                var segKeyS = loopMeasureIdx + '|' + halfSeq;
-                                var prevSegS = _lastPianoSegmentChord;
-                                var isNewSegS = (segKeyS !== _lastPianoSegmentKey);
-                                if (isNewSegS) {
-                                    _lastPianoSegmentKey = segKeyS;
-                                    _lastPianoSegmentChord = rootSeq;
-                                }
-                                playPianoChord(rootSeq, swungTime, velSeq, { vary: isNewSegS && prevSegS === rootSeq });
-                            }
-                            // 피아노 — 단음 (보이싱 맨 아래). default 0.7, accent 면 1.0
-                            if (vPS && rootSeq && loopVolPiano > 0.001) {
-                                playPianoChordLowest(rootSeq, swungTime, vPS === 2 ? 1.0 : 0.7);
+                    // 시퀀서 인덱스 = 현재 tick (시퀀서 길이는 프리셋 드럼 리듬의 measureLen 과 일치).
+                    //   사용자가 메인 도구에서 드럼 리듬을 바꿨다면 인덱스가 안 맞을 수 있으므로
+                    //   bounds 체크 후 스킵.
+                    var _seqPat = _loopActivePresetSequencer;
+                    var _sIdx = t;
+                    var _seqHalf = (t < measureLen / 2) ? 'a' : 'b';
+                    var _seqRoot = null;  // lazy 평가 (필요할 때만 계산)
+                    var _getSeqRoot = function() {
+                        if (_seqRoot === null) _seqRoot = getEffectiveRoot(loopMeasureIdx, _seqHalf);
+                        return _seqRoot;
+                    };
+                    // ─── 베이스 ───────────────────────────────────────
+                    // 'custom' — 빌더에서 짠 시퀀서 (bassRoot/bassFifth) 로 직접 트리거. 뮤트(3) → choke.
+                    // 'default' — 드럼 리듬에 매칭된 기존 BASS_PATTERNS.
+                    // '8beat' / '16beat' — 16분음표 기반 독립 패턴을 ticksPerBeat 에 맞춰.
+                    if (loopBassStyle === 'custom' && _seqPat && Array.isArray(_seqPat.bassRoot)
+                        && _sIdx >= 0 && _sIdx < _seqPat.bassRoot.length) {
+                        var sBR = _seqNormalize(_seqPat.bassRoot[_sIdx]);
+                        var sBF = _seqNormalize(_seqPat.bassFifth ? _seqPat.bassFifth[_sIdx] : 0);
+                        // 뮤트 (3) — 그 지점에서 베이스 sustain 확실히 끊기
+                        if (sBR === 3 || sBF === 3) chokeBass(swungTime);
+                        if (sBR === 1 || sBR === 2) {
+                            var rrB = _getSeqRoot();
+                            if (rrB) {
+                                var bR = chordRootOnly(rrB);
+                                if (bR) playBass(bR, swungTime, sBR === 2 ? 0 : 1);
                             }
                         }
-                    } else {
-                    // ─── 베이스 ───────────────────────────────────────
-                    // 'default' 일 땐 드럼 리듬에 매칭된 기존 BASS_PATTERNS 사용.
-                    // '8beat' / '16beat' 일 땐 16분음표 기반 독립 패턴을 ticksPerBeat 에 맞춰 사용.
-                    if (loopBassStyle === 'default') {
+                        if (sBF === 1 || sBF === 2) {
+                            var rrB2 = _getSeqRoot();
+                            if (rrB2) {
+                                var b5 = getChordFifthName(rrB2);
+                                if (b5) playBass(b5, swungTime, sBF === 2 ? 0 : 1);
+                            }
+                        }
+                    } else if (loopBassStyle === 'default') {
                         var bp = BASS_PATTERNS[r];
                         if (bp) {
                             if (bp.on.indexOf(t) !== -1) {
@@ -9457,7 +9460,7 @@
                                 chokeBass(swungTime);
                             }
                         }
-                    } else {
+                    } else if (loopBassStyle === '8beat' || loopBassStyle === '16beat') {
                         var indep = BASS_INDEP_STYLES[loopBassStyle];
                         if (indep) {
                             var bassTicks = sixteenthsToTicks(indep.sixteenthHits, p.ticksPerBeat);
@@ -9470,9 +9473,34 @@
                             }
                         }
                     }
-                    // ─── 피아노 컴핑 ───────────────────────────────────
-                    var pStyle = PIANO_STYLES[loopPianoStyle];
-                    if (pStyle && loopVolPiano > 0.001) {
+                    // ─── 피아노 ───────────────────────────────────────
+                    // 'custom' — 빌더 시퀀서 (pianoMain/pianoSingle). 뮤트(3) → chokePiano.
+                    if (loopPianoStyle === 'custom' && _seqPat && Array.isArray(_seqPat.pianoMain)
+                        && _sIdx >= 0 && _sIdx < _seqPat.pianoMain.length && loopVolPiano > 0.001) {
+                        var sPM = _seqNormalize(_seqPat.pianoMain[_sIdx]);
+                        var sPS = _seqNormalize(_seqPat.pianoSingle ? _seqPat.pianoSingle[_sIdx] : 0);
+                        if (sPM === 3 || sPS === 3) chokePiano(swungTime);
+                        if (sPM === 1 || sPM === 2) {
+                            var rrP = _getSeqRoot();
+                            if (rrP) {
+                                var velSeq = (_sIdx % p.ticksPerBeat === 0) ? 1.0 : 0.6;
+                                if (sPM === 2) velSeq *= 1.4;
+                                var segKeyS = loopMeasureIdx + '|' + _seqHalf;
+                                var prevSegS = _lastPianoSegmentChord;
+                                var isNewSegS = (segKeyS !== _lastPianoSegmentKey);
+                                if (isNewSegS) {
+                                    _lastPianoSegmentKey = segKeyS;
+                                    _lastPianoSegmentChord = rrP;
+                                }
+                                playPianoChord(rrP, swungTime, velSeq, { vary: isNewSegS && prevSegS === rrP });
+                            }
+                        }
+                        if (sPS === 1 || sPS === 2) {
+                            var rrP2 = _getSeqRoot();
+                            if (rrP2) playPianoChordLowest(rrP2, swungTime, sPS === 2 ? 1.0 : 0.7);
+                        }
+                    } else if (PIANO_STYLES[loopPianoStyle] && loopVolPiano > 0.001) {
+                        var pStyle = PIANO_STYLES[loopPianoStyle];
                         var pianoTicks, pianoChokes = [], pianoHitMeta = null;
                         if (pStyle.dynamic) {
                             // '기본' — 드럼 리듬에 매칭된 패턴 사용. 없으면 quarter 폴백.
@@ -9526,7 +9554,6 @@
                             }
                         }
                     }
-                    } // end of else (userSeq disabled — default 베이스/피아노)
                 } else if (soundMode === 'drums') {
                     const p = DRUM_PATTERNS[drumRhythm] || DRUM_PATTERNS['8beat'];
                     const measureLen = p.ticksPerBeat * p.beatsPerMeasure;
@@ -10105,6 +10132,39 @@
             var _loopActivePresetId = null;
             // 커스텀이 선택됐을 때 사용할 드럼 리듬 (프리셋의 원래 rhythm).
             var _loopActivePresetRhythm = null;
+            // 프리셋이 베이스/피아노 커스텀 시퀀서를 활성화하고 있는지.
+            //   true 일 때만 베이스/피아노 스타일 row 에 "커스텀" 버튼이 노출됨.
+            var _loopActivePresetBassCustom = false;
+            var _loopActivePresetPianoCustom = false;
+            // 동적으로 베이스/피아노 스타일 row 에 "커스텀" 버튼을 추가/제거.
+            //   group: 'bass' 또는 'piano'
+            //   active: true → 버튼 표시, false → 제거 (선택돼 있으면 default 로 폴백)
+            function _ensureCustomStyleBtn(group, active) {
+                var rowId = (group === 'bass') ? 'loopBassStyleBtns' : 'loopPianoStyleBtns';
+                var dataKey = (group === 'bass') ? 'bstyle' : 'pstyle';
+                var setterName = (group === 'bass') ? 'setLoopBassStyle' : 'setLoopPianoStyle';
+                var row = document.getElementById(rowId);
+                if (!row) return;
+                var existing = row.querySelector('button[data-' + dataKey + '="custom"]');
+                if (active) {
+                    if (existing) return;
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'loop-style-btn rhythm-custom-btn';
+                    btn.setAttribute('data-' + dataKey, 'custom');
+                    btn.textContent = '커스텀';
+                    btn.onclick = function() { window[setterName]('custom'); };
+                    row.appendChild(btn);
+                } else {
+                    if (existing) existing.remove();
+                    // 현재 선택돼 있던 게 'custom' 이었으면 default 로 폴백
+                    if (group === 'bass' && loopBassStyle === 'custom') {
+                        if (typeof window.setLoopBassStyle === 'function') window.setLoopBassStyle('default');
+                    } else if (group === 'piano' && loopPianoStyle === 'custom') {
+                        if (typeof window.setLoopPianoStyle === 'function') window.setLoopPianoStyle('default');
+                    }
+                }
+            }
 
             // ─── postMessage API — 빌더 페이지가 iframe 으로 띄워서 인플레이스 재생할 때 사용 ───
             //   { type: 'loop:apply', preset } — 프리셋 적용 (빌더의 폼 데이터)
@@ -10141,15 +10201,38 @@
                 if (!p) return;
                 _loopActivePresetId = p.id;
                 _loopActivePresetRhythm = p.rhythm || '8beat';
-                // 커스텀 시퀀서 패턴 저장 — 있으면 리듬 드로어에 "커스텀" 첫 자리 노출
+                // 커스텀 시퀀서 패턴 저장 — 베이스/피아노 각각 독립적으로 활성/비활성.
                 _loopActivePresetSequencer = (p.sequencer_pattern && typeof p.sequencer_pattern === 'object')
                     ? p.sequencer_pattern : null;
+                // 베이스/피아노 커스텀 활성 여부 — 명시 플래그 우선, 없으면 셀에 값이 있는지로 추정.
+                var sp = _loopActivePresetSequencer;
+                var bassCustomActive = false;
+                var pianoCustomActive = false;
+                if (sp) {
+                    if (typeof sp.bassCustom === 'boolean') {
+                        bassCustomActive = sp.bassCustom;
+                    } else {
+                        bassCustomActive = (Array.isArray(sp.bassRoot) && sp.bassRoot.some(function(v) { return v && v !== 0; }))
+                                        || (Array.isArray(sp.bassFifth) && sp.bassFifth.some(function(v) { return v && v !== 0; }));
+                    }
+                    if (typeof sp.pianoCustom === 'boolean') {
+                        pianoCustomActive = sp.pianoCustom;
+                    } else {
+                        pianoCustomActive = (Array.isArray(sp.pianoMain) && sp.pianoMain.some(function(v) { return v && v !== 0; }))
+                                         || (Array.isArray(sp.pianoSingle) && sp.pianoSingle.some(function(v) { return v && v !== 0; }));
+                    }
+                }
+                _loopActivePresetBassCustom  = bassCustomActive;
+                _loopActivePresetPianoCustom = pianoCustomActive;
+                // 베이스/피아노 row 에 "커스텀" 버튼 노출/제거 — 토글 ON 인 쪽만.
+                _ensureCustomStyleBtn('bass',  bassCustomActive);
+                _ensureCustomStyleBtn('piano', pianoCustomActive);
                 // 마디
                 if (typeof window.setLoopBars === 'function') window.setLoopBars(p.bars || 4);
-                // 드럼 리듬 — 커스텀이 있으면 그게 우선 자동 선택, 없으면 프리셋의 원래 리듬
-                loopRhythm = _loopActivePresetSequencer ? 'custom' : (p.rhythm || '8beat');
+                // 드럼 리듬 — 항상 프리셋의 원래 리듬 (per-instrument 커스텀이 별도로 처리됨)
+                loopRhythm = p.rhythm || '8beat';
                 var lbl = document.getElementById('loopRhythmLabel');
-                if (lbl) lbl.textContent = (LOOP_RHYTHM_LABELS && LOOP_RHYTHM_LABELS[loopRhythm]) || (loopRhythm === 'custom' ? '커스텀' : loopRhythm);
+                if (lbl) lbl.textContent = (LOOP_RHYTHM_LABELS && LOOP_RHYTHM_LABELS[loopRhythm]) || loopRhythm;
                 renderLoopRhythms();
                 // BPM
                 if (typeof window.updateBPM === 'function') {
@@ -10157,9 +10240,14 @@
                     var slider = document.getElementById('bpmSlider');
                     if (slider) slider.value = p.bpm || 90;
                 }
-                // 베이스/피아노 스타일 (커스텀일 땐 시퀀서가 덮어쓸 거라 의미 없지만 일관성 유지)
-                if (typeof window.setLoopBassStyle === 'function') window.setLoopBassStyle(p.bass_style || 'default');
-                if (typeof window.setLoopPianoStyle === 'function') window.setLoopPianoStyle(p.piano_style || 'quarter');
+                // 베이스/피아노 스타일.
+                //   커스텀이 활성화돼 있으면 'custom' 으로 자동 선택, 아니면 프리셋 값 그대로.
+                if (typeof window.setLoopBassStyle === 'function') {
+                    window.setLoopBassStyle(bassCustomActive ? 'custom' : (p.bass_style || 'default'));
+                }
+                if (typeof window.setLoopPianoStyle === 'function') {
+                    window.setLoopPianoStyle(pianoCustomActive ? 'custom' : (p.piano_style || 'default'));
+                }
                 // 코드 진행
                 loopChords  = p.chords_a ? Object.assign({}, p.chords_a) : {};
                 loopChordsB = p.chords_b ? Object.assign({}, p.chords_b) : {};
@@ -10283,19 +10371,16 @@
                 var drawer = document.getElementById('loopRhythmDrawer');
                 if (!drawer) return;
                 drawer.innerHTML = '';
-                // 적용된 프리셋이 커스텀 시퀀서를 가지고 있으면 첫 자리에 "커스텀" 칩
-                var order = [];
-                if (_loopActivePresetSequencer) order.push('custom');
-                order = order.concat(['8beat','8beat2','4beat','4beat2','16beat','16beat2','16beatC','ballad','16beatSA','16beatSB','16beatSC','swing']);
+                // 드럼 리듬 — 항상 실제 패턴만 노출 ('custom' 은 더 이상 드럼 옵션이 아님)
+                var order = ['8beat','8beat2','4beat','4beat2','16beat','16beat2','16beatC','ballad','16beatSA','16beatSB','16beatSC','swing'];
                 order.forEach(function(key) {
                     var btn = document.createElement('button');
-                    btn.textContent = (key === 'custom') ? '커스텀' : (LOOP_RHYTHM_LABELS[key] || key);
-                    if (key === 'custom') btn.classList.add('rhythm-custom-btn');
+                    btn.textContent = LOOP_RHYTHM_LABELS[key] || key;
                     if (key === loopRhythm) btn.classList.add('active');
                     btn.onclick = function(e) {
                         e.stopPropagation();
                         loopRhythm = key;
-                        document.getElementById('loopRhythmLabel').textContent = (key === 'custom') ? '커스텀' : (LOOP_RHYTHM_LABELS[key] || key);
+                        document.getElementById('loopRhythmLabel').textContent = LOOP_RHYTHM_LABELS[key] || key;
                         closeLoopRhythmDrawer();
                         gtag('event', 'loop_rhythm_change', { rhythm: key });
                         renderBeats();
@@ -10864,8 +10949,13 @@
                 _loopActivePresetSequencer = null;
                 _loopActivePresetId = null;
                 _loopActivePresetRhythm = null;
+                _loopActivePresetBassCustom = false;
+                _loopActivePresetPianoCustom = false;
+                // 베이스/피아노 "커스텀" 버튼 제거 (선택돼 있었다면 default 로 폴백)
+                _ensureCustomStyleBtn('bass',  false);
+                _ensureCustomStyleBtn('piano', false);
                 if (loopRhythm === 'custom') {
-                    // 커스텀이 선택돼 있었으면 기본 8비트로 폴백
+                    // legacy: 커스텀이 드럼 리듬으로 선택돼 있었으면 8비트로 폴백
                     loopRhythm = '8beat';
                     var lbl = document.getElementById('loopRhythmLabel');
                     if (lbl) lbl.textContent = LOOP_RHYTHM_LABELS['8beat'];

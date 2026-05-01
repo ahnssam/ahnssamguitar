@@ -754,11 +754,108 @@
             background: #ffc433;
             border-color: #d99a08;
         }
+        /* 뮤트 셀 — 그 지점에서 확실히 음을 끊음. 짙은 회색 + X 표시. */
+        .bd-seq-cell.mute {
+            background: #4a4a4a;
+            border-color: #2a2a2a;
+            color: #fff;
+            position: relative;
+        }
+        .bd-seq-cell.mute::after {
+            content: '×';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1;
+            color: #fff;
+        }
+        .bd-seq-cell.mute.beat-start { background: #5a5a5a; }
         .bd-seq-tip {
             margin-top: 0.55rem;
             font-size: 0.7rem;
             color: var(--text-light);
             line-height: 1.5;
+        }
+        /* 베이스/피아노 별도 시퀀서 섹션 — 토글로 펼치기/접기 */
+        .bd-inst-block {
+            border: 1px solid rgba(42, 107, 74, 0.18);
+            border-radius: 10px;
+            padding: 0.7rem 0.85rem;
+            background: rgba(42, 107, 74, 0.025);
+            margin-top: 0.55rem;
+        }
+        .bd-inst-row {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            flex-wrap: wrap;
+        }
+        .bd-inst-row > label.bd-inst-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--green-deep);
+            min-width: 4rem;
+        }
+        .bd-inst-row > select {
+            flex: 1;
+            min-width: 8rem;
+            padding: 0.42rem 0.55rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: #fff;
+            font-family: inherit;
+            font-size: 0.85rem;
+            color: var(--text);
+            outline: none;
+        }
+        .bd-inst-toggle-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.72rem;
+            color: var(--text-mid);
+            margin-left: auto;
+            cursor: pointer;
+            user-select: none;
+        }
+        .bd-inst-toggle {
+            position: relative;
+            width: 36px;
+            height: 20px;
+            background: rgba(42, 107, 74, 0.18);
+            border-radius: 10px;
+            transition: background 0.15s;
+            flex-shrink: 0;
+        }
+        .bd-inst-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.15s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+        }
+        .bd-inst-toggle-wrap input:checked + .bd-inst-toggle {
+            background: var(--green-deep);
+        }
+        .bd-inst-toggle-wrap input:checked + .bd-inst-toggle::after {
+            transform: translateX(16px);
+        }
+        .bd-inst-toggle-wrap input { display: none; }
+        .bd-inst-seq-collapsible {
+            margin-top: 0.6rem;
+            display: none;
+        }
+        .bd-inst-seq-collapsible.open {
+            display: block;
         }
 
         /* 변형 셋팅 — 같은 프리셋 안에 리듬/베이스/피아노 셋트를 여러 개 묶어 저장 */
@@ -1014,34 +1111,57 @@
                         <button type="button" class="bd-rhythm-btn" data-rhythm="swing">스윙</button>
                     </div>
                 </div>
-                <div class="bd-row">
-                    <div class="bd-field">
-                        <label>베이스 스타일</label>
+                <!-- ───── 베이스 ───── -->
+                <div class="bd-inst-block" style="margin-top:1.0rem;">
+                    <div class="bd-inst-row">
+                        <label class="bd-inst-label">베이스 리듬</label>
                         <select id="fBassStyle">
                             <option value="default">기본</option>
                             <option value="8beat">8비트</option>
                             <option value="16beat">16비트</option>
                         </select>
+                        <label class="bd-inst-toggle-wrap" title="켜면 아래 시퀀서로 베이스를 직접 짭니다 (이 프리셋 선택 시 메인 도구의 베이스 스타일에 '커스텀' 옵션이 노출됨)">
+                            <input type="checkbox" id="fBassCustomToggle">
+                            <span class="bd-inst-toggle"></span>
+                            <span>커스텀</span>
+                        </label>
                     </div>
-                    <div class="bd-field">
-                        <label>피아노 스타일</label>
-                        <select id="fPianoStyle">
-                            <option value="quarter">4비트</option>
-                            <option value="8beat">8비트</option>
-                        </select>
+                    <div class="bd-inst-seq-collapsible" id="fBassSeqWrap">
+                        <div class="bd-seq-wrap">
+                            <div class="bd-seq-rows" id="bdSeqRowsBass"></div>
+                            <div class="bd-seq-tip">
+                                셀 클릭: 끔 → 켬 → 강세 → 뮤트.
+                                근음/5도 두 라인. 뮤트는 sustain을 확실히 끊습니다.
+                                <button type="button" class="bd-btn bd-btn-ghost" id="bdSeqClearBassBtn" style="float:right;font-size:0.7rem;padding:0.25rem 0.55rem;margin-top:-0.2rem;">초기화</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="bd-section-label" style="margin-top:1.2rem;">
-                    커스텀 시퀀서
-                    <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem;color:var(--text-light);margin-left:0.5rem;">베이스·피아노 직접 시퀀싱 (선택)</span>
-                    <button type="button" class="bd-btn bd-btn-ghost" id="bdSeqClearBtn" style="margin-left:auto;font-size:0.72rem;padding:0.3rem 0.6rem;">초기화</button>
-                </div>
-                <div class="bd-seq-wrap">
-                    <div class="bd-seq-rows" id="bdSeqRows"></div>
-                    <div class="bd-seq-tip" id="bdSeqTip">
-                        셀 클릭으로 박자 토글 (끔 → 켬 → 강세). 위 드럼 리듬에 맞춰 칸 수 자동.<br>
-                        한 칸이라도 입력하면 반주 페이지에서 이 프리셋 선택 시 "커스텀" 리듬이 첫 자리에 뜸.
+                <!-- ───── 피아노 ───── -->
+                <div class="bd-inst-block" style="margin-top:0.7rem;">
+                    <div class="bd-inst-row">
+                        <label class="bd-inst-label">피아노 리듬</label>
+                        <select id="fPianoStyle">
+                            <option value="default">기본</option>
+                            <option value="quarter">4비트</option>
+                            <option value="8beat">8비트</option>
+                        </select>
+                        <label class="bd-inst-toggle-wrap" title="켜면 아래 시퀀서로 피아노를 직접 짭니다 (이 프리셋 선택 시 메인 도구의 피아노 스타일에 '커스텀' 옵션이 노출됨)">
+                            <input type="checkbox" id="fPianoCustomToggle">
+                            <span class="bd-inst-toggle"></span>
+                            <span>커스텀</span>
+                        </label>
+                    </div>
+                    <div class="bd-inst-seq-collapsible" id="fPianoSeqWrap">
+                        <div class="bd-seq-wrap">
+                            <div class="bd-seq-rows" id="bdSeqRowsPiano"></div>
+                            <div class="bd-seq-tip">
+                                셀 클릭: 끔 → 켬 → 강세 → 뮤트.
+                                코드/단음 두 라인. 뮤트는 sustain을 확실히 끊습니다.
+                                <button type="button" class="bd-btn bd-btn-ghost" id="bdSeqClearPianoBtn" style="float:right;font-size:0.7rem;padding:0.25rem 0.55rem;margin-top:-0.2rem;">초기화</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1159,22 +1279,25 @@
                 'swing': '스윙'
             };
 
-            // 시퀀서 렌더링
-            function renderBdSeq() {
-                var rows = $('bdSeqRows');
+            // 시퀀서 렌더링 — 베이스/피아노 별도 컨테이너에 라인을 분배.
+            //   bass 블록  : bassRoot, bassFifth
+            //   piano 블록 : pianoMain, pianoSingle
+            const BD_SEQ_GROUPS = {
+                bass:  ['bassRoot', 'bassFifth'],
+                piano: ['pianoMain', 'pianoSingle']
+            };
+            function _renderBdSeqGroup(containerId, lines) {
+                var rows = $(containerId);
                 if (!rows) return;
                 var len = bdSeqMeasureLen();
-                // bdSeq 의 길이가 현재 measureLen 과 다르면 사이즈 변경 (가능한 한 보존)
                 BD_SEQ_LINES.forEach(function(line) {
                     if (!Array.isArray(bdSeq[line])) bdSeq[line] = new Array(len).fill(0);
                     if (bdSeq[line].length !== len) {
-                        var old = bdSeq[line];
                         bdSeq[line] = new Array(len).fill(0);
-                        // 기존 내용을 비례 매핑하기보단 그냥 비움 (리듬 베이스 다르면 의미가 다르니까)
                     }
                 });
                 var beatTicks = (len === 16) ? 4 : (len === 12 ? 3 : (len === 8 ? 2 : 1));
-                var html = BD_SEQ_LINES.map(function(line) {
+                var html = lines.map(function(line) {
                     var arr = bdSeq[line];
                     var cellsHtml = '';
                     for (var i = 0; i < arr.length; i++) {
@@ -1182,6 +1305,7 @@
                         var classes = 'bd-seq-cell';
                         if (v === 1) classes += ' on';
                         else if (v === 2) classes += ' accent';
+                        else if (v === 3) classes += ' mute';
                         if (i % beatTicks === 0) classes += ' beat-start';
                         cellsHtml += '<button type="button" class="' + classes + '" data-step="' + i + '"></button>';
                     }
@@ -1192,35 +1316,86 @@
                 }).join('');
                 rows.innerHTML = html;
             }
+            function renderBdSeq() {
+                _renderBdSeqGroup('bdSeqRowsBass',  BD_SEQ_GROUPS.bass);
+                _renderBdSeqGroup('bdSeqRowsPiano', BD_SEQ_GROUPS.piano);
+            }
+            function _wireSeqRowsClicks(rowsId) {
+                var rows = $(rowsId);
+                if (!rows || rows._wired) return;
+                rows._wired = true;
+                rows.addEventListener('click', function(e) {
+                    var cell = e.target.closest('.bd-seq-cell');
+                    if (!cell) return;
+                    var row = cell.closest('.bd-seq-row');
+                    if (!row) return;
+                    var line = row.dataset.line;
+                    var step = parseInt(cell.dataset.step, 10);
+                    var arr = bdSeq[line];
+                    if (!arr || isNaN(step) || step < 0 || step >= arr.length) return;
+                    // 4-state cycle: 0(off) → 1(on) → 2(accent) → 3(mute) → 0
+                    var cur = arr[step] | 0;
+                    var next = (cur + 1) % 4;
+                    arr[step] = next;
+                    cell.classList.remove('on', 'accent', 'mute');
+                    if (next === 1) cell.classList.add('on');
+                    else if (next === 2) cell.classList.add('accent');
+                    else if (next === 3) cell.classList.add('mute');
+                });
+            }
+            function _clearGroup(lines) {
+                var len = bdSeqMeasureLen();
+                lines.forEach(function(line) { bdSeq[line] = new Array(len).fill(0); });
+            }
+            // 베이스/피아노 커스텀 토글 상태
+            let bdBassCustom  = false;
+            let bdPianoCustom = false;
+            function _applyCustomToggleUI() {
+                var bw = $('fBassSeqWrap');
+                var pw = $('fPianoSeqWrap');
+                if (bw) bw.classList.toggle('open', bdBassCustom);
+                if (pw) pw.classList.toggle('open', bdPianoCustom);
+                var bt = $('fBassCustomToggle');
+                var pt = $('fPianoCustomToggle');
+                if (bt) bt.checked = bdBassCustom;
+                if (pt) pt.checked = bdPianoCustom;
+            }
             function setupBdSeqEvents() {
-                var rows = $('bdSeqRows');
-                if (rows && !rows._wired) {
-                    rows._wired = true;
-                    rows.addEventListener('click', function(e) {
-                        var cell = e.target.closest('.bd-seq-cell');
-                        if (!cell) return;
-                        var row = cell.closest('.bd-seq-row');
-                        if (!row) return;
-                        var line = row.dataset.line;
-                        var step = parseInt(cell.dataset.step, 10);
-                        var arr = bdSeq[line];
-                        if (!arr || isNaN(step) || step < 0 || step >= arr.length) return;
-                        var cur = arr[step] | 0;
-                        var next = (cur + 1) % 3;
-                        arr[step] = next;
-                        cell.classList.remove('on', 'accent');
-                        if (next === 1) cell.classList.add('on');
-                        else if (next === 2) cell.classList.add('accent');
-                    });
-                }
-                var clearBtn = $('bdSeqClearBtn');
-                if (clearBtn && !clearBtn._wired) {
-                    clearBtn._wired = true;
-                    clearBtn.onclick = function() {
-                        if (!confirm('시퀀서 패턴을 모두 비울까요?')) return;
-                        bdSeq = bdSeqEmpty();
+                _wireSeqRowsClicks('bdSeqRowsBass');
+                _wireSeqRowsClicks('bdSeqRowsPiano');
+                var bClear = $('bdSeqClearBassBtn');
+                if (bClear && !bClear._wired) {
+                    bClear._wired = true;
+                    bClear.onclick = function() {
+                        if (!confirm('베이스 시퀀서를 비울까요?')) return;
+                        _clearGroup(BD_SEQ_GROUPS.bass);
                         renderBdSeq();
                     };
+                }
+                var pClear = $('bdSeqClearPianoBtn');
+                if (pClear && !pClear._wired) {
+                    pClear._wired = true;
+                    pClear.onclick = function() {
+                        if (!confirm('피아노 시퀀서를 비울까요?')) return;
+                        _clearGroup(BD_SEQ_GROUPS.piano);
+                        renderBdSeq();
+                    };
+                }
+                var bToggle = $('fBassCustomToggle');
+                if (bToggle && !bToggle._wired) {
+                    bToggle._wired = true;
+                    bToggle.addEventListener('change', function() {
+                        bdBassCustom = !!bToggle.checked;
+                        _applyCustomToggleUI();
+                    });
+                }
+                var pToggle = $('fPianoCustomToggle');
+                if (pToggle && !pToggle._wired) {
+                    pToggle._wired = true;
+                    pToggle.addEventListener('change', function() {
+                        bdPianoCustom = !!pToggle.checked;
+                        _applyCustomToggleUI();
+                    });
                 }
             }
 
@@ -1509,8 +1684,11 @@
                 difficulty = 0;
                 setRhythm('8beat');
                 $('fBassStyle').value = 'default';
-                $('fPianoStyle').value = 'quarter';
+                $('fPianoStyle').value = 'default';
                 bdSeq = bdSeqEmpty();
+                bdBassCustom = false;
+                bdPianoCustom = false;
+                _applyCustomToggleUI();
                 renderBdSeq();
                 renderBars();
                 renderDifficulty();
@@ -1537,18 +1715,31 @@
                 difficulty = p.difficulty || 0;
                 setRhythm(p.rhythm || '8beat');
                 $('fBassStyle').value = p.bass_style || 'default';
-                $('fPianoStyle').value = p.piano_style || 'quarter';
+                $('fPianoStyle').value = p.piano_style || 'default';
                 // 시퀀서 — sequencer_pattern JSONB 에서 로드 (없으면 빈 패턴)
                 bdSeq = bdSeqEmpty();
-                if (p.sequencer_pattern && typeof p.sequencer_pattern === 'object') {
+                var sp = (p.sequencer_pattern && typeof p.sequencer_pattern === 'object') ? p.sequencer_pattern : null;
+                if (sp) {
                     var len = bdSeqMeasureLen();
                     BD_SEQ_LINES.forEach(function(line) {
-                        var saved = p.sequencer_pattern[line];
+                        var saved = sp[line];
                         if (Array.isArray(saved) && saved.length === len) {
-                            bdSeq[line] = saved.map(function(v) { return (v === 1 || v === 2) ? v : 0; });
+                            bdSeq[line] = saved.map(function(v) { return (v === 1 || v === 2 || v === 3) ? v : 0; });
                         }
                     });
                 }
+                // 커스텀 토글 — 명시 플래그(pianoCustom/bassCustom) 우선, 없으면 셀에 값이 있으면 자동 ON.
+                bdBassCustom = sp && typeof sp.bassCustom === 'boolean'
+                    ? sp.bassCustom
+                    : !!(sp && BD_SEQ_GROUPS.bass.some(function(line) {
+                          return Array.isArray(sp[line]) && sp[line].some(function(v) { return v && v !== 0; });
+                      }));
+                bdPianoCustom = sp && typeof sp.pianoCustom === 'boolean'
+                    ? sp.pianoCustom
+                    : !!(sp && BD_SEQ_GROUPS.piano.some(function(line) {
+                          return Array.isArray(sp[line]) && sp[line].some(function(v) { return v && v !== 0; });
+                      }));
+                _applyCustomToggleUI();
                 renderBdSeq();
                 renderBars();
                 renderDifficulty();
@@ -1572,10 +1763,15 @@
 
             function snapshotForm() {
                 var chords = readChords();
-                // 시퀀서 — 비어있으면 null, 한 칸이라도 있으면 객체로
+                // 시퀀서 — 비어있고 토글도 둘 다 OFF 면 null, 그 외엔 객체로 저장.
+                //   - 토글이 ON 인 쪽은 셀이 비어있어도 의도(커스텀 사용)를 유지하기 위해 저장.
+                //   - 토글이 OFF 인 쪽 셀 데이터는 보존(다음에 다시 켜면 복원되도록).
                 var seqOut = null;
-                if (!bdSeqIsEmpty()) {
-                    seqOut = {};
+                if (!bdSeqIsEmpty() || bdBassCustom || bdPianoCustom) {
+                    seqOut = {
+                        bassCustom:  !!bdBassCustom,
+                        pianoCustom: !!bdPianoCustom
+                    };
                     BD_SEQ_LINES.forEach(function(line) {
                         seqOut[line] = (bdSeq[line] || []).slice();
                     });
@@ -1613,18 +1809,30 @@
                 difficulty = c.difficulty || 0;
                 setRhythm(c.rhythm || '8beat');
                 $('fBassStyle').value = c.bass_style || 'default';
-                $('fPianoStyle').value = c.piano_style || 'quarter';
+                $('fPianoStyle').value = c.piano_style || 'default';
                 $('fGenre').value = normalizeGenreForSelect(c.genre || '');
                 bdSeq = bdSeqEmpty();
-                if (c.sequencer_pattern && typeof c.sequencer_pattern === 'object') {
+                var spC = (c.sequencer_pattern && typeof c.sequencer_pattern === 'object') ? c.sequencer_pattern : null;
+                if (spC) {
                     var lenC = bdSeqMeasureLen();
                     BD_SEQ_LINES.forEach(function(line) {
-                        var saved = c.sequencer_pattern[line];
+                        var saved = spC[line];
                         if (Array.isArray(saved) && saved.length === lenC) {
-                            bdSeq[line] = saved.map(function(v) { return (v === 1 || v === 2) ? v : 0; });
+                            bdSeq[line] = saved.map(function(v) { return (v === 1 || v === 2 || v === 3) ? v : 0; });
                         }
                     });
                 }
+                bdBassCustom = spC && typeof spC.bassCustom === 'boolean'
+                    ? spC.bassCustom
+                    : !!(spC && BD_SEQ_GROUPS.bass.some(function(line) {
+                          return Array.isArray(spC[line]) && spC[line].some(function(v) { return v && v !== 0; });
+                      }));
+                bdPianoCustom = spC && typeof spC.pianoCustom === 'boolean'
+                    ? spC.pianoCustom
+                    : !!(spC && BD_SEQ_GROUPS.piano.some(function(line) {
+                          return Array.isArray(spC[line]) && spC[line].some(function(v) { return v && v !== 0; });
+                      }));
+                _applyCustomToggleUI();
                 renderBdSeq();
                 renderBars();
                 renderDifficulty();
@@ -1995,10 +2203,15 @@
                 const name = $('fName').value.trim();
                 if (!name) { showFeedback('이름은 필수입니다', 'error'); return; }
                 const chords = readChords();
-                // 시퀀서 — 비어있으면 null (한 칸이라도 있어야 저장)
+                // 시퀀서 — 비어있고 토글 둘 다 OFF 면 null. 그 외엔 저장.
+                //   - 토글 ON 인 쪽은 셀이 비어있어도 의도(커스텀 사용)를 보존.
+                //   - 토글 OFF 인 쪽 셀은 보존(나중에 다시 켜면 복원).
                 var seqToSave = null;
-                if (!bdSeqIsEmpty()) {
-                    seqToSave = {};
+                if (!bdSeqIsEmpty() || bdBassCustom || bdPianoCustom) {
+                    seqToSave = {
+                        bassCustom:  !!bdBassCustom,
+                        pianoCustom: !!bdPianoCustom
+                    };
                     BD_SEQ_LINES.forEach(function(line) {
                         seqToSave[line] = (bdSeq[line] || []).slice();
                     });
