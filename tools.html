@@ -5403,6 +5403,130 @@
             border-color: rgba(196, 64, 52, 0.55);
         }
         .loop-clear-all-btn i { font-size: 0.7rem; }
+
+        /* 참고 건반 + 전체 키 트랜스포즈 한 줄 (loop-grid 바로 위) */
+        .loop-keyboard-row {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+        }
+        .loop-keyboard-label {
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: rgba(26, 36, 33, 0.55);
+            min-width: 4rem;
+            flex-shrink: 0;
+        }
+        :root[data-theme="dark"] .loop-keyboard-label { color: rgba(232, 240, 236, 0.55); }
+        /* 한 옥타브+ 건반 (C3 ~ G4 = 흰건반 12개) — 흰건반은 grid, 검은건반은 absolute 오버레이 */
+        .loop-keyboard {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            flex: 1 1 360px;
+            min-width: 240px;
+            max-width: 540px;
+            height: 64px;
+            border: 1px solid rgba(42, 107, 74, 0.25);
+            border-radius: 6px;
+            overflow: hidden;
+            background: #fff;
+            user-select: none;
+            box-shadow: inset 0 -3px 6px rgba(0,0,0,0.06);
+        }
+        .loop-key {
+            position: relative;
+            cursor: pointer;
+            transition: background 0.05s;
+        }
+        .loop-key.white {
+            background: #fff;
+            border-right: 1px solid rgba(42, 107, 74, 0.18);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 3px;
+            font-size: 0.55rem;
+            color: rgba(26, 36, 33, 0.45);
+            font-weight: 500;
+        }
+        .loop-key.white:last-child { border-right: none; }
+        .loop-key.white:hover { background: #eaf3ee; }
+        .loop-key.white:active,
+        .loop-key.white.pressed { background: var(--green-mid); color: #fff; }
+        .loop-key.black {
+            position: absolute;
+            top: 0;
+            width: calc(100% / 12 * 0.62);
+            height: 62%;
+            background: #2a2a2a;
+            border: 1px solid #1a1a1a;
+            border-radius: 0 0 3px 3px;
+            box-shadow: 0 2px 3px rgba(0,0,0,0.35);
+            z-index: 2;
+        }
+        .loop-key.black:hover { background: #444; }
+        .loop-key.black:active,
+        .loop-key.black.pressed { background: var(--green-mid); border-color: var(--green-mid); }
+        :root[data-theme="dark"] .loop-keyboard {
+            background: #d8e8df;
+            border-color: rgba(180, 230, 200, 0.35);
+        }
+        :root[data-theme="dark"] .loop-key.white {
+            background: #d8e8df;
+            border-right-color: rgba(60, 90, 75, 0.4);
+            color: rgba(20, 32, 28, 0.55);
+        }
+        :root[data-theme="dark"] .loop-key.white:hover { background: #b9d2c2; }
+        :root[data-theme="dark"] .loop-key.black { background: #1a2622; border-color: #0e1815; }
+        :root[data-theme="dark"] .loop-key.black:hover { background: #2c3d36; }
+        /* 전체 키 트랜스포즈 컨트롤 */
+        .loop-transpose {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            flex-shrink: 0;
+        }
+        .loop-transpose-label {
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: rgba(26, 36, 33, 0.55);
+            margin-right: 0.2rem;
+        }
+        :root[data-theme="dark"] .loop-transpose-label { color: rgba(232, 240, 236, 0.55); }
+        .loop-transpose-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1px solid rgba(42, 107, 74, 0.25);
+            background: rgba(42, 107, 74, 0.08);
+            color: var(--green-mid);
+            cursor: pointer;
+            font-size: 0.78rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s, transform 0.08s;
+        }
+        .loop-transpose-btn:hover {
+            background: rgba(42, 107, 74, 0.18);
+        }
+        .loop-transpose-btn:active { transform: scale(0.92); }
+        :root[data-theme="dark"] .loop-transpose-btn {
+            border-color: rgba(180, 230, 200, 0.35);
+            background: rgba(180, 230, 200, 0.1);
+            color: #b8d8c4;
+        }
+        :root[data-theme="dark"] .loop-transpose-btn:hover {
+            background: rgba(180, 230, 200, 0.22);
+        }
+        @media (max-width: 600px) {
+            .loop-keyboard-row { gap: 0.5rem; }
+            .loop-keyboard { height: 54px; min-width: 200px; }
+            .loop-keyboard-label { min-width: 100%; margin-bottom: -0.2rem; }
+        }
         /* iOS-style 작은 토글 스위치 — 예비박 on/off 같은 boolean 옵션용 */
         .loop-toggle {
             position: relative;
@@ -6452,9 +6576,30 @@
                                 <span class="loop-toggle-track"><span class="loop-toggle-thumb"></span></span>
                             </label>
                         </div>
+                        <div class="loop-style-group" title="2마디 모드: 드럼/베이스 그루브가 2마디마다 한 사이클 (끝마디 fill 포함). 코드는 그대로 매 마디 1코드.">
+                            <label>패턴 길이</label>
+                            <div class="loop-style-btns" id="loopMeasureLenBtns">
+                                <button type="button" class="loop-style-btn active" data-mlen="1" onclick="setLoopMeasureLen(1)">1마디</button>
+                                <button type="button" class="loop-style-btn" data-mlen="2" onclick="setLoopMeasureLen(2)">2마디</button>
+                            </div>
+                        </div>
                         <button type="button" class="loop-clear-all-btn" onclick="resetLoopAll()" title="프리셋 해제 + 모든 코드 비움">
                             <i class="fas fa-redo"></i> 초기화
                         </button>
+                    </div>
+                    <!-- 참고용 한 옥타브 건반 (C3 ~ G4) — 코드 진행 짤 때 음 확인용. 클릭하면 그 음만 짧게 울림. -->
+                    <div class="loop-keyboard-row">
+                        <div class="loop-keyboard-label">참고 건반</div>
+                        <div class="loop-keyboard" id="loopKeyboard" aria-label="참고용 건반"></div>
+                        <div class="loop-transpose">
+                            <span class="loop-transpose-label">전체 키</span>
+                            <button type="button" class="loop-transpose-btn" onclick="transposeLoopChordsAll(-1)" title="모든 코드를 반음 내림" aria-label="반음 내림">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <button type="button" class="loop-transpose-btn" onclick="transposeLoopChordsAll(1)" title="모든 코드를 반음 올림" aria-label="반음 올림">
+                                <i class="fas fa-chevron-up"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="loop-grid cols-4" id="loopGrid"></div>
                 </div>
@@ -8085,6 +8230,30 @@
             //          'default' = 드럼 리듬 매칭 패턴 (셔플락은 셔플 패턴, 그 외는 quarter 폴백)
             let loopBassStyle  = 'default';
             let loopPianoStyle = 'default';
+            // 패턴 길이 — 1 (기본, 매 마디 동일 패턴) | 2 (2마디마다 한 사이클, 끝마디에 fill).
+            //   코드 진행은 여전히 매 마디 1코드. 드럼/베이스 그루브만 2마디 단위로 들림.
+            //   localStorage 에 저장 — 다음 방문 시 유지.
+            let loopMeasureLen = 1;
+            try {
+                var _savedML = parseInt(localStorage.getItem('loopMeasureLen'), 10);
+                if (_savedML === 2) loopMeasureLen = 2;
+            } catch (e) {}
+            window.setLoopMeasureLen = function(n) {
+                n = parseInt(n, 10);
+                if (n !== 1 && n !== 2) return;
+                loopMeasureLen = n;
+                try { localStorage.setItem('loopMeasureLen', String(n)); } catch (e) {}
+                document.querySelectorAll('#loopMeasureLenBtns button').forEach(function(b) {
+                    b.classList.toggle('active', parseInt(b.dataset.mlen, 10) === n);
+                });
+                gtag('event', 'loop_measure_len', { measures: n });
+            };
+            // 부팅 시 토글 동기화
+            document.addEventListener('DOMContentLoaded', function() {
+                document.querySelectorAll('#loopMeasureLenBtns button').forEach(function(b) {
+                    b.classList.toggle('active', parseInt(b.dataset.mlen, 10) === loopMeasureLen);
+                });
+            });
             // 코드 픽커의 장/단 sticky 상태 — 마지막 선택을 다음 picker 에서도 유지
             let loopPickerQuality = 'major';
 
@@ -9067,9 +9236,12 @@
                 options = options || {};
                 var pcs = chordPcsFromName(chordName);
                 if (!pcs) return null;
-                // 음역대 1.5옥타브 (D4..G5) — drift 가 누적되지 않도록 좁힘
-                var LOW = 62, HIGH = 79;
-                var CENTER = 70; // Bb4 근처
+                // 음역대 1.5옥타브 (C3..G4) — 사용자 요청 범위. 가운데 도(C4)
+                // 부근에 모이도록 CENTER=A3 정도로 잡음. 너무 높지 않아 기타
+                // 코드 위에 쌓아도 답답하지 않고, 너무 낮지도 않아 베이스와
+                // 안 겹침.
+                var LOW = 48, HIGH = 67;
+                var CENTER = 57; // A3 근처 (range 의 중앙)
                 // 반복 코드 — 직전 voicing 의 평균 음높이로 변화 방향 결정.
                 //   prev avg 가 CENTER 보다 낮으면 → 위로 끌어당김 (positive bias)
                 //   prev avg 가 CENTER 보다 높으면 → 아래로 끌어당김 (negative bias)
@@ -9293,11 +9465,17 @@
                 osc.stop(time + 0.07);
             }
 
-            function playDrumPattern(tickIdx, time) {
+            function playDrumPattern(tickIdx, time, opts) {
                 const activeRhythm = soundMode === 'loop' ? loopRhythm : drumRhythm;
                 const p = DRUM_PATTERNS[activeRhythm] || DRUM_PATTERNS['8beat'];
                 const measureLen = p.ticksPerBeat * p.beatsPerMeasure;
                 const t = tickIdx % measureLen;
+                // 2마디 모드: opts.isFillMeasure === true 인 마디의 마지막 박(beat 4) 에서 fill.
+                //   - 하이햇 자리에 스네어를 깔아 작은 fill 느낌.
+                //   - quietSnare/softHihat 가 있는 스윙 패턴에서는 fill 생략 (음악적 충돌 방지).
+                var isFillMeasure = !!(opts && opts.isFillMeasure);
+                var lastBeatStart = measureLen - p.ticksPerBeat;
+                var inFillWindow = isFillMeasure && t >= lastBeatStart && !p.quietSnare && !p.softHihat;
                 if (p.hihatOpen && p.hihatOpen.includes(t)) {
                     playHiHatOpen(time);
                 } else if (p.hihat.includes(t)) {
@@ -9312,14 +9490,23 @@
                     }
                     // softHihat 플래그 — 페달 하이햇 느낌으로 항상 medium 볼륨 (level 1)
                     if (p.softHihat) level = 1;
-                    playHiHat(time, level);
+                    if (inFillWindow) {
+                        // fill — 하이햇 칠 자리를 스네어로 대체 (drum-roll 느낌).
+                        // 첫 tick (박 머리) 은 살짝 강하게, 그 외는 보통.
+                        playSnare(time, sub === 0 ? 0.85 : 0.65);
+                    } else {
+                        playHiHat(time, level);
+                    }
                 }
                 // 라이드 — swing 12/8 등 라이드 메인 리듬용. 박의 첫 tick (sub === 0) 은 강세.
                 if (p.ride && p.ride.includes(t)) {
                     var rideLevel = (t % p.ticksPerBeat === 0) ? 1 : 0;
                     playRide(time, rideLevel);
                 }
-                if (p.kick.includes(t))  playKick(time);
+                if (p.kick.includes(t)) {
+                    // fill window 의 마지막 박 첫 tick 만 킥 유지 — 그 외 킥은 fill 흐름 위해 생략.
+                    if (!inFillWindow || t === lastBeatStart) playKick(time);
+                }
                 if (p.snare.includes(t)) {
                     // quietSnare 플래그 — 스윙 12/8 처럼 스네어를 고스트 노트로 깔 때.
                     // 라이드 위에 거의 안 보이는 수준의 액센트.
@@ -9395,7 +9582,14 @@
                         }
                     }
                     var swungTime = time + swingOffset;
-                    playDrumPattern(beatNum, swungTime);
+                    // ─── 2마디 패턴 모드 ────────────────────────────────
+                    // 기본은 매 마디 같은 그루브 (1마디 사이클).
+                    // 2마디 모드면 (loopMeasureLen===2) 두 마디 단위로 한 사이클:
+                    //   짝수 번째 마디 = 일반, 홀수 번째 마디 = fill 마디.
+                    // 재생 시작(beatNum=0) 부터의 절대 마디 인덱스로 판정 — 1마디 진행에서도 매 마디 alternate.
+                    var _isFillMeasure = (loopMeasureLen === 2)
+                        && (Math.floor(beatNum / measureLen) % 2 === 1);
+                    playDrumPattern(beatNum, swungTime, { isFillMeasure: _isFillMeasure });
                     if (t % p.ticksPerBeat === 0) {
                         const dotIdx = Math.floor(t / p.ticksPerBeat);
                         highlightDot(dotIdx, time);
@@ -9487,6 +9681,14 @@
                                 if (bassRootA) playBass(bassRootA, swungTime, velA);
                             } else if (bp.off.indexOf(t) !== -1) {
                                 chokeBass(swungTime);
+                            } else if (_isFillMeasure && t === measureLen - 1
+                                       && bp.on.indexOf(t) === -1 && bp.off.indexOf(t) === -1) {
+                                // 2마디 모드 fill: 마지막 tick 에 5th anticipation (다음 마디로 이어주기).
+                                var rootF = getEffectiveRoot(loopMeasureIdx, 'b');
+                                if (rootF) {
+                                    var fifthF = getChordFifthName(rootF);
+                                    if (fifthF) playBass(fifthF, swungTime, 1);
+                                }
                             }
                         }
                     } else if (loopBassStyle === '8beat' || loopBassStyle === '16beat') {
@@ -9499,6 +9701,14 @@
                                 var rootB = getEffectiveRoot(loopMeasureIdx, halfB);
                                 var bassRootB = chordRootOnly(rootB);
                                 if (bassRootB) playBass(bassRootB, swungTime, 0);
+                            } else if (_isFillMeasure && loopBassStyle === '8beat'
+                                       && t === measureLen - 1) {
+                                // 2마디 모드 fill — 8비트 베이스는 짝수 tick 만 치니, 마지막 홀수 tick 에 5th anticipation.
+                                var rootF8 = getEffectiveRoot(loopMeasureIdx, 'b');
+                                if (rootF8) {
+                                    var fifthF8 = getChordFifthName(rootF8);
+                                    if (fifthF8) playBass(fifthF8, swungTime, 1);
+                                }
                             }
                         }
                     }
@@ -10997,6 +11207,124 @@
                 renderLoopGrid();
                 gtag('event', 'loop_clear_all');
             };
+
+            // ─── 전체 키 트랜스포즈 ────────────────────────────────────
+            // loopChords / loopChordsB 의 모든 코드 root 를 ±semitones 만큼 이동.
+            // 표기는 현재 loopPickerAccidental (#/♭) 을 따름. quality / extension 은 보존.
+            function _rootIndexAny(root) {
+                if (!root) return -1;
+                var i = LOOP_ROOTS_SHARP.indexOf(root);
+                if (i !== -1) return i;
+                i = LOOP_ROOTS_FLAT.indexOf(root);
+                return i;
+            }
+            function _shiftChordName(name, semitones) {
+                if (!name) return name;
+                var info = parseChordName(name);
+                if (!info.root) return name;
+                var idx = _rootIndexAny(info.root);
+                if (idx === -1) return name;
+                var newIdx = ((idx + semitones) % 12 + 12) % 12;
+                var arr = (loopPickerAccidental === 'flat') ? LOOP_ROOTS_FLAT : LOOP_ROOTS_SHARP;
+                var newRoot = arr[newIdx];
+                return buildChordName(newRoot, info.minor ? 'minor' : 'major', info.extension);
+            }
+            window.transposeLoopChordsAll = function(semitones) {
+                semitones = parseInt(semitones, 10);
+                if (!semitones) return;
+                var hasAny = false;
+                Object.keys(loopChords).forEach(function(k) {
+                    var v = loopChords[k];
+                    if (v) { loopChords[k] = _shiftChordName(v, semitones); hasAny = true; }
+                });
+                Object.keys(loopChordsB).forEach(function(k) {
+                    var v = loopChordsB[k];
+                    if (v) { loopChordsB[k] = _shiftChordName(v, semitones); hasAny = true; }
+                });
+                if (!hasAny) return;
+                // 보이싱 캐시 초기화 — 다음 재생 시 새 키에서 적정 옥타브로 다시 잡음
+                _prevPianoVoicing = null;
+                _lastPianoSegmentKey = null;
+                _lastPianoSegmentChord = null;
+                renderLoopGrid();
+                gtag('event', 'loop_transpose_all', { semitones: semitones });
+            };
+
+            // ─── 참고용 한 옥타브+ 건반 (C3 ~ G4) ──────────────────────
+            // 클릭하면 그 음 하나만 짧게 울림. 코드 진행 짤 때 음 확인용.
+            // 흰건반 12개 (C3..G4) 를 grid 로 깔고, 검은건반 8개를 absolute 오버레이.
+            (function setupLoopReferenceKeyboard() {
+                // C3 = MIDI 48, G4 = MIDI 67
+                var WHITE_OFFSETS = [0, 2, 4, 5, 7, 9, 11];     // C D E F G A B
+                var WHITE_NAMES   = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+                var BLACK_AFTER   = [true, true, false, true, true, true, false]; // 흰건반 뒤에 검은건반?
+                // C3 옥타브의 흰건반 7개 + C4 옥타브 5개 (C4..G4) = 12개
+                function buildKeys() {
+                    var kb = document.getElementById('loopKeyboard');
+                    if (!kb) return;
+                    kb.innerHTML = '';
+                    var whites = [];
+                    var blacks = [];
+                    var whiteIdx = 0;
+                    // octave 3
+                    for (var i = 0; i < 7; i++) {
+                        var midi = 48 + WHITE_OFFSETS[i];
+                        whites.push({ midi: midi, name: WHITE_NAMES[i] + '3', col: whiteIdx });
+                        if (BLACK_AFTER[i]) {
+                            blacks.push({ midi: midi + 1, col: whiteIdx });
+                        }
+                        whiteIdx++;
+                    }
+                    // octave 4 — only C, D, E, F, G (and black keys C#, D#, F#)
+                    for (var j = 0; j < 5; j++) {
+                        var midi2 = 60 + WHITE_OFFSETS[j];
+                        whites.push({ midi: midi2, name: WHITE_NAMES[j] + '4', col: whiteIdx });
+                        // C4(j=0), D4(j=1), F4(j=3) 다음에 검은건반
+                        if (BLACK_AFTER[j] && j !== 4) {
+                            blacks.push({ midi: midi2 + 1, col: whiteIdx });
+                        }
+                        whiteIdx++;
+                    }
+                    // 흰건반 추가
+                    whites.forEach(function(w) {
+                        var el = document.createElement('div');
+                        el.className = 'loop-key white';
+                        el.dataset.midi = w.midi;
+                        el.textContent = w.name;
+                        el.style.gridColumn = (w.col + 1);
+                        kb.appendChild(el);
+                    });
+                    // 검은건반 — col + 1 위치의 경계에 걸치도록 absolute
+                    blacks.forEach(function(b) {
+                        var el = document.createElement('div');
+                        el.className = 'loop-key black';
+                        el.dataset.midi = b.midi;
+                        // (col+1) 번째 흰건반의 시작점에 가운데 정렬되도록 left 계산
+                        // 흰건반 칸 너비 = 100% / 12, 검은건반 너비 = 흰건반 너비 * 0.62
+                        // → left = (col+1) / 12 * 100% - 검은건반너비/2
+                        var leftPct = (b.col + 1) / 12 * 100;
+                        el.style.left = 'calc(' + leftPct + '% - (100% / 12 * 0.31))';
+                        kb.appendChild(el);
+                    });
+                    // 클릭 핸들러 — 위임
+                    kb.addEventListener('pointerdown', function(e) {
+                        var key = e.target.closest('.loop-key');
+                        if (!key) return;
+                        var midi = parseInt(key.dataset.midi, 10);
+                        if (isNaN(midi)) return;
+                        if (typeof playPianoNote === 'function') {
+                            playPianoNote(midi);
+                        }
+                        key.classList.add('pressed');
+                        setTimeout(function() { key.classList.remove('pressed'); }, 140);
+                    });
+                }
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', buildKeys);
+                } else {
+                    buildKeys();
+                }
+            })();
             // 초기화 — 적용된 프리셋 해제 + 모든 코드 비움 + 검색 인풋 비움 + 커스텀 시퀀서 정리
             window.resetLoopAll = function() {
                 _loopActivePresetSequencer = null;
