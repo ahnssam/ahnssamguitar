@@ -727,31 +727,47 @@
             border-color: var(--green-mid);
         }
 
-        /* ───── Feedback ───── */
+        /* ───── Feedback (toast — 화면 하단 고정, 스크롤과 무관하게 항상 보임) ───── */
         .bd-feedback {
-            margin-top: 0.7rem;
-            padding: 0.55rem 0.8rem;
-            border-radius: 8px;
-            font-size: 0.82rem;
+            position: fixed;
+            left: 50%;
+            bottom: 24px;
+            transform: translateX(-50%) translateY(20px);
+            min-width: 200px;
+            max-width: min(420px, calc(100vw - 32px));
+            padding: 0.7rem 1.1rem;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.25s;
+            z-index: 9000;
+            text-align: center;
             display: none;
         }
-        .bd-feedback.success {
-            display: block;
-            background: rgba(82, 168, 114, 0.18);
-            color: var(--green-deep);
-            border: 1px solid rgba(82, 168, 114, 0.45);
-        }
-        .bd-feedback.error {
-            display: block;
-            background: rgba(196, 64, 52, 0.1);
-            color: #b83a2e;
-            border: 1px solid rgba(196, 64, 52, 0.35);
-        }
+        .bd-feedback.success,
+        .bd-feedback.error,
         .bd-feedback.info {
             display: block;
-            background: rgba(42, 107, 74, 0.08);
-            color: var(--text-mid);
-            border: 1px solid rgba(42, 107, 74, 0.22);
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .bd-feedback.success {
+            background: rgba(82, 168, 114, 0.96);
+            color: #fff;
+            border: 1px solid rgba(50, 130, 80, 0.6);
+        }
+        .bd-feedback.error {
+            background: rgba(196, 64, 52, 0.96);
+            color: #fff;
+            border: 1px solid rgba(160, 40, 30, 0.6);
+        }
+        .bd-feedback.info {
+            background: rgba(50, 80, 70, 0.94);
+            color: #fff;
+            border: 1px solid rgba(30, 60, 50, 0.6);
         }
         /* 인플레이스 재생용 숨김 iframe — 보이지 않지만 살아있어서 오디오 재생 가능 */
         .bd-preview-iframe {
@@ -1283,9 +1299,9 @@
                         <button type="button" class="bd-rhythm-btn" data-rhythm="16beat2">16비트 B</button>
                         <button type="button" class="bd-rhythm-btn" data-rhythm="16beatC">16비트 C</button>
                         <button type="button" class="bd-rhythm-btn" data-rhythm="ballad">셔플락</button>
-                        <button type="button" class="bd-rhythm-btn" data-rhythm="16beatSA">16비트s A</button>
-                        <button type="button" class="bd-rhythm-btn" data-rhythm="16beatSB">16비트s B</button>
-                        <button type="button" class="bd-rhythm-btn" data-rhythm="16beatSC">16비트s C</button>
+                        <button type="button" class="bd-rhythm-btn" data-rhythm="16beatSA">16바운스 A</button>
+                        <button type="button" class="bd-rhythm-btn" data-rhythm="16beatSB">16바운스 B</button>
+                        <button type="button" class="bd-rhythm-btn" data-rhythm="16beatSC">16바운스 C</button>
                         <button type="button" class="bd-rhythm-btn" data-rhythm="swing">스윙</button>
                     </div>
                 </div>
@@ -1484,7 +1500,7 @@
                 '4beat': '4비트 A', '4beat2': '4비트 B',
                 '16beat': '16비트 A', '16beat2': '16비트 B', '16beatC': '16비트 C',
                 'ballad': '셔플락',
-                '16beatSA': '16비트s A', '16beatSB': '16비트s B', '16beatSC': '16비트s C',
+                '16beatSA': '16바운스 A', '16beatSB': '16바운스 B', '16beatSC': '16바운스 C',
                 'swing': '스윙'
             };
 
@@ -2745,6 +2761,27 @@
 
             // ─── Save / Delete ───
             async function savePreset() {
+                // 더블클릭 방지 — 저장 중엔 버튼 비활성화 + spinner.
+                var btn = $('saveBtn');
+                if (btn && btn.disabled) return;
+                var origHtml = btn ? btn.innerHTML : '';
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...';
+                }
+                try {
+                    await _savePresetInner();
+                } catch (err) {
+                    console.error('[savePreset] error:', err);
+                    showFeedback('저장 중 오류: ' + (err && err.message ? err.message : err), 'error');
+                } finally {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = origHtml;
+                    }
+                }
+            }
+            async function _savePresetInner() {
                 const name = $('fName').value.trim();
                 if (!name) { showFeedback('이름은 필수입니다', 'error'); return; }
                 const chords = readChords();
