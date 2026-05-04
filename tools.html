@@ -8806,16 +8806,43 @@
                 '8beat':   { sixteenthHits: [0, 2, 4, 6, 8, 10, 12, 14] }
             };
             // '기본' 스타일 — 드럼 리듬별 피아노 컴핑 패턴.
-            // tick 위치는 해당 드럼 리듬의 ticksPerBeat 기준 (16분 변환 X).
-            //   ballad (셔플락, ticksPerBeat=3, 한 마디=12tick):
-            //     beats →  1=0  1na=2  2=3  2a=5  3=6  3a=8  4=9  4a=11
-            //     hits  : 0(1박), 2(1의 a), 5(2의 a), 9(4박)
-            //     chokes: 3(2박에서 음 끊기)
-            const PIANO_DEFAULT_PATTERNS = {
-                'ballad': { hits: [0, 2, 5, 9], chokes: [3] },
-                // 스윙 12/8 — 재즈 컴핑. 1박과 3박에 코드 (sparse comping).
-                'swing':  { hits: [0, 6], chokes: [] }
+            // 사용자가 정의한 표기법으로 입력 (한 자 = 한 tick, 드럼 ticksPerBeat 기준):
+            //   X = 코드 sustain     O = 단음(루트) sustain
+            //   M = 코드 staccato    m = 단음 staccato
+            //   . = 무음
+            const PIANO_DEFAULT_PATTERNS_RAW = {
+                '4beat':    'X.X.',
+                '4beat2':   'X.X.',
+                '8beat':    'X.MX.MX.',
+                '8beat2':   'X.MXX.M.',
+                '16beat':   'X...X.OX.XO.X...',
+                '16beat2':  'X..OX.OX.XO.X...',
+                '16beatC':  'X.X.M.OX.XO.X.OX',
+                '16beatSA': 'X...X.OX.XO.X...',
+                '16beatSB': 'X..OX.OX.XO.X...',
+                '16beatSC': 'X.X.M.OX.XO.X.OX',
+                'ballad':   'X..X.OX..X..',
             };
+            // 표기법 파서 — 'X', 'O', 'M', 'm', '.' 한 글자씩 → hits + meta
+            function _parsePianoPattern(str) {
+                var s = (str || '').replace(/\s/g, '');
+                var hits = [], meta = {};
+                for (var i = 0; i < s.length; i++) {
+                    var ch = s.charAt(i);
+                    if (ch === '.') continue;
+                    var info = null;
+                    if (ch === 'X')      info = { type: 'chord',  staccato: false };
+                    else if (ch === 'O') info = { type: 'single', staccato: false };
+                    else if (ch === 'M') info = { type: 'chord',  staccato: true  };
+                    else if (ch === 'm') info = { type: 'single', staccato: true  };
+                    if (info) { hits.push(i); meta[i] = info; }
+                }
+                return { hits: hits, meta: meta, chokes: [] };
+            }
+            const PIANO_DEFAULT_PATTERNS = {};
+            for (var _pdpKey in PIANO_DEFAULT_PATTERNS_RAW) {
+                PIANO_DEFAULT_PATTERNS[_pdpKey] = _parsePianoPattern(PIANO_DEFAULT_PATTERNS_RAW[_pdpKey]);
+            }
 
             // 16분음표 위치 배열을 드럼 ticksPerBeat 에 맞춰 가용한 tick 위치로 변환.
             //   ticksPerBeat = 4 (16분) → ratio 1, 모두 그대로
@@ -9223,13 +9250,25 @@
                 if (!audioCtx) return;
                 if (typeof velMul !== 'number') velMul = 1.0;
                 opts = opts || {};
-                var voicing = pickPianoVoicing(chordName, _prevPianoVoicing, { varyForRepeat: !!opts.vary });
-                if (!voicing) return;
-                _prevPianoVoicing = voicing;
+                var voicing;
+                if (opts.single) {
+                    // 단일음 모드 — 루트만, C3-B3 (MIDI 48-59) 범위.
+                    //   직전 보이싱은 갱신하지 않음 (코드 보이스 리딩에 영향 X)
+                    var rootName = chordRootOnly(chordName);
+                    if (!rootName) return;
+                    var pcSharp = normalizeRoot(rootName);
+                    var pcIdx = CHROMATIC.indexOf(pcSharp);
+                    if (pcIdx < 0) return;
+                    voicing = [48 + pcIdx];   // C3 = 48
+                } else {
+                    voicing = pickPianoVoicing(chordName, _prevPianoVoicing, { varyForRepeat: !!opts.vary });
+                    if (!voicing) return;
+                    _prevPianoVoicing = voicing;
+                }
                 var bus = getPianoBus();
-                // 길게 울리는 sustain — 다음 박까지 자연스럽게 이어짐
-                var dur = 1.4;
-                var perVoiceGain = 0.18 * velMul;
+                // staccato — 짧고 또렷, sustain — 다음 박까지 자연스럽게 이어짐
+                var dur = opts.staccato ? 0.18 : 1.4;
+                var perVoiceGain = (opts.staccato ? 0.22 : 0.18) * velMul;
 
                 // 코드 단위 마스터 게인 — choke (음 끊기) 시 한 번에 0 으로 감쇠.
                 var chordGain = audioCtx.createGain();
@@ -9245,9 +9284,15 @@
                     var voiceGain = audioCtx.createGain();
                     voiceGain.gain.setValueAtTime(0.0001, t0);
                     voiceGain.gain.exponentialRampToValueAtTime(perVoiceGain, t0 + 0.005);
-                    voiceGain.gain.exponentialRampToValueAtTime(perVoiceGain * 0.7, t0 + 0.18);
-                    voiceGain.gain.exponentialRampToValueAtTime(perVoiceGain * 0.42, t0 + 0.7);
-                    voiceGain.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
+                    if (opts.staccato) {
+                        // staccato — 빠르게 감쇠
+                        voiceGain.gain.exponentialRampToValueAtTime(perVoiceGain * 0.6, t0 + 0.05);
+                        voiceGain.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
+                    } else {
+                        voiceGain.gain.exponentialRampToValueAtTime(perVoiceGain * 0.7, t0 + 0.18);
+                        voiceGain.gain.exponentialRampToValueAtTime(perVoiceGain * 0.42, t0 + 0.7);
+                        voiceGain.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
+                    }
 
                     var filt = audioCtx.createBiquadFilter();
                     filt.type = 'lowpass';
@@ -9275,8 +9320,10 @@
                         osc.type = 'sine';
                         osc.frequency.value = sf;
                         g.gain.setValueAtTime(p.vol, t0);
-                        // sustain 길게 — 낮은 배음일수록 천천히 감쇠
-                        var pdur = Math.max(0.5, dur / Math.pow(p.n, 0.6));
+                        // sustain 길게 — 낮은 배음일수록 천천히 감쇠. staccato 면 짧게.
+                        var pdur = opts.staccato
+                            ? Math.max(0.12, dur)
+                            : Math.max(0.5, dur / Math.pow(p.n, 0.6));
                         g.gain.exponentialRampToValueAtTime(0.0008, t0 + pdur);
                         osc.connect(g);
                         g.connect(filt);
@@ -9654,24 +9701,30 @@
                         }
                     } else if (PIANO_STYLES[loopPianoStyle] && loopVolPiano > 0.001) {
                         var pStyle = PIANO_STYLES[loopPianoStyle];
-                        var pianoTicks, pianoChokes = [], pianoHitMeta = null;
+                        var pianoTicks, pianoChokes = [], pianoMeta = null, pianoHitMeta = null;
                         if (pStyle.dynamic) {
                             // '기본' — 드럼 리듬에 매칭된 패턴 사용. 없으면 quarter 폴백.
                             var pdp = PIANO_DEFAULT_PATTERNS[r];
                             if (pdp) {
                                 pianoTicks = pdp.hits;
                                 pianoChokes = pdp.chokes || [];
+                                pianoMeta = pdp.meta;
                                 pianoHitMeta = 'default';
                             } else {
-                                pianoTicks = sixteenthsToTicks(PIANO_STYLES.quarter.sixteenthHits, p.ticksPerBeat);
+                                // 폴백 — 매 박 첫 tick (모든 ticksPerBeat 에서 작동)
+                                pianoTicks = [];
+                                for (var qb = 0; qb < measureLen; qb += p.ticksPerBeat) pianoTicks.push(qb);
                                 pianoHitMeta = 'quarter';
                             }
+                        } else if (loopPianoStyle === 'quarter') {
+                            // 4비트 — 매 박의 첫 tick. 모든 ticksPerBeat 에서 정확히 작동.
+                            pianoTicks = [];
+                            for (var qb2 = 0; qb2 < measureLen; qb2 += p.ticksPerBeat) pianoTicks.push(qb2);
+                            pianoHitMeta = 'quarter';
                         } else {
                             pianoTicks = sixteenthsToTicks(pStyle.sixteenthHits, p.ticksPerBeat);
                             pianoHitMeta = pStyle;
                         }
-                        // choke 가 같은 tick 에 hit 와 함께 있을 일은 없지만,
-                        // 안전하게 hit 처리보다 먼저 실행 (먼저 끊고 새로 치는 경우 대비).
                         if (pianoChokes.indexOf(t) !== -1) {
                             chokePiano(swungTime);
                         }
@@ -9681,20 +9734,19 @@
                             var halfP = t < midP ? 'a' : 'b';
                             var rootP = getEffectiveRoot(loopMeasureIdx, halfP);
                             if (rootP) {
-                                // velocity — on-beat 강세, off-beat 약세.
-                                var velMul;
-                                if (pianoHitMeta === 'default') {
-                                    // 박의 첫 tick (tick % ticksPerBeat === 0) 은 on-beat.
-                                    velMul = (t % p.ticksPerBeat === 0) ? 1.0 : 0.55;
+                                // 사용자 정의 default 패턴 사용 시 — 단일 강도(0.55) + char별 staccato/single
+                                var velMul, isSingle = false, isStaccato = false;
+                                if (pianoHitMeta === 'default' && pianoMeta && pianoMeta[t]) {
+                                    var info = pianoMeta[t];
+                                    velMul = 0.55;          // 단일 강도
+                                    isSingle = info.type === 'single';
+                                    isStaccato = info.staccato;
                                 } else if (pianoHitMeta === 'quarter') {
                                     velMul = 1.0;
                                 } else {
                                     var sixteenthPos = pianoHitMeta.sixteenthHits[pidx];
                                     velMul = (sixteenthPos % 4 === 0) ? 1.0 : 0.55;
                                 }
-                                // 세그먼트 식별: 마디 인덱스 + half (a/b).
-                                // 새 세그먼트로 진입했고 직전 세그먼트와 코드가 같으면
-                                // 보이싱을 살짝 변형 (인버전 한 음 점프).
                                 var segKey = loopMeasureIdx + '|' + halfP;
                                 var prevSegChord = _lastPianoSegmentChord;
                                 var isNewSeg = (segKey !== _lastPianoSegmentKey);
@@ -9703,7 +9755,11 @@
                                     _lastPianoSegmentChord = rootP;
                                 }
                                 var shouldVary = isNewSeg && prevSegChord === rootP;
-                                playPianoChord(rootP, swungTime, velMul, { vary: shouldVary });
+                                playPianoChord(rootP, swungTime, velMul, {
+                                    vary: shouldVary,
+                                    single: isSingle,
+                                    staccato: isStaccato
+                                });
                             }
                         }
                     }
@@ -10999,21 +11055,25 @@
             };
 
             // 드럼 ticksPerBeat 에 따라 베이스/피아노 스타일 옵션을 조건부로 숨긴다.
-            //   - 8비트: ticksPerBeat ≥ 2 일 때만 의미 있음 (4비트 드럼이면 1tick/beat 라 동일하게 들림)
-            //   - 16비트: ticksPerBeat ≥ 4 일 때만 의미 있음 (8비트 드럼이면 8비트와 동일하게 들림)
+            //   - 8비트: ticksPerBeat 가 짝수 (2 또는 4) 일 때만 의미 있음
+            //     · 4비트 드럼(tpb=1) 이면 1tick/beat 라 8비트와 동일하게 들림 — 숨김
+            //     · 셔플락(tpb=3) 이면 8분음표 위치가 정수 tick 에 안 떨어짐 — 숨김
+            //   - 16비트: ticksPerBeat = 4 일 때만 의미 있음
             // 현재 선택된 스타일이 invalid 가 되면 default 로 폴백한다.
             function updateLoopStyleAvailability() {
                 var p = (typeof DRUM_PATTERNS !== 'undefined' && DRUM_PATTERNS[loopRhythm]) || null;
                 if (!p) return;
                 var tpb = p.ticksPerBeat;
+                var eightFits = (tpb === 2 || tpb === 4);
+                var sixteenthFits = (tpb === 4);
 
                 var rules = {
                     bass: {
-                        '8beat':  tpb >= 2,
-                        '16beat': tpb >= 4
+                        '8beat':  eightFits,
+                        '16beat': sixteenthFits
                     },
                     piano: {
-                        '8beat':  tpb >= 2
+                        '8beat':  eightFits
                     }
                 };
 
