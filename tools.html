@@ -5404,90 +5404,12 @@
         }
         .loop-clear-all-btn i { font-size: 0.7rem; }
 
-        /* 참고 건반 + 전체 키 트랜스포즈 한 줄 (loop-grid 바로 위) */
-        .loop-keyboard-row {
+        /* 전체 키 트랜스포즈 한 줄 (loop-grid 바로 위) */
+        .loop-transpose-row {
             display: flex;
             align-items: center;
-            gap: 0.7rem;
+            gap: 0.4rem;
             margin-bottom: 0.8rem;
-            flex-wrap: wrap;
-        }
-        .loop-keyboard-label {
-            font-size: 0.74rem;
-            font-weight: 600;
-            color: rgba(26, 36, 33, 0.55);
-            min-width: 4rem;
-            flex-shrink: 0;
-        }
-        :root[data-theme="dark"] .loop-keyboard-label { color: rgba(232, 240, 236, 0.55); }
-        /* 한 옥타브+ 건반 (C3 ~ G4 = 흰건반 12개) — 흰건반은 grid, 검은건반은 absolute 오버레이 */
-        .loop-keyboard {
-            position: relative;
-            display: grid;
-            grid-template-columns: repeat(12, 1fr);
-            flex: 1 1 360px;
-            min-width: 240px;
-            max-width: 540px;
-            height: 64px;
-            border: 1px solid rgba(42, 107, 74, 0.25);
-            border-radius: 6px;
-            overflow: hidden;
-            background: #fff;
-            user-select: none;
-            box-shadow: inset 0 -3px 6px rgba(0,0,0,0.06);
-        }
-        .loop-key {
-            position: relative;
-            cursor: pointer;
-            transition: background 0.05s;
-        }
-        .loop-key.white {
-            background: #fff;
-            border-right: 1px solid rgba(42, 107, 74, 0.18);
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            padding-bottom: 3px;
-            font-size: 0.55rem;
-            color: rgba(26, 36, 33, 0.45);
-            font-weight: 500;
-        }
-        .loop-key.white:last-child { border-right: none; }
-        .loop-key.white:hover { background: #eaf3ee; }
-        .loop-key.white:active,
-        .loop-key.white.pressed { background: var(--green-mid); color: #fff; }
-        .loop-key.black {
-            position: absolute;
-            top: 0;
-            width: calc(100% / 12 * 0.62);
-            height: 62%;
-            background: #2a2a2a;
-            border: 1px solid #1a1a1a;
-            border-radius: 0 0 3px 3px;
-            box-shadow: 0 2px 3px rgba(0,0,0,0.35);
-            z-index: 2;
-        }
-        .loop-key.black:hover { background: #444; }
-        .loop-key.black:active,
-        .loop-key.black.pressed { background: var(--green-mid); border-color: var(--green-mid); }
-        :root[data-theme="dark"] .loop-keyboard {
-            background: #d8e8df;
-            border-color: rgba(180, 230, 200, 0.35);
-        }
-        :root[data-theme="dark"] .loop-key.white {
-            background: #d8e8df;
-            border-right-color: rgba(60, 90, 75, 0.4);
-            color: rgba(20, 32, 28, 0.55);
-        }
-        :root[data-theme="dark"] .loop-key.white:hover { background: #b9d2c2; }
-        :root[data-theme="dark"] .loop-key.black { background: #1a2622; border-color: #0e1815; }
-        :root[data-theme="dark"] .loop-key.black:hover { background: #2c3d36; }
-        /* 전체 키 트랜스포즈 컨트롤 */
-        .loop-transpose {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            flex-shrink: 0;
         }
         .loop-transpose-label {
             font-size: 0.74rem;
@@ -5521,11 +5443,6 @@
         }
         :root[data-theme="dark"] .loop-transpose-btn:hover {
             background: rgba(180, 230, 200, 0.22);
-        }
-        @media (max-width: 600px) {
-            .loop-keyboard-row { gap: 0.5rem; }
-            .loop-keyboard { height: 54px; min-width: 200px; }
-            .loop-keyboard-label { min-width: 100%; margin-bottom: -0.2rem; }
         }
         /* iOS-style 작은 토글 스위치 — 예비박 on/off 같은 boolean 옵션용 */
         .loop-toggle {
@@ -6576,30 +6493,19 @@
                                 <span class="loop-toggle-track"><span class="loop-toggle-thumb"></span></span>
                             </label>
                         </div>
-                        <div class="loop-style-group" title="2마디 모드: 드럼/베이스 그루브가 2마디마다 한 사이클 (끝마디 fill 포함). 코드는 그대로 매 마디 1코드.">
-                            <label>패턴 길이</label>
-                            <div class="loop-style-btns" id="loopMeasureLenBtns">
-                                <button type="button" class="loop-style-btn active" data-mlen="1" onclick="setLoopMeasureLen(1)">1마디</button>
-                                <button type="button" class="loop-style-btn" data-mlen="2" onclick="setLoopMeasureLen(2)">2마디</button>
-                            </div>
-                        </div>
                         <button type="button" class="loop-clear-all-btn" onclick="resetLoopAll()" title="프리셋 해제 + 모든 코드 비움">
                             <i class="fas fa-redo"></i> 초기화
                         </button>
                     </div>
-                    <!-- 참고용 한 옥타브 건반 (C3 ~ G4) — 코드 진행 짤 때 음 확인용. 클릭하면 그 음만 짧게 울림. -->
-                    <div class="loop-keyboard-row">
-                        <div class="loop-keyboard-label">참고 건반</div>
-                        <div class="loop-keyboard" id="loopKeyboard" aria-label="참고용 건반"></div>
-                        <div class="loop-transpose">
-                            <span class="loop-transpose-label">전체 키</span>
-                            <button type="button" class="loop-transpose-btn" onclick="transposeLoopChordsAll(-1)" title="모든 코드를 반음 내림" aria-label="반음 내림">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            <button type="button" class="loop-transpose-btn" onclick="transposeLoopChordsAll(1)" title="모든 코드를 반음 올림" aria-label="반음 올림">
-                                <i class="fas fa-chevron-up"></i>
-                            </button>
-                        </div>
+                    <!-- 전체 키 트랜스포즈 — 모든 코드 root 를 ±반음 이동. -->
+                    <div class="loop-transpose-row">
+                        <span class="loop-transpose-label">전체 키</span>
+                        <button type="button" class="loop-transpose-btn" onclick="transposeLoopChordsAll(-1)" title="모든 코드를 반음 내림" aria-label="반음 내림">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <button type="button" class="loop-transpose-btn" onclick="transposeLoopChordsAll(1)" title="모든 코드를 반음 올림" aria-label="반음 올림">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
                     </div>
                     <div class="loop-grid cols-4" id="loopGrid"></div>
                 </div>
@@ -8231,29 +8137,15 @@
             let loopBassStyle  = 'default';
             let loopPianoStyle = 'default';
             // 패턴 길이 — 1 (기본, 매 마디 동일 패턴) | 2 (2마디마다 한 사이클, 끝마디에 fill).
-            //   코드 진행은 여전히 매 마디 1코드. 드럼/베이스 그루브만 2마디 단위로 들림.
-            //   localStorage 에 저장 — 다음 방문 시 유지.
+            //   메인 반주 UI 에는 노출 안 함. 빌더(presets-builder.html) 에서 만든
+            //   2마디 프리셋이 로드되면 setLoopMeasureLen(2) 로 켜짐.
+            //   코드 진행은 여전히 매 마디 1코드. 드럼/베이스 그루브만 2마디 단위로.
             let loopMeasureLen = 1;
-            try {
-                var _savedML = parseInt(localStorage.getItem('loopMeasureLen'), 10);
-                if (_savedML === 2) loopMeasureLen = 2;
-            } catch (e) {}
             window.setLoopMeasureLen = function(n) {
                 n = parseInt(n, 10);
                 if (n !== 1 && n !== 2) return;
                 loopMeasureLen = n;
-                try { localStorage.setItem('loopMeasureLen', String(n)); } catch (e) {}
-                document.querySelectorAll('#loopMeasureLenBtns button').forEach(function(b) {
-                    b.classList.toggle('active', parseInt(b.dataset.mlen, 10) === n);
-                });
-                gtag('event', 'loop_measure_len', { measures: n });
             };
-            // 부팅 시 토글 동기화
-            document.addEventListener('DOMContentLoaded', function() {
-                document.querySelectorAll('#loopMeasureLenBtns button').forEach(function(b) {
-                    b.classList.toggle('active', parseInt(b.dataset.mlen, 10) === loopMeasureLen);
-                });
-            });
             // 코드 픽커의 장/단 sticky 상태 — 마지막 선택을 다음 picker 에서도 유지
             let loopPickerQuality = 'major';
 
@@ -9606,14 +9498,17 @@
                         loopMeasureIdx = mIdx;
                         highlightLoopCell(mIdx, time);
                     }
-                    // 시퀀서 인덱스 = 현재 tick (시퀀서 길이는 프리셋 드럼 리듬의 measureLen 과 일치).
-                    //   사용자가 메인 도구에서 드럼 리듬을 바꿨다면 인덱스가 안 맞을 수 있으므로
-                    //   bounds 체크 후 스킵.
+                    // 시퀀서 인덱스 = 현재 사이클 안 위치.
+                    //   1마디 시퀀서 : _sIdx = beatNum % measureLen           (= t)
+                    //   2마디 시퀀서 : _sIdx = beatNum % (measureLen * 2)    (= 32 step 사이클)
+                    // 사이클 안에서의 "지금 어느 음악마디" = Math.floor(_sIdx / measureLen) (0 또는 1)
+                    // chord half ('a'/'b') 는 항상 음악마디 안 위치 — t < measureLen/2 면 'a'.
                     var _seqPat = _loopActivePresetSequencer;
-                    var _sIdx = t;
+                    var _seqLen = measureLen * loopMeasureLen;
+                    var _sIdx = beatNum % _seqLen;
                     var _seqHalf = (t < measureLen / 2) ? 'a' : 'b';
-                    // chordOffset[t] — 그 tick 에서 코드를 미리 땡겨치기 (싱코페이션).
-                    //   0 = 그 tick 의 기본 segment 코드, +1 = 다음 segment, -1 = 이전.
+                    // chordOffset[_sIdx] — 그 step 에서 코드를 미리 땡겨치기 (싱코페이션).
+                    //   0 = 그 step 의 기본 segment 코드, +1 = 다음 segment, -1 = 이전.
                     var _seqOffset = 0;
                     if (_seqPat && Array.isArray(_seqPat.chordOffset) && _sIdx < _seqPat.chordOffset.length) {
                         var co = _seqPat.chordOffset[_sIdx] | 0;
@@ -9626,20 +9521,26 @@
                     };
                     // 싱코페이션 — 직전 segment 에서 chordOffset=+1 로 코드를 미리 땡겨쳤으면,
                     // 그 코드가 원래 등장해야 할 위치(= 다음 segment 의 첫 tick) 는 자동 silence.
-                    //   case 1: t === measureLen/2 → 'a' 의 어딘가에서 +1 이 있었으면 'b' 첫 박 silence
-                    //   case 2: t === 0           → (직전 마디의 'b' 어딘가에서 +1) ← 패턴이 매 마디 반복되므로
-                    //                                같은 chordOffset 배열의 'b' 구간을 본다
+                    //   매 음악마디(measureLen) 마다 'a' / 'b' 두 segment 를 본다 — 2마디 시퀀서면 사이클 안 두 음악마디 각각 처리.
                     var _stolenByPrevAnticipation = false;
-                    if (_seqPat && Array.isArray(_seqPat.chordOffset) && _seqPat.chordOffset.length === measureLen) {
+                    if (_seqPat && Array.isArray(_seqPat.chordOffset) && _seqPat.chordOffset.length === _seqLen) {
                         var _mid = measureLen / 2;
                         var _co = _seqPat.chordOffset;
+                        // 현재 사이클 안 어느 음악마디인지 (0 또는 1)
+                        var _seqMeasIdx = Math.floor(_sIdx / measureLen);
+                        var _measBase = _seqMeasIdx * measureLen;
                         if (t === _mid) {
+                            // 'a' 구간(_measBase ~ _measBase+_mid-1) 에서 +1 이 있었으면 'b' 첫 tick silence
                             for (var _ai = 0; _ai < _mid && !_stolenByPrevAnticipation; _ai++) {
-                                if ((_co[_ai] | 0) === 1) _stolenByPrevAnticipation = true;
+                                if ((_co[_measBase + _ai] | 0) === 1) _stolenByPrevAnticipation = true;
                             }
                         } else if (t === 0) {
+                            // 새 음악마디 첫 tick — 직전 음악마디의 'b' 구간을 본다.
+                            // 사이클 첫 음악마디(0) 면 직전은 사이클 마지막 음악마디(loopMeasureLen-1).
+                            var _prevMeas = (_seqMeasIdx - 1 + loopMeasureLen) % loopMeasureLen;
+                            var _prevBase = _prevMeas * measureLen;
                             for (var _aj = _mid; _aj < measureLen && !_stolenByPrevAnticipation; _aj++) {
-                                if ((_co[_aj] | 0) === 1) _stolenByPrevAnticipation = true;
+                                if ((_co[_prevBase + _aj] | 0) === 1) _stolenByPrevAnticipation = true;
                             }
                         }
                     }
@@ -10467,8 +10368,14 @@
                 // 커스텀 시퀀서 패턴 저장 — 베이스/피아노 각각 독립적으로 활성/비활성.
                 _loopActivePresetSequencer = (p.sequencer_pattern && typeof p.sequencer_pattern === 'object')
                     ? p.sequencer_pattern : null;
-                // 베이스/피아노 커스텀 활성 여부 — 명시 플래그 우선, 없으면 셀에 값이 있는지로 추정.
                 var sp = _loopActivePresetSequencer;
+                // 2마디 시퀀서 — sp.measureLen === 2 면 한 사이클이 2 음악마디. 없으면 1마디.
+                if (sp && sp.measureLen === 2) {
+                    setLoopMeasureLen(2);
+                } else {
+                    setLoopMeasureLen(1);
+                }
+                // 베이스/피아노 커스텀 활성 여부 — 명시 플래그 우선, 없으면 셀에 값이 있는지로 추정.
                 var bassCustomActive = false;
                 var pianoCustomActive = false;
                 if (sp) {
@@ -11250,86 +11157,12 @@
                 gtag('event', 'loop_transpose_all', { semitones: semitones });
             };
 
-            // ─── 참고용 한 옥타브+ 건반 (C3 ~ G4) ──────────────────────
-            // 클릭하면 그 음 하나만 짧게 울림. 코드 진행 짤 때 음 확인용.
-            // 흰건반 12개 (C3..G4) 를 grid 로 깔고, 검은건반 8개를 absolute 오버레이.
-            (function setupLoopReferenceKeyboard() {
-                // C3 = MIDI 48, G4 = MIDI 67
-                var WHITE_OFFSETS = [0, 2, 4, 5, 7, 9, 11];     // C D E F G A B
-                var WHITE_NAMES   = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-                var BLACK_AFTER   = [true, true, false, true, true, true, false]; // 흰건반 뒤에 검은건반?
-                // C3 옥타브의 흰건반 7개 + C4 옥타브 5개 (C4..G4) = 12개
-                function buildKeys() {
-                    var kb = document.getElementById('loopKeyboard');
-                    if (!kb) return;
-                    kb.innerHTML = '';
-                    var whites = [];
-                    var blacks = [];
-                    var whiteIdx = 0;
-                    // octave 3
-                    for (var i = 0; i < 7; i++) {
-                        var midi = 48 + WHITE_OFFSETS[i];
-                        whites.push({ midi: midi, name: WHITE_NAMES[i] + '3', col: whiteIdx });
-                        if (BLACK_AFTER[i]) {
-                            blacks.push({ midi: midi + 1, col: whiteIdx });
-                        }
-                        whiteIdx++;
-                    }
-                    // octave 4 — only C, D, E, F, G (and black keys C#, D#, F#)
-                    for (var j = 0; j < 5; j++) {
-                        var midi2 = 60 + WHITE_OFFSETS[j];
-                        whites.push({ midi: midi2, name: WHITE_NAMES[j] + '4', col: whiteIdx });
-                        // C4(j=0), D4(j=1), F4(j=3) 다음에 검은건반
-                        if (BLACK_AFTER[j] && j !== 4) {
-                            blacks.push({ midi: midi2 + 1, col: whiteIdx });
-                        }
-                        whiteIdx++;
-                    }
-                    // 흰건반 추가
-                    whites.forEach(function(w) {
-                        var el = document.createElement('div');
-                        el.className = 'loop-key white';
-                        el.dataset.midi = w.midi;
-                        el.textContent = w.name;
-                        el.style.gridColumn = (w.col + 1);
-                        kb.appendChild(el);
-                    });
-                    // 검은건반 — col + 1 위치의 경계에 걸치도록 absolute
-                    blacks.forEach(function(b) {
-                        var el = document.createElement('div');
-                        el.className = 'loop-key black';
-                        el.dataset.midi = b.midi;
-                        // (col+1) 번째 흰건반의 시작점에 가운데 정렬되도록 left 계산
-                        // 흰건반 칸 너비 = 100% / 12, 검은건반 너비 = 흰건반 너비 * 0.62
-                        // → left = (col+1) / 12 * 100% - 검은건반너비/2
-                        var leftPct = (b.col + 1) / 12 * 100;
-                        el.style.left = 'calc(' + leftPct + '% - (100% / 12 * 0.31))';
-                        kb.appendChild(el);
-                    });
-                    // 클릭 핸들러 — 위임
-                    kb.addEventListener('pointerdown', function(e) {
-                        var key = e.target.closest('.loop-key');
-                        if (!key) return;
-                        var midi = parseInt(key.dataset.midi, 10);
-                        if (isNaN(midi)) return;
-                        if (typeof playPianoNote === 'function') {
-                            playPianoNote(midi);
-                        }
-                        key.classList.add('pressed');
-                        setTimeout(function() { key.classList.remove('pressed'); }, 140);
-                    });
-                }
-                if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', buildKeys);
-                } else {
-                    buildKeys();
-                }
-            })();
             // 초기화 — 적용된 프리셋 해제 + 모든 코드 비움 + 검색 인풋 비움 + 커스텀 시퀀서 정리
             window.resetLoopAll = function() {
                 _loopActivePresetSequencer = null;
                 _loopActivePresetId = null;
                 _loopActivePresetRhythm = null;
+                setLoopMeasureLen(1);
                 _loopActivePresetBassCustom = false;
                 _loopActivePresetPianoCustom = false;
                 // 베이스/피아노 "커스텀" 버튼 제거 (선택돼 있었다면 default 로 폴백)

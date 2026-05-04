@@ -357,6 +357,77 @@
         .bd-pills-stars .bd-pill:not([data-diff="0"]) { color: #d4a52a; font-size: 0.74rem; }
         .bd-pills-stars .bd-pill.active { color: #fff !important; }
 
+        /* ───── 참고용 한 옥타브+ 건반 (C3 ~ G4) — 코드 진행 위 ─────
+           흰건반 12개를 grid 로 깔고, 검은건반 8개를 absolute 오버레이.
+           클릭 시 짧은 piano-style 톤이 울림. */
+        .bd-keyboard-row {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.6rem;
+            flex-wrap: wrap;
+        }
+        .bd-keyboard-label {
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: var(--text-light);
+            min-width: 4rem;
+            flex-shrink: 0;
+        }
+        .bd-keyboard {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            flex: 1 1 360px;
+            min-width: 240px;
+            max-width: 540px;
+            height: 64px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+            background: #fff;
+            user-select: none;
+            box-shadow: inset 0 -3px 6px rgba(0,0,0,0.06);
+        }
+        .bd-key {
+            position: relative;
+            cursor: pointer;
+            transition: background 0.05s;
+        }
+        .bd-key.white {
+            background: #fff;
+            border-right: 1px solid var(--border);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 3px;
+            font-size: 0.55rem;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+        .bd-key.white:last-child { border-right: none; }
+        .bd-key.white:hover { background: #eaf3ee; }
+        .bd-key.white:active,
+        .bd-key.white.pressed { background: var(--green-mid, #2a6b4a); color: #fff; }
+        .bd-key.black {
+            position: absolute;
+            top: 0;
+            width: calc(100% / 12 * 0.62);
+            height: 62%;
+            background: #2a2a2a;
+            border: 1px solid #1a1a1a;
+            border-radius: 0 0 3px 3px;
+            box-shadow: 0 2px 3px rgba(0,0,0,0.35);
+            z-index: 2;
+        }
+        .bd-key.black:hover { background: #444; }
+        .bd-key.black:active,
+        .bd-key.black.pressed { background: var(--green-mid, #2a6b4a); border-color: var(--green-mid, #2a6b4a); }
+        @media (max-width: 600px) {
+            .bd-keyboard { height: 54px; min-width: 200px; }
+            .bd-keyboard-label { min-width: 100%; margin-bottom: -0.2rem; }
+        }
+
         /* ───── Chord progression — loop-grid 스타일 (반주 메뉴와 동일한 룩) ─────
            tools.html 의 .loop-grid / .loop-cell / .loop-cell-half 룩을 그대로
            가져오되 클릭 picker 대신 텍스트 input 으로 입력. */
@@ -733,6 +804,11 @@
         .bd-seq-cell.beat-start {
             border-left: 2px solid rgba(42, 107, 74, 0.45);
             background: rgba(42, 107, 74, 0.08);
+        }
+        /* 2마디 모드: 두 번째 마디 시작 칸 — 굵은 구분선으로 한눈에 구분 */
+        .bd-seq-cell.measure-2-start {
+            border-left: 3px double rgba(42, 107, 74, 0.7);
+            margin-left: 3px;
         }
         .bd-seq-cell:hover:not(.on):not(.accent) {
             background: rgba(82, 168, 114, 0.18);
@@ -1213,6 +1289,14 @@
                         <button type="button" class="bd-rhythm-btn" data-rhythm="swing">스윙</button>
                     </div>
                 </div>
+                <!-- 패턴 길이 — 시퀀서를 1마디(기본) 또는 2마디(32 step / rhythm 기준) 로 확장. -->
+                <div class="bd-field" style="margin-top: 0.6rem;">
+                    <label>시퀀서 패턴 길이</label>
+                    <div class="bd-rhythm-grid" id="fMeasureLenBtns" style="grid-template-columns: repeat(2, minmax(0,1fr)); max-width: 240px;">
+                        <button type="button" class="bd-rhythm-btn active" data-mlen="1">1마디</button>
+                        <button type="button" class="bd-rhythm-btn" data-mlen="2">2마디</button>
+                    </div>
+                </div>
                 <!-- ───── 베이스 ───── -->
                 <div class="bd-inst-block" style="margin-top:1.0rem;">
                     <div class="bd-inst-row">
@@ -1273,6 +1357,11 @@
                         <button type="button" class="bd-input-mode-btn" data-mode="text" id="bdModeText">직접입력</button>
                         <button type="button" class="bd-input-mode-btn" data-mode="picker" id="bdModePicker">픽커</button>
                     </div>
+                </div>
+                <!-- 참고용 한 옥타브+ 건반 (C3 ~ G4) — 코드 진행 짤 때 음 확인용. -->
+                <div class="bd-keyboard-row">
+                    <div class="bd-keyboard-label">참고 건반</div>
+                    <div class="bd-keyboard" id="bdKeyboard" aria-label="참고용 건반"></div>
                 </div>
                 <div class="bd-chords-wrap">
                     <div class="bd-loop-grid" id="fChords"></div>
@@ -1355,7 +1444,15 @@
                 '16beatSA': 16, '16beatSB': 16, '16beatSC': 16,
                 'ballad': 12, 'swing': 12
             };
+            // 시퀀서 패턴 길이 — 1 (기본, 매 마디 동일) | 2 (2마디 단위 = step 수 2배).
+            // 저장 시 sequencer_pattern.measureLen 으로 보존되어, 메인 반주에서
+            // setLoopMeasureLen(2) 로 자동 적용됨.
+            let bdMeasureLen = 1;
             function bdSeqMeasureLen() {
+                return (BD_RHYTHM_LEN[currentRhythm] || 8) * bdMeasureLen;
+            }
+            // 한 음악 마디 안의 step 수 (beat-start 표시 등에 사용)
+            function bdSeqPerMeasureLen() {
                 return BD_RHYTHM_LEN[currentRhythm] || 8;
             }
             function bdSeqEmpty() {
@@ -1411,7 +1508,8 @@
                 if (!Array.isArray(bdSeq.chordOffset) || bdSeq.chordOffset.length !== len) {
                     bdSeq.chordOffset = new Array(len).fill(0);
                 }
-                var beatTicks = (len === 16) ? 4 : (len === 12 ? 3 : (len === 8 ? 2 : 1));
+                var perMeasure = bdSeqPerMeasureLen();
+                var beatTicks = (perMeasure === 16) ? 4 : (perMeasure === 12 ? 3 : (perMeasure === 8 ? 2 : 1));
                 var html = lines.map(function(line) {
                     var arr = bdSeq[line];
                     var cellsHtml = '';
@@ -1422,7 +1520,10 @@
                         else if (v === 2) classes += ' accent';
                         else if (v === 3) classes += ' mute';
                         else if (v === 4) classes += ' quiet';
-                        if (i % beatTicks === 0) classes += ' beat-start';
+                        // 박 머리 (한 박의 첫 step) — 마디 안 위치 기준
+                        if ((i % perMeasure) % beatTicks === 0) classes += ' beat-start';
+                        // 2마디 모드: 두 번째 마디 첫 칸은 강조 구분선
+                        if (bdMeasureLen === 2 && i === perMeasure) classes += ' measure-2-start';
                         if (bdSeq.chordOffset[i]) classes += ' anticipate';
                         cellsHtml += '<button type="button" class="' + classes + '" data-step="' + i + '"></button>';
                     }
@@ -1435,8 +1536,8 @@
             }
             // 셀 하나의 시각 클래스만 갱신 (전체 재렌더 X)
             function _refreshCellClass(line, step) {
-                var len = bdSeqMeasureLen();
-                var beatTicks = (len === 16) ? 4 : (len === 12 ? 3 : (len === 8 ? 2 : 1));
+                var perMeasure = bdSeqPerMeasureLen();
+                var beatTicks = (perMeasure === 16) ? 4 : (perMeasure === 12 ? 3 : (perMeasure === 8 ? 2 : 1));
                 var v = (bdSeq[line] || [])[step] | 0;
                 var off = (bdSeq.chordOffset || [])[step] | 0;
                 document.querySelectorAll('.bd-seq-row[data-line="' + line + '"] .bd-seq-cell[data-step="' + step + '"]').forEach(function(cell) {
@@ -1762,6 +1863,61 @@
                 if (typeof renderBdSeq === 'function') renderBdSeq();
             }
 
+            // ─── 시퀀서 패턴 길이 (1마디 / 2마디) ──────────────────
+            // bdMeasureLen 변경 시 시퀀서 배열을 길이에 맞게 확장/축소.
+            //   1 → 2 : 기존 마디를 두 번째 마디로 그대로 복제 (기본 2마디 = 같은 그루브 반복)
+            //   2 → 1 : 두 번째 마디 데이터 버림 (앞 마디만 유지)
+            function setBdMeasureLen(n) {
+                n = parseInt(n, 10);
+                if (n !== 1 && n !== 2) return;
+                if (n === bdMeasureLen) return;
+                var perMeasure = bdSeqPerMeasureLen();
+                var oldLen = perMeasure * bdMeasureLen;
+                var newLen = perMeasure * n;
+                if (n === 2) {
+                    // 1 → 2 : 첫 마디 복제해 두 번째 마디로 (편집 출발점)
+                    BD_SEQ_LINES.forEach(function(line) {
+                        var arr = (bdSeq[line] || []).slice(0, oldLen);
+                        while (arr.length < oldLen) arr.push(0);
+                        bdSeq[line] = arr.concat(arr.slice());
+                    });
+                    var co = (bdSeq.chordOffset || []).slice(0, oldLen);
+                    while (co.length < oldLen) co.push(0);
+                    bdSeq.chordOffset = co.concat(co.slice());
+                } else {
+                    // 2 → 1 : 두 번째 마디 버림 (확인 — 빈 마디면 조용히, 데이터 있으면 알림)
+                    var hasSecond = false;
+                    BD_SEQ_LINES.forEach(function(line) {
+                        var arr = bdSeq[line] || [];
+                        for (var i = perMeasure; i < arr.length; i++) {
+                            if (arr[i]) { hasSecond = true; break; }
+                        }
+                    });
+                    if (!hasSecond) {
+                        var co2 = bdSeq.chordOffset || [];
+                        for (var j = perMeasure; j < co2.length; j++) {
+                            if (co2[j]) { hasSecond = true; break; }
+                        }
+                    }
+                    if (hasSecond && !confirm('두 번째 마디 데이터가 사라집니다. 계속할까요?')) {
+                        // 토글 시각 동기화 — 사용자가 취소했으면 버튼 active 복원
+                        document.querySelectorAll('#fMeasureLenBtns .bd-rhythm-btn').forEach(function(b) {
+                            b.classList.toggle('active', parseInt(b.dataset.mlen, 10) === bdMeasureLen);
+                        });
+                        return;
+                    }
+                    BD_SEQ_LINES.forEach(function(line) {
+                        bdSeq[line] = (bdSeq[line] || []).slice(0, perMeasure);
+                    });
+                    bdSeq.chordOffset = (bdSeq.chordOffset || []).slice(0, perMeasure);
+                }
+                bdMeasureLen = n;
+                document.querySelectorAll('#fMeasureLenBtns .bd-rhythm-btn').forEach(function(b) {
+                    b.classList.toggle('active', parseInt(b.dataset.mlen, 10) === n);
+                });
+                if (typeof renderBdSeq === 'function') renderBdSeq();
+            }
+
             const $ = function(id) { return document.getElementById(id); };
 
             function escapeHtml(s) {
@@ -2036,6 +2192,10 @@
                 bars = 4;
                 difficulty = 0;
                 setRhythm('8beat');
+                bdMeasureLen = 1;
+                document.querySelectorAll('#fMeasureLenBtns .bd-rhythm-btn').forEach(function(b) {
+                    b.classList.toggle('active', parseInt(b.dataset.mlen, 10) === 1);
+                });
                 $('fBassStyle').value = 'default';
                 $('fPianoStyle').value = 'default';
                 bdSeq = bdSeqEmpty();
@@ -2070,8 +2230,13 @@
                 $('fBassStyle').value = p.bass_style || 'default';
                 $('fPianoStyle').value = p.piano_style || 'default';
                 // 시퀀서 — sequencer_pattern JSONB 에서 로드 (없으면 빈 패턴)
-                bdSeq = bdSeqEmpty();
+                //   measureLen 을 먼저 적용해야 bdSeqMeasureLen() 이 올바른 길이를 반환.
                 var sp = (p.sequencer_pattern && typeof p.sequencer_pattern === 'object') ? p.sequencer_pattern : null;
+                bdMeasureLen = (sp && sp.measureLen === 2) ? 2 : 1;
+                document.querySelectorAll('#fMeasureLenBtns .bd-rhythm-btn').forEach(function(b) {
+                    b.classList.toggle('active', parseInt(b.dataset.mlen, 10) === bdMeasureLen);
+                });
+                bdSeq = bdSeqEmpty();
                 if (sp) {
                     var len = bdSeqMeasureLen();
                     BD_SEQ_LINES.forEach(function(line) {
@@ -2130,11 +2295,12 @@
                 //   - 토글이 OFF 인 쪽 셀 데이터는 보존(다음에 다시 켜면 복원되도록).
                 //   - chordOffset (싱코페이션) 도 함께 저장.
                 var seqOut = null;
-                if (!bdSeqIsEmpty() || bdBassCustom || bdPianoCustom) {
+                if (!bdSeqIsEmpty() || bdBassCustom || bdPianoCustom || bdMeasureLen === 2) {
                     seqOut = {
                         bassCustom:  !!bdBassCustom,
                         pianoCustom: !!bdPianoCustom
                     };
+                    if (bdMeasureLen === 2) seqOut.measureLen = 2;
                     BD_SEQ_LINES.forEach(function(line) {
                         seqOut[line] = (bdSeq[line] || []).slice();
                     });
@@ -2177,8 +2343,12 @@
                 $('fBassStyle').value = c.bass_style || 'default';
                 $('fPianoStyle').value = c.piano_style || 'default';
                 $('fGenre').value = normalizeGenreForSelect(c.genre || '');
-                bdSeq = bdSeqEmpty();
                 var spC = (c.sequencer_pattern && typeof c.sequencer_pattern === 'object') ? c.sequencer_pattern : null;
+                bdMeasureLen = (spC && spC.measureLen === 2) ? 2 : 1;
+                document.querySelectorAll('#fMeasureLenBtns .bd-rhythm-btn').forEach(function(b) {
+                    b.classList.toggle('active', parseInt(b.dataset.mlen, 10) === bdMeasureLen);
+                });
+                bdSeq = bdSeqEmpty();
                 if (spC) {
                     var lenC = bdSeqMeasureLen();
                     BD_SEQ_LINES.forEach(function(line) {
@@ -2583,11 +2753,13 @@
                 //   - 토글 OFF 인 쪽 셀은 보존(나중에 다시 켜면 복원).
                 //   - chordOffset (싱코페이션) 도 함께 저장.
                 var seqToSave = null;
-                if (!bdSeqIsEmpty() || bdBassCustom || bdPianoCustom) {
+                if (!bdSeqIsEmpty() || bdBassCustom || bdPianoCustom || bdMeasureLen === 2) {
                     seqToSave = {
                         bassCustom:  !!bdBassCustom,
                         pianoCustom: !!bdPianoCustom
                     };
+                    // 2마디 모드일 때만 measureLen 명시 — 기본 1 은 생략 (역호환)
+                    if (bdMeasureLen === 2) seqToSave.measureLen = 2;
                     BD_SEQ_LINES.forEach(function(line) {
                         seqToSave[line] = (bdSeq[line] || []).slice();
                     });
@@ -2789,6 +2961,10 @@
                 document.querySelectorAll('#fRhythmGrid .bd-rhythm-btn').forEach(function(b) {
                     b.onclick = function() { setRhythm(b.dataset.rhythm); };
                 });
+                // 시퀀서 패턴 길이 (1마디 / 2마디)
+                document.querySelectorAll('#fMeasureLenBtns .bd-rhythm-btn').forEach(function(b) {
+                    b.onclick = function() { setBdMeasureLen(b.dataset.mlen); };
+                });
 
                 // 시퀀서 — 셀 클릭 + 초기화 버튼 wire-up + 첫 렌더
                 setupBdSeqEvents();
@@ -2873,6 +3049,104 @@
                     renderList();
                     search.focus();
                 };
+
+                // ─── 참고용 한 옥타브+ 건반 (C3 ~ G4) ──────────────────────
+                // 클릭 시 짧은 piano-style 톤 (sine + 부분음 + lowpass envelope).
+                // tools.html 의 playPianoNote 와 비슷하지만 훨씬 단순.
+                (function setupBdReferenceKeyboard() {
+                    var WHITE_OFFSETS = [0, 2, 4, 5, 7, 9, 11];
+                    var WHITE_NAMES   = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+                    var BLACK_AFTER   = [true, true, false, true, true, true, false];
+                    var kb = $('bdKeyboard');
+                    if (!kb) return;
+                    kb.innerHTML = '';
+                    var whites = [], blacks = [], whiteIdx = 0;
+                    // C3..B3 (옥타브 3 — 7개 흰건반)
+                    for (var i = 0; i < 7; i++) {
+                        var midi = 48 + WHITE_OFFSETS[i];
+                        whites.push({ midi: midi, name: WHITE_NAMES[i] + '3', col: whiteIdx });
+                        if (BLACK_AFTER[i]) blacks.push({ midi: midi + 1, col: whiteIdx });
+                        whiteIdx++;
+                    }
+                    // C4..G4 (옥타브 4 — 5개 흰건반, 검은건반 3개)
+                    for (var j = 0; j < 5; j++) {
+                        var midi2 = 60 + WHITE_OFFSETS[j];
+                        whites.push({ midi: midi2, name: WHITE_NAMES[j] + '4', col: whiteIdx });
+                        if (BLACK_AFTER[j] && j !== 4) blacks.push({ midi: midi2 + 1, col: whiteIdx });
+                        whiteIdx++;
+                    }
+                    whites.forEach(function(w) {
+                        var el = document.createElement('div');
+                        el.className = 'bd-key white';
+                        el.dataset.midi = w.midi;
+                        el.textContent = w.name;
+                        el.style.gridColumn = (w.col + 1);
+                        kb.appendChild(el);
+                    });
+                    blacks.forEach(function(b) {
+                        var el = document.createElement('div');
+                        el.className = 'bd-key black';
+                        el.dataset.midi = b.midi;
+                        var leftPct = (b.col + 1) / 12 * 100;
+                        el.style.left = 'calc(' + leftPct + '% - (100% / 12 * 0.31))';
+                        kb.appendChild(el);
+                    });
+                    // ── piano-style 톤 (lazy AudioContext) ──
+                    var _bdAC = null;
+                    function _ac() {
+                        if (!_bdAC) {
+                            try { _bdAC = new (window.AudioContext || window.webkitAudioContext)(); }
+                            catch (e) { return null; }
+                        }
+                        if (_bdAC.state === 'suspended') _bdAC.resume().catch(function(){});
+                        return _bdAC;
+                    }
+                    function _midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+                    function bdPlayNote(midi) {
+                        var ctx = _ac();
+                        if (!ctx) return;
+                        var freq = _midiToFreq(midi);
+                        var t0 = ctx.currentTime;
+                        var dur = 1.6;
+                        var master = ctx.createGain();
+                        master.gain.setValueAtTime(0.0001, t0);
+                        master.gain.exponentialRampToValueAtTime(0.32, t0 + 0.005);
+                        master.gain.exponentialRampToValueAtTime(0.16, t0 + 0.1);
+                        master.gain.exponentialRampToValueAtTime(0.0005, t0 + dur);
+                        var filter = ctx.createBiquadFilter();
+                        filter.type = 'lowpass';
+                        filter.Q.value = 0.7;
+                        filter.frequency.setValueAtTime(Math.min(8000, freq * 10), t0);
+                        filter.frequency.exponentialRampToValueAtTime(Math.max(500, freq * 2), t0 + dur);
+                        filter.connect(master);
+                        master.connect(ctx.destination);
+                        // 부분음 1..5
+                        var partials = [{n:1,v:1.0},{n:2,v:0.5},{n:3,v:0.3},{n:4,v:0.18},{n:5,v:0.1}];
+                        partials.forEach(function(p) {
+                            var f = freq * p.n;
+                            if (f > 14000) return;
+                            var osc = ctx.createOscillator();
+                            var g = ctx.createGain();
+                            osc.type = 'sine';
+                            osc.frequency.value = f;
+                            g.gain.setValueAtTime(p.v, t0);
+                            var pdur = Math.max(0.3, dur / Math.sqrt(p.n));
+                            g.gain.exponentialRampToValueAtTime(0.0005, t0 + pdur);
+                            osc.connect(g); g.connect(filter);
+                            osc.start(t0);
+                            osc.stop(t0 + pdur + 0.05);
+                        });
+                    }
+                    kb.addEventListener('pointerdown', function(e) {
+                        var key = e.target.closest('.bd-key');
+                        if (!key) return;
+                        var midi = parseInt(key.dataset.midi, 10);
+                        if (isNaN(midi)) return;
+                        bdPlayNote(midi);
+                        key.classList.add('pressed');
+                        setTimeout(function() { key.classList.remove('pressed'); }, 140);
+                    });
+                })();
             });
         })();
     </script>
