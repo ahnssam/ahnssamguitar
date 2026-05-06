@@ -8818,13 +8818,16 @@
                 '4beat2':   'X.X.',
                 '8beat':    'X.MX.MX.',
                 '8beat2':   'X.MXX.M.',
+                // ───── 16비트 A — 사용자 재설계 패턴 ─────
+                // X . . . X . O X . X O . X . . .
                 '16beat':   'X...X.OX.XO.X...',
-                '16beat2':  'X..OX.OX.XO.X...',
-                '16beatC':  'X.X.M.OX.XO.X.OX',
-                '16beatSA': 'X...X.OX.XO.X...',
-                '16beatSB': 'X..OX.OX.XO.X...',
-                '16beatSC': 'X.X.M.OX.XO.X.OX',
-                'ballad':   'X..X.OX..X..',
+                // ───── 나머지 6개 — 재설계 대기 (현재 피아노 무음) ─────
+                '16beat2':  '................',
+                '16beatC':  '................',
+                '16beatSA': '................',
+                '16beatSB': '................',
+                '16beatSC': '................',
+                'ballad':   '............',
             };
             // 표기법 파서 — 'X', 'O', 'M', 'm', '.' 한 글자씩 → hits + meta
             function _parsePianoPattern(str) {
@@ -9691,8 +9694,6 @@
                                 if (isNewSegS) {
                                     _lastPianoSegmentKey = segKeyS;
                                     _lastPianoSegmentChord = rrP;
-                                    // 코드가 바뀐 새 segment — 직전 코드 sustain 끊기 (default 패턴과 동일).
-                                    if (prevSegS && prevSegS !== rrP) chokePiano(swungTime);
                                 }
                                 playPianoChord(rrP, swungTime, velSeq, { vary: isNewSegS && prevSegS === rrP });
                             }
@@ -9758,17 +9759,19 @@
                                 if (isNewSeg) {
                                     _lastPianoSegmentKey = segKey;
                                     _lastPianoSegmentChord = rootP;
-                                    // 코드가 바뀐 새 segment 첫 hit — 직전 코드 sustain 이
-                                    // 새 코드와 묻히지 않게 부드럽게 끊는다 (50ms 페이드).
-                                    // 같은 코드면 natural sustain 살림.
-                                    if (prevSegChord && prevSegChord !== rootP) chokePiano(swungTime);
                                 }
                                 var shouldVary = isNewSeg && prevSegChord === rootP;
-                                playPianoChord(rootP, swungTime, velMul, {
-                                    vary: shouldVary,
-                                    single: isSingle,
-                                    staccato: isStaccato
-                                });
+                                if (isSingle) {
+                                    // O / m — 빌더 시퀀서의 피아노 단음 라인과 동일.
+                                    //   현재 코드 보이싱의 가장 낮은 음을 단음으로 (playPianoChordLowest).
+                                    playPianoChordLowest(rootP, swungTime, velMul);
+                                } else {
+                                    // X / M — 풀 코드. staccato 면 짧게.
+                                    playPianoChord(rootP, swungTime, velMul, {
+                                        vary: shouldVary,
+                                        staccato: isStaccato
+                                    });
+                                }
                             }
                         }
                     }
