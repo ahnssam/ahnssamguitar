@@ -5410,7 +5410,10 @@
             align-items: center;
             gap: 0.4rem;
             margin-bottom: 0.8rem;
+            flex-wrap: wrap;
         }
+        .loop-transpose-row .loop-input-mode { font-size: 0.75rem; }
+        .loop-transpose-row .loop-input-mode label { font-size: 0.74rem; }
         .loop-transpose-label {
             font-size: 0.74rem;
             font-weight: 600;
@@ -6460,13 +6463,6 @@
                             </button>
                             <div class="loop-rhythm-drawer" id="loopRhythmDrawer"></div>
                         </div>
-                        <div class="loop-input-mode" title="코드 칸을 클릭했을 때의 기본 입력 방식">
-                            <label>입력</label>
-                            <div class="loop-input-mode-btns" id="loopInputModeBtns">
-                                <button type="button" class="active" data-mode="picker" onclick="setLoopInputMode('picker')">픽커</button>
-                                <button type="button" data-mode="text" onclick="setLoopInputMode('text')">직접입력</button>
-                            </div>
-                        </div>
                     </div>
                     <!-- 베이스/피아노 스타일 셀렉터 — 드럼 리듬과 별개로 동작 -->
                     <div class="loop-style-row">
@@ -6497,7 +6493,7 @@
                             <i class="fas fa-redo"></i> 초기화
                         </button>
                     </div>
-                    <!-- 전체 키 트랜스포즈 — 모든 코드 root 를 ±반음 이동. -->
+                    <!-- 전체 키 트랜스포즈 + 입력 모드 — 마디 그리드 바로 위. 모바일에서도 잘리지 않게 두 그룹이 양 끝으로 정렬. -->
                     <div class="loop-transpose-row">
                         <span class="loop-transpose-label">전체 키</span>
                         <button type="button" class="loop-transpose-btn" onclick="transposeLoopChordsAll(-1)" title="모든 코드를 반음 내림" aria-label="반음 내림">
@@ -6506,6 +6502,13 @@
                         <button type="button" class="loop-transpose-btn" onclick="transposeLoopChordsAll(1)" title="모든 코드를 반음 올림" aria-label="반음 올림">
                             <i class="fas fa-chevron-up"></i>
                         </button>
+                        <div class="loop-input-mode" title="코드 칸을 클릭했을 때의 기본 입력 방식" style="margin-left:auto;">
+                            <label>입력</label>
+                            <div class="loop-input-mode-btns" id="loopInputModeBtns">
+                                <button type="button" class="active" data-mode="picker" onclick="setLoopInputMode('picker')">픽커</button>
+                                <button type="button" data-mode="text" onclick="setLoopInputMode('text')">직접입력</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="loop-grid cols-4" id="loopGrid"></div>
                 </div>
@@ -9688,6 +9691,8 @@
                                 if (isNewSegS) {
                                     _lastPianoSegmentKey = segKeyS;
                                     _lastPianoSegmentChord = rrP;
+                                    // 코드가 바뀐 새 segment — 직전 코드 sustain 끊기 (default 패턴과 동일).
+                                    if (prevSegS && prevSegS !== rrP) chokePiano(swungTime);
                                 }
                                 playPianoChord(rrP, swungTime, velSeq, { vary: isNewSegS && prevSegS === rrP });
                             }
@@ -9753,6 +9758,10 @@
                                 if (isNewSeg) {
                                     _lastPianoSegmentKey = segKey;
                                     _lastPianoSegmentChord = rootP;
+                                    // 코드가 바뀐 새 segment 첫 hit — 직전 코드 sustain 이
+                                    // 새 코드와 묻히지 않게 부드럽게 끊는다 (50ms 페이드).
+                                    // 같은 코드면 natural sustain 살림.
+                                    if (prevSegChord && prevSegChord !== rootP) chokePiano(swungTime);
                                 }
                                 var shouldVary = isNewSeg && prevSegChord === rootP;
                                 playPianoChord(rootP, swungTime, velMul, {
@@ -11120,7 +11129,7 @@
             // 드럼은 그대로, 베이스/피아노는 상대적으로 더 얌전하게 깔리도록 낮춤.
             //   베이스 ceiling 0.75 → 슬라이더 75% 가 예전 100% 만큼 들림
             //   피아노 ceiling 0.50 → 슬라이더 50% 가 예전 100% 만큼 들림
-            const LOOP_MIX_CEILINGS = { drum: 0.9, bass: 0.75, piano: 0.5 };
+            const LOOP_MIX_CEILINGS = { drum: 0.9, bass: 0.75, piano: 0.75 };
 
             // 슬라이더 + mute 버튼 상태를 한꺼번에 갱신.
             function _applyLoopVolume(kind, v) {
