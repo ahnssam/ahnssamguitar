@@ -8816,18 +8816,24 @@
             const PIANO_DEFAULT_PATTERNS_RAW = {
                 '4beat':    'X.X.',
                 '4beat2':   'X.X.',
-                '8beat':    'X.MX.MX.',
-                '8beat2':   'X.MXX.M.',
-                // ───── 16비트 A — 사용자 재설계 패턴 ─────
-                // X . . . X . O X . X O . X . . .
+                // 8비트 A — 1박 코드 → 2박 무음 → 2& 코드 → 4박 코드
+                '8beat':    'X..X..X.',
+                // 8비트 B — 1박 코드 → 2박 무음 → 2& 코드 → 3박 코드 → 4박 코드
+                '8beat2':   'X..XX.X.',
+                // 16비트 A — 1박 코드 / 2박 코드 / 2& 단음 / 3박 코드 / 3e 코드 / 3& 단음 / 4박 코드 (사용자 검수 완료)
                 '16beat':   'X...X.OX.XO.X...',
-                // ───── 나머지 6개 — 재설계 대기 (현재 피아노 무음) ─────
-                '16beat2':  '................',
-                '16beatC':  '................',
-                '16beatSA': '................',
-                '16beatSB': '................',
-                '16beatSC': '................',
-                'ballad':   '............',
+                // 16비트 B
+                '16beat2':  'X..OX.OX.XO.X...',
+                // 16비트 C — 1박/1& 코드, 2박 자연 sustain, 2& 단음, 3박/3e 코드, 3& 단음, 4박/4& 코드
+                '16beatC':  'X.X...OX.XO.X.OX',
+                // 셔플락 (12 ticks, ticksPerBeat=3) — 1박/2박/2a 코드, 3a 단음, 4박 코드
+                'ballad':   'X..X.X..OX..',
+                // 16바운스 A/B/C — 패턴은 16비트 A/B/C 와 동일, 스케줄러가 swing offset 적용해서 바운스
+                '16beatSA': 'X...X.OX.XO.X...',
+                '16beatSB': 'X..OX.OX.XO.X...',
+                '16beatSC': 'X.X...OX.XO.X.OX',
+                // 스윙 12/8 — 1박, 3박 코드만
+                'swing':    'X.....X.....',
             };
             // 표기법 파서 — 'X', 'O', 'M', 'm', '.' 한 글자씩 → hits + meta
             function _parsePianoPattern(str) {
@@ -9733,6 +9739,7 @@
                         }
                         if (pianoChokes.indexOf(t) !== -1) {
                             chokePiano(swungTime);
+                            chokePianoSingle(swungTime);
                         }
                         var pidx = pianoTicks.indexOf(t);
                         if (pidx !== -1) {
@@ -9762,11 +9769,11 @@
                                 }
                                 var shouldVary = isNewSeg && prevSegChord === rootP;
                                 if (isSingle) {
-                                    // O / m — 빌더 시퀀서의 피아노 단음 라인과 동일.
-                                    //   현재 코드 보이싱의 가장 낮은 음을 단음으로 (playPianoChordLowest).
+                                    // O / m — 단음 (코드의 근음, C3~B3 옥타브). 단음끼리 자동 choke.
                                     playPianoChordLowest(rootP, swungTime, velMul);
                                 } else {
-                                    // X / M — 풀 코드. staccato 면 짧게.
+                                    // X / M — 풀 코드. 단음이 울리고 있으면 먼저 mute (단음 다음 코드 = 단음 사라짐).
+                                    chokePianoSingle(swungTime);
                                     playPianoChord(rootP, swungTime, velMul, {
                                         vary: shouldVary,
                                         staccato: isStaccato
@@ -10327,12 +10334,28 @@
                 var fifthIdx = (rootIdx + semis) % 12;
                 return ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'][fifthIdx];
             }
-            // 단음 — 보이싱의 가장 낮은 미디 노트를 피아노 톤으로 짧게.
-            //   _prevPianoVoicing 은 갱신하지 않음 (메인 보이싱이 같은 tick 에서
-            //   이미 갱신했거나 이후 갱신할 거라 중복 방지).
+            // 단음 — 피아노 톤 한 음. _activePianoSingles 에 트래킹해서
+            //   다음 단음/코드가 올 때 자동으로 페이드아웃 (overlap 방지).
+            var _activePianoSingles = [];
+            function chokePianoSingle(time) {
+                if (!_activePianoSingles || _activePianoSingles.length === 0) return;
+                var t = (typeof time === 'number') ? time : (audioCtx ? audioCtx.currentTime : 0);
+                _activePianoSingles.forEach(function(s) {
+                    try {
+                        s.gain.gain.cancelScheduledValues(t);
+                        var v = s.gain.gain.value;
+                        s.gain.gain.setValueAtTime(v > 0.0001 ? v : 0.0001, t);
+                        s.gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
+                        try { s.source.stop(t + 0.05); } catch(e){}
+                    } catch (e) {}
+                });
+                _activePianoSingles = [];
+            }
             function playPianoSingleNote(midi, time, velMul) {
                 if (!audioCtx) return;
                 if (typeof velMul !== 'number') velMul = 1.0;
+                // 직전 단음이 아직 울리고 있으면 먼저 페이드아웃 (단음끼리 겹침 방지)
+                chokePianoSingle(time);
                 var bus = getPianoBus();
                 var freq = 440 * Math.pow(2, (midi - 69) / 12);
                 var dur = 1.4;
@@ -10348,13 +10371,21 @@
                 g.connect(bus);
                 osc.start(time);
                 osc.stop(time + dur + 0.1);
+                _activePianoSingles.push({ gain: g, source: osc, endTime: time + dur + 0.1 });
+                if (_activePianoSingles.length > 6) _activePianoSingles.shift();
             }
+            // 단음 — 코드의 근음(root) 을 C3~B3 옥타브에 둔다.
+            //   코드 보이싱 (rootless, D4~G5) 의 한 옥타브 아래 → 음역대 분리.
+            //   베이스(주로 C2~C3) 보다는 한 옥타브 위라 베이스와도 안 겹침.
             function playPianoChordLowest(chordName, time, velMul) {
                 if (!audioCtx) return;
-                var voicing = pickPianoVoicing(chordName, _prevPianoVoicing, {});
-                if (!voicing || voicing.length === 0) return;
-                var lowestMidi = Math.min.apply(Math, voicing);
-                playPianoSingleNote(lowestMidi, time, velMul);
+                var info = parseChordName(chordName);
+                if (!info || !info.root) return;
+                var rIdx = _pcToIdx(normalizeRoot(info.root));
+                if (rIdx < 0) return;
+                // C3 = MIDI 48. rIdx (0~11) 만큼 더해 → C3~B3 범위.
+                var rootMidi = 48 + rIdx;
+                playPianoSingleNote(rootMidi, time, velMul);
             }
             // 현재 적용된 프리셋의 커스텀 시퀀서 — sequencer_pattern JSONB.
             //   { pianoMain: [...], pianoSingle: [...], bassRoot: [...], bassFifth: [...] }
