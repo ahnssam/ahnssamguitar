@@ -704,6 +704,52 @@
             50%      { transform: scale(1.18); }
         }
 
+        /* 시퀀서 길이 (1/2마디) 토글 행 — 드럼 리듬 그리드 아래 */
+        .bd-seq-bars-row {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin: 0.7rem 0 0.4rem;
+        }
+        .bd-seq-bars-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-light);
+            letter-spacing: 0.04em;
+            margin-right: 0.2rem;
+        }
+        .bd-seq-bars-btn {
+            padding: 0.3rem 0.7rem;
+            border: 1px solid rgba(42, 107, 74, 0.2);
+            background: rgba(42, 107, 74, 0.04);
+            color: rgba(26, 36, 33, 0.7);
+            border-radius: 14px;
+            font-family: inherit;
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+        .bd-seq-bars-btn:hover:not(.active) {
+            background: rgba(82, 168, 114, 0.18);
+            color: var(--green-deep);
+        }
+        .bd-seq-bars-btn.active {
+            background: var(--green-deep);
+            color: #fff;
+            border-color: var(--green-deep);
+        }
+        .bd-seq-bars-hint {
+            font-size: 0.7rem;
+            color: var(--text-light);
+            margin-left: 0.5rem;
+        }
+        /* 시퀀서 그리드 — 2마디 일 때 마디 경계(중간)에 약간의 여백 + 진한 좌측 보더 */
+        .bd-seq-cell.bar-start {
+            margin-left: 6px;
+            border-left: 2px solid rgba(42, 107, 74, 0.65);
+        }
+
         /* 빌더 시퀀서 — 베이스/피아노 4라인. 메인 도구 시퀀서 룩과 동일 톤 */
         .bd-seq-wrap {
             background: rgba(42, 107, 74, 0.04);
@@ -1213,6 +1259,13 @@
                         <button type="button" class="bd-rhythm-btn" data-rhythm="swing">스윙</button>
                     </div>
                 </div>
+                <!-- 시퀀서 패턴 길이 — 1마디 / 2마디. 베이스·피아노 시퀀서가 같이 쓰는 글로벌 옵션 -->
+                <div class="bd-seq-bars-row">
+                    <span class="bd-seq-bars-label">시퀀서 길이</span>
+                    <button type="button" class="bd-seq-bars-btn active" data-bars="1">1마디</button>
+                    <button type="button" class="bd-seq-bars-btn" data-bars="2">2마디</button>
+                    <span class="bd-seq-bars-hint" id="bdSeqBarsHint">한 마디 단위 패턴</span>
+                </div>
                 <!-- ───── 베이스 ───── -->
                 <div class="bd-inst-block" style="margin-top:1.0rem;">
                     <div class="bd-inst-row">
@@ -1355,18 +1408,26 @@
                 '16beatSA': 16, '16beatSB': 16, '16beatSC': 16,
                 'ballad': 12, 'swing': 12
             };
+            // 한 마디 (단일 마디) tick 수 — 드럼 리듬에 따라 4/8/12/16
             function bdSeqMeasureLen() {
                 return BD_RHYTHM_LEN[currentRhythm] || 8;
             }
-            function bdSeqEmpty() {
-                var len = bdSeqMeasureLen();
-                var p = {};
+            // 시퀀서 패턴의 전체 tick 수 = 한 마디 × bars (1 또는 2)
+            // bdSeq.bars 가 아직 정해지지 않았으면 1 폴백.
+            function bdSeqTotalLen() {
+                var b = (bdSeq && bdSeq.bars === 2) ? 2 : 1;
+                return bdSeqMeasureLen() * b;
+            }
+            function bdSeqEmpty(barsOpt) {
+                var bars = (barsOpt === 2) ? 2 : 1;
+                var len = bdSeqMeasureLen() * bars;
+                var p = { bars: bars };
                 BD_SEQ_LINES.forEach(function(k) { p[k] = new Array(len).fill(0); });
                 p.chordOffset = new Array(len).fill(0);
                 return p;
             }
-            // 현재 시퀀서 패턴 — { pianoMain, pianoSingle, bassRoot, bassFifth, chordOffset }
-            let bdSeq = bdSeqEmpty();
+            // 현재 시퀀서 패턴 — { bars, pianoMain, pianoSingle, bassRoot, bassFifth, chordOffset }
+            let bdSeq = bdSeqEmpty(1);
             // 시퀀서가 비어있는지 (셀에 한 칸이라도 값이 있거나, chordOffset 이 설정돼 있으면 false)
             function bdSeqIsEmpty() {
                 var linesEmpty = BD_SEQ_LINES.every(function(line) {
@@ -1401,17 +1462,18 @@
             function _renderBdSeqGroup(containerId, lines) {
                 var rows = $(containerId);
                 if (!rows) return;
-                var len = bdSeqMeasureLen();
+                var measureLen = bdSeqMeasureLen();
+                var totalLen = bdSeqTotalLen();
                 BD_SEQ_LINES.forEach(function(line) {
-                    if (!Array.isArray(bdSeq[line])) bdSeq[line] = new Array(len).fill(0);
-                    if (bdSeq[line].length !== len) {
-                        bdSeq[line] = new Array(len).fill(0);
+                    if (!Array.isArray(bdSeq[line])) bdSeq[line] = new Array(totalLen).fill(0);
+                    if (bdSeq[line].length !== totalLen) {
+                        bdSeq[line] = new Array(totalLen).fill(0);
                     }
                 });
-                if (!Array.isArray(bdSeq.chordOffset) || bdSeq.chordOffset.length !== len) {
-                    bdSeq.chordOffset = new Array(len).fill(0);
+                if (!Array.isArray(bdSeq.chordOffset) || bdSeq.chordOffset.length !== totalLen) {
+                    bdSeq.chordOffset = new Array(totalLen).fill(0);
                 }
-                var beatTicks = (len === 16) ? 4 : (len === 12 ? 3 : (len === 8 ? 2 : 1));
+                var beatTicks = (measureLen === 16) ? 4 : (measureLen === 12 ? 3 : (measureLen === 8 ? 2 : 1));
                 var html = lines.map(function(line) {
                     var arr = bdSeq[line];
                     var cellsHtml = '';
@@ -1423,6 +1485,8 @@
                         else if (v === 3) classes += ' mute';
                         else if (v === 4) classes += ' quiet';
                         if (i % beatTicks === 0) classes += ' beat-start';
+                        // 마디 경계 (i === measureLen) 에 시각적 갭 + 진한 좌측 보더
+                        if (i > 0 && i % measureLen === 0) classes += ' bar-start';
                         if (bdSeq.chordOffset[i]) classes += ' anticipate';
                         cellsHtml += '<button type="button" class="' + classes + '" data-step="' + i + '"></button>';
                     }
@@ -1750,6 +1814,61 @@
                         _applyCustomToggleUI();
                     });
                 }
+                // 시퀀서 길이 (1마디 / 2마디) 토글
+                document.querySelectorAll('.bd-seq-bars-btn').forEach(function(btn) {
+                    if (btn._wired) return;
+                    btn._wired = true;
+                    btn.onclick = function() {
+                        var newBars = parseInt(btn.dataset.bars, 10) === 2 ? 2 : 1;
+                        if (newBars === (bdSeq.bars || 1)) return;
+                        setBdSeqBars(newBars);
+                    };
+                });
+                _refreshBdSeqBarsUI();
+            }
+
+            // 시퀀서 마디 길이 변경 — 1마디 ↔ 2마디. 패턴 배열은 보존(또는 첫 절반만 사용).
+            function setBdSeqBars(bars) {
+                bars = (bars === 2) ? 2 : 1;
+                var measureLen = bdSeqMeasureLen();
+                var newLen = measureLen * bars;
+                var oldBars = bdSeq.bars || 1;
+
+                // 2 → 1 축소 시 두 번째 마디 데이터를 잃는다 — 패턴이 거기 있으면 확인
+                if (oldBars === 2 && bars === 1) {
+                    var hasSecondHalf = BD_SEQ_LINES.some(function(line) {
+                        var arr = bdSeq[line] || [];
+                        for (var i = measureLen; i < arr.length; i++) if (arr[i]) return true;
+                        return false;
+                    }) || (Array.isArray(bdSeq.chordOffset) && bdSeq.chordOffset.slice(measureLen).some(function(v) { return !!v; }));
+                    if (hasSecondHalf && !confirm('2마디 → 1마디 로 줄이면 두 번째 마디 패턴이 사라집니다. 진행할까요?')) {
+                        _refreshBdSeqBarsUI();
+                        return;
+                    }
+                }
+                bdSeq.bars = bars;
+                BD_SEQ_LINES.forEach(function(line) {
+                    var oldArr = bdSeq[line] || [];
+                    var nextArr = new Array(newLen).fill(0);
+                    for (var i = 0; i < Math.min(oldArr.length, newLen); i++) nextArr[i] = oldArr[i] | 0;
+                    bdSeq[line] = nextArr;
+                });
+                var oldOff = Array.isArray(bdSeq.chordOffset) ? bdSeq.chordOffset : [];
+                var nextOff = new Array(newLen).fill(0);
+                for (var k = 0; k < Math.min(oldOff.length, newLen); k++) nextOff[k] = oldOff[k] | 0;
+                bdSeq.chordOffset = nextOff;
+                _refreshBdSeqBarsUI();
+                renderBdSeq();
+            }
+            function _refreshBdSeqBarsUI() {
+                var bars = bdSeq.bars || 1;
+                document.querySelectorAll('.bd-seq-bars-btn').forEach(function(b) {
+                    b.classList.toggle('active', parseInt(b.dataset.bars, 10) === bars);
+                });
+                var hint = $('bdSeqBarsHint');
+                if (hint) hint.textContent = (bars === 2)
+                    ? '두 마디 길이 — 시퀀서 패턴이 2마디 단위로 반복'
+                    : '한 마디 단위 패턴';
             }
 
             // 리듬 그리드 — 선택된 버튼만 active 클래스.
@@ -1759,6 +1878,17 @@
                 document.querySelectorAll('#fRhythmGrid .bd-rhythm-btn').forEach(function(b) {
                     b.classList.toggle('active', b.dataset.rhythm === key);
                 });
+                // 새 리듬의 measureLen × bdSeq.bars 로 패턴 배열 사이즈 재조정
+                var newLen = bdSeqMeasureLen() * (bdSeq.bars || 1);
+                BD_SEQ_LINES.forEach(function(line) {
+                    var oldArr = bdSeq[line] || [];
+                    if (oldArr.length !== newLen) {
+                        bdSeq[line] = new Array(newLen).fill(0);
+                    }
+                });
+                if (!Array.isArray(bdSeq.chordOffset) || bdSeq.chordOffset.length !== newLen) {
+                    bdSeq.chordOffset = new Array(newLen).fill(0);
+                }
                 if (typeof renderBdSeq === 'function') renderBdSeq();
             }
 
@@ -2038,10 +2168,11 @@
                 setRhythm('8beat');
                 $('fBassStyle').value = 'default';
                 $('fPianoStyle').value = 'default';
-                bdSeq = bdSeqEmpty();
+                bdSeq = bdSeqEmpty(1);
                 bdBassCustom = false;
                 bdPianoCustom = false;
                 _applyCustomToggleUI();
+                _refreshBdSeqBarsUI();
                 renderBdSeq();
                 renderBars();
                 renderDifficulty();
@@ -2070,26 +2201,34 @@
                 $('fBassStyle').value = p.bass_style || 'default';
                 $('fPianoStyle').value = p.piano_style || 'default';
                 // 시퀀서 — sequencer_pattern JSONB 에서 로드 (없으면 빈 패턴)
-                bdSeq = bdSeqEmpty();
                 var sp = (p.sequencer_pattern && typeof p.sequencer_pattern === 'object') ? p.sequencer_pattern : null;
+                // bars: 저장된 값 우선, 없으면 배열 길이 ÷ measureLen 으로 추론, 그것도 없으면 1
+                var savedBars = (sp && (sp.bars === 1 || sp.bars === 2)) ? sp.bars : null;
+                if (!savedBars && sp) {
+                    var meas = bdSeqMeasureLen();
+                    var firstLine = BD_SEQ_LINES.find(function(l) { return Array.isArray(sp[l]); });
+                    if (firstLine && sp[firstLine].length === meas * 2) savedBars = 2;
+                }
+                bdSeq = bdSeqEmpty(savedBars || 1);
                 if (sp) {
-                    var len = bdSeqMeasureLen();
+                    var totalLen = bdSeqTotalLen();
                     BD_SEQ_LINES.forEach(function(line) {
                         var saved = sp[line];
-                        if (Array.isArray(saved) && saved.length === len) {
+                        if (Array.isArray(saved) && saved.length === totalLen) {
                             bdSeq[line] = saved.map(function(v) {
                                 v = v | 0;
                                 return (v >= 1 && v <= 4) ? v : 0;
                             });
                         }
                     });
-                    if (Array.isArray(sp.chordOffset) && sp.chordOffset.length === len) {
+                    if (Array.isArray(sp.chordOffset) && sp.chordOffset.length === totalLen) {
                         bdSeq.chordOffset = sp.chordOffset.map(function(v) {
                             v = v | 0;
                             return (v === 1 || v === -1) ? v : 0;
                         });
                     }
                 }
+                _refreshBdSeqBarsUI();
                 // 커스텀 토글 — 명시 플래그(pianoCustom/bassCustom) 우선, 없으면 셀에 값이 있으면 자동 ON.
                 bdBassCustom = sp && typeof sp.bassCustom === 'boolean'
                     ? sp.bassCustom
@@ -2132,6 +2271,7 @@
                 var seqOut = null;
                 if (!bdSeqIsEmpty() || bdBassCustom || bdPianoCustom) {
                     seqOut = {
+                        bars:        (bdSeq.bars === 2) ? 2 : 1,
                         bassCustom:  !!bdBassCustom,
                         pianoCustom: !!bdPianoCustom
                     };
@@ -2177,26 +2317,33 @@
                 $('fBassStyle').value = c.bass_style || 'default';
                 $('fPianoStyle').value = c.piano_style || 'default';
                 $('fGenre').value = normalizeGenreForSelect(c.genre || '');
-                bdSeq = bdSeqEmpty();
                 var spC = (c.sequencer_pattern && typeof c.sequencer_pattern === 'object') ? c.sequencer_pattern : null;
+                var savedBarsC = (spC && (spC.bars === 1 || spC.bars === 2)) ? spC.bars : null;
+                if (!savedBarsC && spC) {
+                    var measC = bdSeqMeasureLen();
+                    var firstLineC = BD_SEQ_LINES.find(function(l) { return Array.isArray(spC[l]); });
+                    if (firstLineC && spC[firstLineC].length === measC * 2) savedBarsC = 2;
+                }
+                bdSeq = bdSeqEmpty(savedBarsC || 1);
                 if (spC) {
-                    var lenC = bdSeqMeasureLen();
+                    var totalC = bdSeqTotalLen();
                     BD_SEQ_LINES.forEach(function(line) {
                         var saved = spC[line];
-                        if (Array.isArray(saved) && saved.length === lenC) {
+                        if (Array.isArray(saved) && saved.length === totalC) {
                             bdSeq[line] = saved.map(function(v) {
                                 v = v | 0;
                                 return (v >= 1 && v <= 4) ? v : 0;
                             });
                         }
                     });
-                    if (Array.isArray(spC.chordOffset) && spC.chordOffset.length === lenC) {
+                    if (Array.isArray(spC.chordOffset) && spC.chordOffset.length === totalC) {
                         bdSeq.chordOffset = spC.chordOffset.map(function(v) {
                             v = v | 0;
                             return (v === 1 || v === -1) ? v : 0;
                         });
                     }
                 }
+                _refreshBdSeqBarsUI();
                 bdBassCustom = spC && typeof spC.bassCustom === 'boolean'
                     ? spC.bassCustom
                     : !!(spC && BD_SEQ_GROUPS.bass.some(function(line) {
@@ -2585,6 +2732,7 @@
                 var seqToSave = null;
                 if (!bdSeqIsEmpty() || bdBassCustom || bdPianoCustom) {
                     seqToSave = {
+                        bars:        (bdSeq.bars === 2) ? 2 : 1,
                         bassCustom:  !!bdBassCustom,
                         pianoCustom: !!bdPianoCustom
                     };

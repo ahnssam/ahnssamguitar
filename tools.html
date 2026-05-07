@@ -8749,11 +8749,43 @@
             //     beats →  1=0  1na=2  2=3  2a=5  3=6  3a=8  4=9  4a=11
             //     hits  : 0(1박), 2(1의 a), 5(2의 a), 9(4박)
             //     chokes: 3(2박에서 음 끊기)
-            const PIANO_DEFAULT_PATTERNS = {
-                'ballad': { hits: [0, 2, 5, 9], chokes: [3] },
-                // 스윙 12/8 — 재즈 컴핑. 1박과 3박에 코드 (sparse comping).
-                'swing':  { hits: [0, 6], chokes: [] }
+            // ─── 피아노 기본 패턴 (RAW 표기법) ──────────────────────────
+            //   X = 코드 시작 (sustain 1.4s)
+            //   O = 단음 시작 (보이싱 맨 아래 한 음, sustain 1.4s)
+            //   M = 명시적 뮤트 (그 시점에 울리던 음 끊기)
+            //   . = 박자 카운트용 (직전 음 유지, 아무 동작 없음)
+            //   * 단음(O) 가 울리는 도중 다음 코드(X) 가 나오면 단음은 자동 뮤트.
+            //   * 한 char = 한 tick. 마디 길이 = 드럼 리듬의 ticksPerBeat × beatsPerMeasure.
+            const PIANO_DEFAULT_PATTERNS_RAW = {
+                '8beat':    'X.MX..X.',          // 8비트 A  (8 ticks, ticksPerBeat=2)
+                '8beat2':   'X.MXX.X.',          // 8비트 B
+                '16beat':   'X...X.OX.XO.X...',  // 16비트 A
+                '16beat2':  'X..OX.OX.XO.X...',  // 16비트 B
+                '16beatC':  'X.X.M.OX.XO.X.OX',  // 16비트 C
+                'ballad':   'X..X.X..OX..',      // 셔플락 (12 ticks, ticksPerBeat=3)
+                // 바운스 16th — 패턴은 직선 16비트와 동일, swing offset 은 스케줄러가 적용해서 바운스 느낌.
+                '16beatSA': 'X...X.OX.XO.X...',  // 16비트s A (= 16비트 A)
+                '16beatSB': 'X..OX.OX.XO.X...',  // 16비트s B (= 16비트 B)
+                '16beatSC': 'X.X.M.OX.XO.X.OX',  // 16비트s C (= 16비트 C)
+                'swing':    'X.....X.....'       // 스윙 12/8 (12 ticks)
             };
+            // RAW → { hits: [tickIdx,...], chokes: [tickIdx,...], hitTypes: {tickIdx → 'chord'|'single'} }
+            function _parsePianoPattern(raw) {
+                var hits = [], chokes = [], hitTypes = {};
+                for (var i = 0; i < raw.length; i++) {
+                    var c = raw[i];
+                    if (c === 'X')      { hits.push(i); hitTypes[i] = 'chord'; }
+                    else if (c === 'O') { hits.push(i); hitTypes[i] = 'single'; }
+                    else if (c === 'M') { chokes.push(i); }
+                    // '.' / 'm' / 그 외 = 무시 (직전 음 유지)
+                }
+                return { hits: hits, chokes: chokes, hitTypes: hitTypes };
+            }
+            // RAW 를 파싱해서 빌드된 사용 가능한 패턴 맵.
+            const PIANO_DEFAULT_PATTERNS = {};
+            Object.keys(PIANO_DEFAULT_PATTERNS_RAW).forEach(function(k) {
+                PIANO_DEFAULT_PATTERNS[k] = _parsePianoPattern(PIANO_DEFAULT_PATTERNS_RAW[k]);
+            });
 
             // 16분음표 위치 배열을 드럼 ticksPerBeat 에 맞춰 가용한 tick 위치로 변환.
             //   ticksPerBeat = 4 (16분) → ratio 1, 모두 그대로
@@ -9411,13 +9443,16 @@
                         loopMeasureIdx = mIdx;
                         highlightLoopCell(mIdx, time);
                     }
-                    // 시퀀서 인덱스 = 현재 tick (시퀀서 길이는 프리셋 드럼 리듬의 measureLen 과 일치).
-                    //   사용자가 메인 도구에서 드럼 리듬을 바꿨다면 인덱스가 안 맞을 수 있으므로
-                    //   bounds 체크 후 스킵.
+                    // 시퀀서 인덱스 — 빌더에서 정의한 패턴 길이는 measureLen × bars(1 또는 2).
+                    //   2마디 패턴이면 짝수 마디는 첫 절반, 홀수 마디는 두 번째 절반을 사용.
+                    //   사용자가 메인 도구에서 드럼 리듬을 바꿨다면 인덱스가 안 맞을 수 있어 bounds 체크.
                     var _seqPat = _loopActivePresetSequencer;
-                    var _sIdx = t;
+                    var _seqBars = (_seqPat && (_seqPat.bars === 1 || _seqPat.bars === 2)) ? _seqPat.bars : 1;
+                    var _seqTotalLen = measureLen * _seqBars;
+                    var _seqMeasureOffset = (loopMeasureIdx % _seqBars) * measureLen;
+                    var _sIdx = _seqMeasureOffset + t;
                     var _seqHalf = (t < measureLen / 2) ? 'a' : 'b';
-                    // chordOffset[t] — 그 tick 에서 코드를 미리 땡겨치기 (싱코페이션).
+                    // chordOffset[sIdx] — 그 tick 에서 코드를 미리 땡겨치기 (싱코페이션).
                     //   0 = 그 tick 의 기본 segment 코드, +1 = 다음 segment, -1 = 이전.
                     var _seqOffset = 0;
                     if (_seqPat && Array.isArray(_seqPat.chordOffset) && _sIdx < _seqPat.chordOffset.length) {
@@ -9431,20 +9466,20 @@
                     };
                     // 싱코페이션 — 직전 segment 에서 chordOffset=+1 로 코드를 미리 땡겨쳤으면,
                     // 그 코드가 원래 등장해야 할 위치(= 다음 segment 의 첫 tick) 는 자동 silence.
-                    //   case 1: t === measureLen/2 → 'a' 의 어딘가에서 +1 이 있었으면 'b' 첫 박 silence
-                    //   case 2: t === 0           → (직전 마디의 'b' 어딘가에서 +1) ← 패턴이 매 마디 반복되므로
-                    //                                같은 chordOffset 배열의 'b' 구간을 본다
+                    //   현재 시퀀서 마디 안에서의 인덱스로 이전 segment 를 찾는다 (2-bar 도 동일하게 동작).
                     var _stolenByPrevAnticipation = false;
-                    if (_seqPat && Array.isArray(_seqPat.chordOffset) && _seqPat.chordOffset.length === measureLen) {
+                    if (_seqPat && Array.isArray(_seqPat.chordOffset) && _seqPat.chordOffset.length === _seqTotalLen) {
                         var _mid = measureLen / 2;
                         var _co = _seqPat.chordOffset;
-                        if (t === _mid) {
-                            for (var _ai = 0; _ai < _mid && !_stolenByPrevAnticipation; _ai++) {
-                                if ((_co[_ai] | 0) === 1) _stolenByPrevAnticipation = true;
-                            }
-                        } else if (t === 0) {
-                            for (var _aj = _mid; _aj < measureLen && !_stolenByPrevAnticipation; _aj++) {
-                                if ((_co[_aj] | 0) === 1) _stolenByPrevAnticipation = true;
+                        // 현 segment 시작점을 기준으로 이전 segment 구간을 검사.
+                        var _segLen = _mid;
+                        var _curSegStart = _seqMeasureOffset + (t < _mid ? 0 : _mid);
+                        if (t === 0 || t === _mid) {
+                            var _prevSegStart = _curSegStart - _segLen;
+                            if (_prevSegStart < 0) _prevSegStart = _seqTotalLen + _prevSegStart; // wrap
+                            for (var _ai = 0; _ai < _segLen && !_stolenByPrevAnticipation; _ai++) {
+                                var _idx = (_prevSegStart + _ai) % _seqTotalLen;
+                                if ((_co[_idx] | 0) === 1) _stolenByPrevAnticipation = true;
                             }
                         }
                     }
@@ -9558,10 +9593,10 @@
                             pianoTicks = sixteenthsToTicks(pStyle.sixteenthHits, p.ticksPerBeat);
                             pianoHitMeta = pStyle;
                         }
-                        // choke 가 같은 tick 에 hit 와 함께 있을 일은 없지만,
-                        // 안전하게 hit 처리보다 먼저 실행 (먼저 끊고 새로 치는 경우 대비).
+                        // M (choke) — 코드 sustain 도, 단음 sustain 도 모두 끊는다.
                         if (pianoChokes.indexOf(t) !== -1) {
                             chokePiano(swungTime);
+                            chokePianoSingle(swungTime);
                         }
                         var pidx = pianoTicks.indexOf(t);
                         if (pidx !== -1) {
@@ -9572,7 +9607,6 @@
                                 // velocity — on-beat 강세, off-beat 약세.
                                 var velMul;
                                 if (pianoHitMeta === 'default') {
-                                    // 박의 첫 tick (tick % ticksPerBeat === 0) 은 on-beat.
                                     velMul = (t % p.ticksPerBeat === 0) ? 1.0 : 0.55;
                                 } else if (pianoHitMeta === 'quarter') {
                                     velMul = 1.0;
@@ -9580,18 +9614,26 @@
                                     var sixteenthPos = pianoHitMeta.sixteenthHits[pidx];
                                     velMul = (sixteenthPos % 4 === 0) ? 1.0 : 0.55;
                                 }
-                                // 세그먼트 식별: 마디 인덱스 + half (a/b).
-                                // 새 세그먼트로 진입했고 직전 세그먼트와 코드가 같으면
-                                // 보이싱을 살짝 변형 (인버전 한 음 점프).
-                                var segKey = loopMeasureIdx + '|' + halfP;
-                                var prevSegChord = _lastPianoSegmentChord;
-                                var isNewSeg = (segKey !== _lastPianoSegmentKey);
-                                if (isNewSeg) {
-                                    _lastPianoSegmentKey = segKey;
-                                    _lastPianoSegmentChord = rootP;
+                                // RAW 패턴 (default 메타) 의 hit type 분기 — 'chord' / 'single'
+                                var hitType = (pianoHitMeta === 'default' && pdp && pdp.hitTypes)
+                                    ? (pdp.hitTypes[t] || 'chord')
+                                    : 'chord';
+                                if (hitType === 'single') {
+                                    // 단음 — 보이싱의 가장 낮은 한 음만. 단음끼리 겹치지 않게 자동 choke.
+                                    playPianoChordLowest(rootP, swungTime, velMul);
+                                } else {
+                                    // 코드 — 단음이 울리고 있으면 먼저 mute (사용자 표기법: O 다음 X 면 단음 자동 뮤트).
+                                    chokePianoSingle(swungTime);
+                                    var segKey = loopMeasureIdx + '|' + halfP;
+                                    var prevSegChord = _lastPianoSegmentChord;
+                                    var isNewSeg = (segKey !== _lastPianoSegmentKey);
+                                    if (isNewSeg) {
+                                        _lastPianoSegmentKey = segKey;
+                                        _lastPianoSegmentChord = rootP;
+                                    }
+                                    var shouldVary = isNewSeg && prevSegChord === rootP;
+                                    playPianoChord(rootP, swungTime, velMul, { vary: shouldVary });
                                 }
-                                var shouldVary = isNewSeg && prevSegChord === rootP;
-                                playPianoChord(rootP, swungTime, velMul, { vary: shouldVary });
                             }
                         }
                     }
@@ -10150,9 +10192,13 @@
             // 단음 — 보이싱의 가장 낮은 미디 노트를 피아노 톤으로 짧게.
             //   _prevPianoVoicing 은 갱신하지 않음 (메인 보이싱이 같은 tick 에서
             //   이미 갱신했거나 이후 갱신할 거라 중복 방지).
+            // 활성 단음 — 다음 코드(X) 또는 명시 뮤트(M) 시 일괄 choke.
+            var _activePianoSingles = [];
             function playPianoSingleNote(midi, time, velMul) {
                 if (!audioCtx) return;
                 if (typeof velMul !== 'number') velMul = 1.0;
+                // 새 단음 시작 시 직전 단음은 즉시 fade — 단음끼리 겹치지 않게.
+                chokePianoSingle(time);
                 var bus = getPianoBus();
                 var freq = 440 * Math.pow(2, (midi - 69) / 12);
                 var dur = 1.4;
@@ -10168,13 +10214,36 @@
                 g.connect(bus);
                 osc.start(time);
                 osc.stop(time + dur + 0.1);
+                _activePianoSingles.push({ gain: g, source: osc, endTime: time + dur + 0.1 });
+                // 너무 오래된 항목 청소
+                if (_activePianoSingles.length > 6) _activePianoSingles.shift();
             }
+            function chokePianoSingle(time) {
+                if (!_activePianoSingles || _activePianoSingles.length === 0) return;
+                var t = (typeof time === 'number') ? time : (audioCtx ? audioCtx.currentTime : 0);
+                _activePianoSingles.forEach(function(s) {
+                    try {
+                        s.gain.gain.cancelScheduledValues(t);
+                        var v = s.gain.gain.value;
+                        s.gain.gain.setValueAtTime(v > 0.0001 ? v : 0.0001, t);
+                        s.gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
+                        try { s.source.stop(t + 0.05); } catch(e){}
+                    } catch (e) {}
+                });
+                _activePianoSingles = [];
+            }
+            // 단음 — 코드의 근음(root) 을 C3~B3 옥타브에 둔다.
+            //   코드 보이싱 (rootless, D4~G5) 의 한 옥타브 아래에 위치 → 음역대 분리.
+            //   베이스(주로 C2~C3) 보다는 한 옥타브 위라 베이스와도 안 겹침.
             function playPianoChordLowest(chordName, time, velMul) {
                 if (!audioCtx) return;
-                var voicing = pickPianoVoicing(chordName, _prevPianoVoicing, {});
-                if (!voicing || voicing.length === 0) return;
-                var lowestMidi = Math.min.apply(Math, voicing);
-                playPianoSingleNote(lowestMidi, time, velMul);
+                var info = parseChordName(chordName);
+                if (!info || !info.root) return;
+                var rIdx = _pcToIdx(normalizeRoot(info.root));
+                if (rIdx < 0) return;
+                // C3 = MIDI 48. rIdx (0~11) 만큼 더해 그 코드의 근음 → C3~B3 범위.
+                var rootMidi = 48 + rIdx;
+                playPianoSingleNote(rootMidi, time, velMul);
             }
             // 현재 적용된 프리셋의 커스텀 시퀀서 — sequencer_pattern JSONB.
             //   { pianoMain: [...], pianoSingle: [...], bassRoot: [...], bassFifth: [...] }
