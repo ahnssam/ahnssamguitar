@@ -11320,12 +11320,45 @@
                 });
             }
 
+            // ─── 화면 꺼짐 방지 (Screen Wake Lock) ────────────────────────────
+            // 메트로놈/드럼/반주 재생 중에는 모바일이 절전모드로 안 넘어가게 함.
+            //   iOS 16.4+, 안드로이드 Chrome, 데스크톱 모두 지원.
+            //   미지원 브라우저(예: 옛 iOS) 에서는 silently no-op.
+            //   페이지가 백그라운드로 갔다가 다시 돌아오면 wake lock 이 자동 해제되므로
+            //   visibilitychange 이벤트로 재요청.
+            let _wakeLockSentinel = null;
+            async function _requestWakeLock() {
+                if (!('wakeLock' in navigator)) return;
+                try {
+                    _wakeLockSentinel = await navigator.wakeLock.request('screen');
+                    _wakeLockSentinel.addEventListener('release', function() {
+                        // 자동 해제 — 메트로놈이 돌아가는 중이면 visibilitychange 핸들러가 다시 잡음
+                        _wakeLockSentinel = null;
+                    });
+                } catch (e) {
+                    // 페이지가 hidden 이거나 허용되지 않으면 실패 — 무시
+                }
+            }
+            function _releaseWakeLock() {
+                if (_wakeLockSentinel) {
+                    try { _wakeLockSentinel.release(); } catch (e) {}
+                    _wakeLockSentinel = null;
+                }
+            }
+            document.addEventListener('visibilitychange', function() {
+                // 백그라운드 → 포그라운드 복귀 시 메트로놈이 살아있으면 wake lock 재요청
+                if (document.visibilityState === 'visible' && window._metroRunning && !_wakeLockSentinel) {
+                    _requestWakeLock();
+                }
+            });
+
             function startMetronome() {
                 if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 if (audioCtx.state === 'suspended') audioCtx.resume();
                 loadDrumSamples();
                 if (!silentAudio) silentAudio = createSilentAudio();
                 silentAudio.play().catch(() => {});
+                _requestWakeLock();
                 currentBeat = 0;
                 // 새 재생 시작 시 직전 피아노 보이싱 초기화 (첫 코드는 미들 옥타브에서 시작)
                 _prevPianoVoicing = null;
@@ -11383,6 +11416,7 @@
                 btn.querySelector('i').className = 'fas fa-play';
                 document.querySelectorAll('#metronomeBeats .beat-dot').forEach(d => d.classList.remove('active'));
                 window._metroRunning = false;
+                _releaseWakeLock();
             }
 
             window.toggleMetronome = function() {
