@@ -11505,17 +11505,33 @@
         // ========== TAP TEMPO ==========
         (function() {
             const TAP_RESET_MS = 2500;
-            const MAX_TAPS = 8;
+            // 최대 탭 보관 개수 — 32. 사용자가 템포 바꾸려면 보통 한 번 쉬게 되고
+            // (TAP_RESET_MS=2500) 그러면 자동 reset 되므로 윈도우 큼 = 안정적 = 거의 무손실.
+            const MAX_TAPS = 32;
             let tapTimes = [];
             let tapResetTimer = null;
 
+            // BPM 계산 — interval 5개 이상이면 trimmed mean (양 끝 outlier 제거).
+            //   N 이 클수록 더 많이 버림 (10% 정도, 최소 1개).
+            //   사용자가 한 번 튀게 친 탭이 평균을 끌고 다니지 않도록.
             function calculateBPM() {
                 if (tapTimes.length < 2) return null;
-                let sum = 0;
+                const intervals = [];
                 for (let i = 1; i < tapTimes.length; i++) {
-                    sum += tapTimes[i] - tapTimes[i - 1];
+                    intervals.push(tapTimes[i] - tapTimes[i - 1]);
                 }
-                const avgMs = sum / (tapTimes.length - 1);
+                let used;
+                if (intervals.length >= 5) {
+                    // 양 끝 10% (최소 1개) 씩 버림
+                    const sorted = intervals.slice().sort((a, b) => a - b);
+                    const trim = Math.max(1, Math.floor(intervals.length * 0.1));
+                    used = sorted.slice(trim, sorted.length - trim);
+                } else {
+                    used = intervals;
+                }
+                let sum = 0;
+                for (let i = 0; i < used.length; i++) sum += used[i];
+                const avgMs = sum / used.length;
                 const bpm = Math.round(60000 / avgMs);
                 return Math.max(30, Math.min(300, bpm));
             }
