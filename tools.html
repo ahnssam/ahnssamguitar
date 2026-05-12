@@ -8611,8 +8611,8 @@
             // level: 1 = downbeat (강세, 1/3박), 0 = 약박 (2a, 4a 등)
             function playRide(time, level) {
                 if (typeof level !== 'number') level = 0;
-                // 사용자 요청: 스윙 ride 볼륨 절반 (전체적으로 0.5x)
-                var sampleVel = (level === 1 ? 0.55 : 0.32) * 0.5;
+                // 사용자 요청: 스윙 ride 볼륨을 단계적으로 줄임 — 최종 원본의 0.25x
+                var sampleVel = (level === 1 ? 0.55 : 0.32) * 0.25;
                 // 샘플 모드 — playSample 반환의 { source, gain } 트래킹.
                 var sampleResult = playSample('ride', time, sampleVel);
                 if (sampleResult) {
@@ -8631,7 +8631,8 @@
                 var bellFreq = 5200;
                 bell.frequency.setValueAtTime(bellFreq, time);
                 var bellG = audioCtx.createGain();
-                var amp = (level === 1 ? 0.085 : 0.05);
+                // ride 볼륨을 원본의 0.25x 로 (스윙 톤다운). 샘플 모드와 같은 비율.
+                var amp = (level === 1 ? 0.085 : 0.05) * 0.25;
                 bellG.gain.setValueAtTime(0.0001, time);
                 bellG.gain.exponentialRampToValueAtTime(amp, time + 0.002);
                 bellG.gain.setTargetAtTime(0.0001, time + 0.04, 0.18);
@@ -8654,7 +8655,8 @@
                     bp.frequency.value = L.f;
                     bp.Q.value = L.q;
                     var g = audioCtx.createGain();
-                    var gMul = level === 1 ? 1.0 : 0.6;
+                    // wash 도 ride 와 같이 0.25x — 스윙 톤다운 일괄 적용.
+                    var gMul = (level === 1 ? 1.0 : 0.6) * 0.25;
                     g.gain.setValueAtTime(0.0001, time);
                     g.gain.exponentialRampToValueAtTime(L.g * gMul, time + 0.003);
                     g.gain.setTargetAtTime(L.g * 0.35 * gMul, time + 0.05, 0.25);
