@@ -477,12 +477,17 @@
             background: rgba(42, 107, 74, 0.20);
             box-shadow: inset 0 0 6px rgba(42, 107, 74, 0.55);
         }
-        .bd-loop-cell-edge .bd-loop-repeat-bar {
-            display: none;
-            width: 3px;
-            height: 70%;
+        /* 표준 도돌이 표기 — 굵은 작대기 + 얇은 작대기 + 점 두 개 */
+        .bd-loop-cell-edge .bd-loop-repeat-bars {
+            display: none; align-items: center; gap: 2px;
+        }
+        .bd-loop-cell-edge .bd-loop-repeat-bars > .thick {
+            width: 3px; height: 70%;
+            background: var(--green-deep); border-radius: 1px;
+        }
+        .bd-loop-cell-edge .bd-loop-repeat-bars > .thin {
+            width: 1.5px; height: 70%;
             background: var(--green-deep);
-            border-radius: 1px;
         }
         .bd-loop-cell-edge .bd-loop-repeat-dots {
             display: none;
@@ -496,10 +501,15 @@
             background: var(--green-deep);
             border-radius: 50%;
         }
-        .bd-loop-cell-edge.has-repeat .bd-loop-repeat-bar,
+        .bd-loop-cell-edge.has-repeat .bd-loop-repeat-bars,
         .bd-loop-cell-edge.has-repeat .bd-loop-repeat-dots { display: flex; }
         .bd-loop-cell-edge.has-repeat:hover { background: rgba(42, 107, 74, 0.10); }
 
+        .bd-loop-cell.playing {
+            background: rgba(82, 168, 114, 0.30);
+            border-color: var(--green-mid, #52a872);
+            box-shadow: 0 0 8px rgba(82, 168, 114, 0.45);
+        }
         .bd-loop-cell {
             position: relative;
             background: rgba(42, 107, 74, 0.03);
@@ -2602,13 +2612,13 @@
                         var edgeL = document.createElement('div');
                         edgeL.className = 'bd-loop-cell-edge left' + (bdRepeats.left.has(i) ? ' has-repeat' : '');
                         edgeL.title = '클릭: 도돌이표 시작 |: 토글';
-                        edgeL.innerHTML = '<span class="bd-loop-repeat-bar"></span><span class="bd-loop-repeat-dots"><span></span><span></span></span>';
+                        edgeL.innerHTML = '<span class="bd-loop-repeat-bars"><span class="thick"></span><span class="thin"></span></span><span class="bd-loop-repeat-dots"><span></span><span></span></span>';
                         edgeL.onclick = function(e) { e.stopPropagation(); window.bdToggleRepeat('left', i); };
                         cell.appendChild(edgeL);
                         var edgeR = document.createElement('div');
                         edgeR.className = 'bd-loop-cell-edge right' + (bdRepeats.right.has(i) ? ' has-repeat' : '');
                         edgeR.title = '클릭: 도돌이표 끝 :| 토글';
-                        edgeR.innerHTML = '<span class="bd-loop-repeat-dots"><span></span><span></span></span><span class="bd-loop-repeat-bar"></span>';
+                        edgeR.innerHTML = '<span class="bd-loop-repeat-dots"><span></span><span></span></span><span class="bd-loop-repeat-bars"><span class="thin"></span><span class="thick"></span></span>';
                         edgeR.onclick = function(e) { e.stopPropagation(); window.bdToggleRepeat('right', i); };
                         cell.appendChild(edgeR);
                     })(i);
@@ -3067,7 +3077,20 @@
                     btn.querySelector('i').className = 'fas fa-play';
                     $('previewPlayLabel').textContent = '재생';
                 }
+                // 정지 시 진행중 마디 하이라이트 제거
+                document.querySelectorAll('#fChords .bd-loop-cell.playing').forEach(function(c) {
+                    c.classList.remove('playing');
+                });
             }
+            // iframe (tools.html) 에서 들어보기 진행 중 마디 통보 받음 — 셀 강조
+            window.addEventListener('message', function(e) {
+                var data = e && e.data;
+                if (!data || data.type !== 'loop-bar') return;
+                var idx = data.mIdx;
+                var cells = document.querySelectorAll('#fChords .bd-loop-cell');
+                cells.forEach(function(c) { c.classList.remove('playing'); });
+                if (typeof idx === 'number' && cells[idx]) cells[idx].classList.add('playing');
+            });
             function togglePreview() {
                 if (_previewPlaying) stopPreview();
                 else startPreview();

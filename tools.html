@@ -5816,12 +5816,20 @@
             background: rgba(42, 107, 74, 0.20);
             box-shadow: inset 0 0 6px rgba(42, 107, 74, 0.55);
         }
-        .loop-cell-edge .loop-repeat-bar {
+        /* 표준 도돌이 표기 — 굵은 작대기 + 얇은 작대기 + 점 두 개. 좌(시작)/우(끝) 방향만 다름. */
+        .loop-cell-edge .loop-repeat-bars {
             display: none;
-            width: 3px;
-            height: 70%;
+            align-items: center;
+            gap: 2px;
+        }
+        .loop-cell-edge .loop-repeat-bars > .thick {
+            width: 3px; height: 70%;
             background: var(--green-deep);
             border-radius: 1px;
+        }
+        .loop-cell-edge .loop-repeat-bars > .thin {
+            width: 1.5px; height: 70%;
+            background: var(--green-deep);
         }
         .loop-cell-edge .loop-repeat-dots {
             display: none;
@@ -5836,10 +5844,11 @@
             border-radius: 50%;
         }
         /* 활성화 시 마크 보여줌 */
-        .loop-cell-edge.has-repeat .loop-repeat-bar,
+        .loop-cell-edge.has-repeat .loop-repeat-bars,
         .loop-cell-edge.has-repeat .loop-repeat-dots { display: flex; }
         .loop-cell-edge.has-repeat:hover { background: rgba(42, 107, 74, 0.10); }
-        :root[data-theme="dark"] .loop-cell-edge .loop-repeat-bar,
+        :root[data-theme="dark"] .loop-cell-edge .loop-repeat-bars > .thick,
+        :root[data-theme="dark"] .loop-cell-edge .loop-repeat-bars > .thin,
         :root[data-theme="dark"] .loop-cell-edge .loop-repeat-dots > span {
             background: #b8d8c4;
         }
@@ -8206,10 +8215,13 @@
             let loopRhythm = '8beat';
             let loopChords = {};
             let loopChordsB = {};
-            // 도돌이표 — 마디별 좌/우 가장자리 마크 (visual only, 세션 단위).
+            // 도돌이표 — 마디별 좌/우 가장자리 마크.
             //   loopRepeats.left  : Set<number> — 마디 i 의 왼쪽 가장자리에 |: (시작 도돌이)
             //   loopRepeats.right : Set<number> — 마디 i 의 오른쪽 가장자리에 :| (끝 도돌이)
+            //   _consumedRights   : 이번 cycle 에서 이미 jump 한 :| 의 마디 idx — 두 번째 만나면 무시.
+            //                       자연 wrap (rg.end → rg.start) 시 자동 clear.
             let loopRepeats = { left: new Set(), right: new Set() };
+            let _consumedRights = new Set();
             window.toggleLoopRepeat = function(side, idx) {
                 if (side !== 'left' && side !== 'right') return;
                 idx = parseInt(idx, 10);
@@ -8597,7 +8609,8 @@
             // level: 1 = downbeat (강세, 1/3박), 0 = 약박 (2a, 4a 등)
             function playRide(time, level) {
                 if (typeof level !== 'number') level = 0;
-                var sampleVel = level === 1 ? 0.55 : 0.32;
+                // 사용자 요청: 스윙 ride 볼륨 절반 (전체적으로 0.5x)
+                var sampleVel = (level === 1 ? 0.55 : 0.32) * 0.5;
                 // 샘플 모드 — playSample 반환의 { source, gain } 트래킹.
                 var sampleResult = playSample('ride', time, sampleVel);
                 if (sampleResult) {
@@ -8911,6 +8924,50 @@
                 // 스윙 12/8 — 워킹 베이스 느낌으로 매 박마다 root (1, 2, 3, 4 = ticks 0, 3, 6, 9).
                 'swing':   { on: [0, 3, 6, 9], off: [], quiet: [3, 9] }
             };
+
+            // ─── 워킹 베이스 (스윙 12/8) ───────────────────────────
+            // 매 마디 4박마다 코드 스케일에 맞는 음을 골라 walking line 형성.
+            // 패턴은 마디 단위로 3개 중 랜덤. 1박~4박 의 scale degree 순서.
+            //   '7below' = 1도 한 옥타브 아래의 7도 (BASS_FREQ 가 이미 낮은 register 라
+            //              실질적으로 같은 노트 — 결국 7도음을 친다는 의미).
+            const WALKING_BASS_PATTERNS = [
+                [1, 2, 3, 1],
+                [1, 3, 5, 1],
+                [1, '7below', 5, 3]
+            ];
+            // 코드 quality → degree 별 semitone offset.
+            //   m7b5 / dim* 는 Locrian (1, b2, b3, 4, b5, b6, b7).
+            function _swingScaleSemis(info) {
+                var ext = info.extension || 'none';
+                if (ext === 'm7b5' || ext === 'dim7' || ext === 'dim') {
+                    return { 1: 0, 2: 1, 3: 3, 4: 5, 5: 6, 6: 8, 7: 10 };
+                }
+                var third = info.minor ? 3 : 4;
+                var seventh;
+                if (ext === 'M7')             seventh = 11;
+                else if (ext === '7' || ext === 'm7') seventh = 10;
+                else                          seventh = info.minor ? 10 : 11;
+                return { 1: 0, 2: 2, 3: third, 4: 5, 5: 7, 6: 9, 7: seventh };
+            }
+            function _swingBassNote(rootName, degree, info) {
+                var degrees = _swingScaleSemis(info);
+                var semis;
+                if (degree === '7below') semis = degrees[7] - 12;
+                else                     semis = (degrees[degree] || 0);
+                var rIdx = _pcToIdx(normalizeRoot(rootName));
+                if (rIdx < 0) return null;
+                var noteIdx = ((rIdx + semis) % 12 + 12) % 12;
+                return ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'][noteIdx];
+            }
+            // 마디별 walking 패턴 캐시 — 같은 마디 안에서 4박이 일관되게.
+            //   resetPlaybackPosition (재생 시작 / 자연 wrap) 에서 clear.
+            var _swingPatternCache = {};
+            function _swingPatternFor(measureIdx) {
+                if (_swingPatternCache[measureIdx]) return _swingPatternCache[measureIdx];
+                var pat = WALKING_BASS_PATTERNS[Math.floor(Math.random() * WALKING_BASS_PATTERNS.length)];
+                _swingPatternCache[measureIdx] = pat;
+                return pat;
+            }
 
             // 베이스 독립 스타일 — 16분음표(=한 마디 16칸) 기준으로 정의.
             // 드럼 리듬의 ticksPerBeat 에 맞춰 sub-sample 해서 사용.
@@ -9716,16 +9773,37 @@
                         highlightDot(dotIdx, time);
                     }
                     if (t === 0) {
-                        // 선택 범위가 있으면 그 범위만 도는 partial loop, 없으면 전체 loop.
-                        // beatNum 은 재생 시작 시 0 으로 리셋되므로 mIdx 는 항상
-                        // 선택 시작 마디(rg.start) 부터 정확히 시작.
+                        // 마디 advance — 도돌이표 적용. 직전엔 beatNum 으로 deterministic 계산했는데,
+                        // 도돌이표가 들어가면 jump 가능해야 해서 stateful 로 전환.
                         var rg = getLoopRange();
-                        var effBars = rg.end - rg.start + 1;
-                        const totalTicks = measureLen * effBars;
-                        const globalTick = beatNum % totalTicks;
-                        const mIdx = rg.start + Math.floor(globalTick / measureLen);
-                        loopMeasureIdx = mIdx;
-                        highlightLoopCell(mIdx, time);
+                        var nextIdx;
+                        if (beatNum === 0) {
+                            // 재생 시작 — rg.start 부터, 도돌이표 consumed 초기화
+                            nextIdx = rg.start;
+                            _consumedRights.clear();
+                        } else {
+                            var prev = loopMeasureIdx;
+                            // 직전 마디에 :| (right repeat) 가 있고 아직 안 쓴 상태면 jump
+                            if (loopRepeats.right.has(prev) && !_consumedRights.has(prev)) {
+                                _consumedRights.add(prev);
+                                // jump target — 가장 최근 |: (prev 이하 중 가장 큰 번호). 없으면 rg.start.
+                                var target = rg.start;
+                                for (var jr = prev; jr >= rg.start; jr--) {
+                                    if (loopRepeats.left.has(jr)) { target = jr; break; }
+                                }
+                                nextIdx = target;
+                            } else {
+                                // 정상 advance — 다음 마디 또는 자연 wrap
+                                nextIdx = prev + 1;
+                                if (nextIdx > rg.end) {
+                                    nextIdx = rg.start;
+                                    // 자연 wrap — 도돌이표 consumed 리셋해서 다시 작동
+                                    _consumedRights.clear();
+                                }
+                            }
+                        }
+                        loopMeasureIdx = nextIdx;
+                        highlightLoopCell(loopMeasureIdx, time);
                     }
                     // 시퀀서 인덱스 = 현재 사이클 안 위치.
                     //   1마디 시퀀서 : _sIdx = beatNum % measureLen           (= t)
@@ -9808,9 +9886,21 @@
                                 var halfA = t < midA ? 'a' : 'b';
                                 var rootA = getEffectiveRoot(loopMeasureIdx, halfA);
                                 var velA = (bp.quiet && bp.quiet.indexOf(t) !== -1) ? 1 : 0;
-                                // 분수코드면 슬래시 베이스 사용
-                                var bassRootA = chordBassNote(rootA);
-                                if (bassRootA) playBass(bassRootA, swungTime, velA);
+                                // 스윙 — 워킹 베이스 (코드 quality 기반 scale, 마디별 랜덤 패턴)
+                                if (r === 'swing' && rootA) {
+                                    var beatIdx = Math.floor(t / p.ticksPerBeat); // 0..3
+                                    var swInfo = parseChordName(rootA);
+                                    if (swInfo.root) {
+                                        var swPat = _swingPatternFor(loopMeasureIdx);
+                                        var swDeg = swPat[beatIdx] || 1;
+                                        var swNote = _swingBassNote(swInfo.root, swDeg, swInfo);
+                                        if (swNote) playBass(swNote, swungTime, velA);
+                                    }
+                                } else {
+                                    // 분수코드면 슬래시 베이스 사용
+                                    var bassRootA = chordBassNote(rootA);
+                                    if (bassRootA) playBass(bassRootA, swungTime, velA);
+                                }
                             } else if (bp.off.indexOf(t) !== -1) {
                                 chokeBass(swungTime);
                             } else if (_isFillMeasure && t === measureLen - 1
@@ -9993,6 +10083,13 @@
                     var cells = document.querySelectorAll('#loopGrid .loop-cell');
                     cells.forEach(function(c) { c.classList.remove('playing'); });
                     if (cells[mIdx]) cells[mIdx].classList.add('playing');
+                    // iframe 으로 들어보기 (빌더 preview) 일 때 부모 윈도우에도 통보 →
+                    // 빌더가 진행 중인 마디 하이라이트 가능.
+                    try {
+                        if (window.parent && window.parent !== window) {
+                            window.parent.postMessage({ type: 'loop-bar', mIdx: mIdx }, '*');
+                        }
+                    } catch (e) {}
                 }, Math.max(0, delay));
             }
 
@@ -10957,14 +11054,14 @@
                     edgeL.dataset.action = 'toggleLoopRepeat';
                     edgeL.dataset.args = 'left,' + i;
                     edgeL.title = '클릭: 도돌이표 시작 |: 토글';
-                    edgeL.innerHTML = '<span class="loop-repeat-bar"></span><span class="loop-repeat-dots"><span></span><span></span></span>';
+                    edgeL.innerHTML = '<span class="loop-repeat-bars"><span class="thick"></span><span class="thin"></span></span><span class="loop-repeat-dots"><span></span><span></span></span>';
                     cell.appendChild(edgeL);
                     var edgeR = document.createElement('div');
                     edgeR.className = 'loop-cell-edge right' + (loopRepeats.right.has(i) ? ' has-repeat' : '');
                     edgeR.dataset.action = 'toggleLoopRepeat';
                     edgeR.dataset.args = 'right,' + i;
                     edgeR.title = '클릭: 도돌이표 끝 :| 토글';
-                    edgeR.innerHTML = '<span class="loop-repeat-dots"><span></span><span></span></span><span class="loop-repeat-bar"></span>';
+                    edgeR.innerHTML = '<span class="loop-repeat-dots"><span></span><span></span></span><span class="loop-repeat-bars"><span class="thin"></span><span class="thick"></span></span>';
                     cell.appendChild(edgeR);
                     grid.appendChild(cell);
                 }
@@ -11589,6 +11686,10 @@
                 if (opts.advanceNote !== false && window._metroRunning && audioCtx) {
                     nextNoteTime = audioCtx.currentTime + 0.05;
                 }
+                // 워킹 베이스 패턴 캐시도 청소 — 새 재생마다 매 마디 패턴 새로 추첨.
+                _swingPatternCache = {};
+                // 도돌이표 consumed 도 청소.
+                _consumedRights.clear();
             }
 
             function startMetronome() {
