@@ -5743,6 +5743,7 @@
         .loop-grid.cols-8  { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         .loop-grid.cols-12 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         .loop-grid.cols-16 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .loop-grid.cols-32 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         .loop-cell {
             aspect-ratio: 2.4; display: flex; flex-direction: column;
             /* halves 컨테이너가 cell 전체 높이를 채우도록 stretch. 이전엔
@@ -5765,6 +5766,56 @@
             background: rgba(82, 168, 114, 0.3);
             border-color: var(--green-mid);
             box-shadow: 0 0 8px rgba(82, 168, 114, 0.4);
+        }
+        /* ───── 도돌이표 가장자리 (마우스 hover 시 강조, 클릭 시 토글) ───── */
+        .loop-cell-edge {
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 12px;
+            z-index: 5;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            transition: background 0.12s, box-shadow 0.12s;
+        }
+        .loop-cell-edge.left  { left: 0;  border-radius: 6px 0 0 6px; }
+        .loop-cell-edge.right { right: 0; border-radius: 0 6px 6px 0; }
+        .loop-cell-edge:hover {
+            background: rgba(42, 107, 74, 0.20);
+            box-shadow: inset 0 0 6px rgba(42, 107, 74, 0.55);
+        }
+        .loop-cell-edge .loop-repeat-bar {
+            display: none;
+            width: 3px;
+            height: 70%;
+            background: var(--green-deep);
+            border-radius: 1px;
+        }
+        .loop-cell-edge .loop-repeat-dots {
+            display: none;
+            flex-direction: column;
+            gap: 3px;
+            margin: 0 2px;
+        }
+        .loop-cell-edge .loop-repeat-dots > span {
+            display: block;
+            width: 4px; height: 4px;
+            background: var(--green-deep);
+            border-radius: 50%;
+        }
+        /* 활성화 시 마크 보여줌 */
+        .loop-cell-edge.has-repeat .loop-repeat-bar,
+        .loop-cell-edge.has-repeat .loop-repeat-dots { display: flex; }
+        .loop-cell-edge.has-repeat:hover { background: rgba(42, 107, 74, 0.10); }
+        :root[data-theme="dark"] .loop-cell-edge .loop-repeat-bar,
+        :root[data-theme="dark"] .loop-cell-edge .loop-repeat-dots > span {
+            background: #b8d8c4;
+        }
+        :root[data-theme="dark"] .loop-cell-edge:hover {
+            background: rgba(180, 230, 200, 0.18);
+            box-shadow: inset 0 0 6px rgba(180, 230, 200, 0.45);
         }
         .loop-cell-num {
             font-size: 0.6rem; color: rgba(26, 36, 33, 0.45);
@@ -6457,6 +6508,7 @@
                                 <button data-bars="8" data-action="setLoopBars" data-args="8">8</button>
                                 <button data-bars="12" data-action="setLoopBars" data-args="12">12</button>
                                 <button data-bars="16" data-action="setLoopBars" data-args="16">16</button>
+                                <button data-bars="32" data-action="setLoopBars" data-args="32">32</button>
                             </div>
                         </div>
                         <div class="loop-rhythm-picker" id="loopRhythmPicker">
@@ -8120,6 +8172,18 @@
             let loopRhythm = '8beat';
             let loopChords = {};
             let loopChordsB = {};
+            // 도돌이표 — 마디별 좌/우 가장자리 마크 (visual only, 세션 단위).
+            //   loopRepeats.left  : Set<number> — 마디 i 의 왼쪽 가장자리에 |: (시작 도돌이)
+            //   loopRepeats.right : Set<number> — 마디 i 의 오른쪽 가장자리에 :| (끝 도돌이)
+            let loopRepeats = { left: new Set(), right: new Set() };
+            window.toggleLoopRepeat = function(side, idx) {
+                if (side !== 'left' && side !== 'right') return;
+                idx = parseInt(idx, 10);
+                if (isNaN(idx)) return;
+                var set = loopRepeats[side];
+                if (set.has(idx)) set.delete(idx); else set.add(idx);
+                renderLoopGrid();
+            };
             // 예비박(카운트인) — ON 일 때 시작 직전에 4박자 하이햇 클릭이 먼저 나간 뒤
             // 본 패턴이 이어진다. localStorage 에 저장되어 다음 방문에도 유지.
             let loopCountInEnabled = false;
@@ -10822,6 +10886,24 @@
                     halves.appendChild(halfA);
                     halves.appendChild(halfB);
                     cell.appendChild(halves);
+                    // ─── 도돌이표 가장자리 (좌/우) ────────────────────────────
+                    // 마우스 hover 시만 가장자리 빛남. 클릭 시 도돌이표 토글.
+                    //   왼쪽 클릭 → |: (start repeat — 바 + 오른쪽 두 점)
+                    //   오른쪽 클릭 → :| (end repeat — 왼쪽 두 점 + 바)
+                    var edgeL = document.createElement('div');
+                    edgeL.className = 'loop-cell-edge left' + (loopRepeats.left.has(i) ? ' has-repeat' : '');
+                    edgeL.dataset.action = 'toggleLoopRepeat';
+                    edgeL.dataset.args = 'left,' + i;
+                    edgeL.title = '클릭: 도돌이표 시작 |: 토글';
+                    edgeL.innerHTML = '<span class="loop-repeat-bar"></span><span class="loop-repeat-dots"><span></span><span></span></span>';
+                    cell.appendChild(edgeL);
+                    var edgeR = document.createElement('div');
+                    edgeR.className = 'loop-cell-edge right' + (loopRepeats.right.has(i) ? ' has-repeat' : '');
+                    edgeR.dataset.action = 'toggleLoopRepeat';
+                    edgeR.dataset.args = 'right,' + i;
+                    edgeR.title = '클릭: 도돌이표 끝 :| 토글';
+                    edgeR.innerHTML = '<span class="loop-repeat-dots"><span></span><span></span></span><span class="loop-repeat-bar"></span>';
+                    cell.appendChild(edgeR);
                     grid.appendChild(cell);
                 }
                 // 마디 번호 영역 — 클릭(시작 마디 선택) + 드래그(범위 선택) 핸들러 부착.

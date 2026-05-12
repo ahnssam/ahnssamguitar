@@ -2076,7 +2076,17 @@
                     $('gateError').textContent = 'Supabase SDK 로드 실패';
                     return;
                 }
-                sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                // 이전 OAuth 시기에 남은 세션 키 청소 — 안 그러면 SDK 가 stale token 으로
+                // 요청하다가 401 / refresh 에서 hang 걸리는 케이스가 있어서 저장 spinner 가
+                // 영원히 도는 증상이 났음.
+                try {
+                    Object.keys(localStorage).forEach(function(k) {
+                        if (k.indexOf('sb-') === 0) localStorage.removeItem(k);
+                    });
+                } catch (e) {}
+                sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+                    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+                });
                 loadPresets();
             }
 
@@ -2724,12 +2734,23 @@
                     btn.disabled = true;
                     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...';
                 }
+                // 12초 timeout — Supabase 요청이 어떤 이유로든 hang 되면 spinner 가
+                // 영원히 도는 걸 막음. 사용자에게 명확한 에러 메시지 보여주고 버튼 복원.
+                var timeoutId = null;
+                var timedOut = false;
+                var timeoutPromise = new Promise(function(_, reject) {
+                    timeoutId = setTimeout(function() {
+                        timedOut = true;
+                        reject(new Error('저장 응답이 12초 이상 안 옴 (네트워크 / 인증 문제 가능). 새로고침 후 다시 시도하세요.'));
+                    }, 12000);
+                });
                 try {
-                    await _savePresetInner();
+                    await Promise.race([_savePresetInner(), timeoutPromise]);
                 } catch (err) {
                     console.error('[savePreset] error:', err);
                     showFeedback('저장 중 오류: ' + (err && err.message ? err.message : err), 'error');
                 } finally {
+                    if (timeoutId) clearTimeout(timeoutId);
                     if (btn) {
                         btn.disabled = false;
                         btn.innerHTML = origHtml;
