@@ -2795,21 +2795,29 @@
                     sequencer_pattern: seqToSave,
                 };
                 try {
-                    let res;
                     if (editingId) {
-                        res = await sb.from('presets').update(data).eq('id', editingId).select().single();
+                        // ─── UPDATE — fire-and-forget ───
+                        // 직전엔 .update().eq().select().single() 한 줄로 했었는데, 두 번째 저장
+                        // 이후 hang 걸리는 문제 보고됨. .select() 가 PATCH 응답 처리에서 멈추는
+                        // 듯함. UPDATE 후 read-back 은 어차피 우리가 이미 보낸 data 와 같으니
+                        // 분리 호출로 회피.
+                        const upd = await sb.from('presets').update(data).eq('id', editingId);
+                        if (upd && upd.error) throw upd.error;
+                        $('formTitle').textContent = '편집: ' + name;
                     } else {
-                        res = await sb.from('presets').insert(data).select().single();
+                        // ─── INSERT — id 가 새로 생기므로 read-back 필요 ───
+                        const ins = await sb.from('presets').insert(data).select('id, name').single();
+                        if (ins.error) throw ins.error;
+                        editingId = ins.data.id;
+                        $('formTitle').textContent = '편집: ' + ins.data.name;
+                        $('deleteBtn').style.display = 'inline-flex';
+                        $('duplicateBtn').style.display = 'inline-flex';
+                        updatePasteBtnState();
                     }
-                    if (res.error) throw res.error;
-                    editingId = res.data.id;
-                    $('formTitle').textContent = '편집: ' + res.data.name;
-                    $('deleteBtn').style.display = 'inline-flex';
-                    $('duplicateBtn').style.display = 'inline-flex';
-                    updatePasteBtnState();
                     showFeedback('저장 완료 ✓', 'success');
                     await loadPresets();
                 } catch (err) {
+                    console.error('[savePreset] DB error:', err);
                     showFeedback('저장 실패: ' + (err.message || err), 'error');
                 }
             }
