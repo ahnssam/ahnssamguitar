@@ -5633,6 +5633,34 @@
         .loop-measures-label {
             display: flex; align-items: center; gap: 0.5rem;
         }
+        /* 마디 ± 미세 조정 — 4/8/12/16/32 외에도 1마디씩 자유롭게 (1~64) */
+        .loop-measures-fine {
+            display: inline-flex; gap: 4px; margin-left: 6px;
+        }
+        .loop-measures-pm {
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            border: 1px solid rgba(42, 107, 74, 0.25);
+            background: rgba(42, 107, 74, 0.06);
+            color: var(--green-deep);
+            font-size: 0.95rem; font-weight: 700;
+            cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center;
+            transition: background 0.15s, transform 0.08s;
+        }
+        .loop-measures-pm:hover { background: rgba(82, 168, 114, 0.18); }
+        .loop-measures-pm:active { transform: scale(0.92); }
+        .loop-measures-pm:disabled {
+            opacity: 0.35; cursor: not-allowed; transform: none;
+        }
+        :root[data-theme="dark"] .loop-measures-pm {
+            border-color: rgba(180, 230, 200, 0.30);
+            background: rgba(180, 230, 200, 0.08);
+            color: #b8d8c4;
+        }
+        :root[data-theme="dark"] .loop-measures-pm:hover {
+            background: rgba(180, 230, 200, 0.18);
+        }
         /* 코드 입력 모드 토글 (픽커 / 직접입력) — 마디·리듬과 같은 행에 배치 */
         .loop-input-mode {
             display: flex; align-items: center; gap: 0.5rem;
@@ -5735,6 +5763,8 @@
         .loop-grid {
             display: grid; gap: 0.35rem;
             margin-bottom: 0.8rem;
+            /* 모든 마디 수에서 기본 4열 — cols-N 클래스가 없는 임의 마디 수 (예: 5, 7, 17) 도 4열 그리드 유지 */
+            grid-template-columns: repeat(4, minmax(0, 1fr));
         }
         /* minmax(0, 1fr) — the `0` floor keeps every column exactly 1fr wide
            even when a chord name is wider than the cell. Without it, the grid
@@ -6509,6 +6539,10 @@
                                 <button data-bars="12" data-action="setLoopBars" data-args="12">12</button>
                                 <button data-bars="16" data-action="setLoopBars" data-args="16">16</button>
                                 <button data-bars="32" data-action="setLoopBars" data-args="32">32</button>
+                            </div>
+                            <div class="loop-measures-fine" title="1마디씩 미세 조정 (1~64)">
+                                <button type="button" class="loop-measures-pm" data-action="adjustLoopBars" data-args="-1" aria-label="마디 1개 줄이기">−</button>
+                                <button type="button" class="loop-measures-pm" data-action="adjustLoopBars" data-args="1" aria-label="마디 1개 늘리기">+</button>
                             </div>
                         </div>
                         <div class="loop-rhythm-picker" id="loopRhythmPicker">
@@ -8229,47 +8263,66 @@
             //       Cdim7 → { root:'C',  minor:false, extension:'dim7' }
             //   .minor 필드는 하위 호환을 위해 유지 (구 코드가 .minor 만 본다면 트라이어드처럼 처리).
             function parseChordName(name) {
-                if (!name) return { root: null, minor: false, extension: 'none' };
-                var m = String(name).match(/^([A-G][#b]?)(.*)$/);
-                if (!m) return { root: null, minor: false, extension: 'none' };
+                if (!name) return { root: null, minor: false, extension: 'none', bass: null };
+                // 분수코드 (slash chord) 분리 — 예: 'C/G' → root part 'C', bass 'G'.
+                //   bass 는 [A-G][#b]? 만 허용. 매칭 안 되면 무시.
+                var bass = null;
+                var src = String(name);
+                var slashIdx = src.lastIndexOf('/');
+                if (slashIdx > 0) {
+                    var afterSlash = src.slice(slashIdx + 1).trim();
+                    var bm = afterSlash.match(/^([A-G][#b♭♯]?)$/);
+                    if (bm) {
+                        bass = bm[1].replace(/♭/g, 'b').replace(/♯/g, '#');
+                        src = src.slice(0, slashIdx).trim();
+                    }
+                }
+                var m = src.match(/^([A-G][#b]?)(.*)$/);
+                if (!m) return { root: null, minor: false, extension: 'none', bass: bass };
                 var root = m[1];
                 var rest = (m[2] || '').trim();
                 var lower = rest.toLowerCase();
                 if (lower === 'dim7' || rest === '°7' || rest === 'o7') {
-                    return { root: root, minor: false, extension: 'dim7' };
+                    return { root: root, minor: false, extension: 'dim7', bass: bass };
                 }
                 if (lower === 'dim' || rest === '°' || rest === 'o') {
                     // 레거시 트라이어드 dim — UI 에선 더 이상 픽 불가, 파싱은 유지
-                    return { root: root, minor: false, extension: 'dim' };
+                    return { root: root, minor: false, extension: 'dim', bass: bass };
                 }
                 if (lower === 'm7b5' || rest === 'm7♭5' || rest === 'ø7' || rest === 'ø' ||
                     lower === 'min7b5' || lower === 'half-dim' || lower === 'halfdim') {
-                    return { root: root, minor: true, extension: 'm7b5' };
+                    return { root: root, minor: true, extension: 'm7b5', bass: bass };
                 }
                 // 마이너 + M7 (mM7 / m(maj7) / mmaj7 / minMaj7)
                 if (lower === 'm(maj7)' || lower === 'mmaj7' || lower === 'mΔ7' ||
                     rest === 'mM7' || lower === 'minmaj7') {
-                    return { root: root, minor: true, extension: 'M7' };
+                    return { root: root, minor: true, extension: 'M7', bass: bass };
                 }
                 // 메이저 + M7 (M7 / maj7 / Δ7) — 레거시 maj7 표기도 받아줌
                 if (lower === 'maj7' || rest === 'M7' || rest === 'Δ7' || rest === '△7' || rest === 'Δ') {
-                    return { root: root, minor: false, extension: 'M7' };
+                    return { root: root, minor: false, extension: 'M7', bass: bass };
                 }
                 if (lower === 'm7' || lower === 'min7') {
-                    return { root: root, minor: true, extension: 'm7' };
+                    return { root: root, minor: true, extension: 'm7', bass: bass };
                 }
                 if (lower === '7' || lower === 'dom7') {
-                    return { root: root, minor: false, extension: '7' };
+                    return { root: root, minor: false, extension: '7', bass: bass };
                 }
                 if (/^m(in)?$/i.test(rest)) {
-                    return { root: root, minor: true, extension: 'none' };
+                    return { root: root, minor: true, extension: 'none', bass: bass };
                 }
                 if (/^m(?!aj)/i.test(rest)) {
-                    return { root: root, minor: true, extension: 'none' };
+                    return { root: root, minor: true, extension: 'none', bass: bass };
                 }
-                return { root: root, minor: false, extension: 'none' };
+                return { root: root, minor: false, extension: 'none', bass: bass };
             }
             function chordRootOnly(name) { return parseChordName(name).root; }
+            // 슬래시 베이스 우선, 없으면 코드 root. 베이스 악기 재생에 사용.
+            //   예) 'C/G' → 'G' / 'F#m7/A' → 'A' / 'C' → 'C'
+            function chordBassNote(name) {
+                var info = parseChordName(name);
+                return info.bass || info.root;
+            }
             // root + quality + extension 조합 → 표시용 코드 이름 빌드
             //   ('C', false, 'none')  → 'C'
             //   ('C', true,  'none')  → 'Cm'
@@ -9735,7 +9788,8 @@
                         if (sBR === 1 || sBR === 2 || sBR === 4) {
                             var rrB = _getSeqRoot();
                             if (rrB) {
-                                var bR = chordRootOnly(rrB);
+                                // 분수코드면 슬래시 베이스 우선 (chordBassNote)
+                                var bR = chordBassNote(rrB);
                                 if (bR) playBass(bR, swungTime, sBR === 2 ? 0 : 1);
                             }
                         }
@@ -9754,7 +9808,8 @@
                                 var halfA = t < midA ? 'a' : 'b';
                                 var rootA = getEffectiveRoot(loopMeasureIdx, halfA);
                                 var velA = (bp.quiet && bp.quiet.indexOf(t) !== -1) ? 1 : 0;
-                                var bassRootA = chordRootOnly(rootA);
+                                // 분수코드면 슬래시 베이스 사용
+                                var bassRootA = chordBassNote(rootA);
                                 if (bassRootA) playBass(bassRootA, swungTime, velA);
                             } else if (bp.off.indexOf(t) !== -1) {
                                 chokeBass(swungTime);
@@ -9776,7 +9831,8 @@
                                 var midB = measureLen / 2;
                                 var halfB = t < midB ? 'a' : 'b';
                                 var rootB = getEffectiveRoot(loopMeasureIdx, halfB);
-                                var bassRootB = chordRootOnly(rootB);
+                                // 분수코드면 슬래시 베이스 사용
+                                var bassRootB = chordBassNote(rootB);
                                 if (bassRootB) playBass(bassRootB, swungTime, 0);
                             } else if (_isFillMeasure && loopBassStyle === '8beat'
                                        && t === measureLen - 1) {
@@ -11220,14 +11276,27 @@
             function closeLoopPicker() {
                 document.querySelectorAll('.loop-chord-picker').forEach(function(p) { p.remove(); });
             }
+            // 마디 1~64 범위 보장. 4/8/12/16/32 프리셋 버튼 외에도 ± 로 1마디씩 조정 가능.
+            var LOOP_BARS_MIN = 1;
+            var LOOP_BARS_MAX = 64;
             window.setLoopBars = function(n) {
+                n = Math.max(LOOP_BARS_MIN, Math.min(LOOP_BARS_MAX, parseInt(n, 10) || LOOP_BARS_MIN));
                 loopBars = n;
                 gtag('event', 'loop_bars_change', { bars: n });
                 document.querySelectorAll('#loopMeasureBtns button').forEach(function(b) {
                     b.classList.toggle('active', parseInt(b.dataset.bars) === n);
                 });
+                // ± 버튼 disabled 상태
+                document.querySelectorAll('.loop-measures-pm').forEach(function(b) {
+                    var d = parseInt(b.dataset.args, 10);
+                    if (d < 0)      b.disabled = (n <= LOOP_BARS_MIN);
+                    else if (d > 0) b.disabled = (n >= LOOP_BARS_MAX);
+                });
                 renderLoopGrid();
                 resetPlaybackPosition();
+            };
+            window.adjustLoopBars = function(delta) {
+                window.setLoopBars(loopBars + (parseInt(delta, 10) || 0));
             };
 
             window.setLoopBassStyle = function(style) {
@@ -11378,10 +11447,21 @@
                 if (!info.root) return name;
                 var idx = _rootIndexAny(info.root);
                 if (idx === -1) return name;
-                var newIdx = ((idx + semitones) % 12 + 12) % 12;
                 var arr = (loopPickerAccidental === 'flat') ? LOOP_ROOTS_FLAT : LOOP_ROOTS_SHARP;
+                var newIdx = ((idx + semitones) % 12 + 12) % 12;
                 var newRoot = arr[newIdx];
-                return buildChordName(newRoot, info.minor ? 'minor' : 'major', info.extension);
+                var built = buildChordName(newRoot, info.minor ? 'minor' : 'major', info.extension);
+                // 슬래시 베이스도 같은 만큼 이동 — 예: Cmaj7/E +2반음 → Dmaj7/F#
+                if (info.bass) {
+                    var bIdx = _rootIndexAny(info.bass);
+                    if (bIdx !== -1) {
+                        var newBIdx = ((bIdx + semitones) % 12 + 12) % 12;
+                        built += '/' + arr[newBIdx];
+                    } else {
+                        built += '/' + info.bass;
+                    }
+                }
+                return built;
             }
             window.transposeLoopChordsAll = function(semitones) {
                 semitones = parseInt(semitones, 10);

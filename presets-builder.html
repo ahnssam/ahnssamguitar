@@ -353,6 +353,22 @@
             color: #fff;
         }
         .bd-pills-stars .bd-pill { letter-spacing: 0; }
+        /* 마디 ± 미세 조정 */
+        .bd-bars-fine { display: inline-flex; gap: 4px; margin-left: 6px; }
+        .bd-bars-pm {
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: rgba(42, 107, 74, 0.06);
+            color: var(--green-deep);
+            font-size: 0.95rem; font-weight: 700;
+            cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center;
+            transition: background 0.15s, transform 0.08s;
+        }
+        .bd-bars-pm:hover { background: rgba(82, 168, 114, 0.18); }
+        .bd-bars-pm:active { transform: scale(0.92); }
+        .bd-bars-pm:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
         .bd-pills-stars .bd-pill[data-diff="0"] { color: var(--text-light); }
         .bd-pills-stars .bd-pill:not([data-diff="0"]) { color: #d4a52a; font-size: 0.74rem; }
         .bd-pills-stars .bd-pill.active { color: #fff !important; }
@@ -1292,6 +1308,10 @@
                             <button class="bd-pill" data-bars="12" type="button">12</button>
                             <button class="bd-pill" data-bars="16" type="button">16</button>
                             <button class="bd-pill" data-bars="32" type="button">32</button>
+                            <span class="bd-bars-fine" title="1마디씩 미세 조정 (1~64)">
+                                <button type="button" class="bd-bars-pm" id="bdBarsMinus" aria-label="마디 1개 줄이기">−</button>
+                                <button type="button" class="bd-bars-pm" id="bdBarsPlus" aria-label="마디 1개 늘리기">+</button>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -2447,10 +2467,20 @@
                 });
             }
 
+            const BARS_MIN = 1, BARS_MAX = 64;
+            function setBars(n) {
+                bars = Math.max(BARS_MIN, Math.min(BARS_MAX, parseInt(n, 10) || BARS_MIN));
+                renderBars();
+                const cur = readChords();
+                renderChords(cur.a, cur.b);
+            }
             function renderBars() {
                 document.querySelectorAll('#fBars .bd-pill').forEach(function(b) {
                     b.classList.toggle('active', parseInt(b.dataset.bars, 10) === bars);
                 });
+                var bm = $('bdBarsMinus'), bp = $('bdBarsPlus');
+                if (bm) bm.disabled = (bars <= BARS_MIN);
+                if (bp) bp.disabled = (bars >= BARS_MAX);
             }
 
             // ─── 장르 호환 매핑 (구버전 텍스트 입력 → 새 셀렉트 옵션) ───
@@ -3097,13 +3127,10 @@
                 renderBdSeq();
 
                 document.querySelectorAll('#fBars .bd-pill').forEach(function(b) {
-                    b.onclick = function() {
-                        bars = parseInt(b.dataset.bars, 10);
-                        renderBars();
-                        const cur = readChords();
-                        renderChords(cur.a, cur.b);
-                    };
+                    b.onclick = function() { setBars(parseInt(b.dataset.bars, 10)); };
                 });
+                $('bdBarsMinus').onclick = function() { setBars(bars - 1); };
+                $('bdBarsPlus').onclick  = function() { setBars(bars + 1); };
                 document.querySelectorAll('#fDifficulty .bd-pill').forEach(function(b) {
                     b.onclick = function() {
                         difficulty = parseInt(b.dataset.diff, 10);
