@@ -442,6 +442,48 @@
             grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 0.35rem;
         }
+        /* ───── 도돌이표 가장자리 (좌/우 hover highlight + 클릭 토글) ───── */
+        .bd-loop-cell-edge {
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 12px;
+            z-index: 5;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            transition: background 0.12s, box-shadow 0.12s;
+        }
+        .bd-loop-cell-edge.left  { left: 0;  border-radius: 8px 0 0 8px; }
+        .bd-loop-cell-edge.right { right: 0; border-radius: 0 8px 8px 0; }
+        .bd-loop-cell-edge:hover {
+            background: rgba(42, 107, 74, 0.20);
+            box-shadow: inset 0 0 6px rgba(42, 107, 74, 0.55);
+        }
+        .bd-loop-cell-edge .bd-loop-repeat-bar {
+            display: none;
+            width: 3px;
+            height: 70%;
+            background: var(--green-deep);
+            border-radius: 1px;
+        }
+        .bd-loop-cell-edge .bd-loop-repeat-dots {
+            display: none;
+            flex-direction: column;
+            gap: 3px;
+            margin: 0 2px;
+        }
+        .bd-loop-cell-edge .bd-loop-repeat-dots > span {
+            display: block;
+            width: 4px; height: 4px;
+            background: var(--green-deep);
+            border-radius: 50%;
+        }
+        .bd-loop-cell-edge.has-repeat .bd-loop-repeat-bar,
+        .bd-loop-cell-edge.has-repeat .bd-loop-repeat-dots { display: flex; }
+        .bd-loop-cell-edge.has-repeat:hover { background: rgba(42, 107, 74, 0.10); }
+
         .bd-loop-cell {
             position: relative;
             background: rgba(42, 107, 74, 0.03);
@@ -1249,6 +1291,7 @@
                             <button class="bd-pill" data-bars="8" type="button">8</button>
                             <button class="bd-pill" data-bars="12" type="button">12</button>
                             <button class="bd-pill" data-bars="16" type="button">16</button>
+                            <button class="bd-pill" data-bars="32" type="button">32</button>
                         </div>
                     </div>
                 </div>
@@ -2182,6 +2225,7 @@
                 bdSeq = bdSeqEmpty();
                 bdBassCustom = false;
                 bdPianoCustom = false;
+                bdRepeats = { left: new Set(), right: new Set() };
                 _applyCustomToggleUI();
                 renderBdSeq();
                 renderBars();
@@ -2247,6 +2291,12 @@
                     : !!(sp && BD_SEQ_GROUPS.piano.some(function(line) {
                           return Array.isArray(sp[line]) && sp[line].some(function(v) { return v && v !== 0; });
                       }));
+                // 도돌이표 로드
+                bdRepeats = { left: new Set(), right: new Set() };
+                if (sp && sp.repeats && typeof sp.repeats === 'object') {
+                    if (Array.isArray(sp.repeats.left))  sp.repeats.left.forEach(function(i)  { bdRepeats.left.add(i|0); });
+                    if (Array.isArray(sp.repeats.right)) sp.repeats.right.forEach(function(i) { bdRepeats.right.add(i|0); });
+                }
                 _applyCustomToggleUI();
                 renderBdSeq();
                 renderBars();
@@ -2275,8 +2325,9 @@
                 //   - 토글이 ON 인 쪽은 셀이 비어있어도 의도(커스텀 사용)를 유지하기 위해 저장.
                 //   - 토글이 OFF 인 쪽 셀 데이터는 보존(다음에 다시 켜면 복원되도록).
                 //   - chordOffset (싱코페이션) 도 함께 저장.
+                var hasRepeats2 = bdRepeats.left.size > 0 || bdRepeats.right.size > 0;
                 var seqOut = null;
-                if (!bdSeqIsEmpty() || bdBassCustom || bdPianoCustom || bdMeasureLen === 2) {
+                if (!bdSeqIsEmpty() || bdBassCustom || bdPianoCustom || bdMeasureLen === 2 || hasRepeats2) {
                     seqOut = {
                         bassCustom:  !!bdBassCustom,
                         pianoCustom: !!bdPianoCustom
@@ -2287,6 +2338,12 @@
                     });
                     if (Array.isArray(bdSeq.chordOffset) && bdSeq.chordOffset.some(function(v) { return v && v !== 0; })) {
                         seqOut.chordOffset = bdSeq.chordOffset.slice();
+                    }
+                    if (hasRepeats2) {
+                        seqOut.repeats = {
+                            left:  Array.from(bdRepeats.left).sort(function(a,b){return a-b;}),
+                            right: Array.from(bdRepeats.right).sort(function(a,b){return a-b;})
+                        };
                     }
                 }
                 return {
@@ -2358,6 +2415,11 @@
                     : !!(spC && BD_SEQ_GROUPS.piano.some(function(line) {
                           return Array.isArray(spC[line]) && spC[line].some(function(v) { return v && v !== 0; });
                       }));
+                bdRepeats = { left: new Set(), right: new Set() };
+                if (spC && spC.repeats && typeof spC.repeats === 'object') {
+                    if (Array.isArray(spC.repeats.left))  spC.repeats.left.forEach(function(i)  { bdRepeats.left.add(i|0); });
+                    if (Array.isArray(spC.repeats.right)) spC.repeats.right.forEach(function(i) { bdRepeats.right.add(i|0); });
+                }
                 _applyCustomToggleUI();
                 renderBdSeq();
                 renderBars();
@@ -2425,6 +2487,17 @@
             let bdPickerExtension = 'none';    // 'none' | '7' | 'm7' | 'M7' | 'm7b5' | 'dim7'
             let bdChordsA = {};
             let bdChordsB = {};
+            // 도돌이표 — 빌더에서 마디 좌/우 가장자리 클릭으로 토글. 프리셋과 함께 저장됨
+            // (sequencer_pattern.repeats = { left: [...], right: [...] }).
+            let bdRepeats = { left: new Set(), right: new Set() };
+            window.bdToggleRepeat = function(side, idx) {
+                if (side !== 'left' && side !== 'right') return;
+                idx = parseInt(idx, 10);
+                if (isNaN(idx)) return;
+                var set = bdRepeats[side];
+                if (set.has(idx)) set.delete(idx); else set.add(idx);
+                renderChords(bdChordsA, bdChordsB);
+            };
 
             const BD_LOOP_ROOTS_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
             const BD_LOOP_ROOTS_FLAT  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
@@ -2494,6 +2567,21 @@
                     halves.appendChild(makeHalf(bdChordsB[String(i)] || '', i, 'b'));
 
                     cell.appendChild(halves);
+                    // ─── 도돌이표 가장자리 (좌/우) — 클릭으로 토글 ─────────────
+                    (function(i) {
+                        var edgeL = document.createElement('div');
+                        edgeL.className = 'bd-loop-cell-edge left' + (bdRepeats.left.has(i) ? ' has-repeat' : '');
+                        edgeL.title = '클릭: 도돌이표 시작 |: 토글';
+                        edgeL.innerHTML = '<span class="bd-loop-repeat-bar"></span><span class="bd-loop-repeat-dots"><span></span><span></span></span>';
+                        edgeL.onclick = function(e) { e.stopPropagation(); window.bdToggleRepeat('left', i); };
+                        cell.appendChild(edgeL);
+                        var edgeR = document.createElement('div');
+                        edgeR.className = 'bd-loop-cell-edge right' + (bdRepeats.right.has(i) ? ' has-repeat' : '');
+                        edgeR.title = '클릭: 도돌이표 끝 :| 토글';
+                        edgeR.innerHTML = '<span class="bd-loop-repeat-dots"><span></span><span></span></span><span class="bd-loop-repeat-bar"></span>';
+                        edgeR.onclick = function(e) { e.stopPropagation(); window.bdToggleRepeat('right', i); };
+                        cell.appendChild(edgeR);
+                    })(i);
                     grid.appendChild(cell);
                 }
             }
@@ -2765,8 +2853,9 @@
                 //   - 토글 ON 인 쪽은 셀이 비어있어도 의도(커스텀 사용)를 보존.
                 //   - 토글 OFF 인 쪽 셀은 보존(나중에 다시 켜면 복원).
                 //   - chordOffset (싱코페이션) 도 함께 저장.
+                var hasRepeats = bdRepeats.left.size > 0 || bdRepeats.right.size > 0;
                 var seqToSave = null;
-                if (!bdSeqIsEmpty() || bdBassCustom || bdPianoCustom || bdMeasureLen === 2) {
+                if (!bdSeqIsEmpty() || bdBassCustom || bdPianoCustom || bdMeasureLen === 2 || hasRepeats) {
                     seqToSave = {
                         bassCustom:  !!bdBassCustom,
                         pianoCustom: !!bdPianoCustom
@@ -2778,6 +2867,12 @@
                     });
                     if (Array.isArray(bdSeq.chordOffset) && bdSeq.chordOffset.some(function(v) { return v && v !== 0; })) {
                         seqToSave.chordOffset = bdSeq.chordOffset.slice();
+                    }
+                    if (hasRepeats) {
+                        seqToSave.repeats = {
+                            left:  Array.from(bdRepeats.left).sort(function(a,b){return a-b;}),
+                            right: Array.from(bdRepeats.right).sort(function(a,b){return a-b;})
+                        };
                     }
                 }
                 const data = {

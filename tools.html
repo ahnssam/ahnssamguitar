@@ -10647,6 +10647,12 @@
                 // 코드 진행
                 loopChords  = p.chords_a ? Object.assign({}, p.chords_a) : {};
                 loopChordsB = p.chords_b ? Object.assign({}, p.chords_b) : {};
+                // 도돌이표 — 프리셋 sequencer_pattern.repeats 에서 로드
+                loopRepeats = { left: new Set(), right: new Set() };
+                if (sp && sp.repeats && typeof sp.repeats === 'object') {
+                    if (Array.isArray(sp.repeats.left))  sp.repeats.left.forEach(function(i)  { loopRepeats.left.add(i|0); });
+                    if (Array.isArray(sp.repeats.right)) sp.repeats.right.forEach(function(i) { loopRepeats.right.add(i|0); });
+                }
                 renderLoopGrid();
                 if (typeof updateLoopStyleAvailability === 'function') updateLoopStyleAvailability();
                 // 재생 위치 리셋
@@ -11347,6 +11353,8 @@
             window.clearAllLoopChords = function() {
                 loopChords = {};
                 loopChordsB = {};
+                loopRepeats.left.clear();
+                loopRepeats.right.clear();
                 _prevPianoVoicing = null;
                 _lastPianoSegmentKey = null;
                 _lastPianoSegmentChord = null;
