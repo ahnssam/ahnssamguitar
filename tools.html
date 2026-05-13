@@ -758,6 +758,7 @@
 
         /* Loop top-row labels (마디 / 리듬) - dark mode */
         :root[data-theme="dark"] .loop-top-row,
+        :root[data-theme="dark"] .loop-rhythm-picker,
         :root[data-theme="dark"] .loop-measures-label > label,
         :root[data-theme="dark"] .loop-rhythm-picker > label {
             color: rgba(232, 240, 236, 0.78);
@@ -5425,6 +5426,8 @@
             margin-right: 0.2rem;
         }
         :root[data-theme="dark"] .loop-transpose-label { color: rgba(232, 240, 236, 0.55); }
+        /* style-row 안에서 전체 키 ▼▲ 두 버튼을 하나의 그룹처럼 묶음 */
+        .loop-transpose-btns { display: inline-flex; gap: 0.25rem; }
         .loop-transpose-btn {
             width: 30px;
             height: 30px;
@@ -5719,10 +5722,15 @@
             background: var(--green-mid); border-color: var(--green-mid); color: var(--white);
         }
         .loop-rhythm-picker {
-            display: flex; align-items: center; gap: 0.5rem;
+            display: flex; align-items: center; gap: 0.6rem;
             position: relative;
+            margin-bottom: 0.8rem;
+            font-size: 0.8rem;
+            color: rgba(26, 36, 33, 0.6);
+            flex-wrap: wrap;
         }
         .loop-rhythm-picker label { white-space: nowrap; }
+        .loop-rhythm-picker > .loop-rhythm-groups { flex: 1 1 auto; }
         .loop-rhythm-toggle {
             display: flex; align-items: center; gap: 0.4rem;
             padding: 0.3rem 0.7rem; font-size: 0.75rem; font-weight: 600;
@@ -6664,12 +6672,21 @@
                                 <button type="button" class="loop-measures-pm" data-action="adjustLoopBars" data-args="1" aria-label="마디 1개 늘리기">+</button>
                             </div>
                         </div>
-                        <div class="loop-rhythm-picker" id="loopRhythmPicker">
-                            <label>리듬</label>
-                            <div class="loop-rhythm-groups" id="loopRhythmGroups"></div>
-                        </div>
                     </div>
-                    <!-- 베이스/피아노 스타일 셀렉터 — 드럼 리듬과 별개로 동작 -->
+                    <!-- 입력 모드 + 초기화 — 마디 바로 아래에 별도 행. -->
+                    <div class="loop-transpose-row">
+                        <div class="loop-input-mode" title="코드 칸을 클릭했을 때의 기본 입력 방식">
+                            <label>입력</label>
+                            <div class="loop-input-mode-btns" id="loopInputModeBtns">
+                                <button type="button" class="active" data-mode="picker" data-action="setLoopInputMode" data-args="picker">픽커</button>
+                                <button type="button" data-mode="text" data-action="setLoopInputMode" data-args="text">직접입력</button>
+                            </div>
+                        </div>
+                        <button type="button" class="loop-clear-all-btn" data-action="resetLoopAll" title="프리셋 해제 + 모든 코드 비움" style="margin-left:auto;">
+                            <i class="fas fa-redo"></i> 초기화
+                        </button>
+                    </div>
+                    <!-- 베이스/피아노/전체키/예비박 — 같은 행에 묶음 -->
                     <div class="loop-style-row">
                         <div class="loop-style-group">
                             <label>베이스</label>
@@ -6687,6 +6704,17 @@
                                 <button type="button" class="loop-style-btn" data-pstyle="8beat" data-action="setLoopPianoStyle" data-args="8beat">8비트</button>
                             </div>
                         </div>
+                        <div class="loop-style-group" title="모든 코드를 반음 단위로 이동">
+                            <label>전체 키</label>
+                            <div class="loop-transpose-btns">
+                                <button type="button" class="loop-transpose-btn" data-action="transposeLoopChordsAll" data-args="-1" title="모든 코드를 반음 내림" aria-label="반음 내림">
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                                <button type="button" class="loop-transpose-btn" data-action="transposeLoopChordsAll" data-args="1" title="모든 코드를 반음 올림" aria-label="반음 올림">
+                                    <i class="fas fa-chevron-up"></i>
+                                </button>
+                            </div>
+                        </div>
                         <div class="loop-style-group" title="시작 전 4박자 카운트인을 하이햇으로 들려줍니다">
                             <label>예비박</label>
                             <label class="loop-toggle">
@@ -6695,25 +6723,10 @@
                             </label>
                         </div>
                     </div>
-                    <!-- 전체 키 트랜스포즈 + 입력 모드 + 초기화 — 마디 그리드 바로 위. 입력 모드는 왼쪽 (트랜스포즈 옆), 초기화는 오른쪽 끝. -->
-                    <div class="loop-transpose-row">
-                        <span class="loop-transpose-label">전체 키</span>
-                        <button type="button" class="loop-transpose-btn" data-action="transposeLoopChordsAll" data-args="-1" title="모든 코드를 반음 내림" aria-label="반음 내림">
-                            <i class="fas fa-chevron-down"></i>
-                        </button>
-                        <button type="button" class="loop-transpose-btn" data-action="transposeLoopChordsAll" data-args="1" title="모든 코드를 반음 올림" aria-label="반음 올림">
-                            <i class="fas fa-chevron-up"></i>
-                        </button>
-                        <div class="loop-input-mode" title="코드 칸을 클릭했을 때의 기본 입력 방식" style="margin-left:auto;">
-                            <label>입력</label>
-                            <div class="loop-input-mode-btns" id="loopInputModeBtns">
-                                <button type="button" class="active" data-mode="picker" data-action="setLoopInputMode" data-args="picker">픽커</button>
-                                <button type="button" data-mode="text" data-action="setLoopInputMode" data-args="text">직접입력</button>
-                            </div>
-                        </div>
-                        <button type="button" class="loop-clear-all-btn" data-action="resetLoopAll" title="프리셋 해제 + 모든 코드 비움">
-                            <i class="fas fa-redo"></i> 초기화
-                        </button>
+                    <!-- 리듬 — 그룹 토글 4개를 한 줄로 -->
+                    <div class="loop-rhythm-picker" id="loopRhythmPicker">
+                        <label>리듬</label>
+                        <div class="loop-rhythm-groups" id="loopRhythmGroups"></div>
                     </div>
                     <div class="loop-grid cols-4" id="loopGrid"></div>
                 </div>
@@ -8509,10 +8522,23 @@
                               kick: [0, 2], snare: [1, 3],
                               hihat: [],
                               hihatOpen: [0, 1, 2, 3] },
+                // 셔플락 — 2a 박(tick 5) 킥은 고스트 노트처럼 70% 볼륨.
                 'ballad':   { ticksPerBeat: 3, beatsPerMeasure: 4,
                               kick: [0, 5, 6], snare: [3, 9],
                               hihat: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                              hihatOpen: [11] },
+                              hihatOpen: [11],
+                              kickVolumes: { 5: 0.7 } },
+                // 셔플락 바운스 — ballad 와 같은 12/8 패턴이지만 2a 박(tick 5)의 킥을
+                //   3박 킥(tick 6) 쪽으로 밀어 그레이스 노트 같은 바운스 느낌 + 같은 70% 볼륨.
+                //   ※ 음악적 취향 — 더 늦추려면 분자↑ (1/4, 5/18, 7/24, 0.3),
+                //                    더 일찍으로 → 분자↓ (2/9 ≒ 0.222, 1/6 ≒ 0.167).
+                //   kickDelays: { tick: 박 단위 지연 } / kickVolumes: { tick: 게인 } — playDrumPattern 이 처리.
+                'balladB':  { ticksPerBeat: 3, beatsPerMeasure: 4,
+                              kick: [0, 5, 6], snare: [3, 9],
+                              hihat: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                              hihatOpen: [11],
+                              kickDelays:  { 5: 0.23 },
+                              kickVolumes: { 5: 0.7 } },
                 '16beat':   { ticksPerBeat: 4, beatsPerMeasure: 4,
                               kick: [0, 8], snare: [4, 12],
                               hihat: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] },
@@ -8807,9 +8833,17 @@
                 return drumBus;
             }
 
-            function playKick(time) {
-                if (playSample('kick', time, 1.0)) return;
-                const bus = getDrumBus();
+            function playKick(time, volMul) {
+                if (typeof volMul !== 'number') volMul = 1.0;
+                if (playSample('kick', time, 1.0 * volMul)) return;
+                // 신스 폴백 — volMul < 1 이면 전체 게인 스테이지를 거쳐 한 번에 스케일.
+                const bus = (function() {
+                    if (volMul >= 1.0) return getDrumBus();
+                    var g = audioCtx.createGain();
+                    g.gain.value = volMul;
+                    g.connect(getDrumBus());
+                    return g;
+                })();
 
                 const click = audioCtx.createBufferSource();
                 click.buffer = getNoiseBuffer();
@@ -9029,6 +9063,8 @@
                 '16beatSB': { on: [0, 3, 7, 9, 10], off: [4, 8, 14], quiet: [9] },
                 '16beatSC': { on: [0, 2, 7, 10], off: [4, 8, 12], quiet: [] },
                 'ballad':  { on: [0, 5, 6], off: [3, 9], quiet: [5] },
+                // 셔플락 바운스 — 베이스 패턴은 ballad 와 동일 (드럼 킥만 늦춰짐)
+                'balladB': { on: [0, 5, 6], off: [3, 9], quiet: [5] },
                 // 스윙 12/8 — 워킹 베이스 느낌으로 매 박마다 root (1, 2, 3, 4 = ticks 0, 3, 6, 9).
                 'swing':   { on: [0, 3, 6, 9], off: [], quiet: [3, 9] }
             };
@@ -9114,6 +9150,8 @@
                 '16beatC':  'X.X...OX.XO.X.OX',
                 // 셔플락 (12 ticks, ticksPerBeat=3) — 1박/2박/2a 코드, 3a 단음, 4박 코드
                 'ballad':   'X..X.X..OX..',
+                // 셔플락 바운스 — 피아노 패턴은 ballad 와 동일 (드럼 킥만 늦춰져 바운스 느낌)
+                'balladB':  'X..X.X..OX..',
                 // 16바운스 A/B/C — 패턴은 16비트 A/B/C 와 동일, 스케줄러가 swing offset 적용해서 바운스
                 '16beatSA': 'X...X.OX.XO.X...',
                 '16beatSB': 'X..OX.OX.XO.X...',
@@ -9790,8 +9828,18 @@
                     playRide(time, rideLevel);
                 }
                 if (p.kick.includes(t)) {
+                    // 특정 tick 의 킥만 박 단위로 살짝 늦춰 바운스 느낌 (예: 셔플락 바운스의 2a 박).
+                    var kickTime = time;
+                    if (p.kickDelays && typeof p.kickDelays[t] === 'number') {
+                        kickTime += (60.0 / bpm) * p.kickDelays[t];
+                    }
+                    // 특정 tick 의 킥만 고스트 노트처럼 볼륨 낮추기 (예: 셔플락/바운스의 2a).
+                    var kickVol = 1.0;
+                    if (p.kickVolumes && typeof p.kickVolumes[t] === 'number') {
+                        kickVol = p.kickVolumes[t];
+                    }
                     // fill window 의 마지막 박 첫 tick 만 킥 유지 — 그 외 킥은 fill 흐름 위해 생략.
-                    if (!inFillWindow || t === lastBeatStart) playKick(time);
+                    if (!inFillWindow || t === lastBeatStart) playKick(kickTime, kickVol);
                 }
                 if (p.snare.includes(t)) {
                     // quietSnare 플래그 — 스윙 12/8 처럼 스네어를 고스트 노트로 깔 때.
@@ -10390,6 +10438,7 @@
                 '16beat': '16비트 A', '16beat2': '16비트 B', '16beatC': '16비트 C',
                 '16beatSA': '16바운스 A', '16beatSB': '16바운스 B', '16beatSC': '16바운스 C',
                 'ballad': '셔플락',
+                'balladB': '셔플락 바운스',
                 'swing': '스윙'
             };
             // ─── 프리셋 (Supabase 연동) ─────────────────────────────
@@ -11030,7 +11079,7 @@
                 { id: '4beat',  label: '4비트',  rhythms: ['4beat', '4beat2'] },
                 { id: '8beat',  label: '8비트',  rhythms: ['8beat', '8beat2'] },
                 { id: '16beat', label: '16비트', rhythms: ['16beat', '16beat2', '16beatC', '16beatSA', '16beatSB', '16beatSC'] },
-                { id: 'other',  label: '그외',   rhythms: ['ballad', 'swing'] }
+                { id: 'other',  label: '그외',   rhythms: ['ballad', 'balladB', 'swing'] }
             ];
             function renderLoopRhythms() {
                 var container = document.getElementById('loopRhythmGroups');

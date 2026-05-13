@@ -200,6 +200,116 @@
         .bd-tap-btn.tapping .bd-tap-bpm { color: #fff; }
         .bd-tap-btn .bd-tap-bpm:empty { display: none; }
 
+        /* ───── BPM 위젯 — 반주 페이지와 동일한 UI (값 + ± 버튼 + 슬라이더 + TAP 박스) ───── */
+        .bd-bpm-widget {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            grid-template-areas:
+                "display tap"
+                "edges   tap"
+                "slider  slider";
+            column-gap: 0.7rem;
+            row-gap: 0.3rem;
+            padding: 0.5rem 0.7rem 0.6rem;
+            background: rgba(42, 107, 74, 0.04);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-top: 0.3rem;
+            align-items: center;
+        }
+        .bd-bpm-display { grid-area: display; }
+        .bd-bpm-edge-row { grid-area: edges; }
+        .bd-bpm-slider { grid-area: slider; }
+        .bd-bpm-tap-slot { grid-area: tap; display: flex; align-items: stretch; }
+        /* 박스형 TAP 버튼 — BPM 위젯 오른쪽 영역 */
+        .bd-bpm-tap-btn {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.2rem;
+            min-width: 80px;
+            padding: 0.7rem 0.9rem;
+            border: 1.5px solid var(--green-mid);
+            border-radius: 8px;
+            background: rgba(82, 168, 114, 0.1);
+            color: var(--green-deep);
+            font-family: inherit;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, transform 0.05s;
+            white-space: nowrap;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .bd-bpm-tap-btn:hover { background: rgba(82, 168, 114, 0.22); }
+        .bd-bpm-tap-btn.tapping {
+            background: var(--green-deep);
+            color: #fff;
+            border-color: var(--green-deep);
+            transform: scale(0.97);
+        }
+        .bd-bpm-tap-btn i { font-size: 1rem; }
+        .bd-bpm-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.4rem;
+            font-weight: 900;
+            line-height: 1;
+            color: var(--green-deep);
+            text-align: center;
+        }
+        .bd-bpm-edge-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.3rem;
+        }
+        .bd-bpm-edge-btn, .bd-bpm-edge-btn-sm {
+            background: var(--green-mid);
+            border: none;
+            color: #fff;
+            line-height: 1;
+            cursor: pointer;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, transform 0.1s;
+            font-family: inherit;
+            padding: 0;
+            box-shadow: 0 2px 6px rgba(42, 107, 74, 0.18);
+        }
+        .bd-bpm-edge-btn { width: 38px; height: 38px; font-size: 1.3rem; font-weight: 400; }
+        .bd-bpm-edge-btn-sm { width: 32px; height: 32px; font-size: 0.7rem; font-weight: 400; }
+        .bd-bpm-edge-btn:hover, .bd-bpm-edge-btn-sm:hover { background: var(--green-dark); }
+        .bd-bpm-edge-btn:active, .bd-bpm-edge-btn-sm:active { transform: scale(0.92); }
+        .bd-bpm-slider {
+            width: 100%;
+            margin-top: 0.5rem;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 5px;
+            background: rgba(42, 107, 74, 0.25);
+            border-radius: 3px;
+            outline: none;
+        }
+        .bd-bpm-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px; height: 18px;
+            background: var(--green-mid);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .bd-bpm-slider::-moz-range-thumb {
+            width: 18px; height: 18px;
+            background: var(--green-mid);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
         .bd-loginCTA button {
             padding: 0.75rem 1.4rem;
             background: var(--green-deep);
@@ -1026,6 +1136,19 @@
             gap: 0.7rem;
             flex-wrap: wrap;
         }
+        /* 커스텀 선택 시 dropdown 오른쪽에 노출되는 1마디/2마디 셀렉터 */
+        .bd-inst-mlen {
+            display: inline-flex;
+            gap: 0.25rem;
+            background: rgba(42, 107, 74, 0.06);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 3px;
+        }
+        .bd-inst-mlen .bd-rhythm-btn {
+            padding: 0.32rem 0.55rem;
+            font-size: 0.72rem;
+        }
         .bd-inst-row > label.bd-inst-label {
             font-size: 0.78rem;
             font-weight: 700;
@@ -1033,8 +1156,8 @@
             min-width: 4rem;
         }
         .bd-inst-row > select {
-            flex: 1;
-            min-width: 8rem;
+            flex: 0 0 120px;
+            min-width: 100px;
             padding: 0.42rem 0.55rem;
             border: 1px solid var(--border);
             border-radius: 6px;
@@ -1431,49 +1554,46 @@
                 </div>
 
                 <div class="bd-row">
-                    <div class="bd-field" style="flex: 0 0 90px;">
+                    <div class="bd-field" style="flex: 1 1 100%;">
                         <label>BPM</label>
-                        <input type="number" id="fBpm" min="20" max="240" value="90">
-                    </div>
-                    <div class="bd-field" style="flex: 0 0 auto;">
-                        <label>탭으로 측정</label>
-                        <button type="button" class="bd-tap-btn" id="fTapBtn" title="박자에 맞춰 2번 이상 누르세요">
-                            <i class="fas fa-hand-pointer"></i>
-                            <span class="bd-tap-label">TAP</span>
-                            <span class="bd-tap-bpm" id="fTapBpm" style="display:none;"></span>
-                        </button>
-                    </div>
-                    <div class="bd-field" style="flex: 1 1 auto;">
-                        <label>마디</label>
-                        <div class="bd-pills" id="fBars">
-                            <button class="bd-pill" data-bars="4" type="button">4</button>
-                            <button class="bd-pill" data-bars="8" type="button">8</button>
-                            <button class="bd-pill" data-bars="12" type="button">12</button>
-                            <button class="bd-pill" data-bars="16" type="button">16</button>
-                            <button class="bd-pill" data-bars="32" type="button">32</button>
-                            <span class="bd-bars-fine" title="1마디씩 미세 조정 (1~64)">
-                                <button type="button" class="bd-bars-pm" id="bdBarsMinus" aria-label="마디 1개 줄이기">−</button>
-                                <button type="button" class="bd-bars-pm" id="bdBarsPlus" aria-label="마디 1개 늘리기">+</button>
-                            </span>
+                        <div class="bd-bpm-widget">
+                            <div class="bd-bpm-display">
+                                <div class="bd-bpm-value" id="fBpmValue">90</div>
+                            </div>
+                            <div class="bd-bpm-edge-row">
+                                <button type="button" class="bd-bpm-edge-btn" data-bpm-delta="-1" aria-label="BPM -1">−</button>
+                                <button type="button" class="bd-bpm-edge-btn-sm" data-bpm-delta="-10">−10</button>
+                                <button type="button" class="bd-bpm-edge-btn-sm" data-bpm-delta="10">+10</button>
+                                <button type="button" class="bd-bpm-edge-btn" data-bpm-delta="1" aria-label="BPM +1">+</button>
+                            </div>
+                            <input type="range" min="20" max="240" value="90" class="bd-bpm-slider" id="fBpmSlider">
+                            <div class="bd-bpm-tap-slot">
+                                <button type="button" class="bd-bpm-tap-btn" id="fTapBtn" title="박자에 맞춰 2번 이상 누르세요">
+                                    <i class="fas fa-hand-pointer"></i>
+                                    <span>TAP</span>
+                                    <span class="bd-tap-bpm" id="fTapBpm" style="display:none;"></span>
+                                </button>
+                            </div>
                         </div>
+                        <!-- 호환: 기존 코드가 $('fBpm').value 로 읽으므로 hidden input 유지 -->
+                        <input type="hidden" id="fBpm" value="90">
                     </div>
                 </div>
 
+                <!-- 난이도 + 장르 + 드럼 리듬 — 한 행에 -->
                 <div class="bd-row">
-                    <div class="bd-field" style="flex: 1 1 auto;">
+                    <div class="bd-field" style="flex: 0 0 130px;">
                         <label>난이도</label>
-                        <div class="bd-pills bd-pills-stars" id="fDifficulty">
-                            <button class="bd-pill" data-diff="0" type="button">없음</button>
-                            <button class="bd-pill" data-diff="1" type="button">★</button>
-                            <button class="bd-pill" data-diff="2" type="button">★★</button>
-                            <button class="bd-pill" data-diff="3" type="button">★★★</button>
-                            <button class="bd-pill" data-diff="4" type="button">★★★★</button>
-                            <button class="bd-pill" data-diff="5" type="button">★★★★★</button>
-                        </div>
+                        <select id="fDifficulty">
+                            <option value="0">없음</option>
+                            <option value="1">★ (입문)</option>
+                            <option value="2">★★</option>
+                            <option value="3">★★★ (보통)</option>
+                            <option value="4">★★★★</option>
+                            <option value="5">★★★★★ (어려움)</option>
+                        </select>
                     </div>
-                </div>
-                <div class="bd-row">
-                    <div class="bd-field">
+                    <div class="bd-field" style="flex: 0 0 130px;">
                         <label>장르</label>
                         <select id="fGenre">
                             <option value="">선택 안함</option>
@@ -1486,34 +1606,31 @@
                             <option value="Folk">Folk</option>
                         </select>
                     </div>
-                </div>
-
-                <div class="bd-field" style="margin-top: 0.6rem;">
-                    <label>드럼 리듬</label>
-                    <div class="bd-rhythm-groups" id="fRhythmGrid"></div>
-                </div>
-                <!-- 패턴 길이 — 시퀀서를 1마디(기본) 또는 2마디(32 step / rhythm 기준) 로 확장. -->
-                <div class="bd-field" style="margin-top: 0.6rem;">
-                    <label>시퀀서 패턴 길이</label>
-                    <div class="bd-rhythm-grid" id="fMeasureLenBtns" style="grid-template-columns: repeat(2, minmax(0,1fr)); max-width: 240px;">
-                        <button type="button" class="bd-rhythm-btn active" data-mlen="1">1마디</button>
-                        <button type="button" class="bd-rhythm-btn" data-mlen="2">2마디</button>
+                    <div class="bd-field" style="flex: 1 1 320px; min-width: 280px;">
+                        <label>드럼 리듬</label>
+                        <div class="bd-rhythm-groups" id="fRhythmGrid"></div>
                     </div>
+                </div>
+                <!-- 시퀀서 패턴 길이 — hidden, 베이스/피아노 row 의 인라인 셀렉터로 노출 -->
+                <div id="fMeasureLenBtns" style="display:none;">
+                    <button type="button" class="bd-rhythm-btn active" data-mlen="1">1마디</button>
+                    <button type="button" class="bd-rhythm-btn" data-mlen="2">2마디</button>
                 </div>
                 <!-- ───── 베이스 ───── -->
                 <div class="bd-inst-block" style="margin-top:1.0rem;">
                     <div class="bd-inst-row">
                         <label class="bd-inst-label">베이스 리듬</label>
-                        <select id="fBassStyle">
+                        <select id="fBassStyle" class="bd-inst-select">
                             <option value="default">기본</option>
                             <option value="8beat">8비트</option>
                             <option value="16beat">16비트</option>
+                            <option value="custom">커스텀</option>
                         </select>
-                        <label class="bd-inst-toggle-wrap" title="켜면 아래 시퀀서로 베이스를 직접 짭니다 (이 프리셋 선택 시 메인 도구의 베이스 스타일에 '커스텀' 옵션이 노출됨)">
-                            <input type="checkbox" id="fBassCustomToggle">
-                            <span class="bd-inst-toggle"></span>
-                            <span>커스텀</span>
-                        </label>
+                        <!-- 커스텀 선택 시 노출되는 시퀀서 패턴 길이 -->
+                        <div class="bd-inst-mlen" id="fBassMlen" style="display:none;">
+                            <button type="button" class="bd-rhythm-btn active" data-mlen="1">1마디</button>
+                            <button type="button" class="bd-rhythm-btn" data-mlen="2">2마디</button>
+                        </div>
                     </div>
                     <div class="bd-inst-seq-collapsible" id="fBassSeqWrap">
                         <div class="bd-seq-wrap">
@@ -1531,16 +1648,17 @@
                 <div class="bd-inst-block" style="margin-top:0.7rem;">
                     <div class="bd-inst-row">
                         <label class="bd-inst-label">피아노 리듬</label>
-                        <select id="fPianoStyle">
+                        <select id="fPianoStyle" class="bd-inst-select">
                             <option value="default">기본</option>
                             <option value="quarter">4비트</option>
                             <option value="8beat">8비트</option>
+                            <option value="custom">커스텀</option>
                         </select>
-                        <label class="bd-inst-toggle-wrap" title="켜면 아래 시퀀서로 피아노를 직접 짭니다 (이 프리셋 선택 시 메인 도구의 피아노 스타일에 '커스텀' 옵션이 노출됨)">
-                            <input type="checkbox" id="fPianoCustomToggle">
-                            <span class="bd-inst-toggle"></span>
-                            <span>커스텀</span>
-                        </label>
+                        <!-- 커스텀 선택 시 노출되는 시퀀서 패턴 길이 -->
+                        <div class="bd-inst-mlen" id="fPianoMlen" style="display:none;">
+                            <button type="button" class="bd-rhythm-btn active" data-mlen="1">1마디</button>
+                            <button type="button" class="bd-rhythm-btn" data-mlen="2">2마디</button>
+                        </div>
                     </div>
                     <div class="bd-inst-seq-collapsible" id="fPianoSeqWrap">
                         <div class="bd-seq-wrap">
@@ -1554,8 +1672,8 @@
                     </div>
                 </div>
 
-                <div class="bd-section-label" style="margin-top:1.1rem;">
-                    코드 진행
+                <!-- 입력 모드 버튼 (직접입력/픽커) — 코드 진행 라벨 제거됨, 버튼만 유지 -->
+                <div class="bd-section-label" style="margin-top:1.1rem; justify-content:flex-end;">
                     <div class="bd-input-mode">
                         <button type="button" class="bd-input-mode-btn" data-mode="text" id="bdModeText">직접입력</button>
                         <button type="button" class="bd-input-mode-btn" data-mode="picker" id="bdModePicker">픽커</button>
@@ -1565,6 +1683,21 @@
                 <div class="bd-keyboard-row">
                     <div class="bd-keyboard-label">참고 건반</div>
                     <div class="bd-keyboard" id="bdKeyboard" aria-label="참고용 건반"></div>
+                </div>
+                <!-- 마디 (총 개수) — 코드 그리드 바로 위 -->
+                <div class="bd-field" style="margin-top: 0.6rem;">
+                    <label>마디</label>
+                    <div class="bd-pills" id="fBars">
+                        <button class="bd-pill" data-bars="4" type="button">4</button>
+                        <button class="bd-pill" data-bars="8" type="button">8</button>
+                        <button class="bd-pill" data-bars="12" type="button">12</button>
+                        <button class="bd-pill" data-bars="16" type="button">16</button>
+                        <button class="bd-pill" data-bars="32" type="button">32</button>
+                        <span class="bd-bars-fine" title="1마디씩 미세 조정 (1~64)">
+                            <button type="button" class="bd-bars-pm" id="bdBarsMinus" aria-label="마디 1개 줄이기">−</button>
+                            <button type="button" class="bd-bars-pm" id="bdBarsPlus" aria-label="마디 1개 늘리기">+</button>
+                        </span>
+                    </div>
                 </div>
                 <div class="bd-chords-wrap">
                     <div class="bd-loop-grid" id="fChords"></div>
@@ -1647,7 +1780,7 @@
                 '4beat': 4, '4beat2': 4,
                 '16beat': 16, '16beat2': 16, '16beatC': 16,
                 '16beatSA': 16, '16beatSB': 16, '16beatSC': 16,
-                'ballad': 12, 'swing': 12
+                'ballad': 12, 'balladB': 12, 'swing': 12
             };
             // 시퀀서 패턴 길이 — 1 (기본, 매 마디 동일) | 2 (2마디 단위 = step 수 2배).
             // 저장 시 sequencer_pattern.measureLen 으로 보존되어, 메인 반주에서
@@ -2014,10 +2147,24 @@
                 var pw = $('fPianoSeqWrap');
                 if (bw) bw.classList.toggle('open', bdBassCustom);
                 if (pw) pw.classList.toggle('open', bdPianoCustom);
-                var bt = $('fBassCustomToggle');
-                var pt = $('fPianoCustomToggle');
-                if (bt) bt.checked = bdBassCustom;
-                if (pt) pt.checked = bdPianoCustom;
+                // 셀렉트 값을 커스텀 상태에 맞춰 동기화 — 커스텀이면 'custom' 으로, 아니면 그대로 둠.
+                var bs = $('fBassStyle');
+                var ps = $('fPianoStyle');
+                if (bs && bdBassCustom && bs.value !== 'custom') bs.value = 'custom';
+                if (bs && !bdBassCustom && bs.value === 'custom') bs.value = 'default';
+                if (ps && bdPianoCustom && ps.value !== 'custom') ps.value = 'custom';
+                if (ps && !bdPianoCustom && ps.value === 'custom') ps.value = 'default';
+                // 1마디/2마디 인라인 셀렉터 — 커스텀일 때만 노출, 현재 bdMeasureLen 반영.
+                var bMlen = $('fBassMlen');
+                var pMlen = $('fPianoMlen');
+                if (bMlen) bMlen.style.display = bdBassCustom ? 'inline-flex' : 'none';
+                if (pMlen) pMlen.style.display = bdPianoCustom ? 'inline-flex' : 'none';
+                [bMlen, pMlen].forEach(function(box) {
+                    if (!box) return;
+                    box.querySelectorAll('.bd-rhythm-btn').forEach(function(b) {
+                        b.classList.toggle('active', parseInt(b.dataset.mlen, 10) === bdMeasureLen);
+                    });
+                });
             }
             function setupBdSeqEvents() {
                 _wireSeqRowsClicks('bdSeqRowsBass');
@@ -2040,22 +2187,34 @@
                         renderBdSeq();
                     };
                 }
-                var bToggle = $('fBassCustomToggle');
-                if (bToggle && !bToggle._wired) {
-                    bToggle._wired = true;
-                    bToggle.addEventListener('change', function() {
-                        bdBassCustom = !!bToggle.checked;
+                // 베이스/피아노 드롭다운에 'custom' 옵션 선택 시 커스텀 모드로 진입
+                var bSel = $('fBassStyle');
+                if (bSel && !bSel._wired) {
+                    bSel._wired = true;
+                    bSel.addEventListener('change', function() {
+                        bdBassCustom = (bSel.value === 'custom');
                         _applyCustomToggleUI();
                     });
                 }
-                var pToggle = $('fPianoCustomToggle');
-                if (pToggle && !pToggle._wired) {
-                    pToggle._wired = true;
-                    pToggle.addEventListener('change', function() {
-                        bdPianoCustom = !!pToggle.checked;
+                var pSel = $('fPianoStyle');
+                if (pSel && !pSel._wired) {
+                    pSel._wired = true;
+                    pSel.addEventListener('change', function() {
+                        bdPianoCustom = (pSel.value === 'custom');
                         _applyCustomToggleUI();
                     });
                 }
+                // 인라인 1마디/2마디 버튼 — 클릭 시 setBdMeasureLen 호출
+                ['fBassMlen', 'fPianoMlen'].forEach(function(boxId) {
+                    var box = $(boxId);
+                    if (!box || box._wired) return;
+                    box._wired = true;
+                    box.querySelectorAll('.bd-rhythm-btn').forEach(function(b) {
+                        b.addEventListener('click', function() {
+                            setBdMeasureLen(parseInt(b.dataset.mlen, 10));
+                        });
+                    });
+                });
             }
 
             // ─── 리듬 그룹 정의 (4비트 / 8비트 / 16비트 / 그외) ───
@@ -2064,13 +2223,13 @@
                 '4beat': '4비트 A', '4beat2': '4비트 B',
                 '16beat': '16비트 A', '16beat2': '16비트 B', '16beatC': '16비트 C',
                 '16beatSA': '16바운스 A', '16beatSB': '16바운스 B', '16beatSC': '16바운스 C',
-                'ballad': '셔플락', 'swing': '스윙'
+                'ballad': '셔플락', 'balladB': '셔플락 바운스', 'swing': '스윙'
             };
             var BD_RHYTHM_GROUPS = [
                 { id: '4beat',  label: '4비트',  rhythms: ['4beat', '4beat2'] },
                 { id: '8beat',  label: '8비트',  rhythms: ['8beat', '8beat2'] },
                 { id: '16beat', label: '16비트', rhythms: ['16beat', '16beat2', '16beatC', '16beatSA', '16beatSB', '16beatSC'] },
-                { id: 'other',  label: '그외',   rhythms: ['ballad', 'swing'] }
+                { id: 'other',  label: '그외',   rhythms: ['ballad', 'balladB', 'swing'] }
             ];
 
             // 모든 그룹 팝업 닫기 — 외부 클릭 또는 다른 토글 클릭 시 호출.
@@ -2211,6 +2370,8 @@
                 document.querySelectorAll('#fMeasureLenBtns .bd-rhythm-btn').forEach(function(b) {
                     b.classList.toggle('active', parseInt(b.dataset.mlen, 10) === n);
                 });
+                // 베이스/피아노 인라인 1마디/2마디 버튼들도 동기화
+                if (typeof _applyCustomToggleUI === 'function') _applyCustomToggleUI();
                 if (typeof renderBdSeq === 'function') renderBdSeq();
             }
 
@@ -2497,7 +2658,7 @@
                 $('formTitle').textContent = '새 프리셋';
                 $('fName').value = '';
                 $('fArtist').value = '';
-                $('fBpm').value = 90;
+                setBdBpm(90);
                 $('fGenre').value = '';
                 bars = 4;
                 difficulty = 0;
@@ -2532,7 +2693,7 @@
                 $('formTitle').textContent = '편집: ' + p.name;
                 $('fName').value = p.name || '';
                 $('fArtist').value = p.artist || '';
-                $('fBpm').value = p.bpm || 90;
+                setBdBpm(p.bpm || 90);
                 // 기존에 한글/소문자 등으로 저장된 값과 새 옵션 값 매칭 — 호환 매핑
                 $('fGenre').value = normalizeGenreForSelect(p.genre || '');
                 bars = p.bars || 4;
@@ -2660,7 +2821,7 @@
                 var c = presetClipboard;
                 $('fName').value = c.name || '';
                 $('fArtist').value = c.artist || '';
-                $('fBpm').value = c.bpm || 90;
+                setBdBpm(c.bpm || 90);
                 bars = c.bars || 4;
                 difficulty = c.difficulty || 0;
                 setRhythm(c.rhythm || '8beat');
@@ -2728,9 +2889,8 @@
             }
 
             function renderDifficulty() {
-                document.querySelectorAll('#fDifficulty .bd-pill').forEach(function(b) {
-                    b.classList.toggle('active', parseInt(b.dataset.diff, 10) === difficulty);
-                });
+                var sel = $('fDifficulty');
+                if (sel) sel.value = String(difficulty || 0);
             }
 
             const BARS_MIN = 1, BARS_MAX = 64;
@@ -3408,10 +3568,31 @@
                 });
                 $('bdBarsMinus').onclick = function() { setBars(bars - 1); };
                 $('bdBarsPlus').onclick  = function() { setBars(bars + 1); };
-                document.querySelectorAll('#fDifficulty .bd-pill').forEach(function(b) {
-                    b.onclick = function() {
-                        difficulty = parseInt(b.dataset.diff, 10);
-                        renderDifficulty();
+                var diffSel = $('fDifficulty');
+                if (diffSel) {
+                    diffSel.onchange = function() {
+                        difficulty = parseInt(diffSel.value, 10) || 0;
+                    };
+                }
+
+                // ─── BPM 위젯 — hidden #fBpm + 표시값 + 슬라이더를 한 번에 동기화 ───
+                window.setBdBpm = function(val) {
+                    val = Math.max(20, Math.min(240, parseInt(val, 10) || 90));
+                    var inp = $('fBpm');     if (inp) inp.value = val;
+                    var disp = $('fBpmValue'); if (disp) disp.textContent = val;
+                    var sld = $('fBpmSlider'); if (sld) sld.value = val;
+                };
+                // 슬라이더 입력 → BPM 동기화
+                var bpmSlider = $('fBpmSlider');
+                if (bpmSlider) {
+                    bpmSlider.oninput = function() { setBdBpm(bpmSlider.value); };
+                }
+                // ± / ±10 버튼
+                document.querySelectorAll('.bd-bpm-edge-btn, .bd-bpm-edge-btn-sm').forEach(function(btn) {
+                    btn.onclick = function() {
+                        var delta = parseInt(btn.dataset.bpmDelta, 10) || 0;
+                        var cur = parseInt(($('fBpm') && $('fBpm').value) || 90, 10);
+                        setBdBpm(cur + delta);
                     };
                 });
 
@@ -3441,7 +3622,7 @@
                         var bpm = calc();
                         if (bpm !== null) {
                             bpmDisplay.textContent = bpm;
-                            bpmInput.value = bpm;
+                            setBdBpm(bpm);
                         }
                         btn.classList.add('tapping');
                         requestAnimationFrame(function() {
