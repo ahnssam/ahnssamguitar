@@ -10567,7 +10567,7 @@
                 if (_loopPresetSort === 'genre') {
                     var genres = new Set();
                     presets.forEach(function(p) { if (p.genre) genres.add(p.genre); });
-                    return Array.from(genres).sort().map(function(g) {
+                    return Array.from(genres).sort(_genreCompare).map(function(g) {
                         return { val: g, label: g };
                     });
                 }
@@ -10626,6 +10626,20 @@
                     return presets.filter(function(p) { return (p.genre || '') === f; });
                 }
                 return presets;
+            }
+
+            // 장르 표시 순서 — 빌더의 셀렉트 옵션 순서와 동일하게 강제.
+            // 알파벳 정렬이면 '가요' 가 항상 끝으로 가는데, UI 일관성을 위해
+            // 빌더와 같은 순서(Pop → 가요 → Rock → ...)로 보이게 함.
+            // 목록에 없는 장르(=신규 추가된 한글 장르 등)는 뒤에 _alphaCompare 로.
+            var _GENRE_ORDER = ['Pop', '가요', 'Rock', 'Ballad', 'Blues', 'Jazz', 'Funk', 'Folk'];
+            function _genreCompare(a, b) {
+                var ai = _GENRE_ORDER.indexOf(String(a || ''));
+                var bi = _GENRE_ORDER.indexOf(String(b || ''));
+                if (ai >= 0 && bi >= 0) return ai - bi;
+                if (ai >= 0) return -1;   // a 만 알려진 장르 → 앞으로
+                if (bi >= 0) return 1;    // b 만 알려진 장르 → 앞으로
+                return _alphaCompare(a, b);
             }
 
             // 영문(A-Z) 먼저, 한글(가-하) 나중. 같은 그룹 안에서는 locale-aware 정렬.
@@ -10747,11 +10761,12 @@
                             return _alphaCompare(a.name, b.name);
                         });
                     } else if (_loopPresetSort === 'genre') {
-                        // 장르별 그룹 정렬 (장르 없으면 마지막 "기타")
+                        // 장르별 그룹 정렬 — 빌더 셀렉트와 동일한 순서 (Pop, 가요, Rock, ...).
+                        // 장르 없는 항목은 마지막 "기타" 그룹으로 (정렬상 끝).
                         filtered.sort(function(a, b) {
                             var ga = a.genre || '￿';
                             var gb = b.genre || '￿';
-                            var c = _alphaCompare(ga, gb);
+                            var c = _genreCompare(ga, gb);
                             if (c !== 0) return c;
                             return _alphaCompare(a.name, b.name);
                         });
