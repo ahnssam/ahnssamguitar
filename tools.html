@@ -5369,7 +5369,8 @@
         :root[data-theme="dark"] .loop-preset-item-meta { color: rgba(232, 240, 236, 0.6); }
         :root[data-theme="dark"] .loop-preset-empty { color: rgba(232, 240, 236, 0.5); }
         .loop-top-row {
-            display: flex; align-items: flex-start; gap: 1rem;
+            display: flex; align-items: center; gap: 1rem;
+            flex-wrap: wrap;
             margin-bottom: 0.8rem; font-size: 0.8rem; color: rgba(26, 36, 33, 0.6);
         }
 
@@ -5671,6 +5672,7 @@
         .loop-input-mode label {
             white-space: nowrap;
             font-size: 0.78rem;
+            font-weight: 600;
             color: rgba(26, 36, 33, 0.6);
         }
         .loop-input-mode-btns {
@@ -5710,7 +5712,7 @@
             background: var(--green-mid);
             color: #fff;
         }
-        .loop-measures-label label { white-space: nowrap; }
+        .loop-measures-label label { white-space: nowrap; font-weight: 600; }
         .loop-measures-btns { display: flex; gap: 0.3rem; }
         .loop-measures-btns button {
             padding: 0.3rem 0.7rem; font-size: 0.75rem; font-weight: 600;
@@ -5729,7 +5731,7 @@
             color: rgba(26, 36, 33, 0.6);
             flex-wrap: wrap;
         }
-        .loop-rhythm-picker label { white-space: nowrap; }
+        .loop-rhythm-picker label { white-space: nowrap; font-weight: 600; }
         .loop-rhythm-picker > .loop-rhythm-groups { flex: 1 1 auto; }
         .loop-rhythm-toggle {
             display: flex; align-items: center; gap: 0.4rem;
@@ -6657,36 +6659,7 @@
                             <div id="loopPresetItems"></div>
                         </div>
                     </div>
-                    <div class="loop-top-row">
-                        <div class="loop-measures-label">
-                            <label>마디</label>
-                            <div class="loop-measures-btns" id="loopMeasureBtns">
-                                <button class="active" data-bars="4" data-action="setLoopBars" data-args="4">4</button>
-                                <button data-bars="8" data-action="setLoopBars" data-args="8">8</button>
-                                <button data-bars="12" data-action="setLoopBars" data-args="12">12</button>
-                                <button data-bars="16" data-action="setLoopBars" data-args="16">16</button>
-                                <button data-bars="32" data-action="setLoopBars" data-args="32">32</button>
-                            </div>
-                            <div class="loop-measures-fine" title="1마디씩 미세 조정 (1~64)">
-                                <button type="button" class="loop-measures-pm" data-action="adjustLoopBars" data-args="-1" aria-label="마디 1개 줄이기">−</button>
-                                <button type="button" class="loop-measures-pm" data-action="adjustLoopBars" data-args="1" aria-label="마디 1개 늘리기">+</button>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- 입력 모드 + 초기화 — 마디 바로 아래에 별도 행. -->
-                    <div class="loop-transpose-row">
-                        <div class="loop-input-mode" title="코드 칸을 클릭했을 때의 기본 입력 방식">
-                            <label>입력</label>
-                            <div class="loop-input-mode-btns" id="loopInputModeBtns">
-                                <button type="button" class="active" data-mode="picker" data-action="setLoopInputMode" data-args="picker">픽커</button>
-                                <button type="button" data-mode="text" data-action="setLoopInputMode" data-args="text">직접입력</button>
-                            </div>
-                        </div>
-                        <button type="button" class="loop-clear-all-btn" data-action="resetLoopAll" title="프리셋 해제 + 모든 코드 비움" style="margin-left:auto;">
-                            <i class="fas fa-redo"></i> 초기화
-                        </button>
-                    </div>
-                    <!-- 베이스/피아노/전체키/예비박 — 같은 행에 묶음 -->
+                    <!-- 베이스/피아노 — 한 행 (예비박은 마디 왼쪽으로, 전체 키는 그리드 아래로 이동) -->
                     <div class="loop-style-row">
                         <div class="loop-style-group">
                             <label>베이스</label>
@@ -6704,8 +6677,48 @@
                                 <button type="button" class="loop-style-btn" data-pstyle="8beat" data-action="setLoopPianoStyle" data-args="8beat">8비트</button>
                             </div>
                         </div>
+                    </div>
+                    <!-- 리듬 — 그룹 토글 4개를 한 줄로 -->
+                    <div class="loop-rhythm-picker" id="loopRhythmPicker">
+                        <label>리듬</label>
+                        <div class="loop-rhythm-groups" id="loopRhythmGroups"></div>
+                    </div>
+                    <!-- 예비박 + 마디 + 입력 픽커 — 코드 그리드 바로 위. 입력 픽커는 오른쪽으로. -->
+                    <div class="loop-top-row">
+                        <div class="loop-style-group" title="시작 전 4박자 카운트인을 하이햇으로 들려줍니다">
+                            <label>예비박</label>
+                            <label class="loop-toggle">
+                                <input type="checkbox" id="loopCountInToggle" data-change="setLoopCountIn" data-args="$checked" aria-label="예비박 토글">
+                                <span class="loop-toggle-track"><span class="loop-toggle-thumb"></span></span>
+                            </label>
+                        </div>
+                        <div class="loop-measures-label">
+                            <label>마디</label>
+                            <div class="loop-measures-btns" id="loopMeasureBtns">
+                                <button class="active" data-bars="4" data-action="setLoopBars" data-args="4">4</button>
+                                <button data-bars="8" data-action="setLoopBars" data-args="8">8</button>
+                                <button data-bars="12" data-action="setLoopBars" data-args="12">12</button>
+                                <button data-bars="16" data-action="setLoopBars" data-args="16">16</button>
+                                <button data-bars="32" data-action="setLoopBars" data-args="32">32</button>
+                            </div>
+                            <div class="loop-measures-fine" title="1마디씩 미세 조정 (1~64)">
+                                <button type="button" class="loop-measures-pm" data-action="adjustLoopBars" data-args="-1" aria-label="마디 1개 줄이기">−</button>
+                                <button type="button" class="loop-measures-pm" data-action="adjustLoopBars" data-args="1" aria-label="마디 1개 늘리기">+</button>
+                            </div>
+                        </div>
+                        <div class="loop-input-mode" title="코드 칸을 클릭했을 때의 기본 입력 방식" style="margin-left:auto;">
+                            <label>입력</label>
+                            <div class="loop-input-mode-btns" id="loopInputModeBtns">
+                                <button type="button" class="active" data-mode="picker" data-action="setLoopInputMode" data-args="picker">픽커</button>
+                                <button type="button" data-mode="text" data-action="setLoopInputMode" data-args="text">직접입력</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="loop-grid cols-4" id="loopGrid"></div>
+                    <!-- 전체 키 + 초기화 — 그리드와 BPM 사이 -->
+                    <div class="loop-transpose-row">
                         <div class="loop-style-group" title="모든 코드를 반음 단위로 이동">
-                            <label>전체 키</label>
+                            <span class="loop-transpose-label">전체 키</span>
                             <div class="loop-transpose-btns">
                                 <button type="button" class="loop-transpose-btn" data-action="transposeLoopChordsAll" data-args="-1" title="모든 코드를 반음 내림" aria-label="반음 내림">
                                     <i class="fas fa-chevron-down"></i>
@@ -6715,20 +6728,10 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="loop-style-group" title="시작 전 4박자 카운트인을 하이햇으로 들려줍니다">
-                            <label>예비박</label>
-                            <label class="loop-toggle">
-                                <input type="checkbox" id="loopCountInToggle" data-change="setLoopCountIn" data-args="$checked" aria-label="예비박 토글">
-                                <span class="loop-toggle-track"><span class="loop-toggle-thumb"></span></span>
-                            </label>
-                        </div>
+                        <button type="button" class="loop-clear-all-btn" data-action="resetLoopAll" title="프리셋 해제 + 모든 코드 비움" style="margin-left:auto;">
+                            <i class="fas fa-redo"></i> 초기화
+                        </button>
                     </div>
-                    <!-- 리듬 — 그룹 토글 4개를 한 줄로 -->
-                    <div class="loop-rhythm-picker" id="loopRhythmPicker">
-                        <label>리듬</label>
-                        <div class="loop-rhythm-groups" id="loopRhythmGroups"></div>
-                    </div>
-                    <div class="loop-grid cols-4" id="loopGrid"></div>
                 </div>
                 <div class="metronome-bpm">
                     <div class="metronome-bpm-value" id="bpmValue">90</div>
@@ -9478,6 +9481,30 @@
                 'half-dim':[0, 3, 6, 10]
             };
 
+            // ─── 탑노트 강제 테이블 ───────────────────────────────────
+            // suffix → root 기준 반음 오프셋. 해당 오프셋의 pitch class 가
+            // 보이싱의 가장 높은 음이 되도록 강제한다.
+            //
+            // 7#9 (헨드릭스 코드) — ♯9 가 위에 있어야 특유의 텐션 사운드.
+            // 보이스 리딩이 직전 코드와의 거리만 보면 3도(4) 가 탑으로
+            // 올라와 색깔이 죽는 경우가 있어 명시적으로 막음.
+            const EXTENDED_CHORD_TOP_OFFSET = {
+                '7#9': 3  // ♯9 (♭3 와 enharmonic) — 항상 탑노트
+            };
+
+            // 주어진 코드 이름의 "탑노트 강제 pitch class" 를 돌려준다.
+            // 제약이 없는 코드면 -1.
+            function getTopNotePc(chordName) {
+                if (!chordName) return -1;
+                var m = String(chordName).match(/^([A-G][#b]?)(.*)$/);
+                if (!m) return -1;
+                var rIdx = _pcToIdx(m[1]);
+                if (rIdx < 0) return -1;
+                var rest = (m[2] || '').trim().replace(/♭/g, 'b').replace(/♯/g, '#');
+                if (!(rest in EXTENDED_CHORD_TOP_OFFSET)) return -1;
+                return (rIdx + EXTENDED_CHORD_TOP_OFFSET[rest]) % 12;
+            }
+
             // 코드 이름 → pitch-class 집합 (피아노 보이싱용).
             //   1) suffix 가 EXTENDED_CHORD_PCS 에 정확히 매칭되면 그 오프셋 사용
             //      (♭/♯ 유니코드는 b/# 로 정규화 후 룩업)
@@ -9540,6 +9567,8 @@
                 options = options || {};
                 var pcs = chordPcsFromName(chordName);
                 if (!pcs) return null;
+                // 탑노트 강제 pc (예: 7#9 → ♯9). -1 이면 제약 없음.
+                var topNotePc = getTopNotePc(chordName);
                 // 음역대 1.5옥타브 (C3..G4) — 사용자 요청 범위. 가운데 도(C4)
                 // 부근에 모이도록 CENTER=A3 정도로 잡음. 너무 높지 않아 기타
                 // 코드 위에 쌓아도 답답하지 않고, 너무 낮지도 않아 베이스와
@@ -9607,6 +9636,12 @@
                         if (isIdenticalToPrev(voicing)) s += 1000;
                         // "음 하나 정도만 변경" — 과도한 이동 합산 페널티.
                         if (move > 30) s += (move - 30) * 1.5;
+                    }
+                    // 탑노트 강제 — 지정된 pc 가 voicing 의 최고음이 아니면 배제.
+                    // (7#9 등에서 ♯9 가 항상 탑이어야 하는 케이스)
+                    if (topNotePc >= 0) {
+                        var topMidi = Math.max.apply(Math, voicing);
+                        if ((topMidi % 12) !== topNotePc) s += 100000;
                     }
                     return s;
                 }

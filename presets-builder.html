@@ -479,6 +479,83 @@
         .bd-bars-pm:hover { background: rgba(82, 168, 114, 0.18); }
         .bd-bars-pm:active { transform: scale(0.92); }
         .bd-bars-pm:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+        /* ───── 마디 + 직접입력/픽커 행 (그리드 바로 위) ───── */
+        .bd-bars-row {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            flex-wrap: wrap;
+            margin-top: 0.6rem;
+        }
+        /* 마디 필드 — 자연 폭 (flex:1 안 함). 가로 사이즈 축소. */
+        .bd-bars-row .bd-field {
+            margin: 0;
+            flex: 0 0 auto;
+            min-width: 0;
+        }
+        /* 마디 pill 버튼들도 살짝 좁힘 */
+        .bd-bars-row .bd-pill {
+            padding: 0.32rem 0.55rem;
+            font-size: 0.74rem;
+        }
+
+        /* ───── 그리드 아래 전체 키 + 초기화 행 ───── */
+        .bd-chord-utility-row {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+            margin-bottom: 0.7rem;
+        }
+        .bd-transpose-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .bd-transpose-label {
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: rgba(26, 36, 33, 0.6);
+        }
+        .bd-transpose-btn {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: rgba(42, 107, 74, 0.06);
+            color: var(--green-deep);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: inherit;
+            font-size: 0.85rem;
+            transition: background 0.15s, transform 0.08s;
+        }
+        .bd-transpose-btn:hover { background: rgba(82, 168, 114, 0.18); }
+        .bd-transpose-btn:active { transform: scale(0.92); }
+        .bd-chord-clear-btn {
+            margin-left: auto;
+            padding: 0.4rem 0.85rem;
+            border-radius: 16px;
+            border: 1px solid rgba(196, 64, 52, 0.3);
+            background: rgba(196, 64, 52, 0.08);
+            color: #b83a2e;
+            font-family: inherit;
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .bd-chord-clear-btn:hover {
+            background: rgba(196, 64, 52, 0.18);
+            border-color: rgba(196, 64, 52, 0.55);
+        }
+        .bd-chord-clear-btn i { font-size: 0.7rem; }
         .bd-pills-stars .bd-pill[data-diff="0"] { color: var(--text-light); }
         .bd-pills-stars .bd-pill:not([data-diff="0"]) { color: #d4a52a; font-size: 0.74rem; }
         .bd-pills-stars .bd-pill.active { color: #fff !important; }
@@ -1542,14 +1619,39 @@
             <div class="bd-card" id="editForm" style="display:none;">
                 <div class="bd-section-label" id="formTitle">새 프리셋</div>
 
+                <!-- 노래 이름 + 아티스트 + 난이도 + 장르 — 한 행. 이름/아티스트는 폭 축소. -->
                 <div class="bd-row">
-                    <div class="bd-field">
+                    <div class="bd-field" style="flex: 1 1 180px; min-width: 140px;">
                         <label>노래 이름 *</label>
                         <input type="text" id="fName" placeholder="예: Let It Be">
                     </div>
-                    <div class="bd-field">
+                    <div class="bd-field" style="flex: 1 1 160px; min-width: 120px;">
                         <label>아티스트</label>
                         <input type="text" id="fArtist" placeholder="예: Beatles">
+                    </div>
+                    <div class="bd-field" style="flex: 0 0 130px;">
+                        <label>난이도</label>
+                        <select id="fDifficulty">
+                            <option value="0">없음</option>
+                            <option value="1">★ (입문)</option>
+                            <option value="2">★★</option>
+                            <option value="3">★★★ (보통)</option>
+                            <option value="4">★★★★</option>
+                            <option value="5">★★★★★ (어려움)</option>
+                        </select>
+                    </div>
+                    <div class="bd-field" style="flex: 0 0 120px;">
+                        <label>장르</label>
+                        <select id="fGenre">
+                            <option value="">선택 안함</option>
+                            <option value="Pop">Pop</option>
+                            <option value="Rock">Rock</option>
+                            <option value="Ballad">Ballad</option>
+                            <option value="Blues">Blues</option>
+                            <option value="Jazz">Jazz</option>
+                            <option value="Funk">Funk</option>
+                            <option value="Folk">Folk</option>
+                        </select>
                     </div>
                 </div>
 
@@ -1580,36 +1682,10 @@
                     </div>
                 </div>
 
-                <!-- 난이도 + 장르 + 드럼 리듬 — 한 행에 -->
-                <div class="bd-row">
-                    <div class="bd-field" style="flex: 0 0 130px;">
-                        <label>난이도</label>
-                        <select id="fDifficulty">
-                            <option value="0">없음</option>
-                            <option value="1">★ (입문)</option>
-                            <option value="2">★★</option>
-                            <option value="3">★★★ (보통)</option>
-                            <option value="4">★★★★</option>
-                            <option value="5">★★★★★ (어려움)</option>
-                        </select>
-                    </div>
-                    <div class="bd-field" style="flex: 0 0 130px;">
-                        <label>장르</label>
-                        <select id="fGenre">
-                            <option value="">선택 안함</option>
-                            <option value="Pop">Pop</option>
-                            <option value="Rock">Rock</option>
-                            <option value="Ballad">Ballad</option>
-                            <option value="Blues">Blues</option>
-                            <option value="Jazz">Jazz</option>
-                            <option value="Funk">Funk</option>
-                            <option value="Folk">Folk</option>
-                        </select>
-                    </div>
-                    <div class="bd-field" style="flex: 1 1 320px; min-width: 280px;">
-                        <label>드럼 리듬</label>
-                        <div class="bd-rhythm-groups" id="fRhythmGrid"></div>
-                    </div>
+                <!-- 드럼 리듬 — 그룹 토글 -->
+                <div class="bd-field" style="margin-top: 0.6rem;">
+                    <label>드럼 리듬</label>
+                    <div class="bd-rhythm-groups" id="fRhythmGrid"></div>
                 </div>
                 <!-- 시퀀서 패턴 길이 — hidden, 베이스/피아노 row 의 인라인 셀렉터로 노출 -->
                 <div id="fMeasureLenBtns" style="display:none;">
@@ -1672,31 +1748,30 @@
                     </div>
                 </div>
 
-                <!-- 입력 모드 버튼 (직접입력/픽커) — 코드 진행 라벨 제거됨, 버튼만 유지 -->
-                <div class="bd-section-label" style="margin-top:1.1rem; justify-content:flex-end;">
-                    <div class="bd-input-mode">
-                        <button type="button" class="bd-input-mode-btn" data-mode="text" id="bdModeText">직접입력</button>
-                        <button type="button" class="bd-input-mode-btn" data-mode="picker" id="bdModePicker">픽커</button>
-                    </div>
-                </div>
                 <!-- 참고용 한 옥타브+ 건반 (C3 ~ G4) — 코드 진행 짤 때 음 확인용. -->
-                <div class="bd-keyboard-row">
+                <div class="bd-keyboard-row" style="margin-top:1.1rem;">
                     <div class="bd-keyboard-label">참고 건반</div>
                     <div class="bd-keyboard" id="bdKeyboard" aria-label="참고용 건반"></div>
                 </div>
-                <!-- 마디 (총 개수) — 코드 그리드 바로 위 -->
-                <div class="bd-field" style="margin-top: 0.6rem;">
-                    <label>마디</label>
-                    <div class="bd-pills" id="fBars">
-                        <button class="bd-pill" data-bars="4" type="button">4</button>
-                        <button class="bd-pill" data-bars="8" type="button">8</button>
-                        <button class="bd-pill" data-bars="12" type="button">12</button>
-                        <button class="bd-pill" data-bars="16" type="button">16</button>
-                        <button class="bd-pill" data-bars="32" type="button">32</button>
-                        <span class="bd-bars-fine" title="1마디씩 미세 조정 (1~64)">
-                            <button type="button" class="bd-bars-pm" id="bdBarsMinus" aria-label="마디 1개 줄이기">−</button>
-                            <button type="button" class="bd-bars-pm" id="bdBarsPlus" aria-label="마디 1개 늘리기">+</button>
-                        </span>
+                <!-- 마디 (좌) + 직접입력/픽커 (우) — 코드 그리드 바로 위 -->
+                <div class="bd-bars-row">
+                    <div class="bd-field">
+                        <label>마디</label>
+                        <div class="bd-pills" id="fBars">
+                            <button class="bd-pill" data-bars="4" type="button">4</button>
+                            <button class="bd-pill" data-bars="8" type="button">8</button>
+                            <button class="bd-pill" data-bars="12" type="button">12</button>
+                            <button class="bd-pill" data-bars="16" type="button">16</button>
+                            <button class="bd-pill" data-bars="32" type="button">32</button>
+                            <span class="bd-bars-fine" title="1마디씩 미세 조정 (1~64)">
+                                <button type="button" class="bd-bars-pm" id="bdBarsMinus" aria-label="마디 1개 줄이기">−</button>
+                                <button type="button" class="bd-bars-pm" id="bdBarsPlus" aria-label="마디 1개 늘리기">+</button>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="bd-input-mode" style="margin-left:auto;">
+                        <button type="button" class="bd-input-mode-btn" data-mode="text" id="bdModeText">직접입력</button>
+                        <button type="button" class="bd-input-mode-btn" data-mode="picker" id="bdModePicker">픽커</button>
                     </div>
                 </div>
                 <div class="bd-chords-wrap">
@@ -1706,6 +1781,21 @@
                         <span id="bdTipText">타이핑: <code>C</code>, <code>Am</code>, <code>F#m</code>, <code>Bb</code>, <code>CM7</code>, <code>Dm7</code> + 확장(<code>Csus4</code>, <code>Cadd9</code>, <code>C9</code>, <code>Cm9</code>, <code>C13</code>, <code>C7b9</code>, <code>C7b13</code> 등) 모두 보이싱 재생.</span>
                         <span id="bdTipPicker" style="display:none;">셀을 누르면 픽커가 뜹니다 — 모바일에서 키보드 없이 빠르게 입력.</span>
                     </div>
+                </div>
+                <!-- 전체 키 + 초기화 — 코드 그리드 바로 아래 -->
+                <div class="bd-chord-utility-row">
+                    <div class="bd-transpose-group" title="모든 코드를 반음 단위로 이동">
+                        <span class="bd-transpose-label">전체 키</span>
+                        <button type="button" class="bd-transpose-btn" id="bdTransposeDown" title="모든 코드를 반음 내림" aria-label="반음 내림">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <button type="button" class="bd-transpose-btn" id="bdTransposeUp" title="모든 코드를 반음 올림" aria-label="반음 올림">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                    </div>
+                    <button type="button" class="bd-chord-clear-btn" id="bdChordClearBtn" title="모든 코드 비우기">
+                        <i class="fas fa-redo"></i> 초기화
+                    </button>
                 </div>
 
                 <div class="bd-actions">
@@ -2987,6 +3077,62 @@
                 return root + (isMinor ? 'm' : '');
             }
 
+            // ─── 코드 일괄 트랜스포즈 (반음 단위로 전체 이동) ───────────────
+            //   루트만 정규식으로 분리해서 ±delta, 나머지 (m7, sus4, add9, 7b9, /E 등 확장)는 원형 보존.
+            //   슬래시 베이스 (예: C/E) 도 같은 만큼 이동.
+            //   루트 표기(샵/플랫)는 원래 표기 유지.
+            function transposeBdChordsAll(delta) {
+                var SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+                var FLAT  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+                function rootIndex(r) {
+                    var i = SHARP.indexOf(r);
+                    if (i >= 0) return i;
+                    return FLAT.indexOf(r);
+                }
+                function shiftRoot(r, useFlat) {
+                    var idx = rootIndex(r);
+                    if (idx < 0) return r;
+                    var newIdx = ((idx + delta) % 12 + 12) % 12;
+                    return useFlat ? FLAT[newIdx] : SHARP[newIdx];
+                }
+                function shiftOne(name) {
+                    if (!name) return name;
+                    var m = String(name).match(/^([A-G][#b]?)(.*)$/);
+                    if (!m) return name;
+                    var root = m[1];
+                    var rest = m[2] || '';
+                    var idx = rootIndex(root);
+                    if (idx < 0) return name;
+                    var useFlat = root.indexOf('b') !== -1;
+                    var newRoot = shiftRoot(root, useFlat);
+                    // 슬래시 베이스도 같이 이동 — 예: Cmaj7/E → Dmaj7/F#  (+2)
+                    var slash = rest.indexOf('/');
+                    if (slash !== -1) {
+                        var prefix = rest.substring(0, slash);
+                        var bassPart = rest.substring(slash + 1);
+                        var bm = bassPart.match(/^([A-G][#b]?)(.*)$/);
+                        if (bm && rootIndex(bm[1]) >= 0) {
+                            var bUseFlat = bm[1].indexOf('b') !== -1;
+                            var newBass = shiftRoot(bm[1], bUseFlat);
+                            return newRoot + prefix + '/' + newBass + (bm[2] || '');
+                        }
+                    }
+                    return newRoot + rest;
+                }
+                if (!delta) return;
+                var cur = readChords();
+                var newA = {}, newB = {};
+                Object.keys(cur.a).forEach(function(k) { newA[k] = shiftOne(cur.a[k]); });
+                Object.keys(cur.b).forEach(function(k) { newB[k] = shiftOne(cur.b[k]); });
+                renderChords(newA, newB);
+            }
+
+            // 코드 진행 전체 비우기
+            function clearBdChordsAll() {
+                if (!confirm('모든 코드를 비울까요?')) return;
+                renderChords({}, {});
+            }
+
             window.setBdInputMode = function(mode) {
                 if (mode !== 'picker' && mode !== 'text') return;
                 bdInputMode = mode;
@@ -3568,6 +3714,10 @@
                 });
                 $('bdBarsMinus').onclick = function() { setBars(bars - 1); };
                 $('bdBarsPlus').onclick  = function() { setBars(bars + 1); };
+                // 전체 키 ▼▲ / 초기화 — 그리드 아래 유틸리티 행
+                var bdTD = $('bdTransposeDown'); if (bdTD) bdTD.onclick = function() { transposeBdChordsAll(-1); };
+                var bdTU = $('bdTransposeUp');   if (bdTU) bdTU.onclick = function() { transposeBdChordsAll(1); };
+                var bdCC = $('bdChordClearBtn'); if (bdCC) bdCC.onclick = clearBdChordsAll;
                 var diffSel = $('fDifficulty');
                 if (diffSel) {
                     diffSel.onchange = function() {
