@@ -1195,6 +1195,76 @@
             border-color: var(--green-deep);
         }
 
+        /* ─ 리듬 그룹 (4비트 / 8비트 / 16비트 / 그외) — 가로 토글 + 세로 팝업 ─ */
+        .bd-rhythm-groups {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+            background: rgba(42, 107, 74, 0.06);
+            border: 1px solid rgba(42, 107, 74, 0.18);
+            border-radius: 8px;
+            padding: 0.4rem;
+            margin-top: 0.3rem;
+        }
+        .bd-rhythm-group { position: relative; }
+        .bd-rhythm-group-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.45rem 0.7rem;
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: var(--green-deep);
+            background: rgba(82, 168, 114, 0.14);
+            border: 1px solid rgba(42, 107, 74, 0.22);
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .bd-rhythm-group-toggle:hover { background: rgba(82, 168, 114, 0.24); }
+        .bd-rhythm-group-toggle i { font-size: 0.6rem; transition: transform 0.2s; }
+        .bd-rhythm-group-toggle.open i { transform: rotate(180deg); }
+        .bd-rhythm-group-toggle.has-active {
+            background: linear-gradient(135deg, rgba(82, 168, 114, 0.32), rgba(42, 107, 74, 0.22));
+            border-color: rgba(42, 107, 74, 0.45);
+        }
+        /* 라벨 스택 — 모든 변형 라벨을 같은 셀에 겹쳐 두고 그 중 visible 한 것만 보임.
+           폭은 가장 넓은 변형 라벨에 맞춰 자동 고정됨 → 선택 바뀌어도 버튼 크기 그대로. */
+        .bd-rhythm-group-toggle .rhythm-label-stack {
+            display: inline-grid;
+            grid-template-columns: 1fr;
+            justify-items: start;
+        }
+        .bd-rhythm-group-toggle .rhythm-label-stack > span {
+            grid-column: 1;
+            grid-row: 1;
+            white-space: nowrap;
+        }
+        .bd-rhythm-group-toggle .rhythm-label-ghost { visibility: hidden; pointer-events: none; }
+        .bd-rhythm-group-popup {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            z-index: 50;
+            flex-direction: column;
+            gap: 0.2rem;
+            padding: 0.3rem;
+            background: #fff;
+            border: 1px solid rgba(42, 107, 74, 0.25);
+            border-radius: 6px;
+            box-shadow: 0 8px 24px rgba(42, 107, 74, 0.22);
+            min-width: 100%;
+            white-space: nowrap;
+        }
+        .bd-rhythm-group-popup.open { display: flex; }
+        .bd-rhythm-group-popup .bd-rhythm-btn {
+            text-align: left;
+            padding: 0.45rem 0.7rem;
+        }
+
         .bd-empty {
             text-align: center;
             color: var(--text-light);
@@ -1420,20 +1490,7 @@
 
                 <div class="bd-field" style="margin-top: 0.6rem;">
                     <label>드럼 리듬</label>
-                    <div class="bd-rhythm-grid" id="fRhythmGrid">
-                        <button type="button" class="bd-rhythm-btn active" data-rhythm="8beat">8비트 A</button>
-                        <button type="button" class="bd-rhythm-btn" data-rhythm="8beat2">8비트 B</button>
-                        <button type="button" class="bd-rhythm-btn" data-rhythm="4beat">4비트 A</button>
-                        <button type="button" class="bd-rhythm-btn" data-rhythm="4beat2">4비트 B</button>
-                        <button type="button" class="bd-rhythm-btn" data-rhythm="16beat">16비트 A</button>
-                        <button type="button" class="bd-rhythm-btn" data-rhythm="16beat2">16비트 B</button>
-                        <button type="button" class="bd-rhythm-btn" data-rhythm="16beatC">16비트 C</button>
-                        <button type="button" class="bd-rhythm-btn" data-rhythm="ballad">셔플락</button>
-                        <button type="button" class="bd-rhythm-btn" data-rhythm="16beatSA">16바운스 A</button>
-                        <button type="button" class="bd-rhythm-btn" data-rhythm="16beatSB">16바운스 B</button>
-                        <button type="button" class="bd-rhythm-btn" data-rhythm="16beatSC">16바운스 C</button>
-                        <button type="button" class="bd-rhythm-btn" data-rhythm="swing">스윙</button>
-                    </div>
+                    <div class="bd-rhythm-groups" id="fRhythmGrid"></div>
                 </div>
                 <!-- 패턴 길이 — 시퀀서를 1마디(기본) 또는 2마디(32 step / rhythm 기준) 로 확장. -->
                 <div class="bd-field" style="margin-top: 0.6rem;">
@@ -2001,13 +2058,104 @@
                 }
             }
 
+            // ─── 리듬 그룹 정의 (4비트 / 8비트 / 16비트 / 그외) ───
+            var BD_RHYTHM_LABELS = {
+                '8beat': '8비트 A', '8beat2': '8비트 B',
+                '4beat': '4비트 A', '4beat2': '4비트 B',
+                '16beat': '16비트 A', '16beat2': '16비트 B', '16beatC': '16비트 C',
+                '16beatSA': '16바운스 A', '16beatSB': '16바운스 B', '16beatSC': '16바운스 C',
+                'ballad': '셔플락', 'swing': '스윙'
+            };
+            var BD_RHYTHM_GROUPS = [
+                { id: '4beat',  label: '4비트',  rhythms: ['4beat', '4beat2'] },
+                { id: '8beat',  label: '8비트',  rhythms: ['8beat', '8beat2'] },
+                { id: '16beat', label: '16비트', rhythms: ['16beat', '16beat2', '16beatC', '16beatSA', '16beatSB', '16beatSC'] },
+                { id: 'other',  label: '그외',   rhythms: ['ballad', 'swing'] }
+            ];
+
+            // 모든 그룹 팝업 닫기 — 외부 클릭 또는 다른 토글 클릭 시 호출.
+            function _closeAllBdRhythmPopups(container) {
+                if (!container) container = document.getElementById('fRhythmGrid');
+                if (!container) return;
+                container.querySelectorAll('.bd-rhythm-group-popup').forEach(function(el) { el.classList.remove('open'); });
+                container.querySelectorAll('.bd-rhythm-group-toggle').forEach(function(el) { el.classList.remove('open'); });
+            }
+
+            // 리듬 그룹 렌더 — 가로 토글들 + 각 토글 아래로 떨어지는 세로 팝업.
+            function renderRhythmGroups(container) {
+                container = container || document.getElementById('fRhythmGrid');
+                if (!container) return;
+                var activeKey = container.dataset.rhythm || currentRhythm;
+                container.innerHTML = '';
+                BD_RHYTHM_GROUPS.forEach(function(group) {
+                    var hasActive = group.rhythms.indexOf(activeKey) !== -1;
+                    var groupEl = document.createElement('div');
+                    groupEl.className = 'bd-rhythm-group';
+                    // 그룹 토글 — 활성 그룹이면 현재 변형 이름, 아니면 그룹 이름.
+                    // 폭은 그룹 내 가장 넓은 변형 라벨에 맞춰 고정 (ghost 스택으로).
+                    var toggle = document.createElement('button');
+                    toggle.type = 'button';
+                    toggle.className = 'bd-rhythm-group-toggle' + (hasActive ? ' has-active' : '');
+                    var labelText = hasActive ? (BD_RHYTHM_LABELS[activeKey] || activeKey) : group.label;
+                    var stackHTML = '<span class="rhythm-label-stack">';
+                    group.rhythms.forEach(function(k) {
+                        stackHTML += '<span class="rhythm-label-ghost">' + (BD_RHYTHM_LABELS[k] || k) + '</span>';
+                    });
+                    stackHTML += '<span class="rhythm-label-ghost">' + group.label + '</span>';
+                    stackHTML += '<span class="rhythm-label-current">' + labelText + '</span>';
+                    stackHTML += '</span>';
+                    toggle.innerHTML = stackHTML + '<i class="fas fa-chevron-down"></i>';
+                    groupEl.appendChild(toggle);
+                    // 세로 팝업
+                    var popup = document.createElement('div');
+                    popup.className = 'bd-rhythm-group-popup';
+                    group.rhythms.forEach(function(key) {
+                        var btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'bd-rhythm-btn' + (key === activeKey ? ' active' : '');
+                        btn.dataset.rhythm = key;
+                        btn.textContent = BD_RHYTHM_LABELS[key] || key;
+                        btn.onclick = function(e) {
+                            e.stopPropagation();
+                            setRhythm(key);
+                            _closeAllBdRhythmPopups(container);
+                        };
+                        popup.appendChild(btn);
+                    });
+                    groupEl.appendChild(popup);
+                    // 토글 클릭 — 해당 팝업만 열고 다른 팝업은 닫음
+                    toggle.onclick = function(e) {
+                        e.stopPropagation();
+                        var alreadyOpen = popup.classList.contains('open');
+                        _closeAllBdRhythmPopups(container);
+                        if (!alreadyOpen) {
+                            popup.classList.add('open');
+                            toggle.classList.add('open');
+                        }
+                    };
+                    container.appendChild(groupEl);
+                });
+            }
+
+            // 외부 클릭 시 팝업 닫기 — 한 번만 등록 (idempotent)
+            if (!window._bdRhythmDocClickWired) {
+                window._bdRhythmDocClickWired = true;
+                document.addEventListener('click', function(e) {
+                    if (!e.target.closest('.bd-rhythm-groups')) {
+                        _closeAllBdRhythmPopups();
+                    }
+                });
+            }
+
             // 리듬 그리드 — 선택된 버튼만 active 클래스.
             // 리듬이 바뀌면 시퀀서 그리드 칸 수도 바뀌니 시퀀서 다시 렌더.
             function setRhythm(key) {
                 currentRhythm = key;
-                document.querySelectorAll('#fRhythmGrid .bd-rhythm-btn').forEach(function(b) {
-                    b.classList.toggle('active', b.dataset.rhythm === key);
-                });
+                var container = document.getElementById('fRhythmGrid');
+                if (container) {
+                    container.dataset.rhythm = key;
+                    renderRhythmGroups(container);
+                }
                 if (typeof renderBdSeq === 'function') renderBdSeq();
             }
 
@@ -3244,10 +3392,8 @@
                 $('bdTipText').style.display   = bdInputMode === 'text'   ? 'inline' : 'none';
                 $('bdTipPicker').style.display = bdInputMode === 'picker' ? 'inline' : 'none';
 
-                // 드럼 리듬 4×3 그리드 — 버튼 클릭으로 currentRhythm 갱신
-                document.querySelectorAll('#fRhythmGrid .bd-rhythm-btn').forEach(function(b) {
-                    b.onclick = function() { setRhythm(b.dataset.rhythm); };
-                });
+                // 드럼 리듬 — 그룹 토글 + sub-drawer. 초기 렌더 (이후 setRhythm 호출 시마다 갱신).
+                renderRhythmGroups();
                 // 시퀀서 패턴 길이 (1마디 / 2마디)
                 document.querySelectorAll('#fMeasureLenBtns .bd-rhythm-btn').forEach(function(b) {
                     b.onclick = function() { setBdMeasureLen(b.dataset.mlen); };

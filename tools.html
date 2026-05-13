@@ -5741,10 +5741,118 @@
             border-radius: 8px; padding: 0.4rem; min-width: 320px;
             box-shadow: 0 8px 24px rgba(42, 107, 74, 0.25);
         }
-        .loop-rhythm-drawer.open {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
+        .loop-rhythm-drawer.open { display: none; } /* legacy — 드로어 없어짐 */
+
+        /* ─ 리듬 그룹 (4비트 / 8비트 / 16비트 / 그외) — 가로 토글 + 세로 팝업 ─ */
+        .loop-rhythm-groups {
+            display: flex;
+            flex-wrap: wrap;
             gap: 0.3rem;
+        }
+        .loop-rhythm-group { position: relative; }
+        .loop-rhythm-group-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.4rem 0.7rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--green-deep);
+            background: rgba(82, 168, 114, 0.12);
+            border: 1px solid rgba(42, 107, 74, 0.22);
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .loop-rhythm-group-toggle:hover { background: rgba(82, 168, 114, 0.22); }
+        .loop-rhythm-group-toggle i { font-size: 0.6rem; transition: transform 0.2s; }
+        .loop-rhythm-group-toggle.open i { transform: rotate(180deg); }
+        .loop-rhythm-group-toggle.has-active {
+            background: linear-gradient(135deg, rgba(82, 168, 114, 0.32), rgba(42, 107, 74, 0.22));
+            border-color: rgba(42, 107, 74, 0.45);
+        }
+        /* 라벨 스택 — 모든 변형 라벨을 같은 셀에 겹쳐 두고 그 중 visible 한 것만 보임.
+           폭은 가장 넓은 변형 라벨에 맞춰 자동 고정됨 → 선택 바뀌어도 버튼 크기 그대로. */
+        .loop-rhythm-group-toggle .rhythm-label-stack {
+            display: inline-grid;
+            grid-template-columns: 1fr;
+            justify-items: start;
+        }
+        .loop-rhythm-group-toggle .rhythm-label-stack > span {
+            grid-column: 1;
+            grid-row: 1;
+            white-space: nowrap;
+        }
+        .loop-rhythm-group-toggle .rhythm-label-ghost { visibility: hidden; pointer-events: none; }
+        .loop-rhythm-group-popup {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            z-index: 50;
+            flex-direction: column;
+            gap: 0.2rem;
+            padding: 0.3rem;
+            background: var(--card, #fff);
+            border: 1px solid rgba(42, 107, 74, 0.25);
+            border-radius: 6px;
+            box-shadow: 0 8px 24px rgba(42, 107, 74, 0.22);
+            min-width: 100%;
+            white-space: nowrap;
+        }
+        .loop-rhythm-group-popup.open { display: flex; }
+        .loop-rhythm-group-popup button {
+            padding: 0.45rem 0.7rem;
+            font-size: 0.74rem;
+            font-weight: 600;
+            border: 1px solid rgba(42, 107, 74, 0.15);
+            border-radius: 4px;
+            background: rgba(42, 107, 74, 0.04);
+            color: rgba(26, 36, 33, 0.85);
+            cursor: pointer;
+            font-family: inherit;
+            text-align: left;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .loop-rhythm-group-popup button:hover {
+            background: rgba(82, 168, 114, 0.18);
+            color: var(--green-deep);
+        }
+        .loop-rhythm-group-popup button.active {
+            background: var(--green-deep);
+            color: #fff;
+            border-color: var(--green-deep);
+        }
+        /* dark mode */
+        :root[data-theme="dark"] .loop-rhythm-group-toggle {
+            background: rgba(82, 168, 114, 0.16);
+            border-color: rgba(180, 230, 200, 0.25);
+            color: #b5e6c8;
+        }
+        :root[data-theme="dark"] .loop-rhythm-group-toggle:hover { background: rgba(82, 168, 114, 0.28); }
+        :root[data-theme="dark"] .loop-rhythm-group-toggle.has-active {
+            background: linear-gradient(135deg, rgba(82, 168, 114, 0.4), rgba(42, 107, 74, 0.32));
+        }
+        :root[data-theme="dark"] .loop-rhythm-group-popup {
+            background: rgba(20, 32, 28, 0.98);
+            border-color: rgba(180, 230, 200, 0.25);
+        }
+        :root[data-theme="dark"] .loop-rhythm-group-popup button {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(180, 230, 200, 0.22);
+            color: rgba(232, 240, 236, 0.85);
+        }
+        :root[data-theme="dark"] .loop-rhythm-group-popup button:hover {
+            background: rgba(82, 168, 114, 0.25);
+            color: #b5e6c8;
+        }
+        :root[data-theme="dark"] .loop-rhythm-group-popup button.active {
+            background: linear-gradient(135deg, var(--green-mid), var(--green-deep));
+            color: #fff;
+            border-color: var(--green-mid);
         }
         .loop-rhythm-drawer button {
             padding: 0.4rem 0.3rem; font-size: 0.74rem; font-weight: 600;
@@ -6558,11 +6666,7 @@
                         </div>
                         <div class="loop-rhythm-picker" id="loopRhythmPicker">
                             <label>리듬</label>
-                            <button class="loop-rhythm-toggle" id="loopRhythmToggle" data-action="toggleLoopRhythmDrawer">
-                                <span id="loopRhythmLabel">8비트 A</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            <div class="loop-rhythm-drawer" id="loopRhythmDrawer"></div>
+                            <div class="loop-rhythm-groups" id="loopRhythmGroups"></div>
                         </div>
                     </div>
                     <!-- 베이스/피아노 스타일 셀렉터 — 드럼 리듬과 별개로 동작 -->
@@ -10921,56 +11025,89 @@
                     }
                 });
             }
+            // ─── 리듬 그룹 정의 (4비트 / 8비트 / 16비트 / 그외) ───
+            var LOOP_RHYTHM_GROUPS = [
+                { id: '4beat',  label: '4비트',  rhythms: ['4beat', '4beat2'] },
+                { id: '8beat',  label: '8비트',  rhythms: ['8beat', '8beat2'] },
+                { id: '16beat', label: '16비트', rhythms: ['16beat', '16beat2', '16beatC', '16beatSA', '16beatSB', '16beatSC'] },
+                { id: 'other',  label: '그외',   rhythms: ['ballad', 'swing'] }
+            ];
             function renderLoopRhythms() {
-                var drawer = document.getElementById('loopRhythmDrawer');
-                if (!drawer) return;
-                drawer.innerHTML = '';
-                // 드럼 리듬 — 항상 실제 패턴만 노출 ('custom' 은 더 이상 드럼 옵션이 아님)
-                var order = ['8beat','8beat2','4beat','4beat2','16beat','16beat2','16beatC','ballad','16beatSA','16beatSB','16beatSC','swing'];
-                order.forEach(function(key) {
-                    var btn = document.createElement('button');
-                    btn.textContent = LOOP_RHYTHM_LABELS[key] || key;
-                    if (key === loopRhythm) btn.classList.add('active');
-                    btn.onclick = function(e) {
+                var container = document.getElementById('loopRhythmGroups');
+                if (!container) return;
+                container.innerHTML = '';
+                LOOP_RHYTHM_GROUPS.forEach(function(group) {
+                    var hasActive = group.rhythms.indexOf(loopRhythm) !== -1;
+                    var groupEl = document.createElement('div');
+                    groupEl.className = 'loop-rhythm-group';
+                    // 그룹 토글 — 활성 그룹이면 현재 변형 이름, 아니면 그룹 이름.
+                    // 폭은 그룹 내 가장 넓은 변형 라벨에 맞춰 고정 (ghost 스택으로).
+                    var toggle = document.createElement('button');
+                    toggle.type = 'button';
+                    toggle.className = 'loop-rhythm-group-toggle' + (hasActive ? ' has-active' : '');
+                    var labelText = hasActive ? (LOOP_RHYTHM_LABELS[loopRhythm] || loopRhythm) : group.label;
+                    var stackHTML = '<span class="rhythm-label-stack">';
+                    // 모든 변형 라벨을 ghost 로 깔아 폭의 하한선 확보
+                    group.rhythms.forEach(function(k) {
+                        stackHTML += '<span class="rhythm-label-ghost">' + (LOOP_RHYTHM_LABELS[k] || k) + '</span>';
+                    });
+                    // 그룹 라벨도 ghost 로 포함 (그룹 표기가 변형보다 긴 경우 대비)
+                    stackHTML += '<span class="rhythm-label-ghost">' + group.label + '</span>';
+                    stackHTML += '<span class="rhythm-label-current">' + labelText + '</span>';
+                    stackHTML += '</span>';
+                    toggle.innerHTML = stackHTML + '<i class="fas fa-chevron-down"></i>';
+                    groupEl.appendChild(toggle);
+                    // 세로 팝업
+                    var popup = document.createElement('div');
+                    popup.className = 'loop-rhythm-group-popup';
+                    group.rhythms.forEach(function(key) {
+                        var btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.textContent = LOOP_RHYTHM_LABELS[key] || key;
+                        if (key === loopRhythm) btn.classList.add('active');
+                        btn.onclick = function(e) {
+                            e.stopPropagation();
+                            loopRhythm = key;
+                            // 2마디 fill 모드는 프리셋의 원래 리듬일 때만 유효 — 다른 리듬으로 바꾸면 1마디로 리셋.
+                            var _sp = _loopActivePresetSequencer;
+                            if (_sp && _sp.measureLen === 2 && key === _loopActivePresetRhythm) {
+                                setLoopMeasureLen(2);
+                            } else {
+                                setLoopMeasureLen(1);
+                            }
+                            closeLoopRhythmDrawer();
+                            gtag('event', 'loop_rhythm_change', { rhythm: key });
+                            renderBeats();
+                            resetPlaybackPosition();
+                            renderLoopRhythms();
+                            updateLoopStyleAvailability();
+                        };
+                        popup.appendChild(btn);
+                    });
+                    groupEl.appendChild(popup);
+                    // 토글 클릭 — 해당 팝업만 열고 다른 팝업은 닫음
+                    toggle.onclick = function(e) {
                         e.stopPropagation();
-                        loopRhythm = key;
-                        // 2마디 fill 모드는 프리셋의 원래 리듬일 때만 유효 — 다른 리듬으로 바꾸면 1마디로 리셋.
-                        //   (프리셋의 sequencer_pattern.measureLen === 2 가 2마디 모드를 켰던 것이라, 리듬을
-                        //    바꾸면 그 fill 이 의도치 않게 새 리듬에 적용돼 마디 2 끝박에 스네어 폭발이 생김.)
-                        var _sp = _loopActivePresetSequencer;
-                        if (_sp && _sp.measureLen === 2 && key === _loopActivePresetRhythm) {
-                            setLoopMeasureLen(2);
-                        } else {
-                            setLoopMeasureLen(1);
+                        var alreadyOpen = popup.classList.contains('open');
+                        // 모든 팝업 닫기
+                        container.querySelectorAll('.loop-rhythm-group-popup').forEach(function(el) { el.classList.remove('open'); });
+                        container.querySelectorAll('.loop-rhythm-group-toggle').forEach(function(el) { el.classList.remove('open'); });
+                        if (!alreadyOpen) {
+                            popup.classList.add('open');
+                            toggle.classList.add('open');
                         }
-                        document.getElementById('loopRhythmLabel').textContent = LOOP_RHYTHM_LABELS[key] || key;
-                        closeLoopRhythmDrawer();
-                        gtag('event', 'loop_rhythm_change', { rhythm: key });
-                        renderBeats();
-                        resetPlaybackPosition();
-                        renderLoopRhythms();
-                        updateLoopStyleAvailability();
                     };
-                    drawer.appendChild(btn);
+                    container.appendChild(groupEl);
                 });
             }
-            window.toggleLoopRhythmDrawer = function() {
-                var drawer = document.getElementById('loopRhythmDrawer');
-                var toggle = document.getElementById('loopRhythmToggle');
-                if (!drawer) return;
-                var isOpen = drawer.classList.contains('open');
-                if (isOpen) {
-                    closeLoopRhythmDrawer();
-                } else {
-                    drawer.classList.add('open');
-                    if (toggle) toggle.classList.add('open');
-                }
-            };
+            // legacy — 외부 드로어 토글은 제거됐지만 다른 위치에서 호출하는 코드가 있어 no-op 유지
+            window.toggleLoopRhythmDrawer = function() {};
+            // 모든 그룹 팝업 닫기 — 다른 영역 클릭 시 호출됨
             function closeLoopRhythmDrawer() {
-                var drawer = document.getElementById('loopRhythmDrawer');
-                var toggle = document.getElementById('loopRhythmToggle');
-                if (drawer) drawer.classList.remove('open');
-                if (toggle) toggle.classList.remove('open');
+                var container = document.getElementById('loopRhythmGroups');
+                if (!container) return;
+                container.querySelectorAll('.loop-rhythm-group-popup').forEach(function(el) { el.classList.remove('open'); });
+                container.querySelectorAll('.loop-rhythm-group-toggle').forEach(function(el) { el.classList.remove('open'); });
             }
             function getEffectiveRoot(idx, half) {
                 if (half === 'b') {
