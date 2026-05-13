@@ -10934,6 +10934,15 @@
                     btn.onclick = function(e) {
                         e.stopPropagation();
                         loopRhythm = key;
+                        // 2마디 fill 모드는 프리셋의 원래 리듬일 때만 유효 — 다른 리듬으로 바꾸면 1마디로 리셋.
+                        //   (프리셋의 sequencer_pattern.measureLen === 2 가 2마디 모드를 켰던 것이라, 리듬을
+                        //    바꾸면 그 fill 이 의도치 않게 새 리듬에 적용돼 마디 2 끝박에 스네어 폭발이 생김.)
+                        var _sp = _loopActivePresetSequencer;
+                        if (_sp && _sp.measureLen === 2 && key === _loopActivePresetRhythm) {
+                            setLoopMeasureLen(2);
+                        } else {
+                            setLoopMeasureLen(1);
+                        }
                         document.getElementById('loopRhythmLabel').textContent = LOOP_RHYTHM_LABELS[key] || key;
                         closeLoopRhythmDrawer();
                         gtag('event', 'loop_rhythm_change', { rhythm: key });
