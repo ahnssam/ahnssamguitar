@@ -8448,7 +8448,7 @@
 
             // 코드 이름 파싱: 트라이어드(C/Cm) + 흔한 4화음까지 지원.
             //   반환: { root, minor, extension }
-            //     extension ∈ 'none' | '7' | 'maj7' | 'm7b5' | 'dim' | 'dim7'
+            //     extension ∈ 'none' | '7' | 'maj7' | 'm7b5' | 'dim' | 'dim7' | 'aug'
             //   예) Cmaj7 → { root:'C',  minor:false, extension:'maj7' }
             //       Bbm7  → { root:'Bb', minor:true,  extension:'7' }
             //       Cm7♭5 → { root:'C',  minor:true,  extension:'m7b5' }
@@ -8476,6 +8476,10 @@
                 var lower = rest.toLowerCase();
                 if (lower === 'dim7' || rest === '°7' || rest === 'o7') {
                     return { root: root, minor: false, extension: 'dim7', bass: bass };
+                }
+                // aug / augmented / + — 증3화음 (1, 3, #5). quality 는 항상 major.
+                if (lower === 'aug' || lower === 'augmented' || rest === '+') {
+                    return { root: root, minor: false, extension: 'aug', bass: bass };
                 }
                 if (lower === 'dim' || rest === '°' || rest === 'o') {
                     // 레거시 트라이어드 dim — UI 에선 더 이상 픽 불가, 파싱은 유지
@@ -8509,6 +8513,66 @@
                 return { root: root, minor: false, extension: 'none', bass: bass };
             }
             function chordRootOnly(name) { return parseChordName(name).root; }
+
+            // ─── 한영 자판 보정 (두벌식) ─────────────────────────────────
+            // 한영 전환을 깜빡하고 'Bm7' 을 치면 'ㅠㅡ7' 처럼 한글로 찍힘.
+            // blur/Enter 시점에 두벌식 매핑으로 영문 키 시퀀스로 환원한다.
+            //   - 한글 음절(가-힣): 초성/중성/종성 자모로 분해 후 매핑
+            //   - 호환 자모(ㄱ-ㅎ, ㅏ-ㅣ 등 단독 입력): 직접 매핑
+            //   - 그 외 문자(영문/숫자/#/b 등): 통과
+            // 두벌식 초성 19개 → 영문 (cho 인덱스 순서)
+            var _CHO_TO_EN = ['r','R','s','e','E','f','a','q','Q','t','T','d','w','W','c','z','x','v','g'];
+            // 두벌식 중성 21개 → 영문 (jung 인덱스 순서, 복합모음은 두 글자)
+            var _JUNG_TO_EN = ['k','o','i','O','j','p','u','P','h','hk','ho','hl','y','n','nj','np','nl','b','m','ml','l'];
+            // 두벌식 종성 28개 → 영문 (jong 인덱스 0 = 종성 없음)
+            var _JONG_TO_EN = ['','r','R','rt','s','sw','sg','e','f','fr','fa','fq','ft','fx','fv','fg','a','q','qt','t','T','d','w','c','z','x','v','g'];
+            // 호환 자모 → 영문 (단독 입력된 자모 — 보통 받침 없이 끝난 케이스)
+            var _COMPAT_JAMO_TO_EN = {
+                'ㄱ':'r','ㄲ':'R','ㄳ':'rt','ㄴ':'s','ㄵ':'sw','ㄶ':'sg','ㄷ':'e','ㄸ':'E',
+                'ㄹ':'f','ㄺ':'fr','ㄻ':'fa','ㄼ':'fq','ㄽ':'ft','ㄾ':'fx','ㄿ':'fv','ㅀ':'fg',
+                'ㅁ':'a','ㅂ':'q','ㅃ':'Q','ㅄ':'qt','ㅅ':'t','ㅆ':'T','ㅇ':'d','ㅈ':'w',
+                'ㅉ':'W','ㅊ':'c','ㅋ':'z','ㅌ':'x','ㅍ':'v','ㅎ':'g',
+                'ㅏ':'k','ㅐ':'o','ㅑ':'i','ㅒ':'O','ㅓ':'j','ㅔ':'p','ㅕ':'u','ㅖ':'P',
+                'ㅗ':'h','ㅘ':'hk','ㅙ':'ho','ㅚ':'hl','ㅛ':'y','ㅜ':'n','ㅝ':'nj','ㅞ':'np',
+                'ㅟ':'nl','ㅠ':'b','ㅡ':'m','ㅢ':'ml','ㅣ':'l'
+            };
+            function _koToEn(str) {
+                if (!str) return str;
+                var out = '';
+                for (var i = 0; i < str.length; i++) {
+                    var ch = str[i];
+                    var code = ch.charCodeAt(0);
+                    if (code >= 0xAC00 && code <= 0xD7A3) {
+                        // 한글 음절 → 초성/중성/종성
+                        var base = code - 0xAC00;
+                        var cho = Math.floor(base / 588);
+                        var jung = Math.floor((base % 588) / 28);
+                        var jong = base % 28;
+                        out += _CHO_TO_EN[cho] + _JUNG_TO_EN[jung];
+                        if (jong > 0) out += _JONG_TO_EN[jong];
+                    } else if (_COMPAT_JAMO_TO_EN[ch]) {
+                        out += _COMPAT_JAMO_TO_EN[ch];
+                    } else {
+                        out += ch;
+                    }
+                }
+                return out;
+            }
+            // 한글 자모/음절이 섞인 입력을 영문 코드 표기로 환원 + 케이스 표준화.
+            //   - 한글이 없으면 원본 통과
+            //   - 환원 결과가 [A-G][#b]? 로 시작해야 적용 (코드 모양일 때만 교정)
+            //   - root 만 대문자, 나머지는 lowercase 그대로 ('m'=마이너 기본). 사용자가 메이저 7
+            //     이면 'maj7' 표기를 써야 함 (한글로는 M/m 구분 불가).
+            function _normalizeKoreanChordInput(raw) {
+                if (!raw) return raw;
+                // 한글 자모/음절이 하나도 없으면 그대로
+                if (!/[ㄱ-㆏가-힣]/.test(raw)) return raw;
+                var en = _koToEn(raw);
+                if (!en) return raw;
+                var m = en.match(/^([a-gA-G])([#b]?)(.*)$/);
+                if (!m) return raw;   // 환원해도 코드 모양 아님 → 원본 유지
+                return m[1].toUpperCase() + m[2] + m[3];
+            }
             // 슬래시 베이스 우선, 없으면 코드 root. 베이스 악기 재생에 사용.
             //   예) 'C/G' → 'G' / 'F#m7/A' → 'A' / 'C' → 'C'
             function chordBassNote(name) {
@@ -8528,6 +8592,7 @@
                 if (!root) return '';
                 if (extension === 'm7b5') return root + 'm7♭5';
                 if (extension === 'dim7') return root + 'dim7';
+                if (extension === 'aug')  return root + 'aug';
                 if (extension === '7')    return root + '7';
                 if (extension === 'm7')   return root + 'm7';
                 var isMinor = quality === 'minor';
@@ -8565,9 +8630,7 @@
             // ──────────────────────────────────────────────────────────
             let loopRangeStart = null;
             let loopRangeEnd   = null;
-            // 드래그 중 임시 상태
-            let _loopDragging   = false;
-            let _loopDragAnchor = null;
+            // 드래그 임시 상태는 _bindLoopEdgeInteractions 내부 클로저(dragState)로 이동.
 
             const DRUM_PATTERNS = {
                 '8beat':    { ticksPerBeat: 2, beatsPerMeasure: 4,
@@ -9217,8 +9280,11 @@
                 '16beatSA': 'X...X.OX.XO.X...',
                 '16beatSB': 'X..OX.OX.XO.X...',
                 '16beatSC': 'X.X...OX.XO.X.OX',
-                // 스윙 12/8 — 1박, 3박 코드만
-                'swing':    'X.....X.....',
+                // 스윙 12/8 — 2마디 컴핑 패턴 (재즈 "Charleston" 류 싱코페이션).
+                //   M1: 1박(tick 0) + 2a(tick 5) 에 코드
+                //   M2: 1a(tick 2) + 3박(tick 6) 에 코드
+                // ticksPerBeat=3 이므로 한 마디 = 12 ticks.
+                'swing':    ['X....X......', '..X...X.....'],
             };
             // ─── 피아노 패턴 표기 → 이벤트 매핑 ───────────────────────────
             // 한 글자 = 한 tick. 새 표기 추가 시:
@@ -9287,7 +9353,15 @@
             }
             const PIANO_DEFAULT_PATTERNS = {};
             for (var _pdpKey in PIANO_DEFAULT_PATTERNS_RAW) {
-                PIANO_DEFAULT_PATTERNS[_pdpKey] = _parsePianoPattern(PIANO_DEFAULT_PATTERNS_RAW[_pdpKey]);
+                var _pdpRaw = PIANO_DEFAULT_PATTERNS_RAW[_pdpKey];
+                if (Array.isArray(_pdpRaw)) {
+                    // 다중 마디 패턴 — 각 마디별 파싱. 스케줄러가 loopMeasureIdx 로 선택.
+                    PIANO_DEFAULT_PATTERNS[_pdpKey] = {
+                        measures: _pdpRaw.map(_parsePianoPattern)
+                    };
+                } else {
+                    PIANO_DEFAULT_PATTERNS[_pdpKey] = _parsePianoPattern(_pdpRaw);
+                }
             }
 
             // 16분음표 위치 배열을 드럼 ticksPerBeat 에 맞춰 가용한 tick 위치로 변환.
@@ -10230,9 +10304,13 @@
                             // '기본' — 드럼 리듬에 매칭된 패턴 사용. 없으면 quarter 폴백.
                             var pdp = PIANO_DEFAULT_PATTERNS[r];
                             if (pdp) {
-                                pianoTicks = pdp.hits;
-                                pianoChokes = pdp.chokes || [];
-                                pianoMeta = pdp.meta;
+                                // 다중 마디 패턴(예: 스윙)은 measures 배열에서 현재 마디로 선택.
+                                var pdpSub = pdp.measures
+                                    ? pdp.measures[loopMeasureIdx % pdp.measures.length]
+                                    : pdp;
+                                pianoTicks = pdpSub.hits;
+                                pianoChokes = pdpSub.chokes || [];
+                                pianoMeta = pdpSub.meta;
                                 pianoHitMeta = 'default';
                             } else {
                                 // 폴백 — 매 박 첫 tick (모든 ticksPerBeat 에서 작동)
@@ -10499,7 +10577,7 @@
             // 코드 픽커의 #/♭ sticky 상태 — 마지막 선택을 다음 picker 에서도 유지
             let loopPickerAccidental = 'sharp';   // 'sharp' | 'flat'
             // 코드 픽커의 4화음 확장 — 마지막 선택을 다음 picker 에서도 유지
-            //   'none' | '7' | 'm7' | 'M7' | 'm7b5' | 'dim' | 'dim7'
+            //   'none' | '7' | 'm7' | 'M7' | 'm7b5' | 'dim' | 'dim7' | 'aug'
             let loopPickerExtension = 'none';
             // 코드 칸 클릭 시 어떤 입력 방식을 띄울지 — 'picker' | 'text'
             // localStorage 저장돼 다음 방문에도 유지.
@@ -11173,9 +11251,9 @@
                 document.addEventListener('click', function(e) {
                     if (!e.target.closest('.loop-cell') && !e.target.closest('.loop-chord-picker')) {
                         closeLoopPicker();
-                        // 마디 영역 밖 (그리고 picker 도 아닌) 을 누르면 선택 범위 해제 →
-                        // 다시 전체 루프로 돌아감.
-                        if (typeof window.clearLoopRange === 'function') window.clearLoopRange();
+                        // 선택 범위는 외부 클릭으로 자동 해제하지 않음 — 재생 버튼이 grid
+                        // 밖에 있어서 자동 해제 시 "드래그 → 재생" 사용이 막혔던 문제.
+                        // 범위 해제는 새 드래그 또는 초기화 버튼으로.
                     }
                     if (!e.target.closest('.loop-rhythm-picker')) {
                         closeLoopRhythmDrawer();
@@ -11353,14 +11431,12 @@
                     halves.appendChild(halfB);
                     cell.appendChild(halves);
                     // ─── 도돌이표 가장자리 (좌/우) ────────────────────────────
-                    // 마우스 hover 시만 가장자리 빛남. 클릭 시 도돌이표 토글.
-                    //   왼쪽 클릭 → |: (start repeat — 바 + 오른쪽 두 점)
-                    //   오른쪽 클릭 → :| (end repeat — 왼쪽 두 점 + 바)
+                    // 좌: 클릭=도돌이표 |: 토글  |  드래그=마디 범위 선택 (재생 시 그 범위만 루핑)
+                    //     → _bindLoopEdgeInteractions 가 pointer 이벤트로 직접 처리 (data-action 없음).
+                    // 우: 클릭=도돌이표 :| 토글 (드래그 없음, 기존 data-action 그대로).
                     var edgeL = document.createElement('div');
                     edgeL.className = 'loop-cell-edge left' + (loopRepeats.left.has(i) ? ' has-repeat' : '');
-                    edgeL.dataset.action = 'toggleLoopRepeat';
-                    edgeL.dataset.args = 'left,' + i;
-                    edgeL.title = '클릭: 도돌이표 시작 |: 토글';
+                    edgeL.title = '클릭: 도돌이표 |: 토글  ·  드래그: 마디 범위 선택';
                     edgeL.innerHTML = '<span class="loop-repeat-bars"><span class="thick"></span><span class="thin"></span></span><span class="loop-repeat-dots"><span></span><span></span></span>';
                     cell.appendChild(edgeL);
                     var edgeR = document.createElement('div');
@@ -11372,58 +11448,81 @@
                     cell.appendChild(edgeR);
                     grid.appendChild(cell);
                 }
-                // 마디 번호 영역 — 클릭(시작 마디 선택) + 드래그(범위 선택) 핸들러 부착.
-                // grid 위임 방식으로 한 번에 처리.
-                _bindLoopNumberInteractions(grid);
+                // 좌측 가장자리 — 클릭(도돌이 토글) + 드래그(마디 범위 선택) 핸들러.
+                // grid 위임 방식으로 한 번만 부착 (재렌더 후에도 동일 grid 엘리먼트라 유효).
+                _bindLoopEdgeInteractions(grid);
             }
 
             // ──────────────────────────────────────────────────────────
-            // 마디 번호 위 pointerdown → 시작점, drag → 범위, click(no drag) → 단일 선택
+            // 좌측 가장자리에서:
+            //   • 클릭(이동 거리 < 임계값) → window.toggleLoopRepeat('left', i) — 도돌이 |: 토글
+            //   • 드래그(이동 거리 >= 임계값) → loopRangeStart/End 갱신, 재렌더로 하이라이트
+            // 드래그가 한 번이라도 시작되면 클릭 토글은 발동 안 함 (둘 중 하나만).
             // ──────────────────────────────────────────────────────────
-            function _bindLoopNumberInteractions(grid) {
-                if (grid._loopNumBound) return;
-                grid._loopNumBound = true;
-                function idxFromPoint(x, y) {
+            function _bindLoopEdgeInteractions(grid) {
+                if (grid._loopEdgeBound) return;
+                grid._loopEdgeBound = true;
+                var dragState = null;
+                var DRAG_THRESHOLD_PX = 5;  // 이만큼 움직이면 "드래그" 로 간주
+                function cellIdxFromPoint(x, y) {
                     var el = document.elementFromPoint(x, y);
                     if (!el) return null;
-                    var n = el.closest && el.closest('.loop-cell-num');
-                    if (!n) return null;
-                    var v = parseInt(n.dataset.numIdx, 10);
+                    var c = el.closest && el.closest('.loop-cell');
+                    if (!c) return null;
+                    var v = parseInt(c.dataset.idx, 10);
                     return isNaN(v) ? null : v;
                 }
                 grid.addEventListener('pointerdown', function(e) {
-                    var n = e.target.closest('.loop-cell-num');
-                    if (!n) return;
+                    var edge = e.target.closest && e.target.closest('.loop-cell-edge.left');
+                    if (!edge) return;
+                    var cell = edge.closest('.loop-cell');
+                    if (!cell) return;
+                    var i = parseInt(cell.dataset.idx, 10);
+                    if (isNaN(i)) return;
                     e.stopPropagation();
+                    // preventDefault — 자동 click 이벤트 차단. 클릭/드래그는 pointerup 에서 직접 판정.
                     e.preventDefault();
                     closeLoopPicker();
-                    var i = parseInt(n.dataset.numIdx, 10);
-                    if (isNaN(i)) return;
-                    _loopDragging = true;
-                    _loopDragAnchor = i;
-                    loopRangeStart = i;
-                    loopRangeEnd   = i;
+                    dragState = {
+                        startIdx: i,
+                        startX: e.clientX,
+                        startY: e.clientY,
+                        dragged: false,
+                        pointerId: e.pointerId
+                    };
                     try { grid.setPointerCapture(e.pointerId); } catch(err) {}
-                    renderLoopGrid();
                 });
                 grid.addEventListener('pointermove', function(e) {
-                    if (!_loopDragging) return;
-                    var i = idxFromPoint(e.clientX, e.clientY);
-                    if (i == null) return;
-                    if (i !== loopRangeEnd) {
+                    if (!dragState) return;
+                    if (!dragState.dragged) {
+                        var dx = e.clientX - dragState.startX;
+                        var dy = e.clientY - dragState.startY;
+                        if (dx * dx + dy * dy < DRAG_THRESHOLD_PX * DRAG_THRESHOLD_PX) return;
+                        // 드래그 진입 — 시작 마디로 range 초기화
+                        dragState.dragged = true;
+                        loopRangeStart = dragState.startIdx;
+                        loopRangeEnd   = dragState.startIdx;
+                        renderLoopGrid();
+                    }
+                    var i = cellIdxFromPoint(e.clientX, e.clientY);
+                    if (i != null && i !== loopRangeEnd) {
                         loopRangeEnd = i;
                         renderLoopGrid();
                     }
                 });
                 var endDrag = function(e) {
-                    if (!_loopDragging) return;
-                    _loopDragging = false;
-                    _loopDragAnchor = null;
+                    if (!dragState) return;
+                    var s = dragState;
+                    dragState = null;
                     try { grid.releasePointerCapture(e.pointerId); } catch(err) {}
+                    if (!s.dragged) {
+                        // 드래그 아닌 클릭 — 도돌이 |: 토글
+                        window.toggleLoopRepeat('left', s.startIdx);
+                    }
+                    // 드래그면 range 는 pointermove 에서 이미 설정됨.
                 };
                 grid.addEventListener('pointerup', endDrag);
                 grid.addEventListener('pointercancel', endDrag);
-                grid.addEventListener('pointerleave', endDrag);
             }
 
             // 외부에서 선택 범위를 정규화해 가져갈 때 쓰는 헬퍼
@@ -11475,14 +11574,15 @@
                 function currentRoots() {
                     return loopPickerAccidental === 'flat' ? LOOP_ROOTS_FLAT : LOOP_ROOTS_SHARP;
                 }
-                // 7 / m7 / m7♭5 / dim7 은 quality 가 이미 픽스됨 → 장/단 토글 비활성.
+                // 7 / m7 / m7♭5 / dim7 / aug 는 quality 가 이미 픽스됨 → 장/단 토글 비활성.
                 // M7 와 삼화음(none) 은 토글 활성 (예: M7 + 단조 = mM7)
                 function qualityLockedByExtension() {
                     return loopPickerExtension === '7'    ||
                            loopPickerExtension === 'm7'   ||
                            loopPickerExtension === 'm7b5' ||
                            loopPickerExtension === 'dim'  ||
-                           loopPickerExtension === 'dim7';
+                           loopPickerExtension === 'dim7' ||
+                           loopPickerExtension === 'aug';
                 }
                 // 픽커 내 모든 root 버튼 라벨/선택상태 재렌더 (quality / accidental / extension 변경 시 호출)
                 function refreshRootButtons() {
@@ -11553,7 +11653,8 @@
                     { key: 'm7',    label: 'm7' },
                     { key: 'M7',    label: 'M7' },
                     { key: 'm7b5',  label: 'm7♭5' },
-                    { key: 'dim7',  label: 'dim7' }
+                    { key: 'dim7',  label: 'dim7' },
+                    { key: 'aug',   label: 'aug' }
                 ];
                 EXT_OPTIONS.forEach(function(opt) {
                     var eb = document.createElement('button');
@@ -11572,9 +11673,11 @@
                         //   m7 → 마이너 강제 (마이너 7)
                         //   m7♭5 → 마이너 강제
                         //   dim7 → quality 와 무관 (표시는 그대로 유지)
+                        //   aug → 메이저 강제 (증3화음 — 1, 3, #5)
                         if (opt.key === '7')    loopPickerQuality = 'major';
                         if (opt.key === 'm7')   loopPickerQuality = 'minor';
                         if (opt.key === 'm7b5') loopPickerQuality = 'minor';
+                        if (opt.key === 'aug')  loopPickerQuality = 'major';
                         // 토글 활성/비활성 시각 갱신
                         var locked = qualityLockedByExtension();
                         qualToggle.classList.toggle('disabled', locked);
@@ -11655,7 +11758,8 @@
                 function commit() {
                     if (committed) return;
                     committed = true;
-                    var v = (input.value || '').trim();
+                    // 한영 전환 깜빡한 입력 자동 보정 (예: 'ㅠㅡ7' → 'Bm7')
+                    var v = _normalizeKoreanChordInput((input.value || '').trim());
                     if (v) chordMap[idx] = v;
                     else delete chordMap[idx];
                     renderLoopGrid();

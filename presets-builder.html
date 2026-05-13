@@ -3033,7 +3033,7 @@
             // 픽커 sticky 상태
             let bdPickerQuality = 'major';     // 'major' | 'minor'
             let bdPickerAccidental = 'sharp';  // 'sharp' | 'flat'
-            let bdPickerExtension = 'none';    // 'none' | '7' | 'm7' | 'M7' | 'm7b5' | 'dim7'
+            let bdPickerExtension = 'none';    // 'none' | '7' | 'm7' | 'M7' | 'm7b5' | 'dim7' | 'aug'
             let bdChordsA = {};
             let bdChordsB = {};
             // 도돌이표 — 빌더에서 마디 좌/우 가장자리 클릭으로 토글. 프리셋과 함께 저장됨
@@ -3051,6 +3051,52 @@
             const BD_LOOP_ROOTS_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
             const BD_LOOP_ROOTS_FLAT  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 
+            // ─── 한영 자판 보정 (두벌식) — tools.html 미러 ───────────────
+            // 한영 전환 깜빡하고 입력한 한글을 영문 키 시퀀스로 환원.
+            // 'ㅠㅡ7' → 'Bm7', 'ㅁ므7' → 'aAm7' 등.
+            var _BD_CHO_TO_EN  = ['r','R','s','e','E','f','a','q','Q','t','T','d','w','W','c','z','x','v','g'];
+            var _BD_JUNG_TO_EN = ['k','o','i','O','j','p','u','P','h','hk','ho','hl','y','n','nj','np','nl','b','m','ml','l'];
+            var _BD_JONG_TO_EN = ['','r','R','rt','s','sw','sg','e','f','fr','fa','fq','ft','fx','fv','fg','a','q','qt','t','T','d','w','c','z','x','v','g'];
+            var _BD_COMPAT_JAMO_TO_EN = {
+                'ㄱ':'r','ㄲ':'R','ㄳ':'rt','ㄴ':'s','ㄵ':'sw','ㄶ':'sg','ㄷ':'e','ㄸ':'E',
+                'ㄹ':'f','ㄺ':'fr','ㄻ':'fa','ㄼ':'fq','ㄽ':'ft','ㄾ':'fx','ㄿ':'fv','ㅀ':'fg',
+                'ㅁ':'a','ㅂ':'q','ㅃ':'Q','ㅄ':'qt','ㅅ':'t','ㅆ':'T','ㅇ':'d','ㅈ':'w',
+                'ㅉ':'W','ㅊ':'c','ㅋ':'z','ㅌ':'x','ㅍ':'v','ㅎ':'g',
+                'ㅏ':'k','ㅐ':'o','ㅑ':'i','ㅒ':'O','ㅓ':'j','ㅔ':'p','ㅕ':'u','ㅖ':'P',
+                'ㅗ':'h','ㅘ':'hk','ㅙ':'ho','ㅚ':'hl','ㅛ':'y','ㅜ':'n','ㅝ':'nj','ㅞ':'np',
+                'ㅟ':'nl','ㅠ':'b','ㅡ':'m','ㅢ':'ml','ㅣ':'l'
+            };
+            function _bdKoToEn(str) {
+                if (!str) return str;
+                var out = '';
+                for (var i = 0; i < str.length; i++) {
+                    var ch = str[i];
+                    var code = ch.charCodeAt(0);
+                    if (code >= 0xAC00 && code <= 0xD7A3) {
+                        var base = code - 0xAC00;
+                        var cho = Math.floor(base / 588);
+                        var jung = Math.floor((base % 588) / 28);
+                        var jong = base % 28;
+                        out += _BD_CHO_TO_EN[cho] + _BD_JUNG_TO_EN[jung];
+                        if (jong > 0) out += _BD_JONG_TO_EN[jong];
+                    } else if (_BD_COMPAT_JAMO_TO_EN[ch]) {
+                        out += _BD_COMPAT_JAMO_TO_EN[ch];
+                    } else {
+                        out += ch;
+                    }
+                }
+                return out;
+            }
+            function _bdNormalizeKoreanChordInput(raw) {
+                if (!raw) return raw;
+                if (!/[ㄱ-㆏가-힣]/.test(raw)) return raw;
+                var en = _bdKoToEn(raw);
+                if (!en) return raw;
+                var m = en.match(/^([a-gA-G])([#b]?)(.*)$/);
+                if (!m) return raw;
+                return m[1].toUpperCase() + m[2] + m[3];
+            }
+
             // tools.html 의 parseChordName / buildChordName 미러 — 빌더 자체적으로 동작.
             function bdParseChordName(name) {
                 if (!name) return { root: null, minor: false, extension: 'none' };
@@ -3060,6 +3106,8 @@
                 var rest = (m[2] || '').trim();
                 var lower = rest.toLowerCase();
                 if (lower === 'dim7' || rest === '°7' || rest === 'o7') return { root: root, minor: false, extension: 'dim7' };
+                // aug / + — 증3화음 (1, 3, #5). quality 는 항상 major.
+                if (lower === 'aug'  || lower === 'augmented' || rest === '+') return { root: root, minor: false, extension: 'aug' };
                 if (lower === 'dim'  || rest === '°'  || rest === 'o')  return { root: root, minor: false, extension: 'dim' };
                 if (lower === 'm7b5' || rest === 'm7♭5' || rest === 'ø7' || rest === 'ø') return { root: root, minor: true, extension: 'm7b5' };
                 if (lower === 'm(maj7)' || lower === 'mmaj7' || rest === 'mM7') return { root: root, minor: true, extension: 'M7' };
@@ -3073,6 +3121,7 @@
                 if (!root) return '';
                 if (extension === 'm7b5') return root + 'm7♭5';
                 if (extension === 'dim7') return root + 'dim7';
+                if (extension === 'aug')  return root + 'aug';
                 if (extension === '7')    return root + '7';
                 if (extension === 'm7')   return root + 'm7';
                 var isMinor = quality === 'minor';
@@ -3212,6 +3261,17 @@
                     if (half === 'a') bdChordsA[idx] = inp.value.trim();
                     else              bdChordsB[idx] = inp.value.trim();
                 };
+                // 한영 전환 깜빡한 입력 자동 보정 (예: 'ㅠㅡ7' → 'Bm7')
+                inp.onblur = function() {
+                    var raw = (inp.value || '').trim();
+                    var fixed = _bdNormalizeKoreanChordInput(raw);
+                    if (fixed !== raw) {
+                        inp.value = fixed;
+                        inp.classList.toggle('has-value', !!fixed);
+                        if (half === 'a') bdChordsA[idx] = fixed;
+                        else              bdChordsB[idx] = fixed;
+                    }
+                };
                 return inp;
             }
 
@@ -3278,7 +3338,8 @@
                 }
                 function qualityLocked() {
                     return bdPickerExtension === '7' || bdPickerExtension === 'm7' ||
-                           bdPickerExtension === 'm7b5' || bdPickerExtension === 'dim7';
+                           bdPickerExtension === 'm7b5' || bdPickerExtension === 'dim7' ||
+                           bdPickerExtension === 'aug';
                 }
                 function refreshRootBtns() {
                     var roots = currentRoots();
@@ -3346,7 +3407,8 @@
                     { key:'m7',    label:'m7' },
                     { key:'M7',    label:'M7' },
                     { key:'m7b5',  label:'m7♭5' },
-                    { key:'dim7',  label:'dim7' }
+                    { key:'dim7',  label:'dim7' },
+                    { key:'aug',   label:'aug' }
                 ];
                 EXT_OPTS.forEach(function(opt) {
                     var eb = document.createElement('button');
@@ -3363,6 +3425,7 @@
                         if (opt.key === '7')    bdPickerQuality = 'major';
                         if (opt.key === 'm7')   bdPickerQuality = 'minor';
                         if (opt.key === 'm7b5') bdPickerQuality = 'minor';
+                        if (opt.key === 'aug')  bdPickerQuality = 'major';
                         var locked = qualityLocked();
                         qualToggle.classList.toggle('disabled', locked);
                         qualToggle.querySelectorAll('.bd-chord-quality-btn').forEach(function(b) {
