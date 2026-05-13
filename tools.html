@@ -11252,11 +11252,17 @@
                 document.addEventListener('click', function(e) {
                     if (!e.target.closest('.loop-cell') && !e.target.closest('.loop-chord-picker')) {
                         closeLoopPicker();
-                        // 마디 선택 범위 해제 — 반주 패널의 "컨트롤 카드" 바깥 클릭이면 해제.
-                        // #metronomePanel 은 화면 전폭이고 실제 컨트롤은 .tool-body (645px
-                        // 가운데 정렬) 안에 있어서, 카드 양옆 흰 공간/푸터/헤더/사이드바 등
-                        // 클릭 시 해제됨. 카드 안쪽(재생/TAP/BPM/리듬/믹스 등) 클릭은 유지.
-                        if (!e.target.closest('#metronomePanel .tool-body')) {
+                        // 마디 선택 범위 해제 — 클릭이 실제 "인터랙티브" 요소가 아니면 해제.
+                        // 인터랙티브: 버튼/입력/셀렉트/라벨(토글 포함)/data-action 핸들러/
+                        //   마디 셀/픽커 오버레이 등. 그 외 (.tool-body 의 흰 배경, 행 컨테이너
+                        //   패딩, 헤더/푸터/사이드바, 카드 바깥 등) 클릭 시 해제 → 자연스럽게
+                        //   풀 곡으로 복귀.
+                        var interactive = e.target.closest(
+                            'button, input, select, textarea, label, a[href], ' +
+                            '[data-action], [data-change], [data-input], [role="button"], ' +
+                            '.loop-cell, .loop-chord-picker, .loop-rhythm-group-popup'
+                        );
+                        if (!interactive) {
                             if (typeof window.clearLoopRange === 'function') window.clearLoopRange();
                         }
                     }
