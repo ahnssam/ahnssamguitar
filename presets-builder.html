@@ -373,6 +373,44 @@
         .bd-pills-stars .bd-pill:not([data-diff="0"]) { color: #d4a52a; font-size: 0.74rem; }
         .bd-pills-stars .bd-pill.active { color: #fff !important; }
 
+        /* ───── 목록 필터 버튼 ───── */
+        .bd-list-filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+            margin-bottom: 0.55rem;
+        }
+        .bd-filter-btn, .bd-genre-btn {
+            padding: 0.32rem 0.65rem;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: rgba(42, 107, 74, 0.06);
+            color: var(--text-mid);
+            font-family: inherit;
+            font-size: 0.74rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .bd-filter-btn:hover:not(.active),
+        .bd-genre-btn:hover:not(.active) {
+            background: rgba(82, 168, 114, 0.18);
+            color: var(--green-deep);
+            border-color: var(--green-mid);
+        }
+        .bd-filter-btn.active, .bd-genre-btn.active {
+            background: var(--green-deep);
+            color: #fff;
+            border-color: var(--green-deep);
+        }
+        .bd-filter-btn.bd-filter-star { color: #d4a52a; letter-spacing: -1px; }
+        .bd-filter-btn.bd-filter-star.active { color: #fff; }
+        .bd-list-genre-row {
+            margin-top: -0.2rem;
+            padding-top: 0.45rem;
+            border-top: 1px dashed var(--border);
+        }
+
         /* ───── 참고용 한 옥타브+ 건반 (C3 ~ G4) — 코드 진행 위 ─────
            흰건반 12개를 grid 로 깔고, 검은건반 8개를 absolute 오버레이.
            클릭 시 짧은 piano-style 톤이 울림. */
@@ -1279,6 +1317,27 @@
                     <input type="text" class="bd-list-search" id="listSearch" placeholder="검색…" autocomplete="off">
                     <button type="button" class="bd-list-search-clear" id="listSearchClear" aria-label="검색 지우기"><i class="fas fa-times"></i></button>
                 </div>
+                <div class="bd-list-filter-row" id="listFilterRow">
+                    <button type="button" class="bd-filter-btn active" data-filter="all">전체</button>
+                    <button type="button" class="bd-filter-btn" data-filter="az">A-Z</button>
+                    <button type="button" class="bd-filter-btn" data-filter="kr">ㄱ-ㅎ</button>
+                    <button type="button" class="bd-filter-btn" data-filter="genre">장르</button>
+                    <button type="button" class="bd-filter-btn bd-filter-star" data-filter="star1">★</button>
+                    <button type="button" class="bd-filter-btn bd-filter-star" data-filter="star2">★★</button>
+                    <button type="button" class="bd-filter-btn bd-filter-star" data-filter="star3">★★★</button>
+                    <button type="button" class="bd-filter-btn bd-filter-star" data-filter="star4">★★★★</button>
+                    <button type="button" class="bd-filter-btn bd-filter-star" data-filter="star5">★★★★★</button>
+                </div>
+                <div class="bd-list-filter-row bd-list-genre-row" id="listGenreRow" style="display:none;">
+                    <button type="button" class="bd-genre-btn active" data-genre="">전체 장르</button>
+                    <button type="button" class="bd-genre-btn" data-genre="Pop">Pop</button>
+                    <button type="button" class="bd-genre-btn" data-genre="Rock">Rock</button>
+                    <button type="button" class="bd-genre-btn" data-genre="Ballad">Ballad</button>
+                    <button type="button" class="bd-genre-btn" data-genre="Blues">Blues</button>
+                    <button type="button" class="bd-genre-btn" data-genre="Jazz">Jazz</button>
+                    <button type="button" class="bd-genre-btn" data-genre="Funk">Funk</button>
+                    <button type="button" class="bd-genre-btn" data-genre="Folk">Folk</button>
+                </div>
                 <div class="bd-list" id="presetList">
                     <div class="bd-empty">로딩중…</div>
                 </div>
@@ -1506,6 +1565,8 @@
             let editingId = null;
             let bars = 4;
             let listFilter = '';
+            let listGroupFilter = 'all';  // 'all' | 'az' | 'kr' | 'genre' | 'star1'..'star5'
+            let listGenreFilter = '';     // '' = 모든 장르 (장르 그룹 선택 시 sub-filter)
             let difficulty = 0;  // 0 = 없음, 1~5 = 별 개수
             let currentRhythm = '8beat';
             // 커스텀 시퀀서 — 4 라인 (피아노 코드 / 피아노 단음 / 베이스 근음 / 베이스 5도)
@@ -2199,14 +2260,52 @@
                 return 0;
             }
 
+            // 이름 첫 글자 카테고리 — 'az' (Latin) / 'kr' (Hangul) / null (그 외)
+            function _firstLetterCategory(name) {
+                if (!name) return null;
+                var s = String(name).trim();
+                if (!s) return null;
+                var code = s.charCodeAt(0);
+                if ((code >= 0x41 && code <= 0x5A) || (code >= 0x61 && code <= 0x7A)) return 'az';
+                if (code >= 0xAC00 && code <= 0xD7AF) return 'kr';
+                return null;
+            }
+
+            // 그룹 필터 통과 여부
+            function _passesGroupFilter(p) {
+                switch (listGroupFilter) {
+                    case 'all':   return true;
+                    case 'az':    return _firstLetterCategory(p.name) === 'az';
+                    case 'kr':    return _firstLetterCategory(p.name) === 'kr';
+                    case 'genre':
+                        if (!listGenreFilter) return true;
+                        return (p.genre || '').toLowerCase() === listGenreFilter.toLowerCase();
+                    case 'star1': return (p.difficulty | 0) === 1;
+                    case 'star2': return (p.difficulty | 0) === 2;
+                    case 'star3': return (p.difficulty | 0) === 3;
+                    case 'star4': return (p.difficulty | 0) === 4;
+                    case 'star5': return (p.difficulty | 0) === 5;
+                    default:      return true;
+                }
+            }
+
             function renderList() {
                 const list = $('presetList');
                 const f = (listFilter || '').trim();
+                // 1) 그룹 필터 (전체/A-Z/ㄱ-ㅎ/장르/별)
+                var pool = presets.filter(_passesGroupFilter);
+                // 2) A-Z / ㄱ-ㅎ 모드일 땐 이름순 정렬
+                if (listGroupFilter === 'az' || listGroupFilter === 'kr') {
+                    pool = pool.slice().sort(function(a, b) {
+                        return String(a.name || '').localeCompare(String(b.name || ''), 'ko');
+                    });
+                }
+                // 3) 검색어 필터 + 랭킹
                 let filtered;
                 if (!f) {
-                    filtered = presets.slice();
+                    filtered = pool.slice();
                 } else {
-                    filtered = presets.map(function(p) {
+                    filtered = pool.map(function(p) {
                         var s1 = _scoreMatch(p.name, f);
                         var s2 = _scoreMatch(p.artist, f) * 0.6;
                         return { p: p, score: Math.max(s1, s2) };
@@ -2215,10 +2314,15 @@
                       .map(function(x) { return x.p; });
                 }
                 if (filtered.length === 0) {
-                    list.innerHTML = '<div class="bd-empty">' +
-                        (f ? '"' + escapeHtml(f) + '" 에 맞는 프리셋이 없어요'
-                           : '아직 프리셋이 없어요. "새 프리셋" 으로 추가해보세요.') +
-                        '</div>';
+                    var emptyMsg;
+                    if (f) {
+                        emptyMsg = '"' + escapeHtml(f) + '" 에 맞는 프리셋이 없어요';
+                    } else if (listGroupFilter !== 'all') {
+                        emptyMsg = '이 필터에 해당하는 프리셋이 없어요';
+                    } else {
+                        emptyMsg = '아직 프리셋이 없어요. "새 프리셋" 으로 추가해보세요.';
+                    }
+                    list.innerHTML = '<div class="bd-empty">' + emptyMsg + '</div>';
                     return;
                 }
                 list.innerHTML = '';
@@ -3229,6 +3333,37 @@
                     renderList();
                     search.focus();
                 };
+
+                // ─── 목록 필터 버튼 (전체/A-Z/ㄱ-ㅎ/장르/별1~5) ───
+                var filterRow = $('listFilterRow');
+                var genreRow  = $('listGenreRow');
+                if (filterRow) {
+                    filterRow.querySelectorAll('.bd-filter-btn').forEach(function(btn) {
+                        btn.onclick = function() {
+                            listGroupFilter = btn.dataset.filter || 'all';
+                            // active 토글
+                            filterRow.querySelectorAll('.bd-filter-btn').forEach(function(b) {
+                                b.classList.toggle('active', b === btn);
+                            });
+                            // 장르 sub-row 표시/숨김
+                            if (genreRow) {
+                                genreRow.style.display = (listGroupFilter === 'genre') ? 'flex' : 'none';
+                            }
+                            renderList();
+                        };
+                    });
+                }
+                if (genreRow) {
+                    genreRow.querySelectorAll('.bd-genre-btn').forEach(function(btn) {
+                        btn.onclick = function() {
+                            listGenreFilter = btn.dataset.genre || '';
+                            genreRow.querySelectorAll('.bd-genre-btn').forEach(function(b) {
+                                b.classList.toggle('active', b === btn);
+                            });
+                            renderList();
+                        };
+                    });
+                }
 
                 // ─── 참고용 한 옥타브+ 건반 (C3 ~ G4) ──────────────────────
                 // 클릭 시 짧은 piano-style 톤 (sine + 부분음 + lowpass envelope).
