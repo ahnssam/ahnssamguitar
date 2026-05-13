@@ -4763,6 +4763,32 @@
             transition: none;
         }
 
+        /* ─── 반주 모드 레이아웃 — 시작 + TAP 을 같은 행에 ───────────
+           메트로놈/반주가 같은 패널을 공유하지만, 반주에선 박자/소리/리듬
+           행이 숨겨져 TAP 과 시작 버튼이 인접하게 됨. body.mode-backing
+           에서만 tool-body 를 grid 로 전환해 시작(넓게) + TAP(좁게) 을
+           한 행에 배치한다. 메트로놈 모드는 그대로 세로 스택. */
+        body.mode-backing #metronomePanel .tool-body {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            grid-template-areas:
+                "loop  loop"
+                "bpm   bpm"
+                "edge  edge"
+                "slider slider"
+                "start tap"
+                "mix   mix";
+            column-gap: 0.7rem;
+            row-gap: 0;
+        }
+        body.mode-backing #loopSection             { grid-area: loop; }
+        body.mode-backing #metronomePanel .metronome-bpm     { grid-area: bpm; }
+        body.mode-backing #metronomePanel .bpm-edge-row      { grid-area: edge; }
+        body.mode-backing #metronomePanel .metronome-slider  { grid-area: slider; }
+        body.mode-backing #metroTapBtn             { grid-area: tap; margin-bottom: 0; }
+        body.mode-backing #metronomeBtn            { grid-area: start; }
+        body.mode-backing #loopMixRow              { grid-area: mix; }
+
         /* ===== Tap Tempo ===== */
         .tap-display {
             text-align: center;
@@ -6659,7 +6685,12 @@
                             <div id="loopPresetItems"></div>
                         </div>
                     </div>
-                    <!-- 베이스/피아노 — 한 행 (예비박은 마디 왼쪽으로, 전체 키는 그리드 아래로 이동) -->
+                    <!-- 리듬 — 그룹 토글 4개를 한 줄로 (베이스/피아노 보다 위) -->
+                    <div class="loop-rhythm-picker" id="loopRhythmPicker">
+                        <label>리듬</label>
+                        <div class="loop-rhythm-groups" id="loopRhythmGroups"></div>
+                    </div>
+                    <!-- 베이스/피아노 — 한 행 (리듬 아래) -->
                     <div class="loop-style-row">
                         <div class="loop-style-group">
                             <label>베이스</label>
@@ -6677,11 +6708,6 @@
                                 <button type="button" class="loop-style-btn" data-pstyle="8beat" data-action="setLoopPianoStyle" data-args="8beat">8비트</button>
                             </div>
                         </div>
-                    </div>
-                    <!-- 리듬 — 그룹 토글 4개를 한 줄로 -->
-                    <div class="loop-rhythm-picker" id="loopRhythmPicker">
-                        <label>리듬</label>
-                        <div class="loop-rhythm-groups" id="loopRhythmGroups"></div>
                     </div>
                     <!-- 예비박 + 마디 + 입력 픽커 — 코드 그리드 바로 위. 입력 픽커는 오른쪽으로. -->
                     <div class="loop-top-row">
@@ -8020,6 +8046,8 @@
                 if (headerH1) headerH1.textContent = '메트로놈 & 드럼';
                 if (soundToggle) soundToggle.style.display = '';
             }
+            // 반주 모드 전용 레이아웃 클래스 (시작 + TAP 한 행 등)
+            document.body.classList.toggle('mode-backing', isBacking);
             // 도움말 / 유튜브 버튼의 data 속성을 반주/메트로놈에 맞게 갱신.
             // 도움말 텍스트(TOOL_HELP_TEXT) 와 유튜브 검색(TOOL_YOUTUBE_LINKS)
             // 둘 다 'backing' / 'metronome' 키로 따로 등록돼 있음.
