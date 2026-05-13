@@ -4762,6 +4762,9 @@
             box-shadow: 0 0 18px rgba(114, 196, 146, 0.5);
             transition: none;
         }
+        /* 기본은 긴 라벨('탭으로 BPM 설정') 노출, 짧은 라벨('TAP') 숨김.
+           반주 모드에서 swap. */
+        .metronome-tap-btn .tap-label-short { display: none; }
 
         /* ─── 반주 모드 레이아웃 — 시작 + TAP 을 같은 행에 ───────────
            메트로놈/반주가 같은 패널을 공유하지만, 반주에선 박자/소리/리듬
@@ -4788,6 +4791,32 @@
         body.mode-backing #metroTapBtn             { grid-area: tap; margin-bottom: 0; }
         body.mode-backing #metronomeBtn            { grid-area: start; }
         body.mode-backing #loopMixRow              { grid-area: mix; }
+
+        /* 반주 모드 — TAP 버튼 'TAP' + ENTER 박스 세로 배치.
+           아이콘과 긴 라벨 숨기고 짧은 'TAP' 노출, kbd-hint 를 아래로. */
+        body.mode-backing #metroTapBtn {
+            flex-direction: column;
+            gap: 0.25rem;
+            padding: 0.55rem 0.8rem;
+        }
+        body.mode-backing #metroTapBtn .tap-icon,
+        body.mode-backing #metroTapBtn .tap-label-long {
+            display: none;
+        }
+        body.mode-backing #metroTapBtn .tap-label-short {
+            display: inline-block;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+        }
+        body.mode-backing #metroTapBtn .kbd-hint {
+            margin-left: 0;
+        }
+
+        /* 반주 모드 — 시작 버튼 세로 패딩 절반. 가로 패딩은 유지. */
+        body.mode-backing #metronomeBtn {
+            padding: 0.8rem 1.6rem;
+        }
 
         /* ===== Tap Tempo ===== */
         .tap-display {
@@ -6777,8 +6806,9 @@
                 </div>
                 <input type="range" min="20" max="240" value="90" class="metronome-slider" id="bpmSlider" data-input="updateBPM" data-args="$value">
                 <button class="metronome-tap-btn" id="metroTapBtn" data-action="metroTap">
-                    <i class="fas fa-hand-pointer"></i>
-                    <span>탭으로 BPM 설정</span>
+                    <i class="fas fa-hand-pointer tap-icon"></i>
+                    <span class="tap-label-long">탭으로 BPM 설정</span>
+                    <span class="tap-label-short">TAP</span>
                     <span class="kbd-hint">ENTER</span>
                 </button>
                 <div class="metronome-time-sig" id="timeSigRow">
