@@ -8455,8 +8455,16 @@
             //       Cm7♭5 → { root:'C',  minor:true,  extension:'m7b5' }
             //       Cdim7 → { root:'C',  minor:false, extension:'dim7' }
             //   .minor 필드는 하위 호환을 위해 유지 (구 코드가 .minor 만 본다면 트라이어드처럼 처리).
+            // N.C / NC / N/C (= No Chord) 검출 — root null 로 반환해 베이스·피아노 silence.
+            //   드럼은 코드와 무관하게 정상 재생.
+            function _isNoChord(name) {
+                if (!name) return false;
+                var s = String(name).trim().toUpperCase().replace(/[\.\s\/]/g, '');
+                return s === 'NC';
+            }
             function parseChordName(name) {
                 if (!name) return { root: null, minor: false, extension: 'none', bass: null };
+                if (_isNoChord(name)) return { root: null, minor: false, extension: 'none', bass: null, nc: true };
                 // 분수코드 (slash chord) 분리 — 예: 'C/G' → root part 'C', bass 'G'.
                 //   bass 는 [A-G][#b]? 만 허용. 매칭 안 되면 무시.
                 var bass = null;
