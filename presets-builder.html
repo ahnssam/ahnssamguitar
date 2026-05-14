@@ -1006,7 +1006,48 @@
             transition: all 0.15s;
             text-decoration: none;
         }
-        .bd-btn-primary { background: var(--green-deep); color: #fff; }
+        .bd-btn-primary { background: var(--green-deep); color: #fff; transition: background 0.18s, opacity 0.18s; }
+        /* 저장 직후 — 사용자가 다시 변경할 때까지 회색 / 반투명 */
+        .bd-btn-primary.bd-btn-saved {
+            background: rgba(120, 130, 125, 0.55);
+            color: rgba(255, 255, 255, 0.85);
+            cursor: default;
+        }
+        .bd-btn-primary.bd-btn-saved:hover { background: rgba(120, 130, 125, 0.55); }
+        /* 변경사항 있음 — 작은 점으로 표시 (선택적, 강조) */
+        .bd-btn-primary.bd-btn-dirty::before {
+            content: '';
+            display: inline-block;
+            width: 6px; height: 6px; border-radius: 50%;
+            background: #ffd24a;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+        /* ───── 변경사항 있을 때 이탈 confirm 모달 ───── */
+        .bd-confirm-modal {
+            position: fixed; inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 9500;
+            display: none;
+            align-items: center; justify-content: center;
+        }
+        .bd-confirm-modal.show { display: flex; }
+        .bd-confirm-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.4rem 1.6rem;
+            max-width: 380px;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+        }
+        .bd-confirm-card p {
+            margin: 0 0 1rem; font-size: 0.95rem; line-height: 1.5; color: var(--text);
+        }
+        .bd-confirm-actions {
+            display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap;
+        }
+        :root[data-theme="dark"] .bd-confirm-card {
+            background: #1f2a26; color: #e8f0ec;
+        }
         .bd-btn-primary:hover { background: var(--green-dark); }
         .bd-btn-danger {
             background: rgba(196, 64, 52, 0.1);
@@ -1827,6 +1868,17 @@
         </div>
         <!-- 파이 메뉴 (마킹 메뉴) — 셀 길게 누를 때 동적으로 띄움 -->
         <div class="bd-pie-overlay" id="bdPieOverlay" hidden></div>
+        <!-- 저장 안 된 변경사항 있을 때 이탈하려는 동작에 띄울 confirm modal -->
+        <div class="bd-confirm-modal" id="bdConfirmModal" role="dialog" aria-modal="true">
+            <div class="bd-confirm-card">
+                <p>저장하지 않은 변경사항이 있습니다.<br>저장하시겠습니까?</p>
+                <div class="bd-confirm-actions">
+                    <button class="bd-btn bd-btn-primary"  id="bdConfirmSave"   type="button">저장</button>
+                    <button class="bd-btn bd-btn-ghost"    id="bdConfirmDiscard" type="button">저장 안 함</button>
+                    <button class="bd-btn bd-btn-ghost"    id="bdConfirmCancel"  type="button">취소</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/dist/umd/supabase.min.js"></script>
@@ -2739,7 +2791,11 @@
                             (stars ? ' <span class="bd-list-item-meta" style="color:#d4a52a;">' + stars + '</span>' : '') +
                         '</div>' +
                         '<span class="bd-list-item-meta">' + p.bpm + ' BPM · ' + p.bars + '마디</span>';
-                    item.onclick = function() { loadEdit(p); };
+                    item.onclick = function() {
+                        // 이미 같은 프리셋이면 confirm 없이 그냥 (no-op 효과)
+                        if (p.id === editingId) return;
+                        navigateWithConfirm(function() { loadEdit(p); });
+                    };
                     list.appendChild(item);
                 });
             }
@@ -2776,6 +2832,7 @@
                 updatePasteBtnState();
                 $('feedback').className = 'bd-feedback';
                 renderList();
+                resetDirtyForLoad();
                 $('fName').focus();
                 window.scrollTo({ top: $('editForm').offsetTop - 12, behavior: 'smooth' });
             }
@@ -2847,6 +2904,7 @@
                 updatePasteBtnState();
                 $('feedback').className = 'bd-feedback';
                 renderList();
+                resetDirtyForLoad();
             }
 
             // ─── 프리셋 클립보드 (복제/붙여넣기) ───────────────────
@@ -3036,6 +3094,107 @@
             let bdPickerExtension = 'none';    // 'none' | '7' | 'm7' | 'M7' | 'm7b5' | 'dim7' | 'aug'
             let bdChordsA = {};
             let bdChordsB = {};
+
+            // ─── Dirty 추적 (저장 안 된 변경사항 있는지) ─────────────────
+            let bdHasChanges = false;
+            function markDirty() {
+                if (bdHasChanges) return;
+                bdHasChanges = true;
+                var btn = $('saveBtn');
+                if (btn) {
+                    btn.classList.remove('bd-btn-saved');
+                    btn.classList.add('bd-btn-dirty');
+                }
+            }
+            function markClean() {
+                bdHasChanges = false;
+                var btn = $('saveBtn');
+                if (btn) {
+                    btn.classList.add('bd-btn-saved');
+                    btn.classList.remove('bd-btn-dirty');
+                }
+            }
+            // 폼 진입 시 (load / new) 깨끗한 상태로 초기화 + saved 표시 안 함 (초기엔 그냥 normal).
+            function resetDirtyForLoad() {
+                bdHasChanges = false;
+                var btn = $('saveBtn');
+                if (btn) btn.classList.remove('bd-btn-saved', 'bd-btn-dirty');
+            }
+
+            // ─── Confirm modal (저장 / 저장 안 함 / 취소) ─────────────
+            // confirmUnsaved(onSave, onDiscard, onCancel) — 변경사항 있으면 모달, 없으면 onDiscard 즉시.
+            function confirmUnsaved(onSave, onDiscard, onCancel) {
+                if (!bdHasChanges) { onDiscard && onDiscard(); return; }
+                var modal = $('bdConfirmModal');
+                if (!modal) { onDiscard && onDiscard(); return; }
+                modal.classList.add('show');
+                var saveBtn    = $('bdConfirmSave');
+                var discardBtn = $('bdConfirmDiscard');
+                var cancelBtn  = $('bdConfirmCancel');
+                function close() {
+                    modal.classList.remove('show');
+                    saveBtn.onclick = discardBtn.onclick = cancelBtn.onclick = null;
+                }
+                saveBtn.onclick = function() {
+                    close();
+                    // 비동기 save — 끝나면 onSave 콜백
+                    Promise.resolve(savePreset()).then(function() { onSave && onSave(); });
+                };
+                discardBtn.onclick = function() {
+                    close();
+                    bdHasChanges = false; // 변경사항 폐기
+                    onDiscard && onDiscard();
+                };
+                cancelBtn.onclick = function() {
+                    close();
+                    onCancel && onCancel();
+                };
+            }
+            // 이탈 동작을 한 번에 wrap — confirm 띄우고 결과에 따라 navAction 실행 / 취소.
+            function navigateWithConfirm(navAction) {
+                if (!bdHasChanges) { navAction(); return; }
+                confirmUnsaved(
+                    function() { navAction(); },   // 저장 후 → navigate
+                    function() { navAction(); },   // 저장 안 함 → navigate (변경 폐기)
+                    function() { /* 취소 — 아무것도 안 함 */ }
+                );
+            }
+            // 폼 입력 변화 감지 — markDirty 자동 호출.
+            //   editorCard 안의 모든 input/change/click 이벤트에 위임.
+            //   재생/저장/삭제 등 비-변경 버튼은 명시적으로 제외.
+            function setupDirtyTracking() {
+                var editor = $('editorCard');
+                if (!editor) return;
+                editor.addEventListener('input', function(e) {
+                    var t = e.target;
+                    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) markDirty();
+                });
+                editor.addEventListener('change', function(e) {
+                    var t = e.target;
+                    if (t && (t.tagName === 'SELECT' || t.tagName === 'INPUT')) markDirty();
+                });
+                editor.addEventListener('click', function(e) {
+                    // 비-변경 버튼은 무시 (저장/삭제/재생/외부이동/복제/붙여넣기/confirm 모달)
+                    var skip = e.target.closest(
+                        '#saveBtn, #deleteBtn, #previewPlayBtn, #testBtn, #duplicateBtn, #pasteBtn, ' +
+                        '#bdConfirmCancel, #bdConfirmSave, #bdConfirmDiscard, #lockBtn'
+                    );
+                    if (skip) return;
+                    // 변경을 일으키는 클릭 가능한 element 들 (마디, 시퀀서, 도돌이, 리듬, pill 등)
+                    var btn = e.target.closest(
+                        'button, .bd-loop-cell-edge, .bd-loop-cell-half-picker, ' +
+                        '.bd-pill, .bd-rhythm-btn, .bd-seq-cell, .bd-bars-pm, .bd-chord-pick-btn'
+                    );
+                    if (btn) markDirty();
+                });
+            }
+            // 창 닫기 / 새로고침 — 변경사항 있으면 브라우저 native dialog (3-옵션은 못 띄움).
+            window.addEventListener('beforeunload', function(e) {
+                if (bdHasChanges) {
+                    e.preventDefault();
+                    e.returnValue = '';
+                }
+            });
             // 도돌이표 — 빌더에서 마디 좌/우 가장자리 클릭으로 토글. 프리셋과 함께 저장됨
             // (sequencer_pattern.repeats = { left: [...], right: [...] }).
             let bdRepeats = { left: new Set(), right: new Set() };
@@ -3578,6 +3737,7 @@
                         updatePasteBtnState();
                     }
                     showFeedback('저장 완료 ✓', 'success');
+                    markClean();
                     await loadPresets();
                 } catch (err) {
                     console.error('[savePreset] DB error:', err);
@@ -3745,8 +3905,11 @@
                         };
                     }
                 }
-                $('newBtn').onclick = newPreset;
+                $('newBtn').onclick = function() {
+                    navigateWithConfirm(function() { newPreset(); });
+                };
                 $('saveBtn').onclick = savePreset;
+                setupDirtyTracking();
                 $('deleteBtn').onclick = deletePreset;
                 $('testBtn').onclick = testInTools;
                 $('previewPlayBtn').onclick = togglePreview;
