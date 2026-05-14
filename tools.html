@@ -12887,17 +12887,24 @@
             let _etCurrentDir = 'ascending';
             let _etAnswer = null;
             let _etAnswered = false;
-            let _etStats = { correct: 0, total: 0, streak: 0 };
+            // score = 난이도 가중치 누적 (UI 표시용), correct = 정답 수 (정답률 계산용)
+            let _etStats = { score: 0, correct: 0, total: 0, streak: 0 };
             let _etBaseFreq = 0;
             let _etHistory = [];
 
             let _etChordDiff = 'easy';
             let _etChordAnswer = null;
             let _etChordAnswered = false;
-            let _etChordStats = { correct: 0, total: 0, streak: 0 };
+            let _etChordStats = { score: 0, correct: 0, total: 0, streak: 0 };
             let _etChordBaseFreq = 0;
             let _etChordRootNote = '';
             let _etChordHistory = [];
+
+            // ─── 청음 점수 가중치 — 난이도별로 다른 점수 누적 ─────────────
+            // 정답률은 count 기반 (변동 없음), 점수 박스만 weighted.
+            var ET_INTERVAL_POINTS = { easy: 1, medium: 2, hard: 3 };
+            var ET_PITCH_DIFF_PTS  = { easy: 1, hard: 2 };          // pitch 모드: 난이도 가중 × 음 개수
+            var ET_CHORD_POINTS    = { easy: 1, medium: 2, hard: 3, hell: 5 };
             const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
             function playTone(freq, startTime, duration) {
@@ -13048,7 +13055,9 @@
                 if (isCorrect) {
                     _etStats.correct++;
                     _etStats.streak++;
-                    fb.textContent = '정답! ' + correctIv.name + ' (' + correctIv.nameEn + ') — ' + noteInfo;
+                    var pts = ET_INTERVAL_POINTS[_etDiff] || 1;
+                    _etStats.score += pts;
+                    fb.textContent = '정답! +' + pts + '점 · ' + correctIv.name + ' (' + correctIv.nameEn + ') — ' + noteInfo;
                     fb.className = 'et-feedback correct';
                 } else {
                     _etStats.streak = 0;
@@ -13126,14 +13135,14 @@
             };
 
             function updateETScores() {
-                document.getElementById('etScore').textContent = _etStats.correct;
+                document.getElementById('etScore').textContent = _etStats.score;
                 document.getElementById('etStreak').textContent = _etStats.streak;
                 document.getElementById('etAccuracy').textContent =
                     _etStats.total > 0 ? Math.round(_etStats.correct / _etStats.total * 100) + '%' : '0%';
             }
 
             window.etReset = function() {
-                _etStats = { correct: 0, total: 0, streak: 0 };
+                _etStats = { score: 0, correct: 0, total: 0, streak: 0 };
                 _etAnswer = null;
                 _etAnswered = false;
                 _etSelectedSemi = null;
@@ -13298,7 +13307,9 @@
                 if (isCorrect) {
                     _etChordStats.correct++;
                     _etChordStats.streak++;
-                    fb.innerHTML = '정답! ' + fullName;
+                    var cPts = ET_CHORD_POINTS[_etChordDiff] || 1;
+                    _etChordStats.score += cPts;
+                    fb.innerHTML = '정답! +' + cPts + '점 · ' + fullName;
                     fb.className = 'et-feedback correct';
                 } else {
                     _etChordStats.streak = 0;
@@ -13363,14 +13374,14 @@
             };
 
             function updateETChordScores() {
-                document.getElementById('etChordScore').textContent = _etChordStats.correct;
+                document.getElementById('etChordScore').textContent = _etChordStats.score;
                 document.getElementById('etChordStreak').textContent = _etChordStats.streak;
                 document.getElementById('etChordAccuracy').textContent =
                     _etChordStats.total > 0 ? Math.round(_etChordStats.correct / _etChordStats.total * 100) + '%' : '0%';
             }
 
             window.etChordReset = function() {
-                _etChordStats = { correct: 0, total: 0, streak: 0 };
+                _etChordStats = { score: 0, correct: 0, total: 0, streak: 0 };
                 _etChordAnswer = null;
                 _etChordAnswered = false;
                 _etSelectedChordIdx = null;
@@ -13410,7 +13421,7 @@
             let _etPitchAnswer = null;
             let _etPitchPicks = [];
             let _etPitchGraded = false;
-            let _etPitchStats = { correct: 0, total: 0, streak: 0 };
+            let _etPitchStats = { score: 0, correct: 0, total: 0, streak: 0 };
             let _etPitchHistory = [];
 
             function getPitchNotes() {
@@ -13588,7 +13599,9 @@
                     if (isCorrect) {
                         _etPitchStats.correct++;
                         _etPitchStats.streak++;
-                        fb.textContent = '정답! ' + ans.note + ans.octave;
+                        var p1Pts = (ET_PITCH_DIFF_PTS[_etPitchDiff] || 1) * (_etPitchCount || 1);
+                        _etPitchStats.score += p1Pts;
+                        fb.textContent = '정답! +' + p1Pts + '점 · ' + ans.note + ans.octave;
                         fb.className = 'et-feedback correct';
                     } else {
                         _etPitchStats.streak = 0;
@@ -13632,7 +13645,9 @@
                 if (allCorrect) {
                     _etPitchStats.correct++;
                     _etPitchStats.streak++;
-                    fb.textContent = '전부 정답! ' + answerStr;
+                    var pMPts = (ET_PITCH_DIFF_PTS[_etPitchDiff] || 1) * (_etPitchCount || 1);
+                    _etPitchStats.score += pMPts;
+                    fb.textContent = '전부 정답! +' + pMPts + '점 · ' + answerStr;
                     fb.className = 'et-feedback correct';
                 } else {
                     _etPitchStats.streak = 0;
@@ -13693,14 +13708,14 @@
             };
 
             function updateETPitchScores() {
-                document.getElementById('etPitchScore').textContent = _etPitchStats.correct;
+                document.getElementById('etPitchScore').textContent = _etPitchStats.score;
                 document.getElementById('etPitchStreak').textContent = _etPitchStats.streak;
                 document.getElementById('etPitchAccuracy').textContent =
                     _etPitchStats.total > 0 ? Math.round(_etPitchStats.correct / _etPitchStats.total * 100) + '%' : '0%';
             }
 
             window.etPitchReset = function() {
-                _etPitchStats = { correct: 0, total: 0, streak: 0 };
+                _etPitchStats = { score: 0, correct: 0, total: 0, streak: 0 };
                 _etPitchAnswer = null;
                 _etPitchPicks = [];
                 _etPitchGraded = false;
