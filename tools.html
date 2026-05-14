@@ -12908,11 +12908,15 @@
             let _etChordRootNote = '';
             let _etChordHistory = [];
 
-            // ─── 청음 점수 가중치 — 난이도별로 다른 점수 누적 ─────────────
-            // 정답률은 count 기반 (변동 없음), 점수 박스만 weighted.
-            var ET_INTERVAL_POINTS = { easy: 1, medium: 2, hard: 3 };
-            var ET_PITCH_DIFF_PTS  = { easy: 1, hard: 2 };          // pitch 모드: 난이도 가중 × 음 개수
-            var ET_CHORD_POINTS    = { easy: 1, medium: 2, hard: 3, hell: 5 };
+            // ─── 청음 점수 가중치 — 랭킹 점수와 동일한 식 ───────────────
+            // 랭킹: localScore = Math.floor(validCorrect * 10 * DIFF_COEF[diff])
+            //   DIFF_COEF = { easy:1.0, medium:1.5, hard:2.0, hell:3.0 }
+            //   → 정답 1개당 easy:10 / medium:15 / hard:20 / hell:30
+            // 점수 박스가 랭킹 표시 점수와 일치하도록 같은 단위로 누적한다.
+            // (음 맞추기도 음 개수 곱하지 않음 — 랭킹은 난이도만 봄)
+            var ET_INTERVAL_POINTS = { easy: 10, medium: 15, hard: 20 };
+            var ET_PITCH_DIFF_PTS  = { easy: 10, hard: 20 };
+            var ET_CHORD_POINTS    = { easy: 10, medium: 15, hard: 20, hell: 30 };
             const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
             function playTone(freq, startTime, duration) {
@@ -13607,7 +13611,7 @@
                     if (isCorrect) {
                         _etPitchStats.correct++;
                         _etPitchStats.streak++;
-                        var p1Pts = (ET_PITCH_DIFF_PTS[_etPitchDiff] || 1) * (_etPitchCount || 1);
+                        var p1Pts = ET_PITCH_DIFF_PTS[_etPitchDiff] || 10;
                         _etPitchStats.score += p1Pts;
                         fb.textContent = '정답! +' + p1Pts + '점 · ' + ans.note + ans.octave;
                         fb.className = 'et-feedback correct';
@@ -13653,7 +13657,7 @@
                 if (allCorrect) {
                     _etPitchStats.correct++;
                     _etPitchStats.streak++;
-                    var pMPts = (ET_PITCH_DIFF_PTS[_etPitchDiff] || 1) * (_etPitchCount || 1);
+                    var pMPts = ET_PITCH_DIFF_PTS[_etPitchDiff] || 10;
                     _etPitchStats.score += pMPts;
                     fb.textContent = '전부 정답! +' + pMPts + '점 · ' + answerStr;
                     fb.className = 'et-feedback correct';
