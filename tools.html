@@ -6829,22 +6829,9 @@
                         <button type="button" class="time-sig-btn" data-clicktype="voice" data-action="updateClickType" data-args="voice">목소리</button>
                     </div>
                 </div>
-                <div class="metronome-time-sig" id="drumRhythmRow" style="display:none;">
+                <div class="loop-rhythm-picker" id="drumRhythmPicker" style="display:none;">
                     <label>리듬</label>
-                    <div class="time-sig-btns">
-                        <button type="button" class="time-sig-btn active" data-rhythm="8beat" data-action="updateDrumRhythm" data-args="8beat">8비트 A</button>
-                        <button type="button" class="time-sig-btn" data-rhythm="8beat2" data-action="updateDrumRhythm" data-args="8beat2">8비트 B</button>
-                        <button type="button" class="time-sig-btn" data-rhythm="4beat" data-action="updateDrumRhythm" data-args="4beat">4비트 A</button>
-                        <button type="button" class="time-sig-btn" data-rhythm="4beat2" data-action="updateDrumRhythm" data-args="4beat2">4비트 B</button>
-                        <button type="button" class="time-sig-btn" data-rhythm="16beat" data-action="updateDrumRhythm" data-args="16beat">16비트 A</button>
-                        <button type="button" class="time-sig-btn" data-rhythm="16beat2" data-action="updateDrumRhythm" data-args="16beat2">16비트 B</button>
-                        <button type="button" class="time-sig-btn" data-rhythm="16beatC" data-action="updateDrumRhythm" data-args="16beatC">16비트 C</button>
-                        <button type="button" class="time-sig-btn" data-rhythm="ballad" data-action="updateDrumRhythm" data-args="ballad">셔플락</button>
-                        <button type="button" class="time-sig-btn" data-rhythm="16beatSA" data-action="updateDrumRhythm" data-args="16beatSA">16바운스 A</button>
-                        <button type="button" class="time-sig-btn" data-rhythm="16beatSB" data-action="updateDrumRhythm" data-args="16beatSB">16바운스 B</button>
-                        <button type="button" class="time-sig-btn" data-rhythm="16beatSC" data-action="updateDrumRhythm" data-args="16beatSC">16바운스 C</button>
-                        <button type="button" class="time-sig-btn" data-rhythm="swing" data-action="updateDrumRhythm" data-args="swing">스윙</button>
-                    </div>
+                    <div class="loop-rhythm-groups" id="drumRhythmGroups"></div>
                 </div>
                 <button class="metronome-btn" id="metronomeBtn" data-action="toggleMetronome">
                     <i class="fas fa-play"></i>
@@ -8709,7 +8696,30 @@
                               hihat: [3, 9],
                               ride: [0, 3, 5, 6, 9, 11],
                               quietSnare: true,
-                              softHihat: true }
+                              softHihat: true },
+                // 보사노바 — 1마디 16분음표 더블타임 (원래 2마디 8분 패턴 압축).
+                //   ticksPerBeat=4 / beatsPerMeasure=4 → 한 마디 = 16 ticks.
+                //   하이햇: 매 16분 = 0..15
+                //   킥:    0,3,4,7,8,11,12,15 = 1·1a·2·2a·3·3a·4·4a
+                //   림:    2,5,8,11,14 = 1n·2e·3·3a·4n
+                'bossa':    { ticksPerBeat: 4, beatsPerMeasure: 4,
+                              kick: [0, 3, 4, 7, 8, 11, 12, 15],
+                              snare: [],
+                              hihat: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+                              rim: [2, 5, 8, 11, 14] },
+                // 삼바 — 1마디 16분음표 패턴 (원래 2마디 8분 패턴의 더블타임 버전).
+                //   ticksPerBeat=4 / beatsPerMeasure=4 → 한 마디 = 16 ticks.
+                //   tick 번호는 원래 2마디 8분과 동일하지만 16분 단위로 해석됨.
+                //     원래 "1·2·3n" (8분, 2마디) = ticks 0,2,5 → 16분 한마디에서 "1·1n·2e"
+                //   ride:  매 16분 = 0..15
+                //   hihat: 2·6·10·14 = 1n·2n·3n·4n (매 박의 8분 뒷박)
+                //   kick:  0,3,4,7,8,11,12,15 = 1·1a·2·2a·3·3a·4·4a
+                //   snare: 0,2,5,7,9,12,14 = 1·1n·2e·2a·3e·4·4n
+                'samba':    { ticksPerBeat: 4, beatsPerMeasure: 4,
+                              kick: [0, 3, 4, 7, 8, 11, 12, 15],
+                              snare: [0, 2, 5, 7, 9, 12, 14],
+                              hihat: [2, 6, 10, 14],
+                              ride: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] }
             };
             let timerId = null;
             let silentAudio = null;
@@ -8726,7 +8736,7 @@
                 return cachedNoiseBuffer;
             }
 
-            const drumSamples = { kick: null, snare: null, hihat: null, hihatOpen: null, ride: null };
+            const drumSamples = { kick: null, snare: null, hihat: null, hihatOpen: null, ride: null, rim: null };
             const bassSamples = {};
             let samplesLoadPromise = null;
             function loadDrumSamples() {
@@ -8742,7 +8752,8 @@
                     load('snare', 'sounds/snare.mp3'),
                     load('hihat', 'sounds/hihat.mp3'),
                     load('hihatOpen', 'sounds/hihat open.mp3'),
-                    load('ride', 'sounds/ride.mp3')
+                    load('ride', 'sounds/ride.mp3'),
+                    load('rim', 'sounds/rim.wav')
                 ]);
                 var loadVoice = function(num, url) {
                     return fetch(url)
@@ -8964,6 +8975,47 @@
                 drumBus.connect(drumMaster);
                 drumMaster.connect(getMasterOut());
                 return drumBus;
+            }
+
+            // 림 — 보사노바/삼바 등 라틴 그루브의 림 클릭(cross-stick).
+            //   샘플(rim.wav) 우선, 실패 시 신스 폴백 — 짧은 우드 톤 + 미세한 노이즈 트랜지언트.
+            function playRim(time, volMul) {
+                if (typeof volMul !== 'number') volMul = 1.0;
+                if (playSample('rim', time, volMul)) return;
+                // ── 신스 폴백 — cross-stick: 800Hz 부근 짧은 사인 + bandpass 노이즈 클릭 ──
+                var bus = getDrumBus();
+                var voiceGain = audioCtx.createGain();
+                voiceGain.gain.value = volMul;
+                voiceGain.connect(bus);
+                // 우드 톤 — 사인 단발, 짧은 피치 다운
+                var osc = audioCtx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, time);
+                osc.frequency.exponentialRampToValueAtTime(560, time + 0.03);
+                var oscG = audioCtx.createGain();
+                oscG.gain.setValueAtTime(0.0001, time);
+                oscG.gain.exponentialRampToValueAtTime(0.45, time + 0.002);
+                oscG.gain.exponentialRampToValueAtTime(0.0001, time + 0.07);
+                osc.connect(oscG);
+                oscG.connect(voiceGain);
+                osc.start(time);
+                osc.stop(time + 0.1);
+                // 트랜지언트 클릭 — bandpass 노이즈, 더 짧고 high freq
+                var n = audioCtx.createBufferSource();
+                n.buffer = getNoiseBuffer();
+                var bp = audioCtx.createBiquadFilter();
+                bp.type = 'bandpass';
+                bp.frequency.value = 2400;
+                bp.Q.value = 4;
+                var nG = audioCtx.createGain();
+                nG.gain.setValueAtTime(0.0001, time);
+                nG.gain.exponentialRampToValueAtTime(0.25, time + 0.001);
+                nG.gain.exponentialRampToValueAtTime(0.0001, time + 0.025);
+                n.connect(bp);
+                bp.connect(nG);
+                nG.connect(voiceGain);
+                n.start(time);
+                n.stop(time + 0.05);
             }
 
             function playKick(time, volMul) {
@@ -9199,7 +9251,16 @@
                 // 셔플락 바운스 — 베이스 패턴은 ballad 와 동일 (드럼 킥만 늦춰짐)
                 'balladB': { on: [0, 5, 6], off: [3, 9], quiet: [5] },
                 // 스윙 12/8 — 워킹 베이스 느낌으로 매 박마다 root (1, 2, 3, 4 = ticks 0, 3, 6, 9).
-                'swing':   { on: [0, 3, 6, 9], off: [], quiet: [3, 9] }
+                'swing':   { on: [0, 3, 6, 9], off: [], quiet: [3, 9] },
+                // 보사노바 — 1마디 16분 더블타임. 원래 1마디 8분 패턴(1·2n·3, fifth on 3)이
+                //   더블타임 1마디 안에서 두 번 반복 (전반·후반 8 tick 씩).
+                //   on (근음):  0·3·8·11 = 1·1a·3·3a (= 원래 1·2n × 2회)
+                //   fifth (5도): 4·12     = 2·4     (= 원래 3박 5도음 × 2회)
+                'bossa':   { on: [0, 3, 8, 11], fifth: [4, 12], off: [], quiet: [] },
+                // 삼바 — 1마디 16분 더블타임 (tick 번호는 동일하지만 16분 단위로 해석).
+                //   on (근음):  0·6·14 = 1·2n·4n
+                //   fifth (5도): 3·11   = 1a·3a
+                'samba':   { on: [0, 6, 14], fifth: [3, 11], off: [], quiet: [] }
             };
 
             // ─── 워킹 베이스 (스윙 12/8) ───────────────────────────
@@ -9294,6 +9355,12 @@
                 //   M2: 1a(tick 2) + 3박(tick 6) 에 코드
                 // ticksPerBeat=3 이므로 한 마디 = 12 ticks.
                 'swing':    ['X....X......', '..X...X.....'],
+                // 보사노바 — 1마디 16분 더블타임 컴핑.
+                //   원래 2마디 8분 패턴 [0,2,5,7, 9,11,12,14] 를 16분 한 마디로 그대로 매핑.
+                'bossa':    'X.X..X.X.X.XX.X.',
+                // 삼바 — 1마디 16분 더블타임. 스네어 타이밍과 동일.
+                //   ticks 0,2,5,7,9,12,14 = 1·1n·2e·2a·3e·4·4n (16 chars / 마디)
+                'samba':    'X.X..X.X.X..X.X.',
             };
             // ─── 피아노 패턴 표기 → 이벤트 매핑 ───────────────────────────
             // 한 글자 = 한 tick. 새 표기 추가 시:
@@ -9969,13 +10036,19 @@
                 const activeRhythm = soundMode === 'loop' ? loopRhythm : drumRhythm;
                 const p = DRUM_PATTERNS[activeRhythm] || DRUM_PATTERNS['8beat'];
                 const measureLen = p.ticksPerBeat * p.beatsPerMeasure;
-                const t = tickIdx % measureLen;
+                // 네이티브 2마디 패턴 (보사노바·삼바 등) — cycleLen 을 2 × measureLen 으로 잡고
+                // tick 배열도 0..(2*measureLen-1) 범위로 명세. 빌더의 fill 매커니즘은 비활성.
+                const nativeMeasures = (p.measures && p.measures > 1) ? p.measures : 1;
+                const cycleLen = measureLen * nativeMeasures;
+                const t = tickIdx % cycleLen;
                 // 2마디 모드: opts.isFillMeasure === true 인 마디의 마지막 박(beat 4) 에서 fill.
                 //   - 하이햇 자리에 스네어를 깔아 작은 fill 느낌.
                 //   - quietSnare/softHihat 가 있는 스윙 패턴에서는 fill 생략 (음악적 충돌 방지).
+                //   - 네이티브 2마디 패턴(보사·삼바)도 이미 두 마디 그루브 있으니 fill 생략.
                 var isFillMeasure = !!(opts && opts.isFillMeasure);
                 var lastBeatStart = measureLen - p.ticksPerBeat;
-                var inFillWindow = isFillMeasure && t >= lastBeatStart && !p.quietSnare && !p.softHihat;
+                var inFillWindow = isFillMeasure && (t % measureLen) >= lastBeatStart
+                                   && !p.quietSnare && !p.softHihat && nativeMeasures === 1;
                 if (p.hihatOpen && p.hihatOpen.includes(t)) {
                     playHiHatOpen(time);
                 } else if (p.hihat.includes(t)) {
@@ -10022,6 +10095,10 @@
                     // 라이드 위에 거의 안 보이는 수준의 액센트.
                     var snareVol = p.quietSnare ? 0.04 : 1.0;
                     playSnare(time, snareVol);
+                }
+                // 림 — 보사노바 같은 라틴 그루브용. 림에 fill 매커니즘은 적용 안 함.
+                if (p.rim && p.rim.includes(t)) {
+                    playRim(time, 1.0);
                 }
             }
 
@@ -10213,11 +10290,18 @@
                     } else if (loopBassStyle === 'default') {
                         var bp = BASS_PATTERNS[r];
                         if (bp) {
-                            if (bp.on.indexOf(t) !== -1) {
+                            // 베이스 2마디 native 패턴 (삼바 등) — cycleLen = 2 × measureLen.
+                            // 한 마디 패턴이면 cycleLen === measureLen 으로 기존 동작 동일.
+                            var bpMeasures = (bp.measures && bp.measures > 1) ? bp.measures : 1;
+                            var bpCycleLen = measureLen * bpMeasures;
+                            var bt = beatNum % bpCycleLen;
+                            // 'on' (근음) — 기존 동작
+                            if (bp.on.indexOf(bt) !== -1) {
+                                // 분수코드 / 코드 변경 판정은 음악 마디 기준. bt 가 cycleLen 일 수 있으니 t (한 마디 기준) 그대로.
                                 var midA = measureLen / 2;
                                 var halfA = t < midA ? 'a' : 'b';
                                 var rootA = getEffectiveRoot(loopMeasureIdx, halfA);
-                                var velA = (bp.quiet && bp.quiet.indexOf(t) !== -1) ? 1 : 0;
+                                var velA = (bp.quiet && bp.quiet.indexOf(bt) !== -1) ? 1 : 0;
                                 // 스윙 — 워킹 베이스 (코드 quality 기반 scale, 마디별 랜덤 패턴)
                                 if (r === 'swing' && rootA) {
                                     var beatIdx = Math.floor(t / p.ticksPerBeat); // 0..3
@@ -10233,10 +10317,20 @@
                                     var bassRootA = chordBassNote(rootA);
                                     if (bassRootA) playBass(bassRootA, swungTime, velA);
                                 }
-                            } else if (bp.off.indexOf(t) !== -1) {
+                            } else if (bp.fifth && bp.fifth.indexOf(bt) !== -1) {
+                                // 5도음 (근음 아래의 5도 — BASS_FREQ 가 자연스럽게 낮은 register 라 C→G 가 root 아래)
+                                var midF = measureLen / 2;
+                                var halfF = t < midF ? 'a' : 'b';
+                                var rootF5 = getEffectiveRoot(loopMeasureIdx, halfF);
+                                if (rootF5) {
+                                    var fifth5 = getChordFifthName(rootF5);
+                                    if (fifth5) playBass(fifth5, swungTime, 0);
+                                }
+                            } else if (bp.off.indexOf(bt) !== -1) {
                                 chokeBass(swungTime);
                             } else if (_isFillMeasure && t === measureLen - 1
-                                       && bp.on.indexOf(t) === -1 && bp.off.indexOf(t) === -1) {
+                                       && bp.on.indexOf(t) === -1 && bp.off.indexOf(t) === -1
+                                       && bpMeasures === 1) {
                                 // 2마디 모드 fill: 마지막 tick 에 5th anticipation (다음 마디로 이어주기).
                                 var rootF = getEffectiveRoot(loopMeasureIdx, 'b');
                                 if (rootF) {
@@ -10492,8 +10586,11 @@
                 if (timeSigRow) timeSigRow.style.display = mode === 'click' ? 'flex' : 'none';
                 const clickTypeRow = document.getElementById('clickTypeRow');
                 if (clickTypeRow) clickTypeRow.style.display = mode === 'click' ? 'flex' : 'none';
-                const drumRhythmRow = document.getElementById('drumRhythmRow');
-                if (drumRhythmRow) drumRhythmRow.style.display = mode === 'drums' ? 'flex' : 'none';
+                const drumRhythmPicker = document.getElementById('drumRhythmPicker');
+                if (drumRhythmPicker) {
+                    drumRhythmPicker.style.display = mode === 'drums' ? 'flex' : 'none';
+                    if (mode === 'drums') renderDrumRhythms();
+                }
                 const loopSection = document.getElementById('loopSection');
                 if (loopSection) {
                     loopSection.classList.toggle('visible', mode === 'loop');
@@ -10520,12 +10617,84 @@
             window.updateDrumRhythm = function(rhythm) {
                 if (!DRUM_PATTERNS[rhythm]) return;
                 drumRhythm = rhythm;
-                document.querySelectorAll('.time-sig-btn[data-rhythm]').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.rhythm === rhythm);
-                });
+                renderDrumRhythms();
                 renderBeats();
                 resetPlaybackPosition({ resetMeasure: false });
             };
+
+            // ─── 메트로놈 드럼 리듬 그룹 렌더 (반주 picker 와 동일 구조) ─────
+            //   LOOP_RHYTHM_GROUPS / LOOP_RHYTHM_LABELS 를 그대로 재사용. drumRhythm 변수만 분리.
+            function renderDrumRhythms() {
+                var container = document.getElementById('drumRhythmGroups');
+                if (!container) return;
+                container.innerHTML = '';
+                LOOP_RHYTHM_GROUPS.forEach(function(group) {
+                    var hasActive = group.rhythms.indexOf(drumRhythm) !== -1;
+                    var groupEl = document.createElement('div');
+                    groupEl.className = 'loop-rhythm-group';
+                    var toggle = document.createElement('button');
+                    toggle.type = 'button';
+                    toggle.className = 'loop-rhythm-group-toggle' + (hasActive ? ' has-active' : '');
+                    var labelText = hasActive ? (LOOP_RHYTHM_LABELS[drumRhythm] || drumRhythm) : group.label;
+                    var stackHTML = '<span class="rhythm-label-stack">';
+                    group.rhythms.forEach(function(k) {
+                        stackHTML += '<span class="rhythm-label-ghost">' + (LOOP_RHYTHM_LABELS[k] || k) + '</span>';
+                    });
+                    stackHTML += '<span class="rhythm-label-ghost">' + group.label + '</span>';
+                    stackHTML += '<span class="rhythm-label-current">' + labelText + '</span>';
+                    stackHTML += '</span>';
+                    toggle.innerHTML = stackHTML + '<i class="fas fa-chevron-down"></i>';
+                    groupEl.appendChild(toggle);
+                    var popup = document.createElement('div');
+                    popup.className = 'loop-rhythm-group-popup';
+                    group.rhythms.forEach(function(key) {
+                        var btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.textContent = LOOP_RHYTHM_LABELS[key] || key;
+                        if (key === drumRhythm) btn.classList.add('active');
+                        btn.onclick = function(e) {
+                            e.stopPropagation();
+                            window.updateDrumRhythm(key);
+                            closeDrumRhythmDrawer();
+                        };
+                        popup.appendChild(btn);
+                    });
+                    groupEl.appendChild(popup);
+                    toggle.onclick = function(e) {
+                        e.stopPropagation();
+                        var alreadyOpen = popup.classList.contains('open');
+                        container.querySelectorAll('.loop-rhythm-group-popup').forEach(function(el) { el.classList.remove('open'); });
+                        container.querySelectorAll('.loop-rhythm-group-toggle').forEach(function(el) { el.classList.remove('open'); });
+                        if (!alreadyOpen) {
+                            popup.classList.add('open');
+                            toggle.classList.add('open');
+                        }
+                    };
+                    container.appendChild(groupEl);
+                });
+            }
+            function closeDrumRhythmDrawer() {
+                var container = document.getElementById('drumRhythmGroups');
+                if (!container) return;
+                container.querySelectorAll('.loop-rhythm-group-popup').forEach(function(el) { el.classList.remove('open'); });
+                container.querySelectorAll('.loop-rhythm-group-toggle').forEach(function(el) { el.classList.remove('open'); });
+            }
+            // 외부 클릭 시 드럼 picker 드로어 닫기 — 한 번만 등록.
+            (function() {
+                var bound = false;
+                var origRender = renderDrumRhythms;
+                renderDrumRhythms = function() {
+                    origRender();
+                    if (bound) return;
+                    bound = true;
+                    document.addEventListener('click', function(e) {
+                        // 드럼 picker 외부 클릭이면 닫음. 픽커 안 (toggle/popup/label) 은 그대로 두기.
+                        var picker = document.getElementById('drumRhythmPicker');
+                        if (!picker) return;
+                        if (!picker.contains(e.target)) closeDrumRhythmDrawer();
+                    });
+                };
+            })();
 
             var _preMuteVol = 100;
             var _isMuted = false;
@@ -10619,7 +10788,9 @@
                 '16beatSA': '16바운스 A', '16beatSB': '16바운스 B', '16beatSC': '16바운스 C',
                 'ballad': '셔플락',
                 'balladB': '셔플락 바운스',
-                'swing': '스윙'
+                'swing': '스윙',
+                'bossa': '보사노바',
+                'samba': '삼바'
             };
             // ─── 프리셋 (Supabase 연동) ─────────────────────────────
             // 노래 이름을 검색해서 한 번에 BPM·마디·리듬·코드 진행을 적용.
@@ -11284,7 +11455,7 @@
                 { id: '4beat',  label: '4비트',  rhythms: ['4beat', '4beat2'] },
                 { id: '8beat',  label: '8비트',  rhythms: ['8beat', '8beat2'] },
                 { id: '16beat', label: '16비트', rhythms: ['16beat', '16beat2', '16beatC', '16beatSA', '16beatSB', '16beatSC'] },
-                { id: 'other',  label: '그외',   rhythms: ['ballad', 'balladB', 'swing'] }
+                { id: 'other',  label: '그외',   rhythms: ['ballad', 'balladB', 'swing', 'bossa', 'samba'] }
             ];
             function renderLoopRhythms() {
                 var container = document.getElementById('loopRhythmGroups');
