@@ -8701,12 +8701,13 @@
                 //   ticksPerBeat=4 / beatsPerMeasure=4 → 한 마디 = 16 ticks.
                 //   하이햇: 매 16분 = 0..15
                 //   킥:    0,3,4,7,8,11,12,15 = 1·1a·2·2a·3·3a·4·4a
-                //   림:    2,5,8,11,14 = 1n·2e·3·3a·4n
+                //   림:    2,5,8,11,14 = 1n·2e·3·3a·4n   (림 볼륨 75% 로 다운)
                 'bossa':    { ticksPerBeat: 4, beatsPerMeasure: 4,
                               kick: [0, 3, 4, 7, 8, 11, 12, 15],
                               snare: [],
                               hihat: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-                              rim: [2, 5, 8, 11, 14] },
+                              rim: [2, 5, 8, 11, 14],
+                              rimVol: 0.75 },
                 // 삼바 — 1마디 16분음표 패턴 (원래 2마디 8분 패턴의 더블타임 버전).
                 //   ticksPerBeat=4 / beatsPerMeasure=4 → 한 마디 = 16 ticks.
                 //   tick 번호는 원래 2마디 8분과 동일하지만 16분 단위로 해석됨.
@@ -8714,12 +8715,13 @@
                 //   ride:  매 16분 = 0..15
                 //   hihat: 2·6·10·14 = 1n·2n·3n·4n (매 박의 8분 뒷박)
                 //   kick:  0,3,4,7,8,11,12,15 = 1·1a·2·2a·3·3a·4·4a
-                //   snare: 0,2,5,7,9,12,14 = 1·1n·2e·2a·3e·4·4n
+                //   snare: 0,2,5,7,9,12,14 = 1·1n·2e·2a·3e·4·4n  (스네어 볼륨 75% 로 다운)
                 'samba':    { ticksPerBeat: 4, beatsPerMeasure: 4,
                               kick: [0, 3, 4, 7, 8, 11, 12, 15],
                               snare: [0, 2, 5, 7, 9, 12, 14],
                               hihat: [2, 6, 10, 14],
-                              ride: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] }
+                              ride: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+                              snareVol: 0.75 }
             };
             let timerId = null;
             let silentAudio = null;
@@ -10094,11 +10096,15 @@
                     // quietSnare 플래그 — 스윙 12/8 처럼 스네어를 고스트 노트로 깔 때.
                     // 라이드 위에 거의 안 보이는 수준의 액센트.
                     var snareVol = p.quietSnare ? 0.04 : 1.0;
+                    // p.snareVol — 리듬별 스네어 전체 볼륨 스케일 (예: 삼바 0.75).
+                    if (typeof p.snareVol === 'number') snareVol *= p.snareVol;
                     playSnare(time, snareVol);
                 }
                 // 림 — 보사노바 같은 라틴 그루브용. 림에 fill 매커니즘은 적용 안 함.
                 if (p.rim && p.rim.includes(t)) {
-                    playRim(time, 1.0);
+                    // p.rimVol — 리듬별 림 전체 볼륨 스케일 (예: 보사노바 0.75).
+                    var rimVol = (typeof p.rimVol === 'number') ? p.rimVol : 1.0;
+                    playRim(time, rimVol);
                 }
             }
 
