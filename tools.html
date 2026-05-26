@@ -755,6 +755,14 @@
             background: rgba(244, 168, 164, 0.28);
             color: #fff;
         }
+        :root[data-theme="dark"] .loop-chord-rest {
+            background: rgba(180, 200, 215, 0.10);
+            color: #c3d6e0;
+        }
+        :root[data-theme="dark"] .loop-chord-rest:hover {
+            background: rgba(180, 200, 215, 0.22);
+            color: #fff;
+        }
 
         /* Loop top-row labels (마디 / 리듬) - dark mode */
         :root[data-theme="dark"] .loop-top-row,
@@ -4478,6 +4486,27 @@
             text-align: center;
             margin-bottom: 2rem;
         }
+        /* ─ 튜너 헤드스톡 그래픽 — 시작하기 버튼 아래, 6현 표준 튜닝(E A D G B E) 가이드 ─ */
+        .tuner-headstock {
+            margin: 1.5rem auto 0;
+            max-width: 220px;
+            display: flex;
+            justify-content: center;
+            user-select: none;
+        }
+        .tuner-headstock svg {
+            width: 100%;
+            height: auto;
+            display: block;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.18));
+        }
+        .tuner-headstock .hs-label {
+            letter-spacing: 0.04em;
+        }
+        :root[data-theme="dark"] .tuner-headstock .hs-label text { fill: #f0e9d8; }
+        @media (max-width: 600px) {
+            .tuner-headstock { max-width: 180px; margin-top: 1.2rem; }
+        }
         .tuner-note {
             font-family: 'Playfair Display', serif;
             font-size: 5rem;
@@ -6096,6 +6125,15 @@
             font-size: clamp(0.7rem, 2.3vw, 0.9rem);
             color: rgba(26, 36, 33, 0.25); font-weight: 400;
         }
+        /* 휴지 — 무채색 톤으로 탁하게 표시. 그린 액센트 톤을 빼고 그레이로. */
+        .loop-cell-half.rest {
+            color: rgba(60, 70, 75, 0.55); font-weight: 500;
+            background: rgba(95, 105, 110, 0.14);
+        }
+        :root[data-theme="dark"] .loop-cell-half.rest {
+            color: rgba(180, 190, 200, 0.55);
+            background: rgba(60, 70, 80, 0.35);
+        }
         .loop-cell-half + .loop-cell-half { border-left: 1px solid rgba(42, 107, 74, 0.1); }
         .loop-chord-picker {
             display: none; position: absolute; z-index: 10;
@@ -6255,12 +6293,16 @@
         .loop-chord-pick-btn.selected {
             background: var(--green-mid); border-color: var(--green-mid); color: var(--white);
         }
-        .loop-chord-clear {
-            width: 100%; margin-top: 0.5rem; padding: 0.45rem;
+        .loop-chord-footer {
+            display: flex; gap: 0.4rem; margin-top: 0.5rem;
+        }
+        .loop-chord-rest, .loop-chord-clear {
+            flex: 1; padding: 0.45rem;
             font-size: 0.82rem; border: none; border-radius: 5px;
             background: rgba(42, 107, 74, 0.08); color: rgba(26, 36, 33, 0.6);
             cursor: pointer; font-family: inherit;
         }
+        .loop-chord-rest:hover { background: rgba(120, 140, 160, 0.35); color: var(--text-primary); }
         .loop-chord-clear:hover { background: rgba(220,60,60,0.3); color: var(--text-primary); }
 
         /* ===== Time signature buttons ===== */
@@ -6669,6 +6711,147 @@
                     <i class="fas fa-microphone"></i>
                     <span>시작하기</span>
                 </button>
+                <!-- 기타 헤드스톡 그림 — 마틴/깁슨 풍 3+3 어쿠스틱 헤드.
+                     6현 표준 튜닝 (E A D G B E) 시각 가이드. -->
+                <div class="tuner-headstock" aria-hidden="true">
+                    <svg viewBox="0 0 360 400" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <!-- 우드 결 (수직) — 워넛 톤 -->
+                            <linearGradient id="hsWood" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%"  stop-color="#7a4f2d"/>
+                                <stop offset="50%" stop-color="#6b4226"/>
+                                <stop offset="100%" stop-color="#4a2b17"/>
+                            </linearGradient>
+                            <!-- 우드 결 미세 줄 (가로 패턴) -->
+                            <pattern id="hsGrain" patternUnits="userSpaceOnUse" width="200" height="6">
+                                <line x1="0" y1="2" x2="200" y2="2.5" stroke="rgba(0,0,0,0.10)" stroke-width="0.5"/>
+                                <line x1="0" y1="4.5" x2="200" y2="4.5" stroke="rgba(255,220,180,0.06)" stroke-width="0.5"/>
+                            </pattern>
+                            <!-- 메탈 페그(post) — 작은 크롬 실린더 -->
+                            <radialGradient id="hsPost" cx="40%" cy="35%" r="65%">
+                                <stop offset="0%" stop-color="#fafafa"/>
+                                <stop offset="55%" stop-color="#8a8a8a"/>
+                                <stop offset="100%" stop-color="#3a3a3a"/>
+                            </radialGradient>
+                            <!-- 튜너 키 버튼 (옆으로 튀어나오는 손잡이) — 상아색 -->
+                            <linearGradient id="hsKey" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#f7eedb"/>
+                                <stop offset="50%" stop-color="#e6d5ad"/>
+                                <stop offset="100%" stop-color="#bfa57a"/>
+                            </linearGradient>
+                            <linearGradient id="hsBar" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#d8d8d8"/>
+                                <stop offset="100%" stop-color="#6a6a6a"/>
+                            </linearGradient>
+                        </defs>
+
+                        <!-- ─ 헤드스톡 외곽 (좁고 길쭉한 마틴 D-style — 양옆 더 슬림하게) ─ -->
+                        <path d="M 130 392
+                                 L 130 365
+                                 Q 110 360 108 335
+                                 L 100 110
+                                 Q 99 72 122 56
+                                 Q 152 36 180 33
+                                 Q 208 36 238 56
+                                 Q 261 72 260 110
+                                 L 252 335
+                                 Q 250 360 230 365
+                                 L 230 392 Z"
+                              fill="url(#hsWood)"
+                              stroke="#2a1808" stroke-width="2.5" stroke-linejoin="round"/>
+                        <!-- 우드 결 오버레이 -->
+                        <path d="M 130 392
+                                 L 130 365
+                                 Q 110 360 108 335
+                                 L 100 110
+                                 Q 99 72 122 56
+                                 Q 152 36 180 33
+                                 Q 208 36 238 56
+                                 Q 261 72 260 110
+                                 L 252 335
+                                 Q 250 360 230 365
+                                 L 230 392 Z"
+                              fill="url(#hsGrain)"/>
+                        <!-- 헤드스톡 상단 가벼운 광택 -->
+                        <ellipse cx="180" cy="65" rx="75" ry="20" fill="rgba(255,230,200,0.10)"/>
+
+                        <!-- ─ 너트 (헤드스톡 아래쪽 끝, 흰 띠) ─ -->
+                        <rect x="125" y="378" width="110" height="8" rx="1.5"
+                              fill="#f0e6cf" stroke="rgba(0,0,0,0.35)" stroke-width="0.6"/>
+
+                        <!-- ─ 6현 — 너트에서 각 페그로.
+                             왼쪽 너트(저음쪽): 6번줄(맨 왼쪽) → 맨 아래 페그(E),
+                                             5번줄 → 중간 페그(A),
+                                             4번줄 → 맨 위 페그(D)
+                             오른쪽 너트(고음쪽): 3번줄 → 맨 위 페그(G),
+                                             2번줄 → 중간 페그(B),
+                                             1번줄(맨 오른쪽) → 맨 아래 페그(E) ─ -->
+                        <g stroke="#cfcfcf" stroke-width="1.3" stroke-linecap="round" opacity="0.95">
+                            <!-- 왼쪽 -->
+                            <line x1="133" y1="380" x2="138" y2="260"/>  <!-- 6번줄 → bottom -->
+                            <line x1="148" y1="380" x2="138" y2="180"/>  <!-- 5번줄 → middle -->
+                            <line x1="163" y1="380" x2="138" y2="100"/>  <!-- 4번줄 → top -->
+                            <!-- 오른쪽 -->
+                            <line x1="197" y1="380" x2="222" y2="100"/>  <!-- 3번줄 → top -->
+                            <line x1="212" y1="380" x2="222" y2="180"/>  <!-- 2번줄 → middle -->
+                            <line x1="227" y1="380" x2="222" y2="260"/>  <!-- 1번줄 → bottom -->
+                        </g>
+
+                        <!-- ─ 튜닝 머신 (3+3) — 정면에서 본 모양: 키 버튼은 세로 직사각형(펼쳐진 모양),
+                             스템은 가로 짧게, 포스트는 헤드 면. 라벨은 키 버튼 바깥쪽에 가로로. ─ -->
+                        <!-- 왼쪽 3개 (E·A·D) — 키는 헤드 왼쪽 바깥, 세로 방향 -->
+                        <g class="hs-tuner">
+                            <!-- E (위) -->
+                            <rect x="62" y="76"  width="24" height="48" rx="4" fill="url(#hsKey)" stroke="#2a1808" stroke-width="1"/>
+                            <rect x="86" y="95"  width="20" height="10" rx="1.5" fill="url(#hsBar)" stroke="#2a1808" stroke-width="0.6"/>
+                            <circle cx="138" cy="100" r="11" fill="url(#hsPost)" stroke="#1c1c1c" stroke-width="1.2"/>
+                            <circle cx="138" cy="100" r="2.5" fill="#1a1a1a"/>
+                            <!-- A (가운데) -->
+                            <rect x="62" y="156" width="24" height="48" rx="4" fill="url(#hsKey)" stroke="#2a1808" stroke-width="1"/>
+                            <rect x="86" y="175" width="20" height="10" rx="1.5" fill="url(#hsBar)" stroke="#2a1808" stroke-width="0.6"/>
+                            <circle cx="138" cy="180" r="11" fill="url(#hsPost)" stroke="#1c1c1c" stroke-width="1.2"/>
+                            <circle cx="138" cy="180" r="2.5" fill="#1a1a1a"/>
+                            <!-- D (아래) -->
+                            <rect x="62" y="236" width="24" height="48" rx="4" fill="url(#hsKey)" stroke="#2a1808" stroke-width="1"/>
+                            <rect x="86" y="255" width="20" height="10" rx="1.5" fill="url(#hsBar)" stroke="#2a1808" stroke-width="0.6"/>
+                            <circle cx="138" cy="260" r="11" fill="url(#hsPost)" stroke="#1c1c1c" stroke-width="1.2"/>
+                            <circle cx="138" cy="260" r="2.5" fill="#1a1a1a"/>
+                        </g>
+                        <!-- 오른쪽 3개 (E·B·G) -->
+                        <g class="hs-tuner">
+                            <!-- E (위) -->
+                            <rect x="274" y="76"  width="24" height="48" rx="4" fill="url(#hsKey)" stroke="#2a1808" stroke-width="1"/>
+                            <rect x="254" y="95"  width="20" height="10" rx="1.5" fill="url(#hsBar)" stroke="#2a1808" stroke-width="0.6"/>
+                            <circle cx="222" cy="100" r="11" fill="url(#hsPost)" stroke="#1c1c1c" stroke-width="1.2"/>
+                            <circle cx="222" cy="100" r="2.5" fill="#1a1a1a"/>
+                            <!-- B (가운데) -->
+                            <rect x="274" y="156" width="24" height="48" rx="4" fill="url(#hsKey)" stroke="#2a1808" stroke-width="1"/>
+                            <rect x="254" y="175" width="20" height="10" rx="1.5" fill="url(#hsBar)" stroke="#2a1808" stroke-width="0.6"/>
+                            <circle cx="222" cy="180" r="11" fill="url(#hsPost)" stroke="#1c1c1c" stroke-width="1.2"/>
+                            <circle cx="222" cy="180" r="2.5" fill="#1a1a1a"/>
+                            <!-- G (아래) -->
+                            <rect x="274" y="236" width="24" height="48" rx="4" fill="url(#hsKey)" stroke="#2a1808" stroke-width="1"/>
+                            <rect x="254" y="255" width="20" height="10" rx="1.5" fill="url(#hsBar)" stroke="#2a1808" stroke-width="0.6"/>
+                            <circle cx="222" cy="260" r="11" fill="url(#hsPost)" stroke="#1c1c1c" stroke-width="1.2"/>
+                            <circle cx="222" cy="260" r="2.5" fill="#1a1a1a"/>
+                        </g>
+
+                        <!-- ─ 음 라벨 — 각 헤드머신 바로 옆(바깥쪽), 수평 정렬 ─
+                             각 줄이 너트에서 가장 가까운 페그로 가는 자연스러운 배치:
+                             왼쪽 위→아래 = D·A·E (4·5·6번줄, 저음 E 가 너트에 가장 가까운 bottom)
+                             오른쪽 위→아래 = G·B·E (3·2·1번줄, 고음 E 가 너트에 가장 가까운 bottom) -->
+                        <g class="hs-label" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-weight="800" font-size="22" fill="#1a2421" text-anchor="middle">
+                            <!-- 왼쪽 -->
+                            <text x="38" y="108">D</text>
+                            <text x="38" y="188">A</text>
+                            <text x="38" y="268">E</text>
+                            <!-- 오른쪽 -->
+                            <text x="322" y="108">G</text>
+                            <text x="322" y="188">B</text>
+                            <text x="322" y="268">E</text>
+                        </g>
+                    </svg>
+                </div>
                 <p class="tuner-hint">마이크 권한을 허용해주세요. 기타 한 줄씩 천천히 쳐보세요.</p>
             </div>
             <!-- YouTube link sits below the tuner box, right-aligned (both desktop & mobile) -->
@@ -10182,7 +10365,19 @@
                     // 재생 시작(beatNum=0) 부터의 절대 마디 인덱스로 판정 — 1마디 진행에서도 매 마디 alternate.
                     var _isFillMeasure = (loopMeasureLen === 2)
                         && (Math.floor(beatNum / measureLen) % 2 === 1);
-                    playDrumPattern(beatNum, swungTime, { isFillMeasure: _isFillMeasure });
+                    // 현재 반쪽 마디(half) 가 'x' 면 모든 악기 무음 (반주 음악적 휴지).
+                    var _curHalf = (t < measureLen / 2) ? 'a' : 'b';
+                    var _curHalfMuted = isHalfMuted(loopMeasureIdx, _curHalf);
+                    if (!_curHalfMuted) {
+                        playDrumPattern(beatNum, swungTime, { isFillMeasure: _isFillMeasure });
+                    } else {
+                        // half 진입 시 sustain 끊기 (이미 울리고 있는 베이스/피아노/오픈 하이햇 등)
+                        if (t === 0 || t === measureLen / 2) {
+                            try { chokeOpenHihat(swungTime); } catch(e) {}
+                            try { chokeBass(swungTime); } catch(e) {}
+                            try { chokePiano(swungTime); } catch(e) {}
+                        }
+                    }
                     if (t % p.ticksPerBeat === 0) {
                         const dotIdx = Math.floor(t / p.ticksPerBeat);
                         highlightDot(dotIdx, time);
@@ -11540,22 +11735,37 @@
                 container.querySelectorAll('.loop-rhythm-group-popup').forEach(function(el) { el.classList.remove('open'); });
                 container.querySelectorAll('.loop-rhythm-group-toggle').forEach(function(el) { el.classList.remove('open'); });
             }
-            function getEffectiveRoot(idx, half) {
+            // 'x' (대소문자 무관) = 명시적 휴지 — 다음 코드가 입력될 때까지 무음 지속.
+            function _isChordRest(v) { return v === 'x' || v === 'X'; }
+            // "가장 최근에 입력된 값" 을 찾는 헬퍼.
+            //   현재 반쪽부터 거꾸로 훑어 첫 번째 non-empty 값을 반환.
+            //   - 그 값이 코드 → 코드 유지(fall-back)
+            //   - 그 값이 'x' → 휴지 유지 (다음 코드 나올 때까지 무음)
+            //   - 아무 것도 없음 → null
+            function _mostRecentChordValue(idx, half) {
                 if (half === 'b') {
-                    if (loopChordsB[idx]) return loopChordsB[idx];
-                    if (loopChords[idx]) return loopChords[idx];
-                    for (var i = idx - 1; i >= 0; i--) {
-                        if (loopChordsB[i]) return loopChordsB[i];
-                        if (loopChords[i]) return loopChords[i];
-                    }
-                    return null;
+                    var b = loopChordsB[idx];
+                    if (b) return b;
                 }
-                if (loopChords[idx]) return loopChords[idx];
+                var a = loopChords[idx];
+                if (a) return a;
                 for (var i = idx - 1; i >= 0; i--) {
-                    if (loopChordsB[i]) return loopChordsB[i];
-                    if (loopChords[i]) return loopChords[i];
+                    var bv = loopChordsB[i]; if (bv) return bv;
+                    var av = loopChords[i];  if (av) return av;
                 }
                 return null;
+            }
+            // 현재 반쪽 마디가 휴지 상태인지 — 드럼/베이스/피아노 전부 뮤트할지 결정.
+            //   직접 'x' 가 들어있으면 당연히 휴지.
+            //   비어 있어도, 가장 최근 입력값이 'x' 면 휴지 지속.
+            function isHalfMuted(idx, half) {
+                var v = _mostRecentChordValue(idx, half);
+                return _isChordRest(v);
+            }
+            function getEffectiveRoot(idx, half) {
+                var v = _mostRecentChordValue(idx, half);
+                if (!v || _isChordRest(v)) return null;
+                return v;
             }
             function renderLoopGrid() {
                 var grid = document.getElementById('loopGrid');
@@ -11595,7 +11805,10 @@
                     halves.className = 'loop-cell-halves';
                     var halfA = document.createElement('span');
                     var directA = loopChords[i];
-                    if (directA) {
+                    if (_isChordRest(directA)) {
+                        halfA.className = 'loop-cell-half rest';
+                        halfA.textContent = 'x';
+                    } else if (directA) {
                         halfA.className = 'loop-cell-half';
                         halfA.textContent = directA;
                     } else {
@@ -11604,7 +11817,10 @@
                     }
                     var halfB = document.createElement('span');
                     var directB = loopChordsB[i];
-                    if (directB) {
+                    if (_isChordRest(directB)) {
+                        halfB.className = 'loop-cell-half rest';
+                        halfB.textContent = 'x';
+                    } else if (directB) {
                         halfB.className = 'loop-cell-half';
                         halfB.textContent = directB;
                     } else {
@@ -11908,6 +12124,21 @@
                 });
                 picker.appendChild(pickerGrid);
 
+                // ─── 푸터 버튼들 (휴지 / 삭제) ───────────────────────────
+                var footer = document.createElement('div');
+                footer.className = 'loop-chord-footer';
+                var restBtn = document.createElement('button');
+                restBtn.className = 'loop-chord-rest';
+                restBtn.type = 'button';
+                restBtn.textContent = '휴지 ×';
+                restBtn.title = '이 반쪽 마디를 무음으로 (드럼·베이스·피아노 모두)';
+                restBtn.onclick = function() {
+                    chordMap[idx] = 'x';
+                    closeLoopPicker();
+                    loopPickerCell = null;
+                    renderLoopGrid();
+                };
+                footer.appendChild(restBtn);
                 var clearBtn = document.createElement('button');
                 clearBtn.className = 'loop-chord-clear';
                 clearBtn.textContent = '삭제';
@@ -11917,7 +12148,8 @@
                     loopPickerCell = null;
                     renderLoopGrid();
                 };
-                picker.appendChild(clearBtn);
+                footer.appendChild(clearBtn);
+                picker.appendChild(footer);
                 cellEl.style.position = 'relative';
                 cellEl.appendChild(picker);
             }
@@ -11955,9 +12187,16 @@
                     if (committed) return;
                     committed = true;
                     // 한영 전환 깜빡한 입력 자동 보정 (예: 'ㅠㅡ7' → 'Bm7')
-                    var v = _normalizeKoreanChordInput((input.value || '').trim());
-                    if (v) chordMap[idx] = v;
-                    else delete chordMap[idx];
+                    var raw = (input.value || '').trim();
+                    // 휴지(rest) — 'x' / 'X' / 'ㅌ'(한영 잘못) 모두 'x' 로 저장.
+                    //   해당 반쪽 마디는 드럼/베이스/피아노 전부 무음으로 처리됨.
+                    if (raw === 'x' || raw === 'X' || raw === 'ㅌ') {
+                        chordMap[idx] = 'x';
+                    } else {
+                        var v = _normalizeKoreanChordInput(raw);
+                        if (v) chordMap[idx] = v;
+                        else delete chordMap[idx];
+                    }
                     renderLoopGrid();
                 }
                 function cancel() {
