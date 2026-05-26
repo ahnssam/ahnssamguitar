@@ -6134,6 +6134,23 @@
             color: rgba(180, 190, 200, 0.55);
             background: rgba(60, 70, 80, 0.35);
         }
+        /* skip-zone — X 마디 + 후속 빈 마디 (다음 코드 전까지). 재생에서 통째로
+           건너뛰는 영역이라는 시각 단서로 cell 전체를 흐릿하게 처리.
+           X 자체(.rest) 의 스타일은 그대로 두고, skip-zone 내 빈 칸과 번호만 dim. */
+        .loop-cell.skip-zone .loop-cell-half.empty {
+            color: rgba(60, 70, 75, 0.30);
+            background: rgba(95, 105, 110, 0.08);
+        }
+        .loop-cell.skip-zone .loop-cell-num {
+            color: rgba(60, 70, 75, 0.4);
+        }
+        :root[data-theme="dark"] .loop-cell.skip-zone .loop-cell-half.empty {
+            color: rgba(180, 190, 200, 0.35);
+            background: rgba(60, 70, 80, 0.22);
+        }
+        :root[data-theme="dark"] .loop-cell.skip-zone .loop-cell-num {
+            color: rgba(180, 190, 200, 0.45);
+        }
         .loop-cell-half + .loop-cell-half { border-left: 1px solid rgba(42, 107, 74, 0.1); }
         .loop-chord-picker {
             display: none; position: absolute; z-index: 10;
@@ -10412,6 +10429,9 @@
                                 }
                             }
                         }
+                        // X 마커가 있는 마디 + 그 뒤 빈 마디들(skip-zone)은 통째로 건너뜀.
+                        // 도돌이표 jump / 정상 advance / wrap 모두 끝난 후 마지막에 적용.
+                        nextIdx = _advanceThroughSkipZone(nextIdx, rg);
                         loopMeasureIdx = nextIdx;
                         highlightLoopCell(loopMeasureIdx, time);
                     }
@@ -11767,6 +11787,38 @@
                 if (!v || _isChordRest(v)) return null;
                 return v;
             }
+            // ─── skip-zone — X 마커를 만나면 다음 실제 코드 마디로 점프 ────
+            // 마디의 half 'a' 에 X 가 있으면 그 마디 전체가 "건너뛰기" 영역.
+            // 그 뒤로 이어지는 빈 마디들도 다음 코드가 나오기 전까지 같은 skip-zone.
+            // 송폼 길이가 불규칙(예: 벌스 9마디)일 때 마디 그리드의 잉여 칸을 시각적·
+            // 시간적으로 건너뛰기 위한 용도. mute 와 달리 재생 시간 자체가 단축됨.
+            function _isInSkipZone(idx) {
+                var a = loopChords[idx];
+                if (_isChordRest(a)) return true;   // X 마커 자체
+                var b = loopChordsB[idx];
+                if ((a && !_isChordRest(a)) || (b && !_isChordRest(b))) return false; // 실제 코드 있음
+                // 빈 마디 — 거꾸로 훑어 X 가 먼저 나오면 skip zone
+                for (var i = idx - 1; i >= 0; i--) {
+                    var pa = loopChords[i];
+                    var pb = loopChordsB[i];
+                    if (_isChordRest(pa)) return true;
+                    if ((pa && !_isChordRest(pa)) || (pb && !_isChordRest(pb))) return false;
+                }
+                return false;
+            }
+            // startIdx 가 skip-zone 이면 영역 밖 (다음 실제 코드 마디) 인덱스 반환.
+            // skip-zone 이 아니면 startIdx 그대로. 범위 안에 코드가 하나도 없으면 fallback.
+            function _advanceThroughSkipZone(startIdx, rg) {
+                if (!_isInSkipZone(startIdx)) return startIdx;
+                for (var i = startIdx + 1; i <= rg.end; i++) {
+                    if (!_isInSkipZone(i)) return i;
+                }
+                // 범위 끝까지 못 찾음 — rg.start 부터 재탐색 (loop wrap 효과)
+                for (var j = rg.start; j < startIdx; j++) {
+                    if (!_isInSkipZone(j)) return j;
+                }
+                return startIdx; // 정말 코드가 하나도 없으면 그대로 진행
+            }
             function renderLoopGrid() {
                 var grid = document.getElementById('loopGrid');
                 if (!grid) return;
@@ -11796,6 +11848,9 @@
                             cell.classList.add('in-range');
                         }
                     }
+                    // X 마커가 만든 skip-zone — X 마디 + 후속 빈 마디(다음 코드 전까지)
+                    // 전체 cell 흑백 처리. 재생도 함께 건너뜀.
+                    if (_isInSkipZone(i)) cell.classList.add('skip-zone');
                     var num = document.createElement('span');
                     num.className = 'loop-cell-num';
                     num.textContent = (i + 1);
