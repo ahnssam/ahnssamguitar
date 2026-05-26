@@ -4488,11 +4488,11 @@
         }
         /* ─ 튜너 헤드스톡 그래픽 — 시작하기 버튼 아래, 6현 표준 튜닝(E A D G B E) 가이드 ─ */
         .tuner-headstock {
-            margin: 1.5rem auto 0;
             max-width: 220px;
             display: flex;
             justify-content: center;
             user-select: none;
+            position: relative;
         }
         .tuner-headstock svg {
             width: 100%;
@@ -4500,12 +4500,112 @@
             display: block;
             filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.18));
         }
+        /* 자동/수동 토글 — 메트로놈의 sound-toggle 과 비슷한 알약 형태. */
+        .tuner-mode-toggle {
+            display: inline-flex;
+            gap: 0.3rem;
+            margin: 1.4rem auto 0.6rem;
+            padding: 0.25rem;
+            background: rgba(42, 107, 74, 0.06);
+            border-radius: 999px;
+            align-self: center;
+        }
+        .tuner-headstock-row > * + * { } /* placeholder to keep cascade tidy */
+        .tuner-mode-btn {
+            background: transparent;
+            border: none;
+            color: rgba(26, 36, 33, 0.55);
+            padding: 0.45rem 0.95rem;
+            border-radius: 999px;
+            font-family: inherit;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .tuner-mode-btn:hover { color: var(--green-deep); }
+        .tuner-mode-btn.active {
+            background: var(--green-mid);
+            color: #fff;
+            box-shadow: 0 1px 4px rgba(42, 107, 74, 0.2);
+        }
+        :root[data-theme="dark"] .tuner-mode-toggle { background: rgba(180, 230, 200, 0.08); }
+        :root[data-theme="dark"] .tuner-mode-btn { color: rgba(232, 240, 236, 0.6); }
+        :root[data-theme="dark"] .tuner-mode-btn:hover { color: var(--green-pale); }
+
+        /* 헤드스톡 — 좌우 줄별 버튼을 SVG 위에 absolute 로 얹는다.
+           페그 y 위치 (SVG viewBox 400 기준 100/180/260) → 25%/45%/65%. */
+        .tuner-headstock-row {
+            display: flex;
+            justify-content: center;
+            margin: 0 auto;
+        }
+        .tuner-string-btn {
+            position: absolute;
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.85);
+            border: 2px solid rgba(42, 107, 74, 0.3);
+            color: var(--text-primary);
+            font-family: 'Playfair Display', serif;
+            font-weight: 800;
+            font-size: 0.95rem;
+            line-height: 1;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: border-color 0.2s, background 0.25s, color 0.25s, box-shadow 0.25s, transform 0.15s;
+            z-index: 2;
+            transform: translateY(-50%);
+        }
+        /* 페그 y 위치 매칭 — SVG viewBox 400 기준 100/180/260 → 25%/45%/65% */
+        .tuner-string-btn.top    { top: 25%; }
+        .tuner-string-btn.middle { top: 45%; }
+        .tuner-string-btn.bottom { top: 65%; }
+        /* 페그 키 바로 옆에 붙도록 — SVG viewBox 좌측 키 x=62~86 (220px SVG → 38~52px).
+           left:2% (=4.4px) + 30px width → 버튼 우측 끝 34.4px, 키 직전. */
+        .tuner-string-btn.left   { left: 2%; }
+        .tuner-string-btn.right  { right: 2%; }
+        .tuner-string-btn:hover {
+            border-color: var(--green-mid);
+            transform: translateY(-50%) scale(1.08);
+        }
+        /* 수동 모드에서 사용자가 선택한 타깃 줄 — 초록 링 강조 */
+        .tuner-string-btn.target {
+            border-color: var(--green-mid);
+            background: rgba(114, 196, 146, 0.18);
+            box-shadow: 0 0 0 3px rgba(114, 196, 146, 0.25);
+        }
+        /* 마이크 입력이 그 음에 도달했을 때 — 강한 초록 빛남. */
+        .tuner-string-btn.in-tune {
+            background: var(--green-mid);
+            color: #fff;
+            border-color: var(--green-deep);
+            box-shadow: 0 0 18px rgba(114, 196, 146, 0.7),
+                        0 0 4px rgba(114, 196, 146, 0.9) inset;
+        }
+        :root[data-theme="dark"] .tuner-string-btn {
+            background: rgba(40, 50, 50, 0.65);
+            border-color: rgba(180, 230, 200, 0.25);
+            color: var(--text-primary);
+        }
+        :root[data-theme="dark"] .tuner-string-btn.target {
+            background: rgba(114, 196, 146, 0.18);
+            border-color: var(--green-mid);
+        }
+        :root[data-theme="dark"] .tuner-string-btn.in-tune {
+            background: var(--green-mid);
+            color: #fff;
+        }
+        @media (max-width: 480px) {
+            .tuner-string-btn { width: 26px; height: 26px; font-size: 0.85rem; }
+        }
         .tuner-headstock .hs-label {
             letter-spacing: 0.04em;
         }
         :root[data-theme="dark"] .tuner-headstock .hs-label text { fill: #f0e9d8; }
         @media (max-width: 600px) {
-            .tuner-headstock { max-width: 180px; margin-top: 1.2rem; }
+            .tuner-headstock { max-width: 180px; }
         }
         .tuner-note {
             font-family: 'Playfair Display', serif;
@@ -6728,9 +6828,20 @@
                     <i class="fas fa-microphone"></i>
                     <span>시작하기</span>
                 </button>
-                <!-- 기타 헤드스톡 그림 — 마틴/깁슨 풍 3+3 어쿠스틱 헤드.
-                     6현 표준 튜닝 (E A D G B E) 시각 가이드. -->
-                <div class="tuner-headstock" aria-hidden="true">
+                <!-- 자동/수동 토글 + 헤드스톡 + 좌우 줄별 버튼 묶음.
+                     자동: 마이크 입력에서 가장 가까운 음을 자동 감지.
+                     수동: 사용자가 선택한 줄(음정) 을 기준으로 ±cents 만 표시 — 초보에게 더 직관. -->
+                <div class="tuner-mode-toggle" role="group" aria-label="튜너 모드">
+                    <button type="button" class="tuner-mode-btn active" id="tunerModeAuto" data-action="setTunerMode" data-args="auto">자동</button>
+                    <button type="button" class="tuner-mode-btn" id="tunerModeManual" data-action="setTunerMode" data-args="manual">수동 (쉬움)</button>
+                </div>
+                <div class="tuner-headstock-row">
+                <div class="tuner-headstock">
+                    <!-- 좌우 줄별 버튼 — SVG 페그(헤드머신) 바로 옆에 absolute 로 얹음.
+                         페그 y 위치 (SVG viewBox 400 기준 100/180/260) → 25%/45%/65%. -->
+                    <button type="button" class="tuner-string-btn left top"    data-midi="50" data-action="setTunerTargetMidi" data-args="50" aria-label="4번줄 D3">D</button>
+                    <button type="button" class="tuner-string-btn left middle" data-midi="45" data-action="setTunerTargetMidi" data-args="45" aria-label="5번줄 A2">A</button>
+                    <button type="button" class="tuner-string-btn left bottom" data-midi="40" data-action="setTunerTargetMidi" data-args="40" aria-label="6번줄 E2">E</button>
                     <svg viewBox="0 0 360 400" xmlns="http://www.w3.org/2000/svg">
                         <defs>
                             <!-- 우드 결 (수직) — 워넛 톤 -->
@@ -6853,21 +6964,12 @@
                             <circle cx="222" cy="260" r="2.5" fill="#1a1a1a"/>
                         </g>
 
-                        <!-- ─ 음 라벨 — 각 헤드머신 바로 옆(바깥쪽), 수평 정렬 ─
-                             각 줄이 너트에서 가장 가까운 페그로 가는 자연스러운 배치:
-                             왼쪽 위→아래 = D·A·E (4·5·6번줄, 저음 E 가 너트에 가장 가까운 bottom)
-                             오른쪽 위→아래 = G·B·E (3·2·1번줄, 고음 E 가 너트에 가장 가까운 bottom) -->
-                        <g class="hs-label" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-weight="800" font-size="22" fill="#1a2421" text-anchor="middle">
-                            <!-- 왼쪽 -->
-                            <text x="38" y="108">D</text>
-                            <text x="38" y="188">A</text>
-                            <text x="38" y="268">E</text>
-                            <!-- 오른쪽 -->
-                            <text x="322" y="108">G</text>
-                            <text x="322" y="188">B</text>
-                            <text x="322" y="268">E</text>
-                        </g>
+                        <!-- 음 라벨은 외부 HTML 버튼 (.tuner-string-btn) 으로 옮김 — 클릭 가능 + 빛남 효과. -->
                     </svg>
+                    <button type="button" class="tuner-string-btn right top"    data-midi="55" data-action="setTunerTargetMidi" data-args="55" aria-label="3번줄 G3">G</button>
+                    <button type="button" class="tuner-string-btn right middle" data-midi="59" data-action="setTunerTargetMidi" data-args="59" aria-label="2번줄 B3">B</button>
+                    <button type="button" class="tuner-string-btn right bottom" data-midi="64" data-action="setTunerTargetMidi" data-args="64" aria-label="1번줄 E4">E</button>
+                </div>
                 </div>
                 <p class="tuner-hint">마이크 권한을 허용해주세요. 기타 한 줄씩 천천히 쳐보세요.</p>
             </div>
@@ -8425,6 +8527,49 @@
             let micStream = null;
             let rafId = null;
 
+            // ─── 튜너 모드 — 자동(가장 가까운 음 자동 감지) / 수동(사용자 지정 줄 기준) ─
+            // 수동: 사용자가 줄 버튼을 누르면 그 음정 (MIDI) 을 기준으로 ±cents 만 표시.
+            //   초보자가 "지금 어느 줄을 튜닝 중인지" 명확히 알 수 있어 더 직관적.
+            let tunerMode = 'auto';
+            let tunerTargetMidi = null;
+
+            // 표준 6현 기타 — 줄 버튼의 MIDI 목록 (E2/A2/D3/G3/B3/E4)
+            const TUNER_STRING_MIDIS = [40, 45, 50, 55, 59, 64];
+
+
+            function _refreshTunerButtons() {
+                document.querySelectorAll('.tuner-string-btn').forEach(function(b) {
+                    var m = parseInt(b.dataset.midi, 10);
+                    b.classList.toggle('target', tunerMode === 'manual' && tunerTargetMidi === m);
+                });
+            }
+            window.setTunerMode = function(mode) {
+                if (mode !== 'auto' && mode !== 'manual') return;
+                tunerMode = mode;
+                document.querySelectorAll('.tuner-mode-btn').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.args === mode);
+                });
+                // 수동인데 타깃 미선택 시 1번줄 (E4) 기본
+                if (tunerMode === 'manual' && tunerTargetMidi == null) {
+                    tunerTargetMidi = 64;
+                }
+                _refreshTunerButtons();
+                gtag('event', 'tuner_mode_change', { mode: mode });
+            };
+            window.setTunerTargetMidi = function(midi) {
+                midi = parseInt(midi, 10);
+                if (isNaN(midi)) return;
+                tunerTargetMidi = midi;
+                // 버튼 클릭 시 자동으로 수동 모드로 전환
+                if (tunerMode !== 'manual') {
+                    tunerMode = 'manual';
+                    document.querySelectorAll('.tuner-mode-btn').forEach(function(b) {
+                        b.classList.toggle('active', b.dataset.args === 'manual');
+                    });
+                }
+                _refreshTunerButtons();
+            };
+
             function freqToNote(freq) {
                 const noteNum = 12 * (Math.log2(freq / 440)) + 69;
                 const rounded = Math.round(noteNum);
@@ -8491,7 +8636,25 @@
                         const freq = autoCorrelate(buf, audioCtx.sampleRate);
 
                         if (freq > 0 && freq < 2000) {
-                            const { noteName, octave, cents } = freqToNote(freq);
+                            // 자동/수동에 따라 표시할 noteName/octave/cents 결정.
+                            //   자동: freqToNote() — 가장 가까운 반음으로 스냅
+                            //   수동: tunerTargetMidi 기준으로 cents 만 계산 (음정명은 타깃 그대로)
+                            let noteName, octave, cents, displayMidi;
+                            if (tunerMode === 'manual' && tunerTargetMidi != null) {
+                                const tMidi = tunerTargetMidi;
+                                const targetFreq = 440 * Math.pow(2, (tMidi - 69) / 12);
+                                cents = 1200 * (Math.log(freq / targetFreq) / Math.LN2);
+                                noteName = NOTE_STRINGS[((tMidi % 12) + 12) % 12];
+                                octave = Math.floor(tMidi / 12) - 1;
+                                displayMidi = tMidi;
+                            } else {
+                                const r = freqToNote(freq);
+                                noteName = r.noteName;
+                                octave = r.octave;
+                                cents = r.cents;
+                                // 자동 모드 — 감지된 가장 가까운 MIDI 계산
+                                displayMidi = Math.round(12 * (Math.log(freq / 440) / Math.LN2) + 69);
+                            }
 
                             if (hasValue) {
                                 smoothedCents += (cents - smoothedCents) * SMOOTHING;
@@ -8505,12 +8668,24 @@
                             noteEl.innerHTML = noteName + '<span class="tuner-octave">' + octave + '</span>';
                             freqEl.textContent = smoothedFreq.toFixed(1) + ' Hz';
 
+                            // 수동 모드는 cents 가 ±100 까지 갈 수 있어 needle 은 [-50, +50] 로 clamp
                             const pct = Math.max(0, Math.min(100, 50 + smoothedCents));
                             needleEl.style.left = pct + '%';
 
                             const inTune = Math.abs(smoothedCents) <= 5;
                             noteEl.classList.toggle('in-tune', inTune);
                             needleEl.classList.toggle('in-tune', inTune);
+
+                            // 줄별 버튼 빛남 — 감지된 음정(또는 타깃) 과 일치하는 줄 버튼만 in-tune
+                            document.querySelectorAll('.tuner-string-btn').forEach(function(b) {
+                                const bm = parseInt(b.dataset.midi, 10);
+                                b.classList.toggle('in-tune', inTune && bm === displayMidi);
+                            });
+                        } else {
+                            // 신호 없음 — 모든 버튼 glow 해제
+                            document.querySelectorAll('.tuner-string-btn.in-tune').forEach(function(b) {
+                                b.classList.remove('in-tune');
+                            });
                         }
                         rafId = requestAnimationFrame(update);
                     }
@@ -8543,6 +8718,9 @@
                 document.getElementById('tunerNeedle').style.left = '50%';
                 document.getElementById('tunerNote').classList.remove('in-tune');
                 document.getElementById('tunerNeedle').classList.remove('in-tune');
+                document.querySelectorAll('.tuner-string-btn.in-tune').forEach(function(b) {
+                    b.classList.remove('in-tune');
+                });
                 window._tunerRunning = false;
             }
 
@@ -8555,6 +8733,7 @@
                     gtag('event', 'tuner_start');
                 }
             };
+
         })();
     </script>
 
@@ -17136,140 +17315,4 @@
                 if (e.code && PN_CODE_MAP[e.code] !== undefined) {
                     baseMidi = PN_CODE_MAP[e.code];
                 } else {
-                    const k = e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key;
-                    baseMidi = PN_KEY_MAP[k];
-                }
-                if (baseMidi === undefined) return;
-                const midi = baseMidi + (pnState.kbdOctaveOffset || 0);
-                const svg = document.getElementById('pnSvg');
-                const keyEl = svg && svg.querySelector('.pn-key[data-midi="' + midi + '"]');
-                if (keyEl) keyEl.classList.remove('pn-key-active');
-            });
-
-            window.initPiano = function() {
-                pnRender();
-                // 레이아웃이 자리 잡은 후 한 틱 뒤에 스크롤 정렬
-                setTimeout(pnScrollToC4, 20);
-            };
-
-            // Redraw on resize (so vertical layouts stay centered)
-            window.addEventListener('resize', function() {
-                if (document.getElementById('fretboardPanel').classList.contains('active')) {
-                    if (fbState.fb) fbRender();
-                }
-                if (document.getElementById('scalesPanel').classList.contains('active')) {
-                    if (scState.fb) scRender();
-                }
-                if (document.getElementById('pianoPanel').classList.contains('active')) {
-                    pnRender();
-                }
-            });
-
-            // If user lands directly on one of these via hash
-            const hash = (window.location.hash || '').replace('#','').toLowerCase();
-            if (hash === 'fretboard' || hash === 'scales') {
-                // switchTool in the earlier block will call initX
-            }
-        })();
-    </script>
-
-    <script>
-        // ─── data-action delegation 지휘자 (refactor #1) ──────────────────────
-        // 인라인 onclick="fn(args)" 대신 data-action="fn" data-args="args" 방식.
-        // 한 곳에서 모든 버튼 클릭을 받아 window[fn](...args) 로 호출.
-        // - 함수 이름 변경 시 한 군데만 바꾸면 됨
-        // - 새 핸들러 추가 시 onclick 안 적어도 됨
-        // - 기존 onclick 도 그대로 동작 — 마이그레이션 중 양쪽 공존 OK
-        (function setupActionDelegation() {
-            function parseArgs(raw, el) {
-                if (!raw) return [];
-                return raw.split(',').map(function(s) {
-                    s = s.trim();
-                    if (s === '') return s;
-                    // @key — 같은 element 의 data-key 속성 (동적 dispatch 용).
-                    //   예) data-args="@tool"  →  el.dataset.tool 값을 인자로.
-                    if (s.charAt(0) === '@' && el) return el.dataset[s.slice(1)];
-                    // $prop — element 의 property 직접 읽기 (input.checked, input.value 등).
-                    //   예) data-args="$checked"  →  el.checked 값을 인자로.
-                    if (s.charAt(0) === '$' && el) return el[s.slice(1)];
-                    if (s === 'true')  return true;
-                    if (s === 'false') return false;
-                    if (s === 'null')  return null;
-                    var n = Number(s);
-                    if (!Number.isNaN(n) && /^-?\d+(\.\d+)?$/.test(s)) return n;
-                    // 따옴표 감싼 문자열은 따옴표 제거
-                    if ((s.charAt(0) === '"'  && s.charAt(s.length-1) === '"')  ||
-                        (s.charAt(0) === "'"  && s.charAt(s.length-1) === "'")) {
-                        return s.slice(1, -1);
-                    }
-                    return s;
-                });
-            }
-            document.addEventListener('click', function(e) {
-                var el = e.target.closest('[data-action]');
-                if (!el) return;
-                var name = el.dataset.action;
-                var fn = window[name];
-                if (typeof fn !== 'function') {
-                    console.warn('[data-action] 함수 못 찾음:', name);
-                    return;
-                }
-                // event 를 마지막 인자로 같이 넘김 — 안 받으면 그냥 무시되니 무해.
-                // event(arg) 받는 옛 핸들러들 (toggle7thMenu(event) 등) 호환을 위해.
-                fn.apply(el, parseArgs(el.dataset.args, el).concat([e]));
-            });
-            // change / input 핸들러 — click 과 동일하게 data-args 지원.
-            //   예) data-change="setLoopCountIn" data-args="$checked"
-            //       data-input="updateBPM"     data-args="$value"
-            function makeListener(eventName, attrName) {
-                return function(e) {
-                    var el = e.target.closest('[' + attrName + ']');
-                    if (!el) return;
-                    var name = el.dataset[attrName.replace(/^data-/, '').replace(/-(.)/g, function(_,c){return c.toUpperCase();})];
-                    var fn = window[name];
-                    if (typeof fn !== 'function') {
-                        console.warn('[' + attrName + '] 함수 못 찾음:', name);
-                        return;
-                    }
-                    fn.apply(el, parseArgs(el.dataset.args, el).concat([e]));
-                };
-            }
-            document.addEventListener('change', makeListener('change', 'data-change'));
-            document.addEventListener('input',  makeListener('input',  'data-input'));
-        })();
-
-        // Fade out the loader on window load
-        window.addEventListener('load', function() {
-            var loader = document.getElementById('loader');
-            if (!loader) return;
-            if (loader.style.display !== 'none') {
-                setTimeout(function() { loader.classList.add('hidden'); }, 800);
-            }
-        });
-    </script>
-
-    <!-- Home transition: intercept logo click, fade in green overlay, then navigate -->
-    <script>
-    (function() {
-        var overlay = document.getElementById('homeTransition');
-        if (!overlay) return;
-        // All anchors that take the user back to the homepage
-        var homeLinks = document.querySelectorAll('a[href="index.html"], a[href="/"]');
-        var FADE_MS = 500;
-        homeLinks.forEach(function(link) {
-            link.addEventListener('click', function(e) {
-                if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
-                if (this.target === '_blank') return;
-                e.preventDefault();
-                var href = this.getAttribute('href');
-                // Signal index.html to show its green loader (same look as this overlay)
-                try { sessionStorage.setItem('skipLoader', 'showLoader'); } catch (err) {}
-                overlay.classList.add('active');
-                try { if (window.gtag) window.gtag('event', 'home_transition'); } catch (err) {}
-                setTimeout(function() { window.location.href = href; }, FADE_MS);
-            });
-        });
-    })();
-    </script>
-</body>
-</html>
+                    c
