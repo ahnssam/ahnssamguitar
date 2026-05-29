@@ -5038,6 +5038,254 @@
         }
         .tap-action-btn:hover { background: rgba(42, 107, 74, 0.1); }
 
+        /* ===== Loop Station ===== */
+        .ls-help {
+            background: rgba(42, 107, 74, 0.05);
+            border: 1px solid rgba(42, 107, 74, 0.15);
+            border-radius: 8px;
+            padding: 0.6rem 0.85rem;
+            margin: 0.5rem 0 1.1rem 0;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+        .ls-help summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-primary);
+            user-select: none;
+        }
+        .ls-help ol { margin: 0.5rem 0 0 1.2rem; padding: 0; line-height: 1.55; }
+        .ls-help li { margin-bottom: 0.18rem; }
+
+        .ls-top {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            flex-wrap: wrap;
+            background: rgba(42, 107, 74, 0.05);
+            border-radius: 10px;
+            padding: 0.7rem 0.85rem;
+            margin-bottom: 1rem;
+        }
+        .ls-mic-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.6rem 1.05rem;
+            background: var(--green-mid);
+            color: var(--white);
+            border: none;
+            border-radius: 999px;
+            font-family: inherit;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.18s, box-shadow 0.18s;
+        }
+        .ls-mic-btn:hover { background: var(--green-dark); }
+        .ls-mic-btn.active {
+            background: #c94545;
+            box-shadow: 0 0 0 0 rgba(201,69,69,0.5);
+            animation: lsMicPulse 1.6s infinite;
+        }
+        .ls-mic-btn.active:hover { background: #b03939; }
+        @keyframes lsMicPulse {
+            0%   { box-shadow: 0 0 0 0 rgba(201,69,69,0.5); }
+            70%  { box-shadow: 0 0 0 12px rgba(201,69,69,0); }
+            100% { box-shadow: 0 0 0 0 rgba(201,69,69,0); }
+        }
+        .ls-meter-wrap { flex: 1; min-width: 160px; }
+        .ls-meter-label { font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 0.18rem; }
+        .ls-meter {
+            position: relative;
+            height: 14px;
+            background: rgba(0,0,0,0.07);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .ls-meter-fill {
+            position: absolute; left: 0; top: 0; bottom: 0; width: 0%;
+            background: linear-gradient(90deg, #4caf50 0%, #8bc34a 60%, #ffb300 82%, #f44336 100%);
+            transition: width 0.04s linear;
+        }
+        .ls-meter-threshold {
+            position: absolute; top: -2px; bottom: -2px;
+            width: 2px;
+            background: rgba(20,20,20,0.65);
+        }
+        .ls-meter-db { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.18rem; font-variant-numeric: tabular-nums; }
+        .ls-threshold-wrap {
+            display: flex; align-items: center; gap: 0.45rem;
+            font-size: 0.78rem; color: var(--text-secondary);
+        }
+        .ls-threshold-wrap label { white-space: nowrap; }
+        .ls-threshold-wrap input[type=range] { width: 110px; }
+        .ls-threshold-wrap #lsThresholdVal {
+            font-variant-numeric: tabular-nums; min-width: 3.6em; text-align: right;
+        }
+
+        .ls-tracks {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.55rem;
+            margin-bottom: 0.9rem;
+        }
+        @media (min-width: 720px) {
+            .ls-tracks { grid-template-columns: 1fr 1fr; }
+        }
+        .ls-track {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            padding: 0.7rem 0.85rem;
+            background: rgba(42, 107, 74, 0.04);
+            border: 1px solid rgba(42, 107, 74, 0.18);
+            border-radius: 10px;
+            transition: border-color 0.18s, background 0.18s;
+        }
+        .ls-track[data-state="armed"]     { border-color: #f5a623; background: rgba(245,166,35,0.08); }
+        .ls-track[data-state="recording"] { border-color: #c94545; background: rgba(201,69,69,0.12); }
+        .ls-track[data-state="playing"]   { border-color: var(--green-mid); background: rgba(82,168,114,0.10); }
+        .ls-track[data-state="paused"]    { border-color: rgba(42, 107, 74, 0.25); background: rgba(42, 107, 74, 0.04); }
+        .ls-track-rec {
+            width: 52px; height: 52px;
+            border-radius: 50%;
+            border: 2.5px solid rgba(42, 107, 74, 0.35);
+            background: transparent;
+            color: rgba(42, 107, 74, 0.45);
+            font-size: 1.05rem;
+            cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            transition: border-color 0.18s, background 0.18s, color 0.18s;
+            position: relative;
+        }
+        .ls-track-rec i { transition: transform 0.15s; }
+        .ls-track-rec:hover { border-color: var(--green-mid); color: var(--green-mid); }
+        .ls-track[data-state="armed"] .ls-track-rec {
+            border-color: #f5a623; color: #f5a623;
+            animation: lsArmFlash 1s infinite;
+        }
+        @keyframes lsArmFlash {
+            0%,100% { opacity: 1; }
+            50%     { opacity: 0.42; }
+        }
+        .ls-track[data-state="recording"] .ls-track-rec {
+            border-color: #c94545; color: #fff; background: #c94545;
+        }
+        .ls-track[data-state="playing"] .ls-track-rec {
+            border-color: var(--green-mid); color: var(--white); background: var(--green-mid);
+        }
+        .ls-track[data-state="paused"] .ls-track-rec {
+            border-color: rgba(42, 107, 74, 0.35); color: rgba(42, 107, 74, 0.6);
+        }
+        .ls-track-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+        .ls-track-head {
+            display: flex; align-items: baseline; gap: 0.55rem;
+            font-size: 0.85rem;
+        }
+        .ls-track-name { font-weight: 600; color: var(--text-primary); }
+        .ls-track-state { font-size: 0.72rem; color: var(--text-secondary); }
+        .ls-track-len { margin-left: auto; font-size: 0.7rem; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+        .ls-track-progress {
+            position: relative;
+            height: 6px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .ls-track-progress-fill {
+            position: absolute; left: 0; top: 0; bottom: 0;
+            background: var(--green-mid);
+            width: 0%;
+            transition: width 0.04s linear;
+        }
+        .ls-track-controls { display: flex; align-items: center; gap: 0.4rem; }
+        .ls-track-vol { flex: 1; }
+        .ls-track-icon-btn {
+            background: transparent;
+            border: 1px solid rgba(42, 107, 74, 0.25);
+            color: rgba(42, 107, 74, 0.7);
+            border-radius: 6px;
+            width: 30px; height: 28px;
+            cursor: pointer;
+            font-size: 0.78rem;
+            display: inline-flex; align-items: center; justify-content: center;
+            transition: background 0.15s, color 0.15s;
+        }
+        .ls-track-icon-btn:hover { background: rgba(42, 107, 74, 0.10); color: var(--green-mid); }
+        .ls-track-icon-btn.active { background: rgba(201,69,69,0.18); border-color: #c94545; color: #c94545; }
+        .ls-track-icon-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+        .ls-master-row {
+            display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;
+            padding-top: 0.55rem;
+            border-top: 1px solid rgba(42, 107, 74, 0.12);
+            margin-top: 0.4rem;
+        }
+        .ls-master-vol { display: flex; align-items: center; gap: 0.45rem; flex: 1; min-width: 200px; font-size: 0.82rem; color: var(--text-secondary); }
+        .ls-master-vol input[type=range] { flex: 1; }
+        .ls-btn {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.5rem 0.85rem;
+            background: rgba(42, 107, 74, 0.08);
+            color: var(--text-primary);
+            border: 1px solid rgba(42, 107, 74, 0.25);
+            border-radius: 7px;
+            font-family: inherit;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .ls-btn:hover { background: rgba(42, 107, 74, 0.14); }
+        .ls-btn-stop:hover { background: rgba(245,166,35,0.18); border-color: #f5a623; }
+        .ls-btn-clear:hover { background: rgba(201,69,69,0.18); border-color: #c94545; color: #c94545; }
+        .ls-status-line {
+            margin-top: 0.7rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            min-height: 1.2em;
+        }
+        .ls-status-line.error { color: #c94545; }
+
+        /* Loop station — dark mode */
+        :root[data-theme="dark"] .ls-help {
+            background: rgba(150, 200, 175, 0.07);
+            border-color: rgba(150, 200, 175, 0.20);
+        }
+        :root[data-theme="dark"] .ls-top {
+            background: rgba(150, 200, 175, 0.07);
+        }
+        :root[data-theme="dark"] .ls-meter { background: rgba(255,255,255,0.10); }
+        :root[data-theme="dark"] .ls-meter-threshold { background: rgba(240,240,240,0.65); }
+        :root[data-theme="dark"] .ls-track {
+            background: rgba(150, 200, 175, 0.06);
+            border-color: rgba(150, 200, 175, 0.18);
+        }
+        :root[data-theme="dark"] .ls-track[data-state="armed"]     { background: rgba(245,166,35,0.18); }
+        :root[data-theme="dark"] .ls-track[data-state="recording"] { background: rgba(201,69,69,0.22); }
+        :root[data-theme="dark"] .ls-track[data-state="playing"]   { background: rgba(82,168,114,0.18); }
+        :root[data-theme="dark"] .ls-track-rec {
+            border-color: rgba(220, 233, 226, 0.30);
+            color: rgba(220, 233, 226, 0.55);
+        }
+        :root[data-theme="dark"] .ls-track-icon-btn {
+            border-color: rgba(220, 233, 226, 0.25);
+            color: rgba(220, 233, 226, 0.7);
+        }
+        :root[data-theme="dark"] .ls-track-icon-btn:hover {
+            background: rgba(150, 200, 175, 0.12); color: #fff;
+        }
+        :root[data-theme="dark"] .ls-track-progress { background: rgba(255,255,255,0.08); }
+        :root[data-theme="dark"] .ls-master-row { border-top-color: rgba(150, 200, 175, 0.20); }
+        :root[data-theme="dark"] .ls-btn {
+            background: rgba(150, 200, 175, 0.08);
+            border-color: rgba(150, 200, 175, 0.25);
+            color: rgba(220, 233, 226, 0.9);
+        }
+        :root[data-theme="dark"] .ls-btn:hover { background: rgba(150, 200, 175, 0.16); }
+
         /* ===== Sound mode toggle ===== */
         .sound-toggle {
             display: flex;
@@ -6760,6 +7008,9 @@
             <button class="menu-item" data-tool="backing" data-action="switchTool" data-args="backing">
                 <i class="fas fa-drum"></i><span>반주</span>
             </button>
+            <button class="menu-item" data-tool="loopstation" data-action="switchTool" data-args="loopstation" onclick="switchTool('loopstation')">
+                <i class="fas fa-record-vinyl"></i><span>루프스테이션</span>
+            </button>
             <button class="menu-item" data-tool="taptempo" data-action="switchTool" data-args="taptempo">
                 <i class="fas fa-hand-pointer"></i><span>탭템포</span>
             </button>
@@ -7798,6 +8049,69 @@
             </div>
         </section>
 
+        <!-- Loop Station -->
+        <section class="tool-panel" id="loopstationPanel">
+            <div class="tool-header">
+                <div class="tool-header-icon"><i class="fas fa-record-vinyl"></i></div>
+                <h1>루프스테이션</h1>
+            </div>
+            <div class="tool-body">
+                <button type="button" class="tool-help-btn tool-help-corner" data-help="loopstation" aria-label="루프스테이션 도움말" aria-expanded="false">?</button>
+
+                <!-- 도움말 -->
+                <details class="ls-help">
+                    <summary>사용법</summary>
+                    <ol>
+                        <li>아래 <b>시작</b> 버튼으로 마이크 권한을 허용해주세요.</li>
+                        <li>녹음할 트랙의 <b>큰 동그란 버튼</b>을 누르면 신호 대기 상태가 됩니다.</li>
+                        <li>마이크에 일정 크기 이상의 소리가 들어오면 <b>자동으로 녹음이 시작</b>됩니다.</li>
+                        <li>녹음 중에 <b>아무 키나</b> 누르면 즉시 정지 + 루프 재생이 시작됩니다.</li>
+                        <li>다른 트랙도 같은 방식으로 쌓아 올리면 됩니다. 첫 트랙이 루프 길이의 기준이 되고, 이후 트랙은 그 배수(1×/2×)로 자동 정렬돼요.</li>
+                    </ol>
+                </details>
+
+                <!-- 시작/정지 + 입력 레벨 미터 + 임계값 -->
+                <div class="ls-top">
+                    <button class="ls-mic-btn" id="lsMicBtn" type="button">
+                        <i class="fas fa-microphone"></i>
+                        <span>시작</span>
+                    </button>
+                    <div class="ls-meter-wrap">
+                        <div class="ls-meter-label">입력 레벨</div>
+                        <div class="ls-meter" id="lsMeter">
+                            <div class="ls-meter-fill" id="lsMeterFill"></div>
+                            <div class="ls-meter-threshold" id="lsMeterThreshold"></div>
+                        </div>
+                        <div class="ls-meter-db" id="lsMeterDb">— dB</div>
+                    </div>
+                    <div class="ls-threshold-wrap">
+                        <label for="lsThreshold">감지 임계값</label>
+                        <input type="range" id="lsThreshold" min="-60" max="-10" step="1" value="-40">
+                        <span id="lsThresholdVal">-40 dB</span>
+                    </div>
+                </div>
+
+                <!-- 트랙 그리드 -->
+                <div class="ls-tracks" id="lsTracks"></div>
+
+                <!-- 글로벌 컨트롤 -->
+                <div class="ls-master-row">
+                    <div class="ls-master-vol">
+                        <label for="lsMasterVol"><i class="fas fa-volume-up"></i> 전체 볼륨</label>
+                        <input type="range" id="lsMasterVol" min="0" max="100" value="85">
+                    </div>
+                    <button class="ls-btn ls-btn-stop" id="lsStopAll" type="button">
+                        <i class="fas fa-stop"></i> 전체 정지
+                    </button>
+                    <button class="ls-btn ls-btn-clear" id="lsClearAll" type="button">
+                        <i class="fas fa-trash"></i> 전체 삭제
+                    </button>
+                </div>
+
+                <div class="ls-status-line" id="lsStatusLine">시작 버튼을 눌러 마이크를 켜주세요.</div>
+            </div>
+        </section>
+
         <!-- Rankings (filled by ear-ranking.js) -->
         <section class="tool-panel" id="rankingPanel"></section>
 
@@ -7938,6 +8252,10 @@
             taptempo: {
                 title: '탭 템포 BPM 측정기 | 안쌤의 기타나무숲',
                 desc: '곡의 박자에 맞춰 두드리면 BPM을 자동 측정. 측정한 BPM을 바로 메트로놈에 보낼 수 있어요.',
+            },
+            loopstation: {
+                title: '온라인 루프스테이션 (마이크 자동 녹음) | 안쌤의 기타나무숲',
+                desc: '브라우저에서 바로 쓰는 무료 루프스테이션. 마이크 신호가 들어오면 자동 녹음, 키 한 번 누르면 즉시 반복 재생. 4트랙 동기화 레이어링.',
             },
             ranking: {
                 title: '음정 트레이닝 랭킹 | 안쌤의 기타나무숲',
@@ -8469,6 +8787,9 @@
             if (tool === 'fretboard' && typeof window.initFretboard === 'function') window.initFretboard();
             if (tool === 'scales' && typeof window.initScales === 'function') window.initScales();
             if (tool === 'piano' && typeof window.initPiano === 'function') window.initPiano();
+            if (tool === 'loopstation' && typeof window.initLoopStation === 'function') window.initLoopStation();
+            // 다른 도구로 이동 시 루프스테이션 마이크/재생 정지
+            if (tool !== 'loopstation' && typeof window.stopLoopStation === 'function') window.stopLoopStation();
 
             if (isMobile()) closeSidebarMobile();
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -8480,7 +8801,7 @@
         //   ?tool=metronome      (canonical, used for SEO)
         //   #metronome           (legacy fallback for older shared links)
         (function() {
-            const VALID = new Set(['tuner','metronome','backing','eartraining','chords','fretboard','scales','piano','capo','taptempo','ranking','mypage']);
+            const VALID = new Set(['tuner','metronome','backing','loopstation','eartraining','chords','fretboard','scales','piano','capo','taptempo','ranking','mypage']);
             function readToolFromUrl() {
                 try {
                     const params = new URLSearchParams(window.location.search);
@@ -12851,6 +13172,494 @@
         })();
     </script>
     <!-- END METRONOME -->
+
+    <!-- ========== LOOP STATION ==========
+         웹 루프스테이션 — 마이크 입력이 dB 임계값을 넘으면 자동 녹음 시작,
+         아무 키 누르면 정지 + 즉시 반복 재생. 4트랙 동기화 (첫 트랙이 기준 길이,
+         나머지는 그 정수배로 자동 정렬). -->
+    <script>
+        (function() {
+            const NUM_TRACKS = 4;
+            // 안정성 — 임계값 이상 신호가 N 연속 프레임 잡혀야 녹음 시작 (튐 방지)
+            const ARM_FRAMES_NEEDED = 2;
+            // 녹음 후 잘려나가도 너무 짧으면 무시 (실수로 키 누른 경우 등)
+            const MIN_LOOP_SEC = 0.25;
+
+            // ─── 상태 ──────────────────────────────────────────────────
+            let ls_ctx = null;
+            let ls_micStream = null;
+            let ls_micSource = null;
+            let ls_analyser = null;
+            let ls_proc = null;             // ScriptProcessorNode — PCM 캡처
+            let ls_silentSink = null;       // proc → 0게인 → destination
+            let ls_masterGain = null;
+            let ls_tracks = [];             // 트랙 객체 배열
+            let ls_armedTrackIdx = -1;      // 현재 신호 대기/녹음 중인 트랙
+            let ls_armFrameCount = 0;       // 임계값 위에서 연속 프레임 카운트
+            let ls_recChunks = null;        // Float32Array 청크 배열 (녹음 중)
+            let ls_recStartCtxTime = 0;     // 녹음 시작 시 AudioContext.currentTime
+            let ls_masterDuration = 0;      // 첫 트랙의 루프 길이 (초)
+            let ls_masterStartCtxTime = 0;  // 첫 루프 재생 시작 ctxTime
+            let ls_threshold = -40;         // dB
+            let ls_micRunning = false;
+            let ls_rafId = 0;
+            let ls_initialized = false;
+
+            // ─── DOM 헬퍼 ──────────────────────────────────────────────
+            function $(id) { return document.getElementById(id); }
+            function setStatus(msg, isErr) {
+                var el = $('lsStatusLine'); if (!el) return;
+                el.textContent = msg || '';
+                el.classList.toggle('error', !!isErr);
+            }
+            function setMicBtnState(on) {
+                var b = $('lsMicBtn'); if (!b) return;
+                b.classList.toggle('active', on);
+                var lbl = b.querySelector('span');
+                if (lbl) lbl.textContent = on ? '정지' : '시작';
+            }
+            function setThresholdMarker(db) {
+                var t = $('lsMeterThreshold'); if (!t) return;
+                // dB 범위: -60 ~ -10 → 0% ~ 100%
+                var pct = Math.max(0, Math.min(100, (db + 60) / 50 * 100));
+                t.style.left = pct + '%';
+            }
+
+            // ─── 트랙 렌더링 ──────────────────────────────────────────
+            function _setTrackState(i, state) {
+                ls_tracks[i].state = state;
+                var row = document.querySelector('.ls-track[data-idx="' + i + '"]');
+                if (row) row.dataset.state = state;
+                var lbl = row && row.querySelector('.ls-track-state');
+                if (lbl) lbl.textContent = ({
+                    empty:     '비어있음',
+                    armed:     '신호 대기 중…',
+                    recording: '녹음 중 (정지: 아무 키)',
+                    playing:   '재생 중 (반복)',
+                    paused:    '정지됨'
+                })[state] || '';
+            }
+            function _setTrackLen(i, sec) {
+                var row = document.querySelector('.ls-track[data-idx="' + i + '"]');
+                var el = row && row.querySelector('.ls-track-len');
+                if (!el) return;
+                el.textContent = sec > 0 ? sec.toFixed(2) + 's' : '';
+            }
+            function renderTracks() {
+                var wrap = $('lsTracks'); if (!wrap) return;
+                wrap.innerHTML = '';
+                for (var i = 0; i < NUM_TRACKS; i++) {
+                    (function(idx) {
+                        var row = document.createElement('div');
+                        row.className = 'ls-track';
+                        row.dataset.idx = idx;
+                        row.dataset.state = 'empty';
+                        row.innerHTML =
+                            '<button class="ls-track-rec" type="button" title="녹음 시작 (또는 정지)">'+
+                              '<i class="fas fa-circle"></i>'+
+                            '</button>'+
+                            '<div class="ls-track-body">'+
+                              '<div class="ls-track-head">'+
+                                '<span class="ls-track-name">트랙 ' + (idx + 1) + '</span>'+
+                                '<span class="ls-track-state">비어있음</span>'+
+                                '<span class="ls-track-len"></span>'+
+                              '</div>'+
+                              '<div class="ls-track-progress"><div class="ls-track-progress-fill"></div></div>'+
+                              '<div class="ls-track-controls">'+
+                                '<input type="range" class="ls-track-vol" min="0" max="100" value="85">'+
+                                '<button class="ls-track-icon-btn ls-track-mute" type="button" title="음소거"><i class="fas fa-volume-up"></i></button>'+
+                                '<button class="ls-track-icon-btn ls-track-clear" type="button" title="비우기"><i class="fas fa-trash"></i></button>'+
+                              '</div>'+
+                            '</div>';
+                        wrap.appendChild(row);
+                        row.querySelector('.ls-track-rec').onclick = function() { onTrackRecClick(idx); };
+                        row.querySelector('.ls-track-vol').oninput = function(e) { setTrackVolume(idx, +e.target.value / 100); };
+                        row.querySelector('.ls-track-mute').onclick = function() { toggleTrackMute(idx); };
+                        row.querySelector('.ls-track-clear').onclick = function() { clearTrack(idx); };
+                    })(i);
+                }
+            }
+
+            // ─── 마이크 시작/정지 ─────────────────────────────────────
+            async function startMic() {
+                if (ls_micRunning) return;
+                try {
+                    if (!ls_ctx) ls_ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    if (ls_ctx.state === 'suspended') await ls_ctx.resume();
+                    var stream = await navigator.mediaDevices.getUserMedia({
+                        audio: {
+                            echoCancellation: false,
+                            noiseSuppression: false,
+                            autoGainControl: false
+                        }
+                    });
+                    ls_micStream = stream;
+                    ls_micSource = ls_ctx.createMediaStreamSource(stream);
+                    ls_analyser = ls_ctx.createAnalyser();
+                    ls_analyser.fftSize = 1024;
+                    ls_analyser.smoothingTimeConstant = 0.4;
+                    ls_micSource.connect(ls_analyser);
+                    // ScriptProcessor — 동작하려면 destination 까지 연결돼야 함.
+                    // 마이크 → proc → silentGain(0) → destination 으로 라우팅해
+                    // 피드백 없이 onaudioprocess 만 발생.
+                    ls_proc = ls_ctx.createScriptProcessor(2048, 1, 1);
+                    ls_silentSink = ls_ctx.createGain();
+                    ls_silentSink.gain.value = 0;
+                    ls_micSource.connect(ls_proc);
+                    ls_proc.connect(ls_silentSink);
+                    ls_silentSink.connect(ls_ctx.destination);
+                    ls_proc.onaudioprocess = onAudioProcess;
+                    // 마스터 출력 게인 — 모든 트랙 재생이 이곳을 거침
+                    if (!ls_masterGain) {
+                        ls_masterGain = ls_ctx.createGain();
+                        ls_masterGain.gain.value = parseInt($('lsMasterVol').value, 10) / 100;
+                        ls_masterGain.connect(ls_ctx.destination);
+                    }
+                    ls_micRunning = true;
+                    setMicBtnState(true);
+                    setStatus('마이크 활성. 트랙의 녹음 버튼을 누르면 신호 대기 상태가 됩니다.');
+                    if (!ls_rafId) ls_rafId = requestAnimationFrame(meterLoop);
+                } catch (e) {
+                    setStatus('마이크를 사용할 수 없습니다: ' + (e && e.message || e), true);
+                }
+            }
+            function stopMic() {
+                if (!ls_micRunning) return;
+                ls_micRunning = false;
+                setMicBtnState(false);
+                if (ls_armedTrackIdx >= 0) {
+                    // 무장/녹음 중이면 취소 (저장 안 함)
+                    cancelArmOrRecording();
+                }
+                try { if (ls_proc) ls_proc.disconnect(); } catch(e) {}
+                try { if (ls_analyser) ls_analyser.disconnect(); } catch(e) {}
+                try { if (ls_micSource) ls_micSource.disconnect(); } catch(e) {}
+                try {
+                    if (ls_micStream) {
+                        ls_micStream.getTracks().forEach(function(t) { t.stop(); });
+                    }
+                } catch(e) {}
+                ls_proc = null; ls_analyser = null; ls_micSource = null; ls_micStream = null;
+                setStatus('마이크 정지됨.');
+            }
+
+            // ─── 미터 + 임계값 감지 ───────────────────────────────────
+            function meterLoop() {
+                ls_rafId = 0;
+                if (!ls_analyser) return;
+                var buf = new Float32Array(ls_analyser.fftSize);
+                ls_analyser.getFloatTimeDomainData(buf);
+                // RMS
+                var sum = 0;
+                for (var i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+                var rms = Math.sqrt(sum / buf.length);
+                var db = 20 * Math.log10(rms + 1e-10);
+                // dB 표시 + 미터 fill
+                var pct = Math.max(0, Math.min(100, (db + 60) / 50 * 100));
+                var fill = $('lsMeterFill'); if (fill) fill.style.width = pct + '%';
+                var dbEl = $('lsMeterDb'); if (dbEl) dbEl.textContent = (db < -60 ? '— dB' : db.toFixed(0) + ' dB');
+                // 임계값 감지 — 무장 상태면 녹음 트리거
+                if (ls_armedTrackIdx >= 0 && ls_tracks[ls_armedTrackIdx].state === 'armed') {
+                    if (db > ls_threshold) {
+                        ls_armFrameCount++;
+                        if (ls_armFrameCount >= ARM_FRAMES_NEEDED) {
+                            beginRecording(ls_armedTrackIdx);
+                        }
+                    } else {
+                        ls_armFrameCount = 0;
+                    }
+                }
+                // 재생 진행 표시
+                if (ls_masterDuration > 0 && ls_ctx) {
+                    var elapsed = ls_ctx.currentTime - ls_masterStartCtxTime;
+                    for (var k = 0; k < NUM_TRACKS; k++) {
+                        var tr = ls_tracks[k];
+                        if (tr && tr.state === 'playing' && tr.buffer) {
+                            var dur = tr.buffer.duration;
+                            var pos = ((elapsed % dur) + dur) % dur;
+                            var row = document.querySelector('.ls-track[data-idx="' + k + '"]');
+                            var pf = row && row.querySelector('.ls-track-progress-fill');
+                            if (pf) pf.style.width = (pos / dur * 100) + '%';
+                        }
+                    }
+                }
+                if (ls_micRunning) ls_rafId = requestAnimationFrame(meterLoop);
+            }
+
+            // ─── PCM 캡처 ─────────────────────────────────────────────
+            function onAudioProcess(e) {
+                if (!ls_recChunks) return;
+                // 안전: input channel 0 의 Float32Array 사본을 push
+                var input = e.inputBuffer.getChannelData(0);
+                var copy = new Float32Array(input.length);
+                copy.set(input);
+                ls_recChunks.push(copy);
+            }
+
+            // ─── 녹음 플로우 ──────────────────────────────────────────
+            async function onTrackRecClick(idx) {
+                if (!ls_micRunning) {
+                    await startMic();
+                    if (!ls_micRunning) return;  // 권한 거부 등
+                }
+                var tr = ls_tracks[idx];
+                if (tr.state === 'armed') {
+                    // 무장 해제
+                    cancelArmOrRecording();
+                    return;
+                }
+                if (tr.state === 'recording') {
+                    // 녹음 즉시 정지
+                    stopRecording();
+                    return;
+                }
+                if (tr.state === 'playing' || tr.state === 'paused') {
+                    // 이미 루프 있음 → 재녹음하려면 먼저 비우라고 안내
+                    setStatus('트랙 ' + (idx+1) + ' 에 이미 루프가 있습니다. 비운 뒤 다시 녹음하세요.');
+                    return;
+                }
+                // empty → arm
+                if (ls_armedTrackIdx >= 0) cancelArmOrRecording();
+                ls_armedTrackIdx = idx;
+                ls_armFrameCount = 0;
+                _setTrackState(idx, 'armed');
+                setStatus('신호 대기 중 — 마이크에 소리가 들어오면 자동 녹음 시작합니다.');
+            }
+            function cancelArmOrRecording() {
+                if (ls_armedTrackIdx < 0) return;
+                var idx = ls_armedTrackIdx;
+                if (ls_tracks[idx].state === 'recording') {
+                    ls_recChunks = null;   // 캡처 중단
+                }
+                _setTrackState(idx, ls_tracks[idx].buffer ? 'paused' : 'empty');
+                ls_armedTrackIdx = -1;
+                ls_armFrameCount = 0;
+            }
+            function beginRecording(idx) {
+                ls_recChunks = [];
+                ls_recStartCtxTime = ls_ctx.currentTime;
+                _setTrackState(idx, 'recording');
+                setStatus('녹음 중 — 아무 키나 누르면 정지하고 즉시 반복 재생됩니다.');
+            }
+            function stopRecording() {
+                if (ls_armedTrackIdx < 0 || !ls_recChunks) return;
+                var idx = ls_armedTrackIdx;
+                var chunks = ls_recChunks;
+                ls_recChunks = null;
+                ls_armedTrackIdx = -1;
+                ls_armFrameCount = 0;
+                var rawSec = (ls_ctx.currentTime - ls_recStartCtxTime);
+                if (rawSec < MIN_LOOP_SEC) {
+                    setStatus('녹음 길이가 너무 짧습니다 (' + rawSec.toFixed(2) + 's). 다시 시도하세요.', true);
+                    _setTrackState(idx, 'empty');
+                    return;
+                }
+                // 청크 합치기
+                var total = 0;
+                chunks.forEach(function(c) { total += c.length; });
+                var sr = ls_ctx.sampleRate;
+                // 첫 트랙 = 마스터 길이 지정. 이후 트랙 = 가장 가까운 마스터 배수로 스냅.
+                var targetLen = total;
+                if (ls_masterDuration > 0) {
+                    var masterSamples = Math.round(ls_masterDuration * sr);
+                    var ratio = total / masterSamples;
+                    // 0.5x / 1x / 2x / 3x / 4x 중 가장 가까운 배수
+                    var candidates = [0.5, 1, 2, 3, 4];
+                    var best = candidates[0];
+                    var bestDiff = Math.abs(ratio - best);
+                    for (var c = 1; c < candidates.length; c++) {
+                        var d = Math.abs(ratio - candidates[c]);
+                        if (d < bestDiff) { bestDiff = d; best = candidates[c]; }
+                    }
+                    targetLen = Math.round(masterSamples * best);
+                }
+                var buf = ls_ctx.createBuffer(1, targetLen, sr);
+                var out = buf.getChannelData(0);
+                var pos = 0;
+                for (var ci = 0; ci < chunks.length && pos < targetLen; ci++) {
+                    var arr = chunks[ci];
+                    var take = Math.min(arr.length, targetLen - pos);
+                    out.set(take === arr.length ? arr : arr.subarray(0, take), pos);
+                    pos += take;
+                }
+                // (모자란 경우는 자동으로 0 으로 패딩 — 마지막 부분 살짝 무음)
+                ls_tracks[idx].buffer = buf;
+                _setTrackLen(idx, buf.duration);
+                // 마스터 길이 / 시작 시각 — 첫 녹음에서만 설정
+                var isFirst = (ls_masterDuration <= 0);
+                if (isFirst) {
+                    ls_masterDuration = buf.duration;
+                    ls_masterStartCtxTime = ls_ctx.currentTime + 0.02;  // 약간 미래에 시작
+                }
+                startTrackPlayback(idx, isFirst);
+                setStatus('트랙 ' + (idx+1) + ' 루프 시작 (' + buf.duration.toFixed(2) + 's)');
+            }
+
+            // ─── 재생 ─────────────────────────────────────────────────
+            function startTrackPlayback(idx, isFirst) {
+                var tr = ls_tracks[idx];
+                if (!tr || !tr.buffer || !ls_ctx) return;
+                stopTrackSource(idx);
+                var src = ls_ctx.createBufferSource();
+                src.buffer = tr.buffer;
+                src.loop = true;
+                var gain = ls_ctx.createGain();
+                gain.gain.value = tr.muted ? 0 : tr.volume;
+                src.connect(gain);
+                gain.connect(ls_masterGain);
+                tr.sourceNode = src;
+                tr.gainNode = gain;
+                // 시작 시각 — 마스터 boundary 와 동기화.
+                //   첫 트랙: ls_masterStartCtxTime (방금 정한 시점) 에 시작.
+                //   이후 트랙: 가장 가까운 다음 마스터 경계.
+                var when, offset = 0;
+                if (isFirst) {
+                    when = ls_masterStartCtxTime;
+                } else {
+                    var now = ls_ctx.currentTime;
+                    var elapsed = now - ls_masterStartCtxTime;
+                    var k = Math.ceil(elapsed / ls_masterDuration);
+                    when = ls_masterStartCtxTime + k * ls_masterDuration;
+                }
+                src.start(when, offset);
+                _setTrackState(idx, 'playing');
+            }
+            function stopTrackSource(idx) {
+                var tr = ls_tracks[idx];
+                if (!tr) return;
+                try { if (tr.sourceNode) tr.sourceNode.stop(); } catch(e) {}
+                try { if (tr.sourceNode) tr.sourceNode.disconnect(); } catch(e) {}
+                try { if (tr.gainNode) tr.gainNode.disconnect(); } catch(e) {}
+                tr.sourceNode = null;
+                tr.gainNode = null;
+            }
+            function pauseAllTracks() {
+                for (var i = 0; i < NUM_TRACKS; i++) {
+                    var tr = ls_tracks[i];
+                    if (tr.state === 'playing') {
+                        stopTrackSource(i);
+                        _setTrackState(i, 'paused');
+                        var row = document.querySelector('.ls-track[data-idx="' + i + '"]');
+                        var pf = row && row.querySelector('.ls-track-progress-fill');
+                        if (pf) pf.style.width = '0%';
+                    }
+                }
+            }
+            function resumeAllTracks() {
+                // 마스터 시작 시각을 현재로 리셋해 모든 paused 트랙을 다시 동기화 재생.
+                if (ls_masterDuration <= 0 || !ls_ctx) return;
+                ls_masterStartCtxTime = ls_ctx.currentTime + 0.02;
+                for (var i = 0; i < NUM_TRACKS; i++) {
+                    if (ls_tracks[i].state === 'paused' && ls_tracks[i].buffer) {
+                        startTrackPlayback(i, true);
+                    }
+                }
+            }
+            function setTrackVolume(idx, v) {
+                ls_tracks[idx].volume = v;
+                if (ls_tracks[idx].gainNode && !ls_tracks[idx].muted) {
+                    ls_tracks[idx].gainNode.gain.value = v;
+                }
+            }
+            function toggleTrackMute(idx) {
+                var tr = ls_tracks[idx];
+                tr.muted = !tr.muted;
+                if (tr.gainNode) tr.gainNode.gain.value = tr.muted ? 0 : tr.volume;
+                var row = document.querySelector('.ls-track[data-idx="' + idx + '"]');
+                var btn = row && row.querySelector('.ls-track-mute');
+                if (btn) {
+                    btn.classList.toggle('active', tr.muted);
+                    var ic = btn.querySelector('i');
+                    if (ic) ic.className = tr.muted ? 'fas fa-volume-mute' : 'fas fa-volume-up';
+                }
+            }
+            function clearTrack(idx) {
+                stopTrackSource(idx);
+                ls_tracks[idx].buffer = null;
+                _setTrackState(idx, 'empty');
+                _setTrackLen(idx, 0);
+                var row = document.querySelector('.ls-track[data-idx="' + idx + '"]');
+                var pf = row && row.querySelector('.ls-track-progress-fill');
+                if (pf) pf.style.width = '0%';
+                // 모든 트랙이 비면 마스터 길이도 리셋
+                var anyHas = false;
+                for (var i = 0; i < NUM_TRACKS; i++) if (ls_tracks[i].buffer) { anyHas = true; break; }
+                if (!anyHas) { ls_masterDuration = 0; ls_masterStartCtxTime = 0; }
+            }
+            function clearAllTracks() {
+                for (var i = 0; i < NUM_TRACKS; i++) clearTrack(i);
+                setStatus('모든 트랙을 비웠습니다.');
+            }
+
+            // ─── 키보드 정지 ──────────────────────────────────────────
+            function onGlobalKeydown(e) {
+                // 루프스테이션 패널 활성일 때만, 그리고 입력 요소에서 타이핑 중이 아닐 때만 반응
+                var panel = $('loopstationPanel');
+                if (!panel || !panel.classList.contains('active')) return;
+                var tag = (e.target && e.target.tagName || '').toLowerCase();
+                if (tag === 'input' || tag === 'textarea') return;
+                if (e.metaKey || e.ctrlKey || e.altKey) return;
+                // 녹음 중 → 정지
+                if (ls_armedTrackIdx >= 0 && ls_tracks[ls_armedTrackIdx].state === 'recording') {
+                    e.preventDefault();
+                    stopRecording();
+                }
+            }
+
+            // ─── 초기화 (lazy, switchTool 첫 진입 시) ─────────────────
+            function initLoopStation() {
+                if (ls_initialized) return;
+                ls_initialized = true;
+                // 트랙 상태 객체
+                for (var i = 0; i < NUM_TRACKS; i++) {
+                    ls_tracks.push({
+                        idx: i, state: 'empty',
+                        buffer: null, sourceNode: null, gainNode: null,
+                        volume: 0.85, muted: false
+                    });
+                }
+                renderTracks();
+                setThresholdMarker(ls_threshold);
+                // 시작 버튼
+                $('lsMicBtn').onclick = function() {
+                    if (ls_micRunning) stopMic(); else startMic();
+                };
+                // 임계값 슬라이더
+                $('lsThreshold').oninput = function(e) {
+                    ls_threshold = +e.target.value;
+                    $('lsThresholdVal').textContent = ls_threshold + ' dB';
+                    setThresholdMarker(ls_threshold);
+                };
+                // 마스터 볼륨
+                $('lsMasterVol').oninput = function(e) {
+                    var v = +e.target.value / 100;
+                    if (ls_masterGain) ls_masterGain.gain.value = v;
+                };
+                // 전체 정지/삭제
+                $('lsStopAll').onclick = function() {
+                    var anyPlaying = false;
+                    for (var i = 0; i < NUM_TRACKS; i++) if (ls_tracks[i].state === 'playing') { anyPlaying = true; break; }
+                    if (anyPlaying) { pauseAllTracks(); setStatus('전체 정지됨. 다시 누르면 동기화 재생.'); }
+                    else { resumeAllTracks(); setStatus('재생 재개.'); }
+                };
+                $('lsClearAll').onclick = function() {
+                    clearAllTracks();
+                };
+                document.addEventListener('keydown', onGlobalKeydown);
+            }
+
+            function stopLoopStation() {
+                // 다른 도구로 이동 시 정리
+                pauseAllTracks();
+                if (ls_armedTrackIdx >= 0) cancelArmOrRecording();
+                if (ls_micRunning) stopMic();
+            }
+
+            window.initLoopStation = initLoopStation;
+            window.stopLoopStation = stopLoopStation;
+        })();
+    </script>
+    <!-- END LOOP STATION -->
 
     <script>
         // ========== TAP TEMPO ==========
@@ -17315,4 +18124,140 @@
                 if (e.code && PN_CODE_MAP[e.code] !== undefined) {
                     baseMidi = PN_CODE_MAP[e.code];
                 } else {
-                    c
+                    const k = e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key;
+                    baseMidi = PN_KEY_MAP[k];
+                }
+                if (baseMidi === undefined) return;
+                const midi = baseMidi + (pnState.kbdOctaveOffset || 0);
+                const svg = document.getElementById('pnSvg');
+                const keyEl = svg && svg.querySelector('.pn-key[data-midi="' + midi + '"]');
+                if (keyEl) keyEl.classList.remove('pn-key-active');
+            });
+
+            window.initPiano = function() {
+                pnRender();
+                // 레이아웃이 자리 잡은 후 한 틱 뒤에 스크롤 정렬
+                setTimeout(pnScrollToC4, 20);
+            };
+
+            // Redraw on resize (so vertical layouts stay centered)
+            window.addEventListener('resize', function() {
+                if (document.getElementById('fretboardPanel').classList.contains('active')) {
+                    if (fbState.fb) fbRender();
+                }
+                if (document.getElementById('scalesPanel').classList.contains('active')) {
+                    if (scState.fb) scRender();
+                }
+                if (document.getElementById('pianoPanel').classList.contains('active')) {
+                    pnRender();
+                }
+            });
+
+            // If user lands directly on one of these via hash
+            const hash = (window.location.hash || '').replace('#','').toLowerCase();
+            if (hash === 'fretboard' || hash === 'scales') {
+                // switchTool in the earlier block will call initX
+            }
+        })();
+    </script>
+
+    <script>
+        // ─── data-action delegation 지휘자 (refactor #1) ──────────────────────
+        // 인라인 onclick="fn(args)" 대신 data-action="fn" data-args="args" 방식.
+        // 한 곳에서 모든 버튼 클릭을 받아 window[fn](...args) 로 호출.
+        // - 함수 이름 변경 시 한 군데만 바꾸면 됨
+        // - 새 핸들러 추가 시 onclick 안 적어도 됨
+        // - 기존 onclick 도 그대로 동작 — 마이그레이션 중 양쪽 공존 OK
+        (function setupActionDelegation() {
+            function parseArgs(raw, el) {
+                if (!raw) return [];
+                return raw.split(',').map(function(s) {
+                    s = s.trim();
+                    if (s === '') return s;
+                    // @key — 같은 element 의 data-key 속성 (동적 dispatch 용).
+                    //   예) data-args="@tool"  →  el.dataset.tool 값을 인자로.
+                    if (s.charAt(0) === '@' && el) return el.dataset[s.slice(1)];
+                    // $prop — element 의 property 직접 읽기 (input.checked, input.value 등).
+                    //   예) data-args="$checked"  →  el.checked 값을 인자로.
+                    if (s.charAt(0) === '$' && el) return el[s.slice(1)];
+                    if (s === 'true')  return true;
+                    if (s === 'false') return false;
+                    if (s === 'null')  return null;
+                    var n = Number(s);
+                    if (!Number.isNaN(n) && /^-?\d+(\.\d+)?$/.test(s)) return n;
+                    // 따옴표 감싼 문자열은 따옴표 제거
+                    if ((s.charAt(0) === '"'  && s.charAt(s.length-1) === '"')  ||
+                        (s.charAt(0) === "'"  && s.charAt(s.length-1) === "'")) {
+                        return s.slice(1, -1);
+                    }
+                    return s;
+                });
+            }
+            document.addEventListener('click', function(e) {
+                var el = e.target.closest('[data-action]');
+                if (!el) return;
+                var name = el.dataset.action;
+                var fn = window[name];
+                if (typeof fn !== 'function') {
+                    console.warn('[data-action] 함수 못 찾음:', name);
+                    return;
+                }
+                // event 를 마지막 인자로 같이 넘김 — 안 받으면 그냥 무시되니 무해.
+                // event(arg) 받는 옛 핸들러들 (toggle7thMenu(event) 등) 호환을 위해.
+                fn.apply(el, parseArgs(el.dataset.args, el).concat([e]));
+            });
+            // change / input 핸들러 — click 과 동일하게 data-args 지원.
+            //   예) data-change="setLoopCountIn" data-args="$checked"
+            //       data-input="updateBPM"     data-args="$value"
+            function makeListener(eventName, attrName) {
+                return function(e) {
+                    var el = e.target.closest('[' + attrName + ']');
+                    if (!el) return;
+                    var name = el.dataset[attrName.replace(/^data-/, '').replace(/-(.)/g, function(_,c){return c.toUpperCase();})];
+                    var fn = window[name];
+                    if (typeof fn !== 'function') {
+                        console.warn('[' + attrName + '] 함수 못 찾음:', name);
+                        return;
+                    }
+                    fn.apply(el, parseArgs(el.dataset.args, el).concat([e]));
+                };
+            }
+            document.addEventListener('change', makeListener('change', 'data-change'));
+            document.addEventListener('input',  makeListener('input',  'data-input'));
+        })();
+
+        // Fade out the loader on window load
+        window.addEventListener('load', function() {
+            var loader = document.getElementById('loader');
+            if (!loader) return;
+            if (loader.style.display !== 'none') {
+                setTimeout(function() { loader.classList.add('hidden'); }, 800);
+            }
+        });
+    </script>
+
+    <!-- Home transition: intercept logo click, fade in green overlay, then navigate -->
+    <script>
+    (function() {
+        var overlay = document.getElementById('homeTransition');
+        if (!overlay) return;
+        // All anchors that take the user back to the homepage
+        var homeLinks = document.querySelectorAll('a[href="index.html"], a[href="/"]');
+        var FADE_MS = 500;
+        homeLinks.forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                if (this.target === '_blank') return;
+                e.preventDefault();
+                var href = this.getAttribute('href');
+                // Signal index.html to show its green loader (same look as this overlay)
+                try { sessionStorage.setItem('skipLoader', 'showLoader'); } catch (err) {}
+                overlay.classList.add('active');
+                try { if (window.gtag) window.gtag('event', 'home_transition'); } catch (err) {}
+                setTimeout(function() { window.location.href = href; }, FADE_MS);
+            });
+        });
+    })();
+    </script>
+</body>
+</html>
