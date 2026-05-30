@@ -9,16 +9,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <style>
         /* =========================================================
-           이 파일은 루프스테이션 단독 개발용 데모 페이지입니다.
+           루프스테이션 단독 개발용 데모 페이지.
            tools.html 와 분리되어 있어 여기서 자유롭게 실험/수정하고,
-           만족스러운 수준이 되면 tools.html 의 메뉴/패널/스크립트로
-           다시 옮기면 됩니다.
+           만족스러우면 tools.html 의 메뉴/패널/스크립트로 재이식.
 
-           tools.html 안에서의 위치 (재이식 시 참고):
-             - CSS:   "/* ===== Loop Station ===== */" 블록
-             - 메뉴:  data-tool="loopstation" 버튼 (현재 제거됨)
-             - 패널:  <section id="loopstationPanel">
-             - 스크립트: <!-- ========== LOOP STATION ========== --> 블록
+           구조 (이번 개편):
+             - 단일 트랙 + 오버더빙
+             - 트랜스포트 바: RECORD(크게) / PLAY / REVERSE / UNDO
+             - 파형: 녹음·대기 중 실시간 입력, 재생 중 루프 파형 + 커서
+             - 녹음 시작: 기존 자동 감지 유지 (RECORD 로 무장 → 신호 감지 시 자동 시작)
            ========================================================= */
 
         /* ===== 베이스 토큰 (tools.html 의 :root 발췌) ===== */
@@ -36,7 +35,6 @@
             --text-primary: #1a2421;
             --text-mid:     #4a5a52;
             --text-light:   #7a8a82;
-            /* tools.html 의 루프 CSS 가 참조하는 별칭 (원본엔 미정의되어 있었음) */
             --text-secondary: var(--text-mid);
         }
         :root[data-theme="dark"] {
@@ -61,7 +59,7 @@
             font-family: 'Noto Sans KR', sans-serif;
         }
 
-        /* ===== 데모 전용 레이아웃 (tools.html 사이드바 없이 단독) ===== */
+        /* ===== 데모 전용 레이아웃 ===== */
         .demo-topbar {
             display: flex;
             align-items: center;
@@ -98,6 +96,7 @@
         .demo-wrap { max-width: 820px; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }
 
         .tool-header {
+            position: relative;
             display: flex; align-items: center; gap: 0.9rem;
             margin-bottom: 1.25rem;
         }
@@ -120,16 +119,66 @@
         }
         :root[data-theme="dark"] .tool-body { border-color: rgba(150, 200, 175, 0.15); }
 
+        .tool-help-ctl {
+            margin-left: auto; align-self: center; flex-shrink: 0;
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            cursor: pointer;
+        }
+        .tool-help-label {
+            font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);
+            user-select: none;
+        }
+        .tool-help-ctl:hover .tool-help-label { color: var(--green-mid); }
         .tool-help-btn {
-            position: absolute; top: 1rem; right: 1rem;
-            width: 28px; height: 28px; border-radius: 50%;
+            width: 30px; height: 30px; border-radius: 50%;
             border: 1px solid rgba(42, 107, 74, 0.3);
             background: transparent; color: var(--text-secondary);
             cursor: pointer; font-weight: 700;
+            flex-shrink: 0;
         }
+        .tool-help-ctl:hover .tool-help-btn,
         .tool-help-btn:hover { background: rgba(42, 107, 74, 0.1); }
+        .tool-help-btn[aria-expanded="true"] {
+            background: var(--green-mid); color: #fff; border-color: var(--green-mid);
+        }
 
-        /* ===== Loop Station (tools.html 에서 그대로 발췌) ===== */
+        /* 도움말 팝업 — 헤더(박스 바깥) 우측 아래로 */
+        .ls-help-pop {
+            position: absolute;
+            top: calc(100% + 8px); right: 0;
+            width: min(340px, calc(100vw - 3rem));
+            background: var(--bg-panel);
+            border: 1px solid rgba(42,107,74,0.2);
+            border-radius: 12px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+            padding: 0.9rem 1.05rem 1rem;
+            z-index: 30;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            animation: lsHelpIn 0.14s ease-out;
+        }
+        .ls-help-pop[hidden] { display: none; }
+        .ls-help-pop::before {
+            content: ''; position: absolute; top: -7px; right: 15px;
+            width: 12px; height: 12px; background: var(--bg-panel);
+            border-left: 1px solid rgba(42,107,74,0.2);
+            border-top: 1px solid rgba(42,107,74,0.2);
+            transform: rotate(45deg);
+        }
+        @keyframes lsHelpIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .ls-help-pop-title { font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
+        .ls-help-pop ol { margin: 0 0 0 1.15rem; padding: 0; line-height: 1.55; }
+        .ls-help-pop li { margin-bottom: 0.28rem; }
+        :root[data-theme="dark"] .ls-help-pop {
+            border-color: rgba(150,200,175,0.22);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+        }
+        :root[data-theme="dark"] .ls-help-pop::before { border-color: rgba(150,200,175,0.22); }
+
+        /* ===== Loop Station ===== */
         .ls-help {
             background: rgba(42, 107, 74, 0.05);
             border: 1px solid rgba(42, 107, 74, 0.15);
@@ -173,6 +222,7 @@
             cursor: pointer;
             transition: background 0.18s, box-shadow 0.18s;
         }
+        .ls-mic-btn span { display: inline-block; min-width: 3.4em; text-align: center; }
         .ls-mic-btn:hover { background: var(--green-dark); }
         .ls-mic-btn.active {
             background: #c94545;
@@ -205,117 +255,215 @@
             background: rgba(20,20,20,0.65);
         }
         .ls-meter-db { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.18rem; font-variant-numeric: tabular-nums; }
-        .ls-threshold-wrap {
-            display: flex; align-items: center; gap: 0.45rem;
-            font-size: 0.78rem; color: var(--text-secondary);
+        .ls-meter-label .ls-thr-readout {
+            margin-left: 0.4rem; font-weight: 400; color: var(--text-light);
+            font-variant-numeric: tabular-nums;
         }
-        .ls-threshold-wrap label { white-space: nowrap; }
-        .ls-threshold-wrap input[type=range] { width: 110px; }
-        .ls-threshold-wrap #lsThresholdVal {
-            font-variant-numeric: tabular-nums; min-width: 3.6em; text-align: right;
+        /* 감지 임계값 — 미터 바로 아래 드래그 삼각형(^) */
+        .ls-thr-track {
+            position: relative;
+            height: 13px;
+            margin-top: 2px;
+            touch-action: none;
+            cursor: pointer;
         }
+        .ls-thr-handle {
+            position: absolute; top: 0; left: 0;
+            width: 0; height: 0;
+            transform: translateX(-50%);
+            border-left: 7px solid transparent;
+            border-right: 7px solid transparent;
+            border-bottom: 9px solid var(--green-deep);
+            cursor: ew-resize;
+            touch-action: none;
+        }
+        .ls-thr-handle::after {
+            /* 드래그 히트영역 확대 */
+            content: ''; position: absolute;
+            left: -10px; right: -10px; top: -3px; bottom: -8px;
+        }
+        :root[data-theme="dark"] .ls-thr-handle { border-bottom-color: var(--green-light); }
 
-        .ls-tracks {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 0.55rem;
-            margin-bottom: 0.9rem;
-        }
-        @media (min-width: 720px) {
-            .ls-tracks { grid-template-columns: 1fr 1fr; }
-        }
-        .ls-track {
-            display: flex;
-            align-items: center;
-            gap: 0.7rem;
-            padding: 0.7rem 0.85rem;
-            background: rgba(42, 107, 74, 0.04);
-            border: 1px solid rgba(42, 107, 74, 0.18);
-            border-radius: 10px;
-            transition: border-color 0.18s, background 0.18s;
-        }
-        .ls-track[data-state="armed"]     { border-color: #f5a623; background: rgba(245,166,35,0.08); }
-        .ls-track[data-state="recording"] { border-color: #c94545; background: rgba(201,69,69,0.12); }
-        .ls-track[data-state="playing"]   { border-color: var(--green-mid); background: rgba(82,168,114,0.10); }
-        .ls-track[data-state="paused"]    { border-color: rgba(42, 107, 74, 0.25); background: rgba(42, 107, 74, 0.04); }
-        .ls-track-rec {
-            width: 52px; height: 52px;
-            border-radius: 50%;
-            border: 2.5px solid rgba(42, 107, 74, 0.35);
-            background: transparent;
-            color: rgba(42, 107, 74, 0.45);
-            font-size: 1.05rem;
-            cursor: pointer;
-            display: inline-flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-            transition: border-color 0.18s, background 0.18s, color 0.18s;
+        /* ===== 파형 ===== */
+        .ls-wave-wrap {
             position: relative;
-        }
-        .ls-track-rec i { transition: transform 0.15s; }
-        .ls-track-rec:hover { border-color: var(--green-mid); color: var(--green-mid); }
-        .ls-track[data-state="armed"] .ls-track-rec {
-            border-color: #f5a623; color: #f5a623;
-            animation: lsArmFlash 1s infinite;
-        }
-        @keyframes lsArmFlash {
-            0%,100% { opacity: 1; }
-            50%     { opacity: 0.42; }
-        }
-        .ls-track[data-state="recording"] .ls-track-rec {
-            border-color: #c94545; color: #fff; background: #c94545;
-        }
-        .ls-track[data-state="playing"] .ls-track-rec {
-            border-color: var(--green-mid); color: var(--white); background: var(--green-mid);
-        }
-        .ls-track[data-state="paused"] .ls-track-rec {
-            border-color: rgba(42, 107, 74, 0.35); color: rgba(42, 107, 74, 0.6);
-        }
-        .ls-track-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
-        .ls-track-head {
-            display: flex; align-items: baseline; gap: 0.55rem;
-            font-size: 0.85rem;
-        }
-        .ls-track-name { font-weight: 600; color: var(--text-primary); }
-        .ls-track-state { font-size: 0.72rem; color: var(--text-secondary); }
-        .ls-track-len { margin-left: auto; font-size: 0.7rem; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
-        .ls-track-progress {
-            position: relative;
-            height: 6px;
-            background: rgba(0,0,0,0.05);
-            border-radius: 3px;
+            height: 150px;
+            margin-bottom: 1rem;
+            border-radius: 12px;
             overflow: hidden;
+            background: linear-gradient(180deg, rgba(42,107,74,0.07), rgba(42,107,74,0.02));
+            border: 1px solid rgba(42,107,74,0.18);
         }
-        .ls-track-progress-fill {
-            position: absolute; left: 0; top: 0; bottom: 0;
-            background: var(--green-mid);
-            width: 0%;
-            transition: width 0.04s linear;
+        :root[data-theme="dark"] .ls-wave-wrap {
+            background: rgba(0,0,0,0.22);
+            border-color: rgba(150,200,175,0.18);
         }
-        .ls-track-controls { display: flex; align-items: center; gap: 0.4rem; }
-        .ls-track-vol { flex: 1; }
-        .ls-track-icon-btn {
+        .ls-wave { display: block; width: 100%; height: 100%; }
+        .ls-wave-empty {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.82rem; color: var(--text-light);
+            pointer-events: none;
+        }
+        /* 트림 핸들 (시작/끝 컷) */
+        .ls-trim {
+            position: absolute; top: 0; bottom: 0;
+            width: 0;
+            z-index: 5;
+            touch-action: none;
+        }
+        .ls-trim::before {
+            content: ''; position: absolute; top: 0; bottom: 0; left: -1px;
+            width: 2px; background: var(--green-deep);
+        }
+        .ls-trim::after {
+            /* 넓은 드래그 히트영역 */
+            content: ''; position: absolute; top: 0; bottom: 0; left: -11px; width: 22px;
+            cursor: ew-resize;
+        }
+        .ls-trim-grip {
+            position: absolute; top: 50%; left: -7px;
+            width: 14px; height: 30px; transform: translateY(-50%);
+            background: var(--green-deep);
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            cursor: ew-resize;
+        }
+        .ls-trim-grip::after {
+            content: ''; position: absolute; left: 50%; top: 50%;
+            width: 2px; height: 12px; transform: translate(-50%,-50%);
+            background: rgba(255,255,255,0.7); border-radius: 1px;
+            box-shadow: -3px 0 0 rgba(255,255,255,0.45), 3px 0 0 rgba(255,255,255,0.45);
+        }
+        :root[data-theme="dark"] .ls-trim::before,
+        :root[data-theme="dark"] .ls-trim-grip { background: var(--green-light); }
+
+        /* 더빙 토글 스위치 */
+        .ls-toggles {
+            display: flex; gap: 1.1rem; flex-wrap: wrap;
+            margin: 0.7rem 0 1rem;
+        }
+        .ls-toggle {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            cursor: pointer; user-select: none;
+            font-size: 0.82rem; color: var(--text-secondary);
+        }
+        .ls-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+        .ls-toggle-sw {
+            position: relative; flex-shrink: 0;
+            width: 38px; height: 22px; border-radius: 999px;
+            background: rgba(42,107,74,0.22);
+            transition: background 0.18s;
+        }
+        .ls-toggle-sw::after {
+            content: ''; position: absolute; top: 2px; left: 2px;
+            width: 18px; height: 18px; border-radius: 50%;
+            background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+            transition: transform 0.18s;
+        }
+        .ls-toggle input:checked + .ls-toggle-sw { background: var(--green-mid); }
+        .ls-toggle input:checked + .ls-toggle-sw::after { transform: translateX(16px); }
+        .ls-toggle input:focus-visible + .ls-toggle-sw { box-shadow: 0 0 0 3px rgba(82,168,114,0.35); }
+        .ls-toggle input:checked ~ .ls-toggle-txt { color: var(--text-primary); font-weight: 600; }
+        :root[data-theme="dark"] .ls-toggle-sw { background: rgba(150,200,175,0.22); }
+
+        /* ===== 트랜스포트 바 (캡쳐 이미지 스타일, 항상 다크 하드웨어 톤) ===== */
+        .ls-transport {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #21413c;
+            border: 1px solid rgba(0,0,0,0.35);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 22px rgba(0,0,0,0.22);
+            margin-bottom: 1rem;
+        }
+        .ls-tp-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            padding: 1.15rem 0.5rem;
             background: transparent;
-            border: 1px solid rgba(42, 107, 74, 0.25);
-            color: rgba(42, 107, 74, 0.7);
-            border-radius: 6px;
-            width: 30px; height: 28px;
+            border: none;
+            border-left: 1px solid rgba(255,255,255,0.07);
+            color: #cfe4db;
             cursor: pointer;
-            font-size: 0.78rem;
-            display: inline-flex; align-items: center; justify-content: center;
-            transition: background 0.15s, color 0.15s;
+            font-family: inherit;
+            transition: background 0.15s, color 0.15s, opacity 0.15s;
         }
-        .ls-track-icon-btn:hover { background: rgba(42, 107, 74, 0.10); color: var(--green-mid); }
-        .ls-track-icon-btn.active { background: rgba(201,69,69,0.18); border-color: #c94545; color: #c94545; }
-        .ls-track-icon-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+        .ls-tp-btn:first-child { border-left: none; }
+        .ls-tp-btn:hover:not([disabled]) { background: rgba(255,255,255,0.06); color: #ffffff; }
+        .ls-tp-btn[disabled] { opacity: 0.3; cursor: default; }
+        .ls-tp-ico {
+            height: 1.7rem;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.35rem;
+        }
+        .ls-tp-label {
+            font-size: 0.7rem; letter-spacing: 0.12em; font-weight: 600;
+        }
+        .ls-tp-key {
+            font-size: 0.54rem; letter-spacing: 0.06em; font-weight: 600;
+            opacity: 0.65; margin-top: 0.1rem;
+            padding: 0.08rem 0.34rem;
+            border: 1px solid currentColor;
+            border-radius: 4px;
+            line-height: 1.25;
+        }
+        /* 활성(재생 중 PLAY, 리버스 ON) — 사각형 배경을 유지해 눈에 띄게 */
+        .ls-tp-btn.active { color: #7fd6a2; background: rgba(127,214,162,0.16); }
+        .ls-tp-btn.active:hover:not([disabled]) { background: rgba(127,214,162,0.24); }
+
+        /* RECORD = PLAY (더 크게) / REVERSE = UNDO (더 작게) */
+        .ls-tp-rec, .ls-tp-play { flex: 1.8; }
+        .ls-tp-rev, .ls-tp-undo { flex: 0.75; }
+        .ls-tp-rec .ls-tp-ico, .ls-tp-play .ls-tp-ico { font-size: 1.7rem; height: 1.95rem; }
+        .ls-tp-rec .ls-tp-label, .ls-tp-play .ls-tp-label { font-size: 0.8rem; }
+        .ls-rec-dot {
+            display: block;
+            width: 1.55rem; height: 1.55rem;
+            border-radius: 50%;
+            background: #e23b3b;
+            box-shadow: 0 0 0 3px rgba(226,59,59,0.22);
+            transform-origin: center;
+            transition: transform 0.06s linear, box-shadow 0.06s linear;
+        }
+        /* 무장/녹음/더빙 중 — RECORD 사각형 배경을 유지 (hover 처럼 켜진 상태) */
+        .ls-tp-rec.armed { background: rgba(245,166,35,0.18); }
+        .ls-tp-rec.armed .ls-tp-label { color: #f5a623; }
+        .ls-tp-rec.recording { background: rgba(226,59,59,0.30); }
+        .ls-tp-rec.recording:hover:not([disabled]) { background: rgba(226,59,59,0.38); }
+        .ls-tp-rec.recording .ls-tp-label { color: #ff8a8a; }
 
         .ls-master-row {
-            display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;
-            padding-top: 0.55rem;
+            display: flex; flex-direction: column; gap: 1.5rem;
+            padding-top: 0.7rem;
             border-top: 1px solid rgba(42, 107, 74, 0.12);
-            margin-top: 0.4rem;
+            margin-top: 0.2rem;
         }
-        .ls-master-vol { display: flex; align-items: center; gap: 0.45rem; flex: 1; min-width: 200px; font-size: 0.82rem; color: var(--text-secondary); }
-        .ls-master-vol input[type=range] { flex: 1; }
+        .ls-fader { display: flex; align-items: center; gap: 0.55rem; }
+        .ls-fader input[type=range] { flex: 1; }
+        .ls-fader-ico {
+            flex-shrink: 0; width: 36px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--green-deep);
+        }
+        .ls-fader-name {
+            flex-shrink: 0; min-width: 2.3em;
+            font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);
+        }
+        .ls-fader-ico i { font-size: 1.7rem; line-height: 1; }
+        .ls-speed-ico { height: 1.7rem; width: auto; display: block; }
+        :root[data-theme="dark"] .ls-fader-ico { color: var(--green-light); }
+        .ls-fader-val {
+            flex-shrink: 0; min-width: 3.4em; text-align: right;
+            font-size: 0.8rem; color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+        }
         .ls-btn {
             display: inline-flex; align-items: center; gap: 0.4rem;
             padding: 0.5rem 0.85rem;
@@ -329,46 +477,23 @@
             transition: background 0.15s;
         }
         .ls-btn:hover { background: rgba(42, 107, 74, 0.14); }
-        .ls-btn-stop:hover { background: rgba(245,166,35,0.18); border-color: #f5a623; }
         .ls-btn-clear:hover { background: rgba(201,69,69,0.18); border-color: #c94545; color: #c94545; }
-        .ls-status-line {
-            margin-top: 0.7rem;
-            text-align: center;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            min-height: 1.2em;
+        .ls-clear-wide {
+            flex-shrink: 0;
+            min-width: 104px;
+            padding-top: 1.1rem; padding-bottom: 1.1rem;
+            padding-left: 1.4rem; padding-right: 1.4rem;
+            justify-content: center;
         }
-        .ls-status-line.error { color: #c94545; }
 
-        /* Loop station — dark mode */
+        /* dark mode */
         :root[data-theme="dark"] .ls-help {
             background: rgba(150, 200, 175, 0.07);
             border-color: rgba(150, 200, 175, 0.20);
         }
-        :root[data-theme="dark"] .ls-top {
-            background: rgba(150, 200, 175, 0.07);
-        }
+        :root[data-theme="dark"] .ls-top { background: rgba(150, 200, 175, 0.07); }
         :root[data-theme="dark"] .ls-meter { background: rgba(255,255,255,0.10); }
         :root[data-theme="dark"] .ls-meter-threshold { background: rgba(240,240,240,0.65); }
-        :root[data-theme="dark"] .ls-track {
-            background: rgba(150, 200, 175, 0.06);
-            border-color: rgba(150, 200, 175, 0.18);
-        }
-        :root[data-theme="dark"] .ls-track[data-state="armed"]     { background: rgba(245,166,35,0.18); }
-        :root[data-theme="dark"] .ls-track[data-state="recording"] { background: rgba(201,69,69,0.22); }
-        :root[data-theme="dark"] .ls-track[data-state="playing"]   { background: rgba(82,168,114,0.18); }
-        :root[data-theme="dark"] .ls-track-rec {
-            border-color: rgba(220, 233, 226, 0.30);
-            color: rgba(220, 233, 226, 0.55);
-        }
-        :root[data-theme="dark"] .ls-track-icon-btn {
-            border-color: rgba(220, 233, 226, 0.25);
-            color: rgba(220, 233, 226, 0.7);
-        }
-        :root[data-theme="dark"] .ls-track-icon-btn:hover {
-            background: rgba(150, 200, 175, 0.12); color: #fff;
-        }
-        :root[data-theme="dark"] .ls-track-progress { background: rgba(255,255,255,0.08); }
         :root[data-theme="dark"] .ls-master-row { border-top-color: rgba(150, 200, 175, 0.20); }
         :root[data-theme="dark"] .ls-btn {
             background: rgba(150, 200, 175, 0.08);
@@ -391,66 +516,125 @@
     </div>
 
     <div class="demo-wrap">
-        <!-- Loop Station 패널 (tools.html 의 #loopstationPanel 발췌, active 클래스 부여) -->
         <section class="tool-panel active" id="loopstationPanel">
             <div class="tool-header">
                 <div class="tool-header-icon"><i class="fas fa-record-vinyl"></i></div>
                 <h1>루프스테이션</h1>
+                <div class="tool-help-ctl" id="lsHelpCtl">
+                    <span class="tool-help-label">사용법</span>
+                    <button type="button" class="tool-help-btn" id="lsHelpBtn" aria-label="루프스테이션 도움말" aria-expanded="false" aria-controls="lsHelpPop">?</button>
+                </div>
+
+                <!-- 도움말 팝업 (? 클릭 시 표시) -->
+                <div class="ls-help-pop" id="lsHelpPop" role="dialog" aria-label="사용법" hidden>
+                    <div class="ls-help-pop-title">사용법</div>
+                    <ol>
+                        <li>왼쪽 <b>준비</b> 버튼으로 마이크를 켭니다. (다시 누르면 감지 중지)</li>
+                        <li><b>RECORD</b> 또는 <b>R</b> 키를 누르면 신호 대기 상태가 되고, 소리가 들어오면 <b>자동으로 녹음</b>이 시작됩니다.</li>
+                        <li>녹음 중 같은 키를 다시 누르거나 <b>아무 키</b>나 누르면 정지 + 즉시 반복 재생됩니다. 첫 녹음이 루프 길이의 기준이 돼요.</li>
+                        <li>루프가 도는 동안 다시 녹음하면 그 위에 <b>겹쳐서(오버더빙)</b> 녹음됩니다. 한 바퀴 후 자동 정지.</li>
+                        <li><b>오토 더빙</b> 켜면 녹음 직후 자동으로 다음 오버더빙 대기로, <b>연속 더빙</b> 켜면 정지할 때까지 계속 겹쳐 녹음합니다.</li>
+                        <li>파형 양옆 <b>핸들</b>을 드래그하면 루프 시작·끝점을 자를 수 있어요(폰 녹음 편집처럼).</li>
+                        <li><b>스페이스바</b>=PLAY(재생/일시정지), <b>REVERSE</b> 역재생, <b>UNDO</b> 되돌리기.</li>
+                    </ol>
+                </div>
             </div>
             <div class="tool-body">
-                <button type="button" class="tool-help-btn" data-help="loopstation" aria-label="루프스테이션 도움말" aria-expanded="false">?</button>
 
-                <!-- 도움말 -->
-                <details class="ls-help">
-                    <summary>사용법</summary>
-                    <ol>
-                        <li>아래 <b>시작</b> 버튼으로 마이크 권한을 허용해주세요.</li>
-                        <li>녹음할 트랙의 <b>큰 동그란 버튼</b>을 누르면 신호 대기 상태가 됩니다.</li>
-                        <li>마이크에 일정 크기 이상의 소리가 들어오면 <b>자동으로 녹음이 시작</b>됩니다.</li>
-                        <li>녹음 중에 <b>아무 키나</b> 누르면 즉시 정지 + 루프 재생이 시작됩니다.</li>
-                        <li>다른 트랙도 같은 방식으로 쌓아 올리면 됩니다. 첫 트랙이 루프 길이의 기준이 되고, 이후 트랙은 그 배수(1×/2×)로 자동 정렬돼요.</li>
-                    </ol>
-                </details>
-
-                <!-- 시작/정지 + 입력 레벨 미터 + 임계값 -->
+                <!-- 입력 레벨 미터 + 감지 임계값 + 초기화 -->
                 <div class="ls-top">
-                    <button class="ls-mic-btn" id="lsMicBtn" type="button">
+                    <button class="ls-mic-btn" id="lsMicBtn" type="button" title="마이크 켜기 / 감지 중지">
                         <i class="fas fa-microphone"></i>
-                        <span>시작</span>
+                        <span>준비</span>
                     </button>
                     <div class="ls-meter-wrap">
-                        <div class="ls-meter-label">입력 레벨</div>
+                        <div class="ls-meter-label">입력 레벨<span class="ls-thr-readout" id="lsThresholdVal">감지 임계값 -40 dB</span></div>
                         <div class="ls-meter" id="lsMeter">
                             <div class="ls-meter-fill" id="lsMeterFill"></div>
                             <div class="ls-meter-threshold" id="lsMeterThreshold"></div>
                         </div>
+                        <div class="ls-thr-track" id="lsThrTrack">
+                            <div class="ls-thr-handle" id="lsThrHandle" title="드래그해서 감지 임계값 조정"></div>
+                        </div>
                         <div class="ls-meter-db" id="lsMeterDb">— dB</div>
                     </div>
-                    <div class="ls-threshold-wrap">
-                        <label for="lsThreshold">감지 임계값</label>
-                        <input type="range" id="lsThreshold" min="-60" max="-10" step="1" value="-40">
-                        <span id="lsThresholdVal">-40 dB</span>
-                    </div>
+                    <button class="ls-btn ls-btn-clear ls-clear-wide" id="lsClearAll" type="button">
+                        <i class="fas fa-trash"></i> 초기화
+                    </button>
                 </div>
 
-                <!-- 트랙 그리드 -->
-                <div class="ls-tracks" id="lsTracks"></div>
+                <!-- 파형 -->
+                <div class="ls-wave-wrap">
+                    <canvas class="ls-wave" id="lsWave"></canvas>
+                    <div class="ls-trim ls-trim-start" id="lsTrimStart" style="display:none;" title="시작점 드래그"><span class="ls-trim-grip"></span></div>
+                    <div class="ls-trim ls-trim-end" id="lsTrimEnd" style="display:none;left:100%;" title="끝점 드래그"><span class="ls-trim-grip"></span></div>
+                    <div class="ls-wave-empty" id="lsWaveEmpty">RECORD 를 누르면 파형이 표시됩니다</div>
+                </div>
 
-                <!-- 글로벌 컨트롤 -->
+                <!-- 트랜스포트 -->
+                <div class="ls-transport">
+                    <button class="ls-tp-btn ls-tp-rec" id="lsRecBtn" type="button" title="녹음 (무장/정지)">
+                        <span class="ls-tp-ico"><span class="ls-rec-dot"></span></span>
+                        <span class="ls-tp-label">RECORD</span>
+                        <span class="ls-tp-key">R</span>
+                    </button>
+                    <button class="ls-tp-btn ls-tp-play" id="lsPlayBtn" type="button" title="재생 / 일시정지" disabled>
+                        <span class="ls-tp-ico"><i class="fas fa-play"></i></span>
+                        <span class="ls-tp-label">PLAY</span>
+                        <span class="ls-tp-key">SPACE</span>
+                    </button>
+                    <button class="ls-tp-btn ls-tp-rev" id="lsRevBtn" type="button" title="역재생" disabled>
+                        <span class="ls-tp-ico"><i class="fas fa-backward"></i></span>
+                        <span class="ls-tp-label">REVERSE</span>
+                    </button>
+                    <button class="ls-tp-btn ls-tp-undo" id="lsUndoBtn" type="button" title="되돌리기" disabled>
+                        <span class="ls-tp-ico"><i class="fas fa-rotate-left"></i></span>
+                        <span class="ls-tp-label">UNDO</span>
+                    </button>
+                </div>
+
+                <!-- 더빙 토글 (RECORD 아래) -->
+                <div class="ls-toggles">
+                    <label class="ls-toggle" title="첫 녹음 직후 자동으로 다음 오버더빙 대기 상태로 들어갑니다">
+                        <input type="checkbox" id="lsAutoDub">
+                        <span class="ls-toggle-sw"></span>
+                        <span class="ls-toggle-txt">오토 더빙</span>
+                    </label>
+                    <label class="ls-toggle" title="한 사이클 후 멈추지 않고, 정지할 때까지 계속 겹쳐 녹음합니다">
+                        <input type="checkbox" id="lsContDub">
+                        <span class="ls-toggle-sw"></span>
+                        <span class="ls-toggle-txt">연속 더빙</span>
+                    </label>
+                </div>
+
+                <!-- 글로벌 컨트롤 (볼륨 / 속도 페이더) -->
                 <div class="ls-master-row">
-                    <div class="ls-master-vol">
-                        <label for="lsMasterVol"><i class="fas fa-volume-up"></i> 전체 볼륨</label>
-                        <input type="range" id="lsMasterVol" min="0" max="100" value="85">
+                    <div class="ls-fader">
+                        <span class="ls-fader-ico" title="전체 볼륨" aria-label="전체 볼륨"><i class="fas fa-volume-high"></i></span>
+                        <span class="ls-fader-name">볼륨</span>
+                        <input type="range" id="lsMasterVol" min="0" max="100" value="50" title="중앙(50%)=기준 음량, 오른쪽으로 갈수록 부스트">
+                        <span id="lsMasterVolVal" class="ls-fader-val">100%</span>
                     </div>
-                    <button class="ls-btn ls-btn-stop" id="lsStopAll" type="button">
-                        <i class="fas fa-stop"></i> 전체 정지
-                    </button>
-                    <button class="ls-btn ls-btn-clear" id="lsClearAll" type="button">
-                        <i class="fas fa-trash"></i> 전체 삭제
-                    </button>
+                    <div class="ls-fader">
+                        <span class="ls-fader-ico" title="재생 속도" aria-label="재생 속도">
+                            <svg class="ls-speed-ico" viewBox="0 0 64 46" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <path d="M 12.95 38 A 22 22 0 1 1 51.05 38" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+                                <g stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                                    <line x1="10.34" y1="23.17" x2="16.73" y2="24.30"/>
+                                    <line x1="17.86" y1="10.15" x2="22.03" y2="15.13"/>
+                                    <line x1="32" y1="5" x2="32" y2="11.5"/>
+                                    <line x1="46.14" y1="10.15" x2="41.97" y2="15.13"/>
+                                    <line x1="53.66" y1="23.17" x2="47.27" y2="24.30"/>
+                                </g>
+                                <polygon points="31.25,29.07 32.75,24.93 49.85,33.5" fill="currentColor"/>
+                                <circle cx="32" cy="27" r="3.8" fill="currentColor"/>
+                            </svg>
+                        </span>
+                        <span class="ls-fader-name">속도</span>
+                        <input type="range" id="lsSpeed" min="0" max="100" step="0.5" value="50" title="재생 속도 (중앙=100%, 5% 단위, 좌 10%~우 200%)">
+                        <span id="lsSpeedVal" class="ls-fader-val">100%</span>
+                    </div>
                 </div>
-
-                <div class="ls-status-line" id="lsStatusLine">시작 버튼을 눌러 마이크를 켜주세요.</div>
             </div>
         </section>
     </div>
@@ -463,6 +647,7 @@
             function apply(theme) {
                 document.documentElement.setAttribute('data-theme', theme);
                 icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+                if (window._lsRedraw) window._lsRedraw();
             }
             btn.addEventListener('click', function () {
                 var cur = document.documentElement.getAttribute('data-theme');
@@ -472,18 +657,20 @@
     </script>
 
     <!-- ========== LOOP STATION ==========
-         웹 루프스테이션 — 마이크 입력이 dB 임계값을 넘으면 자동 녹음 시작,
-         아무 키 누르면 정지 + 즉시 반복 재생. 4트랙 동기화 (첫 트랙이 기준 길이,
-         나머지는 그 정수배로 자동 정렬).
-         (tools.html 의 동일 블록을 그대로 가져옴 — 단독 페이지라 마지막에
-          initLoopStation() 을 즉시 호출하도록만 추가했습니다.) -->
+         단일 트랙 + 오버더빙 루프스테이션.
+         녹음: 마이크 입력이 dB 임계값을 넘으면 자동 시작 (RECORD 로 무장),
+               RECORD 재클릭 또는 아무 키로 정지 + 즉시 반복 재생.
+         오버더빙: 루프가 도는 동안 RECORD → 위상 정렬해 한 바퀴 겹쳐 녹음.
+         REVERSE: 루프 역재생. UNDO: 직전 녹음/오버더빙/리버스 되돌리기.
+         파형: 무장/녹음 중 실시간 입력, 재생 중 루프 파형 + 진행 커서.
+         (tools.html 재이식 시 #loopstationPanel / 이 스크립트 블록 교체) -->
     <script>
         (function() {
-            const NUM_TRACKS = 4;
-            // 안정성 — 임계값 이상 신호가 N 연속 프레임 잡혀야 녹음 시작 (튐 방지)
+            // 임계값 이상 신호가 N 연속 프레임 잡혀야 녹음 시작 (튐 방지)
             const ARM_FRAMES_NEEDED = 2;
-            // 녹음 후 잘려나가도 너무 짧으면 무시 (실수로 키 누른 경우 등)
+            // 너무 짧으면 무시 (실수 클릭 등)
             const MIN_LOOP_SEC = 0.25;
+            const MAX_UNDO = 20;
 
             // ─── 상태 ──────────────────────────────────────────────────
             let ls_ctx = null;
@@ -491,22 +678,41 @@
             let ls_micSource = null;
             let ls_analyser = null;
             let ls_proc = null;             // ScriptProcessorNode — PCM 캡처
-            let ls_silentSink = null;       // proc → 0게인 → destination
-            let ls_masterGain = null;
-            let ls_tracks = [];             // 트랙 객체 배열
-            let ls_armedTrackIdx = -1;      // 현재 신호 대기/녹음 중인 트랙
-            let ls_armFrameCount = 0;       // 임계값 위에서 연속 프레임 카운트
-            let ls_recChunks = null;        // Float32Array 청크 배열 (녹음 중)
-            let ls_recStartCtxTime = 0;     // 녹음 시작 시 AudioContext.currentTime
-            let ls_masterDuration = 0;      // 첫 트랙의 루프 길이 (초)
-            let ls_masterStartCtxTime = 0;  // 첫 루프 재생 시작 ctxTime
-            let ls_threshold = -40;         // dB
+            let ls_silentSink = null;
+            let ls_masterGain = null;       // 모든 재생이 거치는 출력 게인
+            let ls_loopGain = null;         // 루프 트랙 게인
+
+            let ls_loopBuffer = null;       // 현재 루프 AudioBuffer (mono)
+            let ls_loopSource = null;       // 현재 재생 중인 source
+            let ls_loopPeaks = null;        // 파형 피크 {min,max} (캔버스 폭 기준)
+            let ls_state = 'empty';         // empty | armed | recording | playing | paused
+            let ls_returnState = 'empty';   // 무장 직전 상태 (취소 시 복귀)
+            let ls_reversed = false;
+            let ls_trimStart = 0;           // 트림 시작 (전체 버퍼 대비 0~1)
+            let ls_trimEnd = 1;             // 트림 끝 (0~1)
+            let ls_autoDub = false;         // 오토 더빙 — 녹음 후 자동 재무장
+            let ls_contDub = false;         // 연속 더빙 — 수동 정지까지 한 사이클 자동정지 안 함
+
+            let ls_armFrameCount = 0;
+            let ls_recChunks = null;        // Float32Array 청크 (녹음 중)
+            let ls_recStartCtxTime = 0;
+            let ls_recStartPhaseSamples = 0;// 오버더빙 위상 정렬용
+            let ls_masterDuration = 0;      // 루프 길이 (버퍼 초)
+            let ls_masterStartCtxTime = 0;  // 루프 위상 기준 ctxTime
+            let ls_audioStartSec = 0;       // 현재 재생 중인 루프 구간 시작(초) — 커서/위상 기준
+            let ls_speed = 1;               // 재생 배속 (1=100%) — playbackRate
+            let ls_undoStack = [];          // [{buffer, dur, reversed}]
+
+            let ls_threshold = -40;
             let ls_micRunning = false;
             let ls_rafId = 0;
             let ls_initialized = false;
 
             // ─── DOM 헬퍼 ──────────────────────────────────────────────
             function $(id) { return document.getElementById(id); }
+            function cssVar(n) {
+                return getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+            }
             function setStatus(msg, isErr) {
                 var el = $('lsStatusLine'); if (!el) return;
                 el.textContent = msg || '';
@@ -516,68 +722,63 @@
                 var b = $('lsMicBtn'); if (!b) return;
                 b.classList.toggle('active', on);
                 var lbl = b.querySelector('span');
-                if (lbl) lbl.textContent = on ? '정지' : '시작';
+                if (lbl) lbl.textContent = on ? '감지 중' : '준비';
+            }
+            function dbToPct(db) { return Math.max(0, Math.min(100, (db + 60) / 50 * 100)); }
+            function pctToDb(pct) {
+                var db = Math.round(pct / 100 * 50 - 60);
+                return Math.max(-60, Math.min(-10, db));
+            }
+            function setThreshold(db) {
+                ls_threshold = Math.max(-60, Math.min(-10, db));
+                setThresholdMarker(ls_threshold);
             }
             function setThresholdMarker(db) {
-                var t = $('lsMeterThreshold'); if (!t) return;
-                // dB 범위: -60 ~ -10 → 0% ~ 100%
-                var pct = Math.max(0, Math.min(100, (db + 60) / 50 * 100));
-                t.style.left = pct + '%';
+                var pct = dbToPct(db);
+                var t = $('lsMeterThreshold'); if (t) t.style.left = pct + '%';
+                var h = $('lsThrHandle'); if (h) h.style.left = pct + '%';
+                var v = $('lsThresholdVal'); if (v) v.textContent = '감지 임계값 ' + db + ' dB';
             }
 
-            // ─── 트랙 렌더링 ──────────────────────────────────────────
-            function _setTrackState(i, state) {
-                ls_tracks[i].state = state;
-                var row = document.querySelector('.ls-track[data-idx="' + i + '"]');
-                if (row) row.dataset.state = state;
-                var lbl = row && row.querySelector('.ls-track-state');
-                if (lbl) lbl.textContent = ({
-                    empty:     '비어있음',
-                    armed:     '신호 대기 중…',
-                    recording: '녹음 중 (정지: 아무 키)',
-                    playing:   '재생 중 (반복)',
-                    paused:    '정지됨'
-                })[state] || '';
+            // ─── 트랜스포트 버튼 상태 ─────────────────────────────────
+            function setRecVisual() {
+                var b = $('lsRecBtn'); if (!b) return;
+                b.classList.toggle('armed', ls_state === 'armed');
+                b.classList.toggle('recording', ls_state === 'recording');
+                var lbl = b.querySelector('.ls-tp-label');
+                if (lbl) lbl.textContent =
+                    ls_state === 'recording' ? 'STOP' :
+                    ls_state === 'armed'     ? 'WAIT…' : 'RECORD';
             }
-            function _setTrackLen(i, sec) {
-                var row = document.querySelector('.ls-track[data-idx="' + i + '"]');
-                var el = row && row.querySelector('.ls-track-len');
-                if (!el) return;
-                el.textContent = sec > 0 ? sec.toFixed(2) + 's' : '';
-            }
-            function renderTracks() {
-                var wrap = $('lsTracks'); if (!wrap) return;
-                wrap.innerHTML = '';
-                for (var i = 0; i < NUM_TRACKS; i++) {
-                    (function(idx) {
-                        var row = document.createElement('div');
-                        row.className = 'ls-track';
-                        row.dataset.idx = idx;
-                        row.dataset.state = 'empty';
-                        row.innerHTML =
-                            '<button class="ls-track-rec" type="button" title="녹음 시작 (또는 정지)">'+
-                              '<i class="fas fa-circle"></i>'+
-                            '</button>'+
-                            '<div class="ls-track-body">'+
-                              '<div class="ls-track-head">'+
-                                '<span class="ls-track-name">트랙 ' + (idx + 1) + '</span>'+
-                                '<span class="ls-track-state">비어있음</span>'+
-                                '<span class="ls-track-len"></span>'+
-                              '</div>'+
-                              '<div class="ls-track-progress"><div class="ls-track-progress-fill"></div></div>'+
-                              '<div class="ls-track-controls">'+
-                                '<input type="range" class="ls-track-vol" min="0" max="100" value="85">'+
-                                '<button class="ls-track-icon-btn ls-track-mute" type="button" title="음소거"><i class="fas fa-volume-up"></i></button>'+
-                                '<button class="ls-track-icon-btn ls-track-clear" type="button" title="비우기"><i class="fas fa-trash"></i></button>'+
-                              '</div>'+
-                            '</div>';
-                        wrap.appendChild(row);
-                        row.querySelector('.ls-track-rec').onclick = function() { onTrackRecClick(idx); };
-                        row.querySelector('.ls-track-vol').oninput = function(e) { setTrackVolume(idx, +e.target.value / 100); };
-                        row.querySelector('.ls-track-mute').onclick = function() { toggleTrackMute(idx); };
-                        row.querySelector('.ls-track-clear').onclick = function() { clearTrack(idx); };
-                    })(i);
+            function updateTransport() {
+                var hasLoop = !!ls_loopBuffer;
+                var play = $('lsPlayBtn'), rev = $('lsRevBtn'), undo = $('lsUndoBtn');
+                if (play) {
+                    // 녹음 중에도 클릭으로 정지+재생 가능하도록 활성화 (스페이스바와 동일)
+                    play.disabled = !(hasLoop || ls_state === 'recording');
+                    var pi = play.querySelector('i'), pl = play.querySelector('.ls-tp-label');
+                    if (ls_state === 'playing') {
+                        if (pi) pi.className = 'fas fa-pause';
+                        if (pl) pl.textContent = 'PAUSE';
+                        play.classList.add('active');
+                    } else {
+                        if (pi) pi.className = 'fas fa-play';
+                        if (pl) pl.textContent = 'PLAY';
+                        play.classList.remove('active');
+                    }
                 }
+                if (rev)  { rev.disabled  = !hasLoop; rev.classList.toggle('active', ls_reversed); }
+                if (undo) { undo.disabled = !ls_undoStack.length; }
+                var empty = $('lsWaveEmpty');
+                if (empty) empty.style.display = (hasLoop || ls_state === 'armed' || ls_state === 'recording') ? 'none' : '';
+                updateTrimHandles();
+            }
+            // 트림 핸들 위치/표시 — 루프가 있고 녹음 중이 아닐 때만 노출
+            function updateTrimHandles() {
+                var hs = $('lsTrimStart'), he = $('lsTrimEnd');
+                var show = !!ls_loopBuffer && ls_state !== 'recording';
+                if (hs) { hs.style.display = show ? '' : 'none'; hs.style.left = (ls_trimStart * 100) + '%'; }
+                if (he) { he.style.display = show ? '' : 'none'; he.style.left = (ls_trimEnd * 100) + '%'; }
             }
 
             // ─── 마이크 시작/정지 ─────────────────────────────────────
@@ -586,22 +787,21 @@
                 try {
                     if (!ls_ctx) ls_ctx = new (window.AudioContext || window.webkitAudioContext)();
                     if (ls_ctx.state === 'suspended') await ls_ctx.resume();
-                    var stream = await navigator.mediaDevices.getUserMedia({
-                        audio: {
-                            echoCancellation: false,
-                            noiseSuppression: false,
-                            autoGainControl: false
-                        }
-                    });
-                    ls_micStream = stream;
-                    ls_micSource = ls_ctx.createMediaStreamSource(stream);
+                    // 기존 스트림이 살아있으면 재사용 → getUserMedia 재호출/권한 재요청 방지
+                    var live = ls_micStream && ls_micStream.getTracks().some(function(t){ return t.readyState === 'live'; });
+                    if (!live) {
+                        ls_micStream = await navigator.mediaDevices.getUserMedia({
+                            audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+                        });
+                    } else {
+                        ls_micStream.getTracks().forEach(function(t){ t.enabled = true; });
+                    }
+                    ls_micSource = ls_ctx.createMediaStreamSource(ls_micStream);
                     ls_analyser = ls_ctx.createAnalyser();
                     ls_analyser.fftSize = 1024;
-                    ls_analyser.smoothingTimeConstant = 0.4;
+                    ls_analyser.smoothingTimeConstant = 0.3;
                     ls_micSource.connect(ls_analyser);
-                    // ScriptProcessor — 동작하려면 destination 까지 연결돼야 함.
-                    // 마이크 → proc → silentGain(0) → destination 으로 라우팅해
-                    // 피드백 없이 onaudioprocess 만 발생.
+                    // ScriptProcessor — 마이크 → proc → silentGain(0) → destination
                     ls_proc = ls_ctx.createScriptProcessor(2048, 1, 1);
                     ls_silentSink = ls_ctx.createGain();
                     ls_silentSink.gain.value = 0;
@@ -609,16 +809,11 @@
                     ls_proc.connect(ls_silentSink);
                     ls_silentSink.connect(ls_ctx.destination);
                     ls_proc.onaudioprocess = onAudioProcess;
-                    // 마스터 출력 게인 — 모든 트랙 재생이 이곳을 거침
-                    if (!ls_masterGain) {
-                        ls_masterGain = ls_ctx.createGain();
-                        ls_masterGain.gain.value = parseInt($('lsMasterVol').value, 10) / 100;
-                        ls_masterGain.connect(ls_ctx.destination);
-                    }
+                    ensureMasterGain();
                     ls_micRunning = true;
                     setMicBtnState(true);
-                    setStatus('마이크 활성. 트랙의 녹음 버튼을 누르면 신호 대기 상태가 됩니다.');
-                    if (!ls_rafId) ls_rafId = requestAnimationFrame(meterLoop);
+                    setStatus('마이크 활성. RECORD 를 누르면 신호 대기 상태가 됩니다.');
+                    ensureTick();
                 } catch (e) {
                     setStatus('마이크를 사용할 수 없습니다: ' + (e && e.message || e), true);
                 }
@@ -627,69 +822,53 @@
                 if (!ls_micRunning) return;
                 ls_micRunning = false;
                 setMicBtnState(false);
-                if (ls_armedTrackIdx >= 0) {
+                if (ls_state === 'armed' || ls_state === 'recording') {
                     // 무장/녹음 중이면 취소 (저장 안 함)
-                    cancelArmOrRecording();
+                    ls_recChunks = null;
+                    ls_state = ls_loopBuffer ? (ls_loopSource ? 'playing' : 'paused') : 'empty';
+                    ls_armFrameCount = 0;
+                    setRecVisual();
                 }
-                try { if (ls_proc) ls_proc.disconnect(); } catch(e) {}
-                try { if (ls_analyser) ls_analyser.disconnect(); } catch(e) {}
-                try { if (ls_micSource) ls_micSource.disconnect(); } catch(e) {}
-                try {
-                    if (ls_micStream) {
-                        ls_micStream.getTracks().forEach(function(t) { t.stop(); });
-                    }
-                } catch(e) {}
-                ls_proc = null; ls_analyser = null; ls_micSource = null; ls_micStream = null;
-                setStatus('마이크 정지됨.');
+                try { if (ls_proc) ls_proc.disconnect(); } catch (e) {}
+                try { if (ls_analyser) ls_analyser.disconnect(); } catch (e) {}
+                try { if (ls_micSource) ls_micSource.disconnect(); } catch (e) {}
+                // 스트림은 종료(stop)하지 않고 트랙만 비활성화 → 다시 켤 때 권한 재요청 없음
+                try { if (ls_micStream) ls_micStream.getTracks().forEach(function(t){ t.enabled = false; }); } catch (e) {}
+                ls_proc = null; ls_analyser = null; ls_micSource = null;  // ls_micStream 은 유지
+                updateTransport();
+                setStatus('감지 중지됨.' + (ls_loopBuffer ? ' (루프는 계속 재생됩니다)' : ''));
+                ensureTick();
             }
 
-            // ─── 미터 + 임계값 감지 ───────────────────────────────────
-            function meterLoop() {
-                ls_rafId = 0;
-                if (!ls_analyser) return;
-                var buf = new Float32Array(ls_analyser.fftSize);
-                ls_analyser.getFloatTimeDomainData(buf);
-                // RMS
-                var sum = 0;
-                for (var i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
-                var rms = Math.sqrt(sum / buf.length);
-                var db = 20 * Math.log10(rms + 1e-10);
-                // dB 표시 + 미터 fill
-                var pct = Math.max(0, Math.min(100, (db + 60) / 50 * 100));
-                var fill = $('lsMeterFill'); if (fill) fill.style.width = pct + '%';
-                var dbEl = $('lsMeterDb'); if (dbEl) dbEl.textContent = (db < -60 ? '— dB' : db.toFixed(0) + ' dB');
-                // 임계값 감지 — 무장 상태면 녹음 트리거
-                if (ls_armedTrackIdx >= 0 && ls_tracks[ls_armedTrackIdx].state === 'armed') {
-                    if (db > ls_threshold) {
-                        ls_armFrameCount++;
-                        if (ls_armFrameCount >= ARM_FRAMES_NEEDED) {
-                            beginRecording(ls_armedTrackIdx);
-                        }
-                    } else {
-                        ls_armFrameCount = 0;
-                    }
+            // 슬라이더(0~100) → 게인. 50=기준(1.0), 0=무음, 100=3배 부스트.
+            // 부스트 구간(50~100) 기울기를 키워 같은 이동량 대비 더 많이 올라가게.
+            function volToGain(v) {
+                v = +v;
+                return v <= 50 ? (v / 50) : (1 + (v - 50) / 50 * 2);
+            }
+            function updateMasterVolLabel(v) {
+                var el = $('lsMasterVolVal'); if (!el) return;
+                el.textContent = Math.round(volToGain(v) * 100) + '%';
+            }
+            function ensureMasterGain() {
+                if (!ls_masterGain) {
+                    ls_masterGain = ls_ctx.createGain();
+                    ls_masterGain.gain.value = volToGain($('lsMasterVol').value);
+                    ls_masterGain.connect(ls_ctx.destination);
                 }
-                // 재생 진행 표시
-                if (ls_masterDuration > 0 && ls_ctx) {
-                    var elapsed = ls_ctx.currentTime - ls_masterStartCtxTime;
-                    for (var k = 0; k < NUM_TRACKS; k++) {
-                        var tr = ls_tracks[k];
-                        if (tr && tr.state === 'playing' && tr.buffer) {
-                            var dur = tr.buffer.duration;
-                            var pos = ((elapsed % dur) + dur) % dur;
-                            var row = document.querySelector('.ls-track[data-idx="' + k + '"]');
-                            var pf = row && row.querySelector('.ls-track-progress-fill');
-                            if (pf) pf.style.width = (pos / dur * 100) + '%';
-                        }
-                    }
+            }
+            function ensureLoopGain() {
+                ensureMasterGain();
+                if (!ls_loopGain) {
+                    ls_loopGain = ls_ctx.createGain();
+                    ls_loopGain.gain.value = 1;
+                    ls_loopGain.connect(ls_masterGain);
                 }
-                if (ls_micRunning) ls_rafId = requestAnimationFrame(meterLoop);
             }
 
             // ─── PCM 캡처 ─────────────────────────────────────────────
             function onAudioProcess(e) {
                 if (!ls_recChunks) return;
-                // 안전: input channel 0 의 Float32Array 사본을 push
                 var input = e.inputBuffer.getChannelData(0);
                 var copy = new Float32Array(input.length);
                 copy.set(input);
@@ -697,268 +876,622 @@
             }
 
             // ─── 녹음 플로우 ──────────────────────────────────────────
-            async function onTrackRecClick(idx) {
+            async function onRecClick() {
                 if (!ls_micRunning) {
                     await startMic();
                     if (!ls_micRunning) return;  // 권한 거부 등
                 }
-                var tr = ls_tracks[idx];
-                if (tr.state === 'armed') {
-                    // 무장 해제
-                    cancelArmOrRecording();
-                    return;
-                }
-                if (tr.state === 'recording') {
-                    // 녹음 즉시 정지
-                    stopRecording();
-                    return;
-                }
-                if (tr.state === 'playing' || tr.state === 'paused') {
-                    // 이미 루프 있음 → 재녹음하려면 먼저 비우라고 안내
-                    setStatus('트랙 ' + (idx+1) + ' 에 이미 루프가 있습니다. 비운 뒤 다시 녹음하세요.');
-                    return;
-                }
-                // empty → arm
-                if (ls_armedTrackIdx >= 0) cancelArmOrRecording();
-                ls_armedTrackIdx = idx;
-                ls_armFrameCount = 0;
-                _setTrackState(idx, 'armed');
-                setStatus('신호 대기 중 — 마이크에 소리가 들어오면 자동 녹음 시작합니다.');
+                if (ls_state === 'armed')     { cancelArm(); return; }
+                if (ls_state === 'recording') { stopRecording(); return; }
+                arm();
             }
-            function cancelArmOrRecording() {
-                if (ls_armedTrackIdx < 0) return;
-                var idx = ls_armedTrackIdx;
-                if (ls_tracks[idx].state === 'recording') {
-                    ls_recChunks = null;   // 캡처 중단
-                }
-                _setTrackState(idx, ls_tracks[idx].buffer ? 'paused' : 'empty');
-                ls_armedTrackIdx = -1;
+            function arm() {
+                ls_returnState = ls_state;     // playing | paused | empty
+                ls_state = 'armed';
                 ls_armFrameCount = 0;
+                setRecVisual(); updateTransport();
+                setStatus('신호 대기 중 — 마이크에 소리가 들어오면 자동으로 녹음이 시작됩니다.');
+                ensureTick();
             }
-            function beginRecording(idx) {
+            function cancelArm() {
+                ls_state = ls_returnState;
+                ls_armFrameCount = 0;
+                setRecVisual(); updateTransport();
+                setStatus(ls_loopBuffer ? '오버더빙 대기 취소됨.' : '녹음 대기 취소됨.');
+                ensureTick();
+            }
+            function beginRecording() {
                 ls_recChunks = [];
                 ls_recStartCtxTime = ls_ctx.currentTime;
-                _setTrackState(idx, 'recording');
-                setStatus('녹음 중 — 아무 키나 누르면 정지하고 즉시 반복 재생됩니다.');
+                if (ls_loopBuffer && ls_masterDuration > 0) {
+                    ls_recStartPhaseSamples = Math.round(currentPhase() * ls_ctx.sampleRate);
+                } else {
+                    ls_recStartPhaseSamples = 0;
+                }
+                ls_state = 'recording';
+                ls_armFrameCount = 0;
+                setRecVisual(); updateTransport();
+                setStatus(ls_loopBuffer
+                    ? (ls_contDub
+                        ? '오버더빙 녹음 중 (연속) — RECORD/아무 키로 정지할 때까지 계속 겹칩니다.'
+                        : '오버더빙 녹음 중 — 한 바퀴 후 자동 정지 (또는 RECORD/아무 키).')
+                    : '녹음 중 — RECORD 또는 아무 키를 누르면 정지하고 즉시 반복 재생됩니다.');
+                ensureTick();
+            }
+            // 청크 배열 → 하나의 Float32Array
+            function assembleRec(chunks) {
+                var total = 0;
+                chunks.forEach(function(c){ total += c.length; });
+                var rec = new Float32Array(total);
+                var p = 0;
+                chunks.forEach(function(c){ rec.set(c, p); p += c.length; });
+                return rec;
+            }
+            // 한 사이클(한 레이어)을 트림 구간에 위상 정렬해 믹스 — pushUndo 로 개별 되돌리기 단위
+            function mixOverdubLayer(rec) {
+                pushUndo();
+                var sr = ls_ctx.sampleRate;
+                var len = ls_loopBuffer.length;
+                var nb = ls_ctx.createBuffer(1, len, sr);
+                var dst = nb.getChannelData(0);
+                dst.set(ls_loopBuffer.getChannelData(0));
+                var startS = Math.round(ls_trimStart * len);
+                var regionLen = Math.max(1, Math.round((ls_trimEnd - ls_trimStart) * len));
+                var take = Math.min(rec.length, regionLen);   // 항상 한 사이클만
+                for (var i = 0; i < take; i++) {
+                    var idx = startS + ((ls_recStartPhaseSamples + i) % regionLen);
+                    var v = dst[idx] + rec[i];
+                    dst[idx] = v > 1 ? 1 : (v < -1 ? -1 : v);
+                }
+                ls_loopBuffer = nb;
+                recomputePeaks();
             }
             function stopRecording() {
-                if (ls_armedTrackIdx < 0 || !ls_recChunks) return;
-                var idx = ls_armedTrackIdx;
+                if (ls_state !== 'recording' || !ls_recChunks) return;
                 var chunks = ls_recChunks;
                 ls_recChunks = null;
-                ls_armedTrackIdx = -1;
-                ls_armFrameCount = 0;
-                var rawSec = (ls_ctx.currentTime - ls_recStartCtxTime);
-                if (rawSec < MIN_LOOP_SEC) {
-                    setStatus('녹음 길이가 너무 짧습니다 (' + rawSec.toFixed(2) + 's). 다시 시도하세요.', true);
-                    _setTrackState(idx, 'empty');
-                    return;
-                }
-                // 청크 합치기
-                var total = 0;
-                chunks.forEach(function(c) { total += c.length; });
                 var sr = ls_ctx.sampleRate;
-                // 첫 트랙 = 마스터 길이 지정. 이후 트랙 = 가장 가까운 마스터 배수로 스냅.
-                var targetLen = total;
-                if (ls_masterDuration > 0) {
-                    var masterSamples = Math.round(ls_masterDuration * sr);
-                    var ratio = total / masterSamples;
-                    // 0.5x / 1x / 2x / 3x / 4x 중 가장 가까운 배수
-                    var candidates = [0.5, 1, 2, 3, 4];
-                    var best = candidates[0];
-                    var bestDiff = Math.abs(ratio - best);
-                    for (var c = 1; c < candidates.length; c++) {
-                        var d = Math.abs(ratio - candidates[c]);
-                        if (d < bestDiff) { bestDiff = d; best = candidates[c]; }
+                var rawSec = ls_ctx.currentTime - ls_recStartCtxTime;
+                var rec = assembleRec(chunks);
+
+                if (!ls_loopBuffer) {
+                    // ─── 첫 루프 ───
+                    if (rawSec < MIN_LOOP_SEC) {
+                        setStatus('녹음 길이가 너무 짧습니다 (' + rawSec.toFixed(2) + 's). 다시 시도하세요.', true);
+                        ls_state = ls_micRunning ? 'empty' : 'empty';
+                        setRecVisual(); updateTransport(); ensureTick();
+                        return;
                     }
-                    targetLen = Math.round(masterSamples * best);
+                    pushUndo();   // null 스냅샷 → undo 시 빈 상태로
+                    var buf = ls_ctx.createBuffer(1, rec.length, sr);
+                    buf.getChannelData(0).set(rec);
+                    ls_loopBuffer = buf;
+                    ls_trimStart = 0; ls_trimEnd = 1;   // 새 루프 — 트림 초기화
+                    ls_reversed = false;
+                    recomputePeaks();
+                    playLoopAtPhase(0);
+                    setStatus('루프 시작 (' + buf.duration.toFixed(2) + 's). 다시 RECORD 하면 그 위에 겹쳐 녹음됩니다.');
+                } else {
+                    // ─── 오버더빙 — 현재 캡처를 한 레이어(한 사이클)로 커밋 ───
+                    mixOverdubLayer(rec);
+                    playLoopAtPhase(currentPhase());
+                    setStatus('오버더빙 완료. UNDO 로 방금 레이어를 되돌릴 수 있어요.');
                 }
-                var buf = ls_ctx.createBuffer(1, targetLen, sr);
-                var out = buf.getChannelData(0);
-                var pos = 0;
-                for (var ci = 0; ci < chunks.length && pos < targetLen; ci++) {
-                    var arr = chunks[ci];
-                    var take = Math.min(arr.length, targetLen - pos);
-                    out.set(take === arr.length ? arr : arr.subarray(0, take), pos);
-                    pos += take;
+                ls_armFrameCount = 0;
+                setRecVisual(); updateTransport(); updateTrimHandles(); ensureTick();
+                // 오토 더빙 — 녹음 직후 자동으로 다음 오버더빙 대기
+                if (ls_autoDub && ls_micRunning) arm();
+            }
+
+            // ─── undo ─────────────────────────────────────────────────
+            function copyBuf(buf) {
+                if (!buf) return null;
+                var nb = ls_ctx.createBuffer(1, buf.length, buf.sampleRate);
+                nb.getChannelData(0).set(buf.getChannelData(0));
+                return nb;
+            }
+            function pushUndo() {
+                ls_undoStack.push({
+                    buffer: copyBuf(ls_loopBuffer), reversed: ls_reversed,
+                    trimStart: ls_trimStart, trimEnd: ls_trimEnd
+                });
+                if (ls_undoStack.length > MAX_UNDO) ls_undoStack.shift();
+            }
+            function onUndoClick() {
+                if (!ls_undoStack.length) return;
+                var snap = ls_undoStack.pop();
+                stopLoopSource();
+                ls_loopBuffer = snap.buffer;
+                ls_reversed = !!snap.reversed;
+                ls_trimStart = (snap.trimStart != null) ? snap.trimStart : 0;
+                ls_trimEnd = (snap.trimEnd != null) ? snap.trimEnd : 1;
+                if (ls_loopBuffer) {
+                    recomputePeaks();
+                    playLoopAtPhase(0);
+                    setStatus('되돌렸습니다.');
+                } else {
+                    ls_loopPeaks = null;
+                    ls_masterDuration = 0;
+                    ls_state = 'empty';
+                    ls_reversed = false;
+                    ls_trimStart = 0; ls_trimEnd = 1;
+                    setStatus('처음 상태로 되돌렸습니다.');
                 }
-                // (모자란 경우는 자동으로 0 으로 패딩 — 마지막 부분 살짝 무음)
-                ls_tracks[idx].buffer = buf;
-                _setTrackLen(idx, buf.duration);
-                // 마스터 길이 / 시작 시각 — 첫 녹음에서만 설정
-                var isFirst = (ls_masterDuration <= 0);
-                if (isFirst) {
-                    ls_masterDuration = buf.duration;
-                    ls_masterStartCtxTime = ls_ctx.currentTime + 0.02;  // 약간 미래에 시작
-                }
-                startTrackPlayback(idx, isFirst);
-                setStatus('트랙 ' + (idx+1) + ' 루프 시작 (' + buf.duration.toFixed(2) + 's)');
+                setRecVisual(); updateTransport(); updateTrimHandles(); drawCurrent(); ensureTick();
             }
 
             // ─── 재생 ─────────────────────────────────────────────────
-            function startTrackPlayback(idx, isFirst) {
-                var tr = ls_tracks[idx];
-                if (!tr || !tr.buffer || !ls_ctx) return;
-                stopTrackSource(idx);
+            // 트림 구간 정보 (전체 버퍼 대비 ls_trimStart~ls_trimEnd)
+            function regionInfo() {
+                var fullDur = ls_loopBuffer ? ls_loopBuffer.duration : 0;
+                var startSec = ls_trimStart * fullDur;
+                var dur = Math.max(0.02, (ls_trimEnd - ls_trimStart) * fullDur);
+                return { startSec: startSec, dur: dur, fullDur: fullDur };
+            }
+            // 현재 루프 내 위상(버퍼 초) — 배속 반영. 버퍼 위치는 실시간 * 배속으로 진행.
+            function currentPhase() {
+                if (!ls_masterDuration || !ls_ctx) return 0;
+                var p = ((ls_ctx.currentTime - ls_masterStartCtxTime) * ls_speed) % ls_masterDuration;
+                return (p + ls_masterDuration) % ls_masterDuration;
+            }
+            // 배속 변경 — 현재 재생 위치 유지하며 playbackRate 갱신
+            function setSpeed(rate) {
+                rate = Math.max(0.1, Math.min(2, rate));
+                var ph = (ls_loopSource && ls_ctx) ? currentPhase() : 0;
+                ls_speed = rate;
+                if (ls_loopSource) {
+                    try { ls_loopSource.playbackRate.value = rate; } catch (e) {}
+                    ls_masterStartCtxTime = ls_ctx.currentTime - ph / ls_speed;
+                }
+            }
+            function playLoopAtPhase(phase) {
+                if (!ls_loopBuffer || !ls_ctx) return;
+                ensureLoopGain();
+                var rg = regionInfo();
+                ls_masterDuration = rg.dur;     // 재생 길이 = 트림 구간 길이
+                ls_audioStartSec = rg.startSec; // 커서/위상 기준 구간 시작
+                var LEAD = 0.03;
+                var when = ls_ctx.currentTime + LEAD;
+                var old = ls_loopSource;
+                // 이전 소스가 있으면 끊김 없는 교체 — when 시점의 위상으로 맞춰 시작
+                var ph = old
+                    ? (((phase || 0) + LEAD * ls_speed) % rg.dur + rg.dur) % rg.dur
+                    : (((phase || 0)) % rg.dur + rg.dur) % rg.dur;
                 var src = ls_ctx.createBufferSource();
-                src.buffer = tr.buffer;
+                src.buffer = ls_loopBuffer;
                 src.loop = true;
-                var gain = ls_ctx.createGain();
-                gain.gain.value = tr.muted ? 0 : tr.volume;
-                src.connect(gain);
-                gain.connect(ls_masterGain);
-                tr.sourceNode = src;
-                tr.gainNode = gain;
-                // 시작 시각 — 마스터 boundary 와 동기화.
-                //   첫 트랙: ls_masterStartCtxTime (방금 정한 시점) 에 시작.
-                //   이후 트랙: 가장 가까운 다음 마스터 경계.
-                var when, offset = 0;
-                if (isFirst) {
-                    when = ls_masterStartCtxTime;
-                } else {
-                    var now = ls_ctx.currentTime;
-                    var elapsed = now - ls_masterStartCtxTime;
-                    var k = Math.ceil(elapsed / ls_masterDuration);
-                    when = ls_masterStartCtxTime + k * ls_masterDuration;
+                src.loopStart = rg.startSec;
+                src.loopEnd = rg.startSec + rg.dur;
+                src.playbackRate.value = ls_speed;
+                src.connect(ls_loopGain);
+                src.start(when, rg.startSec + ph);
+                if (old) {
+                    // 새 소스가 시작하는 정확한 시점에 이전 소스 정지 → 갭/겹침 없음
+                    try { old.stop(when); } catch (e) {}
+                    old.onended = (function(o){ return function(){ try { o.disconnect(); } catch (e) {} }; })(old);
                 }
-                src.start(when, offset);
-                _setTrackState(idx, 'playing');
+                ls_loopSource = src;
+                ls_masterStartCtxTime = when - ph / ls_speed;
+                ls_state = 'playing';
             }
-            function stopTrackSource(idx) {
-                var tr = ls_tracks[idx];
-                if (!tr) return;
-                try { if (tr.sourceNode) tr.sourceNode.stop(); } catch(e) {}
-                try { if (tr.sourceNode) tr.sourceNode.disconnect(); } catch(e) {}
-                try { if (tr.gainNode) tr.gainNode.disconnect(); } catch(e) {}
-                tr.sourceNode = null;
-                tr.gainNode = null;
+            function stopLoopSource() {
+                try { if (ls_loopSource) ls_loopSource.stop(); } catch (e) {}
+                try { if (ls_loopSource) ls_loopSource.disconnect(); } catch (e) {}
+                ls_loopSource = null;
             }
-            function pauseAllTracks() {
-                for (var i = 0; i < NUM_TRACKS; i++) {
-                    var tr = ls_tracks[i];
-                    if (tr.state === 'playing') {
-                        stopTrackSource(i);
-                        _setTrackState(i, 'paused');
-                        var row = document.querySelector('.ls-track[data-idx="' + i + '"]');
-                        var pf = row && row.querySelector('.ls-track-progress-fill');
-                        if (pf) pf.style.width = '0%';
-                    }
+            function onPlayClick() {
+                if (ls_state === 'recording') { stopRecording(); return; }
+                if (!ls_loopBuffer) return;
+                if (ls_state === 'playing') {
+                    stopLoopSource();
+                    ls_state = 'paused';
+                    setStatus('일시정지.');
+                } else if (ls_state === 'paused' || ls_state === 'armed' || ls_state === 'empty') {
+                    if (ls_state === 'armed') cancelArm();
+                    playLoopAtPhase(0);
+                    setStatus('재생.');
                 }
+                setRecVisual(); updateTransport(); ensureTick();
             }
-            function resumeAllTracks() {
-                // 마스터 시작 시각을 현재로 리셋해 모든 paused 트랙을 다시 동기화 재생.
-                if (ls_masterDuration <= 0 || !ls_ctx) return;
-                ls_masterStartCtxTime = ls_ctx.currentTime + 0.02;
-                for (var i = 0; i < NUM_TRACKS; i++) {
-                    if (ls_tracks[i].state === 'paused' && ls_tracks[i].buffer) {
-                        startTrackPlayback(i, true);
-                    }
+            function onReverseClick() {
+                if (!ls_loopBuffer) return;
+                pushUndo();
+                var sr = ls_ctx.sampleRate, len = ls_loopBuffer.length;
+                var nb = ls_ctx.createBuffer(1, len, sr);
+                var src = ls_loopBuffer.getChannelData(0), dst = nb.getChannelData(0);
+                for (var i = 0; i < len; i++) dst[i] = src[len - 1 - i];
+                ls_loopBuffer = nb;
+                ls_reversed = !ls_reversed;
+                recomputePeaks();
+                if (ls_state === 'playing') {
+                    playLoopAtPhase(currentPhase());
                 }
+                setStatus(ls_reversed ? '역재생 모드.' : '정방향으로 복귀.');
+                updateTransport(); drawCurrent(); ensureTick();
             }
-            function setTrackVolume(idx, v) {
-                ls_tracks[idx].volume = v;
-                if (ls_tracks[idx].gainNode && !ls_tracks[idx].muted) {
-                    ls_tracks[idx].gainNode.gain.value = v;
-                }
-            }
-            function toggleTrackMute(idx) {
-                var tr = ls_tracks[idx];
-                tr.muted = !tr.muted;
-                if (tr.gainNode) tr.gainNode.gain.value = tr.muted ? 0 : tr.volume;
-                var row = document.querySelector('.ls-track[data-idx="' + idx + '"]');
-                var btn = row && row.querySelector('.ls-track-mute');
-                if (btn) {
-                    btn.classList.toggle('active', tr.muted);
-                    var ic = btn.querySelector('i');
-                    if (ic) ic.className = tr.muted ? 'fas fa-volume-mute' : 'fas fa-volume-up';
-                }
-            }
-            function clearTrack(idx) {
-                stopTrackSource(idx);
-                ls_tracks[idx].buffer = null;
-                _setTrackState(idx, 'empty');
-                _setTrackLen(idx, 0);
-                var row = document.querySelector('.ls-track[data-idx="' + idx + '"]');
-                var pf = row && row.querySelector('.ls-track-progress-fill');
-                if (pf) pf.style.width = '0%';
-                // 모든 트랙이 비면 마스터 길이도 리셋
-                var anyHas = false;
-                for (var i = 0; i < NUM_TRACKS; i++) if (ls_tracks[i].buffer) { anyHas = true; break; }
-                if (!anyHas) { ls_masterDuration = 0; ls_masterStartCtxTime = 0; }
-            }
-            function clearAllTracks() {
-                for (var i = 0; i < NUM_TRACKS; i++) clearTrack(i);
-                setStatus('모든 트랙을 비웠습니다.');
+            function clearAll() {
+                stopLoopSource();
+                ls_recChunks = null;
+                ls_loopBuffer = null;
+                ls_loopPeaks = null;
+                ls_masterDuration = 0;
+                ls_masterStartCtxTime = 0;
+                ls_undoStack = [];
+                ls_reversed = false;
+                ls_trimStart = 0; ls_trimEnd = 1;
+                ls_armFrameCount = 0;
+                ls_state = 'empty';
+                setStatus('전체 삭제됨.');
+                setRecVisual(); updateTransport(); updateTrimHandles(); drawCurrent(); ensureTick();
             }
 
-            // ─── 키보드 정지 ──────────────────────────────────────────
+            // ─── 미터 + 감지 + 파형 루프 ──────────────────────────────
+            function tick() {
+                ls_rafId = 0;
+                if (ls_analyser) {
+                    var buf = new Float32Array(ls_analyser.fftSize);
+                    ls_analyser.getFloatTimeDomainData(buf);
+                    var sum = 0;
+                    for (var i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+                    var rms = Math.sqrt(sum / buf.length);
+                    var db = 20 * Math.log10(rms + 1e-10);
+                    var pct = Math.max(0, Math.min(100, (db + 60) / 50 * 100));
+                    var fill = $('lsMeterFill'); if (fill) fill.style.width = pct + '%';
+                    var dbEl = $('lsMeterDb'); if (dbEl) dbEl.textContent = (db < -60 ? '— dB' : db.toFixed(0) + ' dB');
+                    if (ls_state === 'armed') {
+                        if (db > ls_threshold) {
+                            ls_armFrameCount++;
+                            if (ls_armFrameCount >= ARM_FRAMES_NEEDED) beginRecording();
+                        } else {
+                            ls_armFrameCount = 0;
+                        }
+                    }
+                    if (ls_state === 'recording' && ls_loopBuffer && ls_masterDuration > 0) {
+                        if ((ls_ctx.currentTime - ls_recStartCtxTime) >= ls_masterDuration / ls_speed) {
+                            if (ls_contDub) {
+                                // 연속 — 이번 바퀴를 한 레이어로 커밋하고 다음 바퀴 계속 (각 바퀴가 개별 UNDO)
+                                mixOverdubLayer(assembleRec(ls_recChunks || []));
+                                playLoopAtPhase(currentPhase());   // 끊김 없는 교체로 새 레이어 반영
+                                ls_state = 'recording';            // playing→recording 복구
+                                ls_recChunks = [];
+                                ls_recStartCtxTime = ls_ctx.currentTime;
+                                ls_recStartPhaseSamples = Math.round(currentPhase() * ls_ctx.sampleRate);
+                                setRecVisual();
+                            } else {
+                                stopRecording();   // 한 바퀴 후 정지
+                            }
+                        }
+                    }
+                    // RECORD 동그라미를 입력 레벨에 맞춰 떨림 (파형 영역 대신 여기로)
+                    if (ls_state === 'armed' || ls_state === 'recording') {
+                        updateRecDot(Math.max(0, Math.min(1, (db + 55) / 45)));
+                    } else {
+                        updateRecDot(null);
+                    }
+                } else {
+                    updateRecDot(null);
+                }
+                drawCurrent();
+                if (ls_micRunning || ls_state === 'playing' || ls_state === 'recording' || ls_state === 'armed') {
+                    ls_rafId = requestAnimationFrame(tick);
+                }
+            }
+            function ensureTick() { if (!ls_rafId) ls_rafId = requestAnimationFrame(tick); }
+
+            // ─── 파형 그리기 ──────────────────────────────────────────
+            function sizeCanvas() {
+                var c = $('lsWave'); if (!c) return;
+                var r = c.getBoundingClientRect();
+                var dpr = window.devicePixelRatio || 1;
+                c.width = Math.max(1, Math.round(r.width * dpr));
+                c.height = Math.max(1, Math.round(r.height * dpr));
+                if (ls_loopBuffer) recomputePeaks();
+                drawCurrent();
+            }
+            function recomputePeaks() {
+                var c = $('lsWave'); if (!c || !ls_loopBuffer) { ls_loopPeaks = null; return; }
+                var cols = c.width;
+                var data = ls_loopBuffer.getChannelData(0), n = data.length;
+                var step = n / cols;
+                var mn = new Float32Array(cols), mx = new Float32Array(cols);
+                for (var x = 0; x < cols; x++) {
+                    var s = Math.floor(x * step), e = Math.floor((x + 1) * step);
+                    if (e <= s) e = s + 1;
+                    var lo = 1, hi = -1;
+                    for (var i = s; i < e && i < n; i++) {
+                        var v = data[i];
+                        if (v < lo) lo = v;
+                        if (v > hi) hi = v;
+                    }
+                    mn[x] = lo; mx[x] = hi;
+                }
+                ls_loopPeaks = { min: mn, max: mx };
+            }
+            function drawCurrent() {
+                // 첫 녹음: 녹음되는 파형이 채워지는 과정 표시
+                if (ls_state === 'recording' && !ls_loopBuffer) drawRecordingProgress();
+                // 그 외(재생/오버더빙/루프 위 대기): 루프 파형 + 진행 세로선
+                else if (ls_loopBuffer) drawLoopWave();
+                else drawEmptyWave();
+            }
+            // RECORD 빨간 동그라미 — 입력 레벨에 맞춰 크기/글로우 (level 0~1, null=원래대로)
+            function updateRecDot(level) {
+                var dot = document.querySelector('#lsRecBtn .ls-rec-dot');
+                if (!dot) return;
+                if (level == null) {
+                    if (dot.style.transform || dot.style.boxShadow) {
+                        dot.style.transform = '';
+                        dot.style.boxShadow = '';
+                    }
+                    return;
+                }
+                var s = 1 + level * 0.55;
+                dot.style.transform = 'scale(' + s.toFixed(3) + ')';
+                var glow = (6 + level * 18) | 0;
+                var a = (0.25 + level * 0.5).toFixed(2);
+                dot.style.boxShadow = '0 0 ' + glow + 'px rgba(226,59,59,' + a + ')';
+            }
+            function drawEmptyWave() {
+                var c = $('lsWave'); if (!c) return;
+                var g = c.getContext('2d'), W = c.width, H = c.height, mid = H / 2;
+                g.clearRect(0, 0, W, H);
+                g.strokeStyle = (cssVar('--green-mid') || '#52a872');
+                g.globalAlpha = 0.25;
+                g.lineWidth = 1;
+                g.beginPath(); g.moveTo(0, mid); g.lineTo(W, mid); g.stroke();
+                g.globalAlpha = 1;
+            }
+            // 첫 녹음 중 — 지금까지 캡처된 PCM 을 폭에 맞춰 그려 '녹음되는 과정' 표시
+            function drawRecordingProgress() {
+                var c = $('lsWave'); if (!c) return;
+                var g = c.getContext('2d'), W = c.width, H = c.height, mid = H / 2;
+                g.clearRect(0, 0, W, H);
+                if (!ls_recChunks || !ls_recChunks.length) { drawEmptyWave(); return; }
+                var total = 0;
+                for (var ci = 0; ci < ls_recChunks.length; ci++) total += ls_recChunks[ci].length;
+                if (total <= 0) { drawEmptyWave(); return; }
+                var cols = W, step = total / cols, scale = mid * 0.92;
+                // 과도한 연산 방지용 stride (열당 ~6 샘플)
+                var stride = Math.max(1, (total / (cols * 6)) | 0);
+                var colMin = new Float32Array(cols); colMin.fill(1);
+                var colMax = new Float32Array(cols); colMax.fill(-1);
+                var gi = 0;
+                for (var k = 0; k < ls_recChunks.length; k++) {
+                    var arr = ls_recChunks[k];
+                    for (var j = 0; j < arr.length; j++, gi++) {
+                        if (gi % stride) continue;
+                        var x = (gi / step) | 0; if (x >= cols) x = cols - 1;
+                        var v = arr[j];
+                        if (v < colMin[x]) colMin[x] = v;
+                        if (v > colMax[x]) colMax[x] = v;
+                    }
+                }
+                g.fillStyle = '#e23b3b';
+                for (var x = 0; x < cols; x++) {
+                    if (colMax[x] < colMin[x]) continue;
+                    var yTop = mid - colMax[x] * scale, yBot = mid - colMin[x] * scale;
+                    var h = yBot - yTop; if (h < 1) h = 1;
+                    g.fillRect(x, yTop, 1, h);
+                }
+                // 녹음 진행 헤드 — 채워진 마지막 위치에 세로선
+                var headX = Math.min(W, (gi / step));
+                var dpr = window.devicePixelRatio || 1;
+                g.fillRect(headX - dpr, 0, 2 * dpr, H);
+            }
+            function drawLoopWave() {
+                var c = $('lsWave'); if (!c) return;
+                var g = c.getContext('2d'), W = c.width, H = c.height, mid = H / 2;
+                g.clearRect(0, 0, W, H);
+                var scale = mid * 0.92;
+                g.fillStyle = (cssVar('--green-mid') || '#52a872');
+                if (ls_loopPeaks) {
+                    var mn = ls_loopPeaks.min, mx = ls_loopPeaks.max;
+                    for (var x = 0; x < mx.length; x++) {
+                        var yTop = mid - mx[x] * scale;
+                        var yBot = mid - mn[x] * scale;
+                        var h = yBot - yTop; if (h < 1) h = 1;
+                        g.fillRect(x, yTop, 1, h);
+                    }
+                }
+                // 트림 바깥 영역 디밍 (잘려나가는 구간)
+                var sX = ls_trimStart * W, eX = ls_trimEnd * W;
+                if (ls_trimStart > 0 || ls_trimEnd < 1) {
+                    g.fillStyle = 'rgba(15,25,20,0.46)';
+                    if (sX > 0) g.fillRect(0, 0, sX, H);
+                    if (eX < W) g.fillRect(eX, 0, W - eX, H);
+                    var dpr0 = window.devicePixelRatio || 1;
+                    g.fillStyle = (cssVar('--green-deep') || '#2a6b4a');
+                    g.fillRect(sX, 0, dpr0, H);
+                    g.fillRect(eX - dpr0, 0, dpr0, H);
+                }
+                // 루프가 실제로 돌고 있을 때 — 실제 재생 위치(절대 버퍼 위치)에 세로선 커서
+                if (ls_loopSource && ls_masterDuration > 0 && ls_ctx) {
+                    var absPos = ls_audioStartSec + currentPhase();     // 초 (전체 버퍼 기준)
+                    var cx = (absPos / ls_loopBuffer.duration) * W;
+                    var dpr = window.devicePixelRatio || 1;
+                    // 오버더빙 중이면 커서를 더 굵게/밝게
+                    g.fillStyle = '#e23b3b';
+                    g.fillRect(cx, 0, (ls_state === 'recording' ? 3 : 2) * dpr, H);
+                }
+            }
+
+            // ─── 키보드 ───────────────────────────────────────────────
             function onGlobalKeydown(e) {
-                // 루프스테이션 패널 활성일 때만, 그리고 입력 요소에서 타이핑 중이 아닐 때만 반응
                 var panel = $('loopstationPanel');
                 if (!panel || !panel.classList.contains('active')) return;
                 var tag = (e.target && e.target.tagName || '').toLowerCase();
                 if (tag === 'input' || tag === 'textarea') return;
                 if (e.metaKey || e.ctrlKey || e.altKey) return;
-                // 녹음 중 → 정지
-                if (ls_armedTrackIdx >= 0 && ls_tracks[ls_armedTrackIdx].state === 'recording') {
-                    e.preventDefault();
-                    stopRecording();
-                }
+                // R(=한글 ㄱ, 물리키 KeyR) = RECORD 버튼과 동일
+                // (마이크 미가동이면 권한 요청 → 무장 → 정지 토글). e.code 는 자판 배열과 무관.
+                if (e.code === 'KeyR') { e.preventDefault(); onRecClick(); return; }
+                // 스페이스 = PLAY (재생/일시정지, 녹음 중이면 정지)
+                if (e.code === 'Space') { e.preventDefault(); onPlayClick(); return; }
+                // 녹음 중엔 다른 아무 키로도 정지
+                if (ls_state === 'recording') { e.preventDefault(); stopRecording(); }
             }
 
-            // ─── 초기화 (lazy, switchTool 첫 진입 시) ─────────────────
+            // ─── 초기화 ───────────────────────────────────────────────
             function initLoopStation() {
                 if (ls_initialized) return;
                 ls_initialized = true;
-                // 트랙 상태 객체
-                for (var i = 0; i < NUM_TRACKS; i++) {
-                    ls_tracks.push({
-                        idx: i, state: 'empty',
-                        buffer: null, sourceNode: null, gainNode: null,
-                        volume: 0.85, muted: false
-                    });
-                }
-                renderTracks();
-                setThresholdMarker(ls_threshold);
-                // 시작 버튼
-                $('lsMicBtn').onclick = function() {
-                    if (ls_micRunning) stopMic(); else startMic();
-                };
-                // 임계값 슬라이더
-                $('lsThreshold').oninput = function(e) {
-                    ls_threshold = +e.target.value;
-                    $('lsThresholdVal').textContent = ls_threshold + ' dB';
-                    setThresholdMarker(ls_threshold);
-                };
-                // 마스터 볼륨
-                $('lsMasterVol').oninput = function(e) {
-                    var v = +e.target.value / 100;
-                    if (ls_masterGain) ls_masterGain.gain.value = v;
-                };
-                // 전체 정지/삭제
-                $('lsStopAll').onclick = function() {
-                    var anyPlaying = false;
-                    for (var i = 0; i < NUM_TRACKS; i++) if (ls_tracks[i].state === 'playing') { anyPlaying = true; break; }
-                    if (anyPlaying) { pauseAllTracks(); setStatus('전체 정지됨. 다시 누르면 동기화 재생.'); }
-                    else { resumeAllTracks(); setStatus('재생 재개.'); }
-                };
-                $('lsClearAll').onclick = function() {
-                    clearAllTracks();
-                };
-                document.addEventListener('keydown', onGlobalKeydown);
-            }
 
+                sizeCanvas();
+                setThresholdMarker(ls_threshold);
+                setRecVisual();
+                updateTransport();
+                drawCurrent();
+
+                $('lsMicBtn').onclick = function() { if (ls_micRunning) stopMic(); else startMic(); };
+                $('lsRecBtn').onclick = function() { onRecClick(); };
+                $('lsPlayBtn').onclick = function() { onPlayClick(); };
+                $('lsRevBtn').onclick = function() { onReverseClick(); };
+                $('lsUndoBtn').onclick = function() { onUndoClick(); };
+                $('lsClearAll').onclick = function() { clearAll(); };
+
+                // 더빙 토글
+                $('lsAutoDub').onchange = function(e) { ls_autoDub = e.target.checked; };
+                $('lsContDub').onchange = function(e) { ls_contDub = e.target.checked; };
+
+                // 파형 트림 핸들 — 시작/끝점 드래그 (loopStart/loopEnd, 비파괴)
+                (function() {
+                    var TRIM_MIN_GAP = 0.03;
+                    function fracFromClientX(clientX) {
+                        var r = $('lsWave').getBoundingClientRect();
+                        return Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+                    }
+                    function bindTrim(el, isStart) {
+                        if (!el) return;
+                        var dragging = false, moved = false;
+                        el.addEventListener('pointerdown', function(e) {
+                            if (!ls_loopBuffer) return;
+                            dragging = true; moved = false;
+                            try { el.setPointerCapture(e.pointerId); } catch (err) {}
+                            e.preventDefault(); e.stopPropagation();
+                        });
+                        el.addEventListener('pointermove', function(e) {
+                            if (!dragging) return;
+                            if (!moved) { pushUndo(); moved = true; }  // 드래그 시작 직전 상태 스냅샷
+                            var f = fracFromClientX(e.clientX);
+                            if (isStart) ls_trimStart = Math.max(0, Math.min(ls_trimEnd - TRIM_MIN_GAP, f));
+                            else         ls_trimEnd   = Math.min(1, Math.max(ls_trimStart + TRIM_MIN_GAP, f));
+                            updateTrimHandles();
+                            drawCurrent();
+                        });
+                        function endDrag() {
+                            if (!dragging) return;
+                            dragging = false;
+                            if (moved) {
+                                var rg = regionInfo();   // 새 트림 기준 구간
+                                if (ls_loopSource && ls_ctx) {
+                                    // 재시작하지 않고 현재 소스의 루프 지점만 변경 →
+                                    // 재생은 끊김 없이 이어지고 다음 루프 경계에서 새 구간 반영.
+                                    var absPos = ls_audioStartSec + currentPhase();   // 현재 절대 재생 위치(초)
+                                    ls_loopSource.loopStart = rg.startSec;
+                                    ls_loopSource.loopEnd = rg.startSec + rg.dur;
+                                    // 커서/위상 기준을 새 구간으로 — 현재 재생 위치는 그대로 유지
+                                    ls_audioStartSec = rg.startSec;
+                                    ls_masterDuration = rg.dur;
+                                    var newPhase = ((absPos - rg.startSec) % rg.dur + rg.dur) % rg.dur;
+                                    ls_masterStartCtxTime = ls_ctx.currentTime - newPhase / ls_speed;
+                                } else {
+                                    // 정지/일시정지 상태 — 다음 재생 때 반영되도록 기준만 갱신
+                                    ls_audioStartSec = rg.startSec;
+                                    ls_masterDuration = rg.dur;
+                                }
+                                updateTransport();
+                            }
+                        }
+                        el.addEventListener('pointerup', endDrag);
+                        el.addEventListener('pointercancel', endDrag);
+                    }
+                    bindTrim($('lsTrimStart'), true);
+                    bindTrim($('lsTrimEnd'), false);
+                })();
+
+                // 감지 임계값 — 미터 아래 삼각형 핸들 드래그 (또는 트랙 클릭)
+                (function() {
+                    var track = $('lsThrTrack'), handle = $('lsThrHandle');
+                    if (!track || !handle) return;
+                    function dbFromClientX(clientX) {
+                        var r = $('lsMeter').getBoundingClientRect();
+                        var pct = (clientX - r.left) / r.width * 100;
+                        return pctToDb(Math.max(0, Math.min(100, pct)));
+                    }
+                    var dragging = false;
+                    handle.addEventListener('pointerdown', function(e) {
+                        dragging = true;
+                        try { handle.setPointerCapture(e.pointerId); } catch (err) {}
+                        e.preventDefault();
+                    });
+                    handle.addEventListener('pointermove', function(e) {
+                        if (dragging) setThreshold(dbFromClientX(e.clientX));
+                    });
+                    function endDrag() { dragging = false; }
+                    handle.addEventListener('pointerup', endDrag);
+                    handle.addEventListener('pointercancel', endDrag);
+                    track.addEventListener('pointerdown', function(e) {
+                        if (e.target === handle) return;
+                        setThreshold(dbFromClientX(e.clientX));
+                    });
+                })();
+                $('lsMasterVol').oninput = function(e) {
+                    if (ls_masterGain) ls_masterGain.gain.value = volToGain(e.target.value);
+                    updateMasterVolLabel(e.target.value);
+                };
+                updateMasterVolLabel($('lsMasterVol').value);
+
+                // 재생 속도 페이더 — 위치 0~100(중앙 50=100%), 좌 10%·우 200%, 5% 단위 스냅(걸림)
+                function speedPosToPct(pos) {
+                    return pos <= 50 ? (10 + (pos / 50) * 90) : (100 + ((pos - 50) / 50) * 100);
+                }
+                function speedPctToPos(pct) {
+                    return pct <= 100 ? ((pct - 10) / 90 * 50) : (50 + (pct - 100) / 100 * 50);
+                }
+                $('lsSpeed').oninput = function(e) {
+                    var pct = Math.round(speedPosToPct(+e.target.value) / 5) * 5;
+                    pct = Math.max(10, Math.min(200, pct));
+                    e.target.value = speedPctToPos(pct);   // 스냅된 위치로 썸 이동 (5%마다 걸림)
+                    setSpeed(pct / 100);
+                    var el = $('lsSpeedVal'); if (el) el.textContent = pct + '%';
+                };
+                $('lsSpeedVal').textContent = '100%';
+
+                document.addEventListener('keydown', onGlobalKeydown);
+                window.addEventListener('resize', sizeCanvas);
+
+                // 도움말 팝업 토글 (외부 클릭 / Esc 닫기) — ? 버튼과 '사용법' 텍스트 모두 클릭 가능
+                (function() {
+                    var hc = $('lsHelpCtl'), hb = $('lsHelpBtn'), hp = $('lsHelpPop');
+                    if (!hc || !hb || !hp) return;
+                    function setHelp(open) {
+                        if (open) { hp.removeAttribute('hidden'); hb.setAttribute('aria-expanded', 'true'); }
+                        else { hp.setAttribute('hidden', ''); hb.setAttribute('aria-expanded', 'false'); }
+                    }
+                    hc.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        setHelp(hp.hasAttribute('hidden'));
+                    });
+                    document.addEventListener('click', function(e) {
+                        if (hp.hasAttribute('hidden')) return;
+                        if (hc.contains(e.target) || hp.contains(e.target)) return;
+                        setHelp(false);
+                    });
+                    document.addEventListener('keydown', function(e) {
+                        if (e.code === 'Escape' && !hp.hasAttribute('hidden')) setHelp(false);
+                    });
+                })();
+            }
             function stopLoopStation() {
-                // 다른 도구로 이동 시 정리
-                pauseAllTracks();
-                if (ls_armedTrackIdx >= 0) cancelArmOrRecording();
+                stopLoopSource();
+                if (ls_state === 'armed' || ls_state === 'recording') { ls_recChunks = null; ls_state = ls_loopBuffer ? 'paused' : 'empty'; }
                 if (ls_micRunning) stopMic();
             }
 
             window.initLoopStation = initLoopStation;
             window.stopLoopStation = stopLoopStation;
+            window._lsRedraw = function() { drawCurrent(); };
 
-            // ─── 단독 데모 페이지 — 로드 시 즉시 초기화 ───────────────
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', initLoopStation);
             } else {
