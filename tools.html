@@ -5258,6 +5258,48 @@
         .ls-toggle input:checked ~ .ls-toggle-txt { color: var(--text-primary); font-weight: 600; }
         :root[data-theme="dark"] .ls-toggle-sw { background: rgba(150,200,175,0.22); }
 
+        /* 레이어별 볼륨 드롭다운 */
+        .ls-layvol { position: relative; display: inline-flex; align-items: center; margin-left: auto; }
+        .ls-layvol-btn {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.34rem 0.7rem; border-radius: 999px;
+            background: rgba(42,107,74,0.08);
+            border: 1px solid rgba(42,107,74,0.25);
+            color: var(--text-secondary);
+            font-family: inherit; font-size: 0.82rem; cursor: pointer;
+            transition: background 0.15s, opacity 0.15s;
+        }
+        .ls-layvol-btn:hover:not([disabled]) { background: rgba(42,107,74,0.14); }
+        .ls-layvol-btn[disabled] { opacity: 0.4; cursor: default; }
+        .ls-layvol-btn > i:first-child { color: var(--green-deep); font-size: 0.9rem; }
+        .ls-layvol-caret { font-size: 0.7rem; transition: transform 0.15s; }
+        .ls-layvol-btn[aria-expanded="true"] .ls-layvol-caret { transform: rotate(180deg); }
+        .ls-layvol-count { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--green-deep); }
+        :root[data-theme="dark"] .ls-layvol-btn { background: rgba(150,200,175,0.10); border-color: rgba(150,200,175,0.25); }
+        :root[data-theme="dark"] .ls-layvol-btn > i:first-child,
+        :root[data-theme="dark"] .ls-layvol-count { color: var(--green-light); }
+        .ls-layvol-pop {
+            position: absolute; right: 0; top: calc(100% + 8px);
+            width: 240px; padding: 0.6rem 0.7rem;
+            background: var(--bg-panel);
+            border: 1px solid rgba(42,107,74,0.22);
+            border-radius: 12px;
+            box-shadow: 0 8px 26px rgba(0,0,0,0.20);
+            z-index: 20;
+        }
+        :root[data-theme="dark"] .ls-layvol-pop { border-color: rgba(150,200,175,0.22); }
+        .ls-layvol-pop[hidden] { display: none; }
+        .ls-layvol-title { font-size: 0.74rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem; }
+        /* 5개까지 보이고 그 이상은 세로 스크롤 */
+        .ls-layvol-list { max-height: 148px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.45rem; padding-right: 0.25rem; }
+        .ls-layvol-list::-webkit-scrollbar { width: 8px; }
+        .ls-layvol-list::-webkit-scrollbar-thumb { background: rgba(42,107,74,0.4); border-radius: 999px; }
+        :root[data-theme="dark"] .ls-layvol-list::-webkit-scrollbar-thumb { background: rgba(150,200,175,0.4); }
+        .ls-layvol-row { display: flex; align-items: center; gap: 0.5rem; }
+        .ls-layvol-num { flex-shrink: 0; width: 1.6em; text-align: right; font-size: 0.78rem; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+        .ls-layvol-fader { flex: 1; min-width: 0; height: 14px; margin: 0; }
+        .ls-layvol-val { flex-shrink: 0; width: 3em; text-align: right; font-size: 0.72rem; color: var(--text-light); font-variant-numeric: tabular-nums; }
+
         /* ===== 트랜스포트 바 (캡쳐 이미지 스타일, 항상 다크 하드웨어 톤) ===== */
         .ls-transport {
             display: flex;
@@ -5309,9 +5351,9 @@
         .ls-tp-btn.active { color: #7fd6a2; background: rgba(127,214,162,0.16); }
         .ls-tp-btn.active:hover:not([disabled]) { background: rgba(127,214,162,0.24); }
 
-        /* RECORD = PLAY (더 크게) / REVERSE = UNDO (더 작게) */
+        /* RECORD = PLAY (더 크게) / REVERSE = UNDO = REDO (더 작게) */
         .ls-tp-rec, .ls-tp-play { flex: 1.8; }
-        .ls-tp-rev, .ls-tp-undo { flex: 0.75; }
+        .ls-tp-rev, .ls-tp-undo, .ls-tp-redo { flex: 0.75; }
         .ls-tp-rec .ls-tp-ico, .ls-tp-play .ls-tp-ico { font-size: 1.7rem; height: 1.95rem; }
         .ls-tp-rec .ls-tp-label, .ls-tp-play .ls-tp-label { font-size: 0.8rem; }
         .ls-rec-dot {
@@ -5336,6 +5378,9 @@
             border-top: 1px solid rgba(42, 107, 74, 0.12);
             margin-top: 0.2rem;
         }
+        /* 피치 변동 토글 — 속도 페이더 바로 아래, 들여쓰기로 속도에 종속됨을 표현 */
+        .ls-pitch-row { margin-top: -0.7rem; padding-left: 2.9rem; }
+        .ls-pitch-hint { color: var(--text-light); font-weight: 400; font-size: 0.92em; }
         .ls-fader { display: flex; align-items: center; gap: 0.55rem; }
         .ls-fader input[type=range] { flex: 1; }
         .ls-fader-ico {
@@ -8224,6 +8269,10 @@
                         <span class="ls-tp-ico"><i class="fas fa-rotate-left"></i></span>
                         <span class="ls-tp-label">UNDO</span>
                     </button>
+                    <button class="ls-tp-btn ls-tp-redo" id="lsRedoBtn" type="button" title="다시 실행" disabled>
+                        <span class="ls-tp-ico"><i class="fas fa-rotate-right"></i></span>
+                        <span class="ls-tp-label">REDO</span>
+                    </button>
                 </div>
 
                 <!-- 더빙 토글 (RECORD 아래) -->
@@ -8238,6 +8287,18 @@
                         <span class="ls-toggle-sw"></span>
                         <span class="ls-toggle-txt">연속 더빙</span>
                     </label>
+                    <!-- 레이어별 볼륨 — 드롭다운 -->
+                    <div class="ls-layvol" id="lsLayVol">
+                        <button type="button" class="ls-layvol-btn" id="lsLayVolBtn" disabled aria-haspopup="true" aria-expanded="false" title="레이어별 볼륨 조절">
+                            <i class="fas fa-sliders" aria-hidden="true"></i>
+                            <span>레이어 볼륨<span class="ls-layvol-count"></span></span>
+                            <i class="fas fa-caret-down ls-layvol-caret" aria-hidden="true"></i>
+                        </button>
+                        <div class="ls-layvol-pop" id="lsLayVolPop" hidden>
+                            <div class="ls-layvol-title">레이어별 볼륨</div>
+                            <div class="ls-layvol-list" id="lsLayVolList"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 글로벌 컨트롤 (볼륨 / 속도 페이더) -->
@@ -8266,6 +8327,14 @@
                         <span class="ls-fader-name">속도</span>
                         <input type="range" id="lsSpeed" min="0" max="100" step="0.5" value="50" title="재생 속도 (중앙=100%, 5% 단위, 좌 10%~우 200%)">
                         <span id="lsSpeedVal" class="ls-fader-val">100%</span>
+                    </div>
+                    <!-- 피치 변동 토글 (속도 아래) — 기본 OFF = 속도만 바뀌고 음정 유지 -->
+                    <div class="ls-pitch-row">
+                        <label class="ls-toggle" title="끄면(기본) 속도를 바꿔도 음정이 유지됩니다. 켜면 속도와 함께 음정도 변합니다(테이프처럼).">
+                            <input type="checkbox" id="lsPitchFollow">
+                            <span class="ls-toggle-sw"></span>
+                            <span class="ls-toggle-txt">피치 변동 <span class="ls-pitch-hint">(속도에 따라 음정도 변경)</span></span>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -13378,7 +13447,16 @@
             let ls_masterStartCtxTime = 0;  // 루프 위상 기준 ctxTime
             let ls_audioStartSec = 0;       // 현재 재생 중인 루프 구간 시작(초) — 커서/위상 기준
             let ls_speed = 1;               // 재생 배속 (1=100%) — playbackRate
-            let ls_undoStack = [];          // [{buffer, dur, reversed}]
+            let ls_layers = [];             // 레이어 배열 [{ data: Float32Array(masterLen), volume }]
+            let ls_undoStack = [];          // [snapshot] — snapshot = {layers, reversed, trim*}
+            let ls_redoStack = [];          // [snapshot] — UNDO 한 것을 다시 실행
+            let _ls_volTimer = 0;           // 레이어 볼륨 변경 디바운스 타이머
+            let ls_pitchFollowsSpeed = false; // false = 속도만 변경(피치 유지·타임스트레치), true = 속도와 함께 피치도 변경
+            let _ls_stretchBuf = null;      // 캐시된 타임스트레치 버퍼
+            let _ls_stretchSrc = null;      // 캐시 기준 소스 버퍼 (identity 비교)
+            let _ls_stretchSpeed = 1;       // 캐시 기준 속도
+            let _ls_speedTimer = 0;         // 속도 변경 디바운스 타이머
+            let _ls_pendingSpeed = 1;       // 디바운스 대기 중인 속도
 
             let ls_threshold = -40;
             let ls_micRunning = false;
@@ -13432,7 +13510,7 @@
             }
             function updateTransport() {
                 var hasLoop = !!ls_loopBuffer;
-                var play = $('lsPlayBtn'), rev = $('lsRevBtn'), undo = $('lsUndoBtn');
+                var play = $('lsPlayBtn'), rev = $('lsRevBtn'), undo = $('lsUndoBtn'), redo = $('lsRedoBtn');
                 if (play) {
                     // 녹음 중에도 클릭으로 정지+재생 가능하도록 활성화 (스페이스바와 동일)
                     play.disabled = !(hasLoop || ls_state === 'recording');
@@ -13449,6 +13527,8 @@
                 }
                 if (rev)  { rev.disabled  = !hasLoop; rev.classList.toggle('active', ls_reversed); }
                 if (undo) { undo.disabled = !ls_undoStack.length; }
+                if (redo) { redo.disabled = !ls_redoStack.length; }
+                var lvBtn = $('lsLayVolBtn'); if (lvBtn) lvBtn.disabled = !ls_layers.length;
                 var empty = $('lsWaveEmpty');
                 if (empty) {
                     if (ls_state === 'armed') {
@@ -13478,6 +13558,59 @@
                 var show = !!ls_loopBuffer && ls_state !== 'recording';
                 if (hs) { hs.style.display = show ? '' : 'none'; hs.style.left = (ls_trimStart * 100) + '%'; }
                 if (he) { he.style.display = show ? '' : 'none'; he.style.left = (ls_trimEnd * 100) + '%'; }
+            }
+
+            // ─── 레이어별 볼륨 ────────────────────────────────────────
+            // 드롭다운 목록을 현재 레이어 수에 맞춰 다시 그린다. (레이어 개수가
+            // 바뀔 때만 호출 — 볼륨 드래그 중엔 호출하지 않아 포커스가 안 끊김)
+            function refreshLayerVol() {
+                var list = $('lsLayVolList');
+                var btn = $('lsLayVolBtn');
+                var n = ls_layers.length;
+                if (btn) {
+                    btn.disabled = (n === 0);
+                    var cnt = btn.querySelector('.ls-layvol-count');
+                    if (cnt) cnt.textContent = n ? (' ' + n) : '';
+                }
+                if (!list) return;
+                list.innerHTML = '';
+                for (var i = 0; i < n; i++) {
+                    var row = document.createElement('div');
+                    row.className = 'ls-layvol-row';
+                    row.innerHTML =
+                        '<span class="ls-layvol-num">' + (i + 1) + '.</span>' +
+                        '<input type="range" class="ls-layvol-fader" min="0" max="150" step="1" value="' +
+                        Math.round(ls_layers[i].volume * 100) + '" aria-label="레이어 ' + (i + 1) + ' 볼륨">' +
+                        '<span class="ls-layvol-val">' + Math.round(ls_layers[i].volume * 100) + '%</span>';
+                    list.appendChild(row);
+                    (function(idx, input, valEl) {
+                        input.oninput = function(e) {
+                            ls_layers[idx].volume = (+e.target.value) / 100;
+                            if (valEl) valEl.textContent = e.target.value + '%';
+                            scheduleLayerVolRebuild();
+                        };
+                    })(i, row.querySelector('input'), row.querySelector('.ls-layvol-val'));
+                }
+                if (n === 0) setLayVolOpen(false);
+            }
+            // 볼륨 변경 → 합성 버퍼 갱신(끊김 없이 소스 교체). 드래그 중 과도한 재생성
+            // 방지를 위해 트레일링 디바운스(~140ms).
+            function scheduleLayerVolRebuild() {
+                if (_ls_volTimer) clearTimeout(_ls_volTimer);
+                _ls_volTimer = setTimeout(function() {
+                    _ls_volTimer = 0;
+                    var playing = (ls_state === 'playing');
+                    var ph = playing ? currentPhase() : 0;
+                    rebuildLoop();
+                    if (playing && ls_loopBuffer) playLoopAtPhase(ph);
+                    drawCurrent();
+                }, 140);
+            }
+            function setLayVolOpen(open) {
+                var pop = $('lsLayVolPop'), btn = $('lsLayVolBtn');
+                if (!pop || !btn) return;
+                if (open && !btn.disabled) { pop.hidden = false; btn.setAttribute('aria-expanded', 'true'); }
+                else { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
             }
 
             // ─── 마이크 시작/정지 ─────────────────────────────────────
@@ -13626,24 +13759,47 @@
                 chunks.forEach(function(c){ rec.set(c, p); p += c.length; });
                 return rec;
             }
-            // 한 사이클(한 레이어)을 트림 구간에 위상 정렬해 믹스 — pushUndo 로 개별 되돌리기 단위
-            function mixOverdubLayer(rec) {
-                pushUndo();
+            // 레이어들을 (각자 볼륨 반영해) 합쳐 재생용 단일 버퍼 ls_loopBuffer 를 만든다.
+            // 재생/트림/리버스/시크/파형 로직은 모두 이 합성 버퍼를 그대로 사용.
+            function rebuildLoop() {
+                if (!ls_layers.length) {
+                    ls_loopBuffer = null; ls_loopPeaks = null; ls_masterDuration = 0;
+                    return;
+                }
+                var len = ls_layers[0].data.length;
                 var sr = ls_ctx.sampleRate;
-                var len = ls_loopBuffer.length;
+                var mix = new Float32Array(len);
+                for (var L = 0; L < ls_layers.length; L++) {
+                    var d = ls_layers[L].data, vol = ls_layers[L].volume;
+                    if (!vol) continue;
+                    for (var i = 0; i < len; i++) mix[i] += d[i] * vol;
+                }
+                // 최종 클램프 (합산 후 한 번만)
+                for (var k = 0; k < len; k++) {
+                    var v = mix[k];
+                    if (v > 1) mix[k] = 1; else if (v < -1) mix[k] = -1;
+                }
                 var nb = ls_ctx.createBuffer(1, len, sr);
-                var dst = nb.getChannelData(0);
-                dst.set(ls_loopBuffer.getChannelData(0));
+                nb.getChannelData(0).set(mix);
+                ls_loopBuffer = nb;
+                recomputePeaks();
+            }
+            // 한 사이클(한 레이어)을 트림 구간에 위상 정렬해 '독립 레이어'로 추가.
+            function addOverdubLayer(rec) {
+                if (!rec || !rec.length) return;      // 빈 캡처 — 레이어 추가 안 함
+                pushUndo();
+                var len = ls_layers.length ? ls_layers[0].data.length : (ls_loopBuffer ? ls_loopBuffer.length : rec.length);
+                var layer = new Float32Array(len);
                 var startS = Math.round(ls_trimStart * len);
                 var regionLen = Math.max(1, Math.round((ls_trimEnd - ls_trimStart) * len));
                 var take = Math.min(rec.length, regionLen);   // 항상 한 사이클만
                 for (var i = 0; i < take; i++) {
                     var idx = startS + ((ls_recStartPhaseSamples + i) % regionLen);
-                    var v = dst[idx] + rec[i];
-                    dst[idx] = v > 1 ? 1 : (v < -1 ? -1 : v);
+                    layer[idx] = rec[i];               // 합산은 rebuildLoop 에서
                 }
-                ls_loopBuffer = nb;
-                recomputePeaks();
+                ls_layers.push({ data: layer, volume: 1 });
+                rebuildLoop();
+                refreshLayerVol();
             }
             function stopRecording() {
                 if (ls_state !== 'recording' || !ls_recChunks) return;
@@ -13661,18 +13817,17 @@
                         setRecVisual(); updateTransport(); ensureTick();
                         return;
                     }
-                    pushUndo();   // null 스냅샷 → undo 시 빈 상태로
-                    var buf = ls_ctx.createBuffer(1, rec.length, sr);
-                    buf.getChannelData(0).set(rec);
-                    ls_loopBuffer = buf;
+                    pushUndo();   // 빈 레이어 스냅샷 → undo 시 빈 상태로
                     ls_trimStart = 0; ls_trimEnd = 1;   // 새 루프 — 트림 초기화
                     ls_reversed = false;
-                    recomputePeaks();
+                    ls_layers = [{ data: rec, volume: 1 }];   // 첫 레이어
+                    rebuildLoop();
+                    refreshLayerVol();
                     playLoopAtPhase(0);
-                    setStatus('루프 시작 (' + buf.duration.toFixed(2) + 's). 다시 RECORD 하면 그 위에 겹쳐 녹음됩니다.');
+                    setStatus('루프 시작 (' + ls_loopBuffer.duration.toFixed(2) + 's). 다시 RECORD 하면 그 위에 겹쳐 녹음됩니다.');
                 } else {
                     // ─── 오버더빙 — 현재 캡처를 한 레이어(한 사이클)로 커밋 ───
-                    mixOverdubLayer(rec);
+                    addOverdubLayer(rec);
                     playLoopAtPhase(currentPhase());
                     setStatus('오버더빙 완료. UNDO 로 방금 레이어를 되돌릴 수 있어요.');
                 }
@@ -13682,55 +13837,67 @@
                 if (ls_autoDub && ls_micRunning) arm();
             }
 
-            // ─── undo ─────────────────────────────────────────────────
-            function copyBuf(buf) {
-                if (!buf) return null;
-                var nb = ls_ctx.createBuffer(1, buf.length, buf.sampleRate);
-                nb.getChannelData(0).set(buf.getChannelData(0));
-                return nb;
+            // ─── undo / redo ──────────────────────────────────────────
+            // 스냅샷 = 레이어 배열(데이터 복사 + 볼륨) + 리버스/트림 상태
+            function snapshotState() {
+                return {
+                    layers: ls_layers.map(function(L){ return { data: L.data.slice(0), volume: L.volume }; }),
+                    reversed: ls_reversed, trimStart: ls_trimStart, trimEnd: ls_trimEnd
+                };
             }
-            function undoBytes() {
+            function snapBytes(snap) {
                 var b = 0;
-                for (var i = 0; i < ls_undoStack.length; i++) {
-                    var buf = ls_undoStack[i].buffer;
-                    if (buf) b += buf.length * 4;   // Float32 = 4바이트/샘플 (모노)
-                }
+                for (var i = 0; i < snap.layers.length; i++) b += snap.layers[i].data.length * 4;
                 return b;
             }
+            function stacksBytes() {
+                var b = 0, i;
+                for (i = 0; i < ls_undoStack.length; i++) b += snapBytes(ls_undoStack[i]);
+                for (i = 0; i < ls_redoStack.length; i++) b += snapBytes(ls_redoStack[i]);
+                return b;
+            }
+            // 현재 상태를 undo 스택에 저장. '새 편집' 이므로 redo 는 무효화.
             function pushUndo() {
-                ls_undoStack.push({
-                    buffer: copyBuf(ls_loopBuffer), reversed: ls_reversed,
-                    trimStart: ls_trimStart, trimEnd: ls_trimEnd
-                });
-                // 개수 상한
+                ls_undoStack.push(snapshotState());
+                ls_redoStack = [];
                 if (ls_undoStack.length > MAX_UNDO) ls_undoStack.shift();
-                // 메모리 예산 상한 — 오래된 스냅샷부터 버려 ~120MB 이하 유지
-                // (단, 최소 1개는 남겨 직전 동작은 항상 되돌릴 수 있게)
-                while (ls_undoStack.length > 1 && undoBytes() > MAX_UNDO_BYTES) {
+                // 메모리 예산 — 오래된 undo 스냅샷부터 버려 ~120MB 이하 유지 (최소 1개 보존)
+                while (ls_undoStack.length > 1 && stacksBytes() > MAX_UNDO_BYTES) {
                     ls_undoStack.shift();
                 }
             }
-            function onUndoClick() {
-                if (!ls_undoStack.length) return;
-                var snap = ls_undoStack.pop();
+            // 스냅샷을 현재 상태로 복원 (undo/redo 공용)
+            function applySnapshot(snap) {
                 stopLoopSource();
-                ls_loopBuffer = snap.buffer;
+                ls_layers = snap.layers.map(function(L){ return { data: L.data.slice(0), volume: L.volume }; });
                 ls_reversed = !!snap.reversed;
                 ls_trimStart = (snap.trimStart != null) ? snap.trimStart : 0;
                 ls_trimEnd = (snap.trimEnd != null) ? snap.trimEnd : 1;
+                rebuildLoop();
                 if (ls_loopBuffer) {
-                    recomputePeaks();
                     playLoopAtPhase(0);
-                    setStatus('되돌렸습니다.');
                 } else {
-                    ls_loopPeaks = null;
                     ls_masterDuration = 0;
                     ls_state = 'empty';
                     ls_reversed = false;
                     ls_trimStart = 0; ls_trimEnd = 1;
-                    setStatus('처음 상태로 되돌렸습니다.');
                 }
+                refreshLayerVol();
                 setRecVisual(); updateTransport(); updateTrimHandles(); drawCurrent(); ensureTick();
+            }
+            function onUndoClick() {
+                if (!ls_undoStack.length) return;
+                ls_redoStack.push(snapshotState());        // 현재 상태 → redo
+                if (ls_redoStack.length > MAX_UNDO) ls_redoStack.shift();
+                applySnapshot(ls_undoStack.pop());
+                setStatus(ls_loopBuffer ? '되돌렸습니다.' : '처음 상태로 되돌렸습니다.');
+            }
+            function onRedoClick() {
+                if (!ls_redoStack.length) return;
+                ls_undoStack.push(snapshotState());        // 현재 상태 → undo
+                if (ls_undoStack.length > MAX_UNDO) ls_undoStack.shift();
+                applySnapshot(ls_redoStack.pop());
+                setStatus('다시 실행했습니다.');
             }
 
             // ─── 재생 ─────────────────────────────────────────────────
@@ -13747,22 +13914,100 @@
                 var p = ((ls_ctx.currentTime - ls_masterStartCtxTime) * ls_speed) % ls_masterDuration;
                 return (p + ls_masterDuration) % ls_masterDuration;
             }
-            // 배속 변경 — 현재 재생 위치 유지하며 playbackRate 갱신
+            // ─── 타임스트레치 (피치 유지) ─────────────────────────────
+            // 피치 유지 모드가 켜져 있고 속도가 100% 가 아닐 때만 동작
+            function preserveActive() {
+                return !ls_pitchFollowsSpeed && Math.abs(ls_speed - 1) > 1e-3;
+            }
+            function _hann(n) {
+                var w = new Float32Array(n), d = n > 1 ? (n - 1) : 1;
+                for (var i = 0; i < n; i++) w[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / d);
+                return w;
+            }
+            // WSOLA 시간축 신축 — 피치를 바꾸지 않고 길이만 1/speed 배로.
+            // (speed>1 → 짧게=빠르게, <1 → 길게=느리게. 음정은 그대로.)
+            function timeStretch(input, sr, speed) {
+                var N = input.length;
+                if (!N || Math.abs(speed - 1) < 1e-3) return input.slice(0);
+                var L = Math.max(256, Math.round(sr * 0.046)); if (L & 1) L++;
+                var Hs = L >> 1;                 // synthesis hop (50% overlap)
+                var Ha = Hs * speed;             // analysis hop
+                var W = Math.max(64, Math.round(sr * ((N / sr > 30) ? 0.006 : 0.011)));  // 유사도 탐색 반경
+                var win = _hann(L);
+                var outLen = Math.max(1, Math.round(N / speed));
+                var out = new Float32Array(outLen + L);
+                var wsum = new Float32Array(outLen + L);
+                var corrLen = Hs;
+                var cstride = Math.max(1, (corrLen / 220) | 0);   // 상관 계산 표본 ~220점으로 제한
+                var template = new Float32Array(L);
+                var anaIdeal = 0, outPos = 0, first = true;
+                while (anaIdeal + L < N && outPos + L < out.length) {
+                    var pos;
+                    if (first) { pos = 0; first = false; }
+                    else {
+                        var center = anaIdeal | 0;
+                        var lo = center - W; if (lo < 0) lo = 0;
+                        var hi = center + W; if (hi > N - L) hi = N - L;
+                        var best = lo, bestC = -Infinity;
+                        for (var p = lo; p <= hi; p++) {
+                            var c = 0;
+                            for (var i = 0; i < corrLen; i += cstride) c += input[p + i] * template[i];
+                            if (c > bestC) { bestC = c; best = p; }
+                        }
+                        pos = best;
+                    }
+                    for (var i2 = 0; i2 < L; i2++) {
+                        out[outPos + i2] += input[pos + i2] * win[i2];
+                        wsum[outPos + i2] += win[i2];
+                    }
+                    var tp = pos + Hs;
+                    for (var k = 0; k < L; k++) template[k] = (tp + k < N) ? input[tp + k] : 0;
+                    outPos += Hs;
+                    anaIdeal += Ha;
+                }
+                var res = new Float32Array(outLen);
+                for (var n = 0; n < outLen; n++) res[n] = wsum[n] > 1e-6 ? out[n] / wsum[n] : 0;
+                return res;
+            }
+            // 현재 ls_loopBuffer / ls_speed 에 대한 스트레치 버퍼 (캐시)
+            function getStretchBuffer() {
+                if (_ls_stretchBuf && _ls_stretchSrc === ls_loopBuffer && _ls_stretchSpeed === ls_speed) {
+                    return _ls_stretchBuf;
+                }
+                var sr = ls_ctx.sampleRate;
+                var stretched = timeStretch(ls_loopBuffer.getChannelData(0), sr, ls_speed);
+                var nb = ls_ctx.createBuffer(1, stretched.length, sr);
+                nb.getChannelData(0).set(stretched);
+                _ls_stretchBuf = nb; _ls_stretchSrc = ls_loopBuffer; _ls_stretchSpeed = ls_speed;
+                return nb;
+            }
+            // 원본 초 → 재생 버퍼 초 변환 배율 (피치 유지 모드에선 스트레치 버퍼가 늘어나 있으므로)
+            function tScaleNow() { return preserveActive() ? (1 / ls_speed) : 1; }
+
+            // 배속 변경 — 드래그 중 과도한 스트레치 재생성을 막기 위해 디바운스 후 적용
             function setSpeed(rate) {
-                rate = Math.max(0.1, Math.min(2, rate));
+                _ls_pendingSpeed = Math.max(0.1, Math.min(2, rate));
+                if (_ls_speedTimer) clearTimeout(_ls_speedTimer);
+                _ls_speedTimer = setTimeout(applySpeed, 130);
+            }
+            function applySpeed() {
+                _ls_speedTimer = 0;
+                var rate = _ls_pendingSpeed;
+                if (rate === ls_speed) return;
                 var ph = (ls_loopSource && ls_ctx) ? currentPhase() : 0;
                 ls_speed = rate;
-                if (ls_loopSource) {
-                    try { ls_loopSource.playbackRate.value = rate; } catch (e) {}
-                    ls_masterStartCtxTime = ls_ctx.currentTime - ph / ls_speed;
-                }
+                if (ls_loopSource) playLoopAtPhase(ph);   // 모드에 맞춰 버퍼/레이트 재구성
             }
             function playLoopAtPhase(phase) {
                 if (!ls_loopBuffer || !ls_ctx) return;
                 ensureLoopGain();
                 var rg = regionInfo();
-                ls_masterDuration = rg.dur;     // 재생 길이 = 트림 구간 길이
-                ls_audioStartSec = rg.startSec; // 커서/위상 기준 구간 시작
+                ls_masterDuration = rg.dur;     // 재생 길이(원본 초) = 트림 구간 길이
+                ls_audioStartSec = rg.startSec; // 커서/위상 기준 구간 시작(원본 초)
+                var preserve = preserveActive();
+                var playBuf = preserve ? getStretchBuffer() : ls_loopBuffer;
+                var rate = preserve ? 1 : ls_speed;
+                var ts = preserve ? (1 / ls_speed) : 1;   // 원본 초 → 재생버퍼 초
                 var LEAD = 0.03;
                 var when = ls_ctx.currentTime + LEAD;
                 var old = ls_loopSource;
@@ -13771,20 +14016,20 @@
                     ? (((phase || 0) + LEAD * ls_speed) % rg.dur + rg.dur) % rg.dur
                     : (((phase || 0)) % rg.dur + rg.dur) % rg.dur;
                 var src = ls_ctx.createBufferSource();
-                src.buffer = ls_loopBuffer;
+                src.buffer = playBuf;
                 src.loop = true;
-                src.loopStart = rg.startSec;
-                src.loopEnd = rg.startSec + rg.dur;
-                src.playbackRate.value = ls_speed;
+                src.loopStart = rg.startSec * ts;
+                src.loopEnd = (rg.startSec + rg.dur) * ts;
+                src.playbackRate.value = rate;
                 src.connect(ls_loopGain);
-                src.start(when, rg.startSec + ph);
+                src.start(when, (rg.startSec + ph) * ts);
                 if (old) {
                     // 새 소스가 시작하는 정확한 시점에 이전 소스 정지 → 갭/겹침 없음
                     try { old.stop(when); } catch (e) {}
                     old.onended = (function(o){ return function(){ try { o.disconnect(); } catch (e) {} }; })(old);
                 }
                 ls_loopSource = src;
-                ls_masterStartCtxTime = when - ph / ls_speed;
+                ls_masterStartCtxTime = when - ph / ls_speed;   // 위상은 항상 원본 시간 기준
                 ls_state = 'playing';
             }
             function stopLoopSource() {
@@ -13809,13 +14054,13 @@
             function onReverseClick() {
                 if (!ls_loopBuffer) return;
                 pushUndo();
-                var sr = ls_ctx.sampleRate, len = ls_loopBuffer.length;
-                var nb = ls_ctx.createBuffer(1, len, sr);
-                var src = ls_loopBuffer.getChannelData(0), dst = nb.getChannelData(0);
-                for (var i = 0; i < len; i++) dst[i] = src[len - 1 - i];
-                ls_loopBuffer = nb;
+                // 각 레이어를 제자리 뒤집기 — 합의 뒤집기 = 뒤집은 것들의 합 (선형) 이라 일관됨
+                for (var L = 0; L < ls_layers.length; L++) {
+                    var d = ls_layers[L].data;
+                    for (var i = 0, j = d.length - 1; i < j; i++, j--) { var t = d[i]; d[i] = d[j]; d[j] = t; }
+                }
                 ls_reversed = !ls_reversed;
-                recomputePeaks();
+                rebuildLoop();
                 if (ls_state === 'playing') {
                     playLoopAtPhase(currentPhase());
                 }
@@ -13825,15 +14070,19 @@
             function clearAll() {
                 stopLoopSource();
                 ls_recChunks = null;
+                ls_layers = [];
                 ls_loopBuffer = null;
                 ls_loopPeaks = null;
                 ls_masterDuration = 0;
                 ls_masterStartCtxTime = 0;
                 ls_undoStack = [];
+                ls_redoStack = [];
+                _ls_stretchBuf = null; _ls_stretchSrc = null;   // 타임스트레치 캐시 해제
                 ls_reversed = false;
                 ls_trimStart = 0; ls_trimEnd = 1;
                 ls_armFrameCount = 0;
                 ls_state = 'empty';
+                refreshLayerVol();
                 setStatus('전체 삭제됨.');
                 setRecVisual(); updateTransport(); updateTrimHandles(); drawCurrent(); ensureTick();
             }
@@ -13870,7 +14119,7 @@
                         if ((ls_ctx.currentTime - ls_recStartCtxTime) >= ls_masterDuration / ls_speed) {
                             if (ls_contDub) {
                                 // 연속 — 이번 바퀴를 한 레이어로 커밋하고 다음 바퀴 계속 (각 바퀴가 개별 UNDO)
-                                mixOverdubLayer(assembleRec(ls_recChunks || []));
+                                addOverdubLayer(assembleRec(ls_recChunks || []));
                                 playLoopAtPhase(currentPhase());   // 끊김 없는 교체로 새 레이어 반영
                                 ls_state = 'recording';            // playing→recording 복구
                                 ls_recChunks = [];
@@ -14113,11 +14362,38 @@
                 $('lsPlayBtn').onclick = function() { onPlayClick(); };
                 $('lsRevBtn').onclick = function() { onReverseClick(); };
                 $('lsUndoBtn').onclick = function() { onUndoClick(); };
+                var redoBtn = $('lsRedoBtn'); if (redoBtn) redoBtn.onclick = function() { onRedoClick(); };
                 $('lsClearAll').onclick = function() { clearAll(); };
 
                 // 더빙 토글
                 $('lsAutoDub').onchange = function(e) { ls_autoDub = e.target.checked; };
                 $('lsContDub').onchange = function(e) { ls_contDub = e.target.checked; };
+
+                // 피치 변동 토글 — 켜면 속도와 함께 음정도 변경(기존 동작), 끄면 음정 유지
+                var pf = $('lsPitchFollow');
+                if (pf) pf.onchange = function(e) {
+                    ls_pitchFollowsSpeed = e.target.checked;
+                    if (ls_loopSource && ls_ctx) playLoopAtPhase(currentPhase());  // 현재 위치에서 모드 전환 적용
+                };
+
+                // 레이어별 볼륨 드롭다운 (버튼 토글 + 바깥 클릭/Esc 닫기)
+                (function() {
+                    var btn = $('lsLayVolBtn'), pop = $('lsLayVolPop');
+                    if (!btn || !pop) return;
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        setLayVolOpen(pop.hidden);
+                    });
+                    document.addEventListener('click', function(e) {
+                        if (pop.hidden) return;
+                        if (btn.contains(e.target) || pop.contains(e.target)) return;
+                        setLayVolOpen(false);
+                    });
+                    document.addEventListener('keydown', function(e) {
+                        if (e.code === 'Escape' && !pop.hidden) setLayVolOpen(false);
+                    });
+                })();
+                refreshLayerVol();   // 초기 상태(빈 목록 + 버튼 비활성)
 
                 // 파형 트림 핸들 — 시작/끝점 드래그 (loopStart/loopEnd, 비파괴)
                 (function() {
@@ -14152,9 +14428,10 @@
                                 if (ls_loopSource && ls_ctx) {
                                     // 재시작하지 않고 현재 소스의 루프 지점만 변경 →
                                     // 재생은 끊김 없이 이어지고 다음 루프 경계에서 새 구간 반영.
-                                    var absPos = ls_audioStartSec + currentPhase();   // 현재 절대 재생 위치(초)
-                                    ls_loopSource.loopStart = rg.startSec;
-                                    ls_loopSource.loopEnd = rg.startSec + rg.dur;
+                                    var absPos = ls_audioStartSec + currentPhase();   // 현재 절대 재생 위치(원본 초)
+                                    var ts = tScaleNow();   // 피치 유지 모드면 스트레치 버퍼 시간축으로 변환
+                                    ls_loopSource.loopStart = rg.startSec * ts;
+                                    ls_loopSource.loopEnd = (rg.startSec + rg.dur) * ts;
                                     // 커서/위상 기준을 새 구간으로 — 현재 재생 위치는 그대로 유지
                                     ls_audioStartSec = rg.startSec;
                                     ls_masterDuration = rg.dur;
