@@ -5149,10 +5149,51 @@
             border-color: rgba(150,200,175,0.18);
         }
         .ls-wave { display: block; width: 100%; height: 100%; }
+        /* 확대 시 가로 스크롤 컨테이너 — 안쪽(inner)이 줌 배율만큼 넓어지고
+           컨테이너에 가로 스크롤바(드래그)가 생긴다. */
+        .ls-wave-scroll {
+            position: absolute; inset: 0;
+            overflow-x: auto; overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+        .ls-wave-inner {
+            position: relative;
+            width: 100%; height: 100%; min-width: 100%;
+        }
+        /* 얇은 가로 스크롤바 (확대했을 때만 등장) */
+        .ls-wave-scroll::-webkit-scrollbar { height: 9px; }
+        .ls-wave-scroll::-webkit-scrollbar-track { background: transparent; }
+        .ls-wave-scroll::-webkit-scrollbar-thumb {
+            background: rgba(42,107,74,0.5); border-radius: 999px;
+        }
+        .ls-wave-scroll::-webkit-scrollbar-thumb:hover { background: rgba(42,107,74,0.7); }
+        :root[data-theme="dark"] .ls-wave-scroll::-webkit-scrollbar-thumb { background: rgba(150,200,175,0.5); }
+        /* 확대/축소 슬라이더 — 파형 우측 하단, 약 1/4 폭 */
+        .ls-zoom {
+            position: absolute; right: 7px; bottom: 10px;
+            display: flex; align-items: center; gap: 0.3rem;
+            width: 17%; min-width: 82px; max-width: 140px;
+            padding: 0.16rem 0.45rem;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.8);
+            border: 1px solid rgba(42,107,74,0.22);
+            box-shadow: 0 1px 5px rgba(0,0,0,0.14);
+            z-index: 6;
+            -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+        }
+        .ls-zoom i { font-size: 0.64rem; color: var(--green-deep); flex-shrink: 0; }
+        .ls-zoom input[type=range] { flex: 1; min-width: 0; margin: 0; height: 14px; }
+        .ls-zoom.disabled { opacity: 0.4; pointer-events: none; }
+        :root[data-theme="dark"] .ls-zoom {
+            background: rgba(20,30,26,0.74);
+            border-color: rgba(150,200,175,0.25);
+        }
+        :root[data-theme="dark"] .ls-zoom i { color: var(--green-light); }
         .ls-wave-empty {
             position: absolute; inset: 0;
             display: flex; align-items: center; justify-content: center;
             font-size: 0.82rem; color: var(--text-light);
+            text-align: center; padding: 0 1rem;
             pointer-events: none;
         }
         /* 트림 핸들 (시작/끝 컷) */
@@ -8148,10 +8189,19 @@
 
                 <!-- 파형 -->
                 <div class="ls-wave-wrap">
-                    <canvas class="ls-wave" id="lsWave"></canvas>
-                    <div class="ls-trim ls-trim-start" id="lsTrimStart" style="display:none;" title="시작점 드래그"><span class="ls-trim-grip"></span></div>
-                    <div class="ls-trim ls-trim-end" id="lsTrimEnd" style="display:none;left:100%;" title="끝점 드래그"><span class="ls-trim-grip"></span></div>
+                    <div class="ls-wave-scroll" id="lsWaveScroll">
+                        <div class="ls-wave-inner" id="lsWaveInner">
+                            <canvas class="ls-wave" id="lsWave"></canvas>
+                            <div class="ls-trim ls-trim-start" id="lsTrimStart" style="display:none;" title="시작점 드래그"><span class="ls-trim-grip"></span></div>
+                            <div class="ls-trim ls-trim-end" id="lsTrimEnd" style="display:none;left:100%;" title="끝점 드래그"><span class="ls-trim-grip"></span></div>
+                        </div>
+                    </div>
                     <div class="ls-wave-empty" id="lsWaveEmpty">RECORD 를 누르면 파형이 표시됩니다</div>
+                    <!-- 확대/축소 슬라이더 — 파형 우측 하단 -->
+                    <div class="ls-zoom" id="lsZoomCtl" title="파형 확대/축소">
+                        <i class="fas fa-arrows-left-right" aria-hidden="true"></i>
+                        <input type="range" id="lsZoom" min="100" max="800" step="10" value="100" aria-label="파형 확대/축소">
+                    </div>
                 </div>
 
                 <!-- 트랜스포트 -->
@@ -13293,7 +13343,11 @@
             const ARM_FRAMES_NEEDED = 2;
             // 너무 짧으면 무시 (실수 클릭 등)
             const MIN_LOOP_SEC = 0.25;
-            const MAX_UNDO = 20;
+            // 첫 녹음 최대 길이 (초) — 넘으면 자동 정지. 메모리 보호용.
+            const MAX_LOOP_SEC = 180;          // 3분
+            const MAX_UNDO = 20;               // UNDO 최대 개수 (상한)
+            // UNDO 스택 메모리 예산 (바이트). 긴 루프일수록 적게 쌓이도록 개수 대신 용량으로도 제한.
+            const MAX_UNDO_BYTES = 120 * 1024 * 1024;  // ~120MB
 
             // ─── 상태 ──────────────────────────────────────────────────
             let ls_ctx = null;
@@ -13330,6 +13384,9 @@
             let ls_micRunning = false;
             let ls_rafId = 0;
             let ls_initialized = false;
+            let ls_zoom = 1;                // 파형 확대 배율 (1 = 100%)
+            let ls_userScrollUntil = 0;     // 사용자가 직접 스크롤한 직후 자동추적 보류 시각
+            let ls_autoScrolling = false;   // 프로그램이 스크롤 중인지 (사용자 스크롤과 구분)
 
             // ─── DOM 헬퍼 ──────────────────────────────────────────────
             function $(id) { return document.getElementById(id); }
@@ -13393,7 +13450,26 @@
                 if (rev)  { rev.disabled  = !hasLoop; rev.classList.toggle('active', ls_reversed); }
                 if (undo) { undo.disabled = !ls_undoStack.length; }
                 var empty = $('lsWaveEmpty');
-                if (empty) empty.style.display = (hasLoop || ls_state === 'armed' || ls_state === 'recording') ? 'none' : '';
+                if (empty) {
+                    if (ls_state === 'armed') {
+                        // 신호 대기 중 — 임계값 기반 자동 녹음 안내를 파형 영역에 표시
+                        empty.textContent = '오디오가 위 설정의 임계값을 넘으면 오디오를 인지하고 녹음 시작합니다';
+                        empty.style.display = '';
+                    } else if (hasLoop || ls_state === 'recording') {
+                        empty.style.display = 'none';
+                    } else {
+                        empty.textContent = 'RECORD 를 누르면 파형이 표시됩니다';
+                        empty.style.display = '';
+                    }
+                }
+                // 확대/축소 — 녹음된 루프가 있을 때만 활성화
+                var zoom = $('lsZoom'), zoomCtl = $('lsZoomCtl');
+                if (zoom) {
+                    zoom.disabled = !hasLoop;
+                    // 루프가 사라지면 줌을 100%로 리셋 (빈 파형이 확대된 채 남지 않게)
+                    if (!hasLoop && ls_zoom !== 1) { zoom.value = 100; setZoom(1); }
+                }
+                if (zoomCtl) zoomCtl.classList.toggle('disabled', !hasLoop);
                 updateTrimHandles();
             }
             // 트림 핸들 위치/표시 — 루프가 있고 녹음 중이 아닐 때만 노출
@@ -13613,12 +13689,26 @@
                 nb.getChannelData(0).set(buf.getChannelData(0));
                 return nb;
             }
+            function undoBytes() {
+                var b = 0;
+                for (var i = 0; i < ls_undoStack.length; i++) {
+                    var buf = ls_undoStack[i].buffer;
+                    if (buf) b += buf.length * 4;   // Float32 = 4바이트/샘플 (모노)
+                }
+                return b;
+            }
             function pushUndo() {
                 ls_undoStack.push({
                     buffer: copyBuf(ls_loopBuffer), reversed: ls_reversed,
                     trimStart: ls_trimStart, trimEnd: ls_trimEnd
                 });
+                // 개수 상한
                 if (ls_undoStack.length > MAX_UNDO) ls_undoStack.shift();
+                // 메모리 예산 상한 — 오래된 스냅샷부터 버려 ~120MB 이하 유지
+                // (단, 최소 1개는 남겨 직전 동작은 항상 되돌릴 수 있게)
+                while (ls_undoStack.length > 1 && undoBytes() > MAX_UNDO_BYTES) {
+                    ls_undoStack.shift();
+                }
             }
             function onUndoClick() {
                 if (!ls_undoStack.length) return;
@@ -13769,6 +13859,13 @@
                             ls_armFrameCount = 0;
                         }
                     }
+                    // 첫 녹음(루프 없음) — 최대 길이(MAX_LOOP_SEC) 도달 시 자동 정지
+                    if (ls_state === 'recording' && !ls_loopBuffer) {
+                        if ((ls_ctx.currentTime - ls_recStartCtxTime) >= MAX_LOOP_SEC) {
+                            stopRecording();
+                            setStatus('최대 길이(' + Math.round(MAX_LOOP_SEC / 60) + '분)에 도달해 녹음을 자동 정지했습니다.');
+                        }
+                    }
                     if (ls_state === 'recording' && ls_loopBuffer && ls_masterDuration > 0) {
                         if ((ls_ctx.currentTime - ls_recStartCtxTime) >= ls_masterDuration / ls_speed) {
                             if (ls_contDub) {
@@ -13795,6 +13892,7 @@
                     updateRecDot(null);
                 }
                 drawCurrent();
+                followPlayhead();
                 if (ls_micRunning || ls_state === 'playing' || ls_state === 'recording' || ls_state === 'armed') {
                     ls_rafId = requestAnimationFrame(tick);
                 }
@@ -13810,6 +13908,51 @@
                 c.height = Math.max(1, Math.round(r.height * dpr));
                 if (ls_loopBuffer) recomputePeaks();
                 drawCurrent();
+            }
+            // ─── 파형 확대/축소 ───────────────────────────────────────
+            // inner 의 폭을 줌 배율만큼 늘려 캔버스를 더 넓게(=더 정밀하게) 그리고,
+            // 스크롤 컨테이너에 가로 스크롤바가 생기게 한다. 확대 중심은 현재 보이는
+            // 화면의 중앙을 유지.
+            function setZoom(z) {
+                z = Math.max(1, Math.min(8, z));
+                var scroll = $('lsWaveScroll'), c = $('lsWave'), inner = $('lsWaveInner');
+                var dpr = window.devicePixelRatio || 1;
+                // 줌 변경 전, 화면 중앙이 가리키는 전체 대비 위치(0~1)
+                var centerFrac = 0.5;
+                if (scroll && c && c.width > 0) {
+                    centerFrac = (scroll.scrollLeft + scroll.clientWidth / 2) / (c.width / dpr);
+                }
+                ls_zoom = z;
+                if (inner) inner.style.width = (z * 100) + '%';
+                sizeCanvas();   // 백버퍼 재계산 + 피크 재계산 + 재그리기
+                // 확대 중심 유지
+                if (scroll && c) {
+                    var Wcss = c.width / (window.devicePixelRatio || 1);
+                    ls_autoScrolling = true;
+                    scroll.scrollLeft = Math.max(0, centerFrac * Wcss - scroll.clientWidth / 2);
+                    ls_autoScrolling = false;
+                }
+            }
+            // 재생 중 빨간 커서가 화면 밖으로 나가면 살짝 따라가게 스크롤.
+            // 단, 사용자가 방금 직접 스크롤했다면 잠시 보류(서로 안 싸우게).
+            function followPlayhead() {
+                if (ls_zoom <= 1) return;
+                if (!(ls_loopSource && ls_masterDuration > 0 && ls_ctx && ls_loopBuffer)) return;
+                var now = (window.performance && performance.now) ? performance.now() : Date.now();
+                if (now < ls_userScrollUntil) return;
+                var scroll = $('lsWaveScroll'), c = $('lsWave');
+                if (!scroll || !c) return;
+                var Wcss = c.width / (window.devicePixelRatio || 1);
+                var cx = ((ls_audioStartSec + currentPhase()) / ls_loopBuffer.duration) * Wcss;
+                var view = scroll.clientWidth, left = scroll.scrollLeft, margin = view * 0.12;
+                var target = null;
+                if (cx < left + margin) target = cx - margin;
+                else if (cx > left + view - margin) target = cx - view + margin;
+                if (target != null) {
+                    ls_autoScrolling = true;
+                    scroll.scrollLeft = Math.max(0, Math.min(Wcss - view, target));
+                    ls_autoScrolling = false;
+                }
             }
             function recomputePeaks() {
                 var c = $('lsWave'); if (!c || !ls_loopBuffer) { ls_loopPeaks = null; return; }
@@ -14079,6 +14222,36 @@
                     var el = $('lsSpeedVal'); if (el) el.textContent = pct + '%';
                 };
                 $('lsSpeedVal').textContent = '100%';
+
+                // 확대/축소 슬라이더 (값 100~800 = 1~8배)
+                (function() {
+                    var zr = $('lsZoom');
+                    if (zr) zr.oninput = function(e) { setZoom((+e.target.value) / 100); };
+                    var scroll = $('lsWaveScroll');
+                    if (scroll) scroll.addEventListener('scroll', function() {
+                        if (ls_autoScrolling) return;   // 프로그램 스크롤은 무시
+                        var now = (window.performance && performance.now) ? performance.now() : Date.now();
+                        ls_userScrollUntil = now + 1200;  // 사용자 스크롤 직후 1.2초 자동추적 보류
+                    });
+                })();
+
+                // 파형 클릭 → 그 지점으로 재생 위치 이동(시크) 후 거기서부터 재생.
+                // (트림 핸들/줌 슬라이더는 별도 요소라 캔버스 클릭만 시크로 처리됨)
+                (function() {
+                    var c = $('lsWave');
+                    if (!c) return;
+                    c.addEventListener('click', function(e) {
+                        if (!ls_loopBuffer) return;
+                        if (ls_state === 'armed' || ls_state === 'recording') return;
+                        var r = c.getBoundingClientRect();
+                        var f = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); // 전체 버퍼 대비 위치
+                        var rg = regionInfo();
+                        // 트림 구간 안으로 클램프 → 그 구간의 위상(phase)으로 변환
+                        var absSec = Math.max(rg.startSec, Math.min(rg.startSec + rg.dur, f * rg.fullDur));
+                        playLoopAtPhase(absSec - rg.startSec);
+                        setRecVisual(); updateTransport(); ensureTick();
+                    });
+                })();
 
                 document.addEventListener('keydown', onGlobalKeydown);
                 window.addEventListener('resize', sizeCanvas);
