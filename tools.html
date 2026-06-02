@@ -6457,18 +6457,26 @@
             color: var(--green-deep);
             border-color: var(--green-mid);
         }
-        .loop-rhythm-group-toggle.has-active {
-            background: rgba(82, 168, 114, 0.18);
-            color: var(--green-deep);
-        }
         :root[data-theme="dark"] .loop-style-btn.active,
         :root[data-theme="dark"] .loop-input-mode-btns button.active,
         :root[data-theme="dark"] .loop-measures-btns button.active,
-        :root[data-theme="dark"] .loop-rhythm-group-popup button.active,
-        :root[data-theme="dark"] .loop-rhythm-group-toggle.has-active {
+        :root[data-theme="dark"] .loop-rhythm-group-popup button.active {
             background: rgba(150, 200, 175, 0.18);
             color: var(--green-light);
             border-color: rgba(150, 200, 175, 0.45);
+        }
+        /* 리듬 선택 토글 — 어느 리듬이 선택됐는지 잘 보이게 약간 더 진하게 */
+        .loop-rhythm-group-toggle.has-active {
+            background: rgba(82, 168, 114, 0.34);
+            color: var(--green-deep);
+            border-color: var(--green-mid);
+            font-weight: 700;
+        }
+        :root[data-theme="dark"] .loop-rhythm-group-toggle.has-active {
+            background: rgba(150, 200, 175, 0.34);
+            color: #eaf7ef;
+            border-color: rgba(150, 200, 175, 0.6);
+            font-weight: 700;
         }
         .loop-rhythm-drawer button {
             padding: 0.4rem 0.3rem; font-size: 0.74rem; font-weight: 600;
@@ -6503,8 +6511,25 @@
             display: flex; align-items: center; gap: 0.8rem;
             flex-wrap: wrap; margin-bottom: 0.6rem;
         }
+        /* 페이지 나누기 하위옵션 — 보기 버튼 아래 떠 있는 작은 팝업 */
+        .loop-view-ctl { position: relative; }
+        .loop-view-pop {
+            position: absolute; top: calc(100% + 6px); left: 0;
+            z-index: 30;
+            display: flex; align-items: center; gap: 0.6rem;
+            background: var(--bg-panel);
+            border: 1px solid rgba(42,107,74,0.25);
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+            padding: 0.45rem 0.55rem;
+            white-space: nowrap;
+        }
+        .loop-view-pop[hidden] { display: none; }
+        :root[data-theme="dark"] .loop-view-pop { border-color: rgba(150,200,175,0.3); }
         /* 설정(고급) 접기 */
         .loop-settings { margin-bottom: 0.8rem; }
+        /* 설정 토글(왼쪽) + 입력(오른쪽 끝) 한 줄 */
+        .loop-settings-bar { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
         .loop-settings-toggle {
             display: inline-flex; align-items: center; gap: 0.45rem;
             padding: 0.42rem 0.8rem; border-radius: 8px;
@@ -6915,6 +6940,9 @@
             line-height: 1.15;
             display: block;
             box-sizing: border-box;
+            /* 내용 높이만큼만 잡고 셀 안에서 수직 가운데 정렬 (위에 붙지 않게) */
+            align-self: center;
+            height: auto;
         }
         .loop-cell-half-input::placeholder {
             color: rgba(26, 36, 33, 0.3);
@@ -7567,40 +7595,43 @@
                                 <button type="button" class="loop-measures-pm" data-action="adjustLoopBars" data-args="1" aria-label="마디 1개 늘리기">+</button>
                             </div>
                         </div>
-                        <div class="loop-input-mode" title="코드 칸을 클릭했을 때의 기본 입력 방식">
-                            <label>입력</label>
-                            <div class="loop-input-mode-btns" id="loopInputModeBtns">
-                                <button type="button" class="active" data-mode="picker" data-action="setLoopInputMode" data-args="picker">픽커</button>
-                                <button type="button" data-mode="text" data-action="setLoopInputMode" data-args="text">직접입력</button>
-                            </div>
-                        </div>
-                        <div class="loop-input-mode" title="악보를 한 화면에 이어서 볼지, 10줄씩 페이지로 나눠 볼지" style="margin-left:auto;">
+                        <div class="loop-input-mode loop-view-ctl" title="악보를 한 화면에 이어서 볼지, 10줄씩 페이지로 나눠 볼지" style="margin-left:auto;">
                             <label>보기</label>
                             <div class="loop-input-mode-btns" id="loopViewModeBtns">
                                 <button type="button" class="active" data-view="continuous" data-action="setLoopViewMode" data-args="continuous">이어보기</button>
                                 <button type="button" data-view="paged" data-action="setLoopViewMode" data-args="paged">페이지 나누기</button>
                             </div>
-                        </div>
-                        <div class="loop-input-mode" id="loopSpreadCtl" title="페이지를 한 쪽씩 볼지, 두 쪽씩 펼쳐 볼지" style="display:none;">
-                            <div class="loop-input-mode-btns" id="loopSpreadBtns">
-                                <button type="button" class="active" data-spread="1" data-action="setLoopPageSpread" data-args="1">한 페이지씩</button>
-                                <button type="button" data-spread="2" data-action="setLoopPageSpread" data-args="2">두 페이지씩</button>
+                            <!-- 페이지 나누기 하위옵션 — 떠 있는 작은 팝업 (행 레이아웃을 밀지 않음) -->
+                            <div class="loop-view-pop" id="loopViewPop" hidden>
+                                <div class="loop-input-mode-btns" id="loopSpreadBtns" title="페이지를 한 쪽씩 볼지, 두 쪽씩 펼쳐 볼지">
+                                    <button type="button" class="active" data-spread="1" data-action="setLoopPageSpread" data-args="1">한 페이지씩</button>
+                                    <button type="button" data-spread="2" data-action="setLoopPageSpread" data-args="2">두 페이지씩</button>
+                                </div>
+                                <div class="loop-page-nav" id="loopPageNav" style="display:none;">
+                                    <button type="button" class="loop-page-arrow" data-action="loopPagePrev" aria-label="이전 페이지" title="이전 페이지 (←)">‹</button>
+                                    <span class="loop-page-label" id="loopPageLabel">1 / 1</span>
+                                    <button type="button" class="loop-page-arrow" data-action="loopPageNext" aria-label="다음 페이지" title="다음 페이지 (→)">›</button>
+                                </div>
                             </div>
                         </div>
-                        <div class="loop-page-nav" id="loopPageNav" style="display:none;">
-                            <button type="button" class="loop-page-arrow" data-action="loopPagePrev" aria-label="이전 페이지" title="이전 페이지 (←)">‹</button>
-                            <span class="loop-page-label" id="loopPageLabel">1 / 1</span>
-                            <button type="button" class="loop-page-arrow" data-action="loopPageNext" aria-label="다음 페이지" title="다음 페이지 (→)">›</button>
-                        </div>
                     </div>
-                    <!-- 설정(고급): 리듬 · 베이스/피아노 · 예비박 — 접기/펼치기 -->
+                    <!-- 설정(고급) + 입력 — 같은 줄 (설정 왼쪽 · 입력 오른쪽 끝) -->
                     <div class="loop-settings">
-                        <button type="button" class="loop-settings-toggle" id="loopSettingsToggle" data-action="toggleLoopSettings" aria-expanded="false" aria-controls="loopAdvanced">
-                            <i class="fas fa-sliders-h" aria-hidden="true"></i>
-                            <span>설정</span>
-                            <span class="loop-settings-sub">리듬 · 베이스/피아노 · 예비박</span>
-                            <i class="fas fa-chevron-down loop-settings-caret" aria-hidden="true"></i>
-                        </button>
+                        <div class="loop-settings-bar">
+                            <button type="button" class="loop-settings-toggle" id="loopSettingsToggle" data-action="toggleLoopSettings" aria-expanded="false" aria-controls="loopAdvanced">
+                                <i class="fas fa-sliders-h" aria-hidden="true"></i>
+                                <span>설정</span>
+                                <span class="loop-settings-sub">리듬 · 베이스/피아노 · 예비박</span>
+                                <i class="fas fa-chevron-down loop-settings-caret" aria-hidden="true"></i>
+                            </button>
+                            <div class="loop-input-mode" title="코드 칸을 클릭했을 때의 기본 입력 방식" style="margin-left:auto;">
+                                <label>입력</label>
+                                <div class="loop-input-mode-btns" id="loopInputModeBtns">
+                                    <button type="button" class="active" data-mode="picker" data-action="setLoopInputMode" data-args="picker">픽커</button>
+                                    <button type="button" data-mode="text" data-action="setLoopInputMode" data-args="text">직접입력</button>
+                                </div>
+                            </div>
+                        </div>
                         <div class="loop-adv" id="loopAdvanced" hidden>
                             <div class="loop-rhythm-picker" id="loopRhythmPicker">
                                 <label>리듬</label>
@@ -12806,8 +12837,9 @@
                 vbtns.forEach(function(b) { b.classList.toggle('active', b.dataset.view === loopViewMode); });
                 var sbtns = document.querySelectorAll('#loopSpreadBtns button');
                 sbtns.forEach(function(b) { b.classList.toggle('active', Number(b.dataset.spread) === loopPageSpread); });
-                var spreadCtl = document.getElementById('loopSpreadCtl');
-                if (spreadCtl) spreadCtl.style.display = paged ? '' : 'none';
+                // 하위옵션은 '페이지 나누기'일 때만 떠 있는 팝업으로 노출 (행 레이아웃 안 밀림)
+                var pop = document.getElementById('loopViewPop');
+                if (pop) { if (paged) pop.removeAttribute('hidden'); else pop.setAttribute('hidden', ''); }
                 var nav = document.getElementById('loopPageNav');
                 // 페이지 터너는 '한 페이지씩' + 페이지 2개 이상일 때만
                 if (nav) nav.style.display = (paged && loopPageSpread === 1 && multiPage) ? '' : 'none';
@@ -12861,13 +12893,26 @@
             function _fitChordText(el) {
                 if (!el) return;
                 el.style.whiteSpace = 'pre';   // 입력한 줄바꿈 보존 + 자동 줄바꿈 방지
-                if (!el.clientWidth || !el.clientHeight) return;  // 보이지 않으면(레이아웃 0) 건너뜀
+                if (!el.clientWidth) return;   // 보이지 않으면(레이아웃 0) 건너뜀
                 var maxF = 17, minF = 6, f = maxF, guard = 0;
                 el.style.fontSize = f + 'px';
-                while (f > minF && guard++ < 32 &&
-                       (el.scrollWidth > el.clientWidth + 0.5 || el.scrollHeight > el.clientHeight + 0.5)) {
-                    f -= 1;
-                    el.style.fontSize = f + 'px';
+                if (el.tagName === 'TEXTAREA') {
+                    // 입력칸 — 내용 높이만큼만 차지하게 한 뒤(CSS align-self:center 로 수직 가운데),
+                    //   셀 높이(부모) 기준으로 가로·세로 모두 들어오게 글자 축소.
+                    var boxH = (el.parentElement && el.parentElement.clientHeight) || el.clientHeight;
+                    el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px';
+                    while (f > minF && guard++ < 32 &&
+                           (el.scrollWidth > el.clientWidth + 0.5 || el.scrollHeight > boxH)) {
+                        f -= 1;
+                        el.style.fontSize = f + 'px';
+                        el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px';
+                    }
+                } else {
+                    while (f > minF && guard++ < 32 &&
+                           (el.scrollWidth > el.clientWidth + 0.5 || el.scrollHeight > el.clientHeight + 0.5)) {
+                        f -= 1;
+                        el.style.fontSize = f + 'px';
+                    }
                 }
             }
             function renderLoopGrid() {
