@@ -6448,6 +6448,28 @@
             color: #fff;
             border-color: var(--green-mid);
         }
+        /* ── 액티브 상태 '옅은 초록' 통일 (진한 채움 → 옅은 톤 + 초록 테두리) ── */
+        .loop-style-btn.active,
+        .loop-input-mode-btns button.active,
+        .loop-measures-btns button.active,
+        .loop-rhythm-group-popup button.active {
+            background: rgba(82, 168, 114, 0.18);
+            color: var(--green-deep);
+            border-color: var(--green-mid);
+        }
+        .loop-rhythm-group-toggle.has-active {
+            background: rgba(82, 168, 114, 0.18);
+            color: var(--green-deep);
+        }
+        :root[data-theme="dark"] .loop-style-btn.active,
+        :root[data-theme="dark"] .loop-input-mode-btns button.active,
+        :root[data-theme="dark"] .loop-measures-btns button.active,
+        :root[data-theme="dark"] .loop-rhythm-group-popup button.active,
+        :root[data-theme="dark"] .loop-rhythm-group-toggle.has-active {
+            background: rgba(150, 200, 175, 0.18);
+            color: var(--green-light);
+            border-color: rgba(150, 200, 175, 0.45);
+        }
         .loop-rhythm-drawer button {
             padding: 0.4rem 0.3rem; font-size: 0.74rem; font-weight: 600;
             border: 1px solid rgba(42, 107, 74, 0.15); border-radius: 4px;
@@ -6481,6 +6503,26 @@
             display: flex; align-items: center; gap: 0.8rem;
             flex-wrap: wrap; margin-bottom: 0.6rem;
         }
+        /* 설정(고급) 접기 */
+        .loop-settings { margin-bottom: 0.8rem; }
+        .loop-settings-toggle {
+            display: inline-flex; align-items: center; gap: 0.45rem;
+            padding: 0.42rem 0.8rem; border-radius: 8px;
+            border: 1px solid rgba(42,107,74,0.2);
+            background: rgba(42,107,74,0.05); color: var(--text-mid);
+            font-family: inherit; font-size: 0.8rem; cursor: pointer;
+            transition: background 0.15s;
+        }
+        .loop-settings-toggle:hover { background: rgba(42,107,74,0.1); }
+        .loop-settings-toggle .loop-settings-sub { color: var(--text-light); font-size: 0.74rem; }
+        .loop-settings-caret { font-size: 0.62rem; transition: transform 0.2s; margin-left: 0.15rem; }
+        .loop-settings-toggle[aria-expanded="true"] .loop-settings-caret { transform: rotate(180deg); }
+        .loop-adv { display: flex; flex-direction: column; gap: 0.7rem; margin-top: 0.7rem; }
+        .loop-adv[hidden] { display: none; }
+        :root[data-theme="dark"] .loop-settings-toggle {
+            background: rgba(150,200,175,0.08); border-color: rgba(150,200,175,0.22); color: #cfe0d6;
+        }
+        :root[data-theme="dark"] .loop-settings-toggle:hover { background: rgba(150,200,175,0.16); }
         /* 페이지 나누기 — 페이지들을 가로로 나란히 */
         .loop-grid-pages {
             display: flex; gap: 1.6rem; align-items: flex-start;
@@ -7509,39 +7551,8 @@
                             <div id="loopPresetItems"></div>
                         </div>
                     </div>
-                    <!-- 리듬 — 그룹 토글 4개를 한 줄로 (베이스/피아노 보다 위) -->
-                    <div class="loop-rhythm-picker" id="loopRhythmPicker">
-                        <label>리듬</label>
-                        <div class="loop-rhythm-groups" id="loopRhythmGroups"></div>
-                    </div>
-                    <!-- 베이스/피아노 — 한 행 (리듬 아래) -->
-                    <div class="loop-style-row">
-                        <div class="loop-style-group">
-                            <label>베이스</label>
-                            <div class="loop-style-btns" id="loopBassStyleBtns">
-                                <button type="button" class="loop-style-btn active" data-bstyle="default" data-action="setLoopBassStyle" data-args="default">기본</button>
-                                <button type="button" class="loop-style-btn" data-bstyle="8beat" data-action="setLoopBassStyle" data-args="8beat">8비트</button>
-                                <button type="button" class="loop-style-btn" data-bstyle="16beat" data-action="setLoopBassStyle" data-args="16beat">16비트</button>
-                            </div>
-                        </div>
-                        <div class="loop-style-group">
-                            <label>피아노</label>
-                            <div class="loop-style-btns" id="loopPianoStyleBtns">
-                                <button type="button" class="loop-style-btn active" data-pstyle="default" data-action="setLoopPianoStyle" data-args="default">기본</button>
-                                <button type="button" class="loop-style-btn" data-pstyle="quarter" data-action="setLoopPianoStyle" data-args="quarter">4비트</button>
-                                <button type="button" class="loop-style-btn" data-pstyle="8beat" data-action="setLoopPianoStyle" data-args="8beat">8비트</button>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- 예비박 + 마디 + 입력 픽커 — 코드 그리드 바로 위. 입력 픽커는 오른쪽으로. -->
+                    <!-- 핵심 컨트롤: 마디 · 입력 · 보기 (항상 표시) -->
                     <div class="loop-top-row">
-                        <div class="loop-style-group" title="시작 전 4박자 카운트인을 하이햇으로 들려줍니다">
-                            <label>예비박</label>
-                            <label class="loop-toggle">
-                                <input type="checkbox" id="loopCountInToggle" data-change="setLoopCountIn" data-args="$checked" aria-label="예비박 토글">
-                                <span class="loop-toggle-track"><span class="loop-toggle-thumb"></span></span>
-                            </label>
-                        </div>
                         <div class="loop-measures-label">
                             <label>마디</label>
                             <div class="loop-measures-btns" id="loopMeasureBtns">
@@ -7556,17 +7567,14 @@
                                 <button type="button" class="loop-measures-pm" data-action="adjustLoopBars" data-args="1" aria-label="마디 1개 늘리기">+</button>
                             </div>
                         </div>
-                        <div class="loop-input-mode" title="코드 칸을 클릭했을 때의 기본 입력 방식" style="margin-left:auto;">
+                        <div class="loop-input-mode" title="코드 칸을 클릭했을 때의 기본 입력 방식">
                             <label>입력</label>
                             <div class="loop-input-mode-btns" id="loopInputModeBtns">
                                 <button type="button" class="active" data-mode="picker" data-action="setLoopInputMode" data-args="picker">픽커</button>
                                 <button type="button" data-mode="text" data-action="setLoopInputMode" data-args="text">직접입력</button>
                             </div>
                         </div>
-                    </div>
-                    <!-- 보기: 이어보기 / 페이지 나누기(+ 한쪽·두쪽) + 페이지 터너 -->
-                    <div class="loop-view-row" id="loopViewRow">
-                        <div class="loop-input-mode" title="악보를 한 화면에 이어서 볼지, 10줄씩 페이지로 나눠 볼지">
+                        <div class="loop-input-mode" title="악보를 한 화면에 이어서 볼지, 10줄씩 페이지로 나눠 볼지" style="margin-left:auto;">
                             <label>보기</label>
                             <div class="loop-input-mode-btns" id="loopViewModeBtns">
                                 <button type="button" class="active" data-view="continuous" data-action="setLoopViewMode" data-args="continuous">이어보기</button>
@@ -7579,10 +7587,50 @@
                                 <button type="button" data-spread="2" data-action="setLoopPageSpread" data-args="2">두 페이지씩</button>
                             </div>
                         </div>
-                        <div class="loop-page-nav" id="loopPageNav" style="display:none; margin-left:auto;">
+                        <div class="loop-page-nav" id="loopPageNav" style="display:none;">
                             <button type="button" class="loop-page-arrow" data-action="loopPagePrev" aria-label="이전 페이지" title="이전 페이지 (←)">‹</button>
                             <span class="loop-page-label" id="loopPageLabel">1 / 1</span>
                             <button type="button" class="loop-page-arrow" data-action="loopPageNext" aria-label="다음 페이지" title="다음 페이지 (→)">›</button>
+                        </div>
+                    </div>
+                    <!-- 설정(고급): 리듬 · 베이스/피아노 · 예비박 — 접기/펼치기 -->
+                    <div class="loop-settings">
+                        <button type="button" class="loop-settings-toggle" id="loopSettingsToggle" data-action="toggleLoopSettings" aria-expanded="false" aria-controls="loopAdvanced">
+                            <i class="fas fa-sliders-h" aria-hidden="true"></i>
+                            <span>설정</span>
+                            <span class="loop-settings-sub">리듬 · 베이스/피아노 · 예비박</span>
+                            <i class="fas fa-chevron-down loop-settings-caret" aria-hidden="true"></i>
+                        </button>
+                        <div class="loop-adv" id="loopAdvanced" hidden>
+                            <div class="loop-rhythm-picker" id="loopRhythmPicker">
+                                <label>리듬</label>
+                                <div class="loop-rhythm-groups" id="loopRhythmGroups"></div>
+                            </div>
+                            <div class="loop-style-row">
+                                <div class="loop-style-group">
+                                    <label>베이스</label>
+                                    <div class="loop-style-btns" id="loopBassStyleBtns">
+                                        <button type="button" class="loop-style-btn active" data-bstyle="default" data-action="setLoopBassStyle" data-args="default">기본</button>
+                                        <button type="button" class="loop-style-btn" data-bstyle="8beat" data-action="setLoopBassStyle" data-args="8beat">8비트</button>
+                                        <button type="button" class="loop-style-btn" data-bstyle="16beat" data-action="setLoopBassStyle" data-args="16beat">16비트</button>
+                                    </div>
+                                </div>
+                                <div class="loop-style-group">
+                                    <label>피아노</label>
+                                    <div class="loop-style-btns" id="loopPianoStyleBtns">
+                                        <button type="button" class="loop-style-btn active" data-pstyle="default" data-action="setLoopPianoStyle" data-args="default">기본</button>
+                                        <button type="button" class="loop-style-btn" data-pstyle="quarter" data-action="setLoopPianoStyle" data-args="quarter">4비트</button>
+                                        <button type="button" class="loop-style-btn" data-pstyle="8beat" data-action="setLoopPianoStyle" data-args="8beat">8비트</button>
+                                    </div>
+                                </div>
+                                <div class="loop-style-group" title="시작 전 4박자 카운트인을 하이햇으로 들려줍니다">
+                                    <label>예비박</label>
+                                    <label class="loop-toggle">
+                                        <input type="checkbox" id="loopCountInToggle" data-change="setLoopCountIn" data-args="$checked" aria-label="예비박 토글">
+                                        <span class="loop-toggle-track"><span class="loop-toggle-thumb"></span></span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="loop-grid cols-4" id="loopGrid"></div>
@@ -11288,10 +11336,10 @@
                                     _loopPass++;
                                     nextIdx = target;        // 다시 시작 도돌이로
                                 } else {
-                                    // 모든 엔딩 완료 — 통과
-                                    _loopSection = -1; _loopPass = 1;
+                                    // 모든 엔딩 완료 — 통과. (회차는 wrap 때만 리셋 → 직후 skip 이 올바른 회차 사용)
+                                    _loopSection = -1;
                                     nextIdx = prev + 1;
-                                    if (nextIdx > rg.end) { nextIdx = rg.start; _consumedRights.clear(); }
+                                    if (nextIdx > rg.end) { nextIdx = rg.start; _consumedRights.clear(); _loopPass = 1; }
                                 }
                             } else {
                                 // 정상 advance — 다음 마디 또는 자연 wrap
@@ -12705,13 +12753,22 @@
             // 현재 회차(pass)에 맞지 않는 볼타 마디를 건너뛴다.
             //   볼타 없음 → 연주, 볼타에 pass 포함 → 연주, 아니면 다음 마디로 skip.
             function _skipNonMatchingVoltas(startIdx, rg, pass) {
-                var idx = startIdx, guard = 0, span = (rg.end - rg.start + 1);
+                var idx = startIdx, guard = 0, span = (rg.end - rg.start + 2);
                 while (idx <= rg.end && guard++ <= span) {
                     var a = _voltaNums(idx);
-                    if (a.length === 0 || a.indexOf(pass) !== -1) return idx;
-                    idx++;
+                    if (a.length === 0 || a.indexOf(pass) !== -1) return idx;   // 공통/일치 엔딩 → 연주
+                    // 현재 회차에 안 맞는 엔딩 — 그 엔딩 '구역 전체' 를 건너뛴다.
+                    //   구역 = 볼타 표시 마디부터 :| 마디(포함)까지, 또는 다음 볼타 표시 직전까지.
+                    var i2 = idx;
+                    while (i2 <= rg.end) {
+                        var hadRepeat = loopRepeats.right.has(i2);
+                        i2++;
+                        if (hadRepeat) break;                                // :| 만나면 구역 종료(다음 마디로)
+                        if (i2 <= rg.end && _voltaNums(i2).length) break;    // 다음 엔딩 시작 → 멈춤
+                    }
+                    idx = i2;   // 구역 다음 위치에서 재평가 (또 다른 엔딩일 수도)
                 }
-                return startIdx;   // 매칭 엔딩을 못 찾음 — 안전하게 원위치
+                return Math.min(idx, rg.end);
             }
             // 볼타 표기 라벨 — [2,3]→'2-3.', [1]→'1.', [2,4]→'2,4.'
             function _voltaLabel(arr) {
@@ -12778,6 +12835,14 @@
             };
             window.loopPagePrev = function() { _loopGoPage(loopCurPage - loopPageSpread); };
             window.loopPageNext = function() { _loopGoPage(loopCurPage + loopPageSpread); };
+            // 설정(고급) 접기/펼치기 — 리듬·베이스/피아노·예비박
+            window.toggleLoopSettings = function() {
+                var adv = document.getElementById('loopAdvanced');
+                var btn = document.getElementById('loopSettingsToggle');
+                if (!adv || !btn) return;
+                if (adv.hasAttribute('hidden')) { adv.removeAttribute('hidden'); btn.setAttribute('aria-expanded', 'true'); }
+                else { adv.setAttribute('hidden', ''); btn.setAttribute('aria-expanded', 'false'); }
+            };
             // 키보드 ← → 로 페이지 넘김 (반주 모드 + 페이지 터너 보일 때, 입력 중 아닐 때)
             document.addEventListener('keydown', function(e) {
                 if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
