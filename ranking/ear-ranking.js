@@ -1426,6 +1426,14 @@
                 { mode: tracker.mode, questionStartedAt: tracker.questionStartedAt });
             return;
         }
+        // 이미 10문제에 도달했거나 결과 제출(서버 저장) 중이면 추가 답안 무시.
+        //  finishSession 이 await(네트워크) 후에야 resetTracker 하므로, 그 사이 빠르게
+        //  더 답하면 11·12 라운드로 넘어가던 버그를 여기서 차단한다.
+        if (tracker.submitting || tracker.answers.length >= SESSION_SIZE) {
+            console.warn('[earSession] recordAnswer 무시 — 라운드 마무리/제출 중',
+                { n: tracker.answers.length, submitting: tracker.submitting });
+            return;
+        }
         const responseMs = Math.max(0, Date.now() - tracker.questionStartedAt.getTime());
         tracker.answers.push({ correct: !!correct, response_ms: responseMs });
         console.log('[earSession] answer recorded',
