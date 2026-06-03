@@ -6553,6 +6553,38 @@
         .loop-settings-toggle[aria-expanded="true"] .loop-settings-caret { transform: rotate(180deg); }
         .loop-adv { display: flex; flex-direction: column; gap: 0.7rem; margin-top: 0.7rem; }
         .loop-adv[hidden] { display: none; }
+        /* 설정 패널 안 행 (보기 · 입력 방식) */
+        .loop-adv-row { display: flex; align-items: center; gap: 0.55rem; position: relative; flex-wrap: wrap; }
+        .loop-adv-row > label {
+            white-space: nowrap; font-size: 0.78rem; font-weight: 600;
+            color: rgba(26,36,33,0.6); min-width: 3.6em;
+        }
+        :root[data-theme="dark"] .loop-adv-row > label { color: #cfe0d6; }
+        /* 예비박 — 마디 줄 오른쪽 끝으로 */
+        .loop-countin-top { margin-left: auto; }
+        /* 보기 + 입력 방식 한 줄 */
+        .loop-view-input-row { gap: 1.3rem; }
+        .loop-subctl { display: inline-flex; align-items: center; gap: 0.45rem; position: relative; }
+        .loop-subctl > label {
+            white-space: nowrap; font-size: 0.78rem; font-weight: 600; color: rgba(26,36,33,0.6);
+        }
+        :root[data-theme="dark"] .loop-subctl > label { color: #cfe0d6; }
+        .loop-inputmode-wrap { position: relative; display: inline-flex; }
+        .loop-inputmode-icon {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.32rem 0.7rem; border-radius: 8px;
+            border: 1px solid rgba(42,107,74,0.2);
+            background: rgba(42,107,74,0.05); color: var(--text-mid);
+            font-family: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+            transition: background 0.15s;
+        }
+        .loop-inputmode-icon:hover { background: rgba(42,107,74,0.1); }
+        .loop-inputmode-icon .loop-inputmode-caret { font-size: 0.6rem; transition: transform 0.2s; }
+        .loop-inputmode-icon[aria-expanded="true"] .loop-inputmode-caret { transform: rotate(180deg); }
+        :root[data-theme="dark"] .loop-inputmode-icon {
+            background: rgba(150,200,175,0.08); border-color: rgba(150,200,175,0.22); color: #cfe0d6;
+        }
+        :root[data-theme="dark"] .loop-inputmode-icon:hover { background: rgba(150,200,175,0.16); }
         :root[data-theme="dark"] .loop-settings-toggle {
             background: rgba(150,200,175,0.08); border-color: rgba(150,200,175,0.22); color: #cfe0d6;
         }
@@ -7604,27 +7636,15 @@
                                 <button type="button" class="loop-measures-pm" data-action="adjustLoopBars" data-args="1" aria-label="마디 1개 늘리기">+</button>
                             </div>
                         </div>
-                        <div class="loop-input-mode loop-view-ctl" title="악보를 한 화면에 이어서 볼지, 10줄씩 페이지로 나눠 볼지" style="margin-left:auto;">
-                            <label>보기</label>
-                            <div class="loop-input-mode-btns" id="loopViewModeBtns">
-                                <button type="button" class="active" data-view="continuous" data-action="setLoopViewMode" data-args="continuous">이어보기</button>
-                                <button type="button" data-view="paged" data-action="setLoopViewMode" data-args="paged">페이지 나누기</button>
-                            </div>
-                            <!-- 페이지 나누기 하위옵션 — 떠 있는 작은 팝업 (행 레이아웃을 밀지 않음) -->
-                            <div class="loop-view-pop" id="loopViewPop" hidden>
-                                <div class="loop-input-mode-btns" id="loopSpreadBtns" title="페이지를 한 쪽씩 볼지, 두 쪽씩 펼쳐 볼지">
-                                    <button type="button" class="active" data-spread="1" data-action="setLoopPageSpread" data-args="1">한 페이지씩</button>
-                                    <button type="button" data-spread="2" data-action="setLoopPageSpread" data-args="2">두 페이지씩</button>
-                                </div>
-                                <div class="loop-page-nav" id="loopPageNav" style="display:none;">
-                                    <button type="button" class="loop-page-arrow" data-action="loopPagePrev" aria-label="이전 페이지" title="이전 페이지 (←)">‹</button>
-                                    <span class="loop-page-label" id="loopPageLabel">1 / 1</span>
-                                    <button type="button" class="loop-page-arrow" data-action="loopPageNext" aria-label="다음 페이지" title="다음 페이지 (→)">›</button>
-                                </div>
-                            </div>
+                        <div class="loop-style-group loop-countin-top" title="시작 전 4박자 카운트인을 하이햇으로 들려줍니다">
+                            <label>예비박</label>
+                            <label class="loop-toggle">
+                                <input type="checkbox" id="loopCountInToggle" data-change="setLoopCountIn" data-args="$checked" aria-label="예비박 토글">
+                                <span class="loop-toggle-track"><span class="loop-toggle-thumb"></span></span>
+                            </label>
                         </div>
                     </div>
-                    <!-- 설정(고급) + 입력 — 같은 줄 (설정 왼쪽 · 입력 오른쪽 끝) -->
+                    <!-- 설정(고급) 토글 한 줄 — 보기·입력은 설정 패널 안으로 이동 -->
                     <div class="loop-settings">
                         <div class="loop-settings-bar">
                             <button type="button" class="loop-settings-toggle" id="loopSettingsToggle" data-action="toggleLoopSettings" aria-expanded="false" aria-controls="loopAdvanced">
@@ -7633,15 +7653,43 @@
                                 <span class="loop-settings-sub">리듬 · 베이스/피아노 · 예비박</span>
                                 <i class="fas fa-chevron-down loop-settings-caret" aria-hidden="true"></i>
                             </button>
-                            <div class="loop-input-mode" title="코드 칸을 클릭했을 때의 기본 입력 방식" style="margin-left:auto;">
-                                <label>입력</label>
-                                <div class="loop-input-mode-btns" id="loopInputModeBtns">
-                                    <button type="button" data-mode="picker" data-action="setLoopInputMode" data-args="picker">픽커</button>
-                                    <button type="button" class="active" data-mode="text" data-action="setLoopInputMode" data-args="text">직접입력</button>
-                                </div>
-                            </div>
                         </div>
                         <div class="loop-adv" id="loopAdvanced" hidden>
+                            <!-- 보기 + 입력 방식 — 한 줄 -->
+                            <div class="loop-adv-row loop-view-input-row">
+                                <div class="loop-subctl loop-view-ctl" title="악보를 한 화면에 이어서 볼지, 페이지로 나눠 볼지">
+                                    <label>보기</label>
+                                    <div class="loop-input-mode-btns" id="loopViewModeBtns">
+                                        <button type="button" class="active" data-view="continuous" data-action="setLoopViewMode" data-args="continuous">이어보기</button>
+                                        <button type="button" data-view="paged" data-action="setLoopViewMode" data-args="paged">페이지 나누기</button>
+                                    </div>
+                                    <div class="loop-view-pop" id="loopViewPop" hidden>
+                                        <div class="loop-input-mode-btns" id="loopSpreadBtns" title="페이지를 한 쪽씩 볼지, 두 쪽씩 펼쳐 볼지">
+                                            <button type="button" class="active" data-spread="1" data-action="setLoopPageSpread" data-args="1">한 페이지씩</button>
+                                            <button type="button" data-spread="2" data-action="setLoopPageSpread" data-args="2">두 페이지씩</button>
+                                        </div>
+                                        <div class="loop-page-nav" id="loopPageNav" style="display:none;">
+                                            <button type="button" class="loop-page-arrow" data-action="loopPagePrev" aria-label="이전 페이지" title="이전 페이지 (←)">‹</button>
+                                            <span class="loop-page-label" id="loopPageLabel">1 / 1</span>
+                                            <button type="button" class="loop-page-arrow" data-action="loopPageNext" aria-label="다음 페이지" title="다음 페이지 (→)">›</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="loop-subctl loop-inputmode-wrap loop-view-ctl">
+                                    <label>입력</label>
+                                    <button type="button" class="loop-inputmode-icon" id="loopInputModeIcon" data-action="toggleLoopInputPop" aria-haspopup="true" aria-expanded="false" title="코드 칸 클릭 시 기본 입력 방식 (픽커 / 직접입력)">
+                                        <i class="fas fa-keyboard" aria-hidden="true"></i>
+                                        <span id="loopInputModeCur">직접입력</span>
+                                        <i class="fas fa-chevron-down loop-inputmode-caret" aria-hidden="true"></i>
+                                    </button>
+                                    <div class="loop-view-pop loop-input-pop" id="loopInputPop" hidden>
+                                        <div class="loop-input-mode-btns" id="loopInputModeBtns">
+                                            <button type="button" data-mode="picker" data-action="setLoopInputMode" data-args="picker">픽커</button>
+                                            <button type="button" class="active" data-mode="text" data-action="setLoopInputMode" data-args="text">직접입력</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="loop-rhythm-picker" id="loopRhythmPicker">
                                 <label>리듬</label>
                                 <div class="loop-rhythm-groups" id="loopRhythmGroups"></div>
@@ -7662,13 +7710,6 @@
                                         <button type="button" class="loop-style-btn" data-pstyle="quarter" data-action="setLoopPianoStyle" data-args="quarter">4비트</button>
                                         <button type="button" class="loop-style-btn" data-pstyle="8beat" data-action="setLoopPianoStyle" data-args="8beat">8비트</button>
                                     </div>
-                                </div>
-                                <div class="loop-style-group" title="시작 전 4박자 카운트인을 하이햇으로 들려줍니다">
-                                    <label>예비박</label>
-                                    <label class="loop-toggle">
-                                        <input type="checkbox" id="loopCountInToggle" data-change="setLoopCountIn" data-args="$checked" aria-label="예비박 토글">
-                                        <span class="loop-toggle-track"><span class="loop-toggle-thumb"></span></span>
-                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -11950,22 +11991,53 @@
                 var savedMode = localStorage.getItem('loopInputMode');
                 if (savedMode === 'text' || savedMode === 'picker') loopInputMode = savedMode;
             } catch (e) {}
+            function _syncLoopInputModeUI(mode) {
+                document.querySelectorAll('#loopInputModeBtns button').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.mode === mode);
+                });
+                var cur = document.getElementById('loopInputModeCur');
+                if (cur) cur.textContent = (mode === 'picker') ? '픽커' : '직접입력';
+            }
+            // 입력 방식 팝업 열기/닫기 (설정 안 아이콘)
+            window.closeLoopInputPop = function() {
+                var pop = document.getElementById('loopInputPop');
+                var icon = document.getElementById('loopInputModeIcon');
+                if (pop) pop.setAttribute('hidden', '');
+                if (icon) icon.setAttribute('aria-expanded', 'false');
+            };
+            window.toggleLoopInputPop = function(e) {
+                if (e && e.stopPropagation) e.stopPropagation();
+                var pop = document.getElementById('loopInputPop');
+                var icon = document.getElementById('loopInputModeIcon');
+                if (!pop) return;
+                if (pop.hasAttribute('hidden')) {
+                    pop.removeAttribute('hidden');
+                    if (icon) icon.setAttribute('aria-expanded', 'true');
+                } else {
+                    pop.setAttribute('hidden', '');
+                    if (icon) icon.setAttribute('aria-expanded', 'false');
+                }
+            };
+            // 바깥 클릭 시 입력 팝업 닫기
+            document.addEventListener('click', function(e) {
+                var pop = document.getElementById('loopInputPop');
+                if (!pop || pop.hasAttribute('hidden')) return;
+                if (e.target.closest('#loopInputPop') || e.target.closest('#loopInputModeIcon')) return;
+                window.closeLoopInputPop();
+            });
             window.setLoopInputMode = function(mode) {
                 if (mode !== 'picker' && mode !== 'text') return;
                 loopInputMode = mode;
                 try { localStorage.setItem('loopInputMode', mode); } catch (e) {}
-                document.querySelectorAll('#loopInputModeBtns button').forEach(function(b) {
-                    b.classList.toggle('active', b.dataset.mode === mode);
-                });
+                _syncLoopInputModeUI(mode);
+                window.closeLoopInputPop();   // 선택하면 팝업 닫기
                 // 모드 바뀌면 열려있던 픽커는 닫기
                 if (typeof closeLoopPicker === 'function') closeLoopPicker();
                 gtag('event', 'loop_input_mode', { mode: mode });
             };
-            // 부팅 시 토글 동기화
+            // 부팅 시 토글 + 아이콘 표시 동기화
             document.addEventListener('DOMContentLoaded', function() {
-                document.querySelectorAll('#loopInputModeBtns button').forEach(function(b) {
-                    b.classList.toggle('active', b.dataset.mode === loopInputMode);
-                });
+                _syncLoopInputModeUI(loopInputMode);
             });
             const LOOP_RHYTHM_LABELS = {
                 '4beat': '4비트 A', '4beat2': '4비트 B',
