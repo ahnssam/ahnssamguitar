@@ -4784,10 +4784,10 @@
         .tuner-headstock.hs-bass4 .tuner-string-btn[data-midi="33"] { left: 21%; top: 50%; }
         .tuner-headstock.hs-bass4 .tuner-string-btn[data-midi="28"] { left: 17%; top: 66%; }
         /* 베이스 5현 (왼쪽 위→아래 D·A·E·B + 오른쪽 G). 왼쪽 4개는 살짝 멀게, 오른쪽 G */
-        .tuner-headstock.hs-bass5 .tuner-string-btn[data-midi="38"] { left: 25%; top: 18%; }
+        .tuner-headstock.hs-bass5 .tuner-string-btn[data-midi="38"] { left: 25%; top: 16.5%; }
         .tuner-headstock.hs-bass5 .tuner-string-btn[data-midi="33"] { left: 19%; top: 33%; }
         .tuner-headstock.hs-bass5 .tuner-string-btn[data-midi="28"] { left: 14%; top: 50%; }
-        .tuner-headstock.hs-bass5 .tuner-string-btn[data-midi="23"] { left: 11%; top: 67%; }
+        .tuner-headstock.hs-bass5 .tuner-string-btn[data-midi="23"] { left: 9.5%; top: 67%; }
         .tuner-headstock.hs-bass5 .tuner-string-btn[data-midi="43"] { left: 91%; top: 58%; }
 
         /* 헤드스톡 — 좌우 줄별 버튼을 SVG 위에 absolute 로 얹는다.
@@ -7934,7 +7934,8 @@
                 <div class="metronome-time-sig" id="clickTypeRow">
                     <label>소리</label>
                     <div class="time-sig-btns">
-                        <button type="button" class="time-sig-btn active" data-clicktype="default" data-action="updateClickType" data-args="default">기본</button>
+                        <button type="button" class="time-sig-btn active" data-clicktype="sharp" data-action="updateClickType" data-args="sharp">타입 A</button>
+                        <button type="button" class="time-sig-btn" data-clicktype="default" data-action="updateClickType" data-args="default">타입 B</button>
                         <button type="button" class="time-sig-btn" data-clicktype="voice" data-action="updateClickType" data-args="voice">목소리</button>
                     </div>
                 </div>
@@ -9825,7 +9826,7 @@
             let bpm = 90;
             let timeSig = 0;
             let soundMode = 'click';
-            let clickType = 'default';
+            let clickType = 'sharp';
             let drumRhythm = '8beat';
             let masterGainNode = null;
             let masterVol = 1.0;
@@ -11502,6 +11503,35 @@
                         source.start(time);
                         return;
                     }
+                }
+                if (clickType === 'sharp') {
+                    // 전자 톤 — 메인(사각) + 한 옥타브 아래 보강(삼각), 노이즈 없음, 피치 상향
+                    var accS = timeSig > 0 && (beatNum % timeSig) === 0;
+                    // 메인 톤 — 사각파
+                    var oscS = audioCtx.createOscillator();
+                    oscS.type = 'square';
+                    oscS.frequency.value = accS ? 2500 : 2080;
+                    var gS = audioCtx.createGain();
+                    gS.gain.setValueAtTime(0.0001, time);
+                    gS.gain.exponentialRampToValueAtTime(accS ? 0.85 : 0.6, time + 0.0005);
+                    gS.gain.exponentialRampToValueAtTime(0.0001, time + 0.045);
+                    oscS.connect(gS);
+                    gS.connect(getMasterOut());
+                    oscS.start(time);
+                    oscS.stop(time + 0.06);
+                    // 보강 톤(두께) — 한 옥타브 아래 삼각파, 살짝 긴 디케이
+                    var oscB = audioCtx.createOscillator();
+                    oscB.type = 'triangle';
+                    oscB.frequency.value = accS ? 1250 : 1040;
+                    var gB = audioCtx.createGain();
+                    gB.gain.setValueAtTime(0.0001, time);
+                    gB.gain.exponentialRampToValueAtTime(accS ? 0.8 : 0.58, time + 0.0006);
+                    gB.gain.exponentialRampToValueAtTime(0.0001, time + 0.055);
+                    oscB.connect(gB);
+                    gB.connect(getMasterOut());
+                    oscB.start(time);
+                    oscB.stop(time + 0.07);
+                    return;
                 }
                 var accent = timeSig > 0 && (beatNum % timeSig) === 0;
                 var osc = audioCtx.createOscillator();
