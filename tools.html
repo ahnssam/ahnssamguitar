@@ -1495,6 +1495,25 @@
         }
         /* .sidebar.closed: desktop rail handled inside @media(min-width:901px); mobile uses .open */
 
+        .sidebar-section-label-pinrow { display: flex; align-items: center; justify-content: space-between; }
+        .pin-clear-btn {
+            display: none;
+            align-items: center;
+            gap: 0.3rem;
+            border: 1px solid rgba(42, 107, 74, 0.25);
+            background: rgba(42, 107, 74, 0.06);
+            color: var(--green-deep);
+            font-family: inherit;
+            font-size: 0.62rem;
+            font-weight: 600;
+            letter-spacing: 0;
+            text-transform: none;
+            padding: 0.25rem 0.55rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .pin-clear-btn i { transform: rotate(45deg); font-size: 0.6rem; }
+        :root[data-theme="dark"] .pin-clear-btn { color: var(--green-light); border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); }
         .sidebar-section-label {
             font-size: 0.72rem;
             font-weight: 700;
@@ -2201,6 +2220,8 @@
             .mobile-tab-more:active { background: rgba(42, 107, 74, 0.05); }
             /* 핀 아이콘은 모바일에서만 노출 */
             .menu-pin { display: inline-flex; align-items: center; }
+            /* 핀 전체 해제 버튼 — 모바일 + 고정된 핀이 있을 때만 */
+            body.has-pins .pin-clear-btn { display: inline-flex; }
 
             /* Main content: topbar + tab strip height */
             .tools-main {
@@ -4505,6 +4526,8 @@
         /* Override ear-ranking.js's default pill margin-left: auto so that when
            the pill sits inside .et-reset-col it doesn't try to push itself away.
            Also give the "idle" (no session started) state a more muted look. */
+        /* 라운드 개념 제거 — 라운드 펠릿은 항상 숨김(듣기 전 잔상 방지) */
+        .et-session-pill { display: none !important; }
         .et-reset-col .et-session-pill {
             margin: 0;
             padding: 0.18rem 0.55rem;
@@ -4858,7 +4881,7 @@
         .tuner-headstock.hs-bass4 .tuner-string-btn:hover,
         .tuner-headstock.hs-bass5 .tuner-string-btn:hover { transform: translate(-50%, -50%) scale(1.08); }
         /* 6 인라인 (위→아래 e·B·G·D·A·E — 고음이 위), 페그 왼쪽 위로 / 1번줄 e 더 위로 */
-        .tuner-headstock.hs-inline .tuner-string-btn[data-midi="64"] { left: 33%; top: 13%; }
+        .tuner-headstock.hs-inline .tuner-string-btn[data-midi="64"] { left: 33%; top: 11%; }
         .tuner-headstock.hs-inline .tuner-string-btn[data-midi="59"] { left: 30%; top: 22%; }
         .tuner-headstock.hs-inline .tuner-string-btn[data-midi="55"] { left: 25%; top: 32%; }
         .tuner-headstock.hs-inline .tuner-string-btn[data-midi="50"] { left: 21%; top: 42%; }
@@ -4927,12 +4950,14 @@
         }
         .tuner-string-btn.tuned::after {
             content: '✓';
-            position: absolute; top: -5px; right: -5px;
-            width: 15px; height: 15px; line-height: 15px;
-            font-size: 9px; font-weight: 700; text-align: center;
+            position: absolute; top: -7px; right: -7px;
+            width: 20px; height: 20px;
+            font-size: 13px; font-weight: 900;
             background: var(--green-mid); color: #fff;
             border-radius: 50%; border: 2px solid #fff;
             font-family: sans-serif; z-index: 3;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.25);
         }
         :root[data-theme="dark"] .tuner-string-btn.tuned:not(.in-tune) {
             background: var(--green-deep); color: #fff; border-color: var(--green-mid);
@@ -7694,7 +7719,7 @@
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <!-- 1. 연습 도구 — 실시간 유틸리티 + 코드/피아노 참조 -->
-        <div class="sidebar-section-label">연습 도구</div>
+        <div class="sidebar-section-label sidebar-section-label-pinrow">연습 도구<button type="button" class="pin-clear-btn" data-action="unpinAll" aria-label="고정한 메뉴 전체 해제"><i class="fas fa-thumbtack"></i> 핀 전체 해제</button></div>
         <nav class="sidebar-menu">
             <button class="menu-item active" data-tool="tuner" data-action="switchTool" data-args="tuner">
                 <i class="fas fa-microphone"></i><span>튜너</span>
@@ -9550,7 +9575,15 @@
                 p.classList.toggle('pinned', pinnedTools.indexOf(t) >= 0);
             });
             document.body.classList.toggle('pins-full', pinnedTools.length >= 4);
+            document.body.classList.toggle('has-pins', pinnedTools.length > 0);
         }
+        window.unpinAll = function(ev) {
+            if (ev && ev.stopPropagation) ev.stopPropagation();
+            pinnedTools = [];
+            savePins();
+            updatePinIcons();
+            renderMobileStrip();
+        };
         window.togglePin = function(tool, ev){
             if (ev && ev.stopPropagation) { ev.stopPropagation(); ev.preventDefault(); }
             if (PIN_FIXED.has(tool) || !TAB_META[tool]) return;
@@ -12554,6 +12587,7 @@
             // 데이터는 public.presets 테이블에서 읽어옴 (RLS: public read).
             let _loopPresetsCache = null;
             let _loopPresetsLoading = false;
+            let _loopAnonClient = null;   // 프리셋 public read 전용 익명 클라이언트 (인증 레이스 회피)
             // 정렬 모드: 'alpha' (가나다, 영문 우선) | 'difficulty' | 'genre'
             let _loopPresetSort = 'alpha';
             // 서브 필터 — 정렬 모드별 부속 필터.
@@ -12705,36 +12739,48 @@
                     await new Promise(function(r) { setTimeout(r, 100); });
                 }
                 if (!window.supabase || !window.supabase.createClient) return null;
-                if (window.ahnssamAuth && window.ahnssamAuth.supabase) {
-                    return window.ahnssamAuth.supabase;
+                // 프리셋은 public read 라 인증 클라이언트가 필요 없음.
+                // 로그인 직후 세션 복원 중인 authed 클라이언트를 쓰면 첫 조회가
+                // 비어서 새로고침 전까지 안 보이던 버그 → 전용 익명 클라이언트로 고정.
+                if (!_loopAnonClient) {
+                    _loopAnonClient = window.supabase.createClient(
+                        'https://qpcbrqgqylxkgdwoflku.supabase.co',
+                        'sb_publishable_5rr-OZ7Sqjk1nXn59R7XnQ_HInATuSV'
+                    );
                 }
-                return window.supabase.createClient(
-                    'https://qpcbrqgqylxkgdwoflku.supabase.co',
-                    'sb_publishable_5rr-OZ7Sqjk1nXn59R7XnQ_HInATuSV'
-                );
+                return _loopAnonClient;
             }
 
             async function loadLoopPresets() {
-                if (_loopPresetsCache) return _loopPresetsCache;
+                // 비어있는(=실패했을 수 있는) 캐시는 재시도 허용 — 한 번 비면 새로고침
+                // 전까지 안 보이던 문제 방지. 실제 데이터가 들어왔을 때만 캐시 확정.
+                if (_loopPresetsCache && _loopPresetsCache.length) return _loopPresetsCache;
                 if (_loopPresetsLoading) return null;
                 _loopPresetsLoading = true;
                 try {
                     var sb = await getLoopPresetClient();
-                    if (!sb) return [];
+                    if (!sb) return _loopPresetsCache || [];
                     var res = await sb.from('presets')
                         .select('*')
                         .order('sort_order', { ascending: true })
                         .order('created_at', { ascending: true });
-                    _loopPresetsCache = res.data || [];
+                    if (res.error) {
+                        console.warn('[loop] preset load error', res.error);
+                    } else {
+                        _loopPresetsCache = res.data || [];
+                    }
                 } catch (e) {
                     console.warn('[loop] preset load failed', e);
-                    _loopPresetsCache = [];
                 } finally {
                     _loopPresetsLoading = false;
                 }
-                // 데이터 로드 끝났으니 서브필터 옵션도 갱신
+                // 데이터 로드 끝났으니 서브필터 옵션 + 열려있는 목록 갱신
                 try { renderSubFilterRow(); } catch (e) {}
-                return _loopPresetsCache;
+                try {
+                    var _ps = document.getElementById('loopPresetSearch');
+                    renderLoopPresetList(_ps ? _ps.value : '');
+                } catch (e) {}
+                return _loopPresetsCache || [];
             }
 
             function _escHtml(s) {
@@ -15953,16 +15999,17 @@
                 const QUAL = {
                     maj7: { suffix: 'maj7',  s6:[0,null,1,1,0,null],   f6:[2,0,3,4,1,0],
                                              s5:[null,0,2,1,2,null],   f5:[0,1,3,2,4,0] },
-                    dom7: { suffix: '7',     s6:[0,null,0,1,0,null],   f6:[1,0,1,2,1,0],
+                    dom7: { suffix: '7',     s6:[0,null,0,1,0,null],   f6:[1,0,2,4,3,0],
                                              s5:[null,0,2,0,2,null],   f5:[0,2,3,1,4,0] },
-                    m7:   { suffix: 'm7',    s6:[0,null,0,0,0,null],   f6:[1,0,1,1,1,0],
-                                             s5:[null,0,2,0,1,null],   f5:[0,2,4,1,3,0] },
+                    // m7 5번줄 루트는 4번줄 뮤트(5·3·2번줄 간소화), 6번줄 루트는 운지 2종 제공
+                    m7:   { suffix: 'm7',    s6:[0,null,0,0,0,null],   f6:[1,0,2,3,4,0],
+                                             s5:[null,0,null,0,1,null], f5:[0,1,0,2,3,0] },
                     m7b5: { suffix: 'm7♭5',  s6:[0,null,0,0,-1,null],  f6:[2,0,2,2,1,0],
                                              s5:[null,0,1,0,1,null],   f5:[0,2,3,1,4,0] },
                     dim7: { suffix: 'dim7',  s6:[0,null,-1,0,-1,null], f6:[3,0,1,4,2,0],
                                              s5:[null,0,1,-1,1,null],  f5:[0,2,3,1,4,0] }
                 };
-                function build(name, offsets, fingers, rootFret, sub) {
+                function build(name, offsets, fingers, rootFret, extra) {
                     let P = rootFret;
                     const minFret = function() {
                         return Math.min.apply(null, offsets.filter(function(o){ return o !== null; })
@@ -15970,7 +16017,15 @@
                     };
                     while (minFret() < 0) P += 12;   // 음수 프렛 방지 (0=개방 허용)
                     const frets = offsets.map(function(o){ return o === null ? null : P + o; });
-                    return { name: name, cat: 'jazz', level: 4, frets: frets, fingers: fingers.slice(), sub: sub };
+                    const obj = { name: name, cat: 'jazz', level: 4, frets: frets, fingers: fingers.slice() };
+                    // 네크 위쪽 보이싱은 다이어그램 둘째 칸부터 그리고 프렛 라벨 표기
+                    const pressed = frets.filter(function(f){ return f != null && f > 0; });
+                    if (pressed.length) {
+                        const maxF = Math.max.apply(null, pressed), minF = Math.min.apply(null, pressed);
+                        if (maxF > 4) { obj.startFret = minF - 2; obj.labelAt = 2; }
+                    }
+                    if (extra) Object.assign(obj, extra);
+                    return obj;
                 }
                 ROOT_NAMES.forEach(function(rn, pc) {
                     Object.keys(QUAL).forEach(function(q) {
@@ -15978,8 +16033,16 @@
                         const nm = rn + Q.suffix;
                         const f6root = ((pc - 4) % 12 + 12) % 12;   // 6번줄(개방 E=4)
                         const f5root = ((pc - 9) % 12 + 12) % 12;   // 5번줄(개방 A=9)
-                        CHORDS.push(build(nm, Q.s6, Q.f6, f6root, '재즈 · 6번줄 루트'));
-                        CHORDS.push(build(nm, Q.s5, Q.f5, f5root, '재즈 · 5번줄 루트'));
+                        if (q === 'm7') {
+                            // 6번줄 루트 — 운지 2종 (① 1·2·3·4  ② 6줄2 + 4·3·2 약지 바레)
+                            CHORDS.push(build(nm, Q.s6, [1,0,2,3,4,0], f6root, {
+                                defaultFingering: 0,
+                                fingerings: [ { fingers: [1,0,2,3,4,0] }, { fingers: [2,0,3,3,3,0] } ]
+                            }));
+                        } else {
+                            CHORDS.push(build(nm, Q.s6, Q.f6, f6root));
+                        }
+                        CHORDS.push(build(nm, Q.s5, Q.f5, f5root));
                     });
                 });
             })();
@@ -16414,6 +16477,18 @@
             let _etAnswered = false;
             // score = 난이도 가중치 누적 (UI 표시용), correct = 정답 수 (정답률 계산용)
             let _etStats = { score: 0, correct: 0, total: 0, streak: 0 };
+            // 최고 연속(스트릭) 서버 제출 — 전 모드 통합 최고값, 디바운스
+            let _etBestStreakSubmitted = 0;
+            let _etStreakSubmitTimer = null;
+            function etTrackStreak(streak) {
+                if (streak > _etBestStreakSubmitted) {
+                    _etBestStreakSubmitted = streak;
+                    clearTimeout(_etStreakSubmitTimer);
+                    _etStreakSubmitTimer = setTimeout(function() {
+                        try { if (window.earSession && window.earSession.submitStreak) window.earSession.submitStreak(_etBestStreakSubmitted); } catch (e) {}
+                    }, 1000);
+                }
+            }
             let _etBaseFreq = 0;
             let _etHistory = [];
 
@@ -16584,6 +16659,7 @@
                 if (isCorrect) {
                     _etStats.correct++;
                     _etStats.streak++;
+                    etTrackStreak(_etStats.streak);
                     var pts = ET_INTERVAL_POINTS[_etDiff] || 1;
                     _etStats.score += pts;
                     fb.textContent = '정답! +' + pts + '점 · ' + correctIv.name + ' (' + correctIv.nameEn + ') — ' + noteInfo;
@@ -16836,6 +16912,7 @@
                 if (isCorrect) {
                     _etChordStats.correct++;
                     _etChordStats.streak++;
+                    etTrackStreak(_etChordStats.streak);
                     var cPts = ET_CHORD_POINTS[_etChordDiff] || 1;
                     _etChordStats.score += cPts;
                     fb.innerHTML = '정답! +' + cPts + '점 · ' + fullName;
@@ -17128,6 +17205,7 @@
                     if (isCorrect) {
                         _etPitchStats.correct++;
                         _etPitchStats.streak++;
+                        etTrackStreak(_etPitchStats.streak);
                         var p1Pts = ET_PITCH_DIFF_PTS[_etPitchDiff] || 10;
                         _etPitchStats.score += p1Pts;
                         fb.textContent = '정답! +' + p1Pts + '점 · ' + ans.note + ans.octave;
@@ -17174,6 +17252,7 @@
                 if (allCorrect) {
                     _etPitchStats.correct++;
                     _etPitchStats.streak++;
+                    etTrackStreak(_etPitchStats.streak);
                     var pMPts = ET_PITCH_DIFF_PTS[_etPitchDiff] || 10;
                     _etPitchStats.score += pMPts;
                     fb.textContent = '전부 정답! +' + pMPts + '점 · ' + answerStr;
