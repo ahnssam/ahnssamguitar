@@ -1533,6 +1533,25 @@
             text-align: left;
             transition: background 0.18s, color 0.18s;
         }
+        /* 모바일 메뉴 핀(즐겨찾기) — 상단 탭에 고정. 데스크탑에선 숨김 */
+        .menu-pin {
+            display: none;
+            margin-left: auto;
+            flex: 0 0 auto;
+            padding: 0.3rem 0.4rem;
+            border-radius: 8px;
+            color: var(--green-deep);
+            font-size: 0.72rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .menu-pin i { display: block; opacity: 0.28; transition: transform 0.15s, opacity 0.15s; }
+        .menu-pin:active { background: rgba(42,107,74,0.10); }
+        .menu-pin.pinned { color: var(--green-dark); }
+        .menu-pin.pinned i { opacity: 1; transform: rotate(45deg); }   /* 시계방향 45도 */
+        :root[data-theme="dark"] .menu-pin { color: var(--green-light); }
+        body.pins-full .menu-pin:not(.pinned) { opacity: 0.4; }
+        body.pins-full .menu-pin:not(.pinned) i { opacity: 0.16; }
         /* Sidebar item badge — small pill placed right after the label
            ("음정 트레이닝" 글자 끝 바로 옆 → "HOT") */
         .menu-badge {
@@ -2180,6 +2199,8 @@
                 font-size: 0.92rem;
             }
             .mobile-tab-more:active { background: rgba(42, 107, 74, 0.05); }
+            /* 핀 아이콘은 모바일에서만 노출 */
+            .menu-pin { display: inline-flex; align-items: center; }
 
             /* Main content: topbar + tab strip height */
             .tools-main {
@@ -2660,6 +2681,10 @@
             background: rgba(82, 168, 114, 0.3);
             color: var(--green-deep);
         }
+        /* 7도화음/재즈 드롭다운 — 다크 모드 가독성 */
+        :root[data-theme="dark"] .chord-7th-menu button { color: rgba(255, 255, 255, 0.82); }
+        :root[data-theme="dark"] .chord-7th-menu button:hover { color: #fff; }
+        :root[data-theme="dark"] .chord-7th-menu button.active { color: var(--green-light); }
         .chord-grid {
             display: grid;
             /* Columns fixed to 5 on the constrained body for tight, consistent layout.
@@ -2812,6 +2837,13 @@
         }
         .fb-control-row-switches {
             justify-content: space-between;
+        }
+        /* 피아노 패널 토글 — 왼쪽으로 몰아 차례대로, 서로 살짝 떨어뜨려 */
+        .fb-control-row-switches.pn-switches {
+            justify-content: flex-start;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
         }
 
         /* Instrument dropdown (replaces old 3-button pill) */
@@ -3682,7 +3714,8 @@
         .prg-scale-line b { color: var(--green-deep); font-size: 0.95rem; }
         .prg-grid {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            /* 모바일과 동일하게 4칸 — 카드가 넓어져 F#m7♭5 같은 긴 심볼이 안 넘침 */
+            grid-template-columns: repeat(4, 1fr);
             gap: 0.5rem;
         }
         .prg-chord-card {
@@ -3757,6 +3790,49 @@
             color: rgba(26, 36, 33, 0.45);
             line-height: 1.5;
         }
+        /* 메이저/마이너/디미니시 색 구분 토글 */
+        .prg-qual-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            border: 1px solid rgba(42, 107, 74, 0.22);
+            border-radius: 8px;
+            background: rgba(42, 107, 74, 0.06);
+            color: rgba(26, 36, 33, 0.62);
+            font-size: 0.78rem;
+            padding: 0.4rem 0.72rem;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+        .prg-qual-toggle:hover { background: rgba(82, 168, 114, 0.16); color: var(--green-deep); }
+        .prg-qual-toggle.active { background: var(--green-deep); color: #fff; border-color: var(--green-deep); }
+        /* 품질별 은은한 색 — 켰을 때만(.qual-on) 적용 */
+        .prg-grid.qual-on .prg-chord-card.prg-q-major { background: rgba(82, 168, 114, 0.10); border-color: rgba(42, 107, 74, 0.30); }
+        .prg-grid.qual-on .prg-chord-card.prg-q-major .prg-symbol { color: #2a6b4a; }
+        .prg-grid.qual-on .prg-chord-card.prg-q-minor { background: rgba(200, 70, 55, 0.10); border-color: rgba(200, 70, 55, 0.30); }
+        .prg-grid.qual-on .prg-chord-card.prg-q-minor .prg-symbol { color: #c0392b; }
+        .prg-grid.qual-on .prg-chord-card.prg-q-dim { background: rgba(140, 90, 200, 0.10); border-color: rgba(140, 90, 200, 0.30); }
+        .prg-grid.qual-on .prg-chord-card.prg-q-dim .prg-symbol { color: #7a4db5; }
+        /* 재생 중 하이라이트는 색 구분보다 우선 */
+        .prg-grid.qual-on .prg-chord-card.playing { background: var(--green-deep); border-color: var(--green-deep); }
+        .prg-grid.qual-on .prg-chord-card.playing .prg-symbol,
+        .prg-grid.qual-on .prg-chord-card.playing .prg-roman,
+        .prg-grid.qual-on .prg-chord-card.playing .prg-notes { color: #fff; }
+        /* 다크 모드 — 텍스트 중심으로 구분 */
+        :root[data-theme="dark"] .prg-grid.qual-on .prg-chord-card.prg-q-major { background: rgba(82, 168, 114, 0.15); }
+        :root[data-theme="dark"] .prg-grid.qual-on .prg-chord-card.prg-q-major .prg-symbol { color: #7fd0a0; }
+        :root[data-theme="dark"] .prg-grid.qual-on .prg-chord-card.prg-q-minor { background: rgba(220, 90, 80, 0.16); }
+        :root[data-theme="dark"] .prg-grid.qual-on .prg-chord-card.prg-q-minor .prg-symbol { color: #f29a90; }
+        :root[data-theme="dark"] .prg-grid.qual-on .prg-chord-card.prg-q-dim { background: rgba(150, 110, 220, 0.16); }
+        :root[data-theme="dark"] .prg-grid.qual-on .prg-chord-card.prg-q-dim .prg-symbol { color: #c0a4f0; }
+        /* 다이아토닉 카드 기본 텍스트 — 다크 모드 가독성 (색 구분 OFF 일 때) */
+        :root[data-theme="dark"] .prg-symbol { color: #f2faf5; }
+        :root[data-theme="dark"] .prg-roman { color: rgba(255, 255, 255, 0.5); }
+        :root[data-theme="dark"] .prg-note-chip { color: rgba(255, 255, 255, 0.82); border-color: rgba(255, 255, 255, 0.22); background: rgba(255, 255, 255, 0.06); }
+        :root[data-theme="dark"] .prg-scale-line { color: rgba(255, 255, 255, 0.6); }
+        :root[data-theme="dark"] .prg-scale-line b { color: #7fd0a0; }
+        :root[data-theme="dark"] .prg-legend { color: rgba(255, 255, 255, 0.42); }
         @media (max-width: 720px) {
             .prg-grid { grid-template-columns: repeat(4, 1fr); }
             .prg-symbol { font-size: 1rem; }
@@ -7620,42 +7696,42 @@
                 <i class="fas fa-drum"></i><span>반주</span>
             </button>
             <button class="menu-item" data-tool="loopstation" data-action="switchTool" data-args="loopstation">
-                <i class="fas fa-record-vinyl"></i><span>루프스테이션</span><span class="menu-badge menu-badge-new">NEW</span>
+                <i class="fas fa-record-vinyl"></i><span>루프스테이션</span><span class="menu-badge menu-badge-new">NEW</span><span class="menu-pin" data-action="togglePin" data-args="loopstation" role="button" aria-label="상단 탭에 고정"><i class="fas fa-thumbtack"></i></span>
             </button>
             <button class="menu-item" data-tool="taptempo" data-action="switchTool" data-args="taptempo">
-                <i class="fas fa-hand-pointer"></i><span>탭템포</span>
+                <i class="fas fa-hand-pointer"></i><span>탭템포</span><span class="menu-pin" data-action="togglePin" data-args="taptempo" role="button" aria-label="상단 탭에 고정"><i class="fas fa-thumbtack"></i></span>
             </button>
             <button class="menu-item" data-tool="piano" data-action="switchTool" data-args="piano">
-                <span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="2.5" width="15" height="12" fill="none" stroke="currentColor" stroke-width="1.1" rx="1"/><line x1="4.25" y1="2.5" x2="4.25" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="8" y1="2.5" x2="8" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="11.75" y1="2.5" x2="11.75" y2="14.5" stroke="currentColor" stroke-width="0.8"/><rect x="2.8" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="6.55" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="10.3" y="2.5" width="2.9" height="7" fill="currentColor"/></svg></span><span>피아노</span>
+                <span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="2.5" width="15" height="12" fill="none" stroke="currentColor" stroke-width="1.1" rx="1"/><line x1="4.25" y1="2.5" x2="4.25" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="8" y1="2.5" x2="8" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="11.75" y1="2.5" x2="11.75" y2="14.5" stroke="currentColor" stroke-width="0.8"/><rect x="2.8" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="6.55" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="10.3" y="2.5" width="2.9" height="7" fill="currentColor"/></svg></span><span>피아노</span><span class="menu-pin" data-action="togglePin" data-args="piano" role="button" aria-label="상단 탭에 고정"><i class="fas fa-thumbtack"></i></span>
             </button>
         </nav>
         <!-- 2. 트레이닝 — 음정 트레이닝 + 랭킹 -->
         <div class="sidebar-section-label" style="margin-top:0.6rem;">트레이닝</div>
         <nav class="sidebar-menu">
             <button class="menu-item" data-tool="eartraining" data-action="switchTool" data-args="eartraining">
-                <i class="fas fa-headphones"></i><span>음정 트레이닝</span><span class="menu-badge menu-badge-hot">HOT</span>
+                <i class="fas fa-headphones"></i><span>음정 트레이닝</span><span class="menu-badge menu-badge-hot">HOT</span><span class="menu-pin" data-action="togglePin" data-args="eartraining" role="button" aria-label="상단 탭에 고정"><i class="fas fa-thumbtack"></i></span>
             </button>
             <button class="menu-item" data-tool="ranking" data-action="switchTool" data-args="ranking">
-                <i class="fas fa-trophy"></i><span>랭킹</span>
+                <i class="fas fa-trophy"></i><span>랭킹</span><span class="menu-pin" data-action="togglePin" data-args="ranking" role="button" aria-label="상단 탭에 고정"><i class="fas fa-thumbtack"></i></span>
             </button>
         </nav>
         <!-- 3. 이론 — 스케일 + 프렛보드 -->
         <div class="sidebar-section-label" style="margin-top:0.6rem;">이론</div>
         <nav class="sidebar-menu">
             <button class="menu-item" data-tool="scales" data-action="switchTool" data-args="scales">
-                <i class="fas fa-music"></i><span>스케일</span>
+                <i class="fas fa-music"></i><span>스케일</span><span class="menu-pin" data-action="togglePin" data-args="scales" role="button" aria-label="상단 탭에 고정"><i class="fas fa-thumbtack"></i></span>
             </button>
             <button class="menu-item" data-tool="progression" data-action="switchTool" data-args="progression">
-                <span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><g stroke="currentColor" stroke-width="0.85" opacity="0.5"><line x1="0.7" y1="3" x2="15.3" y2="3"/><line x1="0.7" y1="5.5" x2="15.3" y2="5.5"/><line x1="0.7" y1="8" x2="15.3" y2="8"/><line x1="0.7" y1="10.5" x2="15.3" y2="10.5"/><line x1="0.7" y1="13" x2="15.3" y2="13"/></g><line x1="7.05" y1="4.2" x2="7.05" y2="11.8" stroke="currentColor" stroke-width="1"/><g fill="currentColor"><ellipse cx="5.1" cy="10.5" rx="2.15" ry="1.5"/><ellipse cx="5.1" cy="8" rx="2.15" ry="1.5"/><ellipse cx="5.1" cy="5.5" rx="2.15" ry="1.5"/></g></svg></span><span>키별 화음 <span style="opacity:0.6;font-size:0.92em;">(다이아토닉)</span></span>
+                <span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><g stroke="currentColor" stroke-width="0.85" opacity="0.5"><line x1="0.7" y1="3" x2="15.3" y2="3"/><line x1="0.7" y1="5.5" x2="15.3" y2="5.5"/><line x1="0.7" y1="8" x2="15.3" y2="8"/><line x1="0.7" y1="10.5" x2="15.3" y2="10.5"/><line x1="0.7" y1="13" x2="15.3" y2="13"/></g><line x1="7.05" y1="4.2" x2="7.05" y2="11.8" stroke="currentColor" stroke-width="1"/><g fill="currentColor"><ellipse cx="5.1" cy="10.5" rx="2.15" ry="1.5"/><ellipse cx="5.1" cy="8" rx="2.15" ry="1.5"/><ellipse cx="5.1" cy="5.5" rx="2.15" ry="1.5"/></g></svg></span><span>키별 화음 <span style="opacity:0.6;font-size:0.92em;">(다이아토닉)</span></span><span class="menu-pin" data-action="togglePin" data-args="progression" role="button" aria-label="상단 탭에 고정"><i class="fas fa-thumbtack"></i></span>
             </button>
             <button class="menu-item" data-tool="fretboard" data-action="switchTool" data-args="fretboard">
-                <span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="3" width="15" height="10" fill="none" stroke="currentColor" stroke-width="1.2" rx="0.6"/><line x1="2" y1="3" x2="2" y2="13" stroke="currentColor" stroke-width="1.6"/><line x1="5.5" y1="3" x2="5.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="9" y1="3" x2="9" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="12.5" y1="3" x2="12.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="0.5" y1="5" x2="15.5" y2="5" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="7" x2="15.5" y2="7" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="9" x2="15.5" y2="9" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="11" x2="15.5" y2="11" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><circle cx="7.25" cy="8" r="0.85" fill="currentColor" opacity="0.75"/></svg></span><span>프렛보드</span>
+                <span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="3" width="15" height="10" fill="none" stroke="currentColor" stroke-width="1.2" rx="0.6"/><line x1="2" y1="3" x2="2" y2="13" stroke="currentColor" stroke-width="1.6"/><line x1="5.5" y1="3" x2="5.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="9" y1="3" x2="9" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="12.5" y1="3" x2="12.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="0.5" y1="5" x2="15.5" y2="5" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="7" x2="15.5" y2="7" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="9" x2="15.5" y2="9" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="11" x2="15.5" y2="11" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><circle cx="7.25" cy="8" r="0.85" fill="currentColor" opacity="0.75"/></svg></span><span>프렛보드</span><span class="menu-pin" data-action="togglePin" data-args="fretboard" role="button" aria-label="상단 탭에 고정"><i class="fas fa-thumbtack"></i></span>
             </button>
             <button class="menu-item" data-tool="chords" data-action="switchTool" data-args="chords">
-                <i class="fas fa-guitar"></i><span>코드 라이브러리</span>
+                <i class="fas fa-guitar"></i><span>코드 라이브러리</span><span class="menu-pin" data-action="togglePin" data-args="chords" role="button" aria-label="상단 탭에 고정"><i class="fas fa-thumbtack"></i></span>
             </button>
             <button class="menu-item" data-tool="capo" data-action="switchTool" data-args="capo">
-                <i class="fas fa-sliders-h"></i><span>카포 계산기</span>
+                <i class="fas fa-sliders-h"></i><span>카포 계산기</span><span class="menu-pin" data-action="togglePin" data-args="capo" role="button" aria-label="상단 탭에 고정"><i class="fas fa-thumbtack"></i></span>
             </button>
         </nav>
         <div class="sidebar-foot">
@@ -7936,6 +8012,7 @@
                     <div class="time-sig-btns">
                         <button type="button" class="time-sig-btn active" data-clicktype="sharp" data-action="updateClickType" data-args="sharp">타입 A</button>
                         <button type="button" class="time-sig-btn" data-clicktype="default" data-action="updateClickType" data-args="default">타입 B</button>
+                        <button type="button" class="time-sig-btn" data-clicktype="hihat" data-action="updateClickType" data-args="hihat">타입 C</button>
                         <button type="button" class="time-sig-btn" data-clicktype="voice" data-action="updateClickType" data-args="voice">목소리</button>
                     </div>
                 </div>
@@ -8219,6 +8296,7 @@
                             <button data-filter="m7" data-action="filterChords" data-args="m7">m7</button>
                             <button data-filter="m7b5" data-action="filterChords" data-args="m7b5">m7b5</button>
                             <button data-filter="dim" data-action="filterChords" data-args="dim">dim</button>
+                            <button data-filter="jazz" data-action="filterChords" data-args="jazz">재즈/간소화</button>
                         </div>
                     </div>
                 </div>
@@ -8507,6 +8585,9 @@
                             <button type="button" class="acc-toggle-btn active" data-acc="sharp" data-action="prgSetAccidental" data-args="sharp">♯</button>
                             <button type="button" class="acc-toggle-btn" data-acc="flat" data-action="prgSetAccidental" data-args="flat">♭</button>
                         </div>
+                        <button type="button" class="prg-qual-toggle" id="prgQualToggle" data-action="prgToggleQuality" aria-pressed="false" title="메이저·마이너·디미니시 색 구분">
+                            <i class="fas fa-palette"></i> 색 구분
+                        </button>
                     </div>
                 </div>
 
@@ -8532,7 +8613,11 @@
                     <button type="button" class="tool-help-btn pn-kbd-help-btn" data-help="piano_keyboard" aria-label="키보드 건반 도움말" aria-expanded="false">?</button>
                 </div>
                 <div class="fb-controls">
-                    <div class="fb-control-row fb-control-row-switches">
+                    <div class="fb-control-row fb-control-row-switches pn-switches">
+                        <div class="acc-toggle" id="pnAccToggle" role="group" aria-label="음이름 표기">
+                            <button type="button" class="acc-toggle-btn active" data-acc="sharp" data-action="pnSetAccidental" data-args="sharp">♯</button>
+                            <button type="button" class="acc-toggle-btn" data-acc="flat" data-action="pnSetAccidental" data-args="flat">♭</button>
+                        </div>
                         <label class="fb-switch">
                             <input type="checkbox" id="pnShowNotes" checked data-change="pnToggleShowNotes" data-args="$checked">
                             <span class="fb-switch-slider"></span>
@@ -9396,6 +9481,77 @@
             }
         }
 
+        // ===== 모바일 메뉴 핀(즐겨찾기) =====
+        // 핀한 메뉴가 상단 탭의 오른쪽부터 채워짐(최대 4). localStorage 저장.
+        const PIN_FIXED = new Set(['tuner','metronome','backing']);
+        const PIN_DYN_ELIGIBLE = new Set(['loopstation','eartraining','chords','fretboard','scales','progression','piano','capo','taptempo']);
+        const _PINFB_SVG = '<span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="3" width="15" height="10" fill="none" stroke="currentColor" stroke-width="1.2" rx="0.6"/><line x1="2" y1="3" x2="2" y2="13" stroke="currentColor" stroke-width="1.6"/><line x1="5.5" y1="3" x2="5.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="9" y1="3" x2="9" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="12.5" y1="3" x2="12.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="0.5" y1="5" x2="15.5" y2="5" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="7" x2="15.5" y2="7" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="9" x2="15.5" y2="9" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="11" x2="15.5" y2="11" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><circle cx="7.25" cy="8" r="0.85" fill="currentColor" opacity="0.75"/></svg></span>';
+        const _PINPN_SVG = '<span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="2.5" width="15" height="12" fill="none" stroke="currentColor" stroke-width="1.1" rx="1"/><line x1="4.25" y1="2.5" x2="4.25" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="8" y1="2.5" x2="8" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="11.75" y1="2.5" x2="11.75" y2="14.5" stroke="currentColor" stroke-width="0.8"/><rect x="2.8" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="6.55" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="10.3" y="2.5" width="2.9" height="7" fill="currentColor"/></svg></span>';
+        const _PINCHORD_SVG = '<span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><g stroke="currentColor" stroke-width="0.85" opacity="0.5"><line x1="0.7" y1="3" x2="15.3" y2="3"/><line x1="0.7" y1="5.5" x2="15.3" y2="5.5"/><line x1="0.7" y1="8" x2="15.3" y2="8"/><line x1="0.7" y1="10.5" x2="15.3" y2="10.5"/><line x1="0.7" y1="13" x2="15.3" y2="13"/></g><line x1="7.05" y1="4.2" x2="7.05" y2="11.8" stroke="currentColor" stroke-width="1"/><g fill="currentColor"><ellipse cx="5.1" cy="10.5" rx="2.15" ry="1.5"/><ellipse cx="5.1" cy="8" rx="2.15" ry="1.5"/><ellipse cx="5.1" cy="5.5" rx="2.15" ry="1.5"/></g></svg></span>';
+        const TAB_META = {
+            tuner:       { label: '튜너',   icon: 'fa-microphone' },
+            metronome:   { label: '메트로놈', icon: 'fa-stopwatch' },
+            backing:     { label: '반주',   icon: 'fa-drum' },
+            loopstation: { label: '루프',   icon: 'fa-record-vinyl' },
+            taptempo:    { label: '탭템포', icon: 'fa-hand-pointer' },
+            piano:       { label: '피아노', iconHtml: _PINPN_SVG },
+            eartraining: { label: '음정',   icon: 'fa-headphones' },
+            ranking:     { label: '랭킹',   icon: 'fa-trophy' },
+            scales:      { label: '스케일', icon: 'fa-music' },
+            progression: { label: '화음',   iconHtml: _PINCHORD_SVG },
+            fretboard:   { label: '지판',   iconHtml: _PINFB_SVG },
+            chords:      { label: '코드',   icon: 'fa-guitar' },
+            capo:        { label: '카포',   icon: 'fa-sliders-h' },
+        };
+        let pinnedTools = [];
+        let lastDynamicTool = 'eartraining';
+        let _currentTool = 'tuner';
+        try {
+            const _sp = JSON.parse(localStorage.getItem('gtns_pinned') || '[]');
+            if (Array.isArray(_sp)) pinnedTools = _sp.filter(function(t){ return TAB_META[t] && !PIN_FIXED.has(t); }).slice(0, 4);
+        } catch (e) {}
+        function savePins(){ try { localStorage.setItem('gtns_pinned', JSON.stringify(pinnedTools)); } catch (e) {} }
+        function getStripTools(){
+            const n = pinnedTools.length;
+            const tools = [];
+            const left = ['tuner','metronome','backing'];
+            for (let i = 0; i < Math.min(3, 4 - n); i++) tools.push(left[i]);
+            if (n === 0) tools.push(lastDynamicTool);
+            for (let k = 0; k < n; k++) tools.push(pinnedTools[n - 1 - k]);
+            return tools;
+        }
+        function renderMobileStrip(){
+            const strip = document.getElementById('mobileTabStrip');
+            if (!strip) return;
+            let html = getStripTools().map(function(t){
+                const m = TAB_META[t] || { label: t, icon: 'fa-circle' };
+                const icon = m.iconHtml || ('<i class="fas ' + m.icon + '"></i>');
+                const cls = 'mobile-tab' + (t === _currentTool ? ' active' : '') +
+                            (pinnedTools.indexOf(t) >= 0 ? ' is-fav' : '');
+                return '<button class="' + cls + '" data-tool="' + t + '" data-action="switchTool" data-args="' + t + '">' +
+                       icon + '<span>' + m.label + '</span></button>';
+            }).join('');
+            html += '<button class="mobile-tab-more" data-action="toggleSidebar" aria-label="메뉴 열기"><i class="fas fa-bars"></i></button>';
+            strip.innerHTML = html;
+        }
+        function updatePinIcons(){
+            document.querySelectorAll('.menu-pin').forEach(function(p){
+                const t = (p.dataset.args || '').trim();
+                p.classList.toggle('pinned', pinnedTools.indexOf(t) >= 0);
+            });
+            document.body.classList.toggle('pins-full', pinnedTools.length >= 4);
+        }
+        window.togglePin = function(tool, ev){
+            if (ev && ev.stopPropagation) { ev.stopPropagation(); ev.preventDefault(); }
+            if (PIN_FIXED.has(tool) || !TAB_META[tool]) return;
+            const i = pinnedTools.indexOf(tool);
+            if (i >= 0) { pinnedTools.splice(i, 1); }
+            else { if (pinnedTools.length >= 4) return; pinnedTools.push(tool); }
+            savePins();
+            updatePinIcons();
+            renderMobileStrip();
+        };
+
         function switchTool(tool, opts) {
                 try { if (window.gtag) window.gtag('event', 'tool_switch', { tool: tool }); } catch (e) {}
             // Sync mobile floating help button to the current tool
@@ -9437,6 +9593,7 @@
             const PN_SVG = '<span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="2.5" width="15" height="12" fill="none" stroke="currentColor" stroke-width="1.1" rx="1"/><line x1="4.25" y1="2.5" x2="4.25" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="8" y1="2.5" x2="8" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="11.75" y1="2.5" x2="11.75" y2="14.5" stroke="currentColor" stroke-width="0.8"/><rect x="2.8" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="6.55" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="10.3" y="2.5" width="2.9" height="7" fill="currentColor"/></svg></span>';
             const CHORD_SVG = '<span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><g stroke="currentColor" stroke-width="0.85" opacity="0.5"><line x1="0.7" y1="3" x2="15.3" y2="3"/><line x1="0.7" y1="5.5" x2="15.3" y2="5.5"/><line x1="0.7" y1="8" x2="15.3" y2="8"/><line x1="0.7" y1="10.5" x2="15.3" y2="10.5"/><line x1="0.7" y1="13" x2="15.3" y2="13"/></g><line x1="7.05" y1="4.2" x2="7.05" y2="11.8" stroke="currentColor" stroke-width="1"/><g fill="currentColor"><ellipse cx="5.1" cy="10.5" rx="2.15" ry="1.5"/><ellipse cx="5.1" cy="8" rx="2.15" ry="1.5"/><ellipse cx="5.1" cy="5.5" rx="2.15" ry="1.5"/></g></svg></span>';
             const DYN = {
+                loopstation: { label: '루프',   icon: 'fa-record-vinyl' },
                 eartraining: { label: '음정',   icon: 'fa-headphones' },
                 chords:      { label: '코드',   icon: 'fa-guitar' },
                 fretboard:   { label: '지판',   iconHtml: FB_SVG },
@@ -9458,15 +9615,10 @@
             };
             const tsl = document.getElementById('topbarSectionLabel');
             if (tsl) tsl.textContent = SECTION_LBL[tool] || '연습 도구';
-            const dynTab = document.getElementById('mobileDynamicTab');
-            if (dynTab && DYN[tool]) {
-                dynTab.dataset.tool = tool;
-                const iconMarkup = DYN[tool].iconHtml ||
-                    ('<i class="fas ' + DYN[tool].icon + '"></i>');
-                dynTab.innerHTML = iconMarkup + '<span>' + DYN[tool].label + '</span>';
-            }
-            const mbtn = document.querySelector('.mobile-tab[data-tool="' + tool + '"]');
-            if (mbtn) mbtn.classList.add('active');
+            // 모바일 상단 탭 — 핀(즐겨찾기) 우선, 동적 4번째 슬롯 반영
+            _currentTool = tool;
+            if (PIN_DYN_ELIGIBLE.has(tool)) lastDynamicTool = tool;
+            renderMobileStrip();
 
             // Lazy-init heavy tools on first open
             if (tool === 'chords' && typeof window.initChordLibrary === 'function') window.initChordLibrary();
@@ -11504,28 +11656,43 @@
                         return;
                     }
                 }
+                if (clickType === 'hihat') {
+                    // 하이햇 — 강박은 오픈 하이햇, 정박은 클로즈드 하이햇
+                    var accHat = timeSig > 0 && (beatNum % timeSig) === 0;
+                    if (accHat) {
+                        playHiHatOpen(time);
+                    } else {
+                        playHiHat(time, 1);
+                    }
+                    return;
+                }
                 if (clickType === 'sharp') {
                     // 전자 톤 — 메인(사각) + 한 옥타브 아래 보강(삼각), 노이즈 없음, 피치 상향
                     var accS = timeSig > 0 && (beatNum % timeSig) === 0;
                     // 메인 톤 — 사각파
                     var oscS = audioCtx.createOscillator();
                     oscS.type = 'square';
-                    oscS.frequency.value = accS ? 2500 : 2080;
+                    oscS.frequency.value = accS ? 2500 : 1975;
                     var gS = audioCtx.createGain();
                     gS.gain.setValueAtTime(0.0001, time);
-                    gS.gain.exponentialRampToValueAtTime(accS ? 0.85 : 0.6, time + 0.0005);
+                    gS.gain.exponentialRampToValueAtTime(accS ? 1.05 : 0.75, time + 0.0005);
                     gS.gain.exponentialRampToValueAtTime(0.0001, time + 0.045);
-                    oscS.connect(gS);
+                    // 로우패스 — 쇠 때리는 듯한 고역 배음 완화
+                    var lpS = audioCtx.createBiquadFilter();
+                    lpS.type = 'lowpass';
+                    lpS.frequency.value = 4800;
+                    oscS.connect(lpS);
+                    lpS.connect(gS);
                     gS.connect(getMasterOut());
                     oscS.start(time);
                     oscS.stop(time + 0.06);
                     // 보강 톤(두께) — 한 옥타브 아래 삼각파, 살짝 긴 디케이
                     var oscB = audioCtx.createOscillator();
                     oscB.type = 'triangle';
-                    oscB.frequency.value = accS ? 1250 : 1040;
+                    oscB.frequency.value = accS ? 1250 : 988;
                     var gB = audioCtx.createGain();
                     gB.gain.setValueAtTime(0.0001, time);
-                    gB.gain.exponentialRampToValueAtTime(accS ? 0.8 : 0.58, time + 0.0006);
+                    gB.gain.exponentialRampToValueAtTime(accS ? 1.0 : 0.72, time + 0.0006);
                     gB.gain.exponentialRampToValueAtTime(0.0001, time + 0.055);
                     oscB.connect(gB);
                     gB.connect(getMasterOut());
@@ -15765,7 +15932,14 @@
                 { name: 'Fdim', cat: 'dim',   level: 4, frets: [1, null, 0, 1, 0, null], fingers: [2, 0, 0, 1, 0, 0] },
                 { name: 'Gdim', cat: 'dim',   level: 4, frets: [3, null, 2, 3, 2, null], fingers: [3, 0, 1, 4, 2, 0] },
                 { name: 'Adim', cat: 'dim',   level: 4, frets: [null, 0, 4, 5, 4, null], fingers: [0, 0, 1, 3, 2, 0], startFret: 2, labelAt: 2 },
-                { name: 'Bdim7',cat: 'dim',   level: 3, frets: [null, 2, 3, 1, 3, null], fingers: [0, 2, 4, 1, 3, 0] }
+                { name: 'Bdim7',cat: 'dim',   level: 3, frets: [null, 2, 3, 1, 3, null], fingers: [0, 2, 4, 1, 3, 0] },
+                // ── 하이코드 / 재즈·간소화 보이싱 (Bm7 예시 세트) ──
+                // 6번줄 루트 바레 (E-shape m7, 7프렛) — m7 카테고리에 대체 보이싱으로 노출
+                { name: 'Bm7',  cat: 'm7',    level: 3, frets: [7, 9, 7, 7, 7, 7], fingers: [1, 3, 1, 1, 1, 1], startFret: 6, labelAt: 1, sub: '6번줄 루트' },
+                // 재즈 — 6번줄 루트 드롭 (6·4·3·2번줄 7프렛, 5·1 뮤트): B·A·D·F#
+                { name: 'Bm7',  cat: 'jazz',  level: 3, frets: [7, null, 7, 7, 7, null], fingers: [1, 0, 3, 3, 3, 0], startFret: 6, labelAt: 1, sub: '재즈 · 6번줄 루트' },
+                // 재즈 — 5번줄 루트 간소화 (5·3·2번줄, 6·4·1 뮤트): B·A·D
+                { name: 'Bm7',  cat: 'jazz',  level: 2, frets: [null, 2, null, 2, 3, null], fingers: [0, 1, 0, 2, 3, 0], sub: '재즈 · 5번줄 루트' }
             ];
 
             window._CHORDS = CHORDS;
@@ -15796,6 +15970,9 @@
                 // CSS `color` controls the chord look — easy light/dark theming.
                 let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
                 svg += `<text x="${W/2}" y="14" text-anchor="middle" fill="currentColor" font-size="13" font-weight="700" font-family="'Playfair Display', serif">${chord.name}</text>`;
+                if (chord.sub) {
+                    svg += `<text x="${W/2}" y="${H - 2.5}" text-anchor="middle" fill="currentColor" opacity="0.55" font-size="6.6" font-family="'Noto Sans KR', sans-serif">${chord.sub}</text>`;
+                }
 
                 if (startFret === 0) {
                     svg += `<rect x="${NUT_X - 1.5}" y="${TOP_Y - 1}" width="3" height="${STR_SP * 5 + 2}" fill="currentColor" opacity="0.85"/>`;
@@ -15966,9 +16143,9 @@
                     filtered.forEach((ch, i) => grid.appendChild(buildCard(ch, i)));
                 }
             }
-            const SEVENTH_CATS = ['maj7', '7th', 'm7', 'm7b5', 'dim'];
+            const SEVENTH_CATS = ['maj7', '7th', 'm7', 'm7b5', 'dim', 'jazz'];
             const SEVENTH_LABELS = {
-                'maj7': 'Maj7', '7th': '7th', 'm7': 'm7', 'm7b5': 'm7b5', 'dim': 'dim'
+                'maj7': 'Maj7', '7th': '7th', 'm7': 'm7', 'm7b5': 'm7b5', 'dim': 'dim', 'jazz': '재즈/간소화'
             };
             window.filterChords = function(cat) {
                 currentFilter = cat;
@@ -17525,6 +17702,9 @@
             // additive synthesis + brightness lowpass + bandpassed hammer
             // noise. Sounds closer to a real piano than simple 3-osc add.
             function playPianoNote(midi) {
+                // 피아노 소리는 항상 피아노 탭과 동일한 pnPlayMidi 사운드로 통일.
+                // (앞으로 어디서 'piano' 악기를 쓰든 이 소리가 나옴)
+                if (typeof pnPlayMidi === 'function') { pnPlayMidi(midi); return; }
                 const ctx = ensureAudio();
                 if (!ctx) return;
                 if (ctx.state === 'suspended') ctx.resume().catch(function(){});
@@ -19518,7 +19698,14 @@
                 rootPc: 'C',
                 quality: 'major',   // 'major' | 'minor'
                 voicing: 'triad',   // 'triad' | 'seventh'
+                showQuality: false, // 화음 품질(메이저/마이너/dim) 색 구분
             };
+            // 화음 종류 → 색 구분 카테고리
+            function prgQualCat(qualKey) {
+                if (qualKey === 'dim' || qualKey === 'm7b5') return 'dim';
+                if (qualKey === 'min' || qualKey === 'm7') return 'minor';
+                return 'major'; // maj, maj7, dom7
+            }
 
             // 조성별 스케일 인터벌 + 각 도수의 화음 품질.
             // qual: 화음 종류 키 (CHORD_QUALITY 참조), roman: 로마숫자 표기.
@@ -19562,6 +19749,19 @@
                 m7b5:  { semis: [0, 3, 6, 10], suffix: 'm7♭5' },
             };
 
+            // 화음이 너무 높이 쌓이면(최고음이 G5≈MIDI79 위로) 한 옥타브씩 내려
+            // 듣기 편한 음역으로 접어 준다. 최저음이 C3(48) 밑으로 가면 멈춤.
+            function prgVoiceChord(midis) {
+                var arr = midis.slice();
+                var guard = 0;
+                while (Math.max.apply(null, arr) > 78 &&
+                       (Math.min.apply(null, arr) - 12) >= 48 && guard < 3) {
+                    arr = arr.map(function(m){ return m - 12; });
+                    guard++;
+                }
+                return arr;
+            }
+
             function prgBuildRoots() {
                 const grid = document.getElementById('prgRootGrid');
                 if (!grid || grid.dataset.built) return;
@@ -19600,18 +19800,31 @@
                             pcName(CHROMATIC[(rootIdx + data.intervals[i] + s) % 12]) +
                             '</span>';
                     }).join('');
-                    // 재생용 절대 MIDI
-                    const chordMidis = q.semis.map(function(s) {
+                    // 재생용 절대 MIDI — 너무 높이 쌓인 화음은 옥타브 폴딩
+                    const rawMidis = q.semis.map(function(s) {
                         return baseMidi + data.intervals[i] + s;
-                    }).join('-');
-                    return '<button class="prg-chord-card" data-idx="' + i + '" ' +
+                    });
+                    const chordMidis = prgVoiceChord(rawMidis).join('-');
+                    return '<button class="prg-chord-card prg-q-' + prgQualCat(qualKey) + '" data-idx="' + i + '" ' +
                         'data-action="prgPlayChord" data-args="' + chordMidis + ',' + i + '">' +
                         '<span class="prg-roman">' + deg.roman + '</span>' +
                         '<span class="prg-symbol">' + symbol + '</span>' +
                         '<span class="prg-notes">' + noteNames + '</span>' +
                         '</button>';
                 }).join('');
+                grid.classList.toggle('qual-on', prgState.showQuality);
             }
+
+            window.prgToggleQuality = function() {
+                prgState.showQuality = !prgState.showQuality;
+                const b = document.getElementById('prgQualToggle');
+                if (b) {
+                    b.classList.toggle('active', prgState.showQuality);
+                    b.setAttribute('aria-pressed', prgState.showQuality ? 'true' : 'false');
+                }
+                const grid = document.getElementById('prgGrid');
+                if (grid) grid.classList.toggle('qual-on', prgState.showQuality);
+            };
 
             window.prgSetRoot = function(pc) {
                 prgState.rootPc = pc;
@@ -19660,9 +19873,10 @@
             window.prgPlayChord = function(midisStr, idx) {
                 const midis = String(midisStr).split('-').map(Number).filter(function(n){ return !isNaN(n); });
                 if (!midis.length) return;
-                // 가벼운 아르페지오
+                // 가벼운 아르페지오 — 피아노 탭과 동일한 pnPlayMidi 사운드.
+                // (playNoteOnInstrument 의 stopAllPlucks 보이스 스틸 회피 → 음 안 끊김)
                 midis.forEach(function(m, k) {
-                    setTimeout(function(){ playNoteOnInstrument('piano', m); }, k * 70);
+                    setTimeout(function(){ pnPlayMidi(m); }, k * 70);
                 });
                 // 카드 하이라이트
                 const card = document.querySelector('.prg-chord-card[data-idx="' + idx + '"]');
@@ -19694,6 +19908,7 @@
             // 있어 검은 건반 영역을 터치하면 검은 건반이 먼저 hit).
             const pnState = {
                 showNotes: true,
+                useFlats: false,        // ♯(false) / ♭(true) 음이름 표기
                 vertical: false,
                 zoom: 1,
                 viewMode: 'default',    // 'default' | 'keyboard'
@@ -19930,7 +20145,9 @@
                 // rotate(90) + translate 로 원본 좌표계를 세로 viewBox 에 매핑.
                 const groupTransform = rotate ? ('translate(' + contentH + ', 0) rotate(90)') : '';
                 let html = '<g' + (groupTransform ? ' transform="' + groupTransform + '"' : '') + '>';
-                const NOTE_LABELS = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+                const NOTE_LABELS = pnState.useFlats
+                    ? ['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B']
+                    : ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
                 // 흰 건반 먼저 (검은 건반 아래에 깔림)
                 whites.forEach(function(midi, i) {
                     const x = i * whiteW;
@@ -20052,6 +20269,14 @@
 
             window.pnToggleShowNotes = function(checked) {
                 pnState.showNotes = !!checked;
+                pnRender();
+            };
+
+            window.pnSetAccidental = function(acc) {
+                pnState.useFlats = (acc === 'flat');
+                document.querySelectorAll('#pnAccToggle .acc-toggle-btn').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.acc === acc);
+                });
                 pnRender();
             };
 
@@ -20283,6 +20508,8 @@
             }
             document.addEventListener('change', makeListener('change', 'data-change'));
             document.addEventListener('input',  makeListener('input',  'data-input'));
+            // 핀(즐겨찾기) 초기 상태 반영 — 저장된 핀을 메뉴 아이콘 + 상단 탭에 적용
+            try { updatePinIcons(); renderMobileStrip(); } catch (e) {}
         })();
 
         // Fade out the loader on window load

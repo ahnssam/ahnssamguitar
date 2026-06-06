@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>핀(즐겨찾기) 데모</title>
+<style>
+  :root{
+    --green-deep:#2a6b4a; --green-dark:#3a8a5c; --green-mid:#52a872; --green-light:#72c492;
+    --line:rgba(42,107,74,.16);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Noto Sans KR',system-ui,sans-serif;background:#eef3ef;color:#1a2421;
+       display:flex;flex-direction:column;align-items:center;padding:18px 12px 60px;gap:14px}
+  h1{font-size:1.05rem;margin:.2rem 0 0}
+  .hint{font-size:.8rem;color:#5a6b62;max-width:380px;text-align:center;line-height:1.5;margin:0}
+
+  /* 스타일 전환 */
+  .style-seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:4px}
+  .style-seg button{border:none;background:#fff;color:#4a5b52;font-size:.82rem;padding:.55rem 1rem;cursor:pointer;font-family:inherit}
+  .style-seg button.active{background:var(--green-deep);color:#fff}
+
+  /* 폰 목업 */
+  .phone{width:100%;max-width:390px;background:#fff;border:1px solid var(--line);border-radius:22px;
+         overflow:hidden;box-shadow:0 8px 30px rgba(20,50,35,.12)}
+
+  /* 상단 탭 스트립 */
+  .strip{display:flex;border-bottom:1px solid var(--line);background:#fafdfb}
+  .strip .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 2px;
+       font-size:.62rem;color:#6a7b72;background:none;border:none;cursor:pointer;font-family:inherit;min-width:0}
+  .strip .tab i{font-size:.95rem}
+  .strip .tab span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .strip .tab.active{color:var(--green-deep);font-weight:700}
+  .strip .tab.fav{color:var(--green-dark)}
+  .strip .more{flex:0 0 46px;border:none;background:none;color:#6a7b72;font-size:1rem;cursor:pointer;border-left:1px solid var(--line)}
+
+  /* 편집 토글 (스타일 B) */
+  .edit-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);background:#fff}
+  .edit-bar.hidden{display:none}
+  .edit-bar .lbl{font-size:.82rem;color:#3a4b42;display:flex;align-items:center;gap:7px}
+  .sw{position:relative;width:42px;height:24px;flex:0 0 auto}
+  .sw input{opacity:0;width:0;height:0}
+  .sw .track{position:absolute;inset:0;background:#cdd8d2;border-radius:20px;transition:.18s}
+  .sw .knob{position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.18s}
+  .sw input:checked + .track{background:var(--green-dark)}
+  .sw input:checked + .track + .knob{transform:translateX(18px)}
+
+  /* 메뉴 리스트 */
+  .menu{padding:6px 0}
+  .item{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;border:none;background:none;width:100%;
+        font-family:inherit;font-size:.92rem;color:#243a32;text-align:left}
+  .item:active{background:rgba(42,107,74,.05)}
+  .item i.lead{width:20px;text-align:center;color:var(--green-deep);font-size:.95rem}
+  .item .name{flex:1}
+  /* 핀 버튼 */
+  .pin{flex:0 0 auto;border:none;background:none;cursor:pointer;padding:6px;border-radius:8px;
+       color:var(--green-deep);font-size:.8rem;line-height:1;display:none}
+  .pin:active{background:rgba(42,107,74,.1)}
+  .pin .fa-thumbtack{transition:.15s}
+  .pin.show{display:inline-flex}
+  .pin .off{opacity:.28}          /* 흐릿한 미고정 */
+  .pin.on{color:var(--green-dark)}
+  .pin.on .fa-thumbtack{opacity:1;transform:rotate(-20deg)}
+  .pin.full{opacity:.4}           /* 4개 꽉 차면 미고정 항목 핀 더 흐리게 */
+
+  .count{font-size:.72rem;color:#7a8b82;text-align:center;margin-top:-4px}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <h1>핀(즐겨찾기) 방식 비교 데모</h1>
+  <p class="hint">아래에서 두 방식을 직접 눌러보세요. 핀을 찍으면 상단 탭이 <b>오른쪽부터</b> 바뀝니다(최대 4개). 결정되면 이 파일은 지우면 돼요.</p>
+
+  <div class="style-seg" id="styleSeg">
+    <button class="active" data-style="A">스타일 A · 항상 보이는 핀</button>
+    <button data-style="B">스타일 B · 편집 모드 토글</button>
+  </div>
+
+  <div class="phone">
+    <!-- 상단 탭 스트립 -->
+    <div class="strip" id="strip"></div>
+
+    <!-- 편집 토글 (스타일 B 전용) -->
+    <div class="edit-bar hidden" id="editBar">
+      <span class="lbl"><i class="fa-solid fa-thumbtack"></i> 고정 편집</span>
+      <label class="sw"><input type="checkbox" id="editToggle"><span class="track"></span><span class="knob"></span></label>
+    </div>
+
+    <!-- 메뉴 -->
+    <div class="menu" id="menu"></div>
+  </div>
+  <p class="count" id="count"></p>
+
+<script>
+  // 데모용 메뉴 (실제 메뉴 일부)
+  const ITEMS = [
+    {tool:'tuner',      label:'튜너',            icon:'fa-microphone'},
+    {tool:'metronome',  label:'메트로놈 & 드럼', icon:'fa-stopwatch'},
+    {tool:'backing',    label:'반주',            icon:'fa-drum'},
+    {tool:'loopstation',label:'루프스테이션',     icon:'fa-record-vinyl'},
+    {tool:'eartraining',label:'음정 트레이닝',    icon:'fa-headphones'},
+    {tool:'chords',     label:'코드',            icon:'fa-guitar'},
+    {tool:'scales',     label:'스케일',          icon:'fa-music'},
+    {tool:'piano',      label:'피아노',          icon:'fa-keyboard'},
+    {tool:'capo',       label:'카포 계산기',      icon:'fa-sliders-h'},
+    {tool:'taptempo',   label:'탭템포',          icon:'fa-hand-pointer'},
+  ];
+  const SHORT = {tuner:'튜너',metronome:'메트로놈',backing:'반주',loopstation:'루프',
+                 eartraining:'음정',chords:'코드',scales:'스케일',piano:'피아노',capo:'카포',taptempo:'탭템포'};
+  const byTool = t => ITEMS.find(i=>i.tool===t);
+
+  // 기본 탭(왼쪽부터) + 4번째는 동적 자리(여기선 '음정'으로 표시)
+  const DEFAULTS = ['tuner','metronome','backing','eartraining'];
+
+  let style = 'A';          // 'A' | 'B'
+  let editOn = false;       // 스타일 B 편집 모드
+  let favorites = [];       // 핀 순서(오래된 것 먼저). fav[0] = 맨 오른쪽
+  let active = 'tuner';
+
+  function renderStrip(){
+    const n = favorites.length;
+    const left = 4 - n;
+    const slots = [];
+    for(let i=0;i<left;i++) slots.push({tool:DEFAULTS[i], fav:false, dynamic:i===3});
+    for(let k=0;k<n;k++) slots.push({tool:favorites[n-1-k], fav:true});
+    const strip = document.getElementById('strip');
+    strip.innerHTML = slots.map(s=>{
+      const it = byTool(s.tool);
+      const cls = 'tab' + (s.fav?' fav':'') + (s.tool===active?' active':'');
+      return `<button class="${cls}" onclick="go('${s.tool}')"><i class="fa-solid ${it.icon}"></i><span>${SHORT[s.tool]}</span></button>`;
+    }).join('') + `<button class="more"><i class="fa-solid fa-bars"></i></button>`;
+  }
+
+  function renderMenu(){
+    const full = favorites.length>=4;
+    const showPins = (style==='A') || (style==='B' && editOn);
+    document.getElementById('menu').innerHTML = ITEMS.map(it=>{
+      const on = favorites.includes(it.tool);
+      const pinCls = 'pin' + (showPins?' show':'') + (on?' on':'') + (!on&&full?' full':'');
+      const ic = on ? 'fa-solid fa-thumbtack' : 'fa-regular fa-bookmark';
+      // 미고정은 얇은 압정(흐릿), 고정은 채워진 압정
+      const icon = on
+        ? '<i class="fa-solid fa-thumbtack"></i>'
+        : '<i class="fa-solid fa-thumbtack off"></i>';
+      return `<button class="item" onclick="go('${it.tool}')">
+          <i class="lead fa-solid ${it.icon}"></i>
+          <span class="name">${it.label}</span>
+          <span class="${pinCls}" onclick="event.stopPropagation();togglePin('${it.tool}')">${icon}</span>
+        </button>`;
+    }).join('');
+    // 편집바 표시 여부
+    document.getElementById('editBar').classList.toggle('hidden', style!=='B');
+    document.getElementById('count').textContent =
+      `고정됨 ${favorites.length}/4` + (favorites.length? ' — '+favorites.map(t=>SHORT[t]).join(', ')+' (맨 왼쪽이 가장 최근)':'' );
+  }
+
+  window.go = function(tool){ active = tool; renderStrip(); renderMenu(); };
+  window.togglePin = function(tool){
+    const idx = favorites.indexOf(tool);
+    if(idx>=0){ favorites.splice(idx,1); }
+    else { if(favorites.length>=4){ alert('최대 4개까지 고정할 수 있어요'); return; } favorites.push(tool); }
+    renderStrip(); renderMenu();
+  };
+
+  document.getElementById('styleSeg').addEventListener('click', e=>{
+    const b = e.target.closest('button'); if(!b) return;
+    style = b.dataset.style; editOn = false;
+    document.getElementById('editToggle').checked = false;
+    [...e.currentTarget.children].forEach(c=>c.classList.toggle('active', c===b));
+    renderStrip(); renderMenu();
+  });
+  document.getElementById('editToggle').addEventListener('change', e=>{
+    editOn = e.target.checked; renderMenu();
+  });
+
+  renderStrip(); renderMenu();
+</script>
+</body>
+</html>
