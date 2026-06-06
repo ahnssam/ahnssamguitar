@@ -3833,6 +3833,16 @@
         :root[data-theme="dark"] .prg-scale-line { color: rgba(255, 255, 255, 0.6); }
         :root[data-theme="dark"] .prg-scale-line b { color: #7fd0a0; }
         :root[data-theme="dark"] .prg-legend { color: rgba(255, 255, 255, 0.42); }
+        /* 옵션 세그먼트/토글 — 다크 모드 비활성 글자 가독성 (장조·단조 / 3·7화음 / ♯♭ / 색 구분) */
+        :root[data-theme="dark"] .prg-seg-btn,
+        :root[data-theme="dark"] .acc-toggle-btn,
+        :root[data-theme="dark"] .prg-qual-toggle { color: rgba(255, 255, 255, 0.72); background: rgba(255, 255, 255, 0.05); }
+        :root[data-theme="dark"] .prg-seg-btn:hover,
+        :root[data-theme="dark"] .acc-toggle-btn:hover,
+        :root[data-theme="dark"] .prg-qual-toggle:hover { color: #fff; background: rgba(82, 168, 114, 0.22); }
+        :root[data-theme="dark"] .prg-seg-btn.active,
+        :root[data-theme="dark"] .acc-toggle-btn.active,
+        :root[data-theme="dark"] .prg-qual-toggle.active { color: #fff; background: var(--green-dark); }
         @media (max-width: 720px) {
             .prg-grid { grid-template-columns: repeat(4, 1fr); }
             .prg-symbol { font-size: 1rem; }
@@ -15932,15 +15942,47 @@
                 { name: 'Fdim', cat: 'dim',   level: 4, frets: [1, null, 0, 1, 0, null], fingers: [2, 0, 0, 1, 0, 0] },
                 { name: 'Gdim', cat: 'dim',   level: 4, frets: [3, null, 2, 3, 2, null], fingers: [3, 0, 1, 4, 2, 0] },
                 { name: 'Adim', cat: 'dim',   level: 4, frets: [null, 0, 4, 5, 4, null], fingers: [0, 0, 1, 3, 2, 0], startFret: 2, labelAt: 2 },
-                { name: 'Bdim7',cat: 'dim',   level: 3, frets: [null, 2, 3, 1, 3, null], fingers: [0, 2, 4, 1, 3, 0] },
-                // ── 하이코드 / 재즈·간소화 보이싱 (Bm7 예시 세트) ──
-                // 6번줄 루트 바레 (E-shape m7, 7프렛) — m7 카테고리에 대체 보이싱으로 노출
-                { name: 'Bm7',  cat: 'm7',    level: 3, frets: [7, 9, 7, 7, 7, 7], fingers: [1, 3, 1, 1, 1, 1], startFret: 6, labelAt: 1, sub: '6번줄 루트' },
-                // 재즈 — 6번줄 루트 드롭 (6·4·3·2번줄 7프렛, 5·1 뮤트): B·A·D·F#
-                { name: 'Bm7',  cat: 'jazz',  level: 3, frets: [7, null, 7, 7, 7, null], fingers: [1, 0, 3, 3, 3, 0], startFret: 6, labelAt: 1, sub: '재즈 · 6번줄 루트' },
-                // 재즈 — 5번줄 루트 간소화 (5·3·2번줄, 6·4·1 뮤트): B·A·D
-                { name: 'Bm7',  cat: 'jazz',  level: 2, frets: [null, 2, null, 2, 3, null], fingers: [0, 1, 0, 2, 3, 0], sub: '재즈 · 5번줄 루트' }
+                { name: 'Bdim7',cat: 'dim',   level: 3, frets: [null, 2, 3, 1, 3, null], fingers: [0, 2, 4, 1, 3, 0] }
             ];
+
+            // ── 재즈/간소화 보이싱 자동 생성 ──
+            //   12키 × {maj7, 7, m7, m7♭5, dim7} × {6번줄 루트, 5번줄 루트}
+            //   각 shape 는 이동 가능한 드롭2/간소화 그립. 오프셋은 루트 프렛 기준.
+            (function buildJazzVoicings() {
+                const ROOT_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+                const QUAL = {
+                    maj7: { suffix: 'maj7',  s6:[0,null,1,1,0,null],   f6:[2,0,3,4,1,0],
+                                             s5:[null,0,2,1,2,null],   f5:[0,1,3,2,4,0] },
+                    dom7: { suffix: '7',     s6:[0,null,0,1,0,null],   f6:[1,0,1,2,1,0],
+                                             s5:[null,0,2,0,2,null],   f5:[0,2,3,1,4,0] },
+                    m7:   { suffix: 'm7',    s6:[0,null,0,0,0,null],   f6:[1,0,1,1,1,0],
+                                             s5:[null,0,2,0,1,null],   f5:[0,2,4,1,3,0] },
+                    m7b5: { suffix: 'm7♭5',  s6:[0,null,0,0,-1,null],  f6:[2,0,2,2,1,0],
+                                             s5:[null,0,1,0,1,null],   f5:[0,2,3,1,4,0] },
+                    dim7: { suffix: 'dim7',  s6:[0,null,-1,0,-1,null], f6:[3,0,1,4,2,0],
+                                             s5:[null,0,1,-1,1,null],  f5:[0,2,3,1,4,0] }
+                };
+                function build(name, offsets, fingers, rootFret, sub) {
+                    let P = rootFret;
+                    const minFret = function() {
+                        return Math.min.apply(null, offsets.filter(function(o){ return o !== null; })
+                            .map(function(o){ return P + o; }));
+                    };
+                    while (minFret() < 0) P += 12;   // 음수 프렛 방지 (0=개방 허용)
+                    const frets = offsets.map(function(o){ return o === null ? null : P + o; });
+                    return { name: name, cat: 'jazz', level: 4, frets: frets, fingers: fingers.slice(), sub: sub };
+                }
+                ROOT_NAMES.forEach(function(rn, pc) {
+                    Object.keys(QUAL).forEach(function(q) {
+                        const Q = QUAL[q];
+                        const nm = rn + Q.suffix;
+                        const f6root = ((pc - 4) % 12 + 12) % 12;   // 6번줄(개방 E=4)
+                        const f5root = ((pc - 9) % 12 + 12) % 12;   // 5번줄(개방 A=9)
+                        CHORDS.push(build(nm, Q.s6, Q.f6, f6root, '재즈 · 6번줄 루트'));
+                        CHORDS.push(build(nm, Q.s5, Q.f5, f5root, '재즈 · 5번줄 루트'));
+                    });
+                });
+            })();
 
             window._CHORDS = CHORDS;
             window._renderChordSVG = renderChordSVG;
