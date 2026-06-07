@@ -395,6 +395,11 @@
 .rank-mode-pills { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0 0 0.9rem; }
 .rank-mode-pill { border: 1px solid rgba(42,107,74,0.22); background: rgba(42,107,74,0.05); color: rgba(26,36,33,0.6); font-family: inherit; font-size: 0.78rem; padding: 0.32rem 0.7rem; border-radius: 16px; cursor: pointer; transition: all .15s; }
 .rank-mode-pill.active { background: var(--green-deep,#2a6b4a); color: #fff; border-color: var(--green-deep,#2a6b4a); }
+.rank-pager { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.3rem; margin-top: 0.9rem; }
+.rank-page-btn { min-width: 30px; height: 30px; padding: 0 0.4rem; border: 1px solid rgba(42,107,74,0.22); background: rgba(42,107,74,0.05); color: rgba(26,36,33,0.65); border-radius: 7px; font-family: inherit; font-size: 0.82rem; cursor: pointer; transition: all .15s; }
+.rank-page-btn.active { background: var(--green-deep,#2a6b4a); color: #fff; border-color: var(--green-deep,#2a6b4a); }
+:root[data-theme="dark"] .rank-page-btn { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.18); }
+:root[data-theme="dark"] .rank-page-btn.active { color: #fff; background: var(--green-dark,#3a8a5c); }
 .rank-row-click { cursor: pointer; }
 .rank-row-click:hover { background: rgba(82,168,114,0.08); }
 /* 점수 내역 모달 */
@@ -1778,7 +1783,7 @@
     const RANK_PAGE_SIZE = 20;
 
     // ── 분기 유틸 (Asia/Seoul 기준: Q1=1~4월, Q2=5~8월, Q3=9~12월) ──
-    const RANK_FIRST_PERIOD = '2026-Q2';   // 사이트 랭킹 시작 분기
+    const RANK_FIRST_PERIOD = '2026-Q1';   // 사이트 랭킹 시작 분기 (4월 데이터부터)
     function rankCurrentPeriod() {
         const now = new Date();
         const kst = new Date(now.getTime() + (now.getTimezoneOffset() + 540) * 60000);
@@ -1827,7 +1832,8 @@
     function rankPickBadge(rank) {
         const t = rankTier(rank);
         const digits = String(rank).length;
-        const fs = digits >= 3 ? 8.5 : digits === 2 ? 11 : 13;
+        // 피크는 키웠지만 숫자 렌더 크기는 유지 (viewBox 24 → 렌더 38, 약 1.58배 → fs 축소)
+        const fs = digits >= 3 ? 5.8 : digits === 2 ? 7.3 : 8.9;
         const path = 'M12 2.2C16.5 2.2 21 5.2 21 10.4C21 16.6 15.5 22.2 12 25.4C8.5 22.2 3 16.6 3 10.4C3 5.2 7.5 2.2 12 2.2Z';
         let fill, txtFill = '#fff';
         let defs = '';
@@ -2227,6 +2233,13 @@
         const rankContentEl = panel.querySelector('#rankContent');
         if (rankContentEl) {
             rankContentEl.addEventListener('click', function(e) {
+                const pageBtn = e.target.closest('.rank-page-btn');
+                if (pageBtn) {
+                    _rankPage = parseInt(pageBtn.getAttribute('data-rank-page'), 10) || 1;
+                    renderRankPage();
+                    rankContentEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    return;
+                }
                 const row = e.target.closest('.rank-row-click');
                 if (!row) return;
                 openUserBreakdown(row.getAttribute('data-rank-user'), row.getAttribute('data-rank-nick'));
@@ -2282,8 +2295,8 @@
                 setTimeout(function() { reject(new Error('네트워크가 느려요 — 잠시 후 다시 시도해주세요.')); }, 20000);
             });
             const params = (fn === 'get_score_ranking')
-                ? { p_period: _rankPeriod, p_mode: _rankBoardMode }
-                : { p_period: _rankPeriod };
+                ? { p_period: _rankPeriod, p_mode: _rankBoardMode, p_limit: 1000 }
+                : { p_period: _rankPeriod, p_limit: 1000 };
             const rpcPromise = Promise.resolve(client.rpc(fn, params));
             const result = await Promise.race([rpcPromise, timeoutPromise]);
             data = result.data; error = result.error;
@@ -2295,10 +2308,11 @@
             content.innerHTML = _renderRankingError((error && error.message) || String(error));
             return;
         }
-        const rows = data || [];
+        _rankRows = data || [];
+        _rankPage = 1;
         const user = currentUser();
 
-        if (rows.length === 0) {
+        if (_rankRows.length === 0) {
             const cta = !user ? `
 <div class="rank-loginCTA">로그인하면 내 기록도 랭킹에 올라가요.<br><button type="button" data-open-login="1">로그인</button></div>` : '';
             const note = _rankBoard === 'streak'
@@ -2307,11 +2321,37 @@
             content.innerHTML = `<div class="rank-empty">${note}</div>${cta}`;
             return;
         }
+        renderRankPage();
+    }
 
-        const list = rows.map(function(r) { return rankRowHtml(r, user); }).join('');
+    // 페이지당 20명 + 1/2/3 페이지 네비게이션
+    function renderRankPage() {
+        const content = document.getElementById('rankContent');
+        if (!content) return;
+        const user = currentUser();
+        const total = _rankRows.length;
+        const pages = Math.max(1, Math.ceil(total / RANK_PAGE_SIZE));
+        if (_rankPage > pages) _rankPage = pages;
+        if (_rankPage < 1) _rankPage = 1;
+        const start = (_rankPage - 1) * RANK_PAGE_SIZE;
+        const slice = _rankRows.slice(start, start + RANK_PAGE_SIZE);
+        const list = slice.map(function(r) { return rankRowHtml(r, user); }).join('');
+        let pager = '';
+        if (pages > 1) {
+            // 최대 5개 노출. 4페이지부터 현재 페이지가 가운데 오도록 윈도우 이동.
+            let startP = Math.max(1, _rankPage - 2);
+            let endP = Math.min(pages, startP + 4);
+            startP = Math.max(1, endP - 4);
+            let btns = '';
+            for (let p = startP; p <= endP; p++) {
+                btns += '<button class="rank-page-btn' + (p === _rankPage ? ' active' : '') +
+                        '" data-rank-page="' + p + '">' + p + '</button>';
+            }
+            pager = '<div class="rank-pager">' + btns + '</div>';
+        }
         let selfCardHtml = '';
         if (user) {
-            const mine = rows.find(function(r) { return r.user_id === user.id; });
+            const mine = _rankRows.find(function(r) { return r.user_id === user.id; });
             if (!mine) {
                 selfCardHtml = `
 <div class="rank-self-card">
@@ -2323,7 +2363,7 @@
             selfCardHtml = `
 <div class="rank-loginCTA">로그인하면 내 기록도 랭킹에 올라가요.<br><button type="button" data-open-login="1">로그인</button></div>`;
         }
-        content.innerHTML = `<div class="rank-list">${list}</div>${selfCardHtml}`;
+        content.innerHTML = `<div class="rank-list">${list}</div>${pager}${selfCardHtml}`;
     }
 
     function rankDiffChips(by) {
@@ -2348,8 +2388,14 @@
         } else {
             right = `<div class="rank-score"><span class="rank-score-pts">${Number(r.total_score).toLocaleString()}점</span></div>`;
         }
+        // 클릭(점수 내역)은 '전체 점수' 보드에서만. 세부 모드/연속 보드에선 비활성.
+        const clickable = (_rankBoard === 'score' && _rankBoardMode === 'all');
+        const cls = 'rank-row' + (clickable ? ' rank-row-click' : '') + (isSelf ? ' self' : '');
+        const dataAttrs = clickable
+            ? ` data-rank-user="${escapeAttr(r.user_id)}" data-rank-nick="${escapeAttr(r.nickname || '익명')}" title="점수 내역 보기"`
+            : '';
         return `
-<div class="rank-row rank-row-click ${isSelf ? 'self' : ''}" data-rank-user="${escapeAttr(r.user_id)}" data-rank-nick="${escapeAttr(r.nickname || '익명')}" title="점수 내역 보기">
+<div class="${cls}"${dataAttrs}>
     <div class="rank-pick-cell">${badge}</div>
     <div class="rank-ava">${avatar}</div>
     <div class="rank-name">${escapeHtml(r.nickname || '익명')}</div>

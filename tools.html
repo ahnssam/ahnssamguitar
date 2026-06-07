@@ -1183,16 +1183,24 @@
                 flex: 0 1 160px;
                 min-width: 120px;
                 max-width: 180px;
-                margin-right: 0.6rem;
+                margin-right: 0;
+            }
+            .topbar .topbar-home-btn {
+                order: 6;
+                margin-right: 0;
             }
             .topbar .topbar-theme-toggle {
                 order: 7;
-                margin-right: 0.7rem;
+                margin-right: 0;
+            }
+            .topbar .topbar-divider {
+                order: 8;
+                margin: 0;
             }
             .topbar .topbar-auth-slot {
                 order: 10;
                 margin-left: 0;
-                margin-right: 0.8rem;
+                margin-right: 0;
             }
 
             /* Sidebar smoothly transitions width too */
@@ -1216,7 +1224,8 @@
                 padding: 0.85rem 0;
                 width: 100%;
             }
-            .sidebar.closed .menu-item span { display: none; }
+            /* 라벨/뱃지/핀 등 일반 span 만 숨기고, 아이콘 span(.cwk-icon)은 유지 */
+            .sidebar.closed .menu-item span:not(.cwk-icon) { display: none; }
             .sidebar.closed .menu-item i {
                 font-size: 1.15rem;
                 width: 22px;
@@ -1226,6 +1235,24 @@
             }
             .sidebar.closed .menu-item.active i { color: var(--green-deep); }
             .sidebar.closed .menu-item:hover i { color: var(--green-deep); }
+            /* 커스텀 SVG 아이콘(피아노/키별 화음/프렛보드)도 FA 아이콘과 동일하게 중앙 정렬·표시 */
+            .sidebar.closed .menu-item .cwk-icon {
+                width: 100%;
+                justify-content: center;
+                color: rgba(26, 36, 33, 0.75);
+            }
+            .sidebar.closed .menu-item .cwk-icon svg { width: 18px; height: 18px; }
+            .sidebar.closed .menu-item.active .cwk-icon { color: var(--green-deep); }
+            .sidebar.closed .menu-item:hover .cwk-icon { color: var(--green-deep); }
+            /* 축소 메뉴에서도 분류(연습 도구/트레이닝/이론) 구분 — 그룹 사이에 짧은 짝대기 */
+            .sidebar.closed .sidebar-menu:not(:first-of-type) {
+                margin-top: 0.55rem;
+                padding-top: 0.55rem;
+                border-top: 1px solid rgba(26, 36, 33, 0.14);
+            }
+            :root[data-theme="dark"] .sidebar.closed .sidebar-menu:not(:first-of-type) {
+                border-top-color: rgba(255, 255, 255, 0.16);
+            }
             /* When collapsed, the first sidebar-menu needs its own top-padding to clear the hamburger
                (since the normally-padded section-label is hidden) */
             .sidebar.closed > .sidebar-menu:first-of-type {
@@ -1432,6 +1459,23 @@
             display: none;
         }
         .topbar-spacer { flex: 1; }
+        /* 상단바 구분선 — 아이콘 세로폭 정도, 테두리 초록 */
+        .topbar-divider {
+            width: 1px; height: 20px; flex-shrink: 0;
+            background: rgba(42, 107, 74, 0.35);
+            margin: 0 0.25rem;
+        }
+        :root[data-theme="dark"] .topbar-divider { background: rgba(180, 230, 200, 0.3); }
+        /* 상단바 홈 버튼 */
+        .topbar-home-btn {
+            background: none; border: none; cursor: pointer;
+            color: rgba(26, 36, 33, 0.62); font-size: 1.05rem;
+            padding: 0.3rem 0.45rem; display: inline-flex; align-items: center;
+            flex-shrink: 0; transition: color 0.2s;
+        }
+        .topbar-home-btn:hover { color: var(--green-deep); }
+        :root[data-theme="dark"] .topbar-home-btn { color: var(--text-mid); }
+        :root[data-theme="dark"] .topbar-home-btn:hover { color: var(--green-light); }
         .master-vol {
             display: flex; align-items: center; gap: 0.5rem;
             flex: 0 1 220px; min-width: 140px;
@@ -2109,6 +2153,14 @@
             .topbar-spacer { flex: 1 1 auto; }
             /* Hide the volume slider on mobile — keep it for PC only */
             .topbar .master-vol { display: none; }
+            /* 모바일 테마 라벨 — "라이트/다크"만 (모드 생략) + 고정폭 해제로 양옆 공백 제거 */
+            .theme-mode-suffix { display: none; }
+            .topbar-theme-toggle .theme-toggle-label { min-width: 0; }
+            /* 모바일: 홈 → 테마 → 구분선 → 로그인 */
+            .topbar-home-btn { order: 5; }
+            .topbar-theme-toggle { order: 6; }
+            .topbar-divider { order: 7; }
+            .topbar-compact-auth { order: 8; }
             /* Theme toggle sits to the LEFT of the (compact) login avatar */
             .topbar .topbar-theme-toggle {
                 margin-right: 0.35rem;
@@ -2986,6 +3038,27 @@
             flex-wrap: wrap;
             align-items: center;
         }
+        /* 음정보기/세로회전 토글 — 왼쪽 정렬로 붙이고, 마지막 누른 음은 오른쪽 */
+        .fb-control-row-switches.fb-switches-left { justify-content: flex-start; gap: 1.4rem; align-items: center; }
+        .fb-note-readout {
+            text-align: center; font-weight: 800; font-size: 1.7rem; line-height: 1.1;
+            color: var(--green-deep); letter-spacing: 0.01em;
+            min-height: 1.1em; margin-bottom: 0.4rem;
+            opacity: 0; transition: opacity .15s;
+        }
+        .fb-note-readout.on { opacity: 1; }
+        :root[data-theme="dark"] .fb-note-readout { color: var(--green-light); }
+        /* 근음 일괄 해제 버튼 */
+        .fb-root-clear {
+            flex-shrink: 0; padding: 0 0.6rem; height: 30px; border-radius: 8px;
+            border: 1px solid rgba(192,57,43,0.3); background: rgba(192,57,43,0.06); color: #b8392e;
+            font-family: inherit; font-size: 0.72rem; font-weight: 600; cursor: pointer; transition: all .15s;
+        }
+        .fb-root-clear:hover { background: rgba(192,57,43,0.14); }
+        :root[data-theme="dark"] .fb-root-clear { color: #f0928a; border-color: rgba(240,146,138,0.3); background: rgba(240,146,138,0.08); }
+        /* 근음 행 안의 악기 드롭다운 — 오른쪽으로 */
+        .fb-root-row .fb-inst-inline { margin-left: auto; flex-shrink: 0; }
+        .fb-inst-inline .fb-inst-current { padding: 0.35rem 0.6rem; font-size: 0.76rem; }
         .fb-root-label {
             font-size: 0.72rem;
             color: rgba(26, 36, 33, 0.55);
@@ -5853,6 +5926,89 @@
         .loop-section.visible { display: block; }
 
         /* Preset bar — 노래 검색 + 적용 */
+        /* ───── 연습도구 대문(홈) ───── */
+        #homePanel .tool-body { max-width: 1100px; }
+        .home-hero { text-align: center; padding: 0.6rem 0 0.3rem; }
+        .home-hero + .home-section-label { margin-top: 0.5rem; }
+        .home-title { font-size: 1.75rem; font-weight: 800; color: var(--green-deep); margin: 0 0 0.5rem; letter-spacing: -0.01em; }
+        .home-title span { color: var(--green-mid); }
+        .home-sub { font-size: 0.92rem; color: rgba(26,36,33,0.6); line-height: 1.6; max-width: 620px; margin: 0 auto; }
+        :root[data-theme="dark"] .home-title { color: var(--green-light); }
+        :root[data-theme="dark"] .home-sub { color: rgba(232,240,236,0.62); }
+        .home-section-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(26,36,33,0.45); margin: 1.4rem 0 0.7rem; }
+        :root[data-theme="dark"] .home-section-label { color: var(--text-mid); }
+        .home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 0.7rem; }
+        .home-card {
+            display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem;
+            padding: 1rem 1rem 0.9rem; border: 1px solid rgba(42,107,74,0.16); border-radius: 14px;
+            background: rgba(82,168,114,0.05); cursor: pointer; font-family: inherit; text-align: left;
+            transition: transform .12s, background .15s, border-color .15s, box-shadow .15s;
+        }
+        .home-card:hover { transform: translateY(-2px); background: rgba(82,168,114,0.12); border-color: rgba(82,168,114,0.4); box-shadow: 0 6px 18px rgba(42,107,74,0.10); }
+        .home-card-ico { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 11px; background: var(--green-deep); color: #fff; font-size: 1.05rem; margin-bottom: 0.25rem; }
+        .home-card-name { font-size: 0.98rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+        .home-card-desc { font-size: 0.76rem; color: rgba(26,36,33,0.58); line-height: 1.45; }
+        :root[data-theme="dark"] .home-card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+        :root[data-theme="dark"] .home-card:hover { background: rgba(82,168,114,0.16); border-color: rgba(82,168,114,0.4); }
+        :root[data-theme="dark"] .home-card-name { color: #e8f0ec; }
+        :root[data-theme="dark"] .home-card-desc { color: rgba(232,240,236,0.55); }
+        .home-card-badge { font-size: 0.56rem; font-weight: 800; padding: 0.08rem 0.34rem; border-radius: 5px; background: #f2b705; color: #1a2421; letter-spacing: 0.03em; }
+        .home-card-badge.hot { background: #e8553a; color: #fff; }
+        @media (max-width: 520px) {
+            .home-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.55rem; }
+            .home-title { font-size: 1.4rem; }
+            .home-sub { font-size: 0.85rem; }
+            .home-card { padding: 0.85rem 0.8rem; }
+        }
+        /* 내 프리셋 / 저장 — 검색바 오른쪽 컴팩트 아이콘 버튼 */
+        .loop-preset-mini {
+            flex: 0 0 auto;
+            width: 30px; height: 30px;
+            display: inline-flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(42,107,74,0.25);
+            background: rgba(42,107,74,0.06);
+            color: var(--green-deep);
+            border-radius: 8px; cursor: pointer; font-size: 0.82rem;
+            transition: all .15s;
+        }
+        .loop-preset-mini:hover:not(:disabled) { background: rgba(82,168,114,0.18); }
+        #loopSavePresetBtn:not(:disabled) { background: var(--green-deep); color: #fff; border-color: var(--green-deep); }
+        #loopSavePresetBtn:disabled { opacity: 0.4; cursor: default; }
+        :root[data-theme="dark"] .loop-preset-mini { color: var(--green-light); border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); }
+        :root[data-theme="dark"] #loopSavePresetBtn:not(:disabled) { color: #fff; background: var(--green-dark); }
+        /* 내 프리셋 모달 공용 */
+        .loop-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; z-index: 1001; padding: 1rem; }
+        .loop-modal-overlay.open { display: flex; }
+        .loop-modal-card { background: var(--bg-panel,#fff); color: var(--text-primary,#1a2421); border-radius: 14px; padding: 1.3rem; max-width: 360px; width: 100%; box-shadow: 0 14px 44px rgba(0,0,0,0.28); }
+        :root[data-theme="dark"] .loop-modal-card { background: #1d2a26; color: #e8f0ec; }
+        .loop-modal-title { font-size: 1.05rem; font-weight: 800; margin-bottom: 0.6rem; color: var(--green-deep,#2a6b4a); }
+        :root[data-theme="dark"] .loop-modal-title { color: var(--green-light,#72c492); }
+        .loop-modal-msg { font-size: 0.88rem; line-height: 1.55; color: rgba(26,36,33,0.7); margin-bottom: 1rem; }
+        :root[data-theme="dark"] .loop-modal-msg { color: rgba(232,240,236,0.7); }
+        .loop-modal-input { width: 100%; box-sizing: border-box; padding: 0.6rem 0.7rem; border: 1px solid rgba(42,107,74,0.3); border-radius: 9px; font-family: inherit; font-size: 0.92rem; margin-bottom: 0.8rem; }
+        .loop-modal-label { font-size: 0.78rem; color: rgba(26,36,33,0.55); margin-bottom: 0.4rem; }
+        :root[data-theme="dark"] .loop-modal-label { color: rgba(232,240,236,0.55); }
+        .loop-slot-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.4rem; margin-bottom: 1rem; }
+        .loop-slot-btn { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; padding: 0.55rem 0.2rem; border: 1px solid rgba(42,107,74,0.25); background: rgba(42,107,74,0.05); border-radius: 9px; cursor: pointer; font-family: inherit; color: inherit; }
+        .loop-slot-btn b { font-size: 1rem; color: var(--green-deep,#2a6b4a); }
+        .loop-slot-btn span { font-size: 0.56rem; opacity: 0.7; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .loop-slot-btn.filled { background: rgba(82,168,114,0.16); border-color: rgba(82,168,114,0.45); }
+        .loop-slot-btn:hover { background: rgba(82,168,114,0.22); }
+        :root[data-theme="dark"] .loop-slot-btn b { color: var(--green-light,#72c492); }
+        .loop-modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+        .loop-modal-btn { padding: 0.5rem 1.1rem; border-radius: 9px; font-family: inherit; font-size: 0.86rem; font-weight: 600; cursor: pointer; border: 1px solid rgba(42,107,74,0.25); }
+        .loop-modal-btn.ghost { background: transparent; color: inherit; }
+        .loop-modal-btn.primary { background: var(--green-deep,#2a6b4a); color: #fff; border-color: var(--green-deep,#2a6b4a); }
+        .loop-mypreset-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
+        .loop-mypreset-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.7rem; border: 1px solid rgba(42,107,74,0.18); border-radius: 9px; }
+        .loop-mypreset-item.filled { cursor: pointer; background: rgba(82,168,114,0.08); }
+        .loop-mypreset-item.filled:hover { background: rgba(82,168,114,0.18); }
+        .loop-mypreset-item.empty { opacity: 0.5; }
+        .loop-mp-num { width: 22px; height: 22px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; background: var(--green-deep,#2a6b4a); color: #fff; border-radius: 50%; font-size: 0.75rem; font-weight: 700; }
+        .loop-mp-name { flex: 1; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .loop-mp-del { background: none; border: none; color: rgba(192,57,43,0.7); cursor: pointer; padding: 0.3rem; font-size: 0.82rem; }
+        .loop-toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(26,36,33,0.92); color: #fff; padding: 0.6rem 1.1rem; border-radius: 22px; font-size: 0.85rem; z-index: 1100; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
+        .loop-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
         .loop-preset-bar {
             position: relative;
             display: flex;
@@ -7672,6 +7828,7 @@
         <div class="topbar-spacer"></div>
         <!-- Desktop auth slot: login button / profile (left of volume) -->
         <div class="auth-slot topbar-auth-slot"></div>
+        <span class="topbar-divider" aria-hidden="true"></span>
         <button id="themeToggleBtn" class="topbar-theme-toggle" type="button" data-action="toggleTheme" aria-label="다크/라이트 모드 전환" title="다크/라이트 모드 전환">
             <span class="theme-icon theme-icon-sun" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -7691,12 +7848,15 @@
                     <path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11Z"/>
                 </svg>
             </span>
-            <span class="theme-toggle-label">라이트모드</span>
+            <span class="theme-toggle-label">라이트<span class="theme-mode-suffix">모드</span></span>
         </button>
         <div class="master-vol">
             <i id="masterVolIcon" class="fas fa-volume-up" data-action="toggleMute" title="음소거 토글"></i>
             <input type="range" id="masterVolSlider" class="master-vol-slider" min="0" max="100" value="100" data-input="updateMasterVol" data-args="$value">
         </div>
+        <button id="topbarHomeBtn" class="topbar-home-btn" type="button" data-action="switchTool" data-args="home" data-tool="home" aria-label="연습도구 홈" title="연습도구 홈">
+            <i class="fas fa-house"></i>
+        </button>
         <!-- Mobile-only compact auth button (user icon / avatar) -->
         <div class="auth-slot topbar-compact-auth"></div>
         <button class="hamburger" id="hamburgerBtn" data-action="toggleSidebar" aria-label="메뉴 토글">
@@ -7721,7 +7881,7 @@
         <!-- 1. 연습 도구 — 실시간 유틸리티 + 코드/피아노 참조 -->
         <div class="sidebar-section-label sidebar-section-label-pinrow">연습 도구<button type="button" class="pin-clear-btn" data-action="unpinAll" aria-label="고정한 메뉴 전체 해제"><i class="fas fa-thumbtack"></i> 핀 전체 해제</button></div>
         <nav class="sidebar-menu">
-            <button class="menu-item active" data-tool="tuner" data-action="switchTool" data-args="tuner">
+            <button class="menu-item" data-tool="tuner" data-action="switchTool" data-args="tuner">
                 <i class="fas fa-microphone"></i><span>튜너</span>
             </button>
             <button class="menu-item" data-tool="metronome" data-action="switchTool" data-args="metronome">
@@ -7770,15 +7930,102 @@
             </button>
         </nav>
         <div class="sidebar-foot">
-            <a href="index.html">← 메인으로 돌아가기</a>
+            <a href="index.html">← 메인 홈페이지로</a>
         </div>
     </aside>
 
     <!-- Main Content -->
     <main class="tools-main" id="toolsMain">
 
+        <!-- 대문 (연습도구 홈) -->
+        <section class="tool-panel active" id="homePanel">
+            <div class="tool-body">
+                <div class="home-hero">
+                    <h1 class="home-title">안쌤의 기타나무숲 <span>연습도구</span></h1>
+                    <p class="home-sub">튜너·메트로놈·반주·청음·루프스테이션까지,<br>기타 연습에 필요한 도구를 한 곳에 !</p>
+                </div>
+
+                <div class="home-section-label">연습 도구</div>
+                <div class="home-grid">
+                    <button class="home-card" data-action="switchTool" data-args="tuner" data-tool="tuner">
+                        <span class="home-card-ico"><i class="fas fa-microphone"></i></span>
+                        <span class="home-card-name">튜너</span>
+                        <span class="home-card-desc">마이크로 자동 튜닝 (기타·베이스·우쿨렐레)</span>
+                    </button>
+                    <button class="home-card" data-action="switchTool" data-args="metronome" data-tool="metronome">
+                        <span class="home-card-ico"><i class="fas fa-stopwatch"></i></span>
+                        <span class="home-card-name">메트로놈 &amp; 드럼</span>
+                        <span class="home-card-desc">BPM·박자·드럼 패턴 연습</span>
+                    </button>
+                    <button class="home-card" data-action="switchTool" data-args="backing" data-tool="backing">
+                        <span class="home-card-ico"><i class="fas fa-drum"></i></span>
+                        <span class="home-card-name">반주</span>
+                        <span class="home-card-desc">코드 진행 자동 반주 (드럼+베이스+피아노)</span>
+                    </button>
+                    <button class="home-card" data-action="switchTool" data-args="loopstation" data-tool="loopstation">
+                        <span class="home-card-ico"><i class="fas fa-record-vinyl"></i></span>
+                        <span class="home-card-name">루프스테이션 <span class="home-card-badge">NEW</span></span>
+                        <span class="home-card-desc">마이크 자동 녹음·반복·오버더빙</span>
+                    </button>
+                    <button class="home-card" data-action="switchTool" data-args="taptempo" data-tool="taptempo">
+                        <span class="home-card-ico"><i class="fas fa-hand-pointer"></i></span>
+                        <span class="home-card-name">탭템포</span>
+                        <span class="home-card-desc">두드려서 BPM 측정</span>
+                    </button>
+                    <button class="home-card" data-action="switchTool" data-args="piano" data-tool="piano">
+                        <span class="home-card-ico"><i class="fas fa-keyboard"></i></span>
+                        <span class="home-card-name">피아노</span>
+                        <span class="home-card-desc">88건반 가상 피아노</span>
+                    </button>
+                </div>
+
+                <div class="home-section-label">트레이닝</div>
+                <div class="home-grid">
+                    <button class="home-card" data-action="switchTool" data-args="eartraining" data-tool="eartraining">
+                        <span class="home-card-ico"><i class="fas fa-headphones"></i></span>
+                        <span class="home-card-name">음정 트레이닝 <span class="home-card-badge hot">HOT</span></span>
+                        <span class="home-card-desc">상대음감 훈련 + 랭킹</span>
+                    </button>
+                    <button class="home-card" data-action="switchTool" data-args="ranking" data-tool="ranking">
+                        <span class="home-card-ico"><i class="fas fa-trophy"></i></span>
+                        <span class="home-card-name">랭킹</span>
+                        <span class="home-card-desc">시즌 점수·연속 랭킹</span>
+                    </button>
+                </div>
+
+                <div class="home-section-label">이론</div>
+                <div class="home-grid">
+                    <button class="home-card" data-action="switchTool" data-args="scales" data-tool="scales">
+                        <span class="home-card-ico"><i class="fas fa-music"></i></span>
+                        <span class="home-card-name">스케일</span>
+                        <span class="home-card-desc">스케일 지판 시각화</span>
+                    </button>
+                    <button class="home-card" data-action="switchTool" data-args="progression" data-tool="progression">
+                        <span class="home-card-ico"><i class="fas fa-layer-group"></i></span>
+                        <span class="home-card-name">키별 화음</span>
+                        <span class="home-card-desc">다이아토닉 코드 가이드</span>
+                    </button>
+                    <button class="home-card" data-action="switchTool" data-args="fretboard" data-tool="fretboard">
+                        <span class="home-card-ico"><i class="fas fa-table-cells"></i></span>
+                        <span class="home-card-name">프렛보드</span>
+                        <span class="home-card-desc">지판 음 위치 + 음 외우기</span>
+                    </button>
+                    <button class="home-card" data-action="switchTool" data-args="chords" data-tool="chords">
+                        <span class="home-card-ico"><i class="fas fa-guitar"></i></span>
+                        <span class="home-card-name">코드 라이브러리</span>
+                        <span class="home-card-desc">운지 다이어그램 + 사운드</span>
+                    </button>
+                    <button class="home-card" data-action="switchTool" data-args="capo" data-tool="capo">
+                        <span class="home-card-ico"><i class="fas fa-sliders-h"></i></span>
+                        <span class="home-card-name">카포 계산기</span>
+                        <span class="home-card-desc">카포 위치 자동 계산</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
         <!-- Tuner -->
-        <section class="tool-panel active" id="tunerPanel">
+        <section class="tool-panel" id="tunerPanel">
             <div class="tool-header">
                 <div class="tool-header-icon"><i class="fas fa-microphone"></i></div>
                 <h1>튜너</h1>
@@ -7884,6 +8131,8 @@
                         <button class="loop-preset-toggle" id="loopPresetToggle" type="button" aria-label="프리셋 목록">
                             <i class="fas fa-chevron-down"></i>
                         </button>
+                        <button type="button" class="loop-preset-mini" id="loopMyPresetBtn" data-action="openMyPresets" aria-label="내 프리셋" title="내 프리셋"><i class="fas fa-folder-open"></i></button>
+                        <button type="button" class="loop-preset-mini" id="loopSavePresetBtn" data-action="openSavePreset" aria-label="내 프리셋 저장" title="내 프리셋 저장" disabled><i class="fas fa-floppy-disk"></i></button>
                         <button type="button" class="tool-help-btn loop-preset-help-btn" data-help="backing" aria-label="반주 도움말" aria-expanded="false">?</button>
                         <div class="loop-preset-list" id="loopPresetList">
                             <div class="loop-preset-sort-row" id="loopPresetSortRow">
@@ -8362,7 +8611,7 @@
 
                 <!-- Controls -->
                 <div class="fb-controls">
-                    <div class="fb-control-row fb-control-row-switches">
+                    <div class="fb-control-row fb-control-row-switches fb-switches-left">
                         <label class="fb-switch">
                             <input type="checkbox" id="fbShowNotes" checked data-change="fbToggleShowNotes" data-args="$checked">
                             <span class="fb-switch-slider"></span>
@@ -8377,6 +8626,19 @@
                     <div class="fb-control-row fb-root-row">
                         <span class="fb-root-label">근음 강조</span>
                         <div class="fb-root-grid" id="fbRootGrid"></div>
+                        <button type="button" class="fb-root-clear" id="fbRootClear" data-action="fbClearRoots" title="근음 전체 해제">해제</button>
+                        <div class="fb-inst-dropdown fb-inst-inline" id="fbInstDropdown">
+                            <button class="fb-inst-current" type="button" data-action="fbToggleInstMenu" aria-haspopup="listbox" aria-expanded="false">
+                                <i class="fas fa-guitar fb-inst-icon"></i>
+                                <span class="fb-inst-current-label">기타</span>
+                                <i class="fas fa-chevron-down fb-inst-chev"></i>
+                            </button>
+                            <div class="fb-inst-menu" role="listbox">
+                                <button class="fb-inst-option active" data-inst="guitar" data-action="fbSetInstrument" data-args="guitar"><i class="fas fa-guitar"></i> 기타</button>
+                                <button class="fb-inst-option" data-inst="bass4" data-action="fbSetInstrument" data-args="bass4"><i class="fas fa-guitar"></i> 베이스 4현</button>
+                                <button class="fb-inst-option" data-inst="bass5" data-action="fbSetInstrument" data-args="bass5"><i class="fas fa-guitar"></i> 베이스 5현</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -8432,24 +8694,9 @@
                     </div>
                 </div>
 
-                <!-- 악기 선택 — 프렛보드 바로 위에 배치 -->
-                <div class="sc-inst-row">
-                    <div class="fb-inst-dropdown" id="fbInstDropdown">
-                        <button class="fb-inst-current" type="button" data-action="fbToggleInstMenu" aria-haspopup="listbox" aria-expanded="false">
-                            <i class="fas fa-guitar fb-inst-icon"></i>
-                            <span class="fb-inst-current-label">기타</span>
-                            <i class="fas fa-chevron-down fb-inst-chev"></i>
-                        </button>
-                        <div class="fb-inst-menu" role="listbox">
-                            <button class="fb-inst-option active" data-inst="guitar" data-action="fbSetInstrument" data-args="guitar"><i class="fas fa-guitar"></i> 기타</button>
-                            <button class="fb-inst-option" data-inst="bass4" data-action="fbSetInstrument" data-args="bass4"><i class="fas fa-guitar"></i> 베이스 4현</button>
-                            <button class="fb-inst-option" data-inst="bass5" data-action="fbSetInstrument" data-args="bass5"><i class="fas fa-guitar"></i> 베이스 5현</button>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Fretboard display -->
                 <div class="fb-stage">
+                    <div class="fb-note-readout" id="fbNoteReadout" aria-live="polite"></div>
                     <button class="fb-zoom-btn" id="fbZoomBtn" type="button" data-action="fbToggleZoom" aria-label="확대/축소" title="확대/축소">
                         <i class="fas fa-magnifying-glass-plus"></i>
                     </button>
@@ -8983,7 +9230,7 @@
             //   light mode  → ☀ sun 아이콘 + "라이트모드" 라벨
             //   dark mode   → ☾ moon 아이콘 + "다크모드" 라벨
             // 아이콘 자체는 CSS 가 [data-theme] 에 따라 sun/moon SVG 를 교차 표시해 줌.
-            if (label) label.textContent = isDark ? '다크모드' : '라이트모드';
+            if (label) label.innerHTML = (isDark ? '다크' : '라이트') + '<span class="theme-mode-suffix">모드</span>';
             const aria = isDark ? '라이트 모드로 전환' : '다크 모드로 전환';
             btn.setAttribute('aria-label', aria);
             btn.setAttribute('title', aria);
@@ -9013,6 +9260,10 @@
         // 현재 환경의 URL (replaceState 용 — 로컬·개발에서도 동일 origin 유지)
         const SITE_BASE = window.location.origin + window.location.pathname;
         const TOOL_META = {
+            home: {
+                title: '안쌤의 기타나무숲 연습도구 — 튜너·메트로놈·반주·청음',
+                desc: '기타 연습에 필요한 도구를 한 곳에. 튜너·메트로놈·자동 반주·루프스테이션·청음 트레이닝·코드/스케일까지 무료로 쓰는 온라인 기타 연습도구 모음.',
+            },
             tuner: {
                 title: '온라인 기타 튜너 (마이크 자동 인식) | 안쌤의 기타나무숲',
                 desc: '브라우저에서 바로 쓰는 무료 기타 튜너. 마이크로 들어오는 음을 자동 분석해 정확한 튜닝을 알려줘요. 베이스·우쿨렐레·바이올린도 지원.',
@@ -9074,7 +9325,9 @@
             const m = TOOL_META[toolKey];
             if (!m) return;
             // canonical/og URL → 항상 프로덕션 도메인 사용 (검색엔진용)
-            const canonUrl = CANONICAL_BASE + '?tool=' + encodeURIComponent(toolKey);
+            const canonUrl = (toolKey === 'home')
+                ? CANONICAL_BASE
+                : CANONICAL_BASE + '?tool=' + encodeURIComponent(toolKey);
             const titleEl = document.getElementById('docTitle');
             const descEl = document.getElementById('metaDesc');
             const canonEl = document.getElementById('canonicalLink');
@@ -9685,7 +9938,7 @@
         //   ?tool=metronome      (canonical, used for SEO)
         //   #metronome           (legacy fallback for older shared links)
         (function() {
-            const VALID = new Set(['tuner','metronome','backing','loopstation','eartraining','chords','fretboard','scales','piano','capo','taptempo','ranking','mypage']);
+            const VALID = new Set(['home','tuner','metronome','backing','loopstation','eartraining','chords','fretboard','scales','piano','capo','taptempo','ranking','mypage']);
             function readToolFromUrl() {
                 try {
                     const params = new URLSearchParams(window.location.search);
@@ -9701,8 +9954,8 @@
                 if (t && typeof switchTool === 'function') {
                     switchTool(t, { skipUrl: true });
                 } else if (typeof switchTool === 'function') {
-                    // No tool in URL → apply meta for the default (tuner)
-                    try { applyToolMeta('tuner'); } catch(e) {}
+                    // 주소에 tool 없음 → 대문(연습도구 홈)
+                    switchTool('home', { skipUrl: true });
                 }
             }
             window.addEventListener('DOMContentLoaded', applyUrlTool);
@@ -13157,6 +13410,231 @@
                 if (list) list.classList.remove('open');
                 if (toggle) toggle.classList.remove('open');
             }
+
+            // ═══════════════ 내 프리셋 (사용자별 저장, 최대 5칸) ═══════════════
+            var LOOP_DRAFT_KEY = 'loop_draft_v1';
+            var _loopDraftTimer = null;
+            function loopAuthClient() { return (window.ahnssamAuth && window.ahnssamAuth.supabase) ? window.ahnssamAuth.supabase : null; }
+            function loopCurrentUser() {
+                var a = window.ahnssamAuth;
+                var s = a && a.getSession ? a.getSession() : null;
+                return s && s.user ? s.user : null;
+            }
+            function hasLoopInput() {
+                return loopChords && Object.keys(loopChords).some(function(k) { return loopChords[k]; });
+            }
+            function updateSavePresetBtnState() {
+                var btn = document.getElementById('loopSavePresetBtn');
+                if (btn) btn.disabled = !hasLoopInput();
+            }
+            // 현재 상태 → 프리셋 객체 (applyLoopPreset 과 호환되는 형태)
+            function serializeLoopState(name) {
+                var sp = {};
+                if (_loopActivePresetSequencer && typeof _loopActivePresetSequencer === 'object') {
+                    try { sp = JSON.parse(JSON.stringify(_loopActivePresetSequencer)); } catch (e) { sp = {}; }
+                }
+                sp.measureLen = loopMeasureLen;
+                sp.repeats = { left: Array.from(loopRepeats.left), right: Array.from(loopRepeats.right) };
+                if (loopVoltas && Object.keys(loopVoltas).length) sp.voltas = Object.assign({}, loopVoltas);
+                sp.bassCustom = (loopBassStyle === 'custom');
+                sp.pianoCustom = (loopPianoStyle === 'custom');
+                return {
+                    name: name || '',
+                    bpm: bpm,
+                    bars: loopBars,
+                    rhythm: loopRhythm,
+                    bass_style: (loopBassStyle === 'custom') ? 'default' : loopBassStyle,
+                    piano_style: (loopPianoStyle === 'custom') ? 'default' : loopPianoStyle,
+                    chords_a: Object.assign({}, loopChords),
+                    chords_b: Object.assign({}, loopChordsB),
+                    sequencer_pattern: sp
+                };
+            }
+            // 작업 중 입력 보존 — sessionStorage (브라우저 끄기 전까지, 로그인 왕복에도 유지)
+            function saveLoopDraft() {
+                try {
+                    if (!hasLoopInput()) { sessionStorage.removeItem(LOOP_DRAFT_KEY); return; }
+                    sessionStorage.setItem(LOOP_DRAFT_KEY, JSON.stringify(serializeLoopState('')));
+                } catch (e) {}
+            }
+            function restoreLoopDraft() {
+                try {
+                    var raw = sessionStorage.getItem(LOOP_DRAFT_KEY);
+                    if (!raw) return false;
+                    var p = JSON.parse(raw);
+                    if (!p || !p.chords_a || !Object.keys(p.chords_a).length) return false;
+                    applyLoopPreset(p);
+                    var s = document.getElementById('loopPresetSearch'); if (s) s.value = '';
+                    return true;
+                } catch (e) { return false; }
+            }
+            function loopOnStateChange() {
+                updateSavePresetBtnState();
+                clearTimeout(_loopDraftTimer);
+                _loopDraftTimer = setTimeout(saveLoopDraft, 400);
+            }
+
+            // 공용 모달 헬퍼
+            function loopEnsureModal(id, html) {
+                var ov = document.getElementById(id);
+                if (!ov) {
+                    ov = document.createElement('div');
+                    ov.id = id;
+                    ov.className = 'loop-modal-overlay';
+                    document.body.appendChild(ov);
+                    ov.addEventListener('click', function(e) {
+                        if (e.target === ov || (e.target.closest && e.target.closest('[data-close]'))) ov.classList.remove('open');
+                    });
+                }
+                ov.innerHTML = '<div class="loop-modal-card">' + html + '</div>';
+                return ov;
+            }
+
+            // 로그인 게이트
+            function loopLoginGate() {
+                saveLoopDraft();
+                var ov = loopEnsureModal('loopLoginGateModal',
+                    '<div class="loop-modal-title">로그인이 필요해요</div>' +
+                    '<div class="loop-modal-msg">내 프리셋을 저장하려면 로그인하세요.<br>지금 입력한 코드는 그대로 유지돼요.</div>' +
+                    '<div class="loop-modal-actions"><button type="button" class="loop-modal-btn ghost" data-close>닫기</button>' +
+                    '<button type="button" class="loop-modal-btn primary" id="loopGoLoginBtn">로그인</button></div>');
+                ov.classList.add('open');
+                var go = document.getElementById('loopGoLoginBtn');
+                if (go) go.onclick = function() {
+                    saveLoopDraft();
+                    ov.classList.remove('open');
+                    if (window.ahnssamAuth && typeof window.ahnssamAuth.openLogin === 'function') window.ahnssamAuth.openLogin();
+                };
+            }
+
+            // 사용자 프리셋 불러오기 (5칸 배열, 없으면 null)
+            async function loadUserPresets() {
+                var client = loopAuthClient(); var user = loopCurrentUser();
+                var slots = [null, null, null, null, null];
+                if (!client || !user) return slots;
+                try {
+                    var res = await client.from('user_presets').select('slot,name,preset').eq('user_id', user.id);
+                    if (res.data) res.data.forEach(function(r) { if (r.slot >= 1 && r.slot <= 5) slots[r.slot - 1] = r; });
+                } catch (e) {}
+                return slots;
+            }
+
+            // 저장 모달 — 이름 + 슬롯 1~5 (덮어쓰기 확인)
+            window.openSavePreset = function() {
+                if (!hasLoopInput()) return;
+                if (!loopCurrentUser()) { loopLoginGate(); return; }
+                openSavePresetModal();
+            };
+            async function openSavePresetModal() {
+                var slots = await loadUserPresets();
+                var slotBtns = '';
+                for (var i = 1; i <= 5; i++) {
+                    var s = slots[i - 1];
+                    var label = s ? ('<b>' + i + '</b><span>' + _escHtml(s.name) + '</span>') : ('<b>' + i + '</b><span>비어있음</span>');
+                    slotBtns += '<button type="button" class="loop-slot-btn' + (s ? ' filled' : '') + '" data-slot="' + i + '">' + label + '</button>';
+                }
+                var ov = loopEnsureModal('loopSaveModal',
+                    '<div class="loop-modal-title">내 프리셋 저장</div>' +
+                    '<input type="text" id="loopPresetName" class="loop-modal-input" placeholder="프리셋 이름" maxlength="30">' +
+                    '<div class="loop-modal-label">저장할 칸 선택</div>' +
+                    '<div class="loop-slot-grid">' + slotBtns + '</div>' +
+                    '<div class="loop-modal-actions"><button type="button" class="loop-modal-btn ghost" data-close>취소</button></div>');
+                ov.classList.add('open');
+                var nameInput = document.getElementById('loopPresetName');
+                if (nameInput) { nameInput.value = ''; setTimeout(function(){ nameInput.focus(); }, 50); }
+                ov.querySelectorAll('.loop-slot-btn').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        var slot = parseInt(btn.getAttribute('data-slot'), 10);
+                        var nm = (document.getElementById('loopPresetName').value || '').trim();
+                        if (!nm) { nm = '프리셋 ' + slot; }
+                        var existing = slots[slot - 1];
+                        if (existing) {
+                            loopConfirmOverwrite(slot, nm, existing.name, ov);
+                        } else {
+                            doSaveUserPreset(slot, nm, ov);
+                        }
+                    });
+                });
+            }
+            function loopConfirmOverwrite(slot, name, oldName, parentOv) {
+                var ov = loopEnsureModal('loopOverwriteModal',
+                    '<div class="loop-modal-title">덮어쓸까요?</div>' +
+                    '<div class="loop-modal-msg">' + slot + '번 칸에 "<b>' + _escHtml(oldName) + '</b>"가 이미 있어요.<br>"<b>' + _escHtml(name) + '</b>"로 덮어쓸까요?</div>' +
+                    '<div class="loop-modal-actions"><button type="button" class="loop-modal-btn ghost" data-close>아니오</button>' +
+                    '<button type="button" class="loop-modal-btn primary" id="loopOwYes">예</button></div>');
+                ov.classList.add('open');
+                document.getElementById('loopOwYes').onclick = function() {
+                    ov.classList.remove('open');
+                    doSaveUserPreset(slot, name, parentOv);
+                };
+            }
+            async function doSaveUserPreset(slot, name, ov) {
+                var client = loopAuthClient(); var user = loopCurrentUser();
+                if (!client || !user) { loopLoginGate(); return; }
+                var preset = serializeLoopState(name);
+                try {
+                    var res = await client.from('user_presets').upsert({
+                        user_id: user.id, slot: slot, name: name, preset: preset, updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_id,slot' });
+                    if (res.error) throw res.error;
+                    if (ov) ov.classList.remove('open');
+                    loopToast(slot + '번 칸에 "' + name + '" 저장됨');
+                } catch (e) {
+                    loopToast('저장 실패 — 잠시 후 다시 시도해주세요');
+                }
+            }
+
+            // 내 프리셋 목록 (불러오기)
+            window.openMyPresets = function() {
+                if (!loopCurrentUser()) { loopLoginGate(); return; }
+                openMyPresetsModal();
+            };
+            async function openMyPresetsModal() {
+                var ov = loopEnsureModal('loopMyPresetsModal',
+                    '<div class="loop-modal-title">내 프리셋</div><div class="loop-mypreset-list" id="loopMyPresetList"><div class="loop-modal-msg">불러오는 중…</div></div>' +
+                    '<div class="loop-modal-actions"><button type="button" class="loop-modal-btn ghost" data-close>닫기</button></div>');
+                ov.classList.add('open');
+                var slots = await loadUserPresets();
+                var listEl = document.getElementById('loopMyPresetList');
+                if (!listEl) return;
+                var html = '';
+                for (var i = 1; i <= 5; i++) {
+                    var s = slots[i - 1];
+                    if (s) {
+                        html += '<div class="loop-mypreset-item filled" data-load-slot="' + i + '">' +
+                            '<span class="loop-mp-num">' + i + '</span><span class="loop-mp-name">' + _escHtml(s.name) + '</span>' +
+                            '<button type="button" class="loop-mp-del" data-del-slot="' + i + '" aria-label="삭제"><i class="fas fa-trash"></i></button></div>';
+                    } else {
+                        html += '<div class="loop-mypreset-item empty"><span class="loop-mp-num">' + i + '</span><span class="loop-mp-name">비어있음</span></div>';
+                    }
+                }
+                listEl.innerHTML = html;
+                listEl.querySelectorAll('[data-load-slot]').forEach(function(item) {
+                    item.addEventListener('click', function(e) {
+                        if (e.target.closest('[data-del-slot]')) return;
+                        var slot = parseInt(item.getAttribute('data-load-slot'), 10);
+                        var s = slots[slot - 1];
+                        if (s && s.preset) { applyLoopPreset(s.preset); saveLoopDraft(); ov.classList.remove('open'); loopToast('"' + s.name + '" 불러옴'); }
+                    });
+                });
+                listEl.querySelectorAll('[data-del-slot]').forEach(function(b) {
+                    b.addEventListener('click', async function(e) {
+                        e.stopPropagation();
+                        var slot = parseInt(b.getAttribute('data-del-slot'), 10);
+                        var client = loopAuthClient(); var user = loopCurrentUser();
+                        if (!client || !user) return;
+                        try { await client.from('user_presets').delete().eq('user_id', user.id).eq('slot', slot); } catch (err) {}
+                        openMyPresetsModal();
+                    });
+                });
+            }
+
+            function loopToast(msg) {
+                var t = document.getElementById('loopToast');
+                if (!t) { t = document.createElement('div'); t.id = 'loopToast'; t.className = 'loop-toast'; document.body.appendChild(t); }
+                t.textContent = msg; t.classList.add('show');
+                clearTimeout(t._tmr); t._tmr = setTimeout(function() { t.classList.remove('show'); }, 2200);
+            }
             window.toggleLoopPresetList = function() {
                 var list = document.getElementById('loopPresetList');
                 if (list && list.classList.contains('open')) closeLoopPresetList();
@@ -13229,6 +13707,12 @@
                 renderLoopGrid();
                 updateLoopStyleAvailability();
                 bindLoopPresetUI();
+                // 작업 중 입력 복원 (로그인 왕복·새로고침 대비) — URL 프리셋이 없을 때만
+                try {
+                    var _hasUrlPreset = new URLSearchParams(window.location.search).get('preset');
+                    if (!_hasUrlPreset) restoreLoopDraft();
+                } catch (e) {}
+                updateSavePresetBtnState();
                 loadLoopPresets().then(function() {
                     renderLoopPresetList('');
                     maybeApplyPresetFromURL();
@@ -13542,6 +14026,7 @@
                 }
             }
             function renderLoopGrid() {
+                try { if (typeof loopOnStateChange === 'function') loopOnStateChange(); } catch (e) {}
                 var grid = document.getElementById('loopGrid');
                 if (!grid) return;
                 grid.innerHTML = '';
@@ -18099,7 +18584,7 @@
                         if (inScaleModeOpen) {
                             highlight = cfg.highlights(s.midi, pc, idx, 0);
                         }
-                        const isRoot = cfg.highlightRoot && cfg.rootPc && pc === cfg.rootPc;
+                        const isRoot = cfg.highlightRoot && cfg.rootPc && (cfg.rootPc instanceof Set ? cfg.rootPc.has(pc) : pc === cfg.rootPc);
 
                         // Default (non-scale-highlight) palette — muted green
                         // button so users see it's a pressable control.
@@ -18187,7 +18672,7 @@
                             if (inScaleMode) {
                                 highlight = cfg.highlights(midi, pc, sIdx, f);
                             }
-                            const isRoot = cfg.highlightRoot && cfg.rootPc && pc === cfg.rootPc;
+                            const isRoot = cfg.highlightRoot && cfg.rootPc && (cfg.rootPc instanceof Set ? cfg.rootPc.has(pc) : pc === cfg.rootPc);
                             const isActive = cfg.activeHighlights && cfg.activeHighlights[sIdx + '_' + f];
                             const outOfRange = !inTrainRange(sIdx, f);
 
@@ -18234,10 +18719,13 @@
                             const isWrongPickMark = cfg.wrongPick &&
                                 cfg.wrongPick.sIdx === sIdx &&
                                 cfg.wrongPick.fret === f;
-                            const bigDot  = cfg.showNotes || highlight || isRoot || isActive || isWrongPickMark;
+                            const isLastClick = cfg.lastClick &&
+                                cfg.lastClick.sIdx === sIdx &&
+                                cfg.lastClick.fret === f;
+                            const bigDot  = cfg.showNotes || highlight || isRoot || isActive || isWrongPickMark || isLastClick;
                             // Root dots always show the pitch letter so the
                             // highlighted key is legible without "음정 보기".
-                            const showText = cfg.showNotes || isActive || isRoot;
+                            const showText = cfg.showNotes || isActive || isRoot || isLastClick;
 
                             // Root is drawn slightly larger for emphasis
                             const r = isRoot ? 12.5 : (bigDot ? 10.5 : 5.5);
@@ -18268,6 +18756,12 @@
                             if (isWrongPickMark) {
                                 fillColor = '#e8836f';       // 연한 붉은색 배경
                                 strokeColor = '#c44034';     // 좀 진한 테두리
+                                textColor = '#ffffff';
+                            }
+                            // 탐색 모드 마지막 클릭 흔적 — 파란색
+                            if (isLastClick) {
+                                fillColor = '#3a7bd5';
+                                strokeColor = '#2a5ba8';
                                 textColor = '#ffffff';
                             }
                             svgContent += '<circle cx="' + cx + '" cy="' + cy +
@@ -18829,7 +19323,8 @@
                 vertical: false,
                 zoom: 1,               // 1 = 기본 / 1.75 = +75% 확대
                 mode: 'explore',       // 'explore' | 'training'
-                rootPc: null,          // null | 'C' | 'C#' | ... — highlight all instances
+                rootPcs: new Set(),    // 다중 근음 강조 (여러 pc 동시 강조)
+                lastClick: null,       // 탐색 모드 마지막 클릭 흔적 { sIdx, fret }
                 training: {
                     active: false,
                     targetPc: null,    // pitch class to find
@@ -18904,8 +19399,9 @@
                         highlights: revealHighlights,
                         keepAllDots: keepAllDots,
                         wrongPick: wrongPick,
-                        rootPc: fbState.rootPc,
-                        highlightRoot: !!fbState.rootPc,
+                        rootPc: fbState.rootPcs,
+                        highlightRoot: fbState.rootPcs.size > 0,
+                        lastClick: (fbState.mode === 'explore' ? fbState.lastClick : null),
                         onFretClick: fbHandleClick,
                     });
                 } else {
@@ -18919,8 +19415,9 @@
                         highlights: revealHighlights,
                         keepAllDots: keepAllDots,
                         wrongPick: wrongPick,
-                        rootPc: fbState.rootPc,
-                        highlightRoot: !!fbState.rootPc,
+                        rootPc: fbState.rootPcs,
+                        highlightRoot: fbState.rootPcs.size > 0,
+                        lastClick: (fbState.mode === 'explore' ? fbState.lastClick : null),
                     });
                 }
                 // Drag-to-scroll on empty areas + custom scrollbar
@@ -18946,6 +19443,11 @@
                 playNoteOnInstrument(fbState.inst, midi);
 
                 if (fbState.mode !== 'training' || !fbState.training.active) {
+                    // 마지막 클릭 흔적 + 음이름 표시
+                    fbState.lastClick = { sIdx: sIdx, fret: fret };
+                    var _ro = document.getElementById('fbNoteReadout');
+                    if (_ro) { _ro.textContent = midiToPitchClass(midi) + (Math.floor(midi / 12) - 1); _ro.classList.add('on'); }
+                    fbRender();
                     fbState.fb.flashDot(sIdx, fret, 'ok');
                     return;
                 }
@@ -19338,11 +19840,17 @@
             // Toggle a root pitch-class highlight. Clicking the already-active
             // button clears the highlight.
             window.fbSetRoot = function(pc) {
-                if (fbState.rootPc === pc) pc = null;
-                fbState.rootPc = pc;
+                // 다중 선택 — 이미 켜진 근음을 또 누르면 해제, 아니면 추가
+                if (fbState.rootPcs.has(pc)) fbState.rootPcs.delete(pc);
+                else fbState.rootPcs.add(pc);
                 document.querySelectorAll('#fbRootGrid .fb-root-btn').forEach(function(b) {
-                    b.classList.toggle('active', pc && b.dataset.pc === pc);
+                    b.classList.toggle('active', fbState.rootPcs.has(b.dataset.pc));
                 });
+                fbRender();
+            };
+            window.fbClearRoots = function() {
+                fbState.rootPcs.clear();
+                document.querySelectorAll('#fbRootGrid .fb-root-btn').forEach(function(b) { b.classList.remove('active'); });
                 fbRender();
             };
 
@@ -20631,6 +21139,33 @@
             document.addEventListener('input',  makeListener('input',  'data-input'));
             // 핀(즐겨찾기) 초기 상태 반영 — 저장된 핀을 메뉴 아이콘 + 상단 탭에 적용
             try { updatePinIcons(); renderMobileStrip(); } catch (e) {}
+
+            // ── 메뉴/탭 새 탭으로 열기 — 가운데클릭·Ctrl/Cmd/Shift+클릭 ──
+            function _toolNewTab(el) {
+                var tool = el && el.getAttribute && el.getAttribute('data-tool');
+                if (!tool) return false;
+                try { window.open(SITE_BASE + '?tool=' + encodeURIComponent(tool), '_blank', 'noopener'); } catch (e) {}
+                return true;
+            }
+            function _toolNavEl(target) {
+                return target && target.closest ? target.closest('[data-action="switchTool"][data-tool]') : null;
+            }
+            // 가운데 버튼 기본 동작(오토스크롤) 방지
+            document.addEventListener('mousedown', function(e) {
+                if (e.button === 1 && _toolNavEl(e.target)) e.preventDefault();
+            });
+            // 가운데클릭 → 새 탭
+            document.addEventListener('auxclick', function(e) {
+                if (e.button !== 1) return;
+                var el = _toolNavEl(e.target);
+                if (el) { e.preventDefault(); _toolNewTab(el); }
+            });
+            // Ctrl/Cmd/Shift + 좌클릭 → 새 탭 (capture 로 switchTool 보다 먼저 가로채기)
+            document.addEventListener('click', function(e) {
+                if (e.button !== 0 || !(e.ctrlKey || e.metaKey || e.shiftKey)) return;
+                var el = _toolNavEl(e.target);
+                if (el) { e.preventDefault(); e.stopPropagation(); _toolNewTab(el); }
+            }, true);
         })();
 
         // Fade out the loader on window load
