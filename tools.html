@@ -9852,13 +9852,15 @@
                 try { if (window.gtag) window.gtag('event', 'tool_switch', { tool: tool }); } catch (e) {}
             // Sync mobile floating help button to the current tool
             try { if (window.__updateMobileHelp) window.__updateMobileHelp(tool); } catch(e) {}
-            // Update SEO meta + URL (skip when called from popstate to avoid loop)
+            // Update SEO meta + URL (skip when called from popstate/hashchange to avoid loop)
+            // 해시 라우팅: location.hash 를 바꾸면 브라우저가 히스토리 항목을 쌓아줘서
+            // 뒤로가기/앞으로가기가 도구 단위로 동작한다. (#tuner, #metronome, ...)
             try {
                 applyToolMeta(tool);
                 if (!(opts && opts.skipUrl)) {
-                    const newUrl = SITE_BASE + '?tool=' + encodeURIComponent(tool);
-                    if (window.history && window.history.replaceState) {
-                        window.history.replaceState({ tool: tool }, '', newUrl);
+                    const newHash = '#' + tool;
+                    if (window.location.hash !== newHash) {
+                        window.location.hash = tool;
                     }
                 }
             } catch (e) {}
@@ -9930,35 +9932,48 @@
 
             if (isMobile()) closeSidebarMobile();
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            // (URL is updated near the top of switchTool via applyToolMeta +
-            //  history.replaceState — no separate hash write needed.)
+            // (URL/해시는 switchTool 상단에서 location.hash 로 갱신됨)
         }
 
         // Sync with URL on load + on back/forward navigation. Supports both
-        //   ?tool=metronome      (canonical, used for SEO)
-        //   #metronome           (legacy fallback for older shared links)
+        //   #metronome           (canonical — 해시 라우팅, 뒤로가기 지원)
+        //   ?tool=metronome      (legacy fallback for older shared links)
         (function() {
             const VALID = new Set(['home','tuner','metronome','backing','loopstation','eartraining','chords','fretboard','scales','piano','capo','taptempo','ranking','mypage']);
             function readToolFromUrl() {
+                // 해시 우선 (현재 내비게이션 상태), 쿼리는 구버전 링크 호환용
+                const h = (window.location.hash || '').replace('#','').toLowerCase();
+                if (VALID.has(h)) return h;
                 try {
                     const params = new URLSearchParams(window.location.search);
                     const q = (params.get('tool') || '').toLowerCase();
                     if (VALID.has(q)) return q;
                 } catch (e) {}
-                const h = (window.location.hash || '').replace('#','').toLowerCase();
-                if (VALID.has(h)) return h;
                 return null;
             }
+            let _routeInit = false;
             function applyUrlTool() {
-                const t = readToolFromUrl();
-                if (t && typeof switchTool === 'function') {
-                    switchTool(t, { skipUrl: true });
-                } else if (typeof switchTool === 'function') {
-                    // 주소에 tool 없음 → 대문(연습도구 홈)
-                    switchTool('home', { skipUrl: true });
-                }
+                if (typeof switchTool !== 'function') return;
+                // 주소에 tool 없음 → 대문(연습도구 홈)
+                const t = readToolFromUrl() || 'home';
+                // switchTool 내부의 location.hash 변경이 다시 hashchange 를
+                // 발생시키므로, 이미 그 도구면 재실행하지 않는다 (루프/중복 방지)
+                if (_routeInit && t === _currentTool) return;
+                _routeInit = true;
+                switchTool(t, { skipUrl: true });
             }
-            window.addEventListener('DOMContentLoaded', applyUrlTool);
+            window.addEventListener('DOMContentLoaded', function() {
+                // 레거시 ?tool=x 주소로 진입한 경우 해시 형태로 정규화
+                // (이후 해시 내비게이션과 쿼리가 충돌하지 않도록)
+                try {
+                    const params = new URLSearchParams(window.location.search);
+                    const q = (params.get('tool') || '').toLowerCase();
+                    if (VALID.has(q) && window.history && window.history.replaceState) {
+                        window.history.replaceState(null, '', SITE_BASE + '#' + q);
+                    }
+                } catch (e) {}
+                applyUrlTool();
+            });
             window.addEventListener('popstate', applyUrlTool);
             window.addEventListener('hashchange', applyUrlTool);
         })();
@@ -21144,7 +21159,7 @@
             function _toolNewTab(el) {
                 var tool = el && el.getAttribute && el.getAttribute('data-tool');
                 if (!tool) return false;
-                try { window.open(SITE_BASE + '?tool=' + encodeURIComponent(tool), '_blank', 'noopener'); } catch (e) {}
+                try { window.open(SITE_BASE + '#' + encodeURIComponent(tool), '_blank', 'noopener'); } catch (e) {}
                 return true;
             }
             function _toolNavEl(target) {
