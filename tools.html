@@ -5937,7 +5937,9 @@
         :root[data-theme="dark"] .home-sub { color: rgba(232,240,236,0.62); }
         .home-section-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(26,36,33,0.45); margin: 1.4rem 0 0.7rem; }
         :root[data-theme="dark"] .home-section-label { color: var(--text-mid); }
-        .home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 0.7rem; }
+        /* 한 줄에 아이콘 3개 고정 — 카드 폭은 이전과 동일(약 200px)하게 두고
+           가로로 늘리지 않음(왼쪽 정렬). 섹션이 바뀌면 줄도 새로 시작. */
+        .home-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 200px)); justify-content: start; gap: 0.7rem; }
         .home-card {
             display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem;
             padding: 1rem 1rem 0.9rem; border: 1px solid rgba(42,107,74,0.16); border-radius: 14px;
@@ -5955,10 +5957,14 @@
         .home-card-badge { font-size: 0.56rem; font-weight: 800; padding: 0.08rem 0.34rem; border-radius: 5px; background: #f2b705; color: #1a2421; letter-spacing: 0.03em; }
         .home-card-badge.hot { background: #e8553a; color: #fff; }
         @media (max-width: 520px) {
-            .home-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.55rem; }
+            /* 모바일에서도 한 줄에 3개 — 카드를 컴팩트하게 줄여 비좁지 않게 */
+            .home-grid { grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }
             .home-title { font-size: 1.4rem; }
             .home-sub { font-size: 0.85rem; }
-            .home-card { padding: 0.85rem 0.8rem; }
+            .home-card { padding: 0.6rem 0.5rem; align-items: center; text-align: center; gap: 0.2rem; }
+            .home-card-ico { width: 34px; height: 34px; font-size: 0.92rem; }
+            .home-card-name { font-size: 0.8rem; justify-content: center; gap: 0.2rem; }
+            .home-card-desc { display: none; }
         }
         /* 내 프리셋 / 저장 — 검색바 오른쪽 컴팩트 아이콘 버튼 */
         .loop-preset-mini {
@@ -9858,10 +9864,20 @@
             try {
                 applyToolMeta(tool);
                 if (!(opts && opts.skipUrl)) {
-                    const newHash = '#' + tool;
-                    if (window.location.hash !== newHash) {
-                        window.location.hash = tool;
-                    }
+                    // 주소는 ?tool= 쿼리만 사용한다 (해시 X).
+                    //   카카오톡 등 인앱 브라우저는 공유 링크를 열 때 중간 리다이렉트를
+                    //   거치는데 '#fragment' 는 서버로 전송되지 않아 그 과정에서 버려진다.
+                    //   반면 '?쿼리' 는 보존되므로, 카톡으로 공유해도 도구가 그대로 열린다.
+                    //   pushState 라 뒤로가기/앞으로가기는 popstate 로 동작.
+                    try {
+                        const want = (tool === 'home')
+                            ? SITE_BASE                                  // 대문은 깔끔한 주소
+                            : SITE_BASE + '?tool=' + encodeURIComponent(tool);
+                        const cur = window.location.origin + window.location.pathname + window.location.search;
+                        if (cur !== want || window.location.hash) {
+                            window.history.pushState(null, '', want);
+                        }
+                    } catch (e) {}
                 }
             } catch (e) {}
             // 'backing' 메뉴는 내부적으로 metronomePanel 을 그대로 재사용한다.
@@ -9963,13 +9979,24 @@
                 switchTool(t, { skipUrl: true });
             }
             window.addEventListener('DOMContentLoaded', function() {
-                // 레거시 ?tool=x 주소로 진입한 경우 해시 형태로 정규화
-                // (이후 해시 내비게이션과 쿼리가 충돌하지 않도록)
+                // 주소 정규화 — 도구를 ?tool=x 쿼리로 통일한다.
+                //   · ?tool=x (공유 링크) 로 들어오면 그대로 두고 남은 #해시만 제거
+                //   · 레거시 #x 링크로 들어오면 ?tool=x 로 승격 (재공유해도 안 깨지게)
                 try {
-                    const params = new URLSearchParams(window.location.search);
-                    const q = (params.get('tool') || '').toLowerCase();
-                    if (VALID.has(q) && window.history && window.history.replaceState) {
-                        window.history.replaceState(null, '', SITE_BASE + '#' + q);
+                    if (window.history && window.history.replaceState) {
+                        const params = new URLSearchParams(window.location.search);
+                        let q = (params.get('tool') || '').toLowerCase();
+                        if (!VALID.has(q)) {
+                            const h = (window.location.hash || '').replace('#','').toLowerCase();
+                            if (VALID.has(h)) q = h;
+                        }
+                        if (VALID.has(q)) {
+                            const want = (q === 'home') ? SITE_BASE : (SITE_BASE + '?tool=' + q);
+                            const cur = window.location.origin + window.location.pathname + window.location.search;
+                            if (cur !== want || window.location.hash) {
+                                window.history.replaceState(null, '', want);
+                            }
+                        }
                     }
                 } catch (e) {}
                 applyUrlTool();
@@ -21159,7 +21186,7 @@
             function _toolNewTab(el) {
                 var tool = el && el.getAttribute && el.getAttribute('data-tool');
                 if (!tool) return false;
-                try { window.open(SITE_BASE + '#' + encodeURIComponent(tool), '_blank', 'noopener'); } catch (e) {}
+                try { window.open(SITE_BASE + '?tool=' + encodeURIComponent(tool), '_blank', 'noopener'); } catch (e) {}
                 return true;
             }
             function _toolNavEl(target) {

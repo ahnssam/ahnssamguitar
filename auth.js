@@ -798,17 +798,18 @@ nav.scrolled .auth-btn:hover {
     }
 
     function goToMypage() {
-        // If already on tools.html, just set hash; otherwise navigate
+        // 도구 라우팅은 ?tool= 쿼리로 통일 (해시 X — 카톡 공유 호환).
         const path = window.location.pathname;
         if (path.endsWith('/tools.html') || path.endsWith('/tools')) {
-            if (window.location.hash !== '#mypage') {
-                window.location.hash = '#mypage';
-            } else {
-                // force re-trigger
-                window.dispatchEvent(new HashChangeEvent('hashchange'));
+            const want = window.location.origin + window.location.pathname + '?tool=mypage';
+            const cur = window.location.origin + window.location.pathname + window.location.search;
+            if (cur !== want || window.location.hash) {
+                window.history.pushState(null, '', want);
             }
+            // 라우터(tools.html)가 듣고 있는 popstate 를 깨워 패널 전환
+            window.dispatchEvent(new PopStateEvent('popstate'));
         } else {
-            window.location.href = 'tools.html#mypage';
+            window.location.href = 'tools.html?tool=mypage';
         }
     }
 
