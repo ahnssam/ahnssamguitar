@@ -415,7 +415,7 @@
 .rank-diff-hell { background: #c0392b; }
 .rank-period-curwrap { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
 .rank-period-sub { font-size: 0.62rem; color: rgba(26,36,33,0.45); font-weight: 500; }
-.rank-mode-pills { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0 0 0.9rem; }
+.rank-mode-pills { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0 0 0.9rem; flex: 1 1 auto; justify-content: flex-end; }
 .rank-mode-pill { border: 1px solid rgba(42,107,74,0.22); background: rgba(42,107,74,0.05); color: rgba(26,36,33,0.6); font-family: inherit; font-size: 0.78rem; padding: 0.32rem 0.7rem; border-radius: 16px; cursor: pointer; transition: all .15s; }
 .rank-mode-pill.active { background: var(--green-deep,#2a6b4a); color: #fff; border-color: var(--green-deep,#2a6b4a); }
 .rank-pager { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.3rem; margin-top: 0.9rem; }
@@ -1815,8 +1815,13 @@
         document.querySelectorAll('#rankViewTabs .rank-view-tab').forEach(function(x) {
             x.classList.toggle('active', x.getAttribute('data-view') === _rankView);
         });
-        // 점수/연속 탭은 종합·고수 둘 다에서 보인다. 안내문은 고수에서만.
-        const note = document.getElementById('rankMasterNote'); if (note) note.style.display = isMaster ? '' : 'none';
+        // 보기 안내문 — 종합/고수에 따라 내용 교체 (둘 다 표시)
+        const vnote = document.getElementById('rankViewNote');
+        if (vnote) {
+            vnote.innerHTML = isMaster
+                ? '각 분야의 <b>최고 난이도</b> 점수만 집계합니다 — 코드 맞추기는 <b>지옥</b>, 그 외는 <b>어려움</b>.'
+                : '난이도 관계 없이 <b>전체를 합산한</b> 순위입니다.';
+        }
     }
 
     // ── 분기 유틸 (Asia/Seoul 기준: Q1=1~4월, Q2=5~8월, Q3=9~12월) ──
@@ -2015,10 +2020,11 @@
             <i class="fas fa-circle-info"></i> 점수 집계방법
         </button>
     </div>
+    <!-- 점수랭킹/연속랭킹 (보드) + 분기 선택 — 상단 줄 -->
     <div class="rank-filters">
-        <div class="rank-view-tabs" id="rankViewTabs">
-            <button class="rank-view-tab active" data-view="normal">종합</button>
-            <button class="rank-view-tab" data-view="master">고수</button>
+        <div class="rank-board-tabs" id="rankBoardTabs">
+            <button class="rank-board-tab active" data-board="score">점수랭킹</button>
+            <button class="rank-board-tab" data-board="streak">연속랭킹</button>
         </div>
         <div class="rank-period-select">
             <button class="rank-period-arrow" id="rankQPrev" type="button" aria-label="이전 분기">‹</button>
@@ -2029,26 +2035,27 @@
             <button class="rank-period-arrow" id="rankQNext" type="button" aria-label="다음 분기">›</button>
         </div>
     </div>
-    <!-- 점수/연속 + 분야(전체·음 맞추기·두 음 비교·코드) 를 한 줄에 -->
-    <div class="rank-ctl-row" style="display:flex;align-items:center;gap:0.5rem 0.6rem;flex-wrap:wrap;margin:0 0 0.6rem;">
-        <div class="rank-board-tabs" id="rankBoardTabs">
-            <button class="rank-board-tab active" data-board="score">점수</button>
-            <button class="rank-board-tab" data-board="streak">연속</button>
+    <!-- 종합/고수 (보기) + 분야(전체·음 맞추기·두 음 비교·코드) + 새로고침 + 고수 안내 -->
+    <div class="rank-ctl-row" style="display:flex;align-items:center;gap:0.4rem 0.7rem;flex-wrap:wrap;margin:0 0 0.7rem;">
+        <div class="rank-view-tabs" id="rankViewTabs">
+            <button class="rank-view-tab active" data-view="normal">종합</button>
+            <button class="rank-view-tab" data-view="master">고수</button>
         </div>
-        <div class="rank-mode-pills" id="rankModePills" style="margin:0;">
+        <div class="rank-mode-pills" id="rankModePills" style="margin:0;flex:1 1 auto;justify-content:flex-end;">
             <button class="rank-mode-pill active" data-bmode="all">전체</button>
             <button class="rank-mode-pill" data-bmode="ear_single">음 맞추기</button>
             <button class="rank-mode-pill" data-bmode="ear_compare">두 음 비교</button>
             <button class="rank-mode-pill" data-bmode="ear_chord">코드 맞추기</button>
         </div>
     </div>
-    <div class="rank-master-note" id="rankMasterNote" style="display:none;font-size:0.82rem;line-height:1.5;opacity:0.7;margin:0 0 0.7rem;">
-        각 분야의 <b>최고 난이도</b> 점수만 집계해요. 코드 맞추기는 <b>지옥</b>, 그 외는 <b>어려움</b> 난이도가 인정됩니다.
+    <!-- 보기 안내문(종합/고수에 따라 내용 바뀜) + 새로고침 — 같은 줄 -->
+    <div class="rank-note-row" style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.8rem;margin:0 0 0.7rem;padding:0 0.1rem;">
+        <div class="rank-view-note" id="rankViewNote" style="font-size:0.8rem;line-height:1.5;opacity:0.7;flex:1 1 auto;"></div>
+        <span id="rankRefresh" style="cursor:pointer;white-space:nowrap;font-size:0.78rem;color:rgba(26,36,33,0.5);flex:0 0 auto;">↻ 새로고침</span>
     </div>
-    <div class="rank-meta">
-        <span id="rankScopeLabel">주간 점수</span>
-        <span id="rankRefresh" style="cursor:pointer;">↻ 새로고침</span>
-    </div>
+    <!-- 레거시 — 코드 참조 유지를 위해 요소만 보존(숨김) -->
+    <div class="rank-master-note" id="rankMasterNote" style="display:none;"></div>
+    <span id="rankScopeLabel" style="display:none;"></span>
     <div id="rankContent"></div>
 </div>
 
