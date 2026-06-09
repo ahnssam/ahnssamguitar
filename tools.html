@@ -5927,7 +5927,8 @@
 
         /* Preset bar — 노래 검색 + 적용 */
         /* ───── 연습도구 대문(홈) ───── */
-        #homePanel .tool-body { max-width: 1100px; }
+        /* 카드 3개(약 200px) + 간격 + 패딩에 딱 맞는 폭. align-self:center 로 가운데 옴 */
+        #homePanel .tool-body { max-width: 670px; }
         .home-hero { text-align: center; padding: 0.6rem 0 0.3rem; }
         .home-hero + .home-section-label { margin-top: 0.5rem; }
         .home-title { font-size: 1.75rem; font-weight: 800; color: var(--green-deep); margin: 0 0 0.5rem; letter-spacing: -0.01em; }
@@ -5937,9 +5938,10 @@
         :root[data-theme="dark"] .home-sub { color: rgba(232,240,236,0.62); }
         .home-section-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(26,36,33,0.45); margin: 1.4rem 0 0.7rem; }
         :root[data-theme="dark"] .home-section-label { color: var(--text-mid); }
-        /* 한 줄에 아이콘 3개 고정 — 카드 폭은 이전과 동일(약 200px)하게 두고
-           가로로 늘리지 않음(왼쪽 정렬). 섹션이 바뀌면 줄도 새로 시작. */
-        .home-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 200px)); justify-content: start; gap: 0.7rem; }
+        /* 한 줄에 아이콘 3개. 박스(.tool-body)를 3칸에 맞게 좁혀놨으므로
+           1fr 로 박스를 꽉 채우면 카드 폭이 이전과 동일(약 200px)해진다.
+           섹션이 바뀌면 줄도 새로 시작. */
+        .home-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; }
         .home-card {
             display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem;
             padding: 1rem 1rem 0.9rem; border: 1px solid rgba(42,107,74,0.16); border-radius: 14px;
@@ -7979,7 +7981,7 @@
                         <span class="home-card-desc">두드려서 BPM 측정</span>
                     </button>
                     <button class="home-card" data-action="switchTool" data-args="piano" data-tool="piano">
-                        <span class="home-card-ico"><i class="fas fa-keyboard"></i></span>
+                        <span class="home-card-ico"><svg viewBox="0 0 16 16" width="20" height="20" style="display:block" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="2.5" width="15" height="12" fill="none" stroke="currentColor" stroke-width="1.1" rx="1"/><line x1="4.25" y1="2.5" x2="4.25" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="8" y1="2.5" x2="8" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="11.75" y1="2.5" x2="11.75" y2="14.5" stroke="currentColor" stroke-width="0.8"/><rect x="2.8" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="6.55" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="10.3" y="2.5" width="2.9" height="7" fill="currentColor"/></svg></span>
                         <span class="home-card-name">피아노</span>
                         <span class="home-card-desc">88건반 가상 피아노</span>
                     </button>
@@ -7995,7 +7997,7 @@
                     <button class="home-card" data-action="switchTool" data-args="ranking" data-tool="ranking">
                         <span class="home-card-ico"><i class="fas fa-trophy"></i></span>
                         <span class="home-card-name">랭킹</span>
-                        <span class="home-card-desc">시즌 점수·연속 랭킹</span>
+                        <span class="home-card-desc">시즌 점수·연속·고수 랭킹</span>
                     </button>
                 </div>
 
@@ -8007,7 +8009,7 @@
                         <span class="home-card-desc">스케일 지판 시각화</span>
                     </button>
                     <button class="home-card" data-action="switchTool" data-args="progression" data-tool="progression">
-                        <span class="home-card-ico"><i class="fas fa-layer-group"></i></span>
+                        <span class="home-card-ico"><svg viewBox="0 0 16 16" width="20" height="20" style="display:block" xmlns="http://www.w3.org/2000/svg"><g stroke="currentColor" stroke-width="0.85" opacity="0.5"><line x1="0.7" y1="3" x2="15.3" y2="3"/><line x1="0.7" y1="5.5" x2="15.3" y2="5.5"/><line x1="0.7" y1="8" x2="15.3" y2="8"/><line x1="0.7" y1="10.5" x2="15.3" y2="10.5"/><line x1="0.7" y1="13" x2="15.3" y2="13"/></g><line x1="7.05" y1="4.2" x2="7.05" y2="11.8" stroke="currentColor" stroke-width="1"/><g fill="currentColor"><ellipse cx="5.1" cy="10.5" rx="2.15" ry="1.5"/><ellipse cx="5.1" cy="8" rx="2.15" ry="1.5"/><ellipse cx="5.1" cy="5.5" rx="2.15" ry="1.5"/></g></svg></span>
                         <span class="home-card-name">키별 화음</span>
                         <span class="home-card-desc">다이아토닉 코드 가이드</span>
                     </button>
@@ -17004,15 +17006,19 @@
             let _etAnswered = false;
             // score = 난이도 가중치 누적 (UI 표시용), correct = 정답 수 (정답률 계산용)
             let _etStats = { score: 0, correct: 0, total: 0, streak: 0 };
-            // 최고 연속(스트릭) 서버 제출 — 전 모드 통합 최고값, 디바운스
-            let _etBestStreakSubmitted = 0;
-            let _etStreakSubmitTimer = null;
-            function etTrackStreak(streak) {
-                if (streak > _etBestStreakSubmitted) {
-                    _etBestStreakSubmitted = streak;
-                    clearTimeout(_etStreakSubmitTimer);
-                    _etStreakSubmitTimer = setTimeout(function() {
-                        try { if (window.earSession && window.earSession.submitStreak) window.earSession.submitStreak(_etBestStreakSubmitted); } catch (e) {}
+            // 최고 연속(스트릭) 서버 제출 — 모드별 최고값, 디바운스.
+            //   서버가 모드행 + 'all'(전체 최고)을 함께 갱신하므로 모드만 넘기면 된다.
+            let _etBestStreakSubmitted = {};   // "mode|difficulty" -> 제출한 최고 연속
+            let _etStreakSubmitTimers = {};
+            function etTrackStreak(streak, mode, difficulty) {
+                mode = mode || 'all';
+                difficulty = difficulty || 'all';
+                const key = mode + '|' + difficulty;
+                if (streak > (_etBestStreakSubmitted[key] || 0)) {
+                    _etBestStreakSubmitted[key] = streak;
+                    clearTimeout(_etStreakSubmitTimers[key]);
+                    _etStreakSubmitTimers[key] = setTimeout(function() {
+                        try { if (window.earSession && window.earSession.submitStreak) window.earSession.submitStreak(_etBestStreakSubmitted[key], mode, difficulty); } catch (e) {}
                     }, 1000);
                 }
             }
@@ -17186,7 +17192,7 @@
                 if (isCorrect) {
                     _etStats.correct++;
                     _etStats.streak++;
-                    etTrackStreak(_etStats.streak);
+                    etTrackStreak(_etStats.streak, 'ear_compare', _etDiff);
                     var pts = ET_INTERVAL_POINTS[_etDiff] || 1;
                     _etStats.score += pts;
                     fb.textContent = '정답! +' + pts + '점 · ' + correctIv.name + ' (' + correctIv.nameEn + ') — ' + noteInfo;
@@ -17439,7 +17445,7 @@
                 if (isCorrect) {
                     _etChordStats.correct++;
                     _etChordStats.streak++;
-                    etTrackStreak(_etChordStats.streak);
+                    etTrackStreak(_etChordStats.streak, 'ear_chord', _etChordDiff);
                     var cPts = ET_CHORD_POINTS[_etChordDiff] || 1;
                     _etChordStats.score += cPts;
                     fb.innerHTML = '정답! +' + cPts + '점 · ' + fullName;
@@ -17779,7 +17785,7 @@
                 if (allCorrect) {
                     _etPitchStats.correct++;
                     _etPitchStats.streak++;
-                    etTrackStreak(_etPitchStats.streak);
+                    etTrackStreak(_etPitchStats.streak, 'ear_single', _etPitchDiff);
                     var pMPts = ET_PITCH_DIFF_PTS[_etPitchDiff] || 10;
                     _etPitchStats.score += pMPts;
                     fb.textContent = '전부 정답! +' + pMPts + '점 · ' + answerStr;

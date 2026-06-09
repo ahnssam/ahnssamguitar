@@ -378,6 +378,29 @@
 .rank-board-tab { border: none; background: rgba(42,107,74,0.06); color: rgba(26,36,33,0.6); font-family: inherit; font-size: 0.86rem; font-weight: 700; padding: 0.45rem 1.1rem; cursor: pointer; transition: all .15s; }
 .rank-board-tab + .rank-board-tab { border-left: 1px solid rgba(42,107,74,0.18); }
 .rank-board-tab.active { background: var(--green-deep, #2a6b4a); color: #fff; }
+/* 다크모드 — 비활성 보드 탭(점수/연속) 글씨가 묻히지 않게 밝게 */
+:root[data-theme="dark"] .rank-board-tab { color: rgba(232,240,236,0.62); background: rgba(255,255,255,0.05); }
+:root[data-theme="dark"] .rank-board-tab.active { background: var(--green-mid, #62b682); color: #0c1f17; }
+/* 종합/고수 — 인터넷 브라우저 탭 느낌 (둥근 상단, 활성탭이 본문과 이어짐) */
+.rank-view-tabs { display: flex; align-items: flex-end; gap: 3px; border-bottom: 2px solid var(--green-deep, #2a6b4a); }
+.rank-view-tab {
+    border: 2px solid transparent; border-bottom: none;
+    background: rgba(42,107,74,0.07); color: rgba(26,36,33,0.55);
+    font-family: inherit; font-size: 0.9rem; font-weight: 700;
+    padding: 0.42rem 1.15rem; cursor: pointer;
+    border-radius: 11px 11px 0 0; margin-bottom: -2px;
+    transition: background .15s, color .15s;
+}
+.rank-view-tab:hover { color: var(--green-deep, #2a6b4a); background: rgba(42,107,74,0.14); }
+.rank-view-tab.active {
+    color: var(--green-deep, #2a6b4a);
+    background: var(--bg-panel, #fff);
+    border-color: var(--green-deep, #2a6b4a);
+    border-bottom: 2px solid var(--bg-panel, #fff);
+}
+:root[data-theme="dark"] .rank-view-tab { color: rgba(232,240,236,0.55); background: rgba(255,255,255,0.04); }
+:root[data-theme="dark"] .rank-view-tab:hover { color: var(--green-light, #8fd9ad); background: rgba(255,255,255,0.08); }
+:root[data-theme="dark"] .rank-view-tab.active { color: var(--green-light, #8fd9ad); background: var(--bg-panel); border-color: var(--green-mid, #62b682); border-bottom-color: var(--bg-panel); }
 .rank-period-select { display: inline-flex; align-items: center; gap: 0.6rem; }
 .rank-period-cur { font-size: 0.9rem; font-weight: 700; color: var(--green-deep, #2a6b4a); min-width: 6.5em; text-align: center; }
 .rank-period-arrow { border: 1px solid rgba(42,107,74,0.22); background: rgba(42,107,74,0.06); color: var(--green-deep,#2a6b4a); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 1rem; line-height: 1; }
@@ -1576,15 +1599,16 @@
         return msg;
     }
 
-    // 최고 연속(스트릭) 서버 제출 — 현재 분기에 best_streak upsert
-    async function submitStreak(streak) {
+    // 최고 연속(스트릭) 서버 제출 — 현재 분기에 best_streak upsert.
+    //   p_mode 로 모드별 기록을 남기고, 서버가 'all'(전체 최고)도 함께 갱신한다.
+    async function submitStreak(streak, mode, difficulty) {
         streak = parseInt(streak, 10);
         if (!streak || streak < 1) return;
         const user = currentUser();
         if (!user) return;
         const client = sb();
         if (!client) return;
-        try { await client.rpc('submit_ear_streak', { p_streak: streak }); } catch (e) {}
+        try { await client.rpc('submit_ear_streak', { p_streak: streak, p_mode: mode || 'all', p_difficulty: difficulty || 'all' }); } catch (e) {}
     }
 
     // Inline progress pill — updates the STATIC pill in each mode's .et-reset-col
@@ -1781,6 +1805,19 @@
     let _rankRows = [];          // 현재 보드의 전체 행
     let _rankPage = 1;           // 페이지 (20명 단위)
     const RANK_PAGE_SIZE = 20;
+    // 현재 보고 있는 보기: 'normal'(종합) | 'master'(고수) — 같은 랭킹 패널 안에서 토글
+    let _rankView = 'normal';
+    // 한 패널을 공유하므로 리스트 컨테이너는 항상 #rankContent
+    function rankContentId() { return 'rankContent'; }
+    // 종합/고수 토글에 맞춰 상단 크롬(점수·연속 탭, 고수 안내문, 보기 탭 active) 동기화
+    function rankSyncChrome() {
+        const isMaster = (_rankView === 'master');
+        document.querySelectorAll('#rankViewTabs .rank-view-tab').forEach(function(x) {
+            x.classList.toggle('active', x.getAttribute('data-view') === _rankView);
+        });
+        // 점수/연속 탭은 종합·고수 둘 다에서 보인다. 안내문은 고수에서만.
+        const note = document.getElementById('rankMasterNote'); if (note) note.style.display = isMaster ? '' : 'none';
+    }
 
     // ── 분기 유틸 (Asia/Seoul 기준: Q1=1~4월, Q2=5~8월, Q3=9~12월) ──
     const RANK_FIRST_PERIOD = '2026-Q1';   // 사이트 랭킹 시작 분기 (4월 데이터부터)
@@ -1979,9 +2016,9 @@
         </button>
     </div>
     <div class="rank-filters">
-        <div class="rank-board-tabs" id="rankBoardTabs">
-            <button class="rank-board-tab active" data-board="score">점수</button>
-            <button class="rank-board-tab" data-board="streak">연속</button>
+        <div class="rank-view-tabs" id="rankViewTabs">
+            <button class="rank-view-tab active" data-view="normal">종합</button>
+            <button class="rank-view-tab" data-view="master">고수</button>
         </div>
         <div class="rank-period-select">
             <button class="rank-period-arrow" id="rankQPrev" type="button" aria-label="이전 분기">‹</button>
@@ -1992,11 +2029,21 @@
             <button class="rank-period-arrow" id="rankQNext" type="button" aria-label="다음 분기">›</button>
         </div>
     </div>
-    <div class="rank-mode-pills" id="rankModePills">
-        <button class="rank-mode-pill active" data-bmode="all">전체</button>
-        <button class="rank-mode-pill" data-bmode="ear_single">음 맞추기</button>
-        <button class="rank-mode-pill" data-bmode="ear_compare">두 음 비교</button>
-        <button class="rank-mode-pill" data-bmode="ear_chord">코드 맞추기</button>
+    <!-- 점수/연속 + 분야(전체·음 맞추기·두 음 비교·코드) 를 한 줄에 -->
+    <div class="rank-ctl-row" style="display:flex;align-items:center;gap:0.5rem 0.6rem;flex-wrap:wrap;margin:0 0 0.6rem;">
+        <div class="rank-board-tabs" id="rankBoardTabs">
+            <button class="rank-board-tab active" data-board="score">점수</button>
+            <button class="rank-board-tab" data-board="streak">연속</button>
+        </div>
+        <div class="rank-mode-pills" id="rankModePills" style="margin:0;">
+            <button class="rank-mode-pill active" data-bmode="all">전체</button>
+            <button class="rank-mode-pill" data-bmode="ear_single">음 맞추기</button>
+            <button class="rank-mode-pill" data-bmode="ear_compare">두 음 비교</button>
+            <button class="rank-mode-pill" data-bmode="ear_chord">코드 맞추기</button>
+        </div>
+    </div>
+    <div class="rank-master-note" id="rankMasterNote" style="display:none;font-size:0.82rem;line-height:1.5;opacity:0.7;margin:0 0 0.7rem;">
+        각 분야의 <b>최고 난이도</b> 점수만 집계해요. 코드 맞추기는 <b>지옥</b>, 그 외는 <b>어려움</b> 난이도가 인정됩니다.
     </div>
     <div class="rank-meta">
         <span id="rankScopeLabel">주간 점수</span>
@@ -2193,14 +2240,31 @@
             if (nextB) nextB.disabled = (idx <= 0);
         }
         function rankSyncModePills() {
-            // 모드 세분화는 점수 보드에서만 (연속은 전체 통합)
+            // 점수·연속 두 보드 모두 모드(분야)별로 볼 수 있다.
             const wrap = panel.querySelector('#rankModePills');
-            if (wrap) wrap.style.display = (_rankBoard === 'score') ? '' : 'none';
+            if (wrap) wrap.style.display = '';
         }
-        panel.querySelectorAll('.rank-board-tab').forEach(function(t) {
+        // 종합/고수 전환 시 고수 안내문 표시만 토글 (점수·연속 탭은 둘 다 유지)
+        function rankSyncViewUI() {
+            const note = panel.querySelector('#rankMasterNote');
+            if (note) note.style.display = (_rankView === 'master') ? '' : 'none';
+        }
+        // 종합 / 고수 보기 토글
+        panel.querySelectorAll('#rankViewTabs .rank-view-tab').forEach(function(t) {
+            t.addEventListener('click', function() {
+                _rankView = t.getAttribute('data-view');
+                panel.querySelectorAll('#rankViewTabs .rank-view-tab').forEach(function(x) {
+                    x.classList.toggle('active', x === t);
+                });
+                rankSyncViewUI();
+                reload();
+            });
+        });
+        // 점수 / 연속 보드 (종합 보기에서만)
+        panel.querySelectorAll('#rankBoardTabs .rank-board-tab').forEach(function(t) {
             t.addEventListener('click', function() {
                 _rankBoard = t.getAttribute('data-board');
-                panel.querySelectorAll('.rank-board-tab').forEach(function(x) {
+                panel.querySelectorAll('#rankBoardTabs .rank-board-tab').forEach(function(x) {
                     x.classList.toggle('active', x === t);
                 });
                 rankSyncModePills();
@@ -2217,6 +2281,7 @@
             });
         });
         rankSyncModePills();
+        rankSyncViewUI();
         const qPrev = panel.querySelector('#rankQPrev');
         if (qPrev) qPrev.addEventListener('click', function() {
             const periods = rankPeriodList(); const idx = periods.indexOf(_rankPeriod);
@@ -2229,22 +2294,9 @@
         });
         rankSyncPeriodUI();
 
-        // 랭킹 행(아이디) 클릭 → 점수 내역 모달 (위임)
+        // 랭킹 행(아이디) 클릭 → 점수 내역 모달 (위임) — 랭킹/고수 랭킹 공용
         const rankContentEl = panel.querySelector('#rankContent');
-        if (rankContentEl) {
-            rankContentEl.addEventListener('click', function(e) {
-                const pageBtn = e.target.closest('.rank-page-btn');
-                if (pageBtn) {
-                    _rankPage = parseInt(pageBtn.getAttribute('data-rank-page'), 10) || 1;
-                    renderRankPage();
-                    rankContentEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    return;
-                }
-                const row = e.target.closest('.rank-row-click');
-                if (!row) return;
-                openUserBreakdown(row.getAttribute('data-rank-user'), row.getAttribute('data-rank-nick'));
-            });
-        }
+        if (rankContentEl) rankContentEl.addEventListener('click', onRankContentClick);
 
         // Help popup wiring — supports any button with .rank-help-open
         // (header ? icon + "점수 집계방법" text button) plus legacy .rank-help-btn.
@@ -2271,7 +2323,13 @@
             '</div>';
     }
 
+    // 랭킹 로드 — (종합/고수) × (점수/연속) 네 조합을 모두 처리.
+    //   종합 점수  → get_score_ranking
+    //   종합 연속  → get_streak_ranking (p_master=false)
+    //   고수 점수  → get_master_ranking (각 분야 최고난이도 점수)
+    //   고수 연속  → get_streak_ranking (p_master=true, 최고난이도 연속)
     async function loadRankings() {
+        rankSyncChrome();
         const content = document.getElementById('rankContent');
         if (!content) return;
         if (!_rankPeriod) _rankPeriod = rankCurrentPeriod();
@@ -2281,22 +2339,30 @@
             content.innerHTML = '<div class="rank-empty">준비 중…<br><small style="opacity:0.6;font-size:0.78em;">SDK 로드 대기</small></div>';
             return;
         }
-        const fn = _rankBoard === 'streak' ? 'get_streak_ranking' : 'get_score_ranking';
+        const isMaster = (_rankView === 'master');
+        const isStreak = (_rankBoard === 'streak');
+        let fn, params;
+        if (isStreak) {
+            fn = 'get_streak_ranking';
+            params = { p_period: _rankPeriod, p_mode: _rankBoardMode, p_master: isMaster, p_limit: 1000 };
+        } else if (isMaster) {
+            fn = 'get_master_ranking';
+            params = { p_period: _rankPeriod, p_mode: _rankBoardMode, p_limit: 1000 };
+        } else {
+            fn = 'get_score_ranking';
+            params = { p_period: _rankPeriod, p_mode: _rankBoardMode, p_limit: 1000 };
+        }
         const lblEl = document.getElementById('rankScopeLabel');
-        if (lblEl) lblEl.textContent = rankPeriodLabel(_rankPeriod) + ' · ' + (_rankBoard === 'streak' ? '연속' : '점수');
+        if (lblEl) lblEl.textContent = rankPeriodLabel(_rankPeriod) + ' · ' + (isMaster ? '고수 ' : '') + (isStreak ? '연속' : '점수');
         // 누적 me-card 는 시즌제로 바뀌어 의미가 약해져 숨김
         const meCard = document.getElementById('rankMeCard');
         if (meCard) meCard.style.display = 'none';
 
         let data, error;
-        const t0 = Date.now();
         try {
             const timeoutPromise = new Promise(function(_, reject) {
                 setTimeout(function() { reject(new Error('네트워크가 느려요 — 잠시 후 다시 시도해주세요.')); }, 20000);
             });
-            const params = (fn === 'get_score_ranking')
-                ? { p_period: _rankPeriod, p_mode: _rankBoardMode, p_limit: 1000 }
-                : { p_period: _rankPeriod, p_limit: 1000 };
             const rpcPromise = Promise.resolve(client.rpc(fn, params));
             const result = await Promise.race([rpcPromise, timeoutPromise]);
             data = result.data; error = result.error;
@@ -2315,9 +2381,16 @@
         if (_rankRows.length === 0) {
             const cta = !user ? `
 <div class="rank-loginCTA">로그인하면 내 기록도 랭킹에 올라가요.<br><button type="button" data-open-login="1">로그인</button></div>` : '';
-            const note = _rankBoard === 'streak'
-                ? '이 분기 연속 기록이 아직 없어요.<br>틀리지 않고 연속으로 맞혀 보세요.'
-                : '이 분기에는 아직 기록이 없어요.<br>첫 번째 기록의 주인공이 되어보세요.';
+            let note;
+            if (isMaster) {
+                note = isStreak
+                    ? '이 분기 고수 연속 기록이 아직 없어요.<br>어려움·지옥 난이도로 도전해 보세요.'
+                    : '이 분기 고수 기록이 아직 없어요.<br>어려움·지옥 난이도로 도전해 보세요.';
+            } else {
+                note = isStreak
+                    ? '이 분기 연속 기록이 아직 없어요.<br>틀리지 않고 연속으로 맞혀 보세요.'
+                    : '이 분기에는 아직 기록이 없어요.<br>첫 번째 기록의 주인공이 되어보세요.';
+            }
             content.innerHTML = `<div class="rank-empty">${note}</div>${cta}`;
             return;
         }
@@ -2326,7 +2399,7 @@
 
     // 페이지당 20명 + 1/2/3 페이지 네비게이션
     function renderRankPage() {
-        const content = document.getElementById('rankContent');
+        const content = document.getElementById(rankContentId());
         if (!content) return;
         const user = currentUser();
         const total = _rankRows.length;
@@ -2388,8 +2461,8 @@
         } else {
             right = `<div class="rank-score"><span class="rank-score-pts">${Number(r.total_score).toLocaleString()}점</span></div>`;
         }
-        // 클릭(점수 내역)은 '전체 점수' 보드에서만. 세부 모드/연속 보드에선 비활성.
-        const clickable = (_rankBoard === 'score' && _rankBoardMode === 'all');
+        // 점수 보드(종합/고수)만 아이디 클릭 시 난이도 내역. 연속 보드는 내역 없음.
+        const clickable = (_rankBoard === 'score');
         const cls = 'rank-row' + (clickable ? ' rank-row-click' : '') + (isSelf ? ' self' : '');
         const dataAttrs = clickable
             ? ` data-rank-user="${escapeAttr(r.user_id)}" data-rank-nick="${escapeAttr(r.nickname || '익명')}" title="점수 내역 보기"`
@@ -2403,7 +2476,22 @@
 </div>`;
     }
 
-    // 아이디 클릭 → 그 분기에 어떤 모드·난이도로 점수를 올렸는지 모달
+    // 랭킹/고수 랭킹 행(아이디) 클릭 위임 핸들러 (두 패널 공용)
+    function onRankContentClick(e) {
+        const pageBtn = e.target.closest('.rank-page-btn');
+        if (pageBtn) {
+            _rankPage = parseInt(pageBtn.getAttribute('data-rank-page'), 10) || 1;
+            renderRankPage();
+            if (e.currentTarget && e.currentTarget.scrollIntoView) e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return;
+        }
+        const row = e.target.closest('.rank-row-click');
+        if (!row) return;
+        openUserBreakdown(row.getAttribute('data-rank-user'), row.getAttribute('data-rank-nick'));
+    }
+
+    // 아이디 클릭 → 그 분기에 어떤 모드·난이도로 점수를 올렸는지 모달.
+    //   활성 화면에 맞춰 필터: 분야별 보기면 그 분야만, 고수 랭킹이면 최고난이도만.
     async function openUserBreakdown(userId, nick) {
         const client = sb();
         if (!client || !userId) return;
@@ -2428,11 +2516,22 @@
             data = res.data; error = res.error;
         } catch (e) { error = e; }
         if (error || !data) { body.innerHTML = '<div class="rank-empty">내역을 불러올 수 없어요.</div>'; return; }
-        if (data.length === 0) { body.innerHTML = '<div class="rank-empty">이 분기 점수 기록이 없어요.</div>'; return; }
+        // 활성 화면에 맞춰 행을 추린다.
+        let rows = data;
+        if (_rankView === 'master') {
+            rows = rows.filter(function(r) {
+                return (r.mode === 'ear_chord' && r.difficulty === 'hell') ||
+                       (r.mode !== 'ear_chord' && r.difficulty === 'hard');
+            });
+            if (_rankBoardMode !== 'all') rows = rows.filter(function(r) { return r.mode === _rankBoardMode; });
+        } else if (_rankBoardMode !== 'all') {
+            rows = rows.filter(function(r) { return r.mode === _rankBoardMode; });
+        }
+        if (rows.length === 0) { body.innerHTML = '<div class="rank-empty">이 분기 점수 기록이 없어요.</div>'; return; }
         const modeNames = { ear_single: '음 맞추기', ear_compare: '두 음 비교', ear_chord: '코드 맞추기' };
         const diffNames = { easy: '쉬움', medium: '보통', hard: '어려움', hell: '지옥' };
         const byMode = {}; let grand = 0;
-        data.forEach(function(r) {
+        rows.forEach(function(r) {
             if (!byMode[r.mode]) byMode[r.mode] = { total: 0, diffs: [] };
             byMode[r.mode].total += r.score; byMode[r.mode].diffs.push(r); grand += r.score;
         });
@@ -2998,3 +3097,4 @@ ${recentHtml}
         boot();
     }
 })();
+// (build marker: per-mode streak + master ranking)
