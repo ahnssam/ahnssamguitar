@@ -389,6 +389,7 @@ nav.scrolled .auth-btn:hover {
                 </div>
                 <button class="auth-submit" id="authSubmit" type="submit">로그인</button>
                 <div class="auth-msg" id="authMsg"></div>
+                <button class="auth-footer-link" type="button" data-auth-action="reset-password">비밀번호를 잊으셨나요?</button>
             </form>
             <div class="auth-divider">또는</div>
             <div class="auth-oauth">
@@ -402,7 +403,6 @@ nav.scrolled .auth-btn:hover {
                     <span>Google로 계속하기</span>
                 </button>
             </div>
-            <button class="auth-footer-link" type="button" data-auth-action="reset-password">비밀번호를 잊으셨나요?</button>
         </div>
     </div>
 </div>
