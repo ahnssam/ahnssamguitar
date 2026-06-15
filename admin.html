@@ -256,6 +256,7 @@ function applySession(session){
 // ---------- 로그인 ----------
 $('#loginForm').addEventListener('submit',async e=>{
   e.preventDefault();
+  if(!sb){$('#gateMsg').innerHTML='<span class="err">로그인 모듈을 불러오는 중이에요. 잠시 후 다시 시도해주세요.</span>';return;}
   const btn=$('#loginBtn'); btn.disabled=true; btn.textContent='로그인 중…';
   $('#gateMsg').textContent='';
   const {error}=await sb.auth.signInWithPassword({email:$('#email').value.trim(),password:$('#pw').value});
@@ -264,9 +265,17 @@ $('#loginForm').addEventListener('submit',async e=>{
 });
 $('#googleBtn').addEventListener('click',async()=>{
   $('#gateMsg').textContent='';
-  const redirectTo=window.location.origin+window.location.pathname;
-  const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo}});
-  if(error)$('#gateMsg').innerHTML='<span class="err">'+esc(error.message)+'</span>';
+  if(!sb){
+    $('#gateMsg').innerHTML='<span class="err">로그인 모듈을 불러오는 중이에요. 잠시 후 다시 눌러주세요.</span>';
+    return;
+  }
+  try{
+    const redirectTo=window.location.origin+window.location.pathname;
+    const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo,queryParams:{prompt:'select_account'}}});
+    if(error)$('#gateMsg').innerHTML='<span class="err">'+esc(error.message)+'</span>';
+  }catch(err){
+    $('#gateMsg').innerHTML='<span class="err">'+esc(err&&err.message||'로그인 오류')+'</span>';
+  }
 });
 $('#logoutBtn').addEventListener('click',async()=>{await sb.auth.signOut();location.reload();});
 
