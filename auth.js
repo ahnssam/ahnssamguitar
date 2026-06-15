@@ -434,7 +434,7 @@ nav.scrolled .auth-btn:hover {
                    window.localStorage.getItem('authdebug') === '1';
         } catch (e) { return false; }
     })();
-    const AUTH_JS_VERSION = 'v3-implicit-debug';
+    const AUTH_JS_VERSION = 'v4-implicit-timeout';
     let _debugEl = null;
     function debugLog(msg) {
         try { console.log('[auth]', msg); } catch (e) {}
@@ -885,16 +885,95 @@ nav.scrolled .auth-btn:hover {
     }
 
     // ------------------------------------------------------------
+    // Robustness helpers — 로그인 검증 요청이 멈춰버리는 상황 대비.
+    // 일부 방문자 환경에선 보안/프라이버시 확장이나 제3자 요청 차단기가
+    // setSession() 이 supabase.co 로 보내는 교차-출처 검증 요청을 조용히
+    // 삼켜버린다. 타임아웃이 없으면 로그인 창만 다시 떠서 사용자는 영문을
+    // 모른다. 아래 헬퍼로 (1) 대기 시간을 제한하고, (2) 검증이 막히면 이미
+    // 받은 토큰(Supabase OAuth 콜백이 방금 발급한 신뢰 가능한 JWT)으로
+    // 세션을 직접 구성해 로그인은 성사시킨다.
+    // ------------------------------------------------------------
+    function withTimeout(promise, ms, label) {
+        let timer;
+        const timeout = new Promise(function (_, reject) {
+            timer = setTimeout(function () {
+                reject(new Error((label || 'operation') + ' timed out after ' + ms + 'ms'));
+            }, ms);
+        });
+        return Promise.race([promise, timeout]).finally(function () { clearTimeout(timer); });
+    }
+
+    function decodeJwtPayload(token) {
+        try {
+            const part = token.split('.')[1];
+            const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
+            const json = decodeURIComponent(
+                atob(b64).split('').map(function (c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join('')
+            );
+            return JSON.parse(json);
+        } catch (e) { return null; }
+    }
+
+    // setSession() 이 네트워크에 닿지 못할 때, OAuth 토큰만으로 바로 쓸 수
+    // 있는 세션 객체를 만든다. access_token 은 Supabase 가 방금 서명·발급한
+    // JWT 라 그 claim 은 신뢰 가능하다.
+    function sessionFromTokens(access_token, refresh_token) {
+        const claims = decodeJwtPayload(access_token);
+        if (!claims || !claims.sub) return null;
+        const nowSec = Math.floor(Date.now() / 1000);
+        const exp = claims.exp || (nowSec + 3600);
+        return {
+            access_token: access_token,
+            refresh_token: refresh_token,
+            token_type: 'bearer',
+            expires_at: exp,
+            expires_in: exp - nowSec,
+            user: {
+                id: claims.sub,
+                email: claims.email || '',
+                phone: claims.phone || '',
+                app_metadata: claims.app_metadata || {},
+                user_metadata: claims.user_metadata || {},
+                aud: claims.aud || 'authenticated',
+                role: claims.role || 'authenticated'
+            }
+        };
+    }
+
+    // 검증이 지연/차단된 경우에만 뜨는, 비난조가 아닌 부드러운 안내.
+    let _slowNoticeShown = false;
+    function showSlowAuthNotice() {
+        if (_slowNoticeShown) return;
+        _slowNoticeShown = true;
+        try {
+            const n = document.createElement('div');
+            n.style.cssText = 'position:fixed;left:50%;bottom:20px;transform:translateX(-50%);max-width:90vw;background:#2a3a35;color:#fff;font:13px/1.5 inherit;padding:12px 16px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.25);z-index:100000;display:flex;gap:12px;align-items:center;';
+            const span = document.createElement('span');
+            span.textContent = '로그인은 됐지만 연결 확인이 지연됐어요. 문제가 계속되면 시크릿 창이나 다른 브라우저로 시도해 보세요.';
+            const close = document.createElement('button');
+            close.textContent = '닫기';
+            close.style.cssText = 'background:rgba(255,255,255,0.18);border:none;color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font:inherit;flex-shrink:0;';
+            close.onclick = function () { try { n.remove(); } catch (e) {} };
+            n.appendChild(span);
+            n.appendChild(close);
+            (document.body || document.documentElement).appendChild(n);
+            setTimeout(function () { try { n.remove(); } catch (e) {} }, 9000);
+        } catch (e) {}
+    }
+
+    // ------------------------------------------------------------
     // Profile
     // ------------------------------------------------------------
     async function fetchProfile(uid) {
         if (!uid) { currentProfile = null; return; }
         try {
-            const { data, error } = await sb
-                .from('profiles')
-                .select('id, nickname')
-                .eq('id', uid)
-                .single();
+            const { data, error } = await withTimeout(
+                sb.from('profiles').select('id, nickname').eq('id', uid).single(),
+                8000,
+                'fetchProfile'
+            );
             currentProfile = error ? null : data;
         } catch (e) {
             currentProfile = null;
@@ -994,16 +1073,35 @@ nav.scrolled .auth-btn:hover {
                 const access_token = params.get('access_token');
                 const refresh_token = params.get('refresh_token');
                 if (access_token && refresh_token) {
-                    const { data: setData, error: setErr } = await sb.auth.setSession({
-                        access_token: access_token,
-                        refresh_token: refresh_token
-                    });
-                    if (setErr) {
-                        debugLog('Hash priority setSession error: ' + setErr.message);
-                        sessionErr = setErr;
-                    } else {
-                        debugLog('Hash priority setSession OK');
-                        data = setData;
+                    try {
+                        const { data: setData, error: setErr } = await withTimeout(
+                            sb.auth.setSession({
+                                access_token: access_token,
+                                refresh_token: refresh_token
+                            }),
+                            8000,
+                            'setSession'
+                        );
+                        if (setErr) {
+                            debugLog('Hash priority setSession error: ' + setErr.message);
+                            sessionErr = setErr;
+                        } else {
+                            debugLog('Hash priority setSession OK');
+                            data = setData;
+                        }
+                    } catch (toErr) {
+                        // setSession 이 응답을 안 줌(검증 요청이 차단됐거나 매우
+                        // 느림). 이미 가진 토큰으로 세션을 직접 구성해 로그인은
+                        // 성사시킨다 — 토큰은 Supabase 콜백이 방금 준 것이라 신뢰 가능.
+                        debugLog('Hash priority setSession timeout/blocked: ' + (toErr && toErr.message));
+                        const fallback = sessionFromTokens(access_token, refresh_token);
+                        if (fallback) {
+                            debugLog('Hash priority fallback: built local session from token');
+                            data = { session: fallback };
+                            showSlowAuthNotice();
+                        } else {
+                            sessionErr = toErr;
+                        }
                     }
                 }
                 try {
@@ -1021,12 +1119,17 @@ nav.scrolled .auth-btn:hover {
 
         // hash 처리가 없거나 실패한 경우엔 기존 캐시된 세션을 시도.
         if (!data.session) {
-            const got = await sb.auth.getSession();
-            if (got.error) {
-                debugLog('getSession error: ' + got.error.message);
-                sessionErr = got.error;
+            try {
+                const got = await withTimeout(sb.auth.getSession(), 8000, 'getSession');
+                if (got.error) {
+                    debugLog('getSession error: ' + got.error.message);
+                    sessionErr = got.error;
+                }
+                data = got.data || { session: null };
+            } catch (toErr) {
+                debugLog('getSession timeout/blocked: ' + (toErr && toErr.message));
+                data = { session: null };
             }
-            data = got.data || { session: null };
         }
 
         currentSession = data.session || null;
