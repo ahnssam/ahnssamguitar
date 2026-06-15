@@ -2344,8 +2344,16 @@
         const client = sb();
         if (!client) {
             content.innerHTML = '<div class="rank-empty">준비 중…<br><small style="opacity:0.6;font-size:0.78em;">SDK 로드 대기</small></div>';
+            // SDK 가 (폴백 CDN 으로) 늦게 떠도 자동으로 다시 그린다 — 0.5초 간격
+            // 최대 ~20초 폴링. 강제새로고침 없이 회복되도록.
+            loadRankings._sdkTries = (loadRankings._sdkTries || 0) + 1;
+            if (loadRankings._sdkTries <= 40) {
+                clearTimeout(loadRankings._sdkTimer);
+                loadRankings._sdkTimer = setTimeout(function () { loadRankings(); }, 500);
+            }
             return;
         }
+        loadRankings._sdkTries = 0;
         const isMaster = (_rankView === 'master');
         const isStreak = (_rankBoard === 'streak');
         let fn, params;

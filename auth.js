@@ -10,7 +10,14 @@
 
     const SUPABASE_URL = 'https://qpcbrqgqylxkgdwoflku.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_5rr-OZ7Sqjk1nXn59R7XnQ_HInATuSV';
-    const SDK_CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/dist/umd/supabase.min.js';
+    // SDK 를 여러 CDN 에서 순차 시도 — 한 CDN(예: jsDelivr)이 특정 네트워크에서
+    // 막히거나 멈춰도 다음 CDN 으로 폴백한다. (작업실 등 일부 네트워크에서
+    // jsDelivr 접속이 간헐적으로 실패해 랭킹이 "SDK 로드 대기"에서 멈추던 문제)
+    const SDK_CDNS = [
+        'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/dist/umd/supabase.min.js',
+        'https://unpkg.com/@supabase/supabase-js@2.74.0/dist/umd/supabase.min.js',
+        'https://esm.sh/@supabase/supabase-js@2.74.0/dist/umd/supabase.min.js'
+    ];
 
     // ------------------------------------------------------------
     // Styles — injected once
@@ -471,16 +478,47 @@ nav.scrolled .auth-btn:hover {
     // ------------------------------------------------------------
     // Bootstrap helpers
     // ------------------------------------------------------------
-    function loadSDK() {
+    // 한 CDN 에서 SDK 로드 시도 — 타임아웃 포함(멈춘 연결이 영영 대기하지
+    // 않도록). 성공/실패/타임아웃 중 하나로 반드시 결판난다.
+    function loadOneSDK(src, timeoutMs) {
         return new Promise((resolve, reject) => {
-            if (window.supabase && window.supabase.createClient) return resolve();
             const s = document.createElement('script');
-            s.src = SDK_CDN;
+            s.src = src;
             s.async = true;
-            s.onload = () => resolve();
-            s.onerror = () => reject(new Error('Supabase SDK failed to load'));
+            let done = false;
+            const finish = (ok, err) => {
+                if (done) return; done = true;
+                clearTimeout(timer);
+                s.onload = s.onerror = null;
+                if (ok) resolve(); else { try { s.remove(); } catch (e) {} reject(err); }
+            };
+            const timer = setTimeout(function () {
+                finish(false, new Error('timeout: ' + src));
+            }, timeoutMs || 7000);
+            s.onload = function () {
+                if (window.supabase && window.supabase.createClient) finish(true);
+                else finish(false, new Error('loaded but no createClient: ' + src));
+            };
+            s.onerror = function () { finish(false, new Error('load error: ' + src)); };
             document.head.appendChild(s);
         });
+    }
+    async function loadSDK() {
+        if (window.supabase && window.supabase.createClient) return;
+        let lastErr = null;
+        for (let i = 0; i < SDK_CDNS.length; i++) {
+            try {
+                await loadOneSDK(SDK_CDNS[i], 7000);
+                if (window.supabase && window.supabase.createClient) {
+                    debugLog('SDK loaded via ' + SDK_CDNS[i]);
+                    return;
+                }
+            } catch (e) {
+                lastErr = e;
+                debugLog('SDK CDN failed (' + (i + 1) + '/' + SDK_CDNS.length + '): ' + (e && e.message));
+            }
+        }
+        throw lastErr || new Error('all Supabase SDK CDNs failed');
     }
 
     function injectStyles() {
