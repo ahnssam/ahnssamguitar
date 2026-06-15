@@ -158,6 +158,13 @@ input,select,textarea{font-family:inherit;font-size:15px}
 .modal-actions .cancel{background:#eef1f0;color:var(--ink-soft)}
 .modal-actions .ok{background:var(--green-deep);color:#fff}
 @media(min-width:760px){.modal{border-radius:18px;margin-bottom:auto;align-self:center}.modal-bg{align-items:center}}
+
+/* ---------- 캘린더(구글 임베드) ---------- */
+.cal-modes{display:flex;gap:8px;margin-bottom:12px}
+.cal-frame{width:100%;height:72vh;min-height:440px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;box-shadow:var(--shadow)}
+.cal-frame iframe{width:100%;height:100%;border:0;display:block}
+.cal-help{font-size:.78rem;color:var(--ink-soft);margin-top:11px;line-height:1.65}
+.cal-help a{color:var(--green-mid);font-weight:600}
 </style>
 </head>
 <body>
@@ -184,19 +191,21 @@ input,select,textarea{font-family:inherit;font-size:15px}
 <!-- ====== 앱 ====== -->
 <div id="app" class="hidden">
   <div class="topbar">
-    <h1 id="viewTitle">오늘 수업</h1>
+    <h1 id="viewTitle">리더보드</h1>
     <div class="who"><span id="whoEmail"></span><button id="logoutBtn">로그아웃</button></div>
   </div>
-  <div id="viewToday" class="view"></div>
+  <div id="viewBoard" class="view"></div>
+  <div id="viewCal" class="view hidden"></div>
   <div id="viewStudents" class="view hidden"></div>
-  <div id="viewBoard" class="view hidden"></div>
+  <div id="viewToday" class="view hidden"></div>
 
   <button class="fab hidden" id="fab">＋</button>
 
   <nav class="tabbar">
-    <button data-tab="today" class="on"><span class="ic">📅</span>오늘 수업</button>
+    <button data-tab="board" class="on"><span class="ic">🏆</span>리더보드</button>
+    <button data-tab="cal"><span class="ic">🗓️</span>캘린더</button>
+    <button data-tab="today"><span class="ic">📅</span>오늘 수업</button>
     <button data-tab="students"><span class="ic">🎸</span>학생</button>
-    <button data-tab="board"><span class="ic">🏆</span>리더보드</button>
   </nav>
 </div>
 
@@ -207,9 +216,11 @@ input,select,textarea{font-family:inherit;font-size:15px}
 (function(){
 'use strict';
 const OWNER_EMAIL = 'steveq2568@gmail.com';
+// 레슨 일정 구글 캘린더 ID (다른 캘린더를 쓰면 여기만 바꾸면 됩니다)
+const CAL_SRC = 'steveq2568@gmail.com';
 const CATEGORIES = ['크로매틱','메이저스케일','X크로매틱','메이저4묶음','펜타토닉','코드','리듬','곡','기타'];
 const STATUSES = ['출석','결석','보강','취소'];
-let sb=null, me=null, currentTab='today', students=[], boardCat='크로매틱';
+let sb=null, me=null, currentTab='board', students=[], boardCat='크로매틱', calMode='WEEK';
 
 // ---------- helpers ----------
 const $=s=>document.querySelector(s);
@@ -296,11 +307,33 @@ document.querySelectorAll('.tabbar button').forEach(b=>{
   });
 });
 function renderTab(){
-  ['Today','Students','Board'].forEach(v=>$('#view'+v).classList.add('hidden'));
+  ['Today','Students','Board','Cal'].forEach(v=>$('#view'+v).classList.add('hidden'));
   $('#fab').classList.add('hidden');
   if(currentTab==='today'){$('#viewTitle').textContent='오늘 수업';$('#viewToday').classList.remove('hidden');renderToday();}
   if(currentTab==='students'){$('#viewTitle').textContent='학생';$('#viewStudents').classList.remove('hidden');$('#fab').classList.remove('hidden');renderStudents();}
   if(currentTab==='board'){$('#viewTitle').textContent='리더보드';$('#viewBoard').classList.remove('hidden');renderBoard();}
+  if(currentTab==='cal'){$('#viewTitle').textContent='캘린더';$('#viewCal').classList.remove('hidden');renderCal();}
+}
+
+/* ========== 캘린더 (구글 캘린더 임베드) ========== */
+function calUrl(mode){
+  const p=new URLSearchParams({
+    src:CAL_SRC, ctz:'Asia/Seoul', mode:mode, wkst:'1',
+    showTitle:'0', showPrint:'0', showCalendars:'0', showTz:'0', showTabs:'0'
+  });
+  return 'https://calendar.google.com/calendar/embed?'+p.toString();
+}
+function renderCal(){
+  const v=$('#viewCal');
+  const modes=[['WEEK','주'],['MONTH','월'],['AGENDA','일정']];
+  v.innerHTML=`
+    <div class="cal-modes" id="calModes">
+      ${modes.map(([m,l])=>`<button class="chip${m===calMode?' on':''}" data-mode="${m}">${l}</button>`).join('')}
+    </div>
+    <div class="cal-frame"><iframe src="${calUrl(calMode)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+    <p class="cal-help">구글 캘린더(${esc(CAL_SRC)})를 그대로 보여줍니다. 일정은 캘린더에서 수정하면 자동 반영돼요. 한 타임 = 50분.<br>
+    빈 화면이나 “권한이 필요” 메시지가 뜨면, 이 브라우저에서 해당 구글 계정에 로그인돼 있는지 확인하세요. <a href="https://calendar.google.com/" target="_blank" rel="noopener">구글 캘린더 열기 ↗</a></p>`;
+  v.querySelectorAll('#calModes [data-mode]').forEach(b=>b.addEventListener('click',()=>{calMode=b.dataset.mode;renderCal();}));
 }
 
 /* ========== 오늘 수업 ========== */
