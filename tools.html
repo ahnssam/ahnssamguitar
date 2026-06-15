@@ -2387,6 +2387,8 @@
                 gap: 0.6rem;
             }
             .chord-card { max-width: none; width: 100%; }
+            /* 정확히 일치한 맨 위 카드는 따라오는 카드보다 더 크게 강조 */
+            .chord-top-match .chord-card { max-width: 240px; width: 100%; }
         }
 
         /* ===== Capo Calculator ===== */
@@ -7676,6 +7678,8 @@
                 gap: 0.6rem;
             }
             .chord-card { max-width: none; width: 100%; }
+            /* 정확히 일치한 맨 위 카드는 따라오는 카드보다 더 크게 강조 */
+            .chord-top-match .chord-card { max-width: 240px; width: 100%; }
 
             /* ===== Tuner / general: natural drag-to-hide-address-bar ===== */
             /* Use 100vh (NOT 100dvh) so the container is always at least as
@@ -16526,7 +16530,7 @@
             (function buildJazzVoicings() {
                 const ROOT_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
                 const QUAL = {
-                    maj7: { suffix: 'maj7',  s6:[0,null,1,1,0,null],   f6:[2,0,3,4,1,0],
+                    maj7: { suffix: 'maj7',  s6:[0,null,1,1,0,null],   f6:[1,0,3,4,2,0],
                                              s5:[null,0,2,1,2,null],   f5:[0,1,3,2,4,0] },
                     dom7: { suffix: '7',     s6:[0,null,0,1,0,null],   f6:[1,0,2,4,3,0],
                                              s5:[null,0,2,0,2,null],   f5:[0,2,3,1,4,0] },
@@ -16676,6 +16680,16 @@
             let chordsRendered = false;
             let currentFilter = 'all';
             let currentSearch = '';
+            // 플랫(♭)으로 검색했을 때 결과 코드 이름도 플랫으로 표기하기 위한 상태.
+            //   예: 'Ab' 검색 → DB의 'G#maj7' 카드를 'Abmaj7' 로 보여줌.
+            let _searchDisplaySharp = null;   // 'G#'
+            let _searchDisplayFlat  = null;   // 'Ab'
+            function chordDisplayName(name) {
+                if (_searchDisplaySharp && name.indexOf(_searchDisplaySharp) === 0) {
+                    return _searchDisplayFlat + name.slice(_searchDisplaySharp.length);
+                }
+                return name;
+            }
             window.initChordLibrary = function() {
                 if (chordsRendered) return;
                 chordsRendered = true;
@@ -16724,12 +16738,15 @@
                 return 100 - idx * 5 - name.length;       // earlier position + shorter name = higher score
             }
             function buildCard(ch, idx) {
+                // 플랫 검색 시 표기만 플랫으로 바꾼 클론을 사용 (운지/프렛은 동일)
+                const dispName = chordDisplayName(ch.name);
+                const cardChord = (dispName === ch.name) ? ch : Object.assign({}, ch, { name: dispName });
                 const card = document.createElement('div');
                 card.className = 'chord-card';
-                card.innerHTML = renderChordSVG(ch);
+                card.innerHTML = renderChordSVG(cardChord);
                 // Cap stagger index so "전체" view (49 cards) doesn't drag the tail out too long
                 if (idx != null) card.style.setProperty('--card-i', Math.min(idx, 14));
-                card.onclick = function() { showChordModal(ch); gtag('event', 'chord_view', { chord: ch.name }); };
+                card.onclick = function() { showChordModal(cardChord); gtag('event', 'chord_view', { chord: ch.name }); };
                 return card;
             }
 
@@ -16804,12 +16821,33 @@
                 if (wrap) wrap.classList.remove('open');
                 renderGrid();
             };
+            // 검색어 맨 앞의 플랫 루트(ab, bb, db…)를 샵으로 환원해 매칭한다.
+            // 코드 DB 이름이 샵(예: g#maj7)으로만 저장돼 있어서, Abmaj7 처럼
+            // 입력하면 매칭이 안 되던 문제 해결. (♭ 기호도 b 로 정규화)
+            function normalizeFlatQuery(q) {
+                q = q.replace(/♭/g, 'b').replace(/♯/g, '#');
+                const FLAT_MAP = { 'ab':'g#', 'bb':'a#', 'cb':'b', 'db':'c#', 'eb':'d#', 'fb':'e', 'gb':'f#' };
+                const m = q.match(/^([a-g]b)/);
+                if (m && FLAT_MAP[m[1]]) return FLAT_MAP[m[1]] + q.slice(2);
+                return q;
+            }
             let _searchDebounceTimer = null;
             window.searchChords = function(q) {
                 const raw = (q || '').trim();
                 // Convert any Hangul (Korean IME typos) to the English QWERTY equivalent
                 // so that "으" matches "Dm", "르머" matches "Fmaj7", etc.
-                currentSearch = hangulToEn(raw).toLowerCase();
+                const lowered = hangulToEn(raw).toLowerCase().replace(/♭/g, 'b').replace(/♯/g, '#');
+                // 플랫 루트로 검색하면 결과 표기도 플랫으로 (검은건반 5음만)
+                const _FLAT_MAP = { 'ab':'g#', 'bb':'a#', 'db':'c#', 'eb':'d#', 'gb':'f#' };
+                const _fm = lowered.match(/^([a-g]b)/);
+                if (_fm && _FLAT_MAP[_fm[1]]) {
+                    _searchDisplaySharp = _FLAT_MAP[_fm[1]].toUpperCase();          // 'G#'
+                    _searchDisplayFlat  = _fm[1].charAt(0).toUpperCase() + 'b';     // 'Ab'
+                } else {
+                    _searchDisplaySharp = null;
+                    _searchDisplayFlat  = null;
+                }
+                currentSearch = normalizeFlatQuery(lowered);
                 const wrap = document.querySelector('.chord-search-wrap');
                 if (wrap) wrap.classList.toggle('has-text', !!raw);
                 renderGrid();
