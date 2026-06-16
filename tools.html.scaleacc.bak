@@ -3760,22 +3760,8 @@
             transition: all 0.15s;
         }
         .acc-toggle-btn + .acc-toggle-btn { border-left: 1px solid rgba(42, 107, 74, 0.18); }
-        .acc-toggle-btn { position: relative; }
         .acc-toggle-btn:hover { background: rgba(82, 168, 114, 0.16); color: var(--green-deep); }
         .acc-toggle-btn.active { background: var(--green-deep); color: #fff; }
-        /* 이 키의 "정답" 표기 버튼 — 아래쪽 작은 점으로 표시 */
-        .acc-toggle-btn.recommended::after {
-            content: '';
-            position: absolute;
-            bottom: 3px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 4px;
-            height: 4px;
-            border-radius: 50%;
-            background: var(--green-deep);
-        }
-        .acc-toggle-btn.recommended.active::after { background: #fff; }
         /* ── 코드진행 (다이아토닉) 패널 ───────────────────────────── */
         /* 키 그리드가 행 전체 폭을 쓰도록 (PC 에서 한 칸만 차지해 좁아 보이던 문제 해결) */
         #progressionPanel .sc-select-row { grid-template-columns: 1fr; }
@@ -18020,68 +18006,6 @@
                 const a = acc || gAccidental;
                 return a === 'flat' ? (SHARP_TO_FLAT[pc] || pc) : pc;
             }
-
-            // ── 조성별 #/b 자동 판정 (5도권 / 4도권) ──────────────────────
-            // 어떤 키(root + 스케일)가 샤프 조표인지 플랫 조표인지 음악 이론대로
-            // 계산한다. 예) C 내추럴 마이너 = E♭ 메이저 키(♭3개) → 'flat'.
-            //
-            // 각 피치클래스의 "장조(Ionian) 기준" 5도권 위치(양수=샤프계열,
-            // 음수=플랫계열). 검은건반은 두 가지 철자(C#/D♭ 등)가 있어 모드
-            // 오프셋을 더한 뒤 |값|이 작은 쪽(조표가 단순한 쪽)을 고른다.
-            // 동점(예: F# 6# vs G♭ 6♭)은 샤프 쪽을 우선한다.
-            const _FIFTHS_SPELLINGS = {
-                'C':  [0],
-                'C#': [7, -5],   // C# / D♭
-                'D':  [2],
-                'D#': [9, -3],   // D# / E♭
-                'E':  [4],
-                'F':  [-1],
-                'F#': [6, -6],   // F# / G♭
-                'G':  [1],
-                'G#': [8, -4],   // G# / A♭
-                'A':  [3],
-                'A#': [10, -2],  // A# / B♭
-                'B':  [5],
-            };
-            // 모드/스케일 → 장조(Ionian) 대비 5도권 오프셋
-            //   Lydian +1 · Ionian 0 · Mixolydian −1 · Dorian −2 ·
-            //   Aeolian(내추럴 마이너) −3 · Phrygian −4 · Locrian −5
-            function _scaleKeyOffset(scaleId) {
-                switch (scaleId) {
-                    case 'lydian':                                return  1;
-                    case 'major': case 'ionian': case 'maj_pent': return  0;
-                    case 'mixolydian':                            return -1;
-                    case 'dorian':                                return -2;
-                    case 'phrygian':                              return -4;
-                    case 'locrian':                               return -5;
-                    // 그 외 마이너 계열(내추럴/하모닉/멜로딕 마이너, 마이너 펜타,
-                    // 블루스, 헝가리안 등)은 모두 Aeolian 기준(−3)으로 본다.
-                    default:                                      return -3;
-                }
-            }
-            // root 피치클래스(+스케일) → 5도권 조표 값(부호 있음).
-            //   양수 = 샤프 N개, 음수 = 플랫 N개, 0 = 조표 없음.
-            function keySignatureFifths(rootPc, scaleId) {
-                const cands = _FIFTHS_SPELLINGS[rootPc];
-                if (!cands) return 0;
-                const off = _scaleKeyOffset(scaleId);
-                let best = cands[0] + off;          // 첫 후보(샤프 철자) 우선
-                for (let k = 1; k < cands.length; k++) {
-                    const f = cands[k] + off;
-                    if (Math.abs(f) < Math.abs(best)) best = f; // 동점이면 유지(샤프)
-                }
-                return best;
-            }
-            // root 피치클래스(+스케일) → 'sharp' | 'flat' (조표에 맞는 정답 표기)
-            function keySignatureAccidental(rootPc, scaleId) {
-                return keySignatureFifths(rootPc, scaleId) < 0 ? 'flat' : 'sharp';
-            }
-            // 조표를 사람이 읽는 문구로. 예) "♭ 3개" / "♯ 2개" / "조표 없음"
-            function keySignatureLabel(rootPc, scaleId) {
-                const f = keySignatureFifths(rootPc, scaleId);
-                if (f === 0) return '조표 없음';
-                return (f > 0 ? '♯ ' : '♭ ') + Math.abs(f) + '개';
-            }
             // MIDI helpers
             function noteNameToMidi(name) {
                 // Accepts "C#4" etc.
@@ -20078,31 +20002,11 @@
                 category: 'major',
                 scaleId: 'major',
                 accidental: 'sharp', // 'sharp' | 'flat' — 음이름 표기
-                accManual: false,    // 사용자가 ♯/♭ 토글을 직접 눌렀는지
                 fb: null,
                 piano: null,        // piano keyboard instance (lazy)
             };
 
-            // 현재 root+스케일의 "정답" 표기를 계산해 적용한다.
-            // 사용자가 토글을 직접 누르지 않았으면(accManual=false) 정답으로
-            // 자동 전환하고, 어느 쪽이든 정답 버튼에 표시를 달아 준다.
-            function scApplyAutoAccidental() {
-                const rec = keySignatureAccidental(scState.rootPc, scState.scaleId);
-                scState.recommendedAcc = rec;
-                if (!scState.accManual) scState.accidental = rec;
-                // 토글 버튼: active(현재 표기) + recommended(정답) 표시
-                document.querySelectorAll('#scAccToggle .acc-toggle-btn').forEach(function(b) {
-                    b.classList.toggle('active', b.dataset.acc === scState.accidental);
-                    b.classList.toggle('recommended', b.dataset.acc === rec);
-                });
-                // 루트 그리드 라벨도 현재 표기로 갱신
-                document.querySelectorAll('#scRootGrid .sc-root-btn').forEach(function(b) {
-                    b.textContent = pcName(b.dataset.pc, scState.accidental);
-                });
-            }
-
             function scRender() {
-                scApplyAutoAccidental();
                 const svgEl = document.getElementById('scSvg');
                 const pianoSvgEl = document.getElementById('scPianoSvg');
                 if (!svgEl) return;
@@ -20245,17 +20149,6 @@
                         '" data-idx="' + i + '" data-action="scPlayScaleNote" data-args="' + midi + ',' + i + '">' +
                         pcName(pc, scState.accidental) + '</button>';
                 }).join('');
-                // 이 키의 "정답" 표기 안내 (조표 기준)
-                const recAcc = keySignatureAccidental(scState.rootPc, scState.scaleId);
-                const recSym = recAcc === 'flat' ? '♭' : '♯';
-                const sigLabel = keySignatureLabel(scState.rootPc, scState.scaleId);
-                const manualOff = scState.accManual && scState.accidental !== recAcc;
-                const recHint =
-                    '<div style="margin-top:0.35rem;font-size:0.72rem;color:rgba(26,36,33,0.55);">' +
-                        '<span style="color:var(--green-deep);font-weight:700;">정답 표기 ' + recSym + '</span>' +
-                        ' &nbsp;<span style="color:rgba(26,36,33,0.4);">(' + sigLabel + ')</span>' +
-                        (manualOff ? ' &nbsp;<span style="color:#c0772a;">· 지금은 수동 표기 중</span>' : '') +
-                    '</div>';
                 box.classList.add('show');
                 box.innerHTML =
                     '<div><b>' + pcName(scState.rootPc, scState.accidental) + ' ' + scale.name + '</b>' + (scale.desc || '') + '</div>' +
@@ -20266,8 +20159,7 @@
                         '</button>' +
                         '<div class="sc-note-btns">' + noteBtns + '</div>' +
                     '</div>' +
-                    '<div style="margin-top:0.35rem;font-size:0.72rem;color:rgba(26,36,33,0.45);">도수 &nbsp;' + degrees + '</div>' +
-                    recHint;
+                    '<div style="margin-top:0.35rem;font-size:0.72rem;color:rgba(26,36,33,0.45);">도수 &nbsp;' + degrees + '</div>';
             }
 
             // Play a single scale tone + briefly light up its button
@@ -20379,7 +20271,6 @@
 
             window.scSetRoot = function(pc) {
                 scState.rootPc = pc;
-                scState.accManual = false; // 키가 바뀌면 정답 표기로 자동 복귀
                 document.querySelectorAll('#scRootGrid .sc-root-btn').forEach(function(b) {
                     b.classList.toggle('active', b.dataset.pc === pc);
                 });
@@ -20389,7 +20280,6 @@
             window.scSetAccidental = function(acc) {
                 acc = (acc === 'flat') ? 'flat' : 'sharp';
                 scState.accidental = acc;
-                scState.accManual = true; // 수동 선택 — 정답과 달라도 유지
                 gAccidental = acc; // 코드진행 패널과 표기 공유
                 // 토글 버튼 active 상태
                 document.querySelectorAll('#scAccToggle .acc-toggle-btn').forEach(function(b) {
@@ -20427,7 +20317,6 @@
 
             window.scSetCategory = function(cat) {
                 scState.category = cat;
-                scState.accManual = false; // 스케일이 바뀌면 정답 표기로 자동 복귀
                 const scales = SCALE_LIBRARY[cat] || [];
                 if (scales.length) scState.scaleId = scales[0].id;
                 // Category 드롭다운 라벨 + active 표시 + 메뉴 닫기
@@ -20444,7 +20333,6 @@
 
             window.scSetScale = function(id) {
                 scState.scaleId = id;
-                scState.accManual = false; // 스케일이 바뀌면 정답 표기로 자동 복귀
                 // Close menu + refresh labels/active state
                 const dd = document.getElementById('scScaleDropdown');
                 if (dd) dd.setAttribute('data-open', 'false');
@@ -20501,8 +20389,7 @@
             }
 
             window.initScales = function() {
-                // 진입 시엔 항상 정답 표기로 시작 (scRender 가 자동 적용)
-                scState.accManual = false;
+                // 다른 패널에서 바뀐 표기(gAccidental) 와 동기화
                 scState.accidental = gAccidental;
                 document.querySelectorAll('#scAccToggle .acc-toggle-btn').forEach(function(b) {
                     b.classList.toggle('active', b.dataset.acc === gAccidental);
@@ -20527,24 +20414,7 @@
                 quality: 'major',   // 'major' | 'minor'
                 voicing: 'triad',   // 'triad' | 'seventh'
                 showQuality: false, // 화음 품질(메이저/마이너/dim) 색 구분
-                accidental: 'sharp',// 'sharp' | 'flat' — 음이름 표기
-                accManual: false,   // 사용자가 ♯/♭ 토글을 직접 눌렀는지
             };
-            // 코드진행 패널: 현재 키(root + 장/단조)의 조표에 맞는 정답 표기를
-            // 계산해 적용. 스케일 패널과 동일한 규칙(5도권/4도권).
-            function prgApplyAutoAccidental() {
-                const sid = prgState.quality === 'minor' ? 'nat_minor' : 'major';
-                const rec = keySignatureAccidental(prgState.rootPc, sid);
-                prgState.recommendedAcc = rec;
-                if (!prgState.accManual) prgState.accidental = rec;
-                document.querySelectorAll('#prgAccToggle .acc-toggle-btn').forEach(function(b) {
-                    b.classList.toggle('active', b.dataset.acc === prgState.accidental);
-                    b.classList.toggle('recommended', b.dataset.acc === rec);
-                });
-                document.querySelectorAll('#prgRootGrid .sc-root-btn').forEach(function(b) {
-                    b.textContent = pcName(b.dataset.pc, prgState.accidental);
-                });
-            }
             // 화음 종류 → 색 구분 카테고리
             function prgQualCat(qualKey) {
                 if (qualKey === 'dim' || qualKey === 'm7b5') return 'dim';
@@ -20612,7 +20482,7 @@
                 if (!grid || grid.dataset.built) return;
                 grid.innerHTML = CHROMATIC.map(function(pc) {
                     const cls = pc === prgState.rootPc ? 'sc-root-btn active' : 'sc-root-btn';
-                    return '<button class="' + cls + '" data-pc="' + pc + '" data-action="prgSetRoot" data-args="' + pc + '">' + pcName(pc, prgState.accidental) + '</button>';
+                    return '<button class="' + cls + '" data-pc="' + pc + '" data-action="prgSetRoot" data-args="' + pc + '">' + pcName(pc) + '</button>';
                 }).join('');
                 grid.dataset.built = '1';
             }
@@ -20622,20 +20492,13 @@
                 if (!data) return;
                 const rootIdx = CHROMATIC.indexOf(prgState.rootPc);
                 if (rootIdx < 0) return;
-                prgApplyAutoAccidental();
-                const acc = prgState.accidental;
 
-                // 헤더 라인 — 키 이름 + 스케일 + 조표(정답 표기) 안내
+                // 헤더 라인 — 키 이름 + 스케일
                 const line = document.getElementById('prgScaleLine');
                 if (line) {
-                    const sid = prgState.quality === 'minor' ? 'nat_minor' : 'major';
-                    const recSym = keySignatureAccidental(prgState.rootPc, sid) === 'flat' ? '♭' : '♯';
-                    const sigLabel = keySignatureLabel(prgState.rootPc, sid);
-                    line.innerHTML = '<b>' + pcName(prgState.rootPc, acc) + (prgState.quality === 'minor' ? 'm' : '') +
+                    line.innerHTML = '<b>' + pcName(prgState.rootPc) + (prgState.quality === 'minor' ? 'm' : '') +
                         '</b> 키 · ' + data.scaleName + ' 다이아토닉 ' +
-                        (prgState.voicing === 'seventh' ? '7화음' : '3화음') +
-                        ' <span style="color:var(--green-deep);font-weight:700;">· 정답 표기 ' + recSym + '</span>' +
-                        ' <span style="color:rgba(26,36,33,0.4);font-weight:400;">(' + sigLabel + ')</span>';
+                        (prgState.voicing === 'seventh' ? '7화음' : '3화음');
                 }
 
                 const grid = document.getElementById('prgGrid');
@@ -20645,11 +20508,11 @@
                     const qualKey = prgState.voicing === 'seventh' ? deg.seventh : deg.triad;
                     const q = PRG_CHORD_QUALITY[qualKey];
                     const chordRootPc = CHROMATIC[(rootIdx + data.intervals[i]) % 12];
-                    const symbol = pcName(chordRootPc, acc) + q.suffix;
+                    const symbol = pcName(chordRootPc) + q.suffix;
                     // 구성음 이름 — 각 음을 테두리 친 칩으로 (음 구분 명확하게)
                     const noteNames = q.semis.map(function(s) {
                         return '<span class="prg-note-chip">' +
-                            pcName(CHROMATIC[(rootIdx + data.intervals[i] + s) % 12], acc) +
+                            pcName(CHROMATIC[(rootIdx + data.intervals[i] + s) % 12]) +
                             '</span>';
                     }).join('');
                     // 재생용 절대 MIDI — 너무 높이 쌓인 화음은 옥타브 폴딩
@@ -20680,7 +20543,6 @@
 
             window.prgSetRoot = function(pc) {
                 prgState.rootPc = pc;
-                prgState.accManual = false; // 키가 바뀌면 정답 표기로 자동 복귀
                 document.querySelectorAll('#prgRootGrid .sc-root-btn').forEach(function(b) {
                     b.classList.toggle('active', b.dataset.pc === pc);
                 });
@@ -20689,7 +20551,6 @@
 
             window.prgSetQuality = function(q) {
                 prgState.quality = (q === 'minor') ? 'minor' : 'major';
-                prgState.accManual = false; // 장/단조가 바뀌면 정답 표기로 자동 복귀
                 document.querySelectorAll('#prgQualitySeg .prg-seg-btn').forEach(function(b) {
                     b.classList.toggle('active', b.dataset.q === prgState.quality);
                 });
@@ -20706,15 +20567,14 @@
 
             window.prgSetAccidental = function(acc) {
                 acc = (acc === 'flat') ? 'flat' : 'sharp';
-                prgState.accidental = acc;
-                prgState.accManual = true; // 수동 선택 — 정답과 달라도 유지
                 gAccidental = acc;
+                if (typeof scState !== 'undefined') scState.accidental = acc;
                 document.querySelectorAll('#prgAccToggle .acc-toggle-btn').forEach(function(b) {
                     b.classList.toggle('active', b.dataset.acc === acc);
                 });
                 // 루트 그리드 라벨 갱신
                 document.querySelectorAll('#prgRootGrid .sc-root-btn').forEach(function(b) {
-                    b.textContent = pcName(b.dataset.pc, acc);
+                    b.textContent = pcName(b.dataset.pc);
                 });
                 // 스케일 패널 토글도 동기화 (열려있을 때 대비)
                 document.querySelectorAll('#scAccToggle .acc-toggle-btn').forEach(function(b) {
@@ -20744,8 +20604,10 @@
             };
 
             window.initProgression = function() {
-                // 진입 시엔 항상 정답 표기로 시작 (prgRender 가 자동 적용)
-                prgState.accManual = false;
+                // 진입 시 현재 표기(gAccidental) 로 토글 동기화
+                document.querySelectorAll('#prgAccToggle .acc-toggle-btn').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.acc === gAccidental);
+                });
                 prgBuildRoots();
                 prgRender();
             };
