@@ -9906,8 +9906,9 @@
             const panelTool = (tool === 'backing') ? 'metronome' : tool;
             // Stop running audio when switching away — metronome ↔ backing 전환은
             // 같은 패널 안에서 모드만 바뀌는 것이므로 정지하지 않는다.
-            if (window._tunerRunning && tool !== 'tuner') {
-                try { toggleTuner(); } catch(e) {}
+            if ((window._tunerRunning || window._tunerStarting) && tool !== 'tuner') {
+                // 실행 중이면 정지, 권한요청(시작) 진행 중이면 마이크 잡자마자 반납.
+                try { window.tunerForceStop(); } catch(e) {}
             }
             if (window._metroRunning && panelTool !== 'metronome') {
                 try { toggleMetronome(); } catch(e) {}
@@ -10178,9 +10179,27 @@
             }
 
             async function startTuner() {
+                // 시작 진행 중 플래그 — getUserMedia(권한요청) 가 비동기라,
+                // 권한 떨어지기 전에 다른 메뉴로 떠나면 _tunerRunning 은 아직
+                // false 라 정지 가드를 못 탄다. 그 사이 떠났는지(_tunerAbort)
+                // 를 확인해 마이크를 잡자마자 즉시 해제한다.
+                window._tunerStarting = true;
+                window._tunerAbort = false;
                 try {
                     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                     micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+                    // 시작 도중 튜너를 떠났으면(다른 메뉴 클릭) 마이크 즉시 반납하고 중단
+                    const activePanel = document.querySelector('.tool-panel.active');
+                    const stillTuner = activePanel && activePanel.id === 'tunerPanel';
+                    if (window._tunerAbort || !stillTuner) {
+                        try { micStream.getTracks().forEach(t => t.stop()); } catch (e) {}
+                        try { if (audioCtx) audioCtx.close(); } catch (e) {}
+                        audioCtx = null; analyser = null; micStream = null;
+                        window._tunerStarting = false;
+                        window._tunerAbort = false;
+                        window._tunerRunning = false;
+                        return;
+                    }
                     const source = audioCtx.createMediaStreamSource(micStream);
                     analyser = audioCtx.createAnalyser();
                     analyser.fftSize = 2048;
@@ -10288,7 +10307,10 @@
                     btn.querySelector('span').textContent = '정지';
                     btn.querySelector('i').className = 'fas fa-stop';
                     window._tunerRunning = true;
+                    window._tunerStarting = false;
                 } catch (err) {
+                    window._tunerStarting = false;
+                    window._tunerRunning = false;
                     alert('마이크 접근이 거부되었습니다. 브라우저 설정에서 마이크 권한을 허용해주세요.');
                     console.error(err);
                 }
@@ -10314,7 +10336,17 @@
                     b.classList.remove('in-tune');
                 });
                 window._tunerRunning = false;
+                window._tunerStarting = false;
             }
+
+            // 다른 메뉴로 전환할 때 호출 — 실행 중이면 정지, 시작 진행 중이면
+            // _tunerAbort 로 표시해 마이크를 잡자마자 반납하게 한다.
+            window.tunerForceStop = function() {
+                window._tunerAbort = true;
+                if (window._tunerRunning) {
+                    try { stopTuner(); } catch (e) {}
+                }
+            };
 
             window.toggleTuner = function() {
                 if (window._tunerRunning) {
