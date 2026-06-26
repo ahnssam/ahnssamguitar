@@ -12453,10 +12453,15 @@
                     var _seqHalf = _loopSlotAt(t, measureLen);
                     // 4코드 모드 — 이 박(beat) 머리에 직접 입력된 코드가 있으면, 패턴이 거기서
                     //   안 쳐도 베이스·피아노가 그 코드를 강제로 찍어준다. (코드 안 바뀐 박은 패턴대로)
-                    var _forceChordHit = false;
-                    if (loopSegs === 4 && p.ticksPerBeat > 0 && (t % p.ticksPerBeat) === 0) {
+                    //   입력된 코드가 있는 박은 "박 머리에서 한 번만" 연주하고 그 박 안의
+                    //   나머지 패턴 타격은 생략한다 (땅-땅 중복 방지).
+                    var _forceChordHit = false, _suppressPattern = false;
+                    if (loopSegs === 4 && p.ticksPerBeat > 0) {
+                        var _isBeatOnset = (t % p.ticksPerBeat) === 0;
                         var _beatSlotVal = _loopSlotMap(_loopSlotAt(t, measureLen))[loopMeasureIdx];
-                        if (_beatSlotVal && !_isChordRest(_beatSlotVal)) _forceChordHit = true;
+                        var _beatHasChord = !!(_beatSlotVal && !_isChordRest(_beatSlotVal));
+                        if (_beatHasChord && _isBeatOnset) _forceChordHit = true;
+                        else if (_beatHasChord && !_isBeatOnset) _suppressPattern = true;
                     }
                     // chordOffset[_sIdx] — 그 step 에서 코드를 미리 땡겨치기 (싱코페이션).
                     //   0 = 그 step 의 기본 segment 코드, +1 = 다음 segment, -1 = 이전.
@@ -12530,8 +12535,8 @@
                             var bpMeasures = (bp.measures && bp.measures > 1) ? bp.measures : 1;
                             var bpCycleLen = measureLen * bpMeasures;
                             var bt = beatNum % bpCycleLen;
-                            // 'on' (근음) — 기존 동작 (+ 4코드 모드의 강제 코드 타격)
-                            if (bp.on.indexOf(bt) !== -1 || _forceChordHit) {
+                            // 'on' (근음) — 패턴 타격(억제 가능) + 4코드 모드의 강제 코드 타격
+                            if ((bp.on.indexOf(bt) !== -1 && !_suppressPattern) || _forceChordHit) {
                                 // 분수코드 / 코드 변경 판정은 음악 마디 기준. bt 가 cycleLen 일 수 있으니 t (한 마디 기준) 그대로.
                                 var halfA = _loopSlotAt(t, measureLen);
                                 var rootA = getEffectiveRoot(loopMeasureIdx, halfA);
@@ -12551,7 +12556,7 @@
                                     var bassRootA = chordBassNote(rootA);
                                     if (bassRootA) playBass(bassRootA, swungTime, velA);
                                 }
-                            } else if (bp.fifth && bp.fifth.indexOf(bt) !== -1) {
+                            } else if (bp.fifth && bp.fifth.indexOf(bt) !== -1 && !_suppressPattern) {
                                 // 5도음 (근음 아래의 5도 — BASS_FREQ 가 자연스럽게 낮은 register 라 C→G 가 root 아래)
                                 var halfF = _loopSlotAt(t, measureLen);
                                 var rootF5 = getEffectiveRoot(loopMeasureIdx, halfF);
@@ -12559,7 +12564,7 @@
                                     var fifth5 = getChordFifthName(rootF5);
                                     if (fifth5) playBass(fifth5, swungTime, 0);
                                 }
-                            } else if (bp.off.indexOf(bt) !== -1) {
+                            } else if (bp.off.indexOf(bt) !== -1 && !_suppressPattern) {
                                 chokeBass(swungTime);
                             } else if (_isFillMeasure && t === measureLen - 1
                                        && bp.on.indexOf(t) === -1 && bp.off.indexOf(t) === -1
@@ -12576,7 +12581,7 @@
                         var indep = BASS_INDEP_STYLES[loopBassStyle];
                         if (indep) {
                             var bassTicks = sixteenthsToTicks(indep.sixteenthHits, p.ticksPerBeat);
-                            if (bassTicks.indexOf(t) !== -1 || _forceChordHit) {
+                            if ((bassTicks.indexOf(t) !== -1 && !_suppressPattern) || _forceChordHit) {
                                 var halfB = _loopSlotAt(t, measureLen);
                                 var rootB = getEffectiveRoot(loopMeasureIdx, halfB);
                                 // 분수코드면 슬래시 베이스 사용
@@ -12662,12 +12667,12 @@
                             pianoTicks = sixteenthsToTicks(pStyle.sixteenthHits, p.ticksPerBeat);
                             pianoHitMeta = pStyle;
                         }
-                        if (pianoChokes.indexOf(t) !== -1) {
+                        if (pianoChokes.indexOf(t) !== -1 && !_suppressPattern) {
                             chokePiano(swungTime);
                             chokePianoSingle(swungTime);
                         }
                         var pidx = pianoTicks.indexOf(t);
-                        if (pidx !== -1 || _forceChordHit) {
+                        if ((pidx !== -1 && !_suppressPattern) || _forceChordHit) {
                             var halfP = _loopSlotAt(t, measureLen);
                             var rootP = getEffectiveRoot(loopMeasureIdx, halfP);
                             if (rootP) {
