@@ -7300,6 +7300,76 @@
         .lv-pick-btn:hover { background: rgba(42,107,74,0.12); }
         .lv-pick-btn.active { background: var(--green-mid); color: #fff; border-color: var(--green-mid); }
         .lv-pick-hint { font-size: 0.55rem; color: var(--text-light); margin-top: 5px; max-width: 132px; line-height: 1.35; }
+        /* ───── 송폼(구성) 라벨 + 입력 팝업 ───── */
+        .loop-cell-songform {
+            position: absolute; top: 0; left: 24px; right: 4px; height: 13px; line-height: 13px;
+            text-align: center; font-size: 0.6rem; font-weight: 800; letter-spacing: -0.02em;
+            color: var(--green-deep); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            pointer-events: none; z-index: 5;
+        }
+        :root[data-theme="dark"] .loop-cell-songform { color: #b8d8c4; }
+        .loop-cell.has-songform .loop-cell-halves { margin-top: 6px; }
+        .loop-songform-pop {
+            position: absolute; top: 16px; left: 0; z-index: 31;
+            background: var(--bg-panel);
+            border: 1px solid rgba(42,107,74,0.3); border-radius: 8px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            padding: 7px 8px; width: max-content; max-width: 190px;
+        }
+        :root[data-theme="dark"] .loop-songform-pop { border-color: rgba(150,200,175,0.3); }
+        .lsf-title { font-size: 0.6rem; color: var(--text-secondary); margin-bottom: 4px; }
+        .lsf-input {
+            width: 132px; font-family: inherit; font-size: 0.82rem; padding: 4px 6px;
+            border: 1px solid rgba(42,107,74,0.35); border-radius: 5px;
+            background: var(--bg-panel); color: var(--text-primary);
+        }
+        .lsf-actions { display: flex; gap: 5px; margin-top: 6px; justify-content: flex-end; }
+        .lsf-btn {
+            font-family: inherit; font-size: 0.7rem; font-weight: 700; padding: 3px 10px;
+            border-radius: 5px; border: 1px solid rgba(42,107,74,0.3);
+            background: transparent; color: var(--text-primary); cursor: pointer; line-height: 1.3;
+        }
+        .lsf-btn:hover { background: rgba(42,107,74,0.1); }
+        .lsf-btn.primary { background: var(--green-mid); color: #fff; border-color: var(--green-mid); }
+        /* ───── 악보 인쇄 (미리보기 + 실제 인쇄 공용 .lp-* 스타일) ───── */
+        .loop-print-preview {
+            max-height: 44vh; overflow: auto; margin-top: 6px;
+            background: #fff; border: 1px solid rgba(0,0,0,0.12); border-radius: 6px; padding: 12px;
+        }
+        .lp-sheet { color: #000; font-family: 'Noto Sans KR', sans-serif; }
+        .lp-head { margin-bottom: 14px; }
+        .lp-title { text-align: center; font-size: 20px; font-weight: 800; line-height: 1.2; }
+        .lp-artist { text-align: right; font-size: 12px; font-weight: 600; margin-top: 3px; }
+        .lp-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            border-top: 1.5px solid #000; border-left: 1.5px solid #000;
+        }
+        .lp-cell {
+            position: relative; border-right: 1.5px solid #000; border-bottom: 1.5px solid #000;
+            min-height: 48px; padding: 15px 8px 8px;
+        }
+        .lp-num { position: absolute; top: 2px; left: 4px; font-size: 8px; color: #777; }
+        .lp-sf {
+            position: absolute; top: 1px; left: 20px; right: 4px; text-align: center;
+            font-size: 9px; font-weight: 800; color: #1a6b3a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .lp-volta {
+            position: absolute; top: 0; left: 0; height: 11px; width: 42%;
+            border-top: 1.5px solid #000; border-left: 1.5px solid #000;
+            font-size: 8px; font-weight: 700; line-height: 11px; padding-left: 2px;
+        }
+        .lp-chords { display: flex; align-items: center; justify-content: space-around; gap: 4px; min-height: 22px; font-size: 15px; font-weight: 700; }
+        .lp-chords.one { justify-content: center; }
+        .lp-rep { position: absolute; top: 50%; transform: translateY(-50%); font-weight: 900; font-size: 13px; }
+        .lp-rep.l { left: 1px; }
+        .lp-rep.r { right: 1px; }
+        #loopPrintArea { display: none; }
+        @media print {
+            body * { visibility: hidden !important; }
+            #loopPrintArea, #loopPrintArea * { visibility: visible !important; }
+            #loopPrintArea { display: block !important; position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; }
+            @page { margin: 14mm; }
+        }
         .loop-cell-num {
             font-size: 0.6rem; color: rgba(26, 36, 33, 0.45);
             position: absolute; top: 2px; left: 0;
@@ -8159,6 +8229,7 @@
                         </button>
                         <button type="button" class="loop-preset-mini" id="loopMyPresetBtn" data-action="openMyPresets" aria-label="내 프리셋" title="내 프리셋"><i class="fas fa-folder-open"></i></button>
                         <button type="button" class="loop-preset-mini" id="loopSavePresetBtn" data-action="openSavePreset" aria-label="내 프리셋 저장" title="내 프리셋 저장" disabled><i class="fas fa-floppy-disk"></i></button>
+                        <button type="button" class="loop-preset-mini" id="loopPrintBtn" data-action="openPrintDialog" aria-label="악보 인쇄" title="악보 인쇄"><i class="fas fa-print"></i></button>
                         <button type="button" class="tool-help-btn loop-preset-help-btn" data-help="backing" aria-label="반주 도움말" aria-expanded="false">?</button>
                         <div class="loop-preset-list" id="loopPresetList">
                             <div class="loop-preset-sort-row" id="loopPresetSortRow">
@@ -10402,6 +10473,8 @@
             let loopRepeats = { left: new Set(), right: new Set() };
             //   loopVoltas : { [마디idx]: [1] / [2,3] } — 마디 위쪽 볼타(엔딩) 번호 집합. 'N.' / 'N-M.' 표시.
             let loopVoltas = {};
+            //   loopSongForm : { [마디idx]: '전주' 등 } — 마디 위쪽 송폼(구성) 라벨. 자유 입력.
+            let loopSongForm = {};
             let _consumedRights = new Set();
             // 볼타 재생 — 반복 구간 회차(pass) 추적.
             //   _loopPass    : 현재 반복 구간의 회차 (1부터). 볼타 마디는 이 번호가 포함될 때만 연주.
@@ -13481,6 +13554,8 @@
                 }
                 // 볼타 — 프리셋엔 보통 없음(있으면 sp.voltas 로 로드), 없으면 초기화
                 loopVoltas = (sp && sp.voltas && typeof sp.voltas === 'object') ? Object.assign({}, sp.voltas) : {};
+                // 송폼(구성) 라벨 — 있으면 로드, 없으면 초기화
+                loopSongForm = (sp && sp.songForm && typeof sp.songForm === 'object') ? Object.assign({}, sp.songForm) : {};
                 renderLoopGrid();
                 if (typeof updateLoopStyleAvailability === 'function') updateLoopStyleAvailability();
                 // 재생 위치 리셋
@@ -13530,6 +13605,7 @@
                 sp.measureLen = loopMeasureLen;
                 sp.repeats = { left: Array.from(loopRepeats.left), right: Array.from(loopRepeats.right) };
                 if (loopVoltas && Object.keys(loopVoltas).length) sp.voltas = Object.assign({}, loopVoltas);
+                if (loopSongForm && Object.keys(loopSongForm).length) sp.songForm = Object.assign({}, loopSongForm);
                 sp.bassCustom = (loopBassStyle === 'custom');
                 sp.pianoCustom = (loopPianoStyle === 'custom');
                 return {
@@ -14158,6 +14234,23 @@
                     num.textContent = (i + 1);
                     num.dataset.numIdx = i;
                     cell.appendChild(num);
+                    // 송폼(구성) 라벨 — 있으면 마디 위쪽에 표시
+                    if (loopSongForm[i]) {
+                        cell.classList.add('has-songform');
+                        var sf = document.createElement('div');
+                        sf.className = 'loop-cell-songform';
+                        sf.textContent = loopSongForm[i];
+                        cell.appendChild(sf);
+                    }
+                    // 마디 번호 클릭 → 송폼(구성) 자유입력 팝업
+                    (function(idx, numEl) {
+                        numEl.addEventListener('pointerdown', function(e) {
+                            e.preventDefault(); e.stopPropagation();
+                            if (loopActiveCommit) loopActiveCommit();
+                            closeLoopPicker();
+                            openSongFormInput(idx);
+                        });
+                    })(i, num);
                     var halves = document.createElement('div');
                     halves.className = 'loop-cell-halves';
                     var halfA = document.createElement('span');
@@ -14732,6 +14825,117 @@
                 }, 0);
             }
             window.openVoltaPicker = openVoltaPicker;
+            // 송폼(구성) 자유입력 — 마디 번호 클릭 시 작은 입력 팝업.
+            //   엔터/바깥클릭 = 저장, Esc = 취소, 빈 값 = 제거.
+            function closeSongFormInput() {
+                document.querySelectorAll('.loop-songform-pop').forEach(function(p) { p.remove(); });
+            }
+            function openSongFormInput(idx) {
+                var grid = document.getElementById('loopGrid');
+                if (!grid) return;
+                var cell = grid.querySelector('.loop-cell[data-idx="' + idx + '"]');
+                if (!cell) return;
+                closeSongFormInput();
+                var pop = document.createElement('div');
+                pop.className = 'loop-songform-pop';
+                pop.innerHTML = '<div class="lsf-title">송폼(구성)</div>' +
+                    '<input type="text" class="lsf-input" maxlength="16" placeholder="전주 / 후렴 / A …">' +
+                    '<div class="lsf-actions">' +
+                    '<button type="button" class="lsf-btn" data-lsf="clear">지움</button>' +
+                    '<button type="button" class="lsf-btn primary" data-lsf="ok">확인</button>' +
+                    '</div>';
+                cell.appendChild(pop);
+                var input = pop.querySelector('.lsf-input');
+                input.value = loopSongForm[idx] || '';
+                setTimeout(function() { try { input.focus(); input.select(); } catch (e) {} }, 30);
+
+                var committed = false;
+                function finish() {
+                    if (committed) return;
+                    committed = true;
+                    loopActiveCommit = null;
+                    document.removeEventListener('pointerdown', onDocDown, true);
+                    var v = (input.value || '').trim();
+                    if (v) loopSongForm[idx] = v; else delete loopSongForm[idx];
+                    closeSongFormInput();
+                    renderLoopGrid();
+                    loopOnStateChange();
+                }
+                function cancel() {
+                    if (committed) return;
+                    committed = true;
+                    loopActiveCommit = null;
+                    document.removeEventListener('pointerdown', onDocDown, true);
+                    closeSongFormInput();
+                }
+                function onDocDown(e) { if (!pop.contains(e.target)) finish(); }
+                loopActiveCommit = finish;
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') { e.preventDefault(); finish(); }
+                    else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+                });
+                pop.querySelector('[data-lsf="ok"]').addEventListener('click', function(e) { e.stopPropagation(); finish(); });
+                pop.querySelector('[data-lsf="clear"]').addEventListener('click', function(e) { e.stopPropagation(); input.value = ''; finish(); });
+                setTimeout(function() { document.addEventListener('pointerdown', onDocDown, true); }, 0);
+            }
+            window.openSongFormInput = openSongFormInput;
+
+            // ─── 악보 인쇄 ─────────────────────────────────────────────
+            // 화면 코드 진행(코드·도돌이·볼타·송폼)을 종이용 정적 차트로 변환.
+            function buildLoopPrintHtml(title, artist) {
+                function chTxt(v) { if (_isChordRest(v)) return '✕'; return v ? _escHtml(v) : ''; }
+                var cells = '';
+                for (var i = 0; i < loopBars; i++) {
+                    var cls = 'lp-cell';
+                    if (loopRepeats.left.has(i)) cls += ' rl';
+                    if (loopRepeats.right.has(i)) cls += ' rr';
+                    var inner = '<div class="lp-num">' + (i + 1) + '</div>';
+                    if (loopSongForm[i]) inner += '<div class="lp-sf">' + _escHtml(loopSongForm[i]) + '</div>';
+                    if (loopVoltas[i] && loopVoltas[i].length) inner += '<div class="lp-volta">' + _voltaLabel(loopVoltas[i]) + '</div>';
+                    var ca = chTxt(loopChords[i]);
+                    var cb = chTxt(loopChordsB[i]);
+                    if (loopChordsB[i]) inner += '<div class="lp-chords"><span>' + (ca || '&nbsp;') + '</span><span>' + cb + '</span></div>';
+                    else inner += '<div class="lp-chords one"><span>' + (ca || '&nbsp;') + '</span></div>';
+                    if (loopRepeats.left.has(i)) inner += '<span class="lp-rep l">‖:</span>';
+                    if (loopRepeats.right.has(i)) inner += '<span class="lp-rep r">:‖</span>';
+                    cells += '<div class="' + cls + '">' + inner + '</div>';
+                }
+                var head = '<div class="lp-head"><div class="lp-title">' + _escHtml(title || '무제') + '</div>' +
+                    (artist ? '<div class="lp-artist">' + _escHtml(artist) + '</div>' : '') + '</div>';
+                return '<div class="lp-sheet">' + head + '<div class="lp-grid">' + cells + '</div></div>';
+            }
+            function doLoopPrint(title, artist) {
+                var area = document.getElementById('loopPrintArea');
+                if (!area) { area = document.createElement('div'); area.id = 'loopPrintArea'; document.body.appendChild(area); }
+                area.innerHTML = buildLoopPrintHtml(title, artist);
+                var ov = document.getElementById('loopPrintModal'); if (ov) ov.classList.remove('open');
+                setTimeout(function() { try { window.print(); } catch (e) {} }, 80);
+                try { gtag('event', 'loop_print'); } catch (e) {}
+            }
+            window.openPrintDialog = function() {
+                if (!hasLoopInput()) { loopToast('먼저 코드를 입력해주세요'); return; }
+                var ov = loopEnsureModal('loopPrintModal',
+                    '<div class="loop-modal-title">악보 인쇄</div>' +
+                    '<input type="text" id="lpTitle" class="loop-modal-input" placeholder="제목" maxlength="60">' +
+                    '<input type="text" id="lpArtist" class="loop-modal-input" placeholder="아티스트 (선택)" maxlength="60" style="margin-top:8px;">' +
+                    '<div class="loop-modal-label">미리보기</div>' +
+                    '<div id="lpPreview" class="loop-print-preview"></div>' +
+                    '<div class="loop-modal-actions"><button type="button" class="loop-modal-btn ghost" data-close>취소</button>' +
+                    '<button type="button" class="loop-modal-btn primary" id="lpPrintGo">프린트</button></div>');
+                ov.classList.add('open');
+                var tEl = document.getElementById('lpTitle');
+                var aEl = document.getElementById('lpArtist');
+                var prev = document.getElementById('lpPreview');
+                var sName = (document.getElementById('loopPresetSearch') || {}).value || '';
+                if (sName) tEl.value = sName;
+                function refresh() { prev.innerHTML = buildLoopPrintHtml(tEl.value, aEl.value); }
+                tEl.addEventListener('input', refresh);
+                aEl.addEventListener('input', refresh);
+                refresh();
+                setTimeout(function() { try { tEl.focus(); } catch (e) {} }, 50);
+                document.getElementById('lpPrintGo').onclick = function() { doLoopPrint(tEl.value, aEl.value); };
+            };
+
             function closeLoopPicker() {
                 document.querySelectorAll('.loop-chord-picker').forEach(function(p) { p.remove(); });
             }
@@ -14884,6 +15088,7 @@
                 loopRepeats.left.clear();
                 loopRepeats.right.clear();
                 loopVoltas = {};
+                loopSongForm = {};
                 _prevPianoVoicing = null;
                 _lastPianoSegmentKey = null;
                 _lastPianoSegmentChord = null;
