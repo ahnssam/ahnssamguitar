@@ -7149,6 +7149,8 @@
         }
         /* 두 페이지씩 볼 땐 흰 박스를 넓게 */
         body.loop-view-wide #metronomePanel .tool-body { max-width: 1320px; }
+        /* 마디당 4코드 — 코드 칸이 좁아지므로 반주 패널을 넓혀 입력 여유 확보 */
+        body.loop-segs-4 #metronomePanel .tool-body { max-width: 1040px; }
         /* 페이지 터너 */
         .loop-page-nav { display: flex; align-items: center; gap: 0.5rem; }
         .loop-page-arrow {
@@ -7166,7 +7168,8 @@
             color: var(--text-secondary); font-variant-numeric: tabular-nums;
         }
         .loop-cell {
-            aspect-ratio: 2.4; display: flex; flex-direction: column;
+            /* 세로를 기존의 3/5 로 (2.4 → 4.0). 화면·인쇄 모두 더 납작하게 */
+            aspect-ratio: 4; display: flex; flex-direction: column;
             /* halves 컨테이너가 cell 전체 높이를 채우도록 stretch. 이전엔
                center 였는데, 그 경우 텍스트 영역만 hover/click hit 이 되고
                아래쪽 빈 공간이 죽은 영역이 됨 → "박스 아래쪽 클릭 안 됨" 버그. */
@@ -7302,13 +7305,15 @@
         .lv-pick-hint { font-size: 0.55rem; color: var(--text-light); margin-top: 5px; max-width: 132px; line-height: 1.35; }
         /* ───── 송폼(구성) 라벨 + 입력 팝업 ───── */
         .loop-cell-songform {
-            position: absolute; top: 0; left: 24px; right: 4px; height: 13px; line-height: 13px;
-            text-align: center; font-size: 0.6rem; font-weight: 800; letter-spacing: -0.02em;
+            position: absolute; top: -18px; left: 0; right: 0;
+            text-align: center; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2;
+            font-size: clamp(0.7rem, 2.4vw, 0.95rem);   /* 코드 글자보다 살짝 작게 */
             color: var(--green-deep); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
             pointer-events: none; z-index: 5;
         }
         :root[data-theme="dark"] .loop-cell-songform { color: #b8d8c4; }
-        .loop-cell.has-songform .loop-cell-halves { margin-top: 6px; }
+        /* 송폼이 있는 줄은 위에 공간을 만들어, 그 사이 빈 공간에 라벨이 들어가게 */
+        .loop-cell.loop-row-spaced { margin-top: 22px; }
         .loop-songform-pop {
             position: absolute; top: 16px; left: 0; z-index: 31;
             background: var(--bg-panel);
@@ -7331,44 +7336,32 @@
         }
         .lsf-btn:hover { background: rgba(42,107,74,0.1); }
         .lsf-btn.primary { background: var(--green-mid); color: #fff; border-color: var(--green-mid); }
-        /* ───── 악보 인쇄 (미리보기 + 실제 인쇄 공용 .lp-* 스타일) ───── */
+        /* ───── 악보 인쇄 (화면 코드 그리드를 그대로 복제) ───── */
         .loop-print-preview {
-            max-height: 44vh; overflow: auto; margin-top: 6px;
-            background: #fff; border: 1px solid rgba(0,0,0,0.12); border-radius: 6px; padding: 12px;
+            max-height: 46vh; overflow: auto; margin-top: 6px;
+            background: var(--bg-panel); border: 1px solid rgba(42,107,74,0.18); border-radius: 8px; padding: 14px;
         }
-        .lp-sheet { color: #000; font-family: 'Noto Sans KR', sans-serif; }
         .lp-head { margin-bottom: 14px; }
-        .lp-title { text-align: center; font-size: 20px; font-weight: 800; line-height: 1.2; }
-        .lp-artist { text-align: right; font-size: 12px; font-weight: 600; margin-top: 3px; }
-        .lp-grid {
-            display: grid; grid-template-columns: repeat(4, 1fr);
-            border-top: 1.5px solid #000; border-left: 1.5px solid #000;
-        }
-        .lp-cell {
-            position: relative; border-right: 1.5px solid #000; border-bottom: 1.5px solid #000;
-            min-height: 48px; padding: 15px 8px 8px;
-        }
-        .lp-num { position: absolute; top: 2px; left: 4px; font-size: 8px; color: #777; }
-        .lp-sf {
-            position: absolute; top: 1px; left: 20px; right: 4px; text-align: center;
-            font-size: 9px; font-weight: 800; color: #1a6b3a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .lp-volta {
-            position: absolute; top: 0; left: 0; height: 11px; width: 42%;
-            border-top: 1.5px solid #000; border-left: 1.5px solid #000;
-            font-size: 8px; font-weight: 700; line-height: 11px; padding-left: 2px;
-        }
-        .lp-chords { display: flex; align-items: center; justify-content: space-around; gap: 4px; min-height: 22px; font-size: 15px; font-weight: 700; }
-        .lp-chords.one { justify-content: center; }
-        .lp-rep { position: absolute; top: 50%; transform: translateY(-50%); font-weight: 900; font-size: 13px; }
-        .lp-rep.l { left: 1px; }
-        .lp-rep.r { right: 1px; }
+        .lp-title { text-align: center; font-size: 20px; font-weight: 800; line-height: 1.25; color: var(--text-primary); }
+        .lp-artist { text-align: right; font-size: 12px; font-weight: 600; margin-top: 3px; color: var(--text-secondary); }
+        /* 복제된 그리드는 화면과 동일한 .loop-* 스타일을 그대로 사용. 빈 '+' 칸만 숨김 */
+        .lp-gridwrap .loop-cell-half.empty { visibility: hidden; }
+        .lp-gridwrap .loop-cell-num:hover { background: transparent; color: inherit; }
+        .lp-foot { text-align: center; font-size: 11px; color: var(--text-secondary); margin-top: 16px; }
         #loopPrintArea { display: none; }
         @media print {
+            /* 브라우저 기본 머리글/바닥글(날짜·문서제목·URL) 제거 — 여백 0 이면 그려지지 않음 */
+            @page { margin: 0; }
             body * { visibility: hidden !important; }
             #loopPrintArea, #loopPrintArea * { visibility: visible !important; }
-            #loopPrintArea { display: block !important; position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; }
-            @page { margin: 14mm; }
+            #loopPrintArea {
+                display: block !important; position: absolute; left: 0; top: 0; width: 100%;
+                padding: 12mm 12mm 16mm; margin: 0;
+                -webkit-print-color-adjust: exact; print-color-adjust: exact;
+            }
+            #loopPrintArea * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            /* 크레딧 — 페이지 맨 아래 중앙 고정 */
+            #loopPrintArea .lp-foot { position: fixed; bottom: 6mm; left: 0; right: 0; margin: 0; }
         }
         .loop-cell-num {
             font-size: 0.6rem; color: rgba(26, 36, 33, 0.45);
@@ -8309,6 +8302,13 @@
                                             <button type="button" data-mode="picker" data-action="setLoopInputMode" data-args="picker">픽커</button>
                                             <button type="button" class="active" data-mode="text" data-action="setLoopInputMode" data-args="text">직접입력</button>
                                         </div>
+                                    </div>
+                                </div>
+                                <div class="loop-subctl loop-segs-wrap" title="한 마디에 코드를 몇 개 넣을지">
+                                    <label>마디당</label>
+                                    <div class="loop-input-mode-btns" id="loopSegsBtns">
+                                        <button type="button" class="active" data-segs="2" data-action="setLoopSegs" data-args="2">2</button>
+                                        <button type="button" data-segs="4" data-action="setLoopSegs" data-args="4">4</button>
                                     </div>
                                 </div>
                             </div>
@@ -10464,6 +10464,10 @@
             const LOOP_PER_PAGE = LOOP_ROWS_PER_PAGE * LOOP_COLS;  // 40마디 = 1페이지
             let loopChords = {};
             let loopChordsB = {};
+            // 마디당 코드 칸: 기본 2개(a·b). 4개(a·b·c·d) 로 전환 가능.
+            let loopChordsC = {};
+            let loopChordsD = {};
+            let loopSegs = 2;              // 2 | 4 — 한 마디를 몇 개 코드 구간으로 나눌지
             let loopActiveCommit = null;   // 현재 열린 인라인 입력칸의 저장 함수 (없으면 null)
             // 도돌이표 — 마디별 좌/우 가장자리 마크.
             //   loopRepeats.left  : Set<number> — 마디 i 의 왼쪽 가장자리에 |: (시작 도돌이)
@@ -10838,6 +10842,19 @@
 
             const drumSamples = { kick: null, snare: null, hihat: null, hihatOpen: null, ride: null, rim: null };
             const bassSamples = {};
+            // 피아노 녹음 샘플 — MIDI 번호(48=C3 … 67=G4) 로 키. 파일을 sounds/ 에 넣으면 자동 로드.
+            //   파일명 규칙: Piano_<음><옥타브>.mp3  (샵은 s 로 표기)
+            //   예) Piano_C3.mp3, Piano_Cs3.mp3, Piano_D3.mp3 … Piano_G4.mp3  (총 20개)
+            //   파일이 없으면 그 음은 기존 합성음으로 자동 폴백.
+            const pianoSamples = {};
+            const PIANO_SAMPLE_MIN_MIDI = 48;   // C3
+            const PIANO_SAMPLE_MAX_MIDI = 67;   // G4
+            const PIANO_SAMPLE_GAIN = 0.5;      // 샘플 재생 음량 (합성음 대비 — 필요시 조정)
+            function _pianoSampleFileLabel(midi) {
+                var names = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'];
+                var oct = Math.floor(midi / 12) - 1;   // MIDI 60 = C4
+                return names[((midi % 12) + 12) % 12] + oct;
+            }
             let samplesLoadPromise = null;
             function loadDrumSamples() {
                 if (samplesLoadPromise) return samplesLoadPromise;
@@ -10876,7 +10893,18 @@
                         .catch(function() {});
                 };
                 var bassNotes = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-                bassNotes.forEach(function(n) { loadBass(n, 'sounds/Bass_' + n + '.mp3'); });
+                bassNotes.forEach(function(n) { loadBass(n, 'sounds/Bass_' + encodeURIComponent(n) + '.mp3'); });
+                // 피아노 샘플 — C3(48)~G4(67). 파일이 있으면 로드, 없으면 조용히 무시(합성음 폴백).
+                var loadPiano = function(midi, url) {
+                    return fetch(url)
+                        .then(function(r) { return r.ok ? r.arrayBuffer() : Promise.reject('404'); })
+                        .then(function(ab) { return audioCtx.decodeAudioData(ab); })
+                        .then(function(buf) { pianoSamples[midi] = buf; })
+                        .catch(function() {});
+                };
+                for (var pm = PIANO_SAMPLE_MIN_MIDI; pm <= PIANO_SAMPLE_MAX_MIDI; pm++) {
+                    loadPiano(pm, 'sounds/Piano_' + _pianoSampleFileLabel(pm) + '.mp3');
+                }
                 return samplesLoadPromise;
             }
             function playSample(key, time, gainVal) {
@@ -12008,6 +12036,24 @@
                     var freq = 440 * Math.pow(2, (midi - 69) / 12);
                     var t0 = time;
 
+                    // 녹음 샘플이 있으면 그 음은 샘플로 재생 (없으면 아래 합성음).
+                    var _pbuf = pianoSamples[midi];
+                    if (_pbuf) {
+                        var sg = audioCtx.createGain();
+                        sg.gain.value = PIANO_SAMPLE_GAIN * velMul;
+                        sg.connect(chordGain);
+                        var ssrc = audioCtx.createBufferSource();
+                        ssrc.buffer = _pbuf;
+                        ssrc.connect(sg);
+                        ssrc.start(t0);
+                        if (opts.staccato) {
+                            sg.gain.setTargetAtTime(0.0001, t0 + 0.12, 0.05);
+                            try { ssrc.stop(t0 + 0.45); } catch (e) {}
+                        }
+                        chordSources.push(ssrc);
+                        return;
+                    }
+
                     // 어택 → 빠른 초기 감쇠 → 길게 sustain → 부드러운 release
                     var voiceGain = audioCtx.createGain();
                     voiceGain.gain.setValueAtTime(0.0001, t0);
@@ -12325,13 +12371,13 @@
                     var _isFillMeasure = (loopMeasureLen === 2)
                         && (Math.floor(beatNum / measureLen) % 2 === 1);
                     // 현재 반쪽 마디(half) 가 'x' 면 모든 악기 무음 (반주 음악적 휴지).
-                    var _curHalf = (t < measureLen / 2) ? 'a' : 'b';
+                    var _curHalf = _loopSlotAt(t, measureLen);
                     var _curHalfMuted = isHalfMuted(loopMeasureIdx, _curHalf);
                     if (!_curHalfMuted) {
                         playDrumPattern(beatNum, swungTime, { isFillMeasure: _isFillMeasure });
                     } else {
                         // half 진입 시 sustain 끊기 (이미 울리고 있는 베이스/피아노/오픈 하이햇 등)
-                        if (t === 0 || t === measureLen / 2) {
+                        if (_isLoopSlotBoundary(t, measureLen)) {
                             try { chokeOpenHihat(swungTime); } catch(e) {}
                             try { chokeBass(swungTime); } catch(e) {}
                             try { chokePiano(swungTime); } catch(e) {}
@@ -12399,7 +12445,14 @@
                     var _seqPat = _loopActivePresetSequencer;
                     var _seqLen = measureLen * loopMeasureLen;
                     var _sIdx = beatNum % _seqLen;
-                    var _seqHalf = (t < measureLen / 2) ? 'a' : 'b';
+                    var _seqHalf = _loopSlotAt(t, measureLen);
+                    // 4코드 모드 — 이 박(beat) 머리에 직접 입력된 코드가 있으면, 패턴이 거기서
+                    //   안 쳐도 베이스·피아노가 그 코드를 강제로 찍어준다. (코드 안 바뀐 박은 패턴대로)
+                    var _forceChordHit = false;
+                    if (loopSegs === 4 && p.ticksPerBeat > 0 && (t % p.ticksPerBeat) === 0) {
+                        var _beatSlotVal = _loopSlotMap(_loopSlotAt(t, measureLen))[loopMeasureIdx];
+                        if (_beatSlotVal && !_isChordRest(_beatSlotVal)) _forceChordHit = true;
+                    }
                     // chordOffset[_sIdx] — 그 step 에서 코드를 미리 땡겨치기 (싱코페이션).
                     //   0 = 그 step 의 기본 segment 코드, +1 = 다음 segment, -1 = 이전.
                     var _seqOffset = 0;
@@ -12472,11 +12525,10 @@
                             var bpMeasures = (bp.measures && bp.measures > 1) ? bp.measures : 1;
                             var bpCycleLen = measureLen * bpMeasures;
                             var bt = beatNum % bpCycleLen;
-                            // 'on' (근음) — 기존 동작
-                            if (bp.on.indexOf(bt) !== -1) {
+                            // 'on' (근음) — 기존 동작 (+ 4코드 모드의 강제 코드 타격)
+                            if (bp.on.indexOf(bt) !== -1 || _forceChordHit) {
                                 // 분수코드 / 코드 변경 판정은 음악 마디 기준. bt 가 cycleLen 일 수 있으니 t (한 마디 기준) 그대로.
-                                var midA = measureLen / 2;
-                                var halfA = t < midA ? 'a' : 'b';
+                                var halfA = _loopSlotAt(t, measureLen);
                                 var rootA = getEffectiveRoot(loopMeasureIdx, halfA);
                                 var velA = (bp.quiet && bp.quiet.indexOf(bt) !== -1) ? 1 : 0;
                                 // 스윙 — 워킹 베이스 (코드 quality 기반 scale, 마디별 랜덤 패턴)
@@ -12496,8 +12548,7 @@
                                 }
                             } else if (bp.fifth && bp.fifth.indexOf(bt) !== -1) {
                                 // 5도음 (근음 아래의 5도 — BASS_FREQ 가 자연스럽게 낮은 register 라 C→G 가 root 아래)
-                                var midF = measureLen / 2;
-                                var halfF = t < midF ? 'a' : 'b';
+                                var halfF = _loopSlotAt(t, measureLen);
                                 var rootF5 = getEffectiveRoot(loopMeasureIdx, halfF);
                                 if (rootF5) {
                                     var fifth5 = getChordFifthName(rootF5);
@@ -12509,7 +12560,7 @@
                                        && bp.on.indexOf(t) === -1 && bp.off.indexOf(t) === -1
                                        && bpMeasures === 1) {
                                 // 2마디 모드 fill: 마지막 tick 에 5th anticipation (다음 마디로 이어주기).
-                                var rootF = getEffectiveRoot(loopMeasureIdx, 'b');
+                                var rootF = getEffectiveRoot(loopMeasureIdx, _lastActiveSlot());
                                 if (rootF) {
                                     var fifthF = getChordFifthName(rootF);
                                     if (fifthF) playBass(fifthF, swungTime, 1);
@@ -12520,9 +12571,8 @@
                         var indep = BASS_INDEP_STYLES[loopBassStyle];
                         if (indep) {
                             var bassTicks = sixteenthsToTicks(indep.sixteenthHits, p.ticksPerBeat);
-                            if (bassTicks.indexOf(t) !== -1) {
-                                var midB = measureLen / 2;
-                                var halfB = t < midB ? 'a' : 'b';
+                            if (bassTicks.indexOf(t) !== -1 || _forceChordHit) {
+                                var halfB = _loopSlotAt(t, measureLen);
                                 var rootB = getEffectiveRoot(loopMeasureIdx, halfB);
                                 // 분수코드면 슬래시 베이스 사용
                                 var bassRootB = chordBassNote(rootB);
@@ -12530,7 +12580,7 @@
                             } else if (_isFillMeasure && loopBassStyle === '8beat'
                                        && t === measureLen - 1) {
                                 // 2마디 모드 fill — 8비트 베이스는 짝수 tick 만 치니, 마지막 홀수 tick 에 5th anticipation.
-                                var rootF8 = getEffectiveRoot(loopMeasureIdx, 'b');
+                                var rootF8 = getEffectiveRoot(loopMeasureIdx, _lastActiveSlot());
                                 if (rootF8) {
                                     var fifthF8 = getChordFifthName(rootF8);
                                     if (fifthF8) playBass(fifthF8, swungTime, 1);
@@ -12612,9 +12662,8 @@
                             chokePianoSingle(swungTime);
                         }
                         var pidx = pianoTicks.indexOf(t);
-                        if (pidx !== -1) {
-                            var midP = measureLen / 2;
-                            var halfP = t < midP ? 'a' : 'b';
+                        if (pidx !== -1 || _forceChordHit) {
+                            var halfP = _loopSlotAt(t, measureLen);
                             var rootP = getEffectiveRoot(loopMeasureIdx, halfP);
                             if (rootP) {
                                 // velocity 결정 — kind 와 무관, 위치 기반.
@@ -12622,7 +12671,9 @@
                                 //   quarter:     모든 hit 이 박 머리 → 풀 강도
                                 //   16분음표 기반 (8beat 등): 박 머리(0,4,8,12) 만 강세
                                 var velMul;
-                                if (pianoHitMeta === 'default') {
+                                if (pidx === -1) {
+                                    velMul = 1.0;   // 4코드 강제 타격(패턴엔 없는 박) — 박 머리이므로 풀 강도
+                                } else if (pianoHitMeta === 'default') {
                                     velMul = 0.55;
                                 } else if (pianoHitMeta === 'quarter') {
                                     velMul = 1.0;
@@ -12986,6 +13037,23 @@
                 // 모드 바뀌면 열려있던 픽커는 닫기
                 if (typeof closeLoopPicker === 'function') closeLoopPicker();
                 gtag('event', 'loop_input_mode', { mode: mode });
+            };
+            // 마디당 코드 칸 수 (2 / 4) 전환
+            window.setLoopSegs = function(n) {
+                n = (parseInt(n, 10) === 4) ? 4 : 2;
+                loopSegs = n;
+                var btns = document.getElementById('loopSegsBtns');
+                if (btns) btns.querySelectorAll('button').forEach(function(b) {
+                    b.classList.toggle('active', parseInt(b.getAttribute('data-segs'), 10) === n);
+                });
+                // 4칸이면 입력 여유를 위해 반주 패널을 넓힘
+                document.body.classList.toggle('loop-segs-4', n === 4);
+                // 열려있던 입력/픽커 정리 후 재렌더
+                if (loopActiveCommit) loopActiveCommit();
+                if (typeof closeLoopPicker === 'function') closeLoopPicker();
+                renderLoopGrid();
+                loopOnStateChange();
+                try { gtag('event', 'loop_segs', { segs: n }); } catch (e) {}
             };
             // 부팅 시 토글 + 아이콘 표시 동기화
             document.addEventListener('DOMContentLoaded', function() {
@@ -13546,6 +13614,15 @@
                 // 코드 진행
                 loopChords  = p.chords_a ? Object.assign({}, p.chords_a) : {};
                 loopChordsB = p.chords_b ? Object.assign({}, p.chords_b) : {};
+                loopChordsC = p.chords_c ? Object.assign({}, p.chords_c) : {};
+                loopChordsD = p.chords_d ? Object.assign({}, p.chords_d) : {};
+                // 마디당 코드 칸 수 (2 / 4) — 렌더는 아래 renderLoopGrid 에서. 여기선 상태/UI만.
+                loopSegs = (sp && sp.segs === 4) ? 4 : 2;
+                document.body.classList.toggle('loop-segs-4', loopSegs === 4);
+                var _segBtns = document.getElementById('loopSegsBtns');
+                if (_segBtns) _segBtns.querySelectorAll('button').forEach(function(b) {
+                    b.classList.toggle('active', parseInt(b.getAttribute('data-segs'), 10) === loopSegs);
+                });
                 // 도돌이표 — 프리셋 sequencer_pattern.repeats 에서 로드
                 loopRepeats = { left: new Set(), right: new Set() };
                 if (sp && sp.repeats && typeof sp.repeats === 'object') {
@@ -13590,7 +13667,8 @@
                 return s && s.user ? s.user : null;
             }
             function hasLoopInput() {
-                return loopChords && Object.keys(loopChords).some(function(k) { return loopChords[k]; });
+                var maps = [loopChords, loopChordsB, loopChordsC, loopChordsD];
+                return maps.some(function(m) { return m && Object.keys(m).some(function(k) { return m[k]; }); });
             }
             function updateSavePresetBtnState() {
                 var btn = document.getElementById('loopSavePresetBtn');
@@ -13606,6 +13684,7 @@
                 sp.repeats = { left: Array.from(loopRepeats.left), right: Array.from(loopRepeats.right) };
                 if (loopVoltas && Object.keys(loopVoltas).length) sp.voltas = Object.assign({}, loopVoltas);
                 if (loopSongForm && Object.keys(loopSongForm).length) sp.songForm = Object.assign({}, loopSongForm);
+                sp.segs = loopSegs;   // 마디당 코드 칸 수 (2 / 4)
                 sp.bassCustom = (loopBassStyle === 'custom');
                 sp.pianoCustom = (loopPianoStyle === 'custom');
                 return {
@@ -13617,6 +13696,8 @@
                     piano_style: (loopPianoStyle === 'custom') ? 'default' : loopPianoStyle,
                     chords_a: Object.assign({}, loopChords),
                     chords_b: Object.assign({}, loopChordsB),
+                    chords_c: Object.assign({}, loopChordsC),
+                    chords_d: Object.assign({}, loopChordsD),
                     sequencer_pattern: sp
                 };
             }
@@ -14000,16 +14081,33 @@
             //   - 그 값이 코드 → 코드 유지(fall-back)
             //   - 그 값이 'x' → 휴지 유지 (다음 코드 나올 때까지 무음)
             //   - 아무 것도 없음 → null
-            function _mostRecentChordValue(idx, half) {
-                if (half === 'b') {
-                    var b = loopChordsB[idx];
-                    if (b) return b;
-                }
-                var a = loopChords[idx];
-                if (a) return a;
+            // ─── 마디당 코드 구간(슬롯) 헬퍼 ──────────────────────────────
+            //   loopSegs=2 → ['a','b'] (기존), loopSegs=4 → ['a','b','c','d'].
+            //   measureLen/loopSegs 로 t(틱)를 슬롯에 매핑 → 2일 땐 기존 measureLen/2 분할과 동일.
+            function _loopSlotKeys() { return loopSegs === 4 ? ['a', 'b', 'c', 'd'] : ['a', 'b']; }
+            function _loopSlotMap(slot) {
+                return slot === 'd' ? loopChordsD : slot === 'c' ? loopChordsC : slot === 'b' ? loopChordsB : loopChords;
+            }
+            function _lastActiveSlot() { var k = _loopSlotKeys(); return k[k.length - 1]; }
+            function _loopSlotAt(t, measLen) {
+                var keys = _loopSlotKeys();
+                var segLen = measLen / loopSegs;
+                var s = segLen > 0 ? Math.floor(t / segLen) : 0;
+                if (s < 0) s = 0; if (s >= keys.length) s = keys.length - 1;
+                return keys[s];
+            }
+            function _isLoopSlotBoundary(t, measLen) {
+                var segLen = measLen / loopSegs;
+                return segLen > 0 && (t % segLen) === 0;
+            }
+            function _mostRecentChordValue(idx, slot) {
+                var keys = _loopSlotKeys();
+                var si = keys.indexOf(slot); if (si < 0) si = keys.length - 1;
+                // 현재 마디 — 현재 슬롯부터 'a' 방향으로
+                for (var s = si; s >= 0; s--) { var v = _loopSlotMap(keys[s])[idx]; if (v) return v; }
+                // 이전 마디들 — 뒤 슬롯부터 앞으로
                 for (var i = idx - 1; i >= 0; i--) {
-                    var bv = loopChordsB[i]; if (bv) return bv;
-                    var av = loopChords[i];  if (av) return av;
+                    for (var s2 = keys.length - 1; s2 >= 0; s2--) { var v2 = _loopSlotMap(keys[s2])[i]; if (v2) return v2; }
                 }
                 return null;
             }
@@ -14030,17 +14128,21 @@
             // 그 뒤로 이어지는 빈 마디들도 다음 코드가 나오기 전까지 같은 skip-zone.
             // 송폼 길이가 불규칙(예: 벌스 9마디)일 때 마디 그리드의 잉여 칸을 시각적·
             // 시간적으로 건너뛰기 위한 용도. mute 와 달리 재생 시간 자체가 단축됨.
+            function _hasRealChord(idx) {
+                var keys = _loopSlotKeys();
+                for (var s = 0; s < keys.length; s++) {
+                    var v = _loopSlotMap(keys[s])[idx];
+                    if (v && !_isChordRest(v)) return true;
+                }
+                return false;
+            }
             function _isInSkipZone(idx) {
-                var a = loopChords[idx];
-                if (_isChordRest(a)) return true;   // X 마커 자체
-                var b = loopChordsB[idx];
-                if ((a && !_isChordRest(a)) || (b && !_isChordRest(b))) return false; // 실제 코드 있음
+                if (_isChordRest(loopChords[idx])) return true;   // X 마커 자체 (슬롯 a)
+                if (_hasRealChord(idx)) return false;             // 실제 코드 있음
                 // 빈 마디 — 거꾸로 훑어 X 가 먼저 나오면 skip zone
                 for (var i = idx - 1; i >= 0; i--) {
-                    var pa = loopChords[i];
-                    var pb = loopChordsB[i];
-                    if (_isChordRest(pa)) return true;
-                    if ((pa && !_isChordRest(pa)) || (pb && !_isChordRest(pb))) return false;
+                    if (_isChordRest(loopChords[i])) return true;
+                    if (_hasRealChord(i)) return false;
                 }
                 return false;
             }
@@ -14253,58 +14355,37 @@
                     })(i, num);
                     var halves = document.createElement('div');
                     halves.className = 'loop-cell-halves';
-                    var halfA = document.createElement('span');
-                    var directA = loopChords[i];
-                    if (_isChordRest(directA)) {
-                        halfA.className = 'loop-cell-half rest';
-                        halfA.textContent = 'x';
-                    } else if (directA) {
-                        halfA.className = 'loop-cell-half';
-                        halfA.textContent = directA;
-                        halfA.dataset.fit = '1';
-                    } else {
-                        halfA.className = 'loop-cell-half empty';
-                        halfA.textContent = '+';
-                    }
-                    var halfB = document.createElement('span');
-                    var directB = loopChordsB[i];
-                    if (_isChordRest(directB)) {
-                        halfB.className = 'loop-cell-half rest';
-                        halfB.textContent = 'x';
-                    } else if (directB) {
-                        halfB.className = 'loop-cell-half';
-                        halfB.textContent = directB;
-                        halfB.dataset.fit = '1';
-                    } else {
-                        halfB.className = 'loop-cell-half empty';
-                        halfB.textContent = '+';
-                    }
-                    (function(idx, elA, elB) {
-                        function openText(half) {
-                            // 다른 칸이 열려 있으면 먼저 저장(재렌더). 그 다음 새 칸을 (idx,half)로 다시 조회해 연다.
-                            if (loopActiveCommit) loopActiveCommit();
-                            closeLoopPicker();
-                            openInlineChordInput(idx, half);
+                    _loopSlotKeys().forEach(function(slot) {
+                        var el = document.createElement('span');
+                        var direct = _loopSlotMap(slot)[i];
+                        if (_isChordRest(direct)) {
+                            el.className = 'loop-cell-half rest';
+                            el.textContent = 'x';
+                        } else if (direct) {
+                            el.className = 'loop-cell-half';
+                            el.textContent = direct;
+                            el.dataset.fit = '1';
+                        } else {
+                            el.className = 'loop-cell-half empty';
+                            el.textContent = '+';
                         }
-                        // 텍스트(직접입력) 모드 — pointerdown 으로 즉시 입력칸 열기.
-                        //   click 으로 처리하면 직전 입력칸의 blur 재렌더로 클릭 대상이 바뀌어
-                        //   click 이벤트가 소실 → 두 번 눌러야 하던 문제를 방지.
-                        function onTextDown(half) {
-                            return function(e) {
+                        (function(idx, halfEl, half) {
+                            // 텍스트(직접입력) 모드 — pointerdown 으로 즉시 입력칸 열기.
+                            halfEl.addEventListener('pointerdown', function(e) {
                                 if (loopInputMode !== 'text') return;   // 픽커 모드는 click 핸들러가 처리
-                                e.preventDefault();    // 포커스 이동에 따른 blur 레이스 차단
+                                e.preventDefault(); e.stopPropagation();
+                                if (loopActiveCommit) loopActiveCommit();
+                                closeLoopPicker();
+                                openInlineChordInput(idx, half);
+                            });
+                            // 픽커 모드 — click 으로 픽커 토글 (텍스트 모드에선 무시)
+                            halfEl.onclick = function(e) {
                                 e.stopPropagation();
-                                openText(half);
+                                if (loopInputMode !== 'text') toggleLoopPicker(idx, half, halfEl.parentElement.parentElement);
                             };
-                        }
-                        elA.addEventListener('pointerdown', onTextDown('a'));
-                        elB.addEventListener('pointerdown', onTextDown('b'));
-                        // 픽커 모드 — 기존처럼 click 으로 픽커 토글 (텍스트 모드에선 무시)
-                        elA.onclick = function(e) { e.stopPropagation(); if (loopInputMode !== 'text') toggleLoopPicker(idx, 'a', elA.parentElement.parentElement); };
-                        elB.onclick = function(e) { e.stopPropagation(); if (loopInputMode !== 'text') toggleLoopPicker(idx, 'b', elB.parentElement.parentElement); };
-                    })(i, halfA, halfB);
-                    halves.appendChild(halfA);
-                    halves.appendChild(halfB);
+                        })(i, el, slot);
+                        halves.appendChild(el);
+                    });
                     cell.appendChild(halves);
                     // ─── 도돌이표 가장자리 (좌/우) ────────────────────────────
                     // 좌: 클릭=도돌이표 |: 토글  |  드래그=마디 범위 선택 (재생 시 그 범위만 루핑)
@@ -14346,6 +14427,15 @@
                     cell.appendChild(edgeT);
                     _cells.push(cell);
                 }
+                // 송폼이 있는 줄(4칸 단위)은 위쪽에 간격을 줘서 라벨이 들어갈 공간을 만든다.
+                function _spaceRows(container) {
+                    var cs = container.querySelectorAll(':scope > .loop-cell');
+                    for (var r = 0; r < cs.length; r += LOOP_COLS) {
+                        var end = Math.min(r + LOOP_COLS, cs.length), any = false;
+                        for (var k = r; k < end; k++) if (cs[k].classList.contains('has-songform')) { any = true; break; }
+                        if (any) for (var k2 = r; k2 < end; k2++) cs[k2].classList.add('loop-row-spaced');
+                    }
+                }
                 // ─── 레이아웃: 이어보기(단일 그리드) vs 페이지 나누기(페이지별 그리드) ───
                 if (loopViewMode === 'paged' && loopBars > LOOP_PER_PAGE) {
                     grid.className = 'loop-grid-pages';
@@ -14361,11 +14451,13 @@
                         for (var c = pg * LOOP_PER_PAGE; c < Math.min((pg + 1) * LOOP_PER_PAGE, loopBars); c++) {
                             pageEl.appendChild(_cells[c]);
                         }
+                        _spaceRows(pageEl);
                         grid.appendChild(pageEl);
                     });
                 } else {
                     grid.className = 'loop-grid cols-' + loopBars;
                     for (var _ci = 0; _ci < _cells.length; _ci++) grid.appendChild(_cells[_ci]);
+                    _spaceRows(grid);
                 }
                 _syncLoopViewControls();
                 var _pl = document.getElementById('loopPageLabel');
@@ -14476,7 +14568,7 @@
                     loopPickerCell = null; return;
                 }
                 loopPickerCell = { idx: idx, half: half };
-                var chordMap = half === 'b' ? loopChordsB : loopChords;
+                var chordMap = _loopSlotMap(half);
                 var picker = document.createElement('div');
                 var colsPerRow = 4;
                 var col = idx % colsPerRow;
@@ -14677,9 +14769,10 @@
                 var halves = cell.querySelector('.loop-cell-halves');
                 if (!halves) return;
                 var spans = halves.querySelectorAll('.loop-cell-half');
-                var span = half === 'b' ? spans[1] : spans[0];
+                var _slotPos = _loopSlotKeys().indexOf(half); if (_slotPos < 0) _slotPos = 0;
+                var span = spans[_slotPos] || spans[0];
                 if (!span) return;
-                var chordMap = half === 'b' ? loopChordsB : loopChords;
+                var chordMap = _loopSlotMap(half);
                 var initial = chordMap[idx] || '';
                 // textarea — Shift+Enter 로 줄바꿈 가능. 글자는 박스에 맞게 자동 축소.
                 var input = document.createElement('textarea');
@@ -14756,12 +14849,14 @@
                         var curIdx = idx, curHalf = half;
                         commit();   // 저장 + 그리드 재렌더 (현재 input 은 사라짐)
                         var nextIdx, nextHalf;
+                        var _keys = _loopSlotKeys();
+                        var _ci = _keys.indexOf(curHalf); if (_ci < 0) _ci = 0;
                         if (e.shiftKey) {
-                            if (curHalf === 'b') { nextIdx = curIdx;     nextHalf = 'a'; }
-                            else                 { nextIdx = curIdx - 1; nextHalf = 'b'; }
+                            if (_ci > 0) { nextIdx = curIdx;     nextHalf = _keys[_ci - 1]; }
+                            else         { nextIdx = curIdx - 1; nextHalf = _keys[_keys.length - 1]; }
                         } else {
-                            if (curHalf === 'a') { nextIdx = curIdx;     nextHalf = 'b'; }
-                            else                 { nextIdx = curIdx + 1; nextHalf = 'a'; }
+                            if (_ci < _keys.length - 1) { nextIdx = curIdx;     nextHalf = _keys[_ci + 1]; }
+                            else                        { nextIdx = curIdx + 1; nextHalf = _keys[0]; }
                         }
                         // 범위 안일 때만 다음 입력칸 열기 (재렌더 직후의 새 span 대상)
                         if (nextIdx >= 0 && nextIdx < loopBars) {
@@ -14882,32 +14977,41 @@
 
             // ─── 악보 인쇄 ─────────────────────────────────────────────
             // 화면 코드 진행(코드·도돌이·볼타·송폼)을 종이용 정적 차트로 변환.
-            function buildLoopPrintHtml(title, artist) {
-                function chTxt(v) { if (_isChordRest(v)) return '✕'; return v ? _escHtml(v) : ''; }
-                var cells = '';
-                for (var i = 0; i < loopBars; i++) {
-                    var cls = 'lp-cell';
-                    if (loopRepeats.left.has(i)) cls += ' rl';
-                    if (loopRepeats.right.has(i)) cls += ' rr';
-                    var inner = '<div class="lp-num">' + (i + 1) + '</div>';
-                    if (loopSongForm[i]) inner += '<div class="lp-sf">' + _escHtml(loopSongForm[i]) + '</div>';
-                    if (loopVoltas[i] && loopVoltas[i].length) inner += '<div class="lp-volta">' + _voltaLabel(loopVoltas[i]) + '</div>';
-                    var ca = chTxt(loopChords[i]);
-                    var cb = chTxt(loopChordsB[i]);
-                    if (loopChordsB[i]) inner += '<div class="lp-chords"><span>' + (ca || '&nbsp;') + '</span><span>' + cb + '</span></div>';
-                    else inner += '<div class="lp-chords one"><span>' + (ca || '&nbsp;') + '</span></div>';
-                    if (loopRepeats.left.has(i)) inner += '<span class="lp-rep l">‖:</span>';
-                    if (loopRepeats.right.has(i)) inner += '<span class="lp-rep r">:‖</span>';
-                    cells += '<div class="' + cls + '">' + inner + '</div>';
+            // 화면의 코드 진행 그리드를 그대로 복제해 인쇄용 시트를 만든다.
+            //   → 화면 레이아웃과 100% 동일. 제목(상단 중앙)·아티스트(우측) 머리글,
+            //     맨 아래 중앙에 크레딧. 비어있는 '+' 칸과 선택/팝업 잔재는 정리.
+            function _buildPrintSheet(title, artist) {
+                var sheet = document.createElement('div');
+                sheet.className = 'lp-sheet';
+                var head = document.createElement('div');
+                head.className = 'lp-head';
+                head.innerHTML = '<div class="lp-title">' + _escHtml(title || '무제') + '</div>' +
+                    (artist ? '<div class="lp-artist">' + _escHtml(artist) + '</div>' : '');
+                sheet.appendChild(head);
+                var grid = document.getElementById('loopGrid');
+                if (grid) {
+                    var clone = grid.cloneNode(true);
+                    clone.removeAttribute('id');
+                    clone.querySelectorAll('.range-start,.range-end,.in-range').forEach(function(c) {
+                        c.classList.remove('range-start', 'range-end', 'in-range');
+                    });
+                    clone.querySelectorAll('.loop-songform-pop,.loop-volta-picker,.loop-chord-picker').forEach(function(p) { p.remove(); });
+                    var wrap = document.createElement('div');
+                    wrap.className = 'lp-gridwrap';
+                    wrap.appendChild(clone);
+                    sheet.appendChild(wrap);
                 }
-                var head = '<div class="lp-head"><div class="lp-title">' + _escHtml(title || '무제') + '</div>' +
-                    (artist ? '<div class="lp-artist">' + _escHtml(artist) + '</div>' : '') + '</div>';
-                return '<div class="lp-sheet">' + head + '<div class="lp-grid">' + cells + '</div></div>';
+                var foot = document.createElement('div');
+                foot.className = 'lp-foot';
+                foot.textContent = '기타 반주 메이커 | 안쌤의 기타나무숲';
+                sheet.appendChild(foot);
+                return sheet;
             }
             function doLoopPrint(title, artist) {
                 var area = document.getElementById('loopPrintArea');
                 if (!area) { area = document.createElement('div'); area.id = 'loopPrintArea'; document.body.appendChild(area); }
-                area.innerHTML = buildLoopPrintHtml(title, artist);
+                area.innerHTML = '';
+                area.appendChild(_buildPrintSheet(title, artist));
                 var ov = document.getElementById('loopPrintModal'); if (ov) ov.classList.remove('open');
                 setTimeout(function() { try { window.print(); } catch (e) {} }, 80);
                 try { gtag('event', 'loop_print'); } catch (e) {}
@@ -14928,7 +15032,7 @@
                 var prev = document.getElementById('lpPreview');
                 var sName = (document.getElementById('loopPresetSearch') || {}).value || '';
                 if (sName) tEl.value = sName;
-                function refresh() { prev.innerHTML = buildLoopPrintHtml(tEl.value, aEl.value); }
+                function refresh() { prev.innerHTML = ''; prev.appendChild(_buildPrintSheet(tEl.value, aEl.value)); }
                 tEl.addEventListener('input', refresh);
                 aEl.addEventListener('input', refresh);
                 refresh();
@@ -15085,6 +15189,8 @@
             window.clearAllLoopChords = function() {
                 loopChords = {};
                 loopChordsB = {};
+                loopChordsC = {};
+                loopChordsD = {};
                 loopRepeats.left.clear();
                 loopRepeats.right.clear();
                 loopVoltas = {};
@@ -15140,6 +15246,14 @@
                     var v = loopChordsB[k];
                     if (v) { loopChordsB[k] = _shiftChordName(v, semitones); hasAny = true; }
                 });
+                Object.keys(loopChordsC).forEach(function(k) {
+                    var v = loopChordsC[k];
+                    if (v) { loopChordsC[k] = _shiftChordName(v, semitones); hasAny = true; }
+                });
+                Object.keys(loopChordsD).forEach(function(k) {
+                    var v = loopChordsD[k];
+                    if (v) { loopChordsD[k] = _shiftChordName(v, semitones); hasAny = true; }
+                });
                 if (!hasAny) return;
                 // 보이싱 캐시 초기화 — 다음 재생 시 새 키에서 적정 옥타브로 다시 잡음
                 _prevPianoVoicing = null;
@@ -15167,6 +15281,7 @@
                     if (lbl) lbl.textContent = LOOP_RHYTHM_LABELS['8beat'];
                 }
                 renderLoopRhythms();
+                if (typeof window.setLoopSegs === 'function') window.setLoopSegs(2);   // 마디당 코드 2개로 복귀
                 window.clearAllLoopChords();
                 var search = document.getElementById('loopPresetSearch');
                 if (search) search.value = '';
