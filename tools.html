@@ -14318,13 +14318,13 @@
                 var spill = parseInt(el.dataset.spill || '0', 10);
                 var targetW = el.clientWidth;
                 if (spill > 0 && el.tagName !== 'TEXTAREA') {
+                    // 글자만 옆 빈 칸으로 시각적으로 넘침. z-index 안 줌 → 다음 칸(나중 그려짐)이
+                    // 위에 남아 마우스 이벤트를 받고, 넘친 글자는 투명한 다음 칸 뒤로 보임.
                     el.style.overflow = 'visible';
-                    el.style.position = 'relative';
-                    el.style.zIndex = '4';
+                    el.style.pointerEvents = '';
                     targetW = el.clientWidth * (1 + spill) - 8;
                 } else if (el.tagName !== 'TEXTAREA') {
                     el.style.overflow = '';
-                    el.style.zIndex = '';
                 }
                 var maxF = 17, minF = 6, f = maxF, guard = 0;
                 el.style.fontSize = f + 'px';
@@ -14436,13 +14436,9 @@
                         } else {
                             el.className = 'loop-cell-half empty';
                             el.textContent = '+';
-                            // 앞의 코드가 이 빈 칸으로 넘쳐오면 '+' 숨김(클릭은 유지)
-                            for (var p = sIdx - 1; p >= 0; p--) {
-                                var pv = _slotVals[p];
-                                if (pv == null || pv === '') continue;
-                                if (!_isChordRest(pv)) el.classList.add('covered');
-                                break;
-                            }
+                            // 바로 앞칸이 코드면 이 칸으로 넘쳐올 수 있으니 '+' 숨김(클릭 유지)
+                            var _pv = sIdx > 0 ? _slotVals[sIdx - 1] : null;
+                            if (_pv != null && _pv !== '' && !_isChordRest(_pv)) el.classList.add('covered');
                         }
                         (function(idx, halfEl, half) {
                             // 텍스트(직접입력) 모드 — pointerdown 으로 즉시 입력칸 열기.
