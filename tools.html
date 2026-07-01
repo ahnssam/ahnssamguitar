@@ -7311,11 +7311,12 @@
             text-align: left; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2;
             font-size: clamp(0.62rem, 2.1vw, 0.82rem);   /* 코드 글자보다 살짝 작게 */
             color: var(--green-deep); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            max-width: 100%; pointer-events: none; z-index: 5;
+            max-width: 100%; pointer-events: auto; cursor: pointer; z-index: 6;
             display: inline-block; padding: 1px 7px;
             border: 1px solid rgba(42,107,74,0.45); border-radius: 7px;
             background: rgba(82,168,114,0.12);
         }
+        .loop-cell-songform:hover { background: rgba(82,168,114,0.22); }
         :root[data-theme="dark"] .loop-cell-songform {
             color: #cfe9d9; border-color: rgba(150,200,175,0.4); background: rgba(150,200,175,0.14);
         }
@@ -7421,16 +7422,17 @@
                will no longer force the measure to stretch.
                빌더 페이지(1.05rem 고정) 와 비슷한 밀도로 max 와 vw 비율 살짝 낮춤. */
             font-size: clamp(0.8rem, 2.9vw, 1.1rem);
-            font-weight: 700; color: var(--text-primary);
+            font-weight: 700; color: var(--green-deep);
             font-family: 'Playfair Display', serif;
             padding: 0; border-radius: 3px;
             transition: background 0.15s;
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
             line-height: 1.1;
-            /* 입력된 코드는 왼쪽 정렬 */
+            /* 입력된 코드는 왼쪽 정렬 (마디 숫자와 안 겹치게 살짝 안쪽) */
             display: flex; align-items: center; justify-content: flex-start;
-            padding-left: 6px; padding-right: 4px;
+            padding-left: 11px; padding-right: 4px;
         }
+        :root[data-theme="dark"] .loop-cell-half { color: #b5e6c8; }
         /* 빈 칸(+)·쉼표(x)는 가운데 유지 */
         .loop-cell-half.empty, .loop-cell-half.rest { justify-content: center; padding-left: 0; padding-right: 0; }
         .loop-cell-half:hover { background: rgba(82,168,114,0.2); }
@@ -14376,6 +14378,15 @@
                         var sf = document.createElement('div');
                         sf.className = 'loop-cell-songform';
                         sf.textContent = loopSongForm[i];
+                        sf.title = '클릭해서 수정';
+                        (function(idx, sfEl) {
+                            sfEl.addEventListener('pointerdown', function(e) {
+                                e.preventDefault(); e.stopPropagation();
+                                if (loopActiveCommit) loopActiveCommit();
+                                closeLoopPicker();
+                                openSongFormInput(idx);
+                            });
+                        })(i, sf);
                         cell.appendChild(sf);
                     }
                     // 마디 번호 클릭 → 송폼(구성) 자유입력 팝업
