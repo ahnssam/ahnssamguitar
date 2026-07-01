@@ -7307,15 +7307,20 @@
         .lv-pick-hint { font-size: 0.55rem; color: var(--text-light); margin-top: 5px; max-width: 132px; line-height: 1.35; }
         /* ───── 송폼(구성) 라벨 + 입력 팝업 ───── */
         .loop-cell-songform {
-            position: absolute; top: -18px; left: 0; right: 0;
-            text-align: center; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2;
-            font-size: clamp(0.7rem, 2.4vw, 0.95rem);   /* 코드 글자보다 살짝 작게 */
+            position: absolute; top: -25px; left: 0; right: auto;
+            text-align: left; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2;
+            font-size: clamp(0.62rem, 2.1vw, 0.82rem);   /* 코드 글자보다 살짝 작게 */
             color: var(--green-deep); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            pointer-events: none; z-index: 5;
+            max-width: 100%; pointer-events: none; z-index: 5;
+            display: inline-block; padding: 1px 7px;
+            border: 1px solid rgba(42,107,74,0.45); border-radius: 7px;
+            background: rgba(82,168,114,0.12);
         }
-        :root[data-theme="dark"] .loop-cell-songform { color: #b8d8c4; }
-        /* 송폼이 있는 줄은 위에 공간을 만들어, 그 사이 빈 공간에 라벨이 들어가게 */
-        .loop-cell.loop-row-spaced { margin-top: 22px; }
+        :root[data-theme="dark"] .loop-cell-songform {
+            color: #cfe9d9; border-color: rgba(150,200,175,0.4); background: rgba(150,200,175,0.14);
+        }
+        /* 송폼이 있는 줄은 위에 공간을 만들어, 그 사이 빈 공간에 라벨이 들어가게 (테두리 박스 + 간격 확보) */
+        .loop-cell.loop-row-spaced { margin-top: 30px; }
         .loop-songform-pop {
             position: absolute; top: 16px; left: 0; z-index: 31;
             background: var(--bg-panel);
@@ -7422,9 +7427,12 @@
             transition: background 0.15s;
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
             line-height: 1.1;
-            /* 텍스트를 셀 중앙 정렬 — flex 로 수직/수평 가운데 */
-            display: flex; align-items: center; justify-content: center;
+            /* 입력된 코드는 왼쪽 정렬 */
+            display: flex; align-items: center; justify-content: flex-start;
+            padding-left: 6px; padding-right: 4px;
         }
+        /* 빈 칸(+)·쉼표(x)는 가운데 유지 */
+        .loop-cell-half.empty, .loop-cell-half.rest { justify-content: center; padding-left: 0; padding-right: 0; }
         .loop-cell-half:hover { background: rgba(82,168,114,0.2); }
         .loop-cell-half.empty {
             font-size: clamp(0.7rem, 2.3vw, 0.9rem);
@@ -13052,6 +13060,21 @@
             // 마디당 코드 칸 수 (2 / 4) 전환
             window.setLoopSegs = function(n) {
                 n = (parseInt(n, 10) === 4) ? 4 : 2;
+                var _prevSegs = loopSegs;
+                // 2 → 4: 2칸 모드의 둘째 코드(b, 실제로는 3박 위치)를 c(3박)로 이동 → 1박·3박 배치
+                if (_prevSegs === 2 && n === 4) {
+                    Object.keys(loopChordsB).forEach(function(k) {
+                        var v = loopChordsB[k];
+                        if (v != null && v !== '') { loopChordsC[k] = v; delete loopChordsB[k]; }
+                    });
+                }
+                // 4 → 2: 3박(c) 코드를 둘째 슬롯(b)으로 되돌림 (2·4박은 2칸 모드에 자리 없음)
+                else if (_prevSegs === 4 && n === 2) {
+                    Object.keys(loopChordsC).forEach(function(k) {
+                        var v = loopChordsC[k];
+                        if (v != null && v !== '') { loopChordsB[k] = v; delete loopChordsC[k]; }
+                    });
+                }
                 loopSegs = n;
                 var btns = document.getElementById('loopSegsBtns');
                 if (btns) btns.querySelectorAll('button').forEach(function(b) {
