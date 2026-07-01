@@ -6573,6 +6573,8 @@
         /* style-row 안에서 전체 키 ▼▲ 두 버튼을 하나의 그룹처럼 묶음 */
         .loop-transpose-btns { display: inline-flex; gap: 0.25rem; }
         .loop-transpose-btn {
+            position: relative;
+            z-index: 3;
             width: 30px;
             height: 30px;
             border-radius: 50%;
@@ -8365,6 +8367,10 @@
                                 <button type="button" class="loop-transpose-btn" data-action="transposeLoopChordsAll" data-args="1" title="모든 코드를 반음 올림" aria-label="반음 올림">
                                     <i class="fas fa-chevron-up"></i>
                                 </button>
+                            </div>
+                            <div class="acc-toggle" id="loopAccToggle" role="group" aria-label="음이름 표기 (샵/플랫)">
+                                <button type="button" class="acc-toggle-btn active" data-acc="sharp" data-action="setLoopAccidental" data-args="sharp">♯</button>
+                                <button type="button" class="acc-toggle-btn" data-acc="flat" data-action="setLoopAccidental" data-args="flat">♭</button>
                             </div>
                         </div>
                         <button type="button" class="loop-clear-all-btn" data-action="resetLoopAll" title="프리셋 해제 + 모든 코드 비움" style="margin-left:auto;">
@@ -14347,6 +14353,19 @@
                     }
                 }
             }
+            // fit 이후, 실제로 글자가 자기 칸을 넘칠 때만 뒤쪽 빈 칸의 '+'를 가림
+            function _applySpillCover(el) {
+                var spill = parseInt(el.dataset.spill || '0', 10);
+                var overflowPx = el.scrollWidth - el.clientWidth;
+                var cellW = el.clientWidth || 1;
+                var covers = (spill > 0 && overflowPx > 4) ? Math.min(spill, Math.ceil(overflowPx / cellW)) : 0;
+                var sib = el.nextElementSibling, n = 0;
+                while (sib && sib.classList.contains('loop-cell-half') && sib.classList.contains('empty')) {
+                    sib.classList.toggle('covered', n < covers);
+                    n++;
+                    sib = sib.nextElementSibling;
+                }
+            }
             function renderLoopGrid() {
                 try { if (typeof loopOnStateChange === 'function') loopOnStateChange(); } catch (e) {}
                 var grid = document.getElementById('loopGrid');
@@ -14436,9 +14455,7 @@
                         } else {
                             el.className = 'loop-cell-half empty';
                             el.textContent = '+';
-                            // 바로 앞칸이 코드면 이 칸으로 넘쳐올 수 있으니 '+' 숨김(클릭 유지)
-                            var _pv = sIdx > 0 ? _slotVals[sIdx - 1] : null;
-                            if (_pv != null && _pv !== '' && !_isChordRest(_pv)) el.classList.add('covered');
+                            // covered('+' 숨김)는 실제 글자가 넘칠 때만 fit 이후 계산 (_applySpillCover)
                         }
                         (function(idx, halfEl, half) {
                             // 텍스트(직접입력) 모드 — pointerdown 으로 즉시 입력칸 열기.
@@ -14538,7 +14555,10 @@
                 // grid 위임 방식으로 한 번만 부착 (재렌더 후에도 동일 grid 엘리먼트라 유효).
                 _bindLoopEdgeInteractions(grid);
                 // 코드 텍스트가 네모를 넘치지 않게 글자 크기 맞춤 (멀티라인 포함).
-                grid.querySelectorAll('.loop-cell-half[data-fit]').forEach(_fitChordText);
+                grid.querySelectorAll('.loop-cell-half[data-fit]').forEach(function(el) {
+                    _fitChordText(el);
+                    _applySpillCover(el);
+                });
             }
 
             // ──────────────────────────────────────────────────────────
@@ -15305,6 +15325,21 @@
                 }
                 return built;
             }
+            // ♯/♭ 표기 전환 — 기존 코드들도 그 표기로 다시 계산 (예: F# ↔ Gb)
+            window.setLoopAccidental = function(acc) {
+                acc = (acc === 'flat') ? 'flat' : 'sharp';
+                loopPickerAccidental = acc;
+                document.querySelectorAll('#loopAccToggle .acc-toggle-btn').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.acc === acc);
+                });
+                [loopChords, loopChordsB, loopChordsC, loopChordsD].forEach(function(map) {
+                    Object.keys(map).forEach(function(k) {
+                        var v = map[k];
+                        if (v && !_isChordRest(v)) map[k] = _shiftChordName(v, 0);
+                    });
+                });
+                renderLoopGrid();
+            };
             window.transposeLoopChordsAll = function(semitones) {
                 semitones = parseInt(semitones, 10);
                 if (!semitones) return;
