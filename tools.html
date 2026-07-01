@@ -7435,6 +7435,8 @@
         :root[data-theme="dark"] .loop-cell-half { color: #b5e6c8; }
         /* 빈 칸(+)·쉼표(x)는 가운데 유지 */
         .loop-cell-half.empty, .loop-cell-half.rest { justify-content: center; padding-left: 0; padding-right: 0; }
+        /* 앞 코드가 넘쳐온 빈 칸 — '+' 숨김(투명, 클릭은 유지) */
+        .loop-cell-half.empty.covered { color: transparent; }
         .loop-cell-half:hover { background: rgba(82,168,114,0.2); }
         .loop-cell-half.empty {
             font-size: clamp(0.7rem, 2.3vw, 0.9rem);
@@ -14312,6 +14314,18 @@
                 if (!el) return;
                 el.style.whiteSpace = 'pre';   // 입력한 줄바꿈 보존 + 자동 줄바꿈 방지
                 if (!el.clientWidth) return;   // 보이지 않으면(레이아웃 0) 건너뜀
+                // 옆칸(빈 박)으로 넘칠 수 있으면 그만큼 가로 여유를 준다 → 글자 안 줄이고 침범.
+                var spill = parseInt(el.dataset.spill || '0', 10);
+                var targetW = el.clientWidth;
+                if (spill > 0 && el.tagName !== 'TEXTAREA') {
+                    el.style.overflow = 'visible';
+                    el.style.position = 'relative';
+                    el.style.zIndex = '4';
+                    targetW = el.clientWidth * (1 + spill) - 8;
+                } else if (el.tagName !== 'TEXTAREA') {
+                    el.style.overflow = '';
+                    el.style.zIndex = '';
+                }
                 var maxF = 17, minF = 6, f = maxF, guard = 0;
                 el.style.fontSize = f + 'px';
                 if (el.tagName === 'TEXTAREA') {
@@ -14327,7 +14341,7 @@
                     }
                 } else {
                     while (f > minF && guard++ < 32 &&
-                           (el.scrollWidth > el.clientWidth + 0.5 || el.scrollHeight > el.clientHeight + 0.5)) {
+                           (el.scrollWidth > targetW + 0.5 || el.scrollHeight > el.clientHeight + 0.5)) {
                         f -= 1;
                         el.style.fontSize = f + 'px';
                     }
@@ -14400,9 +14414,11 @@
                     })(i, num);
                     var halves = document.createElement('div');
                     halves.className = 'loop-cell-halves';
-                    _loopSlotKeys().forEach(function(slot) {
+                    var _slotKeys = _loopSlotKeys();
+                    var _slotVals = _slotKeys.map(function(sl) { return _loopSlotMap(sl)[i]; });
+                    _slotKeys.forEach(function(slot, sIdx) {
                         var el = document.createElement('span');
-                        var direct = _loopSlotMap(slot)[i];
+                        var direct = _slotVals[sIdx];
                         if (_isChordRest(direct)) {
                             el.className = 'loop-cell-half rest';
                             el.textContent = 'x';
@@ -14410,9 +14426,23 @@
                             el.className = 'loop-cell-half';
                             el.textContent = direct;
                             el.dataset.fit = '1';
+                            // 뒤따르는 빈 박 수만큼 옆칸으로 넘칠 수 있게 (다음이 코드/쉼표면 멈춤)
+                            var emptyAfter = 0;
+                            for (var q = sIdx + 1; q < _slotVals.length; q++) {
+                                var nv = _slotVals[q];
+                                if (nv == null || nv === '') emptyAfter++; else break;
+                            }
+                            if (emptyAfter > 0) el.dataset.spill = String(emptyAfter);
                         } else {
                             el.className = 'loop-cell-half empty';
                             el.textContent = '+';
+                            // 앞의 코드가 이 빈 칸으로 넘쳐오면 '+' 숨김(클릭은 유지)
+                            for (var p = sIdx - 1; p >= 0; p--) {
+                                var pv = _slotVals[p];
+                                if (pv == null || pv === '') continue;
+                                if (!_isChordRest(pv)) el.classList.add('covered');
+                                break;
+                            }
                         }
                         (function(idx, halfEl, half) {
                             // 텍스트(직접입력) 모드 — pointerdown 으로 즉시 입력칸 열기.
