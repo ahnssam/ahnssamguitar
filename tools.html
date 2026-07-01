@@ -6030,6 +6030,10 @@
         .loop-mypreset-item.empty { opacity: 0.5; }
         .loop-mp-num { width: 22px; height: 22px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; background: var(--green-deep,#2a6b4a); color: #fff; border-radius: 50%; font-size: 0.75rem; font-weight: 700; }
         .loop-mp-name { flex: 1; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .loop-mp-edit { background: none; border: none; color: rgba(42,107,74,0.7); cursor: pointer; padding: 0.3rem; font-size: 0.8rem; }
+        .loop-mp-edit:hover { color: var(--green-deep); }
+        :root[data-theme="dark"] .loop-mp-edit { color: rgba(180,230,200,0.7); }
+        .loop-mp-name-input { flex: 1; min-width: 0; font-family: inherit; font-size: 0.9rem; padding: 0.2rem 0.45rem; border: 1px solid rgba(42,107,74,0.4); border-radius: 5px; background: var(--bg-panel); color: var(--text-primary); }
         .loop-mp-del { background: none; border: none; color: rgba(192,57,43,0.7); cursor: pointer; padding: 0.3rem; font-size: 0.82rem; }
         .loop-toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(26,36,33,0.92); color: #fff; padding: 0.6rem 1.1rem; border-radius: 22px; font-size: 0.85rem; z-index: 1100; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
         .loop-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -13898,6 +13902,7 @@
                     if (s) {
                         html += '<div class="loop-mypreset-item filled" data-load-slot="' + i + '">' +
                             '<span class="loop-mp-num">' + i + '</span><span class="loop-mp-name">' + _escHtml(s.name) + '</span>' +
+                            '<button type="button" class="loop-mp-edit" data-edit-slot="' + i + '" aria-label="이름 수정"><i class="fas fa-pen"></i></button>' +
                             '<button type="button" class="loop-mp-del" data-del-slot="' + i + '" aria-label="삭제"><i class="fas fa-trash"></i></button></div>';
                     } else {
                         html += '<div class="loop-mypreset-item empty"><span class="loop-mp-num">' + i + '</span><span class="loop-mp-name">비어있음</span></div>';
@@ -13906,10 +13911,42 @@
                 listEl.innerHTML = html;
                 listEl.querySelectorAll('[data-load-slot]').forEach(function(item) {
                     item.addEventListener('click', function(e) {
-                        if (e.target.closest('[data-del-slot]')) return;
+                        if (e.target.closest('[data-del-slot]') || e.target.closest('[data-edit-slot]') || e.target.closest('.loop-mp-name-input')) return;
                         var slot = parseInt(item.getAttribute('data-load-slot'), 10);
                         var s = slots[slot - 1];
                         if (s && s.preset) { applyLoopPreset(s.preset); saveLoopDraft(); ov.classList.remove('open'); loopToast('"' + s.name + '" 불러옴'); }
+                    });
+                });
+                // 이름 수정 (연필) — 인라인 편집 후 서버에 반영
+                listEl.querySelectorAll('[data-edit-slot]').forEach(function(b) {
+                    b.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        var slot = parseInt(b.getAttribute('data-edit-slot'), 10);
+                        var s = slots[slot - 1]; if (!s) return;
+                        var item = b.closest('.loop-mypreset-item');
+                        var nameEl = item && item.querySelector('.loop-mp-name');
+                        if (!nameEl || item.querySelector('.loop-mp-name-input')) return;
+                        var inp = document.createElement('input');
+                        inp.type = 'text'; inp.className = 'loop-mp-name-input'; inp.maxLength = 30; inp.value = s.name;
+                        nameEl.replaceWith(inp);
+                        inp.focus(); inp.select();
+                        var done = false;
+                        function save() {
+                            if (done) return; done = true;
+                            var newName = (inp.value || '').trim() || s.name;
+                            (async function() {
+                                var client = loopAuthClient(); var user = loopCurrentUser();
+                                if (client && user && newName !== s.name) {
+                                    try { await client.from('user_presets').update({ name: newName, updated_at: new Date().toISOString() }).eq('user_id', user.id).eq('slot', slot); } catch (err) {}
+                                }
+                                openMyPresetsModal();
+                            })();
+                        }
+                        inp.addEventListener('keydown', function(ev) {
+                            if (ev.key === 'Enter') { ev.preventDefault(); save(); }
+                            else if (ev.key === 'Escape') { done = true; openMyPresetsModal(); }
+                        });
+                        inp.addEventListener('blur', save);
                     });
                 });
                 listEl.querySelectorAll('[data-del-slot]').forEach(function(b) {
