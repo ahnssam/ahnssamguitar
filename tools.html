@@ -7082,6 +7082,77 @@
         .loop-add-bars:hover { background: rgba(42,107,74,0.07); color: var(--green-deep); border-color: rgba(42,107,74,0.5); }
         .loop-add-bars:disabled { opacity: 0.3; cursor: default; }
         :root[data-theme="dark"] .loop-add-bars { color: rgba(180,220,195,0.45); border-color: rgba(180,220,195,0.22); }
+        /* ───── 커스텀 드럼 버튼 + 16스텝 시퀀서 ───── */
+        /* 커스텀(샘플러) 버튼 — 왼쪽 리듬 선택기와 톤 통일 */
+        .drum-custom-btn {
+            padding: 0.4rem 0.7rem; border: 1px solid rgba(42,107,74,0.22); border-radius: 4px;
+            background: rgba(82,168,114,0.12); color: var(--green-deep);
+            font-family: inherit; font-size: 0.75rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+            transition: background 0.15s;
+        }
+        .drum-custom-btn:hover { background: rgba(82,168,114,0.22); }
+        .drum-custom-btn.active {
+            background: linear-gradient(135deg, rgba(82,168,114,0.32), rgba(42,107,74,0.22));
+            border-color: rgba(42,107,74,0.45);
+        }
+        :root[data-theme="dark"] .drum-custom-btn { background: rgba(82,168,114,0.16); border-color: rgba(180,230,200,0.25); color: #b5e6c8; }
+        :root[data-theme="dark"] .drum-custom-btn:hover { background: rgba(82,168,114,0.28); }
+        :root[data-theme="dark"] .drum-custom-btn.active { background: linear-gradient(135deg, rgba(82,168,114,0.4), rgba(42,107,74,0.32)); border-color: rgba(180,230,200,0.4); }
+        .drum-custom-seq {
+            margin: 0.6rem 0; padding: 0.7rem; border: 1px solid rgba(42,107,74,0.18);
+            border-radius: 10px; background: rgba(42,107,74,0.04);
+            display: flex; flex-direction: column; gap: 5px;
+        }
+        .dcs-row { display: flex; align-items: center; gap: 8px; }
+        /* 라벨 — 왼쪽 정렬, 폭은 가장 긴 '심벌(라이드)' 가 테두리에 닿기 직전까지 */
+        .dcs-label { flex: 0 0 78px; font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-align: left; white-space: nowrap; }
+        /* 고정 폭 — 아이콘(음파 개수/X)이 바뀌어도 오른쪽 샘플러 정렬이 안 흔들리게 */
+        .dcs-vol-wrap { flex: 0 0 24px; position: relative; display: flex; align-items: center; justify-content: center; }
+        .dcs-vol-btn { border: none; background: transparent; color: var(--text-secondary); cursor: pointer; padding: 2px 0; width: 24px; font-size: 0.82rem; line-height: 1; }
+        .dcs-vol-btn i { display: inline-block; width: 18px; text-align: center; }
+        .dcs-vol-btn:hover { color: var(--green-deep); }
+        :root[data-theme="dark"] .dcs-vol-btn:hover { color: var(--green-light); }
+        .dcs-vol-pop {
+            position: absolute; left: 50%; top: calc(100% + 4px); transform: translateX(-50%); z-index: 25;
+            background: var(--bg-panel); border: 1px solid rgba(42,107,74,0.3); border-radius: 8px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.2); padding: 8px 10px;
+        }
+        :root[data-theme="dark"] .dcs-vol-pop { border-color: rgba(150,200,175,0.3); }
+        .dcs-vol-pop input[type="range"] { width: 92px; accent-color: var(--green-mid); display: block; }
+        .dcs-cells { flex: 1; display: grid; grid-template-columns: repeat(16, 1fr); gap: 3px; min-width: 0; }
+        .dcs-cell {
+            aspect-ratio: 1; min-width: 0; border: 1px solid rgba(42,107,74,0.2); border-radius: 4px;
+            background: var(--bg-panel); cursor: pointer; padding: 0; transition: background .1s;
+            touch-action: none;   /* 드래그 페인트 시 스크롤 방지 */
+        }
+        .dcs-cell.beat { border-color: rgba(42,107,74,0.45); }
+        .dcs-cell:hover { background: rgba(82,168,114,0.25); }
+        .dcs-cell.on { background: var(--green-mid); border-color: var(--green-mid); }
+        .dcs-actions { display: flex; justify-content: flex-end; margin-top: 2px; }
+        .dcs-clear {
+            font-family: inherit; font-size: 0.72rem; padding: 3px 10px; border-radius: 6px;
+            border: 1px solid rgba(42,107,74,0.3); background: transparent; color: var(--text-secondary); cursor: pointer;
+        }
+        .dcs-clear:hover { background: rgba(42,107,74,0.08); }
+        /* 미터 선택 — 가운데 정렬 세그먼트 컨트롤 (리듬 선택기와 톤 통일) */
+        .dcs-meter {
+            align-self: center; display: inline-flex; margin: 0 0 9px;
+            border: 1px solid rgba(42,107,74,0.25); border-radius: 9px; overflow: hidden;
+            box-shadow: 0 1px 2px rgba(42,107,74,0.06);
+        }
+        .dcs-meter-btn {
+            border: none; background: rgba(42,107,74,0.05); color: rgba(26,36,33,0.6);
+            font-family: inherit; font-size: 0.76rem; font-weight: 700; padding: 0.42rem 1.05rem;
+            cursor: pointer; transition: background .15s, color .15s; white-space: nowrap;
+        }
+        .dcs-meter-btn + .dcs-meter-btn { border-left: 1px solid rgba(42,107,74,0.18); }
+        .dcs-meter-btn:hover:not(.active) { background: rgba(42,107,74,0.12); color: var(--text-primary); }
+        .dcs-meter-btn.active { background: var(--green-deep); color: #fff; }
+        :root[data-theme="dark"] .dcs-meter { border-color: rgba(150,200,175,0.25); }
+        :root[data-theme="dark"] .dcs-meter-btn { background: rgba(255,255,255,0.05); color: rgba(232,240,236,0.6); }
+        :root[data-theme="dark"] .dcs-meter-btn.active { background: var(--green-mid); color: #0c1f17; }
+        :root[data-theme="dark"] .drum-custom-seq { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+        :root[data-theme="dark"] .dcs-cell { background: rgba(255,255,255,0.05); }
         /* ───── 보기(페이지 나누기) ───── */
         .loop-view-row {
             display: flex; align-items: center; gap: 0.8rem;
@@ -8443,7 +8514,10 @@
                 <div class="loop-rhythm-picker" id="drumRhythmPicker" style="display:none;">
                     <label>리듬</label>
                     <div class="loop-rhythm-groups" id="drumRhythmGroups"></div>
+                    <button type="button" class="drum-custom-btn" id="drumCustomBtn" data-action="toggleDrumCustom" title="커스텀 리듬 만들기">커스텀(샘플러)</button>
                 </div>
+                <!-- 커스텀 16스텝 드럼 시퀀서 — 커스텀 버튼 누르면 여기 표시 -->
+                <div class="drum-custom-seq" id="drumCustomSeq" style="display:none;"></div>
                 <button class="metronome-btn" id="metronomeBtn" data-action="toggleMetronome">
                     <i class="fas fa-play"></i>
                     <span>시작</span>
@@ -10868,6 +10942,58 @@
                               ride: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
                               snareVol: 0.75 }
             };
+            // 커스텀 16스텝 드럼 (사용자 시퀀서). 각 파트 = ON 스텝 인덱스(0..15) 배열.
+            //   16스텝 = 4/4 한 마디의 16분음표. playDrumPattern 이 그대로 재생.
+            const DRUM_CUSTOM_PARTS = [
+                { key: 'kick',      label: '킥' },
+                { key: 'snare',     label: '스네어' },
+                { key: 'hihat',     label: '하이햇' },
+                { key: 'hihatOpen', label: '오픈 하이햇' },
+                { key: 'ride',      label: '심벌(라이드)' },
+                { key: 'rim',       label: '림' }
+            ];
+            DRUM_PATTERNS.custom = { ticksPerBeat: 4, beatsPerMeasure: 4, kick: [], snare: [], hihat: [], hihatOpen: [], ride: [], rim: [] };
+            // 파트별 볼륨 배율 (0~1). 1 = 프리셋에서 튜닝해둔 자연 볼륨(최대), 내리면 그보다 작아짐.
+            const DRUM_CUSTOM_VOL = { kick: 1, snare: 1, hihat: 1, hihatOpen: 1, ride: 1, rim: 1 };
+            // 커스텀 시퀀서 미터(박자) — 스텝 수·묶음이 달라짐.
+            //   16비트 = 4묶음 × 4 = 16스텝 / 3/4 = 3묶음 × 4 = 12스텝 / 12/8 = 4묶음 × 3 = 12스텝
+            const DRUM_CUSTOM_METERS = [
+                { key: '16',   label: '16비트', ticksPerBeat: 4, beatsPerMeasure: 4 },
+                { key: '3/4',  label: '3/4',   ticksPerBeat: 4, beatsPerMeasure: 3 },
+                { key: '12/8', label: '12/8',  ticksPerBeat: 3, beatsPerMeasure: 4 }
+            ];
+            let drumCustomMeter = '16';
+            // 저장된 커스텀 패턴/볼륨/미터 복원 (localStorage). 없으면 기본 8비트 록 비트로 시작.
+            (function _loadDrumCustom() {
+                try {
+                    var raw = localStorage.getItem('drumCustomPattern');
+                    if (raw) {
+                        var saved = JSON.parse(raw);
+                        DRUM_CUSTOM_PARTS.forEach(function(p) {
+                            DRUM_PATTERNS.custom[p.key] = Array.isArray(saved[p.key]) ? saved[p.key].slice() : [];
+                            if (saved._vol && typeof saved._vol[p.key] === 'number') DRUM_CUSTOM_VOL[p.key] = saved._vol[p.key];
+                        });
+                        var mSaved = DRUM_CUSTOM_METERS.find(function(x){ return x.key === saved._meter; });
+                        if (mSaved) {
+                            drumCustomMeter = mSaved.key;
+                            DRUM_PATTERNS.custom.ticksPerBeat = mSaved.ticksPerBeat;
+                            DRUM_PATTERNS.custom.beatsPerMeasure = mSaved.beatsPerMeasure;
+                        }
+                        return;
+                    }
+                } catch (e) {}
+                // 기본 시작 패턴 — 간단한 8비트
+                DRUM_PATTERNS.custom.kick = [0, 8];
+                DRUM_PATTERNS.custom.snare = [4, 12];
+                DRUM_PATTERNS.custom.hihat = [0, 2, 4, 6, 8, 10, 12, 14];
+            })();
+            function _saveDrumCustom() {
+                try {
+                    var o = { _vol: {}, _meter: drumCustomMeter };
+                    DRUM_CUSTOM_PARTS.forEach(function(p) { o[p.key] = DRUM_PATTERNS.custom[p.key]; o._vol[p.key] = DRUM_CUSTOM_VOL[p.key]; });
+                    localStorage.setItem('drumCustomPattern', JSON.stringify(o));
+                } catch (e) {}
+            }
             let timerId = null;
             let silentAudio = null;
             let cachedNoiseBuffer = null;
@@ -10967,14 +11093,15 @@
             let _openHihatNode = null;
             let _openHihatGain = null;
 
-            function playHiHatOpen(time) {
+            function playHiHatOpen(time, volScale) {
+                if (typeof volScale !== 'number') volScale = 1;
                 chokeOpenHihat(time);
                 const buf = drumSamples.hihatOpen;
                 if (buf) {
                     const source = audioCtx.createBufferSource();
                     source.buffer = buf;
                     const g = audioCtx.createGain();
-                    g.gain.value = 0.3;
+                    g.gain.value = 0.3 * volScale;
                     source.connect(g);
                     g.connect(getDrumBus());
                     source.start(time);
@@ -10991,7 +11118,7 @@
                 ];
                 const synthNodes = [];
                 const masterGain = audioCtx.createGain();
-                masterGain.gain.setValueAtTime(0.35, time);
+                masterGain.gain.setValueAtTime(0.35 * volScale, time);
                 masterGain.connect(bus);
                 layers.forEach(function(l) {
                     const noise = audioCtx.createBufferSource();
@@ -11055,10 +11182,11 @@
             //   2) 없으면 신스 폴백 — 메탈릭한 ping + 약간의 wash 로 구현
             //
             // level: 1 = downbeat (강세, 1/3박), 0 = 약박 (2a, 4a 등)
-            function playRide(time, level) {
+            function playRide(time, level, volScale) {
                 if (typeof level !== 'number') level = 0;
+                if (typeof volScale !== 'number') volScale = 1;
                 // 사용자 요청: 스윙 ride 볼륨을 단계적으로 줄임 — 최종 원본의 0.25x
-                var sampleVel = (level === 1 ? 0.55 : 0.32) * 0.25;
+                var sampleVel = (level === 1 ? 0.55 : 0.32) * 0.25 * volScale;
                 // 샘플 모드 — playSample 반환의 { source, gain } 트래킹.
                 var sampleResult = playSample('ride', time, sampleVel);
                 if (sampleResult) {
@@ -11078,7 +11206,7 @@
                 bell.frequency.setValueAtTime(bellFreq, time);
                 var bellG = audioCtx.createGain();
                 // ride 볼륨을 원본의 0.25x 로 (스윙 톤다운). 샘플 모드와 같은 비율.
-                var amp = (level === 1 ? 0.085 : 0.05) * 0.25;
+                var amp = (level === 1 ? 0.085 : 0.05) * 0.25 * volScale;
                 bellG.gain.setValueAtTime(0.0001, time);
                 bellG.gain.exponentialRampToValueAtTime(amp, time + 0.002);
                 bellG.gain.setTargetAtTime(0.0001, time + 0.04, 0.18);
@@ -11356,10 +11484,11 @@
                 crack.stop(time + 0.02);
             }
 
-            function playHiHat(time, level) {
+            function playHiHat(time, level, volScale) {
                 if (typeof level === 'boolean') level = level ? 2 : 1;
-                const mult = level === 2 ? 1.0 : level === 1 ? 0.64 : 0.18;
-                const sampleVel = level === 2 ? 0.5 : level === 1 ? 0.32 : 0.09;
+                if (typeof volScale !== 'number') volScale = 1;
+                const mult = (level === 2 ? 1.0 : level === 1 ? 0.64 : 0.18) * volScale;
+                const sampleVel = (level === 2 ? 0.5 : level === 1 ? 0.32 : 0.09) * volScale;
                 chokeOpenHihat(time);
                 if (playSample('hihat', time, sampleVel)) return;
                 const bus = getDrumBus();
@@ -12270,6 +12399,9 @@
                 const activeRhythm = soundMode === 'loop' ? loopRhythm : drumRhythm;
                 const p = DRUM_PATTERNS[activeRhythm] || DRUM_PATTERNS['8beat'];
                 const measureLen = p.ticksPerBeat * p.beatsPerMeasure;
+                // 커스텀 리듬이면 파트별 볼륨(0~1, 1=프리셋 자연 볼륨) 적용. 그 외엔 1.
+                const _cvol = (activeRhythm === 'custom' && typeof DRUM_CUSTOM_VOL === 'object') ? DRUM_CUSTOM_VOL : null;
+                function _cv(part) { return _cvol ? (typeof _cvol[part] === 'number' ? _cvol[part] : 1) : 1; }
                 // 네이티브 2마디 패턴 (보사노바·삼바 등) — cycleLen 을 2 × measureLen 으로 잡고
                 // tick 배열도 0..(2*measureLen-1) 범위로 명세. 빌더의 fill 매커니즘은 비활성.
                 const nativeMeasures = (p.measures && p.measures > 1) ? p.measures : 1;
@@ -12284,7 +12416,7 @@
                 var inFillWindow = isFillMeasure && (t % measureLen) >= lastBeatStart
                                    && !p.quietSnare && !p.softHihat && nativeMeasures === 1;
                 if (p.hihatOpen && p.hihatOpen.includes(t)) {
-                    playHiHatOpen(time);
+                    playHiHatOpen(time, _cv('hihatOpen'));
                 } else if (p.hihat.includes(t)) {
                     let level;
                     const sub = t % p.ticksPerBeat;
@@ -12302,13 +12434,13 @@
                         // 첫 tick (박 머리) 은 살짝 강하게, 그 외는 보통.
                         playSnare(time, sub === 0 ? 0.85 : 0.65);
                     } else {
-                        playHiHat(time, level);
+                        playHiHat(time, level, _cv('hihat'));
                     }
                 }
                 // 라이드 — swing 12/8 등 라이드 메인 리듬용. 박의 첫 tick (sub === 0) 은 강세.
                 if (p.ride && p.ride.includes(t)) {
                     var rideLevel = (t % p.ticksPerBeat === 0) ? 1 : 0;
-                    playRide(time, rideLevel);
+                    playRide(time, rideLevel, _cv('ride'));
                 }
                 if (p.kick.includes(t)) {
                     // 특정 tick 의 킥만 박 단위로 살짝 늦춰 바운스 느낌 (예: 셔플락 바운스의 2a 박).
@@ -12322,7 +12454,7 @@
                         kickVol = p.kickVolumes[t];
                     }
                     // fill window 의 마지막 박 첫 tick 만 킥 유지 — 그 외 킥은 fill 흐름 위해 생략.
-                    if (!inFillWindow || t === lastBeatStart) playKick(kickTime, kickVol);
+                    if (!inFillWindow || t === lastBeatStart) playKick(kickTime, kickVol * _cv('kick'));
                 }
                 if (p.snare.includes(t)) {
                     // quietSnare 플래그 — 스윙 12/8 처럼 스네어를 고스트 노트로 깔 때.
@@ -12330,13 +12462,13 @@
                     var snareVol = p.quietSnare ? 0.04 : 1.0;
                     // p.snareVol — 리듬별 스네어 전체 볼륨 스케일 (예: 삼바 0.75).
                     if (typeof p.snareVol === 'number') snareVol *= p.snareVol;
-                    playSnare(time, snareVol);
+                    playSnare(time, snareVol * _cv('snare'));
                 }
                 // 림 — 보사노바 같은 라틴 그루브용. 림에 fill 매커니즘은 적용 안 함.
                 if (p.rim && p.rim.includes(t)) {
                     // p.rimVol — 리듬별 림 전체 볼륨 스케일 (예: 보사노바 0.75).
                     var rimVol = (typeof p.rimVol === 'number') ? p.rimVol : 1.0;
-                    playRim(time, rimVol);
+                    playRim(time, rimVol * _cv('rim'));
                 }
             }
 
@@ -12897,9 +13029,159 @@
                 if (!DRUM_PATTERNS[rhythm]) return;
                 drumRhythm = rhythm;
                 renderDrumRhythms();
+                _syncDrumCustomUI();
                 renderBeats();
                 resetPlaybackPosition({ resetMeasure: false });
             };
+
+            // ─── 커스텀 16스텝 드럼 시퀀서 ──────────────────────────────
+            function _syncDrumCustomUI() {
+                var isCustom = (drumRhythm === 'custom');
+                var seq = document.getElementById('drumCustomSeq');
+                if (seq) seq.style.display = isCustom ? '' : 'none';
+                var btn = document.getElementById('drumCustomBtn');
+                if (btn) btn.classList.toggle('active', isCustom);
+            }
+            window.toggleDrumCustom = function() {
+                if (drumRhythm === 'custom') {
+                    // 이미 커스텀이면 시퀀서만 접기/펴기
+                    var seq0 = document.getElementById('drumCustomSeq');
+                    if (seq0) seq0.style.display = (seq0.style.display === 'none') ? '' : 'none';
+                    return;
+                }
+                drumRhythm = 'custom';
+                renderDrumRhythms();
+                renderDrumCustomSeq();
+                _syncDrumCustomUI();
+                renderBeats();
+                resetPlaybackPosition({ resetMeasure: false });
+            };
+            // 미터(박자) 전환 — 스텝 수/묶음 변경. 범위 벗어난 스텝은 정리.
+            window.setDrumCustomMeter = function(key) {
+                var m = DRUM_CUSTOM_METERS.find(function(x){ return x.key === key; });
+                if (!m) return;
+                drumCustomMeter = key;
+                DRUM_PATTERNS.custom.ticksPerBeat = m.ticksPerBeat;
+                DRUM_PATTERNS.custom.beatsPerMeasure = m.beatsPerMeasure;
+                var steps = m.ticksPerBeat * m.beatsPerMeasure;
+                DRUM_CUSTOM_PARTS.forEach(function(p) {
+                    DRUM_PATTERNS.custom[p.key] = (DRUM_PATTERNS.custom[p.key] || []).filter(function(s){ return s < steps; });
+                });
+                _saveDrumCustom();
+                renderDrumCustomSeq();
+                if (drumRhythm === 'custom') resetPlaybackPosition({ resetMeasure: false });
+            };
+            function _volIconClass(v) {
+                if (typeof v !== 'number') v = 1;
+                if (v <= 0.001) return 'fa-volume-xmark';
+                if (v < 0.5) return 'fa-volume-low';
+                return 'fa-volume-high';
+            }
+            function closeDrumVolPopup() {
+                document.querySelectorAll('.dcs-vol-pop').forEach(function(p) { p.remove(); });
+            }
+            function openDrumVolPopup(part, anchor) {
+                var wasOpen = anchor.parentElement.querySelector('.dcs-vol-pop');
+                closeDrumVolPopup();
+                if (wasOpen) return;   // 이미 열려 있으면 클릭 = 닫기
+                var pop = document.createElement('div');
+                pop.className = 'dcs-vol-pop';
+                var pct = Math.round((typeof DRUM_CUSTOM_VOL[part] === 'number' ? DRUM_CUSTOM_VOL[part] : 1) * 100);
+                pop.innerHTML = '<input type="range" min="0" max="100" value="' + pct + '" aria-label="볼륨">';
+                anchor.parentElement.appendChild(pop);
+                var sl = pop.querySelector('input');
+                setTimeout(function() { try { sl.focus(); } catch (e) {} }, 20);
+                sl.addEventListener('input', function() {
+                    DRUM_CUSTOM_VOL[part] = (parseInt(sl.value, 10) || 0) / 100;
+                    _saveDrumCustom();
+                    var ic = anchor.querySelector('i');
+                    if (ic) ic.className = 'fas ' + _volIconClass(DRUM_CUSTOM_VOL[part]);
+                });
+                function onDoc(e) {
+                    if (!pop.contains(e.target) && !anchor.contains(e.target)) {
+                        closeDrumVolPopup();
+                        document.removeEventListener('pointerdown', onDoc, true);
+                    }
+                }
+                setTimeout(function() { document.addEventListener('pointerdown', onDoc, true); }, 0);
+            }
+            function renderDrumCustomSeq() {
+                var seq = document.getElementById('drumCustomSeq');
+                if (!seq) return;
+                var pat = DRUM_PATTERNS.custom;
+                var tpb = pat.ticksPerBeat || 4;
+                var steps = tpb * (pat.beatsPerMeasure || 4);
+                var html = '';
+                // 미터(박자) 버튼
+                html += '<div class="dcs-meter">';
+                DRUM_CUSTOM_METERS.forEach(function(m) {
+                    html += '<button type="button" class="dcs-meter-btn' + (drumCustomMeter === m.key ? ' active' : '') + '" data-meter="' + m.key + '">' + m.label + '</button>';
+                });
+                html += '</div>';
+                DRUM_CUSTOM_PARTS.forEach(function(part) {
+                    var onSet = {};
+                    (pat[part.key] || []).forEach(function(s) { onSet[s] = true; });
+                    html += '<div class="dcs-row">';
+                    html += '<span class="dcs-label">' + part.label + '</span>';
+                    html += '<span class="dcs-vol-wrap"><button type="button" class="dcs-vol-btn" data-part="' + part.key + '" title="' + part.label + ' 볼륨"><i class="fas ' + _volIconClass(DRUM_CUSTOM_VOL[part.key]) + '"></i></button></span>';
+                    html += '<div class="dcs-cells" style="grid-template-columns:repeat(' + steps + ',1fr)">';
+                    for (var s = 0; s < steps; s++) {
+                        var cls = 'dcs-cell' + (onSet[s] ? ' on' : '') + ((s % tpb === 0) ? ' beat' : '');
+                        html += '<button type="button" class="' + cls + '" data-part="' + part.key + '" data-step="' + s + '" aria-label="' + part.label + ' ' + (s + 1) + '스텝"></button>';
+                    }
+                    html += '</div></div>';
+                });
+                html += '<div class="dcs-actions"><button type="button" class="dcs-clear" id="drumCustomClear">전체 지우기</button></div>';
+                seq.innerHTML = html;
+                // 셀 드래그 페인트 — 시작 칸의 상태로 켜기/끄기 모드가 정해지고,
+                //   드래그하는 동안 커서가 지나는 칸을 그 모드로 설정. (핸들러는 seq 에 1회만 부착)
+                if (!seq._dcsPaintBound) {
+                    seq._dcsPaintBound = true;
+                    var _painting = false, _paintOn = false, _paintPart = null;
+                    function _setCell(cell, on) {
+                        if (!cell) return;
+                        var key = cell.getAttribute('data-part');
+                        var step = parseInt(cell.getAttribute('data-step'), 10);
+                        var arr = DRUM_PATTERNS.custom[key];
+                        if (!arr) return;
+                        var i = arr.indexOf(step);
+                        if (on && i < 0) { arr.push(step); arr.sort(function(a, b){ return a - b; }); cell.classList.add('on'); }
+                        else if (!on && i >= 0) { arr.splice(i, 1); cell.classList.remove('on'); }
+                    }
+                    function _cellAt(x, y) { var el = document.elementFromPoint(x, y); return (el && el.closest) ? el.closest('.dcs-cell') : null; }
+                    seq.addEventListener('pointerdown', function(e) {
+                        var cell = e.target.closest && e.target.closest('.dcs-cell');
+                        if (!cell) return;   // 슬라이더·버튼 등은 무시
+                        e.preventDefault();
+                        _painting = true;
+                        _paintOn = !cell.classList.contains('on');   // 꺼진 칸에서 시작→켜기, 켜진 칸→끄기
+                        _paintPart = cell.getAttribute('data-part'); // 시작한 트랙(줄)에만 적용
+                        _setCell(cell, _paintOn);
+                        try { seq.setPointerCapture(e.pointerId); } catch (err) {}
+                    });
+                    seq.addEventListener('pointermove', function(e) {
+                        if (!_painting) return;
+                        var cell = _cellAt(e.clientX, e.clientY);
+                        if (cell && cell.getAttribute('data-part') === _paintPart) _setCell(cell, _paintOn);
+                    });
+                    var _endPaint = function() { if (_painting) { _painting = false; _saveDrumCustom(); } };
+                    seq.addEventListener('pointerup', _endPaint);
+                    seq.addEventListener('pointercancel', _endPaint);
+                    // 미터 버튼 / 볼륨 아이콘 클릭
+                    seq.addEventListener('click', function(e) {
+                        var mb = e.target.closest && e.target.closest('.dcs-meter-btn');
+                        if (mb) { window.setDrumCustomMeter(mb.getAttribute('data-meter')); return; }
+                        var vb = e.target.closest && e.target.closest('.dcs-vol-btn');
+                        if (vb) { e.stopPropagation(); openDrumVolPopup(vb.getAttribute('data-part'), vb); }
+                    });
+                }
+                var clr = document.getElementById('drumCustomClear');
+                if (clr) clr.addEventListener('click', function() {
+                    DRUM_CUSTOM_PARTS.forEach(function(p) { DRUM_PATTERNS.custom[p.key] = []; });
+                    _saveDrumCustom();
+                    renderDrumCustomSeq();
+                });
+            }
 
             // ─── 메트로놈 드럼 리듬 그룹 렌더 (반주 picker 와 동일 구조) ─────
             //   LOOP_RHYTHM_GROUPS / LOOP_RHYTHM_LABELS 를 그대로 재사용. drumRhythm 변수만 분리.
@@ -17117,7 +17399,7 @@
                     m7:   { suffix: 'm7',    s6:[0,null,0,0,0,null],   f6:[1,0,2,3,4,0],
                                              s5:[null,0,null,0,1,null], f5:[0,1,0,2,3,0] },
                     m7b5: { suffix: 'm7♭5',  s6:[0,null,0,0,-1,null],  f6:[2,0,2,2,1,0],
-                                             s5:[null,0,1,0,1,null],   f5:[0,2,3,1,4,0] },
+                                             s5:[null,0,1,0,1,null],   f5:[0,1,3,2,4,0] },
                     dim7: { suffix: 'dim7',  s6:[0,null,-1,0,-1,null], f6:[3,0,1,4,2,0],
                                              s5:[null,0,1,-1,1,null],  f5:[0,2,3,1,4,0] }
                 };
