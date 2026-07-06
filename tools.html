@@ -6000,6 +6000,26 @@
         #loopSavePresetBtn:disabled { opacity: 0.4; cursor: default; }
         :root[data-theme="dark"] .loop-preset-mini { color: var(--green-light); border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); }
         :root[data-theme="dark"] #loopSavePresetBtn:not(:disabled) { color: #fff; background: var(--green-dark); }
+        /* 저장 버튼(아이콘+텍스트) + 드롭다운 (저장 / 다른 이름으로 저장) */
+        .loop-save-wrap { position: relative; display: inline-flex; flex: 0 0 auto; }
+        .loop-save-toggle { width: auto; height: 30px; gap: 0.3rem; padding: 0 0.55rem; white-space: nowrap; font-weight: 700; }
+        .loop-save-toggle .loop-save-caret { font-size: 0.56rem; opacity: 0.85; transition: transform 0.2s; }
+        .loop-save-toggle[aria-expanded="true"] .loop-save-caret { transform: rotate(180deg); }
+        .loop-save-menu {
+            position: absolute; top: calc(100% + 4px); right: 0; z-index: 40;
+            background: var(--bg-panel); border: 1px solid rgba(42,107,74,0.25); border-radius: 8px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.18); padding: 4px; min-width: 152px;
+            display: flex; flex-direction: column; gap: 2px;
+        }
+        .loop-save-menu[hidden] { display: none; }
+        .loop-save-menu button {
+            text-align: left; background: transparent; border: none; border-radius: 6px;
+            padding: 0.52rem 0.7rem; font-family: inherit; font-size: 0.82rem; font-weight: 600;
+            color: var(--text-primary); cursor: pointer; white-space: nowrap;
+        }
+        .loop-save-menu button:hover { background: rgba(42,107,74,0.1); }
+        :root[data-theme="dark"] .loop-save-menu { border-color: rgba(150,200,175,0.25); }
+        :root[data-theme="dark"] .loop-save-menu button:hover { background: rgba(255,255,255,0.08); }
         /* 내 프리셋 모달 공용 */
         .loop-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; z-index: 1001; padding: 1rem; }
         .loop-modal-overlay.open { display: flex; }
@@ -7072,16 +7092,26 @@
         .loop-grid.cols-16 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         .loop-grid.cols-32 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         /* 그리드 아래 '4마디 추가' — 희미한 점선 버튼 */
-        .loop-add-bars {
-            display: block; width: 100%; margin: 0.15rem 0 0.6rem;
-            padding: 0.35rem; border: 1px dashed rgba(42,107,74,0.3); border-radius: 8px;
-            background: transparent; color: rgba(42,107,74,0.5);
+        .loop-add-bars { display: flex; align-items: stretch; gap: 6px; width: 100%; margin: 0.15rem 0 0.6rem; }
+        .loop-add-bars-main {
+            flex: 1; padding: 0.42rem; border: 1px dashed rgba(42,107,74,0.3); border-radius: 8px;
+            background: transparent; color: rgba(42,107,74,0.55);
             font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer;
             transition: background .15s, color .15s, border-color .15s;
         }
-        .loop-add-bars:hover { background: rgba(42,107,74,0.07); color: var(--green-deep); border-color: rgba(42,107,74,0.5); }
-        .loop-add-bars:disabled { opacity: 0.3; cursor: default; }
-        :root[data-theme="dark"] .loop-add-bars { color: rgba(180,220,195,0.45); border-color: rgba(180,220,195,0.22); }
+        .loop-add-bars-main:hover { background: rgba(42,107,74,0.07); color: var(--green-deep); border-color: rgba(42,107,74,0.5); }
+        .loop-add-bars-main:disabled { opacity: 0.3; cursor: default; }
+        /* −1 / +1 — +4마디 와 동일한 투명 점선 스타일 (hover 시 색) */
+        .loop-add-pm {
+            width: auto; min-width: 46px; height: auto; padding: 0 14px; border-radius: 8px;
+            border: 1px dashed rgba(42,107,74,0.3); background: transparent; color: rgba(42,107,74,0.55);
+            font-size: 0.85rem; font-weight: 700;
+        }
+        .loop-add-pm:hover { background: rgba(42,107,74,0.07); color: var(--green-deep); border-color: rgba(42,107,74,0.5); }
+        .loop-add-pm:disabled { opacity: 0.3; cursor: default; }
+        :root[data-theme="dark"] .loop-add-bars-main,
+        :root[data-theme="dark"] .loop-add-pm { color: rgba(180,220,195,0.5); border-color: rgba(180,220,195,0.22); background: transparent; }
+        :root[data-theme="dark"] .loop-add-pm:hover { background: rgba(180,220,195,0.1); color: var(--green-light); }
         /* ───── 커스텀 드럼 버튼 + 16스텝 시퀀서 ───── */
         /* 커스텀(샘플러) 버튼 — 왼쪽 리듬 선택기와 톤 통일 */
         .drum-custom-btn {
@@ -8328,8 +8358,13 @@
                             <i class="fas fa-chevron-down"></i>
                         </button>
                         <button type="button" class="loop-preset-mini" id="loopMyPresetBtn" data-action="openMyPresets" aria-label="내 프리셋" title="내 프리셋"><i class="fas fa-folder-open"></i></button>
-                        <button type="button" class="loop-preset-mini" id="loopSavePresetBtn" data-action="openSavePreset" aria-label="저장" title="저장" disabled><i class="fas fa-floppy-disk"></i></button>
-                        <button type="button" class="loop-preset-mini" id="loopSaveAsPresetBtn" data-action="openSaveAsPreset" aria-label="다른 이름으로 저장" title="다른 이름으로 저장" disabled><i class="fas fa-file-export"></i></button>
+                        <div class="loop-save-wrap">
+                            <button type="button" class="loop-preset-mini loop-save-toggle" id="loopSavePresetBtn" data-action="toggleSaveMenu" aria-haspopup="true" aria-expanded="false" title="저장" disabled><i class="fas fa-floppy-disk"></i><span>저장</span><i class="fas fa-chevron-down loop-save-caret" aria-hidden="true"></i></button>
+                            <div class="loop-save-menu" id="loopSaveMenu" hidden>
+                                <button type="button" data-action="openSavePreset">저장</button>
+                                <button type="button" data-action="openSaveAsPreset">다른 이름으로 저장</button>
+                            </div>
+                        </div>
                         <button type="button" class="loop-preset-mini" id="loopPrintBtn" data-action="openPrintDialog" aria-label="악보 인쇄" title="악보 인쇄"><i class="fas fa-print"></i></button>
                         <button type="button" class="tool-help-btn loop-preset-help-btn" data-help="backing" aria-label="반주 도움말" aria-expanded="false">?</button>
                         <div class="loop-preset-list" id="loopPresetList">
@@ -8343,23 +8378,7 @@
                             <div id="loopPresetItems"></div>
                         </div>
                     </div>
-                    <!-- 핵심 컨트롤: 마디 · 입력 · 보기 (항상 표시) -->
-                    <div class="loop-top-row">
-                        <div class="loop-measures-label">
-                            <label>마디</label>
-                            <div class="loop-measures-btns" id="loopMeasureBtns">
-                                <button class="active" data-bars="4" data-action="setLoopBars" data-args="4">4</button>
-                                <button data-bars="8" data-action="setLoopBars" data-args="8">8</button>
-                                <button data-bars="12" data-action="setLoopBars" data-args="12">12</button>
-                                <button data-bars="16" data-action="setLoopBars" data-args="16">16</button>
-                                <button data-bars="32" data-action="setLoopBars" data-args="32">32</button>
-                            </div>
-                            <div class="loop-measures-fine" title="1마디씩 미세 조정 (1~150)">
-                                <button type="button" class="loop-measures-pm" data-action="adjustLoopBars" data-args="-1" aria-label="마디 1개 줄이기">−</button>
-                                <button type="button" class="loop-measures-pm" data-action="adjustLoopBars" data-args="1" aria-label="마디 1개 늘리기">+</button>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- 마디 수 조정은 그리드 아래 '+4마디 / −1 / +1' 로 통합 -->
                     <!-- 설정(고급) 토글 + 예비박 한 줄 -->
                     <div class="loop-settings">
                         <div class="loop-settings-bar">
@@ -8445,8 +8464,12 @@
                         </div>
                     </div>
                     <div class="loop-grid cols-4" id="loopGrid"></div>
-                    <!-- 그리드 바로 아래 — 4마디 추가 (맨 위 ± 로 안 올라가도 되게) -->
-                    <button type="button" class="loop-add-bars" id="loopAddBarsBtn" data-action="addLoopBars4" title="4마디 추가">＋ 4마디</button>
+                    <!-- 그리드 바로 아래 — 마디 수 조정 (+4마디 / −1 / +1) -->
+                    <div class="loop-add-bars">
+                        <button type="button" class="loop-measures-pm loop-add-pm" data-action="adjustLoopBars" data-args="-1" aria-label="마디 1개 줄이기">−1</button>
+                        <button type="button" class="loop-add-bars-main" id="loopAddBarsBtn" data-action="addLoopBars4" title="4마디 추가">＋ 4마디</button>
+                        <button type="button" class="loop-measures-pm loop-add-pm" data-action="adjustLoopBars" data-args="1" aria-label="마디 1개 늘리기">+1</button>
+                    </div>
                     <!-- 전체 키 + 초기화 — 그리드와 BPM 사이 -->
                     <div class="loop-transpose-row">
                         <div class="loop-style-group" title="모든 코드를 반음 단위로 이동">
@@ -14127,8 +14150,33 @@
             // 현재 작업 중인(불러왔거나 방금 저장한) 사용자 프리셋 슬롯/이름.
             //   저장 버튼은 여기에 같은 이름으로 자동 덮어쓰기. 없으면 슬롯 선택 모달.
             var _loopSavedSlot = null, _loopSavedName = null;
+            // 저장 버튼 아래 드롭다운 (저장 / 다른 이름으로 저장) 열고 닫기
+            function _closeSaveMenu() {
+                var menu = document.getElementById('loopSaveMenu');
+                var btn = document.getElementById('loopSavePresetBtn');
+                if (menu) menu.setAttribute('hidden', '');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+                document.removeEventListener('pointerdown', _saveMenuOutside, true);
+            }
+            function _saveMenuOutside(e) {
+                var wrap = document.querySelector('.loop-save-wrap');
+                if (wrap && !wrap.contains(e.target)) _closeSaveMenu();
+            }
+            window.toggleSaveMenu = function() {
+                var menu = document.getElementById('loopSaveMenu');
+                var btn = document.getElementById('loopSavePresetBtn');
+                if (!menu) return;
+                if (menu.hasAttribute('hidden')) {
+                    menu.removeAttribute('hidden');
+                    if (btn) btn.setAttribute('aria-expanded', 'true');
+                    setTimeout(function() { document.addEventListener('pointerdown', _saveMenuOutside, true); }, 0);
+                } else {
+                    _closeSaveMenu();
+                }
+            };
             // 저장 — 작업 중이던 프리셋에 같은 이름으로 자동 저장. 대상 없으면 슬롯 선택.
             window.openSavePreset = function() {
+                _closeSaveMenu();
                 if (!hasLoopInput()) return;
                 if (!loopCurrentUser()) { loopLoginGate(); return; }
                 if (_loopSavedSlot) {
@@ -14139,6 +14187,7 @@
             };
             // 다른 이름으로 저장 — 항상 슬롯 선택 모달.
             window.openSaveAsPreset = function() {
+                _closeSaveMenu();
                 if (!hasLoopInput()) return;
                 if (!loopCurrentUser()) { loopLoginGate(); return; }
                 openSavePresetModal();
