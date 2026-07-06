@@ -15890,22 +15890,39 @@
                     var isJpg = (fmt === 'jpeg');
                     var mime = isJpg ? 'image/jpeg' : 'image/png';
                     var ext = isJpg ? '.jpg' : '.png';
-                    var imgs = [];
+                    // 이미지 파일 끝에 프리셋 데이터를 숨겨 심는다(표시엔 영향 없음).
+                    //   빌더 '프리셋 업로드'가 이 데이터를 꺼내 폼에 그대로 복원.
+                    var metaTail = null;
+                    try {
+                        var pd = serializeLoopState(title, artist); pd._format = 'ahnssam-preset';
+                        metaTail = new TextEncoder().encode('\n<<<AHNSSAM_PRESET_V1>>>\n' + JSON.stringify(pd));
+                    } catch (eMeta) {}
+                    function _blobWithMeta(canvas) {
+                        return new Promise(function(resolve) {
+                            canvas.toBlob(function(b) {
+                                if (!b) { resolve(null); return; }
+                                resolve(metaTail ? new Blob([b, metaTail], { type: mime }) : b);
+                            }, mime, isJpg ? 0.92 : undefined);
+                        });
+                    }
+                    var blobs = [];
                     for (var i = 0; i < pages.length; i++) {
                         var canvas = await window.html2canvas(pages[i], { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false });
-                        imgs.push(canvas.toDataURL(mime, isJpg ? 0.92 : undefined));
+                        blobs.push(await _blobWithMeta(canvas));
                     }
                     document.body.removeChild(holder);
-                    if (imgs.length === 1) {
+                    if (blobs.length === 1) {
+                        var url = URL.createObjectURL(blobs[0]);
                         var a = document.createElement('a');
-                        a.href = imgs[0]; a.download = base + ext;
+                        a.href = url; a.download = base + ext;
                         document.body.appendChild(a); a.click(); a.remove();
+                        setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
                         loopToast('이미지로 저장했어요');
                     } else {
-                        // 여러 장 → zip 으로 묶기
+                        // 여러 장 → zip 으로 묶기 (각 이미지에 프리셋 데이터 포함)
                         await _ensureJSZip();
                         var zip = new window.JSZip();
-                        imgs.forEach(function(u, idx) { zip.file(base + '_' + (idx + 1) + ext, u.split(',')[1], { base64: true }); });
+                        blobs.forEach(function(b, idx) { zip.file(base + '_' + (idx + 1) + ext, b); });
                         var blob = await zip.generateAsync({ type: 'blob' });
                         var zurl = URL.createObjectURL(blob);
                         var za = document.createElement('a');

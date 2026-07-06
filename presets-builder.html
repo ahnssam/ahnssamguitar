@@ -1940,7 +1940,7 @@
                     <button class="bd-btn bd-btn-ghost" id="importBtn" title="반주 페이지에서 내보낸 프리셋 파일(.json)을 업로드해 이 폼에 채웁니다">
                         <i class="fas fa-upload"></i> 프리셋 업로드
                     </button>
-                    <input type="file" id="importFile" accept=".json,application/json" style="display:none;">
+                    <input type="file" id="importFile" accept=".json,application/json,image/png,image/jpeg,.png,.jpg,.jpeg" style="display:none;">
                     <button class="bd-btn bd-btn-ghost" id="duplicateBtn" style="display:none;" title="이 프리셋의 모든 설정을 클립보드에 복사 — 새 프리셋에서 붙여넣기 가능">
                         <i class="fas fa-copy"></i> 복제
                     </button>
@@ -4264,27 +4264,59 @@
                 $('previewPlayBtn').onclick = togglePreview;
                 $('duplicateBtn').onclick = duplicateCurrent;
                 $('pasteBtn').onclick = pasteFromClipboard;
-                // 파일 열기 — 반주 페이지에서 내보낸 .json 을 새 프리셋 폼에 채움
+                // 프리셋 업로드 — .json 또는 반주 페이지에서 내보낸 이미지(.png/.jpg, 데이터 내장) 인식
                 $('importBtn').onclick = function() {
                     navigateWithConfirm(function() { var fi = $('importFile'); fi.value = ''; fi.click(); });
                 };
+                function _bdApplyImportedPreset(obj) {
+                    if (!obj || typeof obj !== 'object' || (!obj.chords_a && !obj.chords_b)) {
+                        showFeedback('프리셋 데이터를 읽지 못했어요 — 올바른 파일인지 확인하세요', 'error');
+                        return false;
+                    }
+                    newPreset();                 // 새 프리셋 모드(저장 시 새 항목으로 추가)
+                    presetClipboard = obj;
+                    pasteFromClipboard();        // 곡명·아티스트·BPM·코드·리듬·도돌이·볼타·송폼·4코드 채움
+                    showFeedback('불러왔어요 ✓ — 장르·난이도 확인 후 [저장]을 누르면 기본 프리셋에 추가됩니다', 'success');
+                    return true;
+                }
+                // 이미지 파일 끝에 심어둔 프리셋 데이터(<<<AHNSSAM_PRESET_V1>>> 뒤 JSON) 추출
+                function _bdExtractEmbeddedPreset(buf) {
+                    var bytes = new Uint8Array(buf);
+                    var marker = new TextEncoder().encode('<<<AHNSSAM_PRESET_V1>>>');
+                    var at = -1;
+                    for (var i = bytes.length - marker.length; i >= 0; i--) {   // 뒤에서부터
+                        var ok = true;
+                        for (var j = 0; j < marker.length; j++) { if (bytes[i + j] !== marker[j]) { ok = false; break; } }
+                        if (ok) { at = i; break; }
+                    }
+                    if (at < 0) return null;
+                    try {
+                        var json = new TextDecoder('utf-8').decode(bytes.subarray(at + marker.length)).replace(/^\s+/, '');
+                        return JSON.parse(json);
+                    } catch (e) { return null; }
+                }
                 $('importFile').onchange = function(e) {
                     var f = e.target.files && e.target.files[0];
                     if (!f) return;
+                    var isImage = /image\/(png|jpe?g)/i.test(f.type) || /\.(png|jpe?g)$/i.test(f.name);
                     var reader = new FileReader();
-                    reader.onload = function() {
-                        var obj;
-                        try { obj = JSON.parse(reader.result); } catch (err) { obj = null; }
-                        if (!obj || typeof obj !== 'object' || (!obj.chords_a && !obj.chords_b)) {
-                            showFeedback('파일을 읽지 못했어요 — 올바른 프리셋 파일(.json)인지 확인하세요', 'error');
-                            return;
-                        }
-                        newPreset();                 // 새 프리셋 모드(저장 시 새 항목으로 추가)
-                        presetClipboard = obj;
-                        pasteFromClipboard();        // 곡명·아티스트·BPM·코드·리듬 등 폼에 채움
-                        showFeedback('파일을 불러왔어요 ✓ — 장르·난이도 확인 후 [저장]을 누르면 기본 프리셋에 추가됩니다', 'success');
-                    };
-                    reader.readAsText(f);
+                    if (isImage) {
+                        reader.onload = function() {
+                            var obj = _bdExtractEmbeddedPreset(reader.result);
+                            if (!obj) {
+                                showFeedback('이 이미지엔 프리셋 데이터가 없어요. 연습도구에서 내보낸 이미지만 자동 인식됩니다. (다른 형식의 악보 이미지는 챗으로 보내 변환해 주세요.)', 'error');
+                                return;
+                            }
+                            _bdApplyImportedPreset(obj);
+                        };
+                        reader.readAsArrayBuffer(f);
+                    } else {
+                        reader.onload = function() {
+                            var obj; try { obj = JSON.parse(reader.result); } catch (err) { obj = null; }
+                            _bdApplyImportedPreset(obj);
+                        };
+                        reader.readAsText(f);
+                    }
                 };
 
                 // 코드 입력 모드 토글 (직접입력 / 픽커)
