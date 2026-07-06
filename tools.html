@@ -10363,7 +10363,10 @@
                 let rms = 0;
                 for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
                 rms = Math.sqrt(rms / SIZE);
-                if (rms < 0.01) return -1;
+                // 신호 임계값 — 이보다 작으면 '소리 없음'으로 보고 -1 반환.
+                //   높이면 음이 사라진 뒤 잡소리(약한 신호)를 pitch 로 안 잡아서
+                //   바늘이 마지막 위치에 머문다.
+                if (rms < 0.02) return -1;
 
                 let r1 = 0, r2 = SIZE - 1, thres = 0.2;
                 for (let i = 0; i < SIZE / 2; i++) if (Math.abs(buf[i]) < thres) { r1 = i; break; }
@@ -10421,12 +10424,12 @@
                     const freqEl = document.getElementById('tunerFreq');
                     const needleEl = document.getElementById('tunerNeedle');
 
-                    needleEl.style.transition = 'left 120ms ease-out, background 150ms ease-out, box-shadow 150ms ease-out';
+                    needleEl.style.transition = 'left 200ms ease-out, background 150ms ease-out, box-shadow 150ms ease-out';
 
                     let smoothedCents = 0;
                     let smoothedFreq = 0;
                     let hasValue = false;
-                    const SMOOTHING = 0.12;
+                    const SMOOTHING = 0.06;   // 낮을수록 바늘이 천천히 부드럽게 움직임
 
                     // ─── 튜닝 완료 표시 ───
                     //   한 줄이 in-tune 존(±8c)에 ~0.5초 머무르면 그 줄을 '튜닝됨'으로 영구 표시.
