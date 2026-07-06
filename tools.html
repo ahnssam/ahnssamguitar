@@ -7511,7 +7511,9 @@
         .lp-foot { text-align: center; font-size: 11px; color: #55625c; }
         /* 인쇄용 마디 줄 — 화면과 같은 4열이지만 flex 줄이라 페이지 경계에서 줄 단위로 넘어감 */
         .lp-chart .lp-row { display: flex; gap: 0.35rem; margin-bottom: 0.35rem; break-inside: avoid; page-break-inside: avoid; }
-        .lp-chart .lp-row > .loop-cell { flex: 1 1 0; min-width: 0; margin-top: 0; break-inside: avoid; }
+        .lp-chart .lp-row > .loop-cell { flex: 1 1 0; min-width: 0; break-inside: avoid; }
+        /* 송폼 라벨 줄은 위 공간(margin-top) 유지 → 화면처럼 라벨이 마디 위에 뜸 */
+        .lp-chart .lp-row.lp-row-sf { margin-top: 26px; }
         .lp-chart .loop-cell-half.empty { visibility: hidden; }   /* 빈 '+' 칸 숨김 */
         .lp-chart .loop-cell-num:hover { background: transparent; color: inherit; }
         #loopPrintArea { display: none; }
@@ -15563,9 +15565,12 @@
                 });
                 var row = null;
                 cells.forEach(function(cell, idx) {
+                    // loop-row-spaced(셀 margin)는 제거하고, 대신 줄 단위로 lp-row-sf 로 위 공간 부여
                     cell.classList.remove('range-start', 'range-end', 'in-range', 'loop-row-spaced', 'playing');
                     if (idx % 4 === 0) { row = document.createElement('div'); row.className = 'lp-row'; chart.appendChild(row); }
                     row.appendChild(cell);
+                    // 이 줄에 송폼 라벨이 있으면 줄 위에 여백 → 라벨이 마디 위에 뜨게
+                    if (cell.classList.contains('has-songform')) row.classList.add('lp-row-sf');
                 });
                 return chart;
             }
