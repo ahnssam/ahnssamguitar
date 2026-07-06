@@ -6066,7 +6066,10 @@
         .loop-mypreset-item.filled:hover { background: rgba(82,168,114,0.18); }
         .loop-mypreset-item.empty { opacity: 0.5; }
         .loop-mp-num { width: 22px; height: 22px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; background: var(--green-deep,#2a6b4a); color: #fff; border-radius: 50%; font-size: 0.75rem; font-weight: 700; }
-        .loop-mp-name { flex: 1; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .loop-mp-name { flex: 0 1 auto; max-width: 60%; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        /* 제목 오른쪽에 작게 표시되는 아티스트명 */
+        .loop-mp-artist { flex: 1 1 auto; min-width: 0; font-size: 0.78rem; color: rgba(26,36,33,0.5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        :root[data-theme="dark"] .loop-mp-artist { color: rgba(232,240,236,0.5); }
         .loop-mp-edit { background: none; border: none; color: rgba(42,107,74,0.7); cursor: pointer; padding: 0.3rem; font-size: 0.8rem; }
         .loop-mp-edit:hover { color: var(--green-deep); }
         :root[data-theme="dark"] .loop-mp-edit { color: rgba(180,230,200,0.7); }
@@ -14049,7 +14052,7 @@
                 if (!p) return;
                 // 어떤 프리셋을 새로 불러오면 '저장' 자동 대상은 일단 해제.
                 //   (사용자 슬롯에서 불러온 경우엔 호출부에서 다시 지정)
-                _loopSavedSlot = null; _loopSavedName = null;
+                _loopSavedSlot = null; _loopSavedName = null; _loopSavedArtist = null;
                 var _sb0 = document.getElementById('loopSavePresetBtn');
                 if (_sb0) _sb0.title = '저장';
                 _loopActivePresetId = p.id;
@@ -14174,7 +14177,7 @@
                 if (btnAs) btnAs.disabled = !has;
             }
             // 현재 상태 → 프리셋 객체 (applyLoopPreset 과 호환되는 형태)
-            function serializeLoopState(name) {
+            function serializeLoopState(name, artist) {
                 var sp = {};
                 if (_loopActivePresetSequencer && typeof _loopActivePresetSequencer === 'object') {
                     try { sp = JSON.parse(JSON.stringify(_loopActivePresetSequencer)); } catch (e) { sp = {}; }
@@ -14188,6 +14191,7 @@
                 sp.pianoCustom = (loopPianoStyle === 'custom');
                 return {
                     name: name || '',
+                    artist: artist || '',
                     bpm: bpm,
                     bars: loopBars,
                     rhythm: loopRhythm,
@@ -14259,26 +14263,30 @@
                 };
             }
 
-            // 사용자 프리셋 불러오기 (5칸 배열, 없으면 null)
+            // 사용자 프리셋 불러오기 (10칸 배열, 없으면 null)
+            var LOOP_PRESET_SLOTS = 10;
             async function loadUserPresets() {
                 var client = loopAuthClient(); var user = loopCurrentUser();
-                var slots = [null, null, null, null, null];
+                var slots = new Array(LOOP_PRESET_SLOTS).fill(null);
                 if (!client || !user) return slots;
                 try {
                     var res = await client.from('user_presets').select('slot,name,preset').eq('user_id', user.id);
-                    if (res.data) res.data.forEach(function(r) { if (r.slot >= 1 && r.slot <= 5) slots[r.slot - 1] = r; });
+                    if (res.data) res.data.forEach(function(r) { if (r.slot >= 1 && r.slot <= LOOP_PRESET_SLOTS) slots[r.slot - 1] = r; });
                 } catch (e) {}
                 return slots;
             }
+            // 프리셋에서 아티스트 읽기 (preset JSON 안에 저장)
+            function _presetArtist(s) { return (s && s.preset && s.preset.artist) ? String(s.preset.artist) : ''; }
 
             // 현재 작업 중인(불러왔거나 방금 저장한) 사용자 프리셋 슬롯/이름.
             //   저장 버튼은 여기에 같은 이름으로 자동 덮어쓰기. 없으면 슬롯 선택 모달.
-            var _loopSavedSlot = null, _loopSavedName = null;
-            // 검색창에 현재 불러온/저장한 프리셋의 "번호. 이름" 을 표시 (없으면 이름만/비움)
-            function _loopSetPresetLabel(slot, name) {
+            var _loopSavedSlot = null, _loopSavedName = null, _loopSavedArtist = null;
+            // 검색창에 현재 프리셋의 "번호. 아티스트 - 곡제목" 표시 (아티스트 없으면 "번호. 곡제목")
+            function _loopSetPresetLabel(slot, name, artist) {
                 var s = document.getElementById('loopPresetSearch');
                 if (!s) return;
-                s.value = (slot ? (slot + '. ') : '') + (name || '');
+                var t = (artist ? (artist + ' - ') : '') + (name || '');
+                s.value = (slot ? (slot + '. ') : '') + t;
             }
             // 저장 버튼 아래 드롭다운 (저장 / 다른 이름으로 저장) 열고 닫기
             function _closeSaveMenu() {
@@ -14310,7 +14318,7 @@
                 if (!hasLoopInput()) return;
                 if (!loopCurrentUser()) { loopLoginGate(); return; }
                 if (_loopSavedSlot) {
-                    doSaveUserPreset(_loopSavedSlot, _loopSavedName || ('프리셋 ' + _loopSavedSlot), null);
+                    doSaveUserPreset(_loopSavedSlot, _loopSavedName || ('프리셋 ' + _loopSavedSlot), _loopSavedArtist || '', null);
                 } else {
                     openSavePresetModal();
                 }
@@ -14324,36 +14332,49 @@
             };
             async function openSavePresetModal() {
                 var slots = await loadUserPresets();
-                var slotBtns = '';
-                for (var i = 1; i <= 5; i++) {
+                var items = '';
+                for (var i = 1; i <= LOOP_PRESET_SLOTS; i++) {
                     var s = slots[i - 1];
-                    var label = s ? ('<b>' + i + '</b><span>' + _escHtml(s.name) + '</span>') : ('<b>' + i + '</b><span>비어있음</span>');
-                    slotBtns += '<button type="button" class="loop-slot-btn' + (s ? ' filled' : '') + '" data-slot="' + i + '">' + label + '</button>';
+                    if (s) {
+                        var ar = _presetArtist(s);
+                        items += '<div class="loop-mypreset-item filled" data-save-slot="' + i + '">' +
+                            '<span class="loop-mp-num">' + i + '</span>' +
+                            '<span class="loop-mp-name">' + _escHtml(s.name) + '</span>' +
+                            (ar ? '<span class="loop-mp-artist">' + _escHtml(ar) + '</span>' : '') +
+                            '</div>';
+                    } else {
+                        items += '<div class="loop-mypreset-item empty" data-save-slot="' + i + '">' +
+                            '<span class="loop-mp-num">' + i + '</span><span class="loop-mp-name">비어있음</span></div>';
+                    }
                 }
                 var ov = loopEnsureModal('loopSaveModal',
                     '<div class="loop-modal-title">내 프리셋 저장</div>' +
-                    '<input type="text" id="loopPresetName" class="loop-modal-input" placeholder="프리셋 이름" maxlength="30">' +
+                    '<input type="text" id="loopPresetName" class="loop-modal-input" placeholder="곡 제목" maxlength="40">' +
+                    '<input type="text" id="loopPresetArtist" class="loop-modal-input" placeholder="아티스트 (선택)" maxlength="40" style="margin-top:8px;">' +
                     '<div class="loop-modal-label">저장할 칸 선택</div>' +
-                    '<div class="loop-slot-grid">' + slotBtns + '</div>' +
+                    '<div class="loop-mypreset-list">' + items + '</div>' +
                     '<div class="loop-modal-actions"><button type="button" class="loop-modal-btn ghost" data-close>취소</button></div>');
                 ov.classList.add('open');
                 var nameInput = document.getElementById('loopPresetName');
-                if (nameInput) { nameInput.value = ''; setTimeout(function(){ nameInput.focus(); }, 50); }
-                ov.querySelectorAll('.loop-slot-btn').forEach(function(btn) {
+                var artistInput = document.getElementById('loopPresetArtist');
+                if (nameInput) { nameInput.value = _loopSavedName || ''; setTimeout(function(){ nameInput.focus(); }, 50); }
+                if (artistInput) { artistInput.value = _loopSavedArtist || ''; }
+                ov.querySelectorAll('[data-save-slot]').forEach(function(btn) {
                     btn.addEventListener('click', function() {
-                        var slot = parseInt(btn.getAttribute('data-slot'), 10);
-                        var nm = (document.getElementById('loopPresetName').value || '').trim();
+                        var slot = parseInt(btn.getAttribute('data-save-slot'), 10);
+                        var nm = (nameInput.value || '').trim();
+                        var ar = (artistInput.value || '').trim();
                         if (!nm) { nm = '프리셋 ' + slot; }
                         var existing = slots[slot - 1];
                         if (existing) {
-                            loopConfirmOverwrite(slot, nm, existing.name, ov);
+                            loopConfirmOverwrite(slot, nm, ar, existing.name, ov);
                         } else {
-                            doSaveUserPreset(slot, nm, ov);
+                            doSaveUserPreset(slot, nm, ar, ov);
                         }
                     });
                 });
             }
-            function loopConfirmOverwrite(slot, name, oldName, parentOv) {
+            function loopConfirmOverwrite(slot, name, artist, oldName, parentOv) {
                 var ov = loopEnsureModal('loopOverwriteModal',
                     '<div class="loop-modal-title">덮어쓸까요?</div>' +
                     '<div class="loop-modal-msg">' + slot + '번 칸에 "<b>' + _escHtml(oldName) + '</b>"가 이미 있어요.<br>"<b>' + _escHtml(name) + '</b>"로 덮어쓸까요?</div>' +
@@ -14362,24 +14383,25 @@
                 ov.classList.add('open');
                 document.getElementById('loopOwYes').onclick = function() {
                     ov.classList.remove('open');
-                    doSaveUserPreset(slot, name, parentOv);
+                    doSaveUserPreset(slot, name, artist, parentOv);
                 };
             }
-            async function doSaveUserPreset(slot, name, ov) {
+            async function doSaveUserPreset(slot, name, artist, ov) {
                 var client = loopAuthClient(); var user = loopCurrentUser();
                 if (!client || !user) { loopLoginGate(); return; }
-                var preset = serializeLoopState(name);
+                artist = artist || '';
+                var preset = serializeLoopState(name, artist);
                 try {
                     var res = await client.from('user_presets').upsert({
                         user_id: user.id, slot: slot, name: name, preset: preset, updated_at: new Date().toISOString()
                     }, { onConflict: 'user_id,slot' });
                     if (res.error) throw res.error;
                     if (ov) ov.classList.remove('open');
-                    // 이후 '저장' 버튼은 이 슬롯/이름으로 자동 덮어쓰기
-                    _loopSavedSlot = slot; _loopSavedName = name;
+                    // 이후 '저장' 버튼은 이 슬롯/이름/아티스트로 자동 덮어쓰기
+                    _loopSavedSlot = slot; _loopSavedName = name; _loopSavedArtist = artist;
                     var _sb = document.getElementById('loopSavePresetBtn');
                     if (_sb) _sb.title = '저장 ("' + name + '" 덮어쓰기)';
-                    _loopSetPresetLabel(slot, name);   // 검색창에 "번호. 이름" 표시
+                    _loopSetPresetLabel(slot, name, artist);   // 검색창에 "번호. 아티스트 - 곡제목"
                     loopToast('저장이 완료되었습니다');
                 } catch (e) {
                     loopToast('저장 실패 — 잠시 후 다시 시도해주세요');
@@ -14400,11 +14422,13 @@
                 var listEl = document.getElementById('loopMyPresetList');
                 if (!listEl) return;
                 var html = '';
-                for (var i = 1; i <= 5; i++) {
+                for (var i = 1; i <= LOOP_PRESET_SLOTS; i++) {
                     var s = slots[i - 1];
                     if (s) {
+                        var ar = _presetArtist(s);
                         html += '<div class="loop-mypreset-item filled" data-load-slot="' + i + '">' +
                             '<span class="loop-mp-num">' + i + '</span><span class="loop-mp-name">' + _escHtml(s.name) + '</span>' +
+                            (ar ? '<span class="loop-mp-artist">' + _escHtml(ar) + '</span>' : '') +
                             '<button type="button" class="loop-mp-edit" data-edit-slot="' + i + '" aria-label="이름 수정"><i class="fas fa-pen"></i></button>' +
                             '<button type="button" class="loop-mp-del" data-del-slot="' + i + '" aria-label="삭제"><i class="fas fa-trash"></i></button></div>';
                     } else {
@@ -14417,7 +14441,7 @@
                         if (e.target.closest('[data-del-slot]') || e.target.closest('[data-edit-slot]') || e.target.closest('.loop-mp-name-input')) return;
                         var slot = parseInt(item.getAttribute('data-load-slot'), 10);
                         var s = slots[slot - 1];
-                        if (s && s.preset) { applyLoopPreset(s.preset); _loopSavedSlot = s.slot; _loopSavedName = s.name; var _sb2 = document.getElementById('loopSavePresetBtn'); if (_sb2) _sb2.title = '저장 ("' + s.name + '" 덮어쓰기)'; _loopSetPresetLabel(s.slot, s.name); saveLoopDraft(); ov.classList.remove('open'); loopToast('"' + s.name + '" 불러옴'); }
+                        if (s && s.preset) { applyLoopPreset(s.preset); _loopSavedSlot = s.slot; _loopSavedName = s.name; _loopSavedArtist = _presetArtist(s); var _sb2 = document.getElementById('loopSavePresetBtn'); if (_sb2) _sb2.title = '저장 ("' + s.name + '" 덮어쓰기)'; _loopSetPresetLabel(s.slot, s.name, _loopSavedArtist); saveLoopDraft(); ov.classList.remove('open'); loopToast('"' + s.name + '" 불러옴'); }
                     });
                 });
                 // 이름 수정 (연필) — 인라인 편집 후 서버에 반영
@@ -15879,9 +15903,10 @@
                 var aEl = document.getElementById('lpArtist');
                 var cEl = document.getElementById('lpCapo');
                 var prev = document.getElementById('lpPreview');
-                // 제목 기본값 = 현재 프리셋 이름 (있으면). 없으면 검색창 텍스트("N. 이름"이면 번호 제거)
-                var sName = _loopSavedName || (((document.getElementById('loopPresetSearch') || {}).value || '').replace(/^\s*\d+\.\s*/, ''));
+                // 제목·아티스트 기본값 = 현재 프리셋 값 (저장/불러온 경우). 없으면 검색창 텍스트에서 추출.
+                var sName = _loopSavedName || (((document.getElementById('loopPresetSearch') || {}).value || '').replace(/^\s*\d+\.\s*/, '').replace(/^.*\s-\s/, ''));
                 if (sName) tEl.value = sName;
+                if (_loopSavedArtist) aEl.value = _loopSavedArtist;
                 function refresh() {
                     prev.innerHTML = '';
                     var pages = _buildPages(tEl.value, aEl.value, cEl.value);
@@ -16189,7 +16214,7 @@
                 _loopActivePresetSequencer = null;
                 _loopActivePresetId = null;
                 _loopActivePresetRhythm = null;
-                _loopSavedSlot = null; _loopSavedName = null;
+                _loopSavedSlot = null; _loopSavedName = null; _loopSavedArtist = null;
                 var _sbR = document.getElementById('loopSavePresetBtn');
                 if (_sbR) _sbR.title = '저장';
                 setLoopMeasureLen(1);
