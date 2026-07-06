@@ -7532,6 +7532,9 @@
             width: 210mm; min-height: 297mm; box-sizing: border-box;
             padding: 15mm 12mm; position: relative; background: #fff; overflow: hidden;
         }
+        /* 유도리 압축: 마지막 한 줄을 끌어올리려 제목 위·헤더 아래 여백을 줄인 1페이지 */
+        .lp-page.lp-compact { padding-top: 4mm; }
+        .lp-page.lp-compact .lp-head { margin-bottom: 6px; }
         /* 카포(왼쪽) · 아티스트(오른쪽) 한 줄 */
         .lp-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-top: 4px; }
         .lp-capo { text-align: left; font-size: 30px; font-weight: 700; color: #55625c;
@@ -15676,25 +15679,33 @@
                     var mt = parseFloat(getComputedStyle(el).marginTop) || 0;
                     return { el: el, top: el.offsetTop - mt, bottom: el.offsetTop + el.offsetHeight };
                 });
-                // 그리디 페이지 분할
-                var pagesRows = [], cur = [];
-                var start = rows.length ? rows[0].top : 0;
-                var cap = PAGE_CONTENT - headH - SAFETY;   // 1페이지는 머리글만큼 적게
-                for (var i = 0; i < rows.length; i++) {
-                    var r = rows[i];
-                    if (cur.length && (r.bottom - start) > cap) {
-                        pagesRows.push(cur); cur = []; start = r.top; cap = PAGE_CONTENT - SAFETY - RUNHEAD_SPACE;
-                    }
-                    cur.push(r.el);
-                }
-                if (cur.length) pagesRows.push(cur);
                 document.body.removeChild(meas);
+                // 그리디 페이지 분할 헬퍼 (cap1=1페이지 용량, capN=이후 페이지 용량)
+                function paginate(cap1, capN) {
+                    var pr = [], cur = [], start = rows.length ? rows[0].top : 0, cap = cap1;
+                    for (var i = 0; i < rows.length; i++) {
+                        var r = rows[i];
+                        if (cur.length && (r.bottom - start) > cap) { pr.push(cur); cur = []; start = r.top; cap = capN; }
+                        cur.push(r.el);
+                    }
+                    if (cur.length) pr.push(cur);
+                    return pr;
+                }
+                var pagesRows = paginate(PAGE_CONTENT - headH - SAFETY, PAGE_CONTENT - SAFETY - RUNHEAD_SPACE);
+                // 유도리: 마지막 페이지가 딱 1줄만 넘친 경우 → 1페이지의 제목 위 패딩(15→4mm)과
+                //   헤더 아래 여백(22→6px)을 줄여 용량을 키워서 그 한 줄을 끌어올림. (도움 될 때만 적용)
+                var compact = false;
+                if (pagesRows.length >= 2 && pagesRows[pagesRows.length - 1].length <= 1) {
+                    var compCap1 = (297 - 4 - 15) * K - (headH - 16);
+                    var comp = paginate(compCap1, PAGE_CONTENT - SAFETY - RUNHEAD_SPACE);
+                    if (comp.length < pagesRows.length) { compact = true; pagesRows = comp; }
+                }
                 if (!pagesRows.length) pagesRows.push([]);
                 var total = pagesRows.length;
                 var pages = [];
                 for (var p = 0; p < total; p++) {
                     var pg = document.createElement('div');
-                    pg.className = 'lp-page';
+                    pg.className = 'lp-page' + (compact && p === 0 ? ' lp-compact' : '');
                     pg.appendChild(_buildWatermark());           // 각 페이지 뒤 워터마크
                     if (p === 0) {
                         pg.appendChild(_printHead(title, artist, capo));
@@ -15732,18 +15743,28 @@
                 setTimeout(function() { try { window.print(); } catch (e) {} }, 120);
                 try { gtag('event', 'loop_print'); } catch (e) {}
             }
-            // html2canvas 를 필요할 때 한 번만 로드
-            function _ensureHtml2canvas() {
+            // 외부 스크립트(html2canvas / JSZip)를 필요할 때 한 번만 로드
+            function _loadScriptOnce(src, globalName) {
                 return new Promise(function(resolve, reject) {
-                    if (window.html2canvas) { resolve(); return; }
+                    if (window[globalName]) { resolve(); return; }
                     var s = document.createElement('script');
-                    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                    s.src = src;
                     s.onload = function() { resolve(); };
-                    s.onerror = function() { reject(new Error('html2canvas load fail')); };
+                    s.onerror = function() { reject(new Error(globalName + ' load fail')); };
                     document.head.appendChild(s);
                 });
             }
-            // 현재 악보를 페이지별 이미지(PNG/JPEG)로 저장. 실제 A4 크기로 캡처(고해상도).
+            function _ensureHtml2canvas() { return _loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', 'html2canvas'); }
+            function _ensureJSZip() { return _loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js', 'JSZip'); }
+            // 파일명 = "아티스트 - 곡명" (아티스트 없으면 곡명만). 파일명 금지문자 정리.
+            function _loopFileBase(title, artist) {
+                var t = (title || '').trim(), ar = (artist || '').trim();
+                var name = (ar ? (ar + ' - ') : '') + (t || '악보');
+                name = name.replace(/[\\/:*?"<>|\n\r\t]+/g, '_').replace(/\s+/g, ' ').trim();
+                return name || '악보';
+            }
+            // 현재 악보를 이미지로 저장. 실제 A4 크기로 고해상도 캡처.
+            //   1페이지면 이미지 1장, 2페이지 이상이면 모든 페이지를 zip 으로 묶어 저장.
             async function _saveLoopImage(fmt, title, artist, capo) {
                 loopToast('이미지 만드는 중…');
                 try {
@@ -15753,19 +15774,34 @@
                     holder.style.cssText = 'position:fixed;left:-10000px;top:0;background:#fff;z-index:-1;';
                     pages.forEach(function(p) { holder.appendChild(p); });
                     document.body.appendChild(holder);
-                    var base = ((title || '악보').trim() || '악보').replace(/[\\/:*?"<>|]+/g, '_');
+                    var base = _loopFileBase(title, artist);
                     var isJpg = (fmt === 'jpeg');
                     var mime = isJpg ? 'image/jpeg' : 'image/png';
+                    var ext = isJpg ? '.jpg' : '.png';
+                    var imgs = [];
                     for (var i = 0; i < pages.length; i++) {
                         var canvas = await window.html2canvas(pages[i], { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false });
-                        var url = canvas.toDataURL(mime, isJpg ? 0.92 : undefined);
-                        var a = document.createElement('a');
-                        a.href = url;
-                        a.download = base + (pages.length > 1 ? ('_' + (i + 1)) : '') + (isJpg ? '.jpg' : '.png');
-                        document.body.appendChild(a); a.click(); a.remove();
+                        imgs.push(canvas.toDataURL(mime, isJpg ? 0.92 : undefined));
                     }
                     document.body.removeChild(holder);
-                    loopToast(pages.length > 1 ? (pages.length + '장을 이미지로 저장했어요') : '이미지로 저장했어요');
+                    if (imgs.length === 1) {
+                        var a = document.createElement('a');
+                        a.href = imgs[0]; a.download = base + ext;
+                        document.body.appendChild(a); a.click(); a.remove();
+                        loopToast('이미지로 저장했어요');
+                    } else {
+                        // 여러 장 → zip 으로 묶기
+                        await _ensureJSZip();
+                        var zip = new window.JSZip();
+                        imgs.forEach(function(u, idx) { zip.file(base + '_' + (idx + 1) + ext, u.split(',')[1], { base64: true }); });
+                        var blob = await zip.generateAsync({ type: 'blob' });
+                        var zurl = URL.createObjectURL(blob);
+                        var za = document.createElement('a');
+                        za.href = zurl; za.download = base + '.zip';
+                        document.body.appendChild(za); za.click(); za.remove();
+                        setTimeout(function() { URL.revokeObjectURL(zurl); }, 4000);
+                        loopToast(pages.length + '장을 zip 으로 저장했어요');
+                    }
                     try { gtag('event', 'loop_save_image', { fmt: fmt, pages: pages.length }); } catch (e) {}
                 } catch (e) {
                     loopToast('이미지 저장 실패 — 잠시 후 다시 시도해주세요');
