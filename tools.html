@@ -14189,6 +14189,12 @@
             // 현재 작업 중인(불러왔거나 방금 저장한) 사용자 프리셋 슬롯/이름.
             //   저장 버튼은 여기에 같은 이름으로 자동 덮어쓰기. 없으면 슬롯 선택 모달.
             var _loopSavedSlot = null, _loopSavedName = null;
+            // 검색창에 현재 불러온/저장한 프리셋의 "번호. 이름" 을 표시 (없으면 이름만/비움)
+            function _loopSetPresetLabel(slot, name) {
+                var s = document.getElementById('loopPresetSearch');
+                if (!s) return;
+                s.value = (slot ? (slot + '. ') : '') + (name || '');
+            }
             // 저장 버튼 아래 드롭다운 (저장 / 다른 이름으로 저장) 열고 닫기
             function _closeSaveMenu() {
                 var menu = document.getElementById('loopSaveMenu');
@@ -14288,7 +14294,8 @@
                     _loopSavedSlot = slot; _loopSavedName = name;
                     var _sb = document.getElementById('loopSavePresetBtn');
                     if (_sb) _sb.title = '저장 ("' + name + '" 덮어쓰기)';
-                    loopToast(slot + '번 칸에 "' + name + '" 저장됨');
+                    _loopSetPresetLabel(slot, name);   // 검색창에 "번호. 이름" 표시
+                    loopToast('저장이 완료되었습니다');
                 } catch (e) {
                     loopToast('저장 실패 — 잠시 후 다시 시도해주세요');
                 }
@@ -14325,7 +14332,7 @@
                         if (e.target.closest('[data-del-slot]') || e.target.closest('[data-edit-slot]') || e.target.closest('.loop-mp-name-input')) return;
                         var slot = parseInt(item.getAttribute('data-load-slot'), 10);
                         var s = slots[slot - 1];
-                        if (s && s.preset) { applyLoopPreset(s.preset); _loopSavedSlot = s.slot; _loopSavedName = s.name; var _sb2 = document.getElementById('loopSavePresetBtn'); if (_sb2) _sb2.title = '저장 ("' + s.name + '" 덮어쓰기)'; saveLoopDraft(); ov.classList.remove('open'); loopToast('"' + s.name + '" 불러옴'); }
+                        if (s && s.preset) { applyLoopPreset(s.preset); _loopSavedSlot = s.slot; _loopSavedName = s.name; var _sb2 = document.getElementById('loopSavePresetBtn'); if (_sb2) _sb2.title = '저장 ("' + s.name + '" 덮어쓰기)'; _loopSetPresetLabel(s.slot, s.name); saveLoopDraft(); ov.classList.remove('open'); loopToast('"' + s.name + '" 불러옴'); }
                     });
                 });
                 // 이름 수정 (연필) — 인라인 편집 후 서버에 반영
@@ -15598,7 +15605,8 @@
                 var tEl = document.getElementById('lpTitle');
                 var aEl = document.getElementById('lpArtist');
                 var prev = document.getElementById('lpPreview');
-                var sName = (document.getElementById('loopPresetSearch') || {}).value || '';
+                // 제목 기본값 = 현재 프리셋 이름 (있으면). 없으면 검색창 텍스트("N. 이름"이면 번호 제거)
+                var sName = _loopSavedName || (((document.getElementById('loopPresetSearch') || {}).value || '').replace(/^\s*\d+\.\s*/, ''));
                 if (sName) tEl.value = sName;
                 function refresh() {
                     prev.innerHTML = '';
