@@ -1851,6 +1851,10 @@
                     <button class="bd-btn bd-btn-ghost" id="testBtn">
                         <i class="fas fa-external-link-alt"></i> 반주 페이지로 열기
                     </button>
+                    <button class="bd-btn bd-btn-ghost" id="importBtn" title="반주 페이지에서 내보낸 파일(.json)을 열어 이 폼에 채웁니다">
+                        <i class="fas fa-file-import"></i> 파일 열기
+                    </button>
+                    <input type="file" id="importFile" accept=".json,application/json" style="display:none;">
                     <button class="bd-btn bd-btn-ghost" id="duplicateBtn" style="display:none;" title="이 프리셋의 모든 설정을 클립보드에 복사 — 새 프리셋에서 붙여넣기 가능">
                         <i class="fas fa-copy"></i> 복제
                     </button>
@@ -3915,6 +3919,28 @@
                 $('previewPlayBtn').onclick = togglePreview;
                 $('duplicateBtn').onclick = duplicateCurrent;
                 $('pasteBtn').onclick = pasteFromClipboard;
+                // 파일 열기 — 반주 페이지에서 내보낸 .json 을 새 프리셋 폼에 채움
+                $('importBtn').onclick = function() {
+                    navigateWithConfirm(function() { var fi = $('importFile'); fi.value = ''; fi.click(); });
+                };
+                $('importFile').onchange = function(e) {
+                    var f = e.target.files && e.target.files[0];
+                    if (!f) return;
+                    var reader = new FileReader();
+                    reader.onload = function() {
+                        var obj;
+                        try { obj = JSON.parse(reader.result); } catch (err) { obj = null; }
+                        if (!obj || typeof obj !== 'object' || (!obj.chords_a && !obj.chords_b)) {
+                            showFeedback('파일을 읽지 못했어요 — 올바른 프리셋 파일(.json)인지 확인하세요', 'error');
+                            return;
+                        }
+                        newPreset();                 // 새 프리셋 모드(저장 시 새 항목으로 추가)
+                        presetClipboard = obj;
+                        pasteFromClipboard();        // 곡명·아티스트·BPM·코드·리듬 등 폼에 채움
+                        showFeedback('파일을 불러왔어요 ✓ — 장르·난이도 확인 후 [저장]을 누르면 기본 프리셋에 추가됩니다', 'success');
+                    };
+                    reader.readAsText(f);
+                };
 
                 // 코드 입력 모드 토글 (직접입력 / 픽커)
                 document.querySelectorAll('.bd-input-mode-btn').forEach(function(b) {

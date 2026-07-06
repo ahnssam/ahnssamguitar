@@ -8474,6 +8474,7 @@
                             <div class="loop-save-menu" id="loopSaveMenu" hidden>
                                 <button type="button" data-action="openSavePreset">저장</button>
                                 <button type="button" data-action="openSaveAsPreset">다른 이름으로 저장</button>
+                                <button type="button" id="loopExportMenuBtn" data-action="openExportPreset" hidden>파일로 내보내기</button>
                             </div>
                         </div>
                         <button type="button" class="loop-preset-mini" id="loopPrintBtn" data-action="openPrintDialog" aria-label="악보 인쇄" title="악보 인쇄"><i class="fas fa-print"></i></button>
@@ -14300,10 +14301,18 @@
                 var wrap = document.querySelector('.loop-save-wrap');
                 if (wrap && !wrap.contains(e.target)) _closeSaveMenu();
             }
+            // 관리자(파일 내보내기 노출 대상) — 특정 계정만
+            function _loopIsAdmin() {
+                var u = loopCurrentUser();
+                return !!(u && String(u.email || '').toLowerCase() === 'steveq2568@gmail.com');
+            }
             window.toggleSaveMenu = function() {
                 var menu = document.getElementById('loopSaveMenu');
                 var btn = document.getElementById('loopSavePresetBtn');
                 if (!menu) return;
+                // '파일로 내보내기'는 관리자 계정에게만 표시
+                var exp = document.getElementById('loopExportMenuBtn');
+                if (exp) { if (_loopIsAdmin()) exp.removeAttribute('hidden'); else exp.setAttribute('hidden', ''); }
                 if (menu.hasAttribute('hidden')) {
                     menu.removeAttribute('hidden');
                     if (btn) btn.setAttribute('aria-expanded', 'true');
@@ -14329,6 +14338,40 @@
                 if (!hasLoopInput()) return;
                 if (!loopCurrentUser()) { loopLoginGate(); return; }
                 openSavePresetModal();
+            };
+            // 파일로 내보내기 — 현재 코드 진행을 JSON 파일(아티스트 - 곡명.json)로 저장.
+            //   빌더(presets-builder) 페이지에서 열어 기본 프리셋으로 추가할 수 있음. 로그인 불필요.
+            window.openExportPreset = function() {
+                _closeSaveMenu();
+                if (!_loopIsAdmin()) { loopToast('권한이 없습니다'); return; }   // 관리자 전용
+                if (!hasLoopInput()) { loopToast('먼저 코드를 입력해주세요'); return; }
+                var ov = loopEnsureModal('loopExportModal',
+                    '<div class="loop-modal-title">파일로 내보내기</div>' +
+                    '<div class="loop-modal-msg">코드 진행을 파일로 저장합니다.<br>빌더 페이지에서 이 파일을 열면 기본 프리셋으로 추가할 수 있어요.</div>' +
+                    '<input type="text" id="loopExpName" class="loop-modal-input" placeholder="곡 제목" maxlength="40">' +
+                    '<input type="text" id="loopExpArtist" class="loop-modal-input" placeholder="아티스트 (선택)" maxlength="40" style="margin-top:8px;">' +
+                    '<div class="loop-modal-actions"><button type="button" class="loop-modal-btn ghost" data-close>취소</button>' +
+                    '<button type="button" class="loop-modal-btn primary" id="loopExpGo">파일 저장</button></div>');
+                ov.classList.add('open');
+                var nEl = document.getElementById('loopExpName');
+                var aEl = document.getElementById('loopExpArtist');
+                if (nEl) { nEl.value = _loopSavedName || ''; setTimeout(function() { try { nEl.focus(); } catch (e) {} }, 50); }
+                if (aEl) aEl.value = _loopSavedArtist || '';
+                document.getElementById('loopExpGo').onclick = function() {
+                    var nm = (nEl.value || '').trim(), ar = (aEl.value || '').trim();
+                    var data = serializeLoopState(nm, ar);
+                    data.difficulty = 0; data.genre = '';        // 빌더 폼 기본값
+                    data._format = 'ahnssam-preset';             // 파일 식별용 표식
+                    var base = _loopFileBase(nm || '무제', ar);
+                    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a'); a.href = url; a.download = base + '.json';
+                    document.body.appendChild(a); a.click(); a.remove();
+                    setTimeout(function() { URL.revokeObjectURL(url); }, 3000);
+                    ov.classList.remove('open');
+                    loopToast('파일로 저장했어요');
+                    try { gtag('event', 'loop_export_preset'); } catch (e) {}
+                };
             };
             async function openSavePresetModal() {
                 var slots = await loadUserPresets();
