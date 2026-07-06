@@ -7544,6 +7544,10 @@
         /* 2단계: 줄 간격도 좁혀 두 줄까지 한 페이지에 들어오게 */
         .lp-chart.lp-tight .lp-row { margin-bottom: 0.12rem; }
         .lp-chart.lp-tight .lp-row.lp-row-sf { margin-top: 30px; }
+        /* 3단계: 줄 간격 + 마디(셀) 세로 크기까지 축소 — 마지막 수단 */
+        .lp-chart.lp-tight2 .lp-row { margin-bottom: 0.1rem; }
+        .lp-chart.lp-tight2 .lp-row.lp-row-sf { margin-top: 26px; }
+        .lp-chart.lp-tight2 .loop-cell { min-height: 46px; }
         /* 카포(왼쪽) · 아티스트(오른쪽) 한 줄 */
         .lp-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-top: 4px; }
         .lp-capo { text-align: left; font-size: 30px; font-weight: 700; color: #55625c;
@@ -15699,8 +15703,11 @@
                 }
                 var rows = _measRows();                       // 기본 줄 간격
                 chart.classList.add('lp-tight');
-                var rowsTight = _measRows();                  // 좁힌 줄 간격 (2단계용)
+                var rowsTight = _measRows();                  // 줄 간격만 좁힘 (2단계)
                 chart.classList.remove('lp-tight');
+                chart.classList.add('lp-tight2');
+                var rowsVeryTight = _measRows();              // 줄 간격 + 마디 세로 축소 (3단계)
+                chart.classList.remove('lp-tight2');
                 document.body.removeChild(meas);
                 // 그리디 페이지 분할 헬퍼 (cap1=1페이지 용량, capN=이후 페이지 용량)
                 function paginate(rowsArr, cap1, capN) {
@@ -15715,20 +15722,25 @@
                 }
                 var capN = PAGE_CONTENT - SAFETY - RUNHEAD_SPACE;
                 var pagesRows = paginate(rows, PAGE_CONTENT - headH - SAFETY, capN);
-                var level = 0;   // 0=기본, 1=여백축소, 2=여백+폰트+줄간격 축소
-                // 유도리: 마지막 페이지가 1~2줄만 넘친 경우 → 여백(+폰트+줄간격)을 줄여 한 페이지로 끌어올림.
-                //   1단계(여백만)로 페이지 수가 줄면 그걸, 안 되면 2단계(폰트·줄간격까지)를 시도. 도움 될 때만 적용.
+                var level = 0;   // 0=기본, 1=여백, 2=여백+폰트+줄간격, 3=+마디 세로 축소
+                // 유도리: 마지막 페이지가 1~2줄만 넘친 경우 → 점점 강하게 줄여 한 페이지로 끌어올림.
+                //   1단계(여백) → 2단계(폰트·줄간격) → 3단계(마디 세로까지). 페이지 수가 실제로 줄 때 채택.
                 if (pagesRows.length >= 2 && pagesRows[pagesRows.length - 1].length <= 2) {
                     var comp1 = paginate(rows, (297 - 4 - 15) * K - headH1, capN);        // 위패딩15→4mm
                     if (comp1.length < pagesRows.length) { level = 1; pagesRows = comp1; }
                     else {
-                        var comp2 = paginate(rowsTight, (297 - 3 - 8) * K - headH2, capN); // 여백+폰트+줄간격 축소
+                        var comp2 = paginate(rowsTight, (297 - 3 - 8) * K - headH2, capN); // +폰트·줄간격
                         if (comp2.length < pagesRows.length) { level = 2; pagesRows = comp2; }
+                        else {
+                            var comp3 = paginate(rowsVeryTight, (297 - 3 - 8) * K - headH2, capN); // +마디 세로 축소
+                            if (comp3.length < pagesRows.length) { level = 3; pagesRows = comp3; }
+                        }
                     }
                 }
                 if (!pagesRows.length) pagesRows.push([]);
-                var pageCls = level === 1 ? ' lp-compact' : level === 2 ? ' lp-compact2' : '';
-                var headCls = level === 1 ? 'hc1' : level === 2 ? 'hc2' : '';
+                var pageCls = level === 1 ? ' lp-compact' : (level >= 2 ? ' lp-compact2' : '');
+                var headCls = level === 1 ? 'hc1' : (level >= 2 ? 'hc2' : '');
+                var chartTight = level === 2 ? ' lp-tight' : level === 3 ? ' lp-tight2' : '';
                 var total = pagesRows.length;
                 var pages = [];
                 for (var p = 0; p < total; p++) {
@@ -15746,7 +15758,7 @@
                         pg.appendChild(rh);
                     }
                     var ch = document.createElement('div');
-                    ch.className = 'lp-chart' + (level === 2 ? ' lp-tight' : '');
+                    ch.className = 'lp-chart' + chartTight;
                     if (p > 0) ch.style.marginTop = '8mm';    // 러닝헤더와 첫 마디줄 사이 간격
                     pagesRows[p].forEach(function(el) { ch.appendChild(el); });
                     pg.appendChild(ch);
