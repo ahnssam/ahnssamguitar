@@ -814,7 +814,7 @@
             min-height: 76px;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            /* overflow:hidden 제거 — 볼타/송폼 팝업·라벨이 마디 밖으로 나올 수 있게 */
         }
         .bd-loop-cell-num {
             position: absolute;
@@ -823,42 +823,47 @@
             font-size: 0.72rem;
             color: var(--text-light);
             font-weight: 700;
-            pointer-events: none;
+            cursor: pointer; z-index: 4;   /* 클릭 = 송폼(구성) 입력 */
         }
         .bd-loop-cell-halves {
             display: flex;
             flex: 1;
             margin-top: 1rem;
             min-height: 56px;
+            overflow: visible;   /* 긴 코드(Gb/Ab 등)가 옆 칸으로 흘러나오게 */
         }
+        /* 맨 오른쪽 열은 오른쪽 바깥으로 튀어나가지 않게만 클립 */
+        .bd-col-last .bd-loop-cell-halves { overflow: hidden; }
+        /* 한 칸(슬롯) — 투명 input(편집) + 위에 얹힌 disp(표시) 오버레이 */
+        .bd-half { position: relative; flex: 1 1 0; min-width: 0; display: flex; }
+        .bd-half + .bd-half { border-left: 1px solid rgba(42, 107, 74, 0.1); }
         .bd-loop-cell-half-input {
             flex: 1;
             min-width: 0;
             border: none;
             background: transparent;
-            text-align: center;
+            text-align: left;
             font-family: 'Playfair Display', serif;
             font-size: 1.05rem;
             font-weight: 700;
-            color: var(--text);
+            color: transparent;                 /* 글자는 disp 가 표시 — input 은 커서/편집만 */
+            caret-color: var(--green-deep);
             outline: none;
             padding: 0.3rem 0.2rem;
             cursor: text;
+            position: relative;
+            z-index: 2;
         }
-        .bd-loop-cell-half-input::placeholder {
-            color: rgba(26, 36, 33, 0.25);
-            font-weight: 500;
-        }
-        .bd-loop-cell-half-input:focus {
-            background: rgba(82, 168, 114, 0.18);
+        .bd-loop-cell-half-input::placeholder { color: transparent; }
+        .bd-loop-cell-half-input:focus { background: rgba(82, 168, 114, 0.18); }
+        /* 표시용 텍스트 — 칸을 넘겨(nowrap) 옆으로 흐르게 */
+        .bd-half-disp {
+            position: absolute; left: 0.2rem; top: 50%; transform: translateY(-50%);
+            white-space: nowrap; pointer-events: none; z-index: 3;
+            font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700;
             color: var(--green-deep);
         }
-        .bd-loop-cell-half-input + .bd-loop-cell-half-input {
-            border-left: 1px solid rgba(42, 107, 74, 0.1);
-        }
-        .bd-loop-cell-half-input.has-value {
-            color: var(--green-deep);
-        }
+        .bd-half-disp.empty { color: rgba(26, 36, 33, 0.25); font-weight: 500; }
         .bd-chords-tip {
             margin-top: 0.55rem;
             font-size: 0.72rem;
@@ -915,7 +920,7 @@
             min-width: 0;
             border: none;
             background: transparent;
-            text-align: center;
+            text-align: left;
             font-family: 'Playfair Display', serif;
             font-size: 1.05rem;
             font-weight: 700;
@@ -924,7 +929,9 @@
             cursor: pointer;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
+            white-space: nowrap;   /* 칸을 넘겨 옆으로 흐르게 */
+            overflow: visible;
         }
         .bd-loop-cell-half-picker.empty {
             color: rgba(26, 36, 33, 0.25);
@@ -3225,6 +3232,23 @@
                 return half === 'd' ? bdChordsD : half === 'c' ? bdChordsC : half === 'b' ? bdChordsB : bdChordsA;
             }
             function _bdRenderChordsCurrent() { renderChords(bdChordsA, bdChordsB); }
+            // 칸이 좁을 때(특히 4코드) 긴 코드(Gb/Ab 등)가 잘리지 않게 글자 크기를 칸 폭에 맞춰 축소
+            function _bdFitHalf(el) {
+                if (!el) return;
+                el.style.fontSize = '';
+                var text = (el.tagName === 'INPUT') ? el.value : el.textContent;
+                if (!text || !el.clientWidth) return;
+                var f = 17, min = 8, guard = 0;   // 기본 ≈1.05rem
+                el.style.fontSize = f + 'px';
+                while (f > min && guard++ < 24 && el.scrollWidth > el.clientWidth + 0.5) {
+                    f -= 1; el.style.fontSize = f + 'px';
+                }
+            }
+            function _bdFitAllHalves() {
+                var grid = document.getElementById('fChords');
+                if (!grid) return;
+                grid.querySelectorAll('.bd-loop-cell-half-input, .bd-loop-cell-half-picker').forEach(_bdFitHalf);
+            }
 
             // ─── Dirty 추적 (저장 안 된 변경사항 있는지) ─────────────────
             let bdHasChanges = false;
@@ -3606,7 +3630,7 @@
                 grid.innerHTML = '';
                 for (let i = 0; i < bars; i++) {
                     const cell = document.createElement('div');
-                    cell.className = 'bd-loop-cell';
+                    cell.className = 'bd-loop-cell' + ((i % 4 === 3 || i === bars - 1) ? ' bd-col-last' : '');
                     cell.style.position = 'relative';
                     cell.dataset.idx = i;
 
@@ -3685,31 +3709,41 @@
             }
 
             function makeHalfInput(value, idx, half) {
+                // 오버레이 구조: 투명한 input(편집·커서) + 위에 얹힌 표시용 span(disp).
+                //   disp 는 white-space:nowrap 로 칸을 넘겨 옆으로 흘러나오게(안 잘리게) 표시.
+                //   맨 오른쪽 열(.bd-col-last)은 .bd-loop-cell-halves overflow:hidden 로 바깥 튀어나감만 방지.
+                const wrap = document.createElement('div');
+                wrap.className = 'bd-half';
                 const inp = document.createElement('input');
                 inp.type = 'text';
                 inp.className = 'bd-loop-cell-half-input' + (value ? ' has-value' : '');
                 inp.dataset.idx = idx;
                 inp.dataset.half = half;
                 inp.value = value;
-                inp.placeholder = half === 'a' ? '+' : '·';
                 inp.maxLength = 8;
                 inp.autocomplete = 'off';
                 inp.spellcheck = false;
-                inp.oninput = function() {
-                    inp.classList.toggle('has-value', !!inp.value.trim());
-                    _bdChordMap(half)[idx] = inp.value.trim();
-                };
+                const disp = document.createElement('span');
+                disp.className = 'bd-half-disp' + (value ? '' : ' empty');
+                disp.textContent = value || (half === 'a' ? '+' : '·');
+                function sync() {
+                    var v = inp.value.trim();
+                    inp.classList.toggle('has-value', !!v);
+                    _bdChordMap(half)[idx] = v;
+                    disp.textContent = v || (half === 'a' ? '+' : '·');
+                    disp.classList.toggle('empty', !v);
+                }
+                inp.oninput = sync;
                 // 한영 전환 깜빡한 입력 자동 보정 (예: 'ㅠㅡ7' → 'Bm7')
                 inp.onblur = function() {
                     var raw = (inp.value || '').trim();
                     var fixed = _bdNormalizeKoreanChordInput(raw);
-                    if (fixed !== raw) {
-                        inp.value = fixed;
-                        inp.classList.toggle('has-value', !!fixed);
-                        _bdChordMap(half)[idx] = fixed;
-                    }
+                    if (fixed !== raw) inp.value = fixed;
+                    sync();
                 };
-                return inp;
+                wrap.appendChild(inp);
+                wrap.appendChild(disp);
+                return wrap;
             }
 
             function makeHalfPicker(value, idx, half) {
