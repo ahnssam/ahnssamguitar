@@ -16209,8 +16209,18 @@
                 gtag('event', 'loop_transpose_all', { semitones: semitones });
             };
 
-            // 초기화 — 적용된 프리셋 해제 + 모든 코드 비움 + 검색 인풋 비움 + 커스텀 시퀀서 정리
+            // 초기화 — 실행 전 확인 팝업. '초기화'를 눌러야 실제로 비움.
             window.resetLoopAll = function() {
+                var ov = loopEnsureModal('loopResetModal',
+                    '<div class="loop-modal-title">초기화할까요?</div>' +
+                    '<div class="loop-modal-msg">입력한 코드가 모두 지워지고 4마디로 돌아갑니다.</div>' +
+                    '<div class="loop-modal-actions"><button type="button" class="loop-modal-btn ghost" data-close>취소</button>' +
+                    '<button type="button" class="loop-modal-btn primary" id="loopResetYes">초기화</button></div>');
+                ov.classList.add('open');
+                document.getElementById('loopResetYes').onclick = function() { ov.classList.remove('open'); _doResetLoopAll(); };
+            };
+            // 실제 초기화 — 적용된 프리셋 해제 + 모든 코드 비움 + 4마디로 + 검색 인풋 비움 + 커스텀 시퀀서 정리
+            function _doResetLoopAll() {
                 _loopActivePresetSequencer = null;
                 _loopActivePresetId = null;
                 _loopActivePresetRhythm = null;
@@ -16232,6 +16242,7 @@
                 renderLoopRhythms();
                 if (typeof window.setLoopSegs === 'function') window.setLoopSegs(2);   // 마디당 코드 2개로 복귀
                 window.clearAllLoopChords();
+                if (typeof window.setLoopBars === 'function') window.setLoopBars(4);   // 마디도 4마디로 초기화
                 var search = document.getElementById('loopPresetSearch');
                 if (search) search.value = '';
                 if (typeof closeLoopPresetList === 'function') closeLoopPresetList();
