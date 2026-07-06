@@ -7245,8 +7245,8 @@
             color: rgba(26,36,33,0.6); min-width: 3.6em;
         }
         :root[data-theme="dark"] .loop-adv-row > label { color: #cfe0d6; }
-        /* 예비박 — 설정 줄 오른쪽 끝. 폰트는 '마디'(0.8rem)와 동일 */
-        .loop-countin-top { margin-left: auto; font-size: 0.8rem; }
+        /* 예비박 — 설정 바로 오른쪽. 폰트는 '마디'(0.8rem)와 동일 */
+        .loop-countin-top { font-size: 0.8rem; }
         /* 보기 + 입력 방식 한 줄 */
         .loop-view-input-row { gap: 1.3rem; }
         .loop-subctl { display: inline-flex; align-items: center; gap: 0.45rem; position: relative; }
@@ -7494,6 +7494,20 @@
              auto 로 계산돼 한 페이지로 잘리던(스크롤바+1/1) 문제 → 아래 @media print 에서 해제. */
         /* 인쇄 모달은 미리보기가 커야 하므로 카드 폭을 넓게 */
         #loopPrintModal .loop-modal-card { max-width: 720px; }
+        /* 이미지로 저장 버튼(왼쪽) + PNG/JPEG 말풍선 */
+        .lp-img-wrap { position: relative; margin-right: auto; }
+        .lp-img-pop {
+            position: absolute; bottom: calc(100% + 6px); left: 0; display: flex; gap: 6px;
+            background: var(--bg-panel, #fff); border: 1px solid rgba(42,107,74,0.25); border-radius: 9px;
+            padding: 6px; box-shadow: 0 6px 20px rgba(0,0,0,0.18); z-index: 6;
+        }
+        .lp-img-pop[hidden] { display: none; }
+        :root[data-theme="dark"] .lp-img-pop { background: #1d2a26; border-color: rgba(150,200,175,0.3); }
+        .lp-img-pop button {
+            padding: 0.42rem 0.95rem; border-radius: 7px; border: 1px solid rgba(42,107,74,0.25);
+            background: rgba(42,107,74,0.06); color: inherit; font-family: inherit; font-weight: 700; font-size: 0.82rem; cursor: pointer;
+        }
+        .lp-img-pop button:hover { background: rgba(42,107,74,0.15); }
         /* 아티스트(넓게) + 카포(좁게) 한 줄 */
         .lp-ac-row { display: flex; gap: 8px; }
         .lp-ac-row #lpArtist { flex: 1 1 auto; margin-bottom: 0.8rem; }
@@ -8471,6 +8485,9 @@
                                     <span class="loop-toggle-track"><span class="loop-toggle-thumb"></span></span>
                                 </label>
                             </div>
+                            <button type="button" class="loop-clear-all-btn" data-action="resetLoopAll" title="프리셋 해제 + 모든 코드 비움" style="margin-left:auto;">
+                                <i class="fas fa-redo"></i> 초기화
+                            </button>
                         </div>
                         <div class="loop-adv" id="loopAdvanced" hidden>
                             <!-- 보기 + 입력 방식 — 한 줄 -->
@@ -8563,9 +8580,6 @@
                                 <button type="button" class="acc-toggle-btn" data-acc="flat" data-action="setLoopAccidental" data-args="flat">♭</button>
                             </div>
                         </div>
-                        <button type="button" class="loop-clear-all-btn" data-action="resetLoopAll" title="프리셋 해제 + 모든 코드 비움" style="margin-left:auto;">
-                            <i class="fas fa-redo"></i> 초기화
-                        </button>
                     </div>
                 </div>
                 <div class="metronome-bpm">
@@ -15718,6 +15732,45 @@
                 setTimeout(function() { try { window.print(); } catch (e) {} }, 120);
                 try { gtag('event', 'loop_print'); } catch (e) {}
             }
+            // html2canvas 를 필요할 때 한 번만 로드
+            function _ensureHtml2canvas() {
+                return new Promise(function(resolve, reject) {
+                    if (window.html2canvas) { resolve(); return; }
+                    var s = document.createElement('script');
+                    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                    s.onload = function() { resolve(); };
+                    s.onerror = function() { reject(new Error('html2canvas load fail')); };
+                    document.head.appendChild(s);
+                });
+            }
+            // 현재 악보를 페이지별 이미지(PNG/JPEG)로 저장. 실제 A4 크기로 캡처(고해상도).
+            async function _saveLoopImage(fmt, title, artist, capo) {
+                loopToast('이미지 만드는 중…');
+                try {
+                    await _ensureHtml2canvas();
+                    var pages = _buildPages(title, artist, capo);
+                    var holder = document.createElement('div');
+                    holder.style.cssText = 'position:fixed;left:-10000px;top:0;background:#fff;z-index:-1;';
+                    pages.forEach(function(p) { holder.appendChild(p); });
+                    document.body.appendChild(holder);
+                    var base = ((title || '악보').trim() || '악보').replace(/[\\/:*?"<>|]+/g, '_');
+                    var isJpg = (fmt === 'jpeg');
+                    var mime = isJpg ? 'image/jpeg' : 'image/png';
+                    for (var i = 0; i < pages.length; i++) {
+                        var canvas = await window.html2canvas(pages[i], { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false });
+                        var url = canvas.toDataURL(mime, isJpg ? 0.92 : undefined);
+                        var a = document.createElement('a');
+                        a.href = url;
+                        a.download = base + (pages.length > 1 ? ('_' + (i + 1)) : '') + (isJpg ? '.jpg' : '.png');
+                        document.body.appendChild(a); a.click(); a.remove();
+                    }
+                    document.body.removeChild(holder);
+                    loopToast(pages.length > 1 ? (pages.length + '장을 이미지로 저장했어요') : '이미지로 저장했어요');
+                    try { gtag('event', 'loop_save_image', { fmt: fmt, pages: pages.length }); } catch (e) {}
+                } catch (e) {
+                    loopToast('이미지 저장 실패 — 잠시 후 다시 시도해주세요');
+                }
+            }
             window.openPrintDialog = function() {
                 if (!hasLoopInput()) { loopToast('먼저 코드를 입력해주세요'); return; }
                 var ov = loopEnsureModal('loopPrintModal',
@@ -15729,8 +15782,17 @@
                     '</div>' +
                     '<div class="loop-modal-label">미리보기</div>' +
                     '<div id="lpPreview" class="loop-print-preview"></div>' +
-                    '<div class="loop-modal-actions"><button type="button" class="loop-modal-btn ghost" data-close>취소</button>' +
-                    '<button type="button" class="loop-modal-btn primary" id="lpPrintGo">프린트</button></div>');
+                    '<div class="loop-modal-actions">' +
+                        '<div class="lp-img-wrap">' +
+                            '<button type="button" class="loop-modal-btn ghost" id="lpImgBtn"><i class="fas fa-image" aria-hidden="true"></i> 이미지로 저장</button>' +
+                            '<div class="lp-img-pop" id="lpImgPop" hidden>' +
+                                '<button type="button" data-fmt="png">PNG</button>' +
+                                '<button type="button" data-fmt="jpeg">JPEG</button>' +
+                            '</div>' +
+                        '</div>' +
+                        '<button type="button" class="loop-modal-btn ghost" data-close>취소</button>' +
+                        '<button type="button" class="loop-modal-btn primary" id="lpPrintGo">프린트</button>' +
+                    '</div>');
                 ov.setAttribute('data-no-outside-close', '');   // 바깥 클릭으로 닫히지 않게 — 취소만
                 ov.classList.add('open');
                 var tEl = document.getElementById('lpTitle');
@@ -15775,6 +15837,25 @@
                 refresh();
                 setTimeout(function() { try { tEl.focus(); } catch (e) {} }, 50);
                 document.getElementById('lpPrintGo').onclick = function() { doLoopPrint(tEl.value, aEl.value, cEl.value); };
+                // 이미지로 저장 — PNG/JPEG 말풍선
+                var imgBtn = document.getElementById('lpImgBtn');
+                var imgPop = document.getElementById('lpImgPop');
+                if (imgBtn && imgPop) {
+                    imgBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        var willShow = imgPop.hidden;
+                        imgPop.hidden = !willShow;
+                        if (willShow) {
+                            var closer = function(ev) {
+                                if (!ev.target.closest || !ev.target.closest('.lp-img-wrap')) { imgPop.hidden = true; document.removeEventListener('pointerdown', closer, true); }
+                            };
+                            setTimeout(function() { document.addEventListener('pointerdown', closer, true); }, 0);
+                        }
+                    };
+                    imgPop.querySelectorAll('[data-fmt]').forEach(function(b) {
+                        b.onclick = function() { imgPop.hidden = true; _saveLoopImage(b.getAttribute('data-fmt'), tEl.value, aEl.value, cEl.value); };
+                    });
+                }
             };
 
             function closeLoopPicker() {
