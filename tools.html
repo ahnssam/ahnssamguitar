@@ -7541,6 +7541,9 @@
         .lp-head.hc1, .lp-head.hc2 { margin-bottom: 6px; }
         .lp-head.hc2 .lp-title { font-size: 34px; }
         .lp-head.hc2 .lp-capo, .lp-head.hc2 .lp-artist { font-size: 19px; }
+        /* 2단계: 줄 간격도 좁혀 두 줄까지 한 페이지에 들어오게 */
+        .lp-chart.lp-tight .lp-row { margin-bottom: 0.12rem; }
+        .lp-chart.lp-tight .lp-row.lp-row-sf { margin-top: 30px; }
         /* 카포(왼쪽) · 아티스트(오른쪽) 한 줄 */
         .lp-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-top: 4px; }
         .lp-capo { text-align: left; font-size: 30px; font-weight: 700; color: #55625c;
@@ -15688,16 +15691,22 @@
                 var chart = _buildPrintChart();
                 meas.appendChild(chart);
                 var rowEls = Array.prototype.slice.call(chart.children);
-                var rows = rowEls.map(function(el) {
-                    var mt = parseFloat(getComputedStyle(el).marginTop) || 0;
-                    return { el: el, top: el.offsetTop - mt, bottom: el.offsetTop + el.offsetHeight };
-                });
+                function _measRows() {
+                    return rowEls.map(function(el) {
+                        var mt = parseFloat(getComputedStyle(el).marginTop) || 0;
+                        return { el: el, top: el.offsetTop - mt, bottom: el.offsetTop + el.offsetHeight };
+                    });
+                }
+                var rows = _measRows();                       // 기본 줄 간격
+                chart.classList.add('lp-tight');
+                var rowsTight = _measRows();                  // 좁힌 줄 간격 (2단계용)
+                chart.classList.remove('lp-tight');
                 document.body.removeChild(meas);
                 // 그리디 페이지 분할 헬퍼 (cap1=1페이지 용량, capN=이후 페이지 용량)
-                function paginate(cap1, capN) {
-                    var pr = [], cur = [], start = rows.length ? rows[0].top : 0, cap = cap1;
-                    for (var i = 0; i < rows.length; i++) {
-                        var r = rows[i];
+                function paginate(rowsArr, cap1, capN) {
+                    var pr = [], cur = [], start = rowsArr.length ? rowsArr[0].top : 0, cap = cap1;
+                    for (var i = 0; i < rowsArr.length; i++) {
+                        var r = rowsArr[i];
                         if (cur.length && (r.bottom - start) > cap) { pr.push(cur); cur = []; start = r.top; cap = capN; }
                         cur.push(r.el);
                     }
@@ -15705,15 +15714,15 @@
                     return pr;
                 }
                 var capN = PAGE_CONTENT - SAFETY - RUNHEAD_SPACE;
-                var pagesRows = paginate(PAGE_CONTENT - headH - SAFETY, capN);
-                var level = 0;   // 0=기본, 1=여백축소, 2=여백+폰트축소
-                // 유도리: 마지막 페이지가 1~2줄만 넘친 경우 → 여백(+폰트)을 줄여 한 페이지로 끌어올림.
-                //   1단계(여백만)로 페이지 수가 줄면 그걸, 안 되면 2단계(폰트까지)를 시도. 도움 될 때만 적용.
+                var pagesRows = paginate(rows, PAGE_CONTENT - headH - SAFETY, capN);
+                var level = 0;   // 0=기본, 1=여백축소, 2=여백+폰트+줄간격 축소
+                // 유도리: 마지막 페이지가 1~2줄만 넘친 경우 → 여백(+폰트+줄간격)을 줄여 한 페이지로 끌어올림.
+                //   1단계(여백만)로 페이지 수가 줄면 그걸, 안 되면 2단계(폰트·줄간격까지)를 시도. 도움 될 때만 적용.
                 if (pagesRows.length >= 2 && pagesRows[pagesRows.length - 1].length <= 2) {
-                    var comp1 = paginate((297 - 4 - 15) * K - headH1, capN);       // 위패딩15→4mm
+                    var comp1 = paginate(rows, (297 - 4 - 15) * K - headH1, capN);        // 위패딩15→4mm
                     if (comp1.length < pagesRows.length) { level = 1; pagesRows = comp1; }
                     else {
-                        var comp2 = paginate((297 - 3 - 8) * K - headH2, capN);    // 위3·아래8mm + 폰트축소
+                        var comp2 = paginate(rowsTight, (297 - 3 - 8) * K - headH2, capN); // 여백+폰트+줄간격 축소
                         if (comp2.length < pagesRows.length) { level = 2; pagesRows = comp2; }
                     }
                 }
@@ -15737,7 +15746,7 @@
                         pg.appendChild(rh);
                     }
                     var ch = document.createElement('div');
-                    ch.className = 'lp-chart';
+                    ch.className = 'lp-chart' + (level === 2 ? ' lp-tight' : '');
                     if (p > 0) ch.style.marginTop = '8mm';    // 러닝헤더와 첫 마디줄 사이 간격
                     pagesRows[p].forEach(function(el) { ch.appendChild(el); });
                     pg.appendChild(ch);
