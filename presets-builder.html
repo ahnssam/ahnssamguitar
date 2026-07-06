@@ -733,6 +733,73 @@
         .bd-loop-cell-edge.has-repeat .bd-loop-repeat-bars,
         .bd-loop-cell-edge.has-repeat .bd-loop-repeat-dots { display: flex; }
         .bd-loop-cell-edge.has-repeat:hover { background: rgba(42, 107, 74, 0.10); }
+        /* ───── 볼타(1·2도돌이) — 마디 위쪽 클릭 띠 + 브래킷 ───── */
+        .bd-loop-cell-edge.top {
+            top: 0; left: 34px; right: 12px;
+            bottom: auto; width: auto; height: 13px;
+            border-radius: 0; z-index: 6;
+        }
+        .bd-loop-cell-edge.top:hover { background: rgba(42, 107, 74, 0.16); box-shadow: none; }
+        .bd-loop-cell-volta {
+            position: absolute; top: 0; left: 24px; right: 0; height: 16px;
+            border-top: 2px solid var(--green-deep);
+            border-left: 2px solid var(--green-deep);
+            pointer-events: none; z-index: 3;
+        }
+        .bd-volta-num {
+            position: absolute; top: 1px; left: 2px;
+            font-size: 0.66rem; font-weight: 700; line-height: 1;
+            color: var(--green-deep); font-variant-numeric: tabular-nums;
+        }
+        .bd-loop-cell.has-volta .bd-loop-cell-halves { padding-left: 10px; }
+        .bd-volta-picker {
+            position: absolute; top: 14px; left: 0; z-index: 30;
+            background: var(--bg-panel, #fff); border: 1px solid rgba(42,107,74,0.3);
+            border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            padding: 6px 8px; width: max-content;
+        }
+        .bd-lv-title { font-size: 0.6rem; color: var(--muted, #66756e); margin-bottom: 4px; }
+        .bd-lv-btns { display: flex; gap: 4px; }
+        .bd-lv-btn {
+            width: 22px; height: 22px; border-radius: 5px;
+            border: 1px solid rgba(42,107,74,0.3); background: transparent; color: inherit;
+            font-size: 0.72rem; font-weight: 700; cursor: pointer; font-family: inherit; line-height: 1;
+        }
+        .bd-lv-btn:hover { background: rgba(42,107,74,0.12); }
+        .bd-lv-btn.active { background: var(--green-mid, #52a872); color: #fff; border-color: var(--green-mid, #52a872); }
+        .bd-lv-hint { font-size: 0.55rem; color: var(--muted, #66756e); margin-top: 5px; max-width: 132px; line-height: 1.35; }
+        /* ───── 송폼(구성) 라벨 + 입력 팝업 ───── */
+        .bd-loop-cell-songform {
+            position: absolute; top: -25px; left: 0; right: auto;
+            text-align: left; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2;
+            font-size: 0.74rem; color: var(--green-deep);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            max-width: 100%; pointer-events: auto; cursor: pointer; z-index: 6;
+            display: inline-block; padding: 1px 7px;
+            border: 1px solid rgba(42,107,74,0.45); border-radius: 7px; background: rgba(82,168,114,0.12);
+        }
+        .bd-loop-cell-songform:hover { background: rgba(82,168,114,0.22); }
+        .bd-loop-cell.bd-row-spaced { margin-top: 30px; }
+        .bd-songform-pop {
+            position: absolute; top: 16px; left: 0; z-index: 31;
+            background: var(--bg-panel, #fff); border: 1px solid rgba(42,107,74,0.3); border-radius: 8px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2); padding: 7px 8px; width: max-content; max-width: 190px;
+        }
+        .bd-lsf-title { font-size: 0.6rem; color: var(--muted, #66756e); margin-bottom: 4px; }
+        .bd-lsf-input {
+            width: 132px; font-family: inherit; font-size: 0.82rem; padding: 4px 6px;
+            border: 1px solid rgba(42,107,74,0.35); border-radius: 5px; background: var(--bg-panel, #fff); color: inherit;
+        }
+        .bd-lsf-actions { display: flex; gap: 5px; margin-top: 6px; justify-content: flex-end; }
+        .bd-lsf-btn {
+            font-family: inherit; font-size: 0.7rem; font-weight: 700; padding: 3px 10px;
+            border-radius: 5px; border: 1px solid rgba(42,107,74,0.3); background: transparent; color: inherit; cursor: pointer; line-height: 1.3;
+        }
+        .bd-lsf-btn:hover { background: rgba(42,107,74,0.1); }
+        .bd-lsf-btn.primary { background: var(--green-mid, #52a872); color: #fff; border-color: var(--green-mid, #52a872); }
+        /* 마디당 4코드(2/4) — halves 안 4칸 균등 */
+        .bd-loop-cell-halves.segs-4 .bd-loop-cell-half-input,
+        .bd-loop-cell-halves.segs-4 .bd-loop-cell-half-picker { flex: 1 1 0; min-width: 0; }
 
         .bd-loop-cell.playing {
             background: rgba(82, 168, 114, 0.30);
@@ -1622,7 +1689,11 @@
         <!-- Stage 3 — 편집 화면 -->
         <div id="editorCard" style="display:none;">
             <div class="bd-card">
-                <div class="bd-section-label">프리셋 목록</div>
+                <div class="bd-section-label bd-collapse-head" id="presetListToggle" role="button" tabindex="0" aria-expanded="false" style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none;">
+                    <span>프리셋 목록</span>
+                    <i class="fas fa-chevron-down bd-collapse-caret" aria-hidden="true" style="font-size:0.8em; transition:transform 0.2s;"></i>
+                </div>
+                <div id="presetBrowse" hidden>
                 <div class="bd-list-search-wrap" id="listSearchWrap">
                     <i class="fas fa-search bd-list-search-icon"></i>
                     <input type="text" class="bd-list-search" id="listSearch" placeholder="검색…" autocomplete="off">
@@ -1653,6 +1724,7 @@
                 <div class="bd-list" id="presetList">
                     <div class="bd-empty">로딩중…</div>
                 </div>
+                </div><!-- /#presetBrowse -->
                 <button class="bd-btn bd-btn-ghost" id="newBtn">
                     <i class="fas fa-plus"></i> 새 프리셋
                 </button>
@@ -1812,7 +1884,14 @@
                             </span>
                         </div>
                     </div>
-                    <div class="bd-input-mode" style="margin-left:auto;">
+                    <div class="bd-field" style="margin-left:auto;">
+                        <label>마디당 코드</label>
+                        <div class="bd-input-mode" id="fSegsBtns">
+                            <button type="button" class="bd-input-mode-btn active" data-segs="2">2개</button>
+                            <button type="button" class="bd-input-mode-btn" data-segs="4">4개</button>
+                        </div>
+                    </div>
+                    <div class="bd-input-mode" style="margin-left:0.6rem;">
                         <button type="button" class="bd-input-mode-btn" data-mode="text" id="bdModeText">직접입력</button>
                         <button type="button" class="bd-input-mode-btn" data-mode="picker" id="bdModePicker">픽커</button>
                     </div>
@@ -1851,8 +1930,8 @@
                     <button class="bd-btn bd-btn-ghost" id="testBtn">
                         <i class="fas fa-external-link-alt"></i> 반주 페이지로 열기
                     </button>
-                    <button class="bd-btn bd-btn-ghost" id="importBtn" title="반주 페이지에서 내보낸 파일(.json)을 열어 이 폼에 채웁니다">
-                        <i class="fas fa-file-import"></i> 파일 열기
+                    <button class="bd-btn bd-btn-ghost" id="importBtn" title="반주 페이지에서 내보낸 프리셋 파일(.json)을 업로드해 이 폼에 채웁니다">
+                        <i class="fas fa-upload"></i> 프리셋 업로드
                     </button>
                     <input type="file" id="importFile" accept=".json,application/json" style="display:none;">
                     <button class="bd-btn bd-btn-ghost" id="duplicateBtn" style="display:none;" title="이 프리셋의 모든 설정을 클립보드에 복사 — 새 프리셋에서 붙여넣기 가능">
@@ -2825,6 +2904,12 @@
                 bdBassCustom = false;
                 bdPianoCustom = false;
                 bdRepeats = { left: new Set(), right: new Set() };
+                bdVoltas = {};
+                bdSongForm = {};
+                bdChordsC = {};
+                bdChordsD = {};
+                bdSegs = 2;
+                _bdSyncSegsBtns();
                 _applyCustomToggleUI();
                 renderBdSeq();
                 renderBars();
@@ -2897,6 +2982,14 @@
                     if (Array.isArray(sp.repeats.left))  sp.repeats.left.forEach(function(i)  { bdRepeats.left.add(i|0); });
                     if (Array.isArray(sp.repeats.right)) sp.repeats.right.forEach(function(i) { bdRepeats.right.add(i|0); });
                 }
+                // 볼타 · 송폼 로드
+                bdVoltas = (sp && sp.voltas && typeof sp.voltas === 'object') ? _bdCloneVoltas(sp.voltas) : {};
+                bdSongForm = (sp && sp.songForm && typeof sp.songForm === 'object') ? Object.assign({}, sp.songForm) : {};
+                // 마디당 4코드 로드 (sequencer_pattern 또는 top-level chords_c/d)
+                bdSegs = (sp && sp.segs === 4) ? 4 : 2;
+                bdChordsC = (sp && sp.chords_c) ? Object.assign({}, sp.chords_c) : (p.chords_c ? Object.assign({}, p.chords_c) : {});
+                bdChordsD = (sp && sp.chords_d) ? Object.assign({}, sp.chords_d) : (p.chords_d ? Object.assign({}, p.chords_d) : {});
+                _bdSyncSegsBtns();
                 _applyCustomToggleUI();
                 renderBdSeq();
                 renderBars();
@@ -2927,8 +3020,11 @@
                 //   - 토글이 OFF 인 쪽 셀 데이터는 보존(다음에 다시 켜면 복원되도록).
                 //   - chordOffset (싱코페이션) 도 함께 저장.
                 var hasRepeats2 = bdRepeats.left.size > 0 || bdRepeats.right.size > 0;
+                var hasVolta2 = Object.keys(bdVoltas).length > 0;
+                var hasSongForm2 = Object.keys(bdSongForm).length > 0;
+                var segs4 = (bdSegs === 4);
                 var seqOut = null;
-                if (!bdSeqIsEmpty() || bdBassCustom || bdPianoCustom || bdMeasureLen === 2 || hasRepeats2) {
+                if (!bdSeqIsEmpty() || bdBassCustom || bdPianoCustom || bdMeasureLen === 2 || hasRepeats2 || hasVolta2 || hasSongForm2 || segs4) {
                     seqOut = {
                         bassCustom:  !!bdBassCustom,
                         pianoCustom: !!bdPianoCustom
@@ -2946,6 +3042,22 @@
                             right: Array.from(bdRepeats.right).sort(function(a,b){return a-b;})
                         };
                     }
+                    if (hasVolta2) {
+                        var vo = {};
+                        Object.keys(bdVoltas).forEach(function(k) { if (bdVoltas[k] && bdVoltas[k].length) vo[k] = bdVoltas[k].slice(); });
+                        if (Object.keys(vo).length) seqOut.voltas = vo;
+                    }
+                    if (hasSongForm2) {
+                        var so = {};
+                        Object.keys(bdSongForm).forEach(function(k) { if (bdSongForm[k]) so[k] = bdSongForm[k]; });
+                        if (Object.keys(so).length) seqOut.songForm = so;
+                    }
+                    // 마디당 4코드 — 프리셋 테이블엔 C/D 칸이 없어 sequencer_pattern 에 저장
+                    if (segs4) {
+                        seqOut.segs = 4;
+                        seqOut.chords_c = chords.c;
+                        seqOut.chords_d = chords.d;
+                    }
                 }
                 return {
                     name: $('fName').value || '',
@@ -2958,6 +3070,8 @@
                     piano_style: $('fPianoStyle').value,
                     chords_a: chords.a,
                     chords_b: chords.b,
+                    chords_c: chords.c,
+                    chords_d: chords.d,
                     genre: $('fGenre').value || '',
                     sequencer_pattern: seqOut
                 };
@@ -3021,6 +3135,12 @@
                     if (Array.isArray(spC.repeats.left))  spC.repeats.left.forEach(function(i)  { bdRepeats.left.add(i|0); });
                     if (Array.isArray(spC.repeats.right)) spC.repeats.right.forEach(function(i) { bdRepeats.right.add(i|0); });
                 }
+                bdVoltas = (spC && spC.voltas && typeof spC.voltas === 'object') ? _bdCloneVoltas(spC.voltas) : {};
+                bdSongForm = (spC && spC.songForm && typeof spC.songForm === 'object') ? Object.assign({}, spC.songForm) : {};
+                bdSegs = (spC && spC.segs === 4) ? 4 : ((c.chords_c || c.chords_d) ? 4 : 2);
+                bdChordsC = (spC && spC.chords_c) ? Object.assign({}, spC.chords_c) : (c.chords_c ? Object.assign({}, c.chords_c) : {});
+                bdChordsD = (spC && spC.chords_d) ? Object.assign({}, spC.chords_d) : (c.chords_d ? Object.assign({}, c.chords_d) : {});
+                _bdSyncSegsBtns();
                 _applyCustomToggleUI();
                 renderBdSeq();
                 renderBars();
@@ -3098,6 +3218,13 @@
             let bdPickerExtension = 'none';    // 'none' | '7' | 'm7' | 'M7' | 'm7b5' | 'dim7' | 'aug'
             let bdChordsA = {};
             let bdChordsB = {};
+            let bdChordsC = {};
+            let bdChordsD = {};
+            let bdSegs = 2;   // 마디당 코드 칸 수 (2 / 4)
+            function _bdChordMap(half) {
+                return half === 'd' ? bdChordsD : half === 'c' ? bdChordsC : half === 'b' ? bdChordsB : bdChordsA;
+            }
+            function _bdRenderChordsCurrent() { renderChords(bdChordsA, bdChordsB); }
 
             // ─── Dirty 추적 (저장 안 된 변경사항 있는지) ─────────────────
             let bdHasChanges = false;
@@ -3208,8 +3335,100 @@
                 if (isNaN(idx)) return;
                 var set = bdRepeats[side];
                 if (set.has(idx)) set.delete(idx); else set.add(idx);
+                markDirty();
                 renderChords(bdChordsA, bdChordsB);
             };
+
+            // ─── 볼타(1·2 엔딩) + 송폼(구성 라벨) — tools.html 미러. sequencer_pattern 에 저장 ───
+            let bdVoltas = {};      // { 마디idx: [1] / [2,3] }
+            let bdSongForm = {};    // { 마디idx: '전주' 등 }
+            function _bdVoltaLabel(arr) {
+                if (!arr || !arr.length) return '';
+                var s = arr.slice().sort(function(a, b){ return a - b; });
+                var parts = [], i = 0;
+                while (i < s.length) {
+                    var j = i;
+                    while (j + 1 < s.length && s[j + 1] === s[j] + 1) j++;
+                    parts.push(j > i ? (s[i] + '-' + s[j]) : ('' + s[i]));
+                    i = j + 1;
+                }
+                return parts.join(',') + '.';
+            }
+            function _bdCloneVoltas(v) {
+                var out = {};
+                Object.keys(v || {}).forEach(function(k) {
+                    var a = v[k];
+                    if (Array.isArray(a) && a.length) out[k] = a.map(function(n){ return n | 0; }).filter(function(n){ return n >= 1; });
+                });
+                return out;
+            }
+            function bdCloseVoltaPicker() { document.querySelectorAll('.bd-volta-picker').forEach(function(p){ p.remove(); }); }
+            function bdOpenVoltaPicker(idx) {
+                var cell = document.querySelector('#fChords .bd-loop-cell[data-idx="' + idx + '"]');
+                if (!cell) return;
+                bdCloseVoltaPicker();
+                var temp = {};
+                (bdVoltas[idx] || []).forEach(function(n){ temp[n] = true; });
+                var pop = document.createElement('div');
+                pop.className = 'bd-volta-picker';
+                var html = '<div class="bd-lv-title">도돌이(엔딩) 번호</div><div class="bd-lv-btns">';
+                for (var n = 1; n <= 5; n++) html += '<button type="button" class="bd-lv-btn' + (temp[n] ? ' active' : '') + '" data-n="' + n + '">' + n + '</button>';
+                html += '</div><div class="bd-lv-hint">여러 개 선택 가능(예: 2·3). 다시 누르면 해제.</div>';
+                pop.innerHTML = html;
+                cell.appendChild(pop);
+                var committed = false;
+                function finish() {
+                    if (committed) return; committed = true;
+                    document.removeEventListener('pointerdown', onDown); document.removeEventListener('keydown', onKey);
+                    var arr = []; for (var k = 1; k <= 5; k++) if (temp[k]) arr.push(k);
+                    if (arr.length) bdVoltas[idx] = arr; else delete bdVoltas[idx];
+                    markDirty(); renderChords(bdChordsA, bdChordsB);
+                }
+                function onDown(e) { if (!pop.contains(e.target)) finish(); }
+                function onKey(e) { if (e.key === 'Escape' || e.key === 'Enter') { e.preventDefault(); finish(); } }
+                pop.querySelectorAll('.bd-lv-btn').forEach(function(btn) {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        var n = +btn.dataset.n;
+                        if (temp[n]) { delete temp[n]; btn.classList.remove('active'); } else { temp[n] = true; btn.classList.add('active'); }
+                    });
+                });
+                setTimeout(function() { document.addEventListener('pointerdown', onDown); document.addEventListener('keydown', onKey); }, 0);
+            }
+            function bdCloseSongForm() { document.querySelectorAll('.bd-songform-pop').forEach(function(p){ p.remove(); }); }
+            function bdOpenSongForm(idx) {
+                var cell = document.querySelector('#fChords .bd-loop-cell[data-idx="' + idx + '"]');
+                if (!cell) return;
+                bdCloseSongForm();
+                var pop = document.createElement('div');
+                pop.className = 'bd-songform-pop';
+                pop.innerHTML = '<div class="bd-lsf-title">송폼(구성)</div>' +
+                    '<input type="text" class="bd-lsf-input" maxlength="16" placeholder="전주 / 후렴 / A …">' +
+                    '<div class="bd-lsf-actions">' +
+                    '<button type="button" class="bd-lsf-btn" data-lsf="clear">지움</button>' +
+                    '<button type="button" class="bd-lsf-btn primary" data-lsf="ok">확인</button></div>';
+                cell.appendChild(pop);
+                var input = pop.querySelector('.bd-lsf-input');
+                input.value = bdSongForm[idx] || '';
+                setTimeout(function() { try { input.focus(); input.select(); } catch (e) {} }, 30);
+                var committed = false;
+                function finish() {
+                    if (committed) return; committed = true;
+                    document.removeEventListener('pointerdown', onDown, true);
+                    var v = (input.value || '').trim();
+                    if (v) bdSongForm[idx] = v; else delete bdSongForm[idx];
+                    bdCloseSongForm(); markDirty(); renderChords(bdChordsA, bdChordsB);
+                }
+                function cancel() { if (committed) return; committed = true; document.removeEventListener('pointerdown', onDown, true); bdCloseSongForm(); }
+                function onDown(e) { if (!pop.contains(e.target)) finish(); }
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') { e.preventDefault(); finish(); }
+                    else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+                });
+                pop.querySelector('[data-lsf="ok"]').addEventListener('click', function(e) { e.stopPropagation(); finish(); });
+                pop.querySelector('[data-lsf="clear"]').addEventListener('click', function(e) { e.stopPropagation(); input.value = ''; finish(); });
+                setTimeout(function() { document.addEventListener('pointerdown', onDown, true); }, 0);
+            }
 
             const BD_LOOP_ROOTS_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
             const BD_LOOP_ROOTS_FLAT  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
@@ -3336,18 +3555,36 @@
                 }
                 if (!delta) return;
                 var cur = readChords();
-                var newA = {}, newB = {};
+                var newA = {}, newB = {}, newC = {}, newD = {};
                 Object.keys(cur.a).forEach(function(k) { newA[k] = shiftOne(cur.a[k]); });
                 Object.keys(cur.b).forEach(function(k) { newB[k] = shiftOne(cur.b[k]); });
+                Object.keys(cur.c).forEach(function(k) { newC[k] = shiftOne(cur.c[k]); });
+                Object.keys(cur.d).forEach(function(k) { newD[k] = shiftOne(cur.d[k]); });
+                bdChordsC = newC; bdChordsD = newD;
                 renderChords(newA, newB);
             }
 
             // 코드 진행 전체 비우기
             function clearBdChordsAll() {
                 if (!confirm('모든 코드를 비울까요?')) return;
+                bdChordsC = {}; bdChordsD = {};
                 renderChords({}, {});
             }
 
+            // 마디당 코드 2/4 전환
+            function _bdSyncSegsBtns() {
+                document.querySelectorAll('#fSegsBtns .bd-input-mode-btn').forEach(function(b) {
+                    b.classList.toggle('active', parseInt(b.dataset.segs, 10) === bdSegs);
+                });
+            }
+            window.setBdSegs = function(n) {
+                n = (n === 4 || n === '4') ? 4 : 2;
+                if (n === bdSegs) return;
+                bdSegs = n;
+                _bdSyncSegsBtns();
+                markDirty();
+                renderChords(bdChordsA, bdChordsB);
+            };
             window.setBdInputMode = function(mode) {
                 if (mode !== 'picker' && mode !== 'text') return;
                 bdInputMode = mode;
@@ -3376,14 +3613,46 @@
                     const num = document.createElement('span');
                     num.className = 'bd-loop-cell-num';
                     num.textContent = (i + 1);
+                    num.title = '클릭: 송폼(구성) 라벨 입력';
+                    num.style.cursor = 'pointer';
+                    (function(idx) {
+                        num.addEventListener('pointerdown', function(e) { e.preventDefault(); e.stopPropagation(); bdCloseSongForm(); bdCloseVoltaPicker(); bdOpenSongForm(idx); });
+                    })(i);
                     cell.appendChild(num);
 
+                    // 송폼 라벨 (마디 위쪽)
+                    if (bdSongForm[String(i)] || bdSongForm[i]) {
+                        cell.classList.add('has-songform');
+                        var sf = document.createElement('div');
+                        sf.className = 'bd-loop-cell-songform';
+                        sf.textContent = bdSongForm[String(i)] || bdSongForm[i];
+                        sf.title = '클릭해서 수정';
+                        (function(idx) { sf.addEventListener('pointerdown', function(e) { e.preventDefault(); e.stopPropagation(); bdOpenSongForm(idx); }); })(i);
+                        cell.appendChild(sf);
+                    }
+
                     const halves = document.createElement('div');
-                    halves.className = 'bd-loop-cell-halves';
-                    halves.appendChild(makeHalf(bdChordsA[String(i)] || '', i, 'a'));
-                    halves.appendChild(makeHalf(bdChordsB[String(i)] || '', i, 'b'));
+                    halves.className = 'bd-loop-cell-halves' + (bdSegs === 4 ? ' segs-4' : '');
+                    var _slots = bdSegs === 4 ? ['a','b','c','d'] : ['a','b'];
+                    _slots.forEach(function(h) { halves.appendChild(makeHalf(_bdChordMap(h)[String(i)] || '', i, h)); });
 
                     cell.appendChild(halves);
+
+                    // 볼타(1·2 엔딩) 브래킷 + 위쪽 클릭 띠
+                    if (bdVoltas[i] && bdVoltas[i].length) {
+                        cell.classList.add('has-volta');
+                        var volta = document.createElement('div');
+                        volta.className = 'bd-loop-cell-volta';
+                        volta.innerHTML = '<span class="bd-volta-num">' + _bdVoltaLabel(bdVoltas[i]) + '</span>';
+                        cell.appendChild(volta);
+                    }
+                    (function(idx) {
+                        var edgeT = document.createElement('div');
+                        edgeT.className = 'bd-loop-cell-edge top';
+                        edgeT.title = '클릭: 볼타(1·2 엔딩) 번호 선택';
+                        edgeT.addEventListener('pointerdown', function(e) { e.preventDefault(); e.stopPropagation(); bdCloseVoltaPicker(); bdCloseSongForm(); bdOpenVoltaPicker(idx); });
+                        cell.appendChild(edgeT);
+                    })(i);
                     // ─── 도돌이표 가장자리 (좌/우) — 클릭으로 토글 ─────────────
                     (function(i) {
                         var edgeL = document.createElement('div');
@@ -3400,6 +3669,13 @@
                         cell.appendChild(edgeR);
                     })(i);
                     grid.appendChild(cell);
+                }
+                // 송폼이 있는 줄(4칸 단위)은 위쪽에 간격 → 라벨이 마디 위 공간에 들어가게
+                var _cs = grid.querySelectorAll('.bd-loop-cell');
+                for (var r = 0; r < _cs.length; r += 4) {
+                    var end = Math.min(r + 4, _cs.length), any = false;
+                    for (var k = r; k < end; k++) if (_cs[k].classList.contains('has-songform')) { any = true; break; }
+                    if (any) for (var k2 = r; k2 < end; k2++) _cs[k2].classList.add('bd-row-spaced');
                 }
             }
 
@@ -3421,8 +3697,7 @@
                 inp.spellcheck = false;
                 inp.oninput = function() {
                     inp.classList.toggle('has-value', !!inp.value.trim());
-                    if (half === 'a') bdChordsA[idx] = inp.value.trim();
-                    else              bdChordsB[idx] = inp.value.trim();
+                    _bdChordMap(half)[idx] = inp.value.trim();
                 };
                 // 한영 전환 깜빡한 입력 자동 보정 (예: 'ㅠㅡ7' → 'Bm7')
                 inp.onblur = function() {
@@ -3431,8 +3706,7 @@
                     if (fixed !== raw) {
                         inp.value = fixed;
                         inp.classList.toggle('has-value', !!fixed);
-                        if (half === 'a') bdChordsA[idx] = fixed;
-                        else              bdChordsB[idx] = fixed;
+                        _bdChordMap(half)[idx] = fixed;
                     }
                 };
                 return inp;
@@ -3452,23 +3726,24 @@
             }
 
             function readChords() {
-                const a = {}, b = {};
+                const a = {}, b = {}, c = {}, d = {};
+                var out = { a: a, b: b, c: c, d: d };
                 if (bdInputMode === 'picker') {
-                    Object.keys(bdChordsA).forEach(function(k) {
-                        if (bdChordsA[k]) a[k] = bdChordsA[k];
-                    });
-                    Object.keys(bdChordsB).forEach(function(k) {
-                        if (bdChordsB[k]) b[k] = bdChordsB[k];
+                    ['a','b','c','d'].forEach(function(h) {
+                        var src = _bdChordMap(h), dst = out[h];
+                        Object.keys(src).forEach(function(k) { if (src[k]) dst[k] = src[k]; });
                     });
                 } else {
                     document.querySelectorAll('#fChords input').forEach(function(inp) {
                         const v = inp.value.trim();
                         if (!v) return;
-                        if (inp.dataset.half === 'a') a[inp.dataset.idx] = v;
-                        else b[inp.dataset.idx] = v;
+                        var dst = out[inp.dataset.half] || a;
+                        dst[inp.dataset.idx] = v;
                     });
                 }
-                return { a: a, b: b };
+                // 2코드 모드일 땐 c/d 는 저장하지 않음(칸이 없으니 무효)
+                if (bdSegs !== 4) { out.c = {}; out.d = {}; }
+                return out;
             }
 
             // ─── 픽커 로직 ───────────────────────────────────
@@ -3480,7 +3755,7 @@
                 bdClosePicker();
                 var cell = anchorSpan.closest('.bd-loop-cell');
                 if (!cell) return;
-                var chordMap = half === 'b' ? bdChordsB : bdChordsA;
+                var chordMap = _bdChordMap(half);
                 var existing = chordMap[idx];
                 if (existing) {
                     var info = bdParseChordName(existing);
@@ -3685,8 +3960,11 @@
                 //   - 토글 OFF 인 쪽 셀은 보존(나중에 다시 켜면 복원).
                 //   - chordOffset (싱코페이션) 도 함께 저장.
                 var hasRepeats = bdRepeats.left.size > 0 || bdRepeats.right.size > 0;
+                var hasVolta = Object.keys(bdVoltas).length > 0;
+                var hasSongForm = Object.keys(bdSongForm).length > 0;
+                var segs4save = (bdSegs === 4);
                 var seqToSave = null;
-                if (!bdSeqIsEmpty() || bdBassCustom || bdPianoCustom || bdMeasureLen === 2 || hasRepeats) {
+                if (!bdSeqIsEmpty() || bdBassCustom || bdPianoCustom || bdMeasureLen === 2 || hasRepeats || hasVolta || hasSongForm || segs4save) {
                     seqToSave = {
                         bassCustom:  !!bdBassCustom,
                         pianoCustom: !!bdPianoCustom
@@ -3704,6 +3982,22 @@
                             left:  Array.from(bdRepeats.left).sort(function(a,b){return a-b;}),
                             right: Array.from(bdRepeats.right).sort(function(a,b){return a-b;})
                         };
+                    }
+                    if (hasVolta) {
+                        var _vo = {};
+                        Object.keys(bdVoltas).forEach(function(k) { if (bdVoltas[k] && bdVoltas[k].length) _vo[k] = bdVoltas[k].slice(); });
+                        if (Object.keys(_vo).length) seqToSave.voltas = _vo;
+                    }
+                    if (hasSongForm) {
+                        var _so = {};
+                        Object.keys(bdSongForm).forEach(function(k) { if (bdSongForm[k]) _so[k] = bdSongForm[k]; });
+                        if (Object.keys(_so).length) seqToSave.songForm = _so;
+                    }
+                    if (segs4save) {
+                        var _rc = readChords();
+                        seqToSave.segs = 4;
+                        seqToSave.chords_c = _rc.c;
+                        seqToSave.chords_d = _rc.d;
                     }
                 }
                 const data = {
@@ -3794,6 +4088,8 @@
                     piano_style: snap.piano_style || 'default',
                     chords_a: snap.chords_a || {},
                     chords_b: snap.chords_b || {},
+                    chords_c: snap.chords_c || {},
+                    chords_d: snap.chords_d || {},
                     difficulty: snap.difficulty,
                     genre: snap.genre,
                     sequencer_pattern: snap.sequencer_pattern || null,
@@ -3912,6 +4208,21 @@
                 $('newBtn').onclick = function() {
                     navigateWithConfirm(function() { newPreset(); });
                 };
+                // 프리셋 목록 접기/펴기 (기본 접힘)
+                var _plToggle = $('presetListToggle');
+                if (_plToggle) {
+                    var _plToggleFn = function() {
+                        var b = $('presetBrowse');
+                        if (!b) return;
+                        var willOpen = b.hasAttribute('hidden');
+                        if (willOpen) b.removeAttribute('hidden'); else b.setAttribute('hidden', '');
+                        _plToggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+                        var caret = _plToggle.querySelector('.bd-collapse-caret');
+                        if (caret) caret.style.transform = willOpen ? 'rotate(180deg)' : '';
+                    };
+                    _plToggle.onclick = _plToggleFn;
+                    _plToggle.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _plToggleFn(); } });
+                }
                 $('saveBtn').onclick = savePreset;
                 setupDirtyTracking();
                 $('deleteBtn').onclick = deletePreset;
@@ -3952,6 +4263,11 @@
                 });
                 $('bdTipText').style.display   = bdInputMode === 'text'   ? 'inline' : 'none';
                 $('bdTipPicker').style.display = bdInputMode === 'picker' ? 'inline' : 'none';
+                // 마디당 코드 2/4 토글 (위 .bd-input-mode-btn 일괄 바인딩 뒤에 별도 지정)
+                document.querySelectorAll('#fSegsBtns .bd-input-mode-btn').forEach(function(b) {
+                    b.onclick = function() { setBdSegs(parseInt(b.dataset.segs, 10)); };
+                    b.classList.toggle('active', parseInt(b.dataset.segs, 10) === bdSegs);
+                });
 
                 // 드럼 리듬 — 그룹 토글 + sub-drawer. 초기 렌더 (이후 setRhythm 호출 시마다 갱신).
                 renderRhythmGroups();
