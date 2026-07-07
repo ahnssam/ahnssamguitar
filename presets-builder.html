@@ -163,6 +163,29 @@
             min-height: 1rem;
         }
 
+        /* ───── 그리드 아래 마디 추가 (＋4마디 / −1 / +1) ───── */
+        .bd-add-bars { display: flex; align-items: stretch; gap: 6px; width: 100%; margin: 0.55rem 0 0.2rem; }
+        .bd-add-main {
+            flex: 1; padding: 0.42rem; border: 1px dashed rgba(42,107,74,0.3); border-radius: 8px;
+            background: transparent; color: rgba(42,107,74,0.6); font-family: inherit; font-size: 0.85rem; font-weight: 700;
+            cursor: pointer; transition: background .15s, color .15s, border-color .15s;
+        }
+        .bd-add-main:hover { background: rgba(42,107,74,0.07); color: var(--green-deep); border-color: rgba(42,107,74,0.5); }
+        .bd-add-main:disabled { opacity: 0.3; cursor: default; }
+        .bd-add-pm {
+            min-width: 46px; padding: 0 14px; border-radius: 8px; border: 1px dashed rgba(42,107,74,0.3);
+            background: transparent; color: rgba(42,107,74,0.6); font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+        }
+        .bd-add-pm:hover { background: rgba(42,107,74,0.07); color: var(--green-deep); border-color: rgba(42,107,74,0.5); }
+        .bd-add-pm:disabled { opacity: 0.3; cursor: default; }
+        /* 탭템포 아래 템포 초기화 버튼 */
+        .bd-bpm-tap-slot { flex-direction: column; gap: 4px; }
+        .bd-tap-reset-btn {
+            font-family: inherit; font-size: 0.68rem; font-weight: 600; padding: 3px 8px;
+            border-radius: 6px; border: 1px solid rgba(42,107,74,0.25); background: transparent;
+            color: var(--muted, #66756e); cursor: pointer;
+        }
+        .bd-tap-reset-btn:hover { background: rgba(42,107,74,0.08); color: var(--green-deep); }
         /* ───── Tap-tempo button (BPM 옆) ───── */
         .bd-tap-btn {
             display: inline-flex;
@@ -493,7 +516,12 @@
             margin: 0;
             flex: 0 0 auto;
             min-width: 0;
+            /* 라벨을 컨트롤 왼쪽에 인라인으로 */
+            flex-direction: row;
+            align-items: center;
+            gap: 0.4rem;
         }
+        .bd-bars-row .bd-field label { margin-bottom: 0; white-space: nowrap; }
         /* 마디 pill 버튼들도 살짝 좁힘 */
         .bd-bars-row .bd-pill {
             padding: 0.32rem 0.55rem;
@@ -1802,11 +1830,12 @@
                             </div>
                             <input type="range" min="20" max="240" value="90" class="bd-bpm-slider" id="fBpmSlider">
                             <div class="bd-bpm-tap-slot">
-                                <button type="button" class="bd-bpm-tap-btn" id="fTapBtn" title="박자에 맞춰 2번 이상 누르세요">
+                                <button type="button" class="bd-bpm-tap-btn" id="fTapBtn" title="박자에 맞춰 2번 이상 누르세요 (단축키 T)">
                                     <i class="fas fa-hand-pointer"></i>
                                     <span>TAP</span>
                                     <span class="bd-tap-bpm" id="fTapBpm" style="display:none;"></span>
                                 </button>
+                                <button type="button" class="bd-tap-reset-btn" id="fTapResetBtn" title="템포를 기본(90)으로 초기화">템포 초기화</button>
                             </div>
                         </div>
                         <!-- 호환: 기존 코드가 $('fBpm').value 로 읽으므로 hidden input 유지 -->
@@ -1895,20 +1924,20 @@
                             <button class="bd-pill" data-bars="12" type="button">12</button>
                             <button class="bd-pill" data-bars="16" type="button">16</button>
                             <button class="bd-pill" data-bars="32" type="button">32</button>
-                            <span class="bd-bars-fine" title="1마디씩 미세 조정 (1~64)">
+                            <span class="bd-bars-fine" title="1마디씩 미세 조정 (1~150)">
                                 <button type="button" class="bd-bars-pm" id="bdBarsMinus" aria-label="마디 1개 줄이기">−</button>
                                 <button type="button" class="bd-bars-pm" id="bdBarsPlus" aria-label="마디 1개 늘리기">+</button>
                             </span>
                         </div>
                     </div>
-                    <div class="bd-field" style="margin-left:auto;">
+                    <div class="bd-field">
                         <label>마디당 코드</label>
                         <div class="bd-input-mode" id="fSegsBtns">
                             <button type="button" class="bd-input-mode-btn active" data-segs="2">2개</button>
                             <button type="button" class="bd-input-mode-btn" data-segs="4">4개</button>
                         </div>
                     </div>
-                    <div class="bd-input-mode" style="margin-left:0.6rem;">
+                    <div class="bd-input-mode" style="margin-left:auto;">
                         <button type="button" class="bd-input-mode-btn" data-mode="text" id="bdModeText">직접입력</button>
                         <button type="button" class="bd-input-mode-btn" data-mode="picker" id="bdModePicker">픽커</button>
                     </div>
@@ -1920,6 +1949,12 @@
                         <span id="bdTipText">타이핑: <code>C</code>, <code>Am</code>, <code>F#m</code>, <code>Bb</code>, <code>CM7</code>, <code>Dm7</code> + 확장(<code>Csus4</code>, <code>Cadd9</code>, <code>C9</code>, <code>Cm9</code>, <code>C13</code>, <code>C7b9</code>, <code>C7b13</code> 등) 모두 보이싱 재생.</span>
                         <span id="bdTipPicker" style="display:none;">셀을 누르면 픽커가 뜹니다 — 모바일에서 키보드 없이 빠르게 입력.</span>
                     </div>
+                </div>
+                <!-- 그리드 바로 아래 — 마디 수 조정 (＋4마디 / −1 / +1) -->
+                <div class="bd-add-bars">
+                    <button type="button" class="bd-add-pm" id="bdAddMinus" aria-label="마디 1개 줄이기">−1</button>
+                    <button type="button" class="bd-add-main" id="bdAddBars4" title="4마디 추가">＋ 4마디</button>
+                    <button type="button" class="bd-add-pm" id="bdAddPlus" aria-label="마디 1개 늘리기">+1</button>
                 </div>
                 <!-- 전체 키 + 초기화 — 코드 그리드 바로 아래 -->
                 <div class="bd-chord-utility-row">
@@ -3184,7 +3219,7 @@
                 if (sel) sel.value = String(difficulty || 0);
             }
 
-            const BARS_MIN = 1, BARS_MAX = 64;
+            const BARS_MIN = 1, BARS_MAX = 150;   // 연습도구와 동일
             function setBars(n) {
                 bars = Math.max(BARS_MIN, Math.min(BARS_MAX, parseInt(n, 10) || BARS_MIN));
                 renderBars();
@@ -3198,6 +3233,10 @@
                 var bm = $('bdBarsMinus'), bp = $('bdBarsPlus');
                 if (bm) bm.disabled = (bars <= BARS_MIN);
                 if (bp) bp.disabled = (bars >= BARS_MAX);
+                var am = $('bdAddMinus'), ap = $('bdAddPlus'), a4 = $('bdAddBars4');
+                if (am) am.disabled = (bars <= BARS_MIN);
+                if (ap) ap.disabled = (bars >= BARS_MAX);
+                if (a4) a4.disabled = (bars >= BARS_MAX);
             }
 
             // ─── 장르 호환 매핑 (구버전 텍스트 입력 → 새 셀렉트 옵션) ───
@@ -4368,6 +4407,10 @@
                 });
                 $('bdBarsMinus').onclick = function() { setBars(bars - 1); };
                 $('bdBarsPlus').onclick  = function() { setBars(bars + 1); };
+                // 그리드 아래 마디 조정 (＋4마디 / −1 / +1)
+                var _addB4 = $('bdAddBars4'); if (_addB4) _addB4.onclick = function() { setBars(bars + 4); };
+                var _addBm = $('bdAddMinus'); if (_addBm) _addBm.onclick = function() { setBars(bars - 1); };
+                var _addBp = $('bdAddPlus');  if (_addBp) _addBp.onclick = function() { setBars(bars + 1); };
                 // 전체 키 ▼▲ / 초기화 — 그리드 아래 유틸리티 행
                 var bdTD = $('bdTransposeDown'); if (bdTD) bdTD.onclick = function() { transposeBdChordsAll(-1); };
                 var bdTU = $('bdTransposeUp');   if (bdTU) bdTU.onclick = function() { transposeBdChordsAll(1); };
@@ -4445,6 +4488,23 @@
                             e.preventDefault();
                             tap();
                         }
+                    });
+                    // 템포 초기화 — 탭 기록 지우고 BPM 기본(90)으로
+                    var resetBtn = $('fTapResetBtn');
+                    if (resetBtn) resetBtn.addEventListener('click', function() {
+                        taps = [];
+                        if (resetTimer) clearTimeout(resetTimer);
+                        if (bpmDisplay) { bpmDisplay.textContent = ''; bpmDisplay.style.display = 'none'; }
+                        setBdBpm(90);
+                    });
+                    // 단축키 T = 탭 (입력창/셀렉트 포커스 중이 아닐 때)
+                    document.addEventListener('keydown', function(e) {
+                        if (e.key !== 't' && e.key !== 'T') return;
+                        if (e.metaKey || e.ctrlKey || e.altKey) return;
+                        var t = e.target, tag = (t && t.tagName || '').toLowerCase();
+                        if (tag === 'input' || tag === 'textarea' || tag === 'select' || (t && t.isContentEditable)) return;
+                        e.preventDefault();
+                        tap();
                     });
                 })();
 

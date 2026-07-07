@@ -14553,13 +14553,26 @@
                     });
                 });
                 listEl.querySelectorAll('[data-del-slot]').forEach(function(b) {
-                    b.addEventListener('click', async function(e) {
+                    b.addEventListener('click', function(e) {
                         e.stopPropagation();
                         var slot = parseInt(b.getAttribute('data-del-slot'), 10);
-                        var client = loopAuthClient(); var user = loopCurrentUser();
-                        if (!client || !user) return;
-                        try { await client.from('user_presets').delete().eq('user_id', user.id).eq('slot', slot); } catch (err) {}
-                        openMyPresetsModal();
+                        var s = slots[slot - 1];
+                        var nm = (s && s.name) ? s.name : ('프리셋 ' + slot);
+                        // 삭제 확인 팝업
+                        var ov = loopEnsureModal('loopDelModal',
+                            '<div class="loop-modal-title">삭제할까요?</div>' +
+                            '<div class="loop-modal-msg">' + slot + '번 칸의 "<b>' + _escHtml(nm) + '</b>"을(를) 삭제합니다.<br>이 작업은 되돌릴 수 없어요.</div>' +
+                            '<div class="loop-modal-actions"><button type="button" class="loop-modal-btn ghost" data-close>취소</button>' +
+                            '<button type="button" class="loop-modal-btn primary" id="loopDelYes">삭제</button></div>');
+                        ov.classList.add('open');
+                        document.getElementById('loopDelYes').onclick = async function() {
+                            ov.classList.remove('open');
+                            var client = loopAuthClient(); var user = loopCurrentUser();
+                            if (!client || !user) return;
+                            try { await client.from('user_presets').delete().eq('user_id', user.id).eq('slot', slot); } catch (err) {}
+                            loopToast('삭제되었습니다');
+                            openMyPresetsModal();
+                        };
                     });
                 });
             }
