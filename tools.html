@@ -15844,10 +15844,17 @@
                 var headCls = level === 1 ? 'hc1' : (level >= 2 ? 'hc2' : '');
                 var chartTight = level === 2 ? ' lp-tight' : level === 3 ? ' lp-tight2' : '';
                 var total = pagesRows.length;
+                // 한 페이지짜리라도, 내용이 페이지를 어느 정도(80%+) 채울 때만 세로 중앙정렬.
+                //   짧은 악보는 제목/아티스트가 가운데로 내려가지 않게 위(top) 고정.
+                var singleCenter = false;
+                if (total === 1) {
+                    var contentH = headH + (rows.length ? rows[rows.length - 1].bottom : 0);
+                    singleCenter = contentH >= PAGE_CONTENT * 0.8;
+                }
                 var pages = [];
                 for (var p = 0; p < total; p++) {
                     var pg = document.createElement('div');
-                    pg.className = 'lp-page' + (p === 0 ? pageCls : '') + (total === 1 ? ' lp-single' : '');
+                    pg.className = 'lp-page' + (p === 0 ? pageCls : '') + (singleCenter ? ' lp-single' : '');
                     pg.appendChild(_buildWatermark());           // 각 페이지 뒤 워터마크
                     if (p === 0) {
                         var h0 = _printHead(title, artist, capo);
