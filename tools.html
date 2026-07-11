@@ -10147,7 +10147,12 @@
         const main = document.getElementById('toolsMain');
         const overlay = document.getElementById('sidebarOverlay');
 
-        function isMobile() { return window.innerWidth <= MOBILE_BREAKPOINT; }
+        // CSS 모바일 레이아웃과 동일 기준(max-width:900px OR 세로 방향) — 둘이 어긋나면
+        // 세로인데 폭이 900 초과인 기기에서 햄버거가 데스크탑 동작(콘텐츠만 밀림)을 타는 버그.
+        function isMobile() {
+            try { return window.matchMedia('(max-width: ' + MOBILE_BREAKPOINT + 'px), (orientation: portrait)').matches; }
+            catch (e) { return window.innerWidth <= MOBILE_BREAKPOINT; }
+        }
 
         function toggleSidebar() {
             if (isMobile()) {
