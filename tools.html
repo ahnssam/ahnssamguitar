@@ -3709,9 +3709,47 @@
         /* 악기 선택 행 — 프렛보드 바로 위에 배치, 우측 정렬 */
         .sc-inst-row {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.6rem;
             margin-bottom: 0.5rem;
         }
+        /* 프렛보드 윗줄 표시 스위치 — 왼쪽으로 몰고 간격 좁게 */
+        .sc-fb-switches {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            flex-wrap: wrap;
+        }
+        .sc-fb-switches .fb-switch { margin: 0; }
+        /* ♯/♭ 토글 — 루트 그리드 바로 아래, 왼쪽 정렬 */
+        .sc-root-acc { margin-top: 0.4rem; align-self: flex-start; }
+        /* 모드 종류 세그먼트 (기본 / 멜로딕 / 하모닉) */
+        .sc-mode-family {
+            display: flex;
+            gap: 0.3rem;
+            margin-top: 0.45rem;
+            flex-wrap: wrap;
+        }
+        .sc-mf-btn {
+            flex: 1 1 auto;
+            padding: 0.4rem 0.5rem;
+            border: 1px solid rgba(42,107,74,0.22);
+            border-radius: 8px;
+            background: rgba(42,107,74,0.05);
+            color: var(--text-mid);
+            font-family: inherit;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.14s;
+            white-space: nowrap;
+        }
+        .sc-mf-btn:hover { background: rgba(82,168,114,0.16); color: var(--green-deep); }
+        .sc-mf-btn.active { background: var(--green-deep); color: #fff; border-color: var(--green-deep); }
+        :root[data-theme="dark"] .sc-mf-btn { color: rgba(232,240,236,0.72); background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+        :root[data-theme="dark"] .sc-mf-btn.active { color: #fff; background: var(--green-deep); border-color: var(--green-deep); }
+        .sc-mode-family[hidden] { display: none; }
         .sc-root-grid {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
@@ -3779,6 +3817,8 @@
         /* ── 코드진행 (다이아토닉) 패널 ───────────────────────────── */
         /* 키 그리드가 행 전체 폭을 쓰도록 (PC 에서 한 칸만 차지해 좁아 보이던 문제 해결) */
         #progressionPanel .sc-select-row { grid-template-columns: 1fr; }
+        /* 작곡 도우미도 루트만 있으므로 한 열(전체 폭) — 오른쪽 여백 없이 루트를 넓게 */
+        #chordcomposePanel .sc-select-row { grid-template-columns: 1fr; }
         #progressionPanel .sc-root-grid {
             grid-template-columns: repeat(12, 1fr);
             gap: 0.3rem;
@@ -3798,8 +3838,18 @@
         #scalesPanel .sc-root-grid { grid-template-columns: repeat(12, 1fr); gap: 0.28rem; }
         #scalesPanel .sc-root-btn { padding: 0.5rem 0; font-size: 0.82rem; }
         @media (max-width: 640px) { #scalesPanel .sc-root-btn { padding: 0.45rem 0; font-size: 0.72rem; } #scalesPanel .sc-root-grid { gap: 0.18rem; } }
+        /* 스케일 소개 + 코드로 모드 찾기 — 한 행에 반반 */
+        .sc-info-row { display: flex; gap: 0.6rem; align-items: stretch; margin-bottom: 1rem; }
+        .sc-info-row .sc-info { flex: 1 1 50%; min-width: 0; margin-bottom: 0; }
+        .sc-info-row .sc-find { flex: 1 1 50%; min-width: 0; margin: 0; }
+        @media (max-width: 640px) { .sc-info-row { flex-direction: column; } }
         /* 코드로 모드 찾기 (스케일 패널) */
         .sc-find { margin: 0.2rem 0 0.6rem; border: 1px solid rgba(42,107,74,0.16); border-radius: 12px; background: rgba(42,107,74,0.03); padding: 0.7rem 0.85rem; }
+        /* 찾은 모드 — 클릭하면 그 모드가 프렛보드/소개에 표시됨 */
+        .sc-find-result .sc-find-mode { display: inline-flex; align-items: center; gap: 0.15rem; margin: 0.15rem 0.3rem 0.15rem 0; padding: 0.28rem 0.5rem; border: 1px solid rgba(42,107,74,0.28); border-radius: 8px; background: rgba(42,107,74,0.06); color: var(--green-deep); font-family: inherit; font-size: 0.84rem; font-weight: 700; cursor: pointer; transition: all 0.14s; }
+        .sc-find-result .sc-find-mode:hover { background: var(--green-deep); color: #fff; border-color: var(--green-deep); }
+        .sc-find-result .sc-find-mode:hover .sc-find-deg { color: #fff; border-color: rgba(255,255,255,0.6); }
+        :root[data-theme="dark"] .sc-find-result .sc-find-mode { color: var(--green-light); background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.14); }
         :root[data-theme="dark"] .sc-find { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
         .sc-find-head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.45rem; }
         .sc-find-label { font-size: 0.85rem; font-weight: 700; color: var(--green-deep); white-space: nowrap; }
@@ -3853,6 +3903,13 @@
         .cc-gloss-item b { color: var(--green-deep); }
         :root[data-theme="dark"] .cc-gloss-item b { color: var(--green-light); }
         /* 모드 스케일 코드 뷰어 (작곡 도우미 + 키별 화음 공용) */
+        .cc-modal-toggle { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.75rem; border: 1px solid rgba(42,107,74,0.22); border-radius: 8px; background: rgba(42,107,74,0.05); color: var(--green-deep); font-family: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.14s; }
+        .cc-modal-toggle:hover { background: rgba(82,168,114,0.16); }
+        .cc-modal-toggle.active { background: var(--green-deep); color: #fff; border-color: var(--green-deep); }
+        .cc-modal-toggle-chev { font-size: 0.68rem; transition: transform 0.18s; }
+        .cc-modal-toggle.active .cc-modal-toggle-chev { transform: rotate(180deg); }
+        :root[data-theme="dark"] .cc-modal-toggle { color: var(--green-light); background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.14); }
+        .cc-modal[hidden] { display: none; }
         .cc-modal { margin-top: 1.0rem; border: 1px solid rgba(42,107,74,0.16); border-radius: 12px; background: rgba(42,107,74,0.03); padding: 0.8rem 0.9rem; }
         :root[data-theme="dark"] .cc-modal { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
         .cc-modal-head { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
@@ -3863,8 +3920,13 @@
         .cc-modal-chords .cc-cname { flex: 0 0 auto; }
         /* 모드 스케일 코드 — 가로 칩 나열 */
         .cc-chip-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.2rem; }
-        .cc-chip { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; min-width: 52px; padding: 0.4rem 0.6rem; border: 1px solid rgba(42,107,74,0.18); border-radius: 10px; background: rgba(42,107,74,0.05); }
+        .cc-chip { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; min-width: 52px; padding: 0.4rem 0.6rem; border: 1px solid rgba(42,107,74,0.18); border-radius: 10px; background: rgba(42,107,74,0.05); font-family: inherit; cursor: pointer; transition: all 0.13s; }
+        .cc-chip:hover { background: var(--green-deep); border-color: var(--green-deep); transform: translateY(-1px); }
+        .cc-chip:hover .cc-chip-roman { color: rgba(255,255,255,0.85); }
+        .cc-chip:hover .cc-chip-name { color: #fff; }
+        .cc-chip:active { transform: translateY(0); }
         :root[data-theme="dark"] .cc-chip { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); }
+        .cc-chip-hint { font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); }
         .cc-chip-roman { font-size: 0.66rem; font-weight: 800; color: var(--green-mid); letter-spacing: 0.02em; }
         :root[data-theme="dark"] .cc-chip-roman { color: var(--green-light); }
         .cc-chip-name { font-family: 'Playfair Display', serif; font-size: 1.02rem; font-weight: 800; color: var(--text-primary); line-height: 1; }
@@ -9192,6 +9254,11 @@
                                 <label class="sc-select-label">루트</label>
                             </div>
                             <div class="sc-root-grid" id="scRootGrid"></div>
+                            <!-- ♯/♭ 표기 토글 — 루트 바로 아래 -->
+                            <div class="acc-toggle sc-root-acc" id="scAccToggle" role="group" aria-label="음이름 표기">
+                                <button type="button" class="acc-toggle-btn active" data-acc="sharp" data-action="scSetAccidental" data-args="sharp">♯</button>
+                                <button type="button" class="acc-toggle-btn" data-acc="flat" data-action="scSetAccidental" data-args="flat">♭</button>
+                            </div>
                         </div>
                         <div class="sc-select-group">
                             <label class="sc-select-label">스케일</label>
@@ -9223,10 +9290,32 @@
                                     <div class="sc-scale-menu" id="scScaleMenu" role="listbox"></div>
                                 </div>
                             </div>
+                            <!-- 모드 종류 — '모드' 카테고리일 때만 표시 -->
+                            <div class="sc-mode-family" id="scModeFamilySeg" role="group" aria-label="모드 종류" hidden>
+                                <button type="button" class="sc-mf-btn active" data-mf="basic" data-action="scSetModeFamily" data-args="basic">기본</button>
+                                <button type="button" class="sc-mf-btn" data-mf="melodic" data-action="scSetModeFamily" data-args="melodic">멜로딕 마이너</button>
+                                <button type="button" class="sc-mf-btn" data-mf="harmonic" data-action="scSetModeFamily" data-args="harmonic">하모닉 마이너</button>
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="fb-control-row fb-control-row-switches">
+                <!-- 스케일 소개(좌) + 코드로 모드 찾기(우) 를 한 행에 나란히 -->
+                <div class="sc-info-row">
+                    <div class="sc-info" id="scInfo"></div>
+                    <!-- 코드로 모드 찾기 — 입력한 코드가 현재 루트(키)의 7모드 중 어디에 들어있는지 -->
+                    <div class="sc-find">
+                        <div class="sc-find-head">
+                            <span class="sc-find-label"><i class="fas fa-magnifying-glass"></i> 코드로 모드 찾기</span>
+                            <input type="text" class="sc-find-input" id="scFindInput" placeholder="예: Fm, Fm7, A♭maj7, G7" maxlength="14" data-input="scFindModes" data-args="$value" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                        </div>
+                        <div class="sc-find-result" id="scFindResult"></div>
+                    </div>
+                </div>
+
+                <!-- 프렛보드 바로 윗줄: 표시 스위치(좌) + 악기 선택(우) -->
+                <div class="sc-inst-row">
+                    <div class="sc-fb-switches">
                         <label class="fb-switch">
                             <input type="checkbox" id="scShowNotes" checked data-change="scToggleShowNotes" data-args="$checked">
                             <span class="fb-switch-slider"></span>
@@ -9242,26 +9331,7 @@
                             <span class="fb-switch-slider"></span>
                             <span class="fb-switch-label">세로로 회전</span>
                         </label>
-                        <div class="acc-toggle" id="scAccToggle" role="group" aria-label="음이름 표기">
-                            <button type="button" class="acc-toggle-btn active" data-acc="sharp" data-action="scSetAccidental" data-args="sharp">♯</button>
-                            <button type="button" class="acc-toggle-btn" data-acc="flat" data-action="scSetAccidental" data-args="flat">♭</button>
-                        </div>
                     </div>
-                </div>
-
-                <div class="sc-info" id="scInfo"></div>
-
-                <!-- 코드로 모드 찾기 — 입력한 코드가 현재 루트(키)의 7모드 중 어디에 들어있는지 -->
-                <div class="sc-find">
-                    <div class="sc-find-head">
-                        <span class="sc-find-label"><i class="fas fa-magnifying-glass"></i> 코드로 모드 찾기</span>
-                        <input type="text" class="sc-find-input" id="scFindInput" placeholder="예: Fm, Fm7, A♭maj7, G7" maxlength="14" data-input="scFindModes" data-args="$value" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-                    </div>
-                    <div class="sc-find-result" id="scFindResult"></div>
-                </div>
-
-                <!-- 악기 선택 — 프렛보드 바로 위에 배치 -->
-                <div class="sc-inst-row">
                     <div class="fb-inst-dropdown" id="scInstDropdown">
                         <button class="fb-inst-current" type="button" data-action="scToggleInstMenu" aria-haspopup="listbox" aria-expanded="false">
                             <i class="fas fa-guitar fb-inst-icon"></i>
@@ -9330,11 +9400,11 @@
                             <button type="button" class="acc-toggle-btn active" data-acc="sharp" data-action="ccSetAccidental" data-args="sharp">♯</button>
                             <button type="button" class="acc-toggle-btn" data-acc="flat" data-action="ccSetAccidental" data-args="flat">♭</button>
                         </div>
+                        <button type="button" class="cc-modal-toggle" id="ccModalToggle" data-action="ccToggleModal" aria-expanded="false"><i class="fas fa-sliders-h"></i> 모드 스케일 코드 보기 <i class="fas fa-chevron-down cc-modal-toggle-chev"></i></button>
                     </div>
                 </div>
-                <div class="cc-modal">
+                <div class="cc-modal" id="ccModalBox" hidden>
                     <div class="cc-modal-head">
-                        <span class="cc-modal-label"><i class="fas fa-sliders-h"></i> 모드 스케일 코드 보기</span>
                         <select class="cc-modal-select" id="ccModalSelect"></select>
                     </div>
                     <div class="cc-modal-chords" id="ccModalChords"></div>
@@ -12252,6 +12322,43 @@
                 return pianoBusNode;
             }
 
+            // 요청 음(midi)에 가장 가까운 '로드된' 피아노 샘플을 찾는다 (피치시프트 기준음).
+            //   샘플은 C3(48)~G4(67) 20개뿐이라, 그 밖의 음은 가장 가까운 샘플을
+            //   playbackRate 로 반음 단위 재피치해서 전 음역을 커버한다.
+            function _nearestPianoSample(midi) {
+                if (pianoSamples[midi]) return { buf: pianoSamples[midi], midi: midi };
+                for (var d = 1; d <= 24; d++) {
+                    if (pianoSamples[midi - d]) return { buf: pianoSamples[midi - d], midi: midi - d };
+                    if (pianoSamples[midi + d]) return { buf: pianoSamples[midi + d], midi: midi + d };
+                }
+                return null;
+            }
+            // 단일 피아노 음을 반주 샘플(가장 가까운 샘플을 재피치)로 재생.
+            //   키별화음·모드 스케일 뷰어 클릭음에서 사용. 백킹을 아직 안 켰어도
+            //   오디오 컨텍스트/샘플을 지연 로딩하고, 로드 전이면 피아노 신스로 폴백.
+            window.playPianoSampleNote = function(midi, when) {
+                try {
+                    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    if (audioCtx.state === 'suspended') { try { audioCtx.resume(); } catch (e) {} }
+                    try { loadDrumSamples(); } catch (e) {}   // 아직이면 로딩 시작 (idempotent)
+                    var sm = _nearestPianoSample(midi);
+                    if (!sm) {   // 샘플 로드 전 — 피아노 탭 신스로 폴백
+                        if (typeof window.pnPlayMidi === 'function') window.pnPlayMidi(midi);
+                        return;
+                    }
+                    var bus = getPianoBus();
+                    var t0 = (typeof when === 'number') ? when : audioCtx.currentTime;
+                    var g = audioCtx.createGain();
+                    g.gain.value = PIANO_SAMPLE_GAIN;
+                    g.connect(bus);
+                    var src = audioCtx.createBufferSource();
+                    src.buffer = sm.buf;
+                    src.playbackRate.value = Math.pow(2, (midi - sm.midi) / 12);   // 반음 단위 피치시프트
+                    src.connect(g);
+                    src.start(t0);
+                } catch (e) {}
+            };
+
             // 울리고 있는 모든 피아노 코드를 즉시 끊는다.
             //   - 코드별 chordGain 을 짧게 ramp-down → 0 으로 감쇠
             //   - 그 뒤에 시작 예정이거나 진행 중인 oscillator 들도 .stop()
@@ -12560,14 +12667,16 @@
                     var freq = 440 * Math.pow(2, (midi - 69) / 12);
                     var t0 = time;
 
-                    // 녹음 샘플이 있으면 그 음은 샘플로 재생 (없으면 아래 합성음).
-                    var _pbuf = pianoSamples[midi];
-                    if (_pbuf) {
+                    // 녹음 샘플이 있으면 샘플로 재생 — 정확한 음이 없으면 가장 가까운
+                    //   샘플을 반음 단위로 재피치(피치시프트). 샘플 로드 전이면 아래 합성음.
+                    var _sm = _nearestPianoSample(midi);
+                    if (_sm) {
                         var sg = audioCtx.createGain();
                         sg.gain.value = PIANO_SAMPLE_GAIN * velMul;
                         sg.connect(chordGain);
                         var ssrc = audioCtx.createBufferSource();
-                        ssrc.buffer = _pbuf;
+                        ssrc.buffer = _sm.buf;
+                        ssrc.playbackRate.value = Math.pow(2, (midi - _sm.midi) / 12);
                         ssrc.connect(sg);
                         ssrc.start(t0);
                         if (opts.staccato) {
@@ -21683,6 +21792,35 @@
                 ],
             };
 
+            // 모드 패밀리 — '모드' 카테고리에서 기본/멜로딕마이너/하모닉마이너 세 갈래 중 선택.
+            //   각 갈래의 7개 모드(부모 스케일을 각 음에서 시작). 기본은 메이저 스케일 모드 재사용.
+            const SC_MODE_FAMILIES = {
+                basic: { label: '기본', scales: SCALE_LIBRARY.modes },
+                melodic: { label: '멜로딕 마이너', scales: [
+                    { id: 'mm_1', name: '멜로딕 마이너 (1번)',              intervals: [0,2,3,5,7,9,11], desc: '단3도만 내린 메이저 — 재즈 단조의 기본.' },
+                    { id: 'mm_2', name: 'Dorian ♭2 (2번)',                 intervals: [0,1,3,5,7,9,10], desc: '도리안에 ♭2. 프리지안 ♮6 이라고도 함.' },
+                    { id: 'mm_3', name: 'Lydian ♯5 (3번, Lydian aug)',     intervals: [0,2,4,6,8,9,11], desc: '#4·#5의 몽환적인 증음 색채.' },
+                    { id: 'mm_4', name: 'Lydian ♭7 (4번, Lydian dom)',     intervals: [0,2,4,6,7,9,10], desc: '#4 + ♭7. 도미넌트 위 몽환적 사운드.' },
+                    { id: 'mm_5', name: 'Mixolydian ♭6 (5번)',            intervals: [0,2,4,5,7,8,10], desc: '믹솔리디안에 ♭6. 애절한 도미넌트.' },
+                    { id: 'mm_6', name: 'Locrian ♮2 (6번, 하프디미니시드)', intervals: [0,2,3,5,6,8,10], desc: 'm7♭5 위에 쓰는 반감7 스케일.' },
+                    { id: 'mm_7', name: 'Altered (7번, Super Locrian)',    intervals: [0,1,3,4,6,8,10], desc: 'V7alt 위에서 텐션(♭9·♯9·♯11·♭13) 총출동.' },
+                ] },
+                harmonic: { label: '하모닉 마이너', scales: [
+                    { id: 'hm_1', name: '하모닉 마이너 (1번)',             intervals: [0,2,3,5,7,8,11], desc: '7음을 올린 단조 — 극적이고 동양적.' },
+                    { id: 'hm_2', name: 'Locrian ♮6 (2번)',               intervals: [0,1,3,5,6,9,10], desc: '로크리안에 ♮6.' },
+                    { id: 'hm_3', name: 'Ionian ♯5 (3번, augmented major)',intervals: [0,2,4,5,8,9,11], desc: '메이저에 #5의 증음 색.' },
+                    { id: 'hm_4', name: 'Dorian ♯4 (4번, 우크라이나 도리안)',intervals: [0,2,3,6,7,9,10], desc: '도리안에 #4. 집시·동유럽 색깔.' },
+                    { id: 'hm_5', name: 'Phrygian Dominant (5번)',        intervals: [0,1,4,5,7,8,10], desc: '스페인·플라멩코·메탈의 강렬한 도미넌트.' },
+                    { id: 'hm_6', name: 'Lydian ♯2 (6번)',                intervals: [0,3,4,6,7,9,11], desc: '리디안에 #2.' },
+                    { id: 'hm_7', name: 'Ultra Locrian (7번, ♭♭7)',       intervals: [0,1,3,4,6,8,9],  desc: '가장 불안정한 디미니시 계열.' },
+                ] },
+            };
+            // 현재 모드 패밀리의 스케일 목록.
+            function scModesList() {
+                var fam = SC_MODE_FAMILIES[scState.modeFamily] || SC_MODE_FAMILIES.basic;
+                return fam.scales;
+            }
+
             // Format interval labels for display (e.g. 1, 2, ♭3, ...)
             function intervalLabel(semi) {
                 const labels = {0:'1',1:'♭2',2:'2',3:'♭3',4:'3',5:'4',6:'♯4',7:'5',8:'♭6',9:'6',10:'♭7',11:'7'};
@@ -21698,6 +21836,7 @@
                 zoom: 1,            // 1 = 기본 / 1.75 = +75% 확대
                 rootPc: 'C',
                 category: 'major',
+                modeFamily: 'basic',   // '모드' 카테고리 하위: basic | melodic | harmonic
                 scaleId: 'major',
                 accidental: 'sharp', // 'sharp' | 'flat' — 음이름 표기
                 accManual: false,    // 사용자가 ♯/♭ 토글을 직접 눌렀는지
@@ -21866,7 +22005,7 @@
                     mode.degs.forEach(function(dg, i) {
                         var dpc = (rootIdx + mode.intervals[i]) % 12;
                         var dq = isSeventh ? dg.seventh : dg.triad;
-                        if (dpc === pc && dq === tq) matches.push({ name: mode.name, roman: dg.roman });
+                        if (dpc === pc && dq === tq) matches.push({ id: mode.id, name: mode.name, roman: dg.roman });
                     });
                 });
                 var inputAcc = (String(p.root).indexOf('b') >= 0) ? 'flat' : 'sharp';
@@ -21876,12 +22015,33 @@
                     return;
                 }
                 res.innerHTML = '<b>' + chordDisp + '</b> 은(는) <b>' + keyName + '</b> 키에서 → ' +
-                    matches.map(function(m) { return m.name + ' <span class="sc-find-deg">' + m.roman + '</span>'; }).join(' <span class="cc-arrow">·</span> ');
+                    matches.map(function(m) {
+                        return '<button type="button" class="sc-find-mode" data-action="scApplyMode" data-args="' + m.id + '" title="이 모드를 프렛보드에 표시">' +
+                            m.name + ' <span class="sc-find-deg">' + m.roman + '</span></button>';
+                    }).join('');
             }
             window.scFindModes = scFindModes;
+            // 찾은 모드를 클릭 → 현재 루트로 그 모드를 스케일 소개 + 프렛보드에 표시.
+            window.scApplyMode = function(id) {
+                scState.category = 'modes';
+                scState.modeFamily = 'basic';   // 코드로 찾는 모드는 기본(다이어토닉) 모드
+                scState.scaleId = id;
+                scState.accManual = false;
+                var catLabel = document.getElementById('scCategoryCurrentLabel');
+                if (catLabel) catLabel.textContent = (typeof SC_CATEGORY_LABELS !== 'undefined' && SC_CATEGORY_LABELS['modes']) || '모드';
+                document.querySelectorAll('#scCategoryMenu .sc-scale-menu-item').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.cat === 'modes');
+                });
+                var catDd = document.getElementById('scCategoryDropdown');
+                if (catDd) catDd.setAttribute('data-open', 'false');
+                scBuildScaleMenu();   // 세부 스케일 메뉴/라벨을 현재 scaleId 기준으로 갱신
+                scRender();
+                // 프렛보드가 보이도록 부드럽게 스크롤 (선택 확인)
+                try { var bw = document.getElementById('scBoardWrap'); if (bw) bw.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
+            };
 
             function scGetScale() {
-                const list = SCALE_LIBRARY[scState.category] || [];
+                const list = (scState.category === 'modes') ? scModesList() : (SCALE_LIBRARY[scState.category] || []);
                 return list.find(function(s) { return s.id === scState.scaleId; })
                     || list[0];
             }
@@ -22010,7 +22170,16 @@
                 const menu = document.getElementById('scScaleMenu');
                 const label = document.getElementById('scScaleCurrentLabel');
                 if (!dd || !menu) return;
-                const scales = SCALE_LIBRARY[scState.category] || [];
+                const scales = (scState.category === 'modes') ? scModesList() : (SCALE_LIBRARY[scState.category] || []);
+
+                // 모드 패밀리 선택 바 — '모드' 카테고리일 때만 노출
+                var famSeg = document.getElementById('scModeFamilySeg');
+                if (famSeg) {
+                    famSeg.hidden = (scState.category !== 'modes');
+                    famSeg.querySelectorAll('.sc-mf-btn').forEach(function(b) {
+                        b.classList.toggle('active', b.dataset.mf === scState.modeFamily);
+                    });
+                }
 
                 // Make sure scState.scaleId is valid for this category;
                 // otherwise fall back to the first entry.
@@ -22104,7 +22273,7 @@
             window.scSetCategory = function(cat) {
                 scState.category = cat;
                 scState.accManual = false; // 스케일이 바뀌면 정답 표기로 자동 복귀
-                const scales = SCALE_LIBRARY[cat] || [];
+                const scales = (cat === 'modes') ? scModesList() : (SCALE_LIBRARY[cat] || []);
                 if (scales.length) scState.scaleId = scales[0].id;
                 // Category 드롭다운 라벨 + active 표시 + 메뉴 닫기
                 const catLabel = document.getElementById('scCategoryCurrentLabel');
@@ -22124,6 +22293,19 @@
                 // Close menu + refresh labels/active state
                 const dd = document.getElementById('scScaleDropdown');
                 if (dd) dd.setAttribute('data-open', 'false');
+                scBuildScaleMenu();
+                scRender();
+            };
+
+            // 모드 패밀리 전환 (기본 / 멜로딕 마이너 / 하모닉 마이너)
+            window.scSetModeFamily = function(fam) {
+                if (!SC_MODE_FAMILIES[fam]) return;
+                scState.modeFamily = fam;
+                scState.category = 'modes';
+                scState.accManual = false;
+                // 새 패밀리의 첫 모드로 이동
+                var first = SC_MODE_FAMILIES[fam].scales[0];
+                scState.scaleId = first ? first.id : scState.scaleId;
                 scBuildScaleMenu();
                 scRender();
             };
@@ -22407,10 +22589,13 @@
             window.prgPlayChord = function(midisStr, idx) {
                 const midis = String(midisStr).split('-').map(Number).filter(function(n){ return !isNaN(n); });
                 if (!midis.length) return;
-                // 가벼운 아르페지오 — 피아노 탭과 동일한 pnPlayMidi 사운드.
-                // (playNoteOnInstrument 의 stopAllPlucks 보이스 스틸 회피 → 음 안 끊김)
+                // 가벼운 아르페지오 — 반주에 쓴 피아노 샘플(피치시프트)로 재생.
+                //   샘플 로드 전이면 playPianoSampleNote 내부에서 신스로 폴백.
                 midis.forEach(function(m, k) {
-                    setTimeout(function(){ pnPlayMidi(m); }, k * 70);
+                    setTimeout(function(){
+                        if (window.playPianoSampleNote) window.playPianoSampleNote(m);
+                        else pnPlayMidi(m);
+                    }, k * 70);
                 });
                 // 카드 하이라이트
                 const card = document.querySelector('.prg-chord-card[data-idx="' + idx + '"]');
@@ -22677,66 +22862,47 @@
                 var acc = keySignatureAccidental(rootPc, modeId);   // 모드별 조표 철자
                 var ri = CHROMATIC.indexOf(rootPc); if (ri < 0) ri = 0;
                 var keyName = pcName(rootPc, acc);
+                var base = 60 + ri;   // 이 모드의 으뜸음을 C4 근처에 둔다
                 var chips = mode.degs.map(function(dg, i) {
                     var pc = CHROMATIC[(ri + mode.intervals[i]) % 12];
                     var q = voicing === 'seventh' ? dg.seventh : dg.triad;
                     var nm = pcName(pc, acc) + (CC_QUAL_SUFFIX[q] || '');
-                    return '<span class="cc-chip"><span class="cc-chip-roman">' + dg.roman + '</span><span class="cc-chip-name">' + nm + '</span></span>';
+                    // 재생용 MIDI — 코드 구성음을 쌓고 옥타브 폴딩 (prg 와 동일 규칙)
+                    var semis = (PRG_CHORD_QUALITY[q] || { semis: [0, 4, 7] }).semis;
+                    var rawMidis = semis.map(function(s){ return base + mode.intervals[i] + s; });
+                    var midis = prgVoiceChord(rawMidis).join('-');
+                    return '<button type="button" class="cc-chip" data-action="modalPlayChord" data-args="' + midis + '" title="눌러서 코드 듣기">' +
+                        '<span class="cc-chip-roman">' + dg.roman + '</span><span class="cc-chip-name">' + nm + '</span></button>';
                 }).join('');
-                return '<div class="cc-modal-keyline">' + keyName + ' ' + mode.name + ' — 이 모드의 다이어토닉 코드</div>' +
+                return '<div class="cc-modal-keyline">' + keyName + ' ' + mode.name + ' — 이 모드의 다이어토닉 코드 <span class="cc-chip-hint">(눌러서 듣기)</span></div>' +
                     '<div class="cc-chip-row">' + chips + '</div>';
             }
             var ccModalMode = 'dorian';
             window.ccSetModalMode = function(id) { ccModalMode = id; ccRenderModal(); };
+            // 모드 스케일 뷰어 칩 클릭 → 그 코드를 반주 피아노 샘플로 아르페지오 재생.
+            window.modalPlayChord = function(midisStr) {
+                var midis = String(midisStr).split('-').map(Number).filter(function(n){ return !isNaN(n); });
+                midis.forEach(function(m, k) {
+                    setTimeout(function(){
+                        if (window.playPianoSampleNote) window.playPianoSampleNote(m);
+                        else if (typeof pnPlayMidi === 'function') pnPlayMidi(m);
+                    }, k * 70);
+                });
+            };
+            // 모드 스케일 코드 보기 — 기본 감춤, 버튼 클릭 시 펼침/접힘
+            window.ccToggleModal = function() {
+                var box = document.getElementById('ccModalBox');
+                var btn = document.getElementById('ccModalToggle');
+                if (!box) return;
+                var show = box.hasAttribute('hidden');
+                if (show) { box.removeAttribute('hidden'); ccRenderModal(); }
+                else { box.setAttribute('hidden', ''); }
+                if (btn) { btn.classList.toggle('active', show); btn.setAttribute('aria-expanded', show ? 'true' : 'false'); }
+            };
             function ccRenderModal() {
                 var mc = document.getElementById('ccModalChords');
                 if (mc) mc.innerHTML = _modalChordsHtml(ccState.rootPc, ccModalMode, ccState.voicing);
             }
-            // 코드 → 모드 찾기: 입력한 코드가 현재 키(같은 으뜸음)의 7모드 중 어디에
-            //   다이어토닉으로 들어있는지 역으로 검색. 예) C 키에서 Fm → 에올리안/프리지안/로크리안 iv.
-            function ccFindModes() {
-                var res = document.getElementById('ccFindResult');
-                if (!res) return;
-                var el = document.getElementById('ccFindInput');
-                var text = el ? (el.value || '').trim() : '';
-                // 유니코드 ♭/♯ → ASCII b/# 로 정규화 (parseChordName 이 b/# 만 인식)
-                text = text.replace(/♭/g, 'b').replace(/♯/g, '#').replace(/[－–—]/g, '-');
-                if (!text) {
-                    res.innerHTML = '<span class="cc-find-hint">코드를 입력하면, 그 코드가 이 키(같은 으뜸음)의 어떤 모드에 다이어토닉으로 들어있는지 찾아줍니다.</span>';
-                    return;
-                }
-                var p = parseChordName(text);
-                if (!p.root) { res.innerHTML = '<span class="cc-find-hint">코드를 인식하지 못했어요. 예: Fm, Fm7, A♭maj7, G7</span>'; return; }
-                var pc = _pcToIdx(normalizeRoot(p.root));
-                var ext = p.extension, min = !!p.minor;
-                var isSeventh = (ext === '7' || ext === 'M7' || ext === 'm7' || ext === 'm7b5' || ext === 'dim7');
-                var tq;
-                if (!isSeventh) { tq = (ext === 'dim') ? 'dim' : (ext === 'aug' ? 'aug' : (min ? 'min' : 'maj')); }
-                else if (ext === '7') tq = 'dom7';
-                else if (ext === 'm7') tq = 'm7';
-                else if (ext === 'm7b5') tq = 'm7b5';
-                else if (ext === 'dim7') tq = 'dim7';
-                else tq = min ? 'mMaj7' : 'maj7';
-                var rootIdx = CHROMATIC.indexOf(ccState.rootPc); if (rootIdx < 0) rootIdx = 0;
-                var matches = [];
-                MODAL_SCALES.forEach(function(mode) {
-                    mode.degs.forEach(function(dg, i) {
-                        var dpc = (rootIdx + mode.intervals[i]) % 12;
-                        var dq = isSeventh ? dg.seventh : dg.triad;
-                        if (dpc === pc && dq === tq) matches.push({ name: mode.name, roman: dg.roman });
-                    });
-                });
-                var inputAcc = (String(p.root).indexOf('b') >= 0) ? 'flat' : 'sharp';
-                var chordDisp = pcName(CHROMATIC[pc], inputAcc) + (CC_QUAL_SUFFIX[tq] || (tq === 'mMaj7' ? 'mMaj7' : tq === 'aug' ? 'aug' : ''));
-                var keyName = pcName(ccState.rootPc, ccState.accidental);
-                if (!matches.length) {
-                    res.innerHTML = '<b>' + chordDisp + '</b> — ' + keyName + ' 키의 7개 모드 어디에도 다이어토닉으로는 없어요. (세컨더리 도미넌트 등 더 먼 차용일 수 있어요.)';
-                    return;
-                }
-                res.innerHTML = '<b>' + chordDisp + '</b> 은(는) <b>' + keyName + '</b> 키에서 → ' +
-                    matches.map(function(m) { return m.name + ' <span class="cc-find-deg">' + m.roman + '</span>'; }).join(' <span class="cc-arrow">·</span> ');
-            }
-            window.ccFindModes = ccFindModes;
             window.initChordCompose = function() {
                 ccState.accManual = false;
                 ccBuildRoots();
@@ -22932,6 +23098,7 @@
                 noiseSrc.start(t0);
                 noiseSrc.stop(t0 + noiseDur + 0.02);
             }
+            window.pnPlayMidi = pnPlayMidi;   // 다른 블록(반주 샘플 폴백)에서 접근용
 
             // 현재 모드에 맞는 첫/끝 MIDI 반환 (키보드 모드는 옥타브 오프셋 반영)
             function pnRangeForMode() {
