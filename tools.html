@@ -7659,12 +7659,10 @@
         /* 인쇄 모달은 미리보기가 커야 하므로 카드 폭을 넓게 */
         #loopPrintModal .loop-modal-card { max-width: 720px; }
         /* 이미지로 저장 버튼(왼쪽) + PNG/JPEG 말풍선 */
-        .lp-left-group { display: flex; align-items: center; gap: 8px; margin-right: auto; }
-        .lp-left-group .lp-img-wrap { margin-right: 0; }
-        #lpPdfWmBtn { color: var(--green-deep, #2a6b4a); }
-        :root[data-theme="dark"] #lpPdfWmBtn { color: var(--green-light, #72c492); }
-        #lpPdfWmBtn[hidden] { display: none; }
         .lp-img-wrap { position: relative; margin-right: auto; }
+        /* 프린트 옆 워터마크(W) 버튼 — 관리자 전용 */
+        #loopWmBtn { font-weight: 900; font-size: 0.95rem; line-height: 1; }
+        #loopWmBtn[hidden] { display: none; }
         /* 글씨색은 사이트 테마(진한 초록)와 연결. 다크에선 밝은 초록. */
         #lpImgBtn { color: var(--green-deep, #2a6b4a); }
         :root[data-theme="dark"] #lpImgBtn { color: var(--green-light, #72c492); }
@@ -8652,6 +8650,7 @@
                             </div>
                         </div>
                         <button type="button" class="loop-preset-mini" id="loopPrintBtn" data-action="openPrintDialog" aria-label="악보 인쇄" title="악보 인쇄"><i class="fas fa-print"></i></button>
+                        <button type="button" class="loop-preset-mini" id="loopWmBtn" data-action="openWatermarkPdf" aria-label="PDF에 워터마크 입히기" title="PDF에 워터마크 입히기" hidden>W</button>
                         <button type="button" class="tool-help-btn loop-preset-help-btn" data-help="backing" aria-label="반주 도움말" aria-expanded="false">?</button>
                         <div class="loop-preset-list" id="loopPresetList">
                             <div class="loop-preset-sort-row" id="loopPresetSortRow">
@@ -16359,16 +16358,12 @@
                     '<div class="loop-modal-label">미리보기</div>' +
                     '<div id="lpPreview" class="loop-print-preview"></div>' +
                     '<div class="loop-modal-actions">' +
-                        '<div class="lp-left-group">' +
-                            '<div class="lp-img-wrap">' +
-                                '<button type="button" class="loop-modal-btn ghost" id="lpImgBtn"><i class="fas fa-image" aria-hidden="true"></i> 이미지로 저장</button>' +
-                                '<div class="lp-img-pop" id="lpImgPop" hidden>' +
-                                    '<button type="button" data-fmt="png">PNG</button>' +
-                                    '<button type="button" data-fmt="jpeg">JPEG</button>' +
-                                '</div>' +
+                        '<div class="lp-img-wrap">' +
+                            '<button type="button" class="loop-modal-btn ghost" id="lpImgBtn"><i class="fas fa-image" aria-hidden="true"></i> 이미지로 저장</button>' +
+                            '<div class="lp-img-pop" id="lpImgPop" hidden>' +
+                                '<button type="button" data-fmt="png">PNG</button>' +
+                                '<button type="button" data-fmt="jpeg">JPEG</button>' +
                             '</div>' +
-                            '<button type="button" class="loop-modal-btn ghost" id="lpPdfWmBtn" hidden><i class="fas fa-file-pdf" aria-hidden="true"></i> PDF에 워터마크</button>' +
-                            '<input type="file" id="lpPdfInput" accept="application/pdf" hidden>' +
                         '</div>' +
                         '<button type="button" class="loop-modal-btn ghost" data-close>취소</button>' +
                         '<button type="button" class="loop-modal-btn primary" id="lpPrintGo">프린트</button>' +
@@ -16437,17 +16432,30 @@
                         b.onclick = function() { imgPop.hidden = true; _saveLoopImage(b.getAttribute('data-fmt'), tEl.value, aEl.value, cEl.value); };
                     });
                 }
-                // PDF에 워터마크 — 관리자 계정에게만 노출
-                var pdfBtn = document.getElementById('lpPdfWmBtn');
-                var pdfInput = document.getElementById('lpPdfInput');
-                if (pdfBtn && pdfInput && _loopIsAdmin()) {
-                    pdfBtn.hidden = false;
-                    pdfBtn.onclick = function() { pdfInput.value = ''; pdfInput.click(); };
-                    pdfInput.onchange = function() {
-                        if (pdfInput.files && pdfInput.files[0]) _applyPdfWatermark(pdfInput.files[0]);
-                    };
-                }
             };
+
+            // 워터마크 버튼(프린트 옆 W) — 클릭 시 PDF 업로드 후 워터마크 적용. 관리자 전용.
+            window.openWatermarkPdf = function() {
+                if (!_loopIsAdmin()) { loopToast('권한이 없습니다'); return; }
+                var inp = document.getElementById('loopWmFileInput');
+                if (!inp) {
+                    inp = document.createElement('input');
+                    inp.type = 'file'; inp.accept = 'application/pdf'; inp.id = 'loopWmFileInput'; inp.hidden = true;
+                    inp.addEventListener('change', function() {
+                        if (inp.files && inp.files[0]) _applyPdfWatermark(inp.files[0]);
+                        inp.value = '';
+                    });
+                    document.body.appendChild(inp);
+                }
+                inp.click();
+            };
+            // 관리자 로그인 시에만 W 버튼 노출 (auth 이벤트 + 초기 1회)
+            function _syncWmBtn() {
+                var b = document.getElementById('loopWmBtn');
+                if (b) b.hidden = !_loopIsAdmin();
+            }
+            window.addEventListener('ahnssam-auth-settled', _syncWmBtn);
+            setTimeout(_syncWmBtn, 0);
 
             function closeLoopPicker() {
                 document.querySelectorAll('.loop-chord-picker').forEach(function(p) { p.remove(); });
