@@ -7659,6 +7659,11 @@
         /* 인쇄 모달은 미리보기가 커야 하므로 카드 폭을 넓게 */
         #loopPrintModal .loop-modal-card { max-width: 720px; }
         /* 이미지로 저장 버튼(왼쪽) + PNG/JPEG 말풍선 */
+        .lp-left-group { display: flex; align-items: center; gap: 8px; margin-right: auto; }
+        .lp-left-group .lp-img-wrap { margin-right: 0; }
+        #lpPdfWmBtn { color: var(--green-deep, #2a6b4a); }
+        :root[data-theme="dark"] #lpPdfWmBtn { color: var(--green-light, #72c492); }
+        #lpPdfWmBtn[hidden] { display: none; }
         .lp-img-wrap { position: relative; margin-right: auto; }
         /* 글씨색은 사이트 테마(진한 초록)와 연결. 다크에선 밝은 초록. */
         #lpImgBtn { color: var(--green-deep, #2a6b4a); }
@@ -16267,6 +16272,81 @@
                     loopToast('이미지 저장 실패 — 잠시 후 다시 시도해주세요');
                 }
             }
+            // ═══ 관리자 전용: 업로드한 PDF에 사이트 워터마크 입히기 (클라이언트에서 pdf-lib로 처리) ═══
+            var _pdfLibPromise = null;
+            function _loadPdfLib() {
+                if (window.PDFLib) return Promise.resolve(window.PDFLib);
+                if (_pdfLibPromise) return _pdfLibPromise;
+                _pdfLibPromise = new Promise(function(res, rej) {
+                    var s = document.createElement('script');
+                    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
+                    s.onload = function() { window.PDFLib ? res(window.PDFLib) : rej(new Error('PDFLib 없음')); };
+                    s.onerror = function() { rej(new Error('pdf-lib 로드 실패')); };
+                    document.head.appendChild(s);
+                });
+                return _pdfLibPromise;
+            }
+            // 인쇄 워터마크와 동일한 흑백 로고 PNG 바이트 (캔버스로 grayscale 변환, 1회 캐시)
+            var _wmPngPromise = null;
+            function _getGrayWatermarkPng() {
+                if (_wmPngPromise) return _wmPngPromise;
+                _wmPngPromise = new Promise(function(res, rej) {
+                    var img = new Image();
+                    img.onload = function() {
+                        try {
+                            var c = document.createElement('canvas');
+                            c.width = img.naturalWidth; c.height = img.naturalHeight;
+                            var ctx = c.getContext('2d');
+                            ctx.filter = 'grayscale(1)';
+                            ctx.drawImage(img, 0, 0);
+                            c.toBlob(function(blob) {
+                                if (!blob) { rej(new Error('canvas 변환 실패')); return; }
+                                blob.arrayBuffer().then(function(buf) { res(new Uint8Array(buf)); }).catch(rej);
+                            }, 'image/png');
+                        } catch (e) { rej(e); }
+                    };
+                    img.onerror = function() { rej(new Error('로고 로드 실패')); };
+                    img.src = 'images/ahnssam-guitar-forest-logo3.png';
+                });
+                return _wmPngPromise;
+            }
+            // 업로드 PDF의 각 페이지에 인쇄물과 동일한 워터마크(가로 65%, 반시계 45도, 투명도 0.18, 가운데) 오버레이
+            function _applyPdfWatermark(file) {
+                loopToast('워터마크 적용 중…');
+                Promise.all([_loadPdfLib(), _getGrayWatermarkPng(), file.arrayBuffer()]).then(function(vals) {
+                    var PDFLib = vals[0], wmBytes = vals[1], pdfBytes = vals[2];
+                    var degrees = PDFLib.degrees;
+                    return PDFLib.PDFDocument.load(pdfBytes).then(function(pdfDoc) {
+                        return pdfDoc.embedPng(wmBytes).then(function(wmImg) {
+                            var ratio = wmImg.height / wmImg.width;
+                            var theta = Math.PI / 4;                 // 45°
+                            var cos = Math.cos(theta), sin = Math.sin(theta);
+                            pdfDoc.getPages().forEach(function(page) {
+                                var pw = page.getWidth(), ph = page.getHeight();
+                                var w = pw * 0.65, h = w * ratio;
+                                // 이미지 중심을 페이지 중심에 맞추기 위한 좌하단 앵커 보정 (CCW θ 회전)
+                                var x = pw / 2 - ((w / 2) * cos - (h / 2) * sin);
+                                var y = ph / 2 - ((w / 2) * sin + (h / 2) * cos);
+                                page.drawImage(wmImg, { x: x, y: y, width: w, height: h, rotate: degrees(45), opacity: 0.18 });
+                            });
+                            return pdfDoc.save();
+                        });
+                    });
+                }).then(function(out) {
+                    var blob = new Blob([out], { type: 'application/pdf' });
+                    var base = (file.name || 'document').replace(/\.pdf$/i, '');
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url; a.download = base + '_watermarked.pdf';
+                    document.body.appendChild(a); a.click(); a.remove();
+                    setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
+                    loopToast('워터마크 PDF를 저장했어요');
+                }).catch(function(e) {
+                    console.error(e);
+                    loopToast('PDF 처리 중 오류가 발생했어요');
+                });
+            }
+
             window.openPrintDialog = function() {
                 if (!hasLoopInput()) { loopToast('먼저 코드를 입력해주세요'); return; }
                 var ov = loopEnsureModal('loopPrintModal',
@@ -16279,12 +16359,16 @@
                     '<div class="loop-modal-label">미리보기</div>' +
                     '<div id="lpPreview" class="loop-print-preview"></div>' +
                     '<div class="loop-modal-actions">' +
-                        '<div class="lp-img-wrap">' +
-                            '<button type="button" class="loop-modal-btn ghost" id="lpImgBtn"><i class="fas fa-image" aria-hidden="true"></i> 이미지로 저장</button>' +
-                            '<div class="lp-img-pop" id="lpImgPop" hidden>' +
-                                '<button type="button" data-fmt="png">PNG</button>' +
-                                '<button type="button" data-fmt="jpeg">JPEG</button>' +
+                        '<div class="lp-left-group">' +
+                            '<div class="lp-img-wrap">' +
+                                '<button type="button" class="loop-modal-btn ghost" id="lpImgBtn"><i class="fas fa-image" aria-hidden="true"></i> 이미지로 저장</button>' +
+                                '<div class="lp-img-pop" id="lpImgPop" hidden>' +
+                                    '<button type="button" data-fmt="png">PNG</button>' +
+                                    '<button type="button" data-fmt="jpeg">JPEG</button>' +
+                                '</div>' +
                             '</div>' +
+                            '<button type="button" class="loop-modal-btn ghost" id="lpPdfWmBtn" hidden><i class="fas fa-file-pdf" aria-hidden="true"></i> PDF에 워터마크</button>' +
+                            '<input type="file" id="lpPdfInput" accept="application/pdf" hidden>' +
                         '</div>' +
                         '<button type="button" class="loop-modal-btn ghost" data-close>취소</button>' +
                         '<button type="button" class="loop-modal-btn primary" id="lpPrintGo">프린트</button>' +
@@ -16352,6 +16436,16 @@
                     imgPop.querySelectorAll('[data-fmt]').forEach(function(b) {
                         b.onclick = function() { imgPop.hidden = true; _saveLoopImage(b.getAttribute('data-fmt'), tEl.value, aEl.value, cEl.value); };
                     });
+                }
+                // PDF에 워터마크 — 관리자 계정에게만 노출
+                var pdfBtn = document.getElementById('lpPdfWmBtn');
+                var pdfInput = document.getElementById('lpPdfInput');
+                if (pdfBtn && pdfInput && _loopIsAdmin()) {
+                    pdfBtn.hidden = false;
+                    pdfBtn.onclick = function() { pdfInput.value = ''; pdfInput.click(); };
+                    pdfInput.onchange = function() {
+                        if (pdfInput.files && pdfInput.files[0]) _applyPdfWatermark(pdfInput.files[0]);
+                    };
                 }
             };
 
