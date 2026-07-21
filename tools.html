@@ -14272,6 +14272,28 @@
                 // dur 옵션 — 패턴 기반 hit gap 으로 sustain 길이 자동 제한 가능.
                 //   단음이 다음 이벤트까지 짧게 sustain 후 자연 fade — bleed 방지.
                 var dur = (opts && typeof opts.dur === 'number' && opts.dur > 0) ? opts.dur : 1.4;
+                // ★ 녹음된 피아노 샘플이 있으면 샘플로 재생 — 코드 보이싱과 동일한
+                //   음색을 쓴다. (이전엔 삼각파 신스라 단음만 다른 악기처럼 들리고,
+                //   빠른 어택 때문에 "퍽" 하는 튐이 생겼음. 단음 음역 C3~B3 은
+                //   샘플이 전부 있어서 재피치 없이 원음 그대로 재생됨.)
+                var _smS = _nearestPianoSample(midi);
+                if (_smS) {
+                    var sgS = audioCtx.createGain();
+                    sgS.gain.value = PIANO_SAMPLE_GAIN * velMul;
+                    sgS.connect(bus);
+                    var ssrcS = audioCtx.createBufferSource();
+                    ssrcS.buffer = _smS.buf;
+                    ssrcS.playbackRate.value = Math.pow(2, (midi - _smS.midi) / 12);
+                    ssrcS.connect(sgS);
+                    ssrcS.start(time);
+                    // dur 에 맞춰 부드럽게 감쇠 (클릭 없이)
+                    sgS.gain.setTargetAtTime(0.0001, time + Math.max(0.05, dur - 0.12), 0.05);
+                    try { ssrcS.stop(time + dur + 0.3); } catch (e) {}
+                    _activePianoSingles.push({ gain: sgS, source: ssrcS, endTime: time + dur + 0.3 });
+                    if (_activePianoSingles.length > 6) _activePianoSingles.shift();
+                    return;
+                }
+                // 샘플 로드 전 — 기존 합성음 폴백
                 var osc = audioCtx.createOscillator();
                 osc.type = 'triangle';
                 osc.frequency.value = freq;
@@ -16986,8 +17008,20 @@
                     ctx: audioCtx, master: masterGainNode, drumBus: drumBus, drumMaster: drumMaster,
                     bassMaster: bassMaster, bassBus: bassBusNode, pianoBus: pianoBusNode,
                     oHH: _openHihatNode, oHHg: _openHihatGain, noise: cachedNoiseBuffer,
-                    mIdx: loopMeasureIdx, pass: _loopPass, sec: _loopSection
+                    mIdx: loopMeasureIdx, pass: _loopPass, sec: _loopSection,
+                    pv: _prevPianoVoicing, psk: _lastPianoSegmentKey, psc: _lastPianoSegmentChord,
+                    apc: _activePianoChords, swing: _swingPatternCache
                 };
+                // ★ 라이브 재생(startMetronome)과 동일하게 보이싱/패턴 캐시를 초기화한다.
+                //   이걸 안 하면 직전 재생의 보이싱 상태가 남아 보이스리딩이 샘플
+                //   음역(C3~G4) 밖 옥타브를 골라 재피치되면서 "퍽" 하는 잡음이 생김.
+                _prevPianoVoicing = null;
+                _lastPianoSegmentKey = null;
+                _lastPianoSegmentChord = null;
+                _activePianoChords = [];
+                _swingPatternCache = {};
+                _consumedRights.clear();
+                _loopPass = 1; _loopSection = -1;
                 audioCtx = off;
                 masterGainNode = null; drumBus = null; drumMaster = null; bassMaster = null;
                 bassBusNode = null; pianoBusNode = null; _openHihatNode = null; _openHihatGain = null;
@@ -17011,6 +17045,9 @@
                     pianoBusNode = saved.pianoBus; _openHihatNode = saved.oHH; _openHihatGain = saved.oHHg;
                     cachedNoiseBuffer = saved.noise;
                     loopMeasureIdx = saved.mIdx; _loopPass = saved.pass; _loopSection = saved.sec;
+                    _prevPianoVoicing = saved.pv; _lastPianoSegmentKey = saved.psk;
+                    _lastPianoSegmentChord = saved.psc; _activePianoChords = saved.apc;
+                    _swingPatternCache = saved.swing;
                     _backingRendering = false;
                 }
             }
