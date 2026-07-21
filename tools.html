@@ -14321,13 +14321,28 @@
             //   베이스(주로 C2~C3) 보다는 한 옥타브 위라 베이스와도 안 겹침.
             function playPianoChordLowest(chordName, time, velMul, opts) {
                 if (!audioCtx) return;
-                var info = parseChordName(chordName);
-                if (!info || !info.root) return;
-                var rIdx = _pcToIdx(normalizeRoot(info.root));
-                if (rIdx < 0) return;
-                // C3 = MIDI 48. rIdx (0~11) 만큼 더해 → C3~B3 범위.
-                var rootMidi = 48 + rIdx;
-                playPianoSingleNote(rootMidi, time, velMul, opts);
+                // ★ 이 타이밍(리듬의 단음 라인)에 "지금 치고 있는 코드 보이싱의
+                //   맨 아래음"을 친다. 예전엔 근음을 C3~B3 에 따로 뒀는데, 그 음은
+                //   신스로 나서 음색이 튀었음. 보이싱 맨 아래음은 샘플 음역
+                //   (C3~G4) 안이라 녹음한 피아노 원음 그대로 나온다.
+                var midi = null;
+                if (_prevPianoVoicing && _prevPianoVoicing.length) {
+                    midi = Math.min.apply(Math, _prevPianoVoicing);
+                } else {
+                    // 아직 코드 보이싱이 안 잡혔으면 이 코드로 보이싱을 계산해서 최저음 사용
+                    // (상태는 건드리지 않음 — 보이스리딩에 영향 X)
+                    var v = pickPianoVoicing(chordName, null, {});
+                    if (v && v.length) midi = Math.min.apply(Math, v);
+                }
+                if (midi == null) {
+                    // 최후 폴백 — 근음 C3~B3
+                    var info = parseChordName(chordName);
+                    if (!info || !info.root) return;
+                    var rIdx = _pcToIdx(normalizeRoot(info.root));
+                    if (rIdx < 0) return;
+                    midi = 48 + rIdx;
+                }
+                playPianoSingleNote(midi, time, velMul, opts);
             }
             // 현재 적용된 프리셋의 커스텀 시퀀서 — sequencer_pattern JSONB.
             //   { pianoMain: [...], pianoSingle: [...], bassRoot: [...], bassFifth: [...] }
