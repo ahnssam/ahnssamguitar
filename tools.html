@@ -13112,6 +13112,15 @@
                         var _beatHasChord = !!(_beatSlotVal && !_isChordRest(_beatSlotVal));
                         if (_beatHasChord && _isBeatOnset) _forceChordHit = true;
                         else if (_beatHasChord && !_isBeatOnset) _suppressPattern = true;
+                    } else if (loopSegs === 2 && p.ticksPerBeat > 0) {
+                        // 2코드 모드 — 마디 후반부(보통 3박) 에 코드가 따로 입력돼 있으면
+                        // 그 지점에서 코드가 바뀌므로, 패턴에 타격이 없어도 강제로 쳐준다.
+                        // (안 그러면 3박에 새 코드를 넣어도 다음 패턴 타격까지 안 들림)
+                        var _halfStart = Math.floor(measureLen / 2);
+                        if (t === _halfStart) {
+                            var _bVal = _loopSlotMap('b')[loopMeasureIdx];
+                            if (_bVal && !_isChordRest(_bVal)) _forceChordHit = true;
+                        }
                     }
                     // chordOffset[_sIdx] — 그 step 에서 코드를 미리 땡겨치기 (싱코페이션).
                     //   0 = 그 step 의 기본 segment 코드, +1 = 다음 segment, -1 = 이전.
@@ -15411,15 +15420,10 @@
                         })(i, sf);
                         cell.appendChild(sf);
                     }
-                    // 마디 번호 클릭 → 송폼(구성) 자유입력 팝업
-                    (function(idx, numEl) {
-                        numEl.addEventListener('pointerdown', function(e) {
-                            e.preventDefault(); e.stopPropagation();
-                            if (loopActiveCommit) loopActiveCommit();
-                            closeLoopPicker();
-                            openSongFormInput(idx);
-                        });
-                    })(i, num);
+                    // 마디 번호 — 클릭하면 송폼(구성) 자유입력 팝업, 드래그하면 마디 선택.
+                    // 두 동작 판정은 _bindLoopEdgeInteractions 의 위임 핸들러에서 처리하므로
+                    // 여기서 개별 pointerdown 을 걸지 않는다 (걸면 드래그가 막힘).
+                    num.title = '클릭: 구성 입력 · 드래그: 마디 선택';
                     var halves = document.createElement('div');
                     halves.className = 'loop-cell-halves';
                     var _slotKeys = _loopSlotKeys();
@@ -15573,8 +15577,12 @@
                     return isNaN(v) ? null : v;
                 }
                 grid.addEventListener('pointerdown', function(e) {
-                    var edge = e.target.closest && e.target.closest('.loop-cell-edge.left');
+                    // 드래그 선택 시작 지점 — 왼쪽 가장자리(도돌이 토글 겸용) 또는
+                    // 마디 번호(송폼 팝업 겸용). 둘 다 "클릭=기존 동작 / 드래그=마디 선택".
+                    var edge = e.target.closest && (e.target.closest('.loop-cell-edge.left') ||
+                                                    e.target.closest('.loop-cell-num'));
                     if (!edge) return;
+                    var isNum = edge.classList.contains('loop-cell-num');
                     var cell = edge.closest('.loop-cell');
                     if (!cell) return;
                     var i = parseInt(cell.dataset.idx, 10);
@@ -15588,6 +15596,7 @@
                         startX: e.clientX,
                         startY: e.clientY,
                         dragged: false,
+                        fromNum: isNum,
                         pointerId: e.pointerId
                     };
                     try { grid.setPointerCapture(e.pointerId); } catch(err) {}
@@ -15616,8 +15625,14 @@
                     dragState = null;
                     try { grid.releasePointerCapture(e.pointerId); } catch(err) {}
                     if (!s.dragged) {
-                        // 드래그 아닌 클릭 — 도돌이 |: 토글
-                        window.toggleLoopRepeat('left', s.startIdx);
+                        // 드래그 아닌 클릭 — 시작 지점에 따라 기존 동작 유지
+                        if (s.fromNum) {
+                            if (loopActiveCommit) loopActiveCommit();
+                            closeLoopPicker();
+                            openSongFormInput(s.startIdx);
+                        } else {
+                            window.toggleLoopRepeat('left', s.startIdx);   // 도돌이 |: 토글
+                        }
                     }
                     // 드래그면 range 는 pointermove 에서 이미 설정됨.
                 };
