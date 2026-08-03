@@ -11085,14 +11085,21 @@
                 //   bass 는 [A-G][#b]? 만 허용. 매칭 안 되면 무시.
                 var bass = null;
                 var src = String(name);
+                // slashIdx >= 0 — 맨 앞 '/' (예: '/F#') 도 허용해서 베이스만 지정 가능.
                 var slashIdx = src.lastIndexOf('/');
-                if (slashIdx > 0) {
+                if (slashIdx >= 0) {
                     var afterSlash = src.slice(slashIdx + 1).trim();
                     var bm = afterSlash.match(/^([A-G][#b♭♯]?)$/);
                     if (bm) {
                         bass = bm[1].replace(/♭/g, 'b').replace(/♯/g, '#');
                         src = src.slice(0, slashIdx).trim();
                     }
+                }
+                // '/F#' 처럼 슬래시 베이스만 입력한 경우 — 코드부(src)가 비어 있다.
+                //   → 화음은 직전 코드를 그대로 유지하고 베이스음만 바꾸라는 표기.
+                //     root=null 이지만 bass 는 살아 있고 bassOnly 플래그로 구분한다.
+                if (bass && !src) {
+                    return { root: null, minor: false, extension: 'none', bass: bass, bassOnly: true };
                 }
                 var m = src.match(/^([A-G][#b]?)(.*)$/);
                 if (!m) return { root: null, minor: false, extension: 'none', bass: bass };
@@ -13119,8 +13126,17 @@
                         var _halfStart = Math.floor(measureLen / 2);
                         if (t === _halfStart) {
                             var _bVal = _loopSlotMap('b')[loopMeasureIdx];
-                            if (_bVal && !_isChordRest(_bVal)) _forceChordHit = true;
+                            // 슬래시 베이스만('/F#') 인 경우엔 피아노를 다시 치지 않는다
+                            // (화음은 그대로 이어지고 베이스만 바뀌어야 하므로).
+                            if (_bVal && !_isChordRest(_bVal) && !_isBassOnlyValue(_bVal)) _forceChordHit = true;
                         }
+                    }
+                    // ─ 슬래시 베이스 전용 슬롯('/F#') — 그 슬롯 머리에서 베이스만 강제 타격.
+                    //   피아노 화음은 건드리지 않아 직전 코드가 그대로 이어진다.
+                    var _forceBassOnlyHit = false;
+                    if (p.ticksPerBeat > 0 && _isLoopSlotBoundary(t, measureLen)) {
+                        var _slotValNow = _loopSlotMap(_loopSlotAt(t, measureLen))[loopMeasureIdx];
+                        if (_isBassOnlyValue(_slotValNow)) _forceBassOnlyHit = true;
                     }
                     // chordOffset[_sIdx] — 그 step 에서 코드를 미리 땡겨치기 (싱코페이션).
                     //   0 = 그 step 의 기본 segment 코드, +1 = 다음 segment, -1 = 이전.
@@ -13195,13 +13211,17 @@
                             var bpCycleLen = measureLen * bpMeasures;
                             var bt = beatNum % bpCycleLen;
                             // 'on' (근음) — 패턴 타격(억제 가능) + 4코드 모드의 강제 코드 타격
-                            if ((bp.on.indexOf(bt) !== -1 && !_suppressPattern) || _forceChordHit) {
+                            if ((bp.on.indexOf(bt) !== -1 && !_suppressPattern) || _forceChordHit || _forceBassOnlyHit) {
                                 // 분수코드 / 코드 변경 판정은 음악 마디 기준. bt 가 cycleLen 일 수 있으니 t (한 마디 기준) 그대로.
                                 var halfA = _loopSlotAt(t, measureLen);
                                 var rootA = getEffectiveRoot(loopMeasureIdx, halfA);
                                 var velA = (bp.quiet && bp.quiet.indexOf(bt) !== -1) ? 1 : 0;
                                 // 스윙 — 워킹 베이스 (코드 quality 기반 scale, 마디별 랜덤 패턴)
-                                if (r === 'swing' && rootA) {
+                                if (_forceBassOnlyHit && rootA) {
+                                    // 슬래시 베이스 지정 슬롯 — 워킹라인 대신 지정한 음을 그대로.
+                                    var _bn = chordBassNote(rootA);
+                                    if (_bn) playBass(_bn, swungTime, velA);
+                                } else if (r === 'swing' && rootA) {
                                     var beatIdx = Math.floor(t / p.ticksPerBeat); // 0..3
                                     var swInfo = parseChordName(rootA);
                                     if (swInfo.root) {
@@ -13240,7 +13260,7 @@
                         var indep = BASS_INDEP_STYLES[loopBassStyle];
                         if (indep) {
                             var bassTicks = sixteenthsToTicks(indep.sixteenthHits, p.ticksPerBeat);
-                            if ((bassTicks.indexOf(t) !== -1 && !_suppressPattern) || _forceChordHit) {
+                            if ((bassTicks.indexOf(t) !== -1 && !_suppressPattern) || _forceChordHit || _forceBassOnlyHit) {
                                 var halfB = _loopSlotAt(t, measureLen);
                                 var rootB = getEffectiveRoot(loopMeasureIdx, halfB);
                                 // 분수코드면 슬래시 베이스 사용
@@ -15160,10 +15180,51 @@
                 var v = _mostRecentChordValue(idx, half);
                 return _isChordRest(v);
             }
+            // 슬래시 베이스만 입력된 값인지 — '/F#' 형태.
+            function _isBassOnlyValue(v) {
+                if (!v) return false;
+                var s = String(v).split('\n')[0].trim();
+                return /^\/\s*[A-G][#b♯♭]?$/.test(s);
+            }
+            // '/F#' 의 베이스 음 이름만 뽑기 ('F#')
+            function _bassOnlyNote(v) {
+                var s = String(v).split('\n')[0].trim();
+                var m = s.match(/^\/\s*([A-G][#b♯♭]?)$/);
+                return m ? m[1].replace(/♭/g, 'b').replace(/♯/g, '#') : null;
+            }
             function getEffectiveRoot(idx, half) {
                 var v = _mostRecentChordValue(idx, half);
                 if (!v || _isChordRest(v)) return null;
+                // '/F#' — 화음은 직전 코드 유지, 베이스만 교체.
+                //   직전(그 슬롯 이전)의 실제 코드를 찾아 'Bm/F#' 형태로 합성해 준다.
+                //   그러면 피아노는 Bm 보이싱을 그대로 치고, 베이스는 chordBassNote()
+                //   가 슬래시 뒤 음을 읽어 F# 을 연주한다.
+                if (_isBassOnlyValue(v)) {
+                    var note = _bassOnlyNote(v);
+                    var base = _prevRealChordBefore(idx, half);
+                    if (!base) return null;                 // 앞에 코드가 없으면 무시
+                    var baseName = String(base).split('\n')[0].trim();
+                    var si = baseName.lastIndexOf('/');     // 기존 슬래시는 떼고 새 베이스로
+                    if (si > 0) baseName = baseName.slice(0, si).trim();
+                    return note ? (baseName + '/' + note) : baseName;
+                }
                 return v;
+            }
+            // 이 슬롯 "이전"의 가장 최근 실제 코드(슬래시 전용 값 제외) 를 찾는다.
+            function _prevRealChordBefore(idx, half) {
+                var keys = _loopSlotKeys();
+                var si = keys.indexOf(half); if (si < 0) si = keys.length - 1;
+                for (var s = si; s >= 0; s--) {
+                    var v = _loopSlotMap(keys[s])[idx];
+                    if (v && !_isChordRest(v) && !_isBassOnlyValue(v)) return v;
+                }
+                for (var i = idx - 1; i >= 0; i--) {
+                    for (var s2 = keys.length - 1; s2 >= 0; s2--) {
+                        var v2 = _loopSlotMap(keys[s2])[i];
+                        if (v2 && !_isChordRest(v2) && !_isBassOnlyValue(v2)) return v2;
+                    }
+                }
+                return null;
             }
             // ─── skip-zone — X 마커를 만나면 다음 실제 코드 마디로 점프 ────
             // 마디의 half 'a' 에 X 가 있으면 그 마디 전체가 "건너뛰기" 영역.
