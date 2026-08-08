@@ -13389,6 +13389,16 @@
                                 } else {
                                     kind = 'chord-sustain';
                                     gap = null;
+                                    // 2코드 모드 강제 타격(3박 코드 체인지) — 바로 다음 tick 에 패턴 자체
+                                    // 코드 타격이 있으면(16비트 A/B/C 의 3e 등) 3박+3e 이중 컴핑이 되므로,
+                                    // 3박은 화음 대신 단음(루트)만 짚고 화음은 3e 패턴 타격에 맡긴다.
+                                    if (_forceChordHit && pidx === -1 && loopSegs === 2 &&
+                                        pianoHitMeta === 'default' && pianoMeta && pianoMeta[t + 1] &&
+                                        String(pianoMeta[t + 1].kind).indexOf('chord') === 0) {
+                                        kind = 'single-sustain';
+                                        gap = 1;
+                                        velMul = 0.8;
+                                    }
                                 }
                                 // gap 이 있으면 audio time 으로 변환 → 단음 sustain 자동 제한.
                                 var maxDur = null;
