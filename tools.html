@@ -5551,7 +5551,8 @@
                 "edge  edge"
                 "slider slider"
                 "start tap"
-                "mix   mix";
+                "mix   mix"
+                "mini  mini";
             column-gap: 0.7rem;
             row-gap: 0;
         }
@@ -5562,6 +5563,7 @@
         body.mode-backing #metroTapBtn             { grid-area: tap; margin-bottom: 0; }
         body.mode-backing #metronomeBtn            { grid-area: start; }
         body.mode-backing #loopMixRow              { grid-area: mix; }
+        body.mode-backing #loopMiniPiano           { grid-area: mini; }
 
         /* 반주 모드 — TAP 버튼 'TAP' + ENTER 박스 세로 배치.
            아이콘과 긴 라벨 숨기고 짧은 'TAP' 노출, kbd-hint 를 아래로. */
@@ -6904,6 +6906,47 @@
             gap: 0.55rem;
         }
         .loop-mix-row.visible { display: flex; }
+        /* ─── 미니 피아노 (반주 모드 전용, 한 옥타브) ───
+           믹서 박스 아래. 클릭해서 음정만 확인하는 용도라 낮고 컴팩트하게. */
+        .loop-mini-piano {
+            display: none;
+            position: relative;
+            height: 78px;
+            margin-top: 0.6rem;
+            user-select: none; -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        .loop-mini-piano.visible { display: flex; }
+        .lmp-white {
+            flex: 1 1 0; min-width: 0;
+            background: #fff;
+            border: 1px solid rgba(42, 107, 74, 0.32);
+            border-left-width: 0;
+            border-radius: 0 0 5px 5px;
+            position: relative;
+            cursor: pointer;
+        }
+        .lmp-white:first-child { border-left-width: 1px; border-top-left-radius: 5px; }
+        .lmp-white:last-child { border-top-right-radius: 5px; }
+        .lmp-white span {
+            position: absolute; bottom: 4px; left: 0; right: 0;
+            text-align: center; font-size: 0.62rem; font-weight: 700;
+            color: rgba(42, 107, 74, 0.55); pointer-events: none;
+        }
+        .lmp-white.pressed { background: rgba(114, 196, 146, 0.35); }
+        .lmp-black {
+            position: absolute; top: 0; height: 56%; width: 8.5%;
+            background: #2e2e2e;
+            border-radius: 0 0 4px 4px;
+            box-shadow: 0 2px 3px rgba(0,0,0,0.35);
+            z-index: 2;
+            cursor: pointer;
+        }
+        .lmp-black.pressed { background: #5a8a6f; }
+        :root[data-theme="dark"] .lmp-white { background: #d9dfdb; border-color: rgba(150, 200, 175, 0.4); }
+        :root[data-theme="dark"] .lmp-white.pressed { background: #9fd4b4; }
+        :root[data-theme="dark"] .lmp-black { background: #1b1f1d; box-shadow: 0 2px 3px rgba(0,0,0,0.6); }
+        :root[data-theme="dark"] .lmp-black.pressed { background: #4a7a5f; }
         .loop-mix-cell {
             display: flex;
             align-items: center;
@@ -8856,6 +8899,8 @@
                         <input type="range" min="0" max="100" value="100" class="loop-mix-slider" id="mixPianoSlider" data-input="setLoopMix" data-args="piano,$value">
                     </div>
                 </div>
+                <!-- 반주 모드 전용 — 미니 피아노 (한 옥타브 C4~C5, 음정 확인용 클릭 건반) -->
+                <div class="loop-mini-piano" id="loopMiniPiano" aria-label="미니 피아노 — 클릭해서 음정 듣기"></div>
             </div>
             <!-- YouTube link sits below the metronome box, right-aligned (both desktop & mobile) -->
             <div class="tool-mobile-yt-slot" data-yt-tool="metronome">
@@ -12384,6 +12429,37 @@
                 } catch (e) {}
             };
 
+            // ─── 미니 피아노 (반주 모드) — 한 옥타브 C4~C5, 반주 피아노 샘플로 클릭음 재생 ───
+            (function buildLoopMiniPiano() {
+                var host = document.getElementById('loopMiniPiano');
+                if (!host) return;
+                var whites = [60, 62, 64, 65, 67, 69, 71, 72];   // C4 D E F G A B C5
+                var names  = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'];
+                whites.forEach(function(m, i) {
+                    var k = document.createElement('div');
+                    k.className = 'lmp-white';
+                    k.dataset.midi = m;
+                    k.innerHTML = '<span>' + names[i] + '</span>';
+                    host.appendChild(k);
+                });
+                // [midi, 왼쪽 흰건반 index] — 그 흰건반 오른쪽 경계에 걸침
+                [[61, 0], [63, 1], [66, 3], [68, 4], [70, 5]].forEach(function(b) {
+                    var k = document.createElement('div');
+                    k.className = 'lmp-black';
+                    k.dataset.midi = b[0];
+                    k.style.left = 'calc(' + ((b[1] + 1) * 12.5) + '% - 4.25%)';
+                    host.appendChild(k);
+                });
+                host.addEventListener('pointerdown', function(e) {
+                    var k = e.target.closest('[data-midi]');
+                    if (!k) return;
+                    e.preventDefault();
+                    window.playPianoSampleNote(parseInt(k.dataset.midi, 10));
+                    k.classList.add('pressed');
+                    setTimeout(function() { k.classList.remove('pressed'); }, 160);
+                });
+            })();
+
             // 울리고 있는 모든 피아노 코드를 즉시 끊는다.
             //   - 코드별 chordGain 을 짧게 ramp-down → 0 으로 감쇠
             //   - 그 뒤에 시작 예정이거나 진행 중인 oscillator 들도 .stop()
@@ -13529,6 +13605,8 @@
                 // 반주 모드 전용 — 볼륨 믹서 보이기
                 const loopMixRow = document.getElementById('loopMixRow');
                 if (loopMixRow) loopMixRow.classList.toggle('visible', mode === 'loop');
+                const loopMiniPno = document.getElementById('loopMiniPiano');
+                if (loopMiniPno) loopMiniPno.classList.toggle('visible', mode === 'loop');
                 // 반주 모드에선 sound-toggle 아래 ? 슬롯을 숨김 (preset-bar 안에 ? 가 따로 있음).
                 // click/drum 모드에선 슬롯 표시 — 그대로 ? 가 노출.
                 const helpSlot = document.querySelector('#metronomePanel .tool-mobile-help-slot');
