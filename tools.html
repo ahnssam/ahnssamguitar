@@ -12456,14 +12456,16 @@
                 // 흰건반 15개 (C4~C6). 흰건반 반음 오프셋 + 옥타브당 12.
                 var WHITE_SEMI = [0, 2, 4, 5, 7, 9, 11];
                 var NAMES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+                // C3(48) ~ C5(72) — 기존 옥타브(C4~C5) + 그 아래 옥타브(C3~C4)
+                var BASE = 48;
                 var whites = [], names = [];
                 for (var oc = 0; oc < 2; oc++) {
                     for (var w = 0; w < 7; w++) {
-                        whites.push(60 + oc * 12 + WHITE_SEMI[w]);
+                        whites.push(BASE + oc * 12 + WHITE_SEMI[w]);
                         names.push(NAMES[w]);
                     }
                 }
-                whites.push(84); names.push('C');   // 마지막 C6
+                whites.push(BASE + 24); names.push('C');   // 마지막 C5
                 var N = whites.length;              // 15
                 var pct = 100 / N;                  // 흰건반 하나의 폭(%)
                 whites.forEach(function(m, i) {
@@ -12479,7 +12481,7 @@
                 for (var ob = 0; ob < 2; ob++) {
                     BLACK_AFTER.forEach(function(wi) {
                         var whiteIdx = ob * 7 + wi;
-                        var midi = 60 + ob * 12 + WHITE_SEMI[wi] + 1;
+                        var midi = BASE + ob * 12 + WHITE_SEMI[wi] + 1;
                         var k = document.createElement('div');
                         k.className = 'lmp-black';
                         k.dataset.midi = midi;
@@ -12488,14 +12490,39 @@
                         host.appendChild(k);
                     });
                 }
+                // 클릭 + 드래그(글리산도) — 누른 채로 옆으로 훑으면 지나가는 건반이
+                // 차례로 울린다. 같은 건반에서는 한 번만 (중복 트리거 방지).
+                var _lmpDown = false, _lmpLastMidi = null;
+                function _lmpHit(el) {
+                    if (!el) return;
+                    var midi = parseInt(el.dataset.midi, 10);
+                    if (isNaN(midi) || midi === _lmpLastMidi) return;
+                    _lmpLastMidi = midi;
+                    window.playPianoSampleNote(midi);
+                    el.classList.add('pressed');
+                    setTimeout(function() { el.classList.remove('pressed'); }, 160);
+                }
+                function _lmpKeyAt(x, y) {
+                    var el = document.elementFromPoint(x, y);
+                    return el && el.closest ? el.closest('#loopMiniPiano [data-midi]') : null;
+                }
                 host.addEventListener('pointerdown', function(e) {
                     var k = e.target.closest('[data-midi]');
                     if (!k) return;
                     e.preventDefault();
-                    window.playPianoSampleNote(parseInt(k.dataset.midi, 10));
-                    k.classList.add('pressed');
-                    setTimeout(function() { k.classList.remove('pressed'); }, 160);
+                    _lmpDown = true;
+                    _lmpLastMidi = null;
+                    // 포인터 캡처를 걸면 elementFromPoint 로 옆 건반을 못 잡으므로 캡처하지 않는다.
+                    _lmpHit(k);
                 });
+                host.addEventListener('pointermove', function(e) {
+                    if (!_lmpDown) return;
+                    e.preventDefault();
+                    _lmpHit(_lmpKeyAt(e.clientX, e.clientY));
+                });
+                var _lmpEnd = function() { _lmpDown = false; _lmpLastMidi = null; };
+                document.addEventListener('pointerup', _lmpEnd);
+                document.addEventListener('pointercancel', _lmpEnd);
             })();
 
             // 가상 피아노 열기/닫기
