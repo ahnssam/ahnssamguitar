@@ -9345,7 +9345,6 @@
                                     <div class="sc-scale-menu" id="scCategoryMenu" role="listbox">
                                         <button class="sc-scale-menu-item active" data-cat="major" data-action="scSetCategory" data-args="major">메이저</button>
                                         <button class="sc-scale-menu-item" data-cat="minor" data-action="scSetCategory" data-args="minor">마이너</button>
-                                        <button class="sc-scale-menu-item" data-cat="pent" data-action="scSetCategory" data-args="pent">펜타/블루스</button>
                                         <button class="sc-scale-menu-item" data-cat="modes" data-action="scSetCategory" data-args="modes">모드</button>
                                         <button class="sc-scale-menu-item" data-cat="exotic" data-action="scSetCategory" data-args="exotic">특이 스케일</button>
                                     </div>
@@ -9400,6 +9399,11 @@
                             <input type="checkbox" id="scVertical" data-change="scToggleVertical" data-args="$checked">
                             <span class="fb-switch-slider"></span>
                             <span class="fb-switch-label">세로로 회전</span>
+                        </label>
+                        <label class="fb-switch" id="scBoxSwitch" title="펜타토닉/CAGED 5개 포지션(박스) 표시">
+                            <input type="checkbox" id="scShowBoxes" data-change="scToggleBoxes" data-args="$checked">
+                            <span class="fb-switch-slider"></span>
+                            <span class="fb-switch-label">박스 보이기</span>
                         </label>
                     </div>
                     <div class="fb-inst-dropdown" id="scInstDropdown">
@@ -20394,7 +20398,7 @@
             function _scaleKeyOffset(scaleId) {
                 switch (scaleId) {
                     case 'lydian':                                return  1;
-                    case 'major': case 'ionian': case 'maj_pent': return  0;
+                    case 'major': case 'ionian': case 'maj_pent': case 'maj_blues': return  0;
                     case 'mixolydian':                            return -1;
                     case 'dorian':                                return -2;
                     case 'phrygian':                              return -4;
@@ -20952,6 +20956,7 @@
                     keepAllDots: false,     // true 면 highlights 함수가 있어도 비-하이라이트 도트를 숨기지 않음
                     wrongPick: null,        // { sIdx, fret } — 프렛보드 트레이닝 오답 프렛을 연한 붉은색으로
                     accidental: 'sharp',    // 'sharp' | 'flat' — 음이름 표기 (스케일 패널만 'flat' 전달)
+                    boxes: null,            // 펜타/CAGED 포지션 박스 [{num,label,segs:[{lo,hi}|null,...]}]
                     onFretClick: null,
                 }, options);
 
@@ -21163,6 +21168,50 @@
                         svgContent += inlayLeaf(fretMidX(f), boardCenterY - offY, leafSize, -18);
                         svgContent += inlayLeaf(fretMidX(f), boardCenterY + offY, leafSize, 24);
                     });
+
+                    // --- Scale position boxes (펜타/CAGED 5-포지션) ---
+                    // 도트보다 먼저 그려서 뒤에 깔린다. 박스마다 색·번호로 구분,
+                    // 줄별 lo/hi 를 계단식 테두리로 감싼다(겹치지 않고 한 프렛만 맞닿음).
+                    if (cfg.boxes && cfg.boxes.length) {
+                        const BOX_COLORS = ['#e0563b', '#e08a1e', '#2f9e54', '#2f7fbf', '#8a5cc4']; // 1~5
+                        const half = stringGap / 2;
+                        const bxLeft  = function(f){ return (f <= 0) ? (padL - 36) : (padL + fretPos(f - 1)); };
+                        const bxRight = function(f){ return padL + fretPos(Math.min(f, nFrets)); };
+                        cfg.boxes.forEach(function(box){
+                            const col = BOX_COLORS[(box.num - 1) % BOX_COLORS.length];
+                            const bands = [];
+                            for (let s = 0; s < box.segs.length; s++) {
+                                const sg = box.segs[s];
+                                if (!sg || sg.lo > nFrets) continue;
+                                const y = stringY(s);
+                                bands.push({ xL: bxLeft(sg.lo), xR: bxRight(sg.hi), yT: y - half, yB: y + half });
+                            }
+                            if (!bands.length) return;
+                            let d = 'M ' + bands[0].xL.toFixed(1) + ' ' + bands[0].yT.toFixed(1);
+                            d += ' L ' + bands[0].xR.toFixed(1) + ' ' + bands[0].yT.toFixed(1);
+                            for (let i = 0; i < bands.length; i++) {
+                                d += ' L ' + bands[i].xR.toFixed(1) + ' ' + bands[i].yB.toFixed(1);
+                                if (i + 1 < bands.length) d += ' L ' + bands[i + 1].xR.toFixed(1) + ' ' + bands[i].yB.toFixed(1);
+                            }
+                            const last = bands[bands.length - 1];
+                            d += ' L ' + last.xL.toFixed(1) + ' ' + last.yB.toFixed(1);
+                            for (let i = bands.length - 1; i >= 0; i--) {
+                                d += ' L ' + bands[i].xL.toFixed(1) + ' ' + bands[i].yT.toFixed(1);
+                                if (i - 1 >= 0) d += ' L ' + bands[i - 1].xL.toFixed(1) + ' ' + bands[i].yT.toFixed(1);
+                            }
+                            d += ' Z';
+                            svgContent += '<path d="' + d + '" fill="' + col + '" fill-opacity="0.05" ' +
+                                'stroke="' + col + '" stroke-opacity="0.55" stroke-width="2" ' +
+                                'stroke-linejoin="round" pointer-events="none"/>';
+                            // 박스 번호 — 맨 위 줄 세그먼트 위쪽에 표기
+                            const lx = (bands[0].xL + bands[0].xR) / 2;
+                            const ly = bands[0].yT - 3;
+                            svgContent += '<text x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) +
+                                '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" ' +
+                                'font-size="10" font-weight="700" fill="' + col + '" ' +
+                                'fill-opacity="0.9" pointer-events="none">' + box.label + '</text>';
+                        });
+                    }
 
                     // --- Note dots (interactive) ---
                     // Fret 0 is handled by the open-string buttons above — skip it here.
@@ -22378,16 +22427,15 @@
             const SCALE_LIBRARY = {
                 major: [
                     { id: 'major',        name: '메이저 스케일',           intervals: [0,2,4,5,7,9,11], desc: '가장 기본적인 장조 스케일. 7개 음으로 구성돼요.' },
+                    { id: 'maj_pent',     name: '메이저 펜타토닉',         intervals: [0,2,4,7,9],       desc: '메이저의 4, 7을 뺀 5음 스케일. 가장 단순하고 선율적.' },
+                    { id: 'maj_blues',    name: '메이저 블루스 스케일',    intervals: [0,2,3,4,7,9],     desc: '메이저 펜타토닉에 ♭3(블루노트) 추가. 밝고 경쾌한 블루스 색채.' },
                 ],
                 minor: [
                     { id: 'nat_minor',    name: '내추럴 마이너 (Aeolian)', intervals: [0,2,3,5,7,8,10], desc: '가장 기본적인 단조 스케일. 어둡고 차분한 느낌.' },
                     { id: 'harm_minor',   name: '하모닉 마이너',           intervals: [0,2,3,5,7,8,11], desc: '7음을 반음 올린 단조 — 극적이고 동양적인 느낌.' },
                     { id: 'mel_minor',    name: '멜로딕 마이너 (재즈)',    intervals: [0,2,3,5,7,9,11], desc: '재즈에서 많이 쓰는 상행 멜로딕 마이너.' },
-                ],
-                pent: [
-                    { id: 'maj_pent',     name: '메이저 펜타토닉',         intervals: [0,2,4,7,9],       desc: '메이저의 4, 7을 뺀 5음 스케일. 가장 단순하고 선율적.' },
                     { id: 'min_pent',     name: '마이너 펜타토닉',         intervals: [0,3,5,7,10],      desc: '록·블루스·발라드의 필수 5음 스케일.' },
-                    { id: 'blues',        name: '블루스 스케일',           intervals: [0,3,5,6,7,10],    desc: '마이너 펜타토닉에 ♭5(블루노트) 추가.' },
+                    { id: 'min_blues',    name: '마이너 블루스 스케일',    intervals: [0,3,5,6,7,10],    desc: '마이너 펜타토닉에 ♭5(블루노트) 추가. 록·블루스의 필수.' },
                 ],
                 modes: [
                     { id: 'ionian',       name: 'Ionian (1번 모드)',       intervals: [0,2,4,5,7,9,11], desc: '= 메이저 스케일. 모드의 1번.' },
@@ -22456,6 +22504,7 @@
                 scaleId: 'major',
                 accidental: 'sharp', // 'sharp' | 'flat' — 음이름 표기
                 accManual: false,    // 사용자가 ♯/♭ 토글을 직접 눌렀는지
+                showBoxes: false,    // 펜타/CAGED 포지션 박스 표시
                 fb: null,
                 piano: null,        // piano keyboard instance (lazy)
             };
@@ -22480,6 +22529,11 @@
 
             function scRender() {
                 scApplyAutoAccidental();
+                // '박스 보이기' 스위치는 지원 카테고리(메이저/마이너, 기타·베이스)에서만 노출
+                const boxSwitch = document.getElementById('scBoxSwitch');
+                if (boxSwitch) boxSwitch.style.display = scBoxesSupported() ? '' : 'none';
+                const boxChk = document.getElementById('scShowBoxes');
+                if (boxChk) boxChk.checked = !!scState.showBoxes;
                 const svgEl = document.getElementById('scSvg');
                 const pianoSvgEl = document.getElementById('scPianoSvg');
                 if (!svgEl) return;
@@ -22539,6 +22593,9 @@
                         return { color: '#ffffff', stroke: '#2a6b4a', textColor: '#1a2421' };
                     };
 
+                    // 박스 표시: 지원 카테고리 + 체크됐을 때만 계산해서 전달.
+                    const boxesData = (scState.showBoxes && scBoxesSupported()) ? scComputeBoxes() : null;
+
                     if (!scState.fb) {
                         scState.fb = createFretboard({
                             svg: svgEl,
@@ -22551,6 +22608,7 @@
                             highlightRoot: scState.highlightRoot,
                             highlights: highlightsFn,
                             accidental: scState.accidental,
+                            boxes: boxesData,
                             onFretClick: function(sIdx, fret, midi) {
                                 playNoteOnInstrument(scState.inst, midi);
                                 scState.fb.flashDot(sIdx, fret, 'ok');
@@ -22567,6 +22625,7 @@
                             highlightRoot: scState.highlightRoot,
                             highlights: highlightsFn,
                             accidental: scState.accidental,
+                            boxes: boxesData,
                         });
                     }
                 }
@@ -22660,6 +22719,61 @@
                 const list = (scState.category === 'modes') ? scModesList() : (SCALE_LIBRARY[scState.category] || []);
                 return list.find(function(s) { return s.id === scState.scaleId; })
                     || list[0];
+            }
+
+            // 박스(포지션)를 지원하는 카테고리인지 — 메이저/마이너 계열만.
+            //   (펜타·블루스는 메이저/마이너 카테고리 안에 있으므로 함께 지원)
+            //   모드·특이 스케일, 피아노에서는 박스 개념을 쓰지 않는다.
+            function scBoxesSupported() {
+                if (scState.inst === 'piano') return false;
+                return scState.category === 'major' || scState.category === 'minor';
+            }
+
+            // ── 펜타토닉 5-포지션(박스) 계산 ────────────────────────────────
+            // 각 박스는 "펜타토닉 골격"의 이웃한 두 음(줄마다 2음)을 감싼다.
+            //   · 메이저 계열 → 메이저 펜타(0,2,4,7,9) 골격
+            //   · 마이너 계열 → 마이너 펜타(0,3,5,7,10) 골격
+            // 표준 튜닝에서 각 줄의 골격음은 프렛 위상이 정렬되므로, 저음현
+            // 인덱스 k 를 모든 줄에 동일하게 적용하면 박스가 세로로 맞아떨어진다.
+            // 반환: [{ num:1~5, label, segs:[{lo,hi}|null, ...줄순서(가는줄→굵은줄)] }]
+            function scComputeBoxes() {
+                const t = TUNINGS[scState.inst];
+                if (!t || !scBoxesSupported()) return null;
+                const skeleton = (scState.category === 'major') ? [0,2,4,7,9] : [0,3,5,7,10];
+                const rootIdx = CHROMATIC.indexOf(scState.rootPc);
+                if (rootIdx < 0) return null;
+                const strings = t.strings;               // index 0 = 가는 줄 … 마지막 = 굵은 줄
+                const nStr = strings.length;
+                const lowStr = nStr - 1;
+                const maxFret = Math.max(1, Math.min(scState.maxFret, t.maxFrets));
+                const upper = maxFret + 12;               // 위쪽 박스 계산용 여유
+                const skelSet = new Set(skeleton.map(function(s){ return (rootIdx + s) % 12; }));
+                const perString = strings.map(function(s){
+                    const arr = [];
+                    for (let f = 0; f <= upper; f++) {
+                        if (skelSet.has((s.midi + f) % 12)) arr.push(f);
+                    }
+                    return arr;
+                });
+                const lowArr = perString[lowStr];
+                if (!lowArr.length) return null;
+                // base = 굵은 줄에서 루트가 처음 나오는 골격음 인덱스 → 그 박스를 1번으로.
+                let base = 0;
+                for (let i = 0; i < lowArr.length; i++) {
+                    if ((strings[lowStr].midi + lowArr[i]) % 12 === rootIdx) { base = i; break; }
+                }
+                const boxes = [];
+                for (let k = 0; k + 1 < lowArr.length; k++) {
+                    if (lowArr[k] > maxFret) break;
+                    const num = ((((k - base) % 5) + 5) % 5) + 1;
+                    const segs = perString.map(function(arr){
+                        return (k + 1 < arr.length) ? { lo: arr[k], hi: arr[k + 1] } : null;
+                    });
+                    if (segs.some(function(s){ return s && s.lo <= maxFret; })) {
+                        boxes.push({ num: num, label: String(num), segs: segs });
+                    }
+                }
+                return boxes;
             }
 
             // Reference MIDI for the scale's ROOT in each instrument —
@@ -22867,7 +22981,6 @@
             const SC_CATEGORY_LABELS = {
                 major:  '메이저',
                 minor:  '마이너',
-                pent:   '펜타/블루스',
                 modes:  '모드',
                 exotic: '특이 스케일'
             };
@@ -22938,6 +23051,11 @@
 
             window.scToggleVertical = function(checked) {
                 scState.vertical = !!checked;
+                scRender();
+            };
+
+            window.scToggleBoxes = function(checked) {
+                scState.showBoxes = !!checked;
                 scRender();
             };
 
