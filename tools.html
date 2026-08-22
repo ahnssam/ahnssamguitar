@@ -9437,6 +9437,11 @@
                             <span class="fb-switch-slider"></span>
                             <span class="fb-switch-label">세로로 회전</span>
                         </label>
+                        <label class="fb-switch" id="scHighFretsSwitch" title="12프렛 이상(고음 포지션)까지 표시">
+                            <input type="checkbox" id="scHighFrets" checked data-change="scToggleHighFrets" data-args="$checked">
+                            <span class="fb-switch-slider"></span>
+                            <span class="fb-switch-label">12프렛 이상</span>
+                        </label>
                         <label class="fb-switch" id="scBoxSwitch" title="펜타토닉/CAGED 5개 포지션(박스) 표시">
                             <input type="checkbox" id="scShowBoxes" data-change="scToggleBoxes" data-args="$checked">
                             <span class="fb-switch-slider"></span>
@@ -22591,6 +22596,7 @@
                 accManual: false,    // 사용자가 ♯/♭ 토글을 직접 눌렀는지
                 showBoxes: false,    // 펜타/CAGED 포지션 박스 표시
                 emphasisBoxes: [],   // 강조할 박스 번호(1~5) — 비어있으면 전부 동일
+                showHighFrets: true, // 12프렛 이상 표시 (끄면 12프렛까지만)
                 fb: null,
                 piano: null,        // piano keyboard instance (lazy)
             };
@@ -22620,6 +22626,10 @@
                 if (boxSwitch) boxSwitch.style.display = scBoxesSupported() ? '' : 'none';
                 const boxChk = document.getElementById('scShowBoxes');
                 if (boxChk) boxChk.checked = !!scState.showBoxes;
+                const hiChk = document.getElementById('scHighFrets');
+                if (hiChk) hiChk.checked = !!scState.showHighFrets;
+                const hiSwitch = document.getElementById('scHighFretsSwitch');
+                if (hiSwitch) hiSwitch.style.display = (scState.inst === 'piano') ? 'none' : '';
                 // 박스 선택 피커 — 박스 보이기 켰고 지원 카테고리일 때만
                 const boxPicker = document.getElementById('scBoxPicker');
                 if (boxPicker) boxPicker.style.display = (scState.showBoxes && scBoxesSupported()) ? '' : 'none';
@@ -22693,7 +22703,7 @@
                         scState.fb = createFretboard({
                             svg: svgEl,
                             inst: scState.inst,
-                            maxFret: scState.maxFret,
+                            maxFret: scEffMaxFret(),
                             showNotes: scState.showNotes,
                             vertical: scState.vertical,
                             zoom: scState.zoom,
@@ -22710,7 +22720,7 @@
                     } else {
                         scState.fb.redraw({
                             inst: scState.inst,
-                            maxFret: scState.maxFret,
+                            maxFret: scEffMaxFret(),
                             showNotes: scState.showNotes,
                             vertical: scState.vertical,
                             zoom: scState.zoom,
@@ -22822,6 +22832,11 @@
                 return scState.category === 'major' || scState.category === 'minor';
             }
 
+            // 표시할 최대 프렛 — '12프렛 이상' 끄면 12까지만.
+            function scEffMaxFret() {
+                return scState.showHighFrets ? scState.maxFret : 12;
+            }
+
             // ── 펜타토닉 5-포지션(박스) 계산 ────────────────────────────────
             // 각 박스는 "펜타토닉 골격"의 이웃한 두 음(줄마다 2음)을 감싼다.
             //   · 메이저 계열 → 메이저 펜타(0,2,4,7,9) 골격
@@ -22838,7 +22853,7 @@
                 const strings = t.strings;               // index 0 = 가는 줄 … 마지막 = 굵은 줄
                 const nStr = strings.length;
                 const lowStr = nStr - 1;
-                const maxFret = Math.max(1, Math.min(scState.maxFret, t.maxFrets));
+                const maxFret = Math.max(1, Math.min(scEffMaxFret(), t.maxFrets));
                 const upper = maxFret + 12;               // 위쪽 박스 계산용 여유
                 const skelSet = new Set(skeleton.map(function(s){ return (rootIdx + s) % 12; }));
                 const perString = strings.map(function(s){
@@ -23155,6 +23170,11 @@
 
             window.scToggleBoxes = function(checked) {
                 scState.showBoxes = !!checked;
+                scRender();
+            };
+
+            window.scToggleHighFrets = function(checked) {
+                scState.showHighFrets = !!checked;
                 scRender();
             };
 
