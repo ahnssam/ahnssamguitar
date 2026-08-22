@@ -3722,6 +3722,43 @@
             flex-wrap: wrap;
         }
         .sc-fb-switches .fb-switch { margin: 0; }
+        /* 강조할 박스 선택 (박스 보이기 켰을 때만 노출) */
+        .sc-box-picker {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin: -0.1rem 0 0.55rem;
+        }
+        .sc-box-picker-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--green-deep);
+            opacity: 0.85;
+        }
+        .sc-box-picker-btns { display: flex; gap: 0.3rem; }
+        .sc-box-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 7px;
+            border: 1.5px solid rgba(26, 36, 33, 0.22);
+            background: transparent;
+            color: rgba(26, 36, 33, 0.6);
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+            line-height: 1;
+        }
+        .sc-box-btn:hover { border-color: currentColor; }
+        /* 선택된 박스 — 자기 박스 색으로 채워 강조 */
+        .sc-box-btn.active {
+            color: #fff;
+            border-color: transparent;
+            background: var(--box-col, #2a6b4a);
+        }
+        :root[data-theme="dark"] .sc-box-picker-label { color: var(--green-light); }
+        :root[data-theme="dark"] .sc-box-btn { border-color: rgba(255,255,255,0.28); color: rgba(255,255,255,0.7); }
         /* ♯/♭ 토글 — 루트 그리드 바로 아래, 왼쪽 정렬 */
         .sc-root-acc { margin-top: 0.4rem; align-self: flex-start; }
         /* 모드 종류 세그먼트 (기본 / 멜로딕 / 하모닉) */
@@ -9418,6 +9455,18 @@
                             <button class="fb-inst-option" data-inst="bass5" data-action="scSetInstrument" data-args="bass5"><i class="fas fa-guitar"></i> 베이스 5현</button>
                             <button class="fb-inst-option" data-inst="piano" data-action="scSetInstrument" data-args="piano"><span class="cwk-icon sc-inst-piano-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="2.5" width="15" height="12" fill="none" stroke="currentColor" stroke-width="1.1" rx="1"/><line x1="4.25" y1="2.5" x2="4.25" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="8" y1="2.5" x2="8" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="11.75" y1="2.5" x2="11.75" y2="14.5" stroke="currentColor" stroke-width="0.8"/><rect x="2.8" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="6.55" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="10.3" y="2.5" width="2.9" height="7" fill="currentColor"/></svg></span> 피아노</button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- 강조할 박스 선택 — '박스 보이기' 켰을 때만 노출 -->
+                <div class="sc-box-picker" id="scBoxPicker" style="display:none">
+                    <span class="sc-box-picker-label">강조할 박스</span>
+                    <div class="sc-box-picker-btns">
+                        <button type="button" class="sc-box-btn" data-box="1" style="--box-col:#e0563b" data-action="scToggleEmphBox" data-args="1">1</button>
+                        <button type="button" class="sc-box-btn" data-box="2" style="--box-col:#e08a1e" data-action="scToggleEmphBox" data-args="2">2</button>
+                        <button type="button" class="sc-box-btn" data-box="3" style="--box-col:#2f9e54" data-action="scToggleEmphBox" data-args="3">3</button>
+                        <button type="button" class="sc-box-btn" data-box="4" style="--box-col:#2f7fbf" data-action="scToggleEmphBox" data-args="4">4</button>
+                        <button type="button" class="sc-box-btn" data-box="5" style="--box-col:#8a5cc4" data-action="scToggleEmphBox" data-args="5">5</button>
                     </div>
                 </div>
 
@@ -21175,8 +21224,37 @@
                     if (cfg.boxes && cfg.boxes.length) {
                         const BOX_COLORS = ['#e0563b', '#e08a1e', '#2f9e54', '#2f7fbf', '#8a5cc4']; // 1~5
                         const half = stringGap / 2;
+                        const BOX_R = 6; // 모서리 둥글기 반경(px)
                         const bxLeft  = function(f){ return (f <= 0) ? (padL - 36) : (padL + fretPos(f - 1)); };
                         const bxRight = function(f){ return padL + fretPos(Math.min(f, nFrets)); };
+                        // 폴리곤 꼭짓점 목록을 받아 모든 모서리를 둥글린 path 로.
+                        //   각 꼭짓점을 두 변 방향으로 살짝 물러난 뒤 2차 베지어로 이음.
+                        function roundedPath(pts, r) {
+                            const p = [];
+                            for (let i = 0; i < pts.length; i++) {
+                                const q = pts[i], prev = p[p.length - 1];
+                                if (!prev || Math.abs(prev.x - q.x) > 0.1 || Math.abs(prev.y - q.y) > 0.1) p.push(q);
+                            }
+                            if (p.length > 1) {
+                                const a = p[0], b = p[p.length - 1];
+                                if (Math.abs(a.x - b.x) < 0.1 && Math.abs(a.y - b.y) < 0.1) p.pop();
+                            }
+                            const n = p.length;
+                            if (n < 3) return '';
+                            let d = '';
+                            for (let i = 0; i < n; i++) {
+                                const cur = p[i], prev = p[(i - 1 + n) % n], next = p[(i + 1) % n];
+                                const v1x = prev.x - cur.x, v1y = prev.y - cur.y;
+                                const v2x = next.x - cur.x, v2y = next.y - cur.y;
+                                const l1 = Math.hypot(v1x, v1y) || 1, l2 = Math.hypot(v2x, v2y) || 1;
+                                const rr = Math.min(r, l1 / 2, l2 / 2);
+                                const ax = cur.x + v1x / l1 * rr, ay = cur.y + v1y / l1 * rr;
+                                const bx = cur.x + v2x / l2 * rr, by = cur.y + v2y / l2 * rr;
+                                d += (i === 0 ? 'M ' : ' L ') + ax.toFixed(1) + ' ' + ay.toFixed(1);
+                                d += ' Q ' + cur.x.toFixed(1) + ' ' + cur.y.toFixed(1) + ' ' + bx.toFixed(1) + ' ' + by.toFixed(1);
+                            }
+                            return d + ' Z';
+                        }
                         cfg.boxes.forEach(function(box){
                             const col = BOX_COLORS[(box.num - 1) % BOX_COLORS.length];
                             const bands = [];
@@ -21187,21 +21265,28 @@
                                 bands.push({ xL: bxLeft(sg.lo), xR: bxRight(sg.hi), yT: y - half, yB: y + half });
                             }
                             if (!bands.length) return;
-                            let d = 'M ' + bands[0].xL.toFixed(1) + ' ' + bands[0].yT.toFixed(1);
-                            d += ' L ' + bands[0].xR.toFixed(1) + ' ' + bands[0].yT.toFixed(1);
+                            // 계단 폴리곤 꼭짓점(시계방향): 위 → 오른쪽 → 아래 → 왼쪽
+                            const pts = [];
+                            pts.push({ x: bands[0].xL, y: bands[0].yT });
+                            pts.push({ x: bands[0].xR, y: bands[0].yT });
                             for (let i = 0; i < bands.length; i++) {
-                                d += ' L ' + bands[i].xR.toFixed(1) + ' ' + bands[i].yB.toFixed(1);
-                                if (i + 1 < bands.length) d += ' L ' + bands[i + 1].xR.toFixed(1) + ' ' + bands[i].yB.toFixed(1);
+                                pts.push({ x: bands[i].xR, y: bands[i].yB });
+                                if (i + 1 < bands.length) pts.push({ x: bands[i + 1].xR, y: bands[i].yB });
                             }
                             const last = bands[bands.length - 1];
-                            d += ' L ' + last.xL.toFixed(1) + ' ' + last.yB.toFixed(1);
+                            pts.push({ x: last.xL, y: last.yB });
                             for (let i = bands.length - 1; i >= 0; i--) {
-                                d += ' L ' + bands[i].xL.toFixed(1) + ' ' + bands[i].yT.toFixed(1);
-                                if (i - 1 >= 0) d += ' L ' + bands[i - 1].xL.toFixed(1) + ' ' + bands[i].yT.toFixed(1);
+                                pts.push({ x: bands[i].xL, y: bands[i].yT });
+                                if (i - 1 >= 0) pts.push({ x: bands[i - 1].xL, y: bands[i].yT });
                             }
-                            d += ' Z';
-                            svgContent += '<path d="' + d + '" fill="' + col + '" fill-opacity="0.05" ' +
-                                'stroke="' + col + '" stroke-opacity="0.55" stroke-width="2" ' +
+                            const d = roundedPath(pts, BOX_R);
+                            // 강조 등급별 스타일 — on: 진하게 / off: 흐리게 / neutral: 기본
+                            const tier = box.tier || 'neutral';
+                            const st = (tier === 'on')  ? { fill: 0.12, stroke: 0.85, sw: 2.6, label: 1 }
+                                     : (tier === 'off') ? { fill: 0.015, stroke: 0.16, sw: 1.3, label: 0.28 }
+                                     :                     { fill: 0.05, stroke: 0.55, sw: 2, label: 0.9 };
+                            svgContent += '<path d="' + d + '" fill="' + col + '" fill-opacity="' + st.fill + '" ' +
+                                'stroke="' + col + '" stroke-opacity="' + st.stroke + '" stroke-width="' + st.sw + '" ' +
                                 'stroke-linejoin="round" pointer-events="none"/>';
                             // 박스 번호 — 맨 위 줄 세그먼트 위쪽에 표기
                             const lx = (bands[0].xL + bands[0].xR) / 2;
@@ -21209,7 +21294,7 @@
                             svgContent += '<text x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) +
                                 '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" ' +
                                 'font-size="10" font-weight="700" fill="' + col + '" ' +
-                                'fill-opacity="0.9" pointer-events="none">' + box.label + '</text>';
+                                'fill-opacity="' + st.label + '" pointer-events="none">' + box.label + '</text>';
                         });
                     }
 
@@ -22505,6 +22590,7 @@
                 accidental: 'sharp', // 'sharp' | 'flat' — 음이름 표기
                 accManual: false,    // 사용자가 ♯/♭ 토글을 직접 눌렀는지
                 showBoxes: false,    // 펜타/CAGED 포지션 박스 표시
+                emphasisBoxes: [],   // 강조할 박스 번호(1~5) — 비어있으면 전부 동일
                 fb: null,
                 piano: null,        // piano keyboard instance (lazy)
             };
@@ -22534,6 +22620,13 @@
                 if (boxSwitch) boxSwitch.style.display = scBoxesSupported() ? '' : 'none';
                 const boxChk = document.getElementById('scShowBoxes');
                 if (boxChk) boxChk.checked = !!scState.showBoxes;
+                // 박스 선택 피커 — 박스 보이기 켰고 지원 카테고리일 때만
+                const boxPicker = document.getElementById('scBoxPicker');
+                if (boxPicker) boxPicker.style.display = (scState.showBoxes && scBoxesSupported()) ? '' : 'none';
+                const emphArr = scState.emphasisBoxes || [];
+                document.querySelectorAll('#scBoxPicker .sc-box-btn').forEach(function(b){
+                    b.classList.toggle('active', emphArr.indexOf(parseInt(b.dataset.box, 10)) >= 0);
+                });
                 const svgEl = document.getElementById('scSvg');
                 const pianoSvgEl = document.getElementById('scPianoSvg');
                 if (!svgEl) return;
@@ -22773,6 +22866,12 @@
                         boxes.push({ num: num, label: String(num), segs: segs });
                     }
                 }
+                // 강조 등급: 선택 없으면 'neutral', 있으면 선택된 박스는 'on' 나머지 'off'
+                const emph = scState.emphasisBoxes || [];
+                const hasSel = emph.length > 0;
+                boxes.forEach(function(b){
+                    b.tier = !hasSel ? 'neutral' : (emph.indexOf(b.num) >= 0 ? 'on' : 'off');
+                });
                 return boxes;
             }
 
@@ -23056,6 +23155,16 @@
 
             window.scToggleBoxes = function(checked) {
                 scState.showBoxes = !!checked;
+                scRender();
+            };
+
+            // 강조할 박스 번호 토글 (1~5) — 여러 개 선택 가능
+            window.scToggleEmphBox = function(num) {
+                num = parseInt(num, 10);
+                if (!num) return;
+                const arr = scState.emphasisBoxes || (scState.emphasisBoxes = []);
+                const i = arr.indexOf(num);
+                if (i >= 0) arr.splice(i, 1); else arr.push(num);
                 scRender();
             };
 
