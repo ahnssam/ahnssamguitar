@@ -5156,12 +5156,13 @@
         .tuner-headstock.hs-bass4 .tuner-string-btn:hover,
         .tuner-headstock.hs-bass5 .tuner-string-btn:hover { transform: translate(-50%, -50%) scale(1.08); }
         /* 6 인라인 (위→아래 e·B·G·D·A·E — 고음이 위), 페그 왼쪽 위로 / 1번줄 e 더 위로 */
-        .tuner-headstock.hs-inline .tuner-string-btn[data-midi="64"] { left: 33%; top: 11%; }
-        .tuner-headstock.hs-inline .tuner-string-btn[data-midi="59"] { left: 30%; top: 22%; }
-        .tuner-headstock.hs-inline .tuner-string-btn[data-midi="55"] { left: 25%; top: 32%; }
-        .tuner-headstock.hs-inline .tuner-string-btn[data-midi="50"] { left: 21%; top: 42%; }
-        .tuner-headstock.hs-inline .tuner-string-btn[data-midi="45"] { left: 18%; top: 52%; }
-        .tuner-headstock.hs-inline .tuner-string-btn[data-midi="40"] { left: 15%; top: 62%; }
+        /* 인라인 헤드 위치는 줄 번호(data-str)로 고정 — 튜닝이 바뀌어 data-midi 가 변해도 유지 */
+        .tuner-headstock.hs-inline .tuner-string-btn.sb-guitar[data-str="1"] { left: 33%; top: 11%; }
+        .tuner-headstock.hs-inline .tuner-string-btn.sb-guitar[data-str="2"] { left: 30%; top: 22%; }
+        .tuner-headstock.hs-inline .tuner-string-btn.sb-guitar[data-str="3"] { left: 25%; top: 32%; }
+        .tuner-headstock.hs-inline .tuner-string-btn.sb-guitar[data-str="4"] { left: 21%; top: 42%; }
+        .tuner-headstock.hs-inline .tuner-string-btn.sb-guitar[data-str="5"] { left: 18%; top: 52%; }
+        .tuner-headstock.hs-inline .tuner-string-btn.sb-guitar[data-str="6"] { left: 15%; top: 62%; }
         /* 베이스 4현 (위→아래 G·D·A·E), 페그 왼쪽 (더 가깝게) */
         .tuner-headstock.hs-bass4 .tuner-string-btn[data-midi="43"] { left: 30%; top: 18%; }
         .tuner-headstock.hs-bass4 .tuner-string-btn[data-midi="38"] { left: 26%; top: 33%; }
@@ -8678,17 +8679,30 @@
                             <button type="button" data-action="setTunerHeadstock" data-args="bass5">베이스 5현 <span class="tuner-hs-sub">4+1</span></button>
                         </div>
                     </div>
+                    <!-- 튜닝 종류 선택 (기타) — 헤드 디자인 오른쪽 -->
+                    <div class="tuner-hs-select">
+                        <button type="button" class="tuner-hs-btn" id="tunerTuningBtn" data-action="toggleTunerTuningMenu" aria-haspopup="true" aria-expanded="false" title="튜닝 종류 선택">
+                            <i class="fas fa-sliders-h" aria-hidden="true"></i>
+                            <span id="tunerTuningLabel">스탠다드</span>
+                            <i class="fas fa-chevron-down tuner-hs-caret" aria-hidden="true"></i>
+                        </button>
+                        <div class="tuner-hs-menu" id="tunerTuningMenu" hidden>
+                            <button type="button" class="active" data-action="setTunerTuning" data-args="standard">스탠다드 <span class="tuner-hs-sub">E A D G B E</span></button>
+                            <button type="button" data-action="setTunerTuning" data-args="dadgad">DADGAD <span class="tuner-hs-sub">D A D G A D</span></button>
+                            <button type="button" data-action="setTunerTuning" data-args="okapi">Okapi Anger <span class="tuner-hs-sub">D♭ A♭ D♭ G♭ B♭ E♭ (Drop D 반음↓)</span></button>
+                        </div>
+                    </div>
                 </div>
                 <div class="tuner-headstock-row">
                 <div class="tuner-headstock hs-3p3">
                     <!-- 좌우 줄별 버튼 — SVG 페그(헤드머신) 바로 옆에 absolute 로 얹음.
                          페그 y 위치 (SVG viewBox 400 기준 100/180/260) → 25%/45%/65%. -->
-                    <button type="button" class="tuner-string-btn sb-guitar left top"    data-midi="50" data-action="setTunerTargetMidi" data-args="50" aria-label="4번줄 D3">D</button>
-                    <button type="button" class="tuner-string-btn sb-guitar left middle" data-midi="45" data-action="setTunerTargetMidi" data-args="45" aria-label="5번줄 A2">A</button>
-                    <button type="button" class="tuner-string-btn sb-guitar left bottom" data-midi="40" data-action="setTunerTargetMidi" data-args="40" aria-label="6번줄 E2">E</button>
-                    <button type="button" class="tuner-string-btn sb-guitar right top"    data-midi="55" data-action="setTunerTargetMidi" data-args="55" aria-label="3번줄 G3">G</button>
-                    <button type="button" class="tuner-string-btn sb-guitar right middle" data-midi="59" data-action="setTunerTargetMidi" data-args="59" aria-label="2번줄 B3">B</button>
-                    <button type="button" class="tuner-string-btn sb-guitar right bottom" data-midi="64" data-action="setTunerTargetMidi" data-args="64" aria-label="1번줄 E4">e</button>
+                    <button type="button" class="tuner-string-btn sb-guitar left top"    data-str="4" data-midi="50" data-action="setTunerTargetMidi" data-args="50" aria-label="4번줄 D3">D</button>
+                    <button type="button" class="tuner-string-btn sb-guitar left middle" data-str="5" data-midi="45" data-action="setTunerTargetMidi" data-args="45" aria-label="5번줄 A2">A</button>
+                    <button type="button" class="tuner-string-btn sb-guitar left bottom" data-str="6" data-midi="40" data-action="setTunerTargetMidi" data-args="40" aria-label="6번줄 E2">E</button>
+                    <button type="button" class="tuner-string-btn sb-guitar right top"    data-str="3" data-midi="55" data-action="setTunerTargetMidi" data-args="55" aria-label="3번줄 G3">G</button>
+                    <button type="button" class="tuner-string-btn sb-guitar right middle" data-str="2" data-midi="59" data-action="setTunerTargetMidi" data-args="59" aria-label="2번줄 B3">B</button>
+                    <button type="button" class="tuner-string-btn sb-guitar right bottom" data-str="1" data-midi="64" data-action="setTunerTargetMidi" data-args="64" aria-label="1번줄 E4">e</button>
                     <!-- 베이스 4현 (E A D G) -->
                     <button type="button" class="tuner-string-btn sb-bass4" data-midi="43" data-action="setTunerTargetMidi" data-args="43" aria-label="베이스 1번줄 G2">G</button>
                     <button type="button" class="tuner-string-btn sb-bass4" data-midi="38" data-action="setTunerTargetMidi" data-args="38" aria-label="베이스 2번줄 D2">D</button>
@@ -10768,9 +10782,10 @@
                 document.querySelectorAll('.tuner-mode-btn').forEach(function(b) {
                     b.classList.toggle('active', b.dataset.args === mode);
                 });
-                // 수동인데 타깃 미선택 시 1번줄 (E4) 기본
+                // 수동인데 타깃 미선택 시 1번줄 기본 (현재 튜닝의 1번줄 음)
                 if (tunerMode === 'manual' && tunerTargetMidi == null) {
-                    tunerTargetMidi = 64;
+                    var _t1 = (typeof TUNINGS !== 'undefined' && TUNINGS[_tunerTuning]) ? TUNINGS[_tunerTuning].strings['1'].midi : 64;
+                    tunerTargetMidi = _t1;
                 }
                 _refreshTunerButtons();
                 gtag('event', 'tuner_mode_change', { mode: mode });
@@ -10787,6 +10802,59 @@
                     });
                 }
                 _refreshTunerButtons();
+            };
+
+            // ─── 튜닝 종류 선택 (기타 6현) ─────────────────────────────
+            //   줄 번호(1=1번줄/고음 e)별 목표음(midi)·표기·옥타브. 헤드 디자인과
+            //   무관하게 sb-guitar 6개 버튼의 목표음/라벨만 갈아끼운다.
+            var TUNINGS = {
+                standard: { label: '스탠다드', strings: {
+                    '1': { midi: 64, nm: 'e',  oct: 'E4' }, '2': { midi: 59, nm: 'B',  oct: 'B3' },
+                    '3': { midi: 55, nm: 'G',  oct: 'G3' }, '4': { midi: 50, nm: 'D',  oct: 'D3' },
+                    '5': { midi: 45, nm: 'A',  oct: 'A2' }, '6': { midi: 40, nm: 'E',  oct: 'E2' } } },
+                dadgad:   { label: 'DADGAD', strings: {
+                    '1': { midi: 62, nm: 'd',  oct: 'D4' }, '2': { midi: 57, nm: 'A',  oct: 'A3' },
+                    '3': { midi: 55, nm: 'G',  oct: 'G3' }, '4': { midi: 50, nm: 'D',  oct: 'D3' },
+                    '5': { midi: 45, nm: 'A',  oct: 'A2' }, '6': { midi: 38, nm: 'D',  oct: 'D2' } } },
+                okapi:    { label: 'Okapi Anger', strings: {
+                    '1': { midi: 63, nm: 'e♭', oct: 'E♭4' }, '2': { midi: 58, nm: 'B♭', oct: 'B♭3' },
+                    '3': { midi: 54, nm: 'G♭', oct: 'G♭3' }, '4': { midi: 49, nm: 'D♭', oct: 'D♭3' },
+                    '5': { midi: 44, nm: 'A♭', oct: 'A♭2' }, '6': { midi: 37, nm: 'D♭', oct: 'D♭2' } } }
+            };
+            var _tunerTuning = 'standard';
+            function applyTuning(id) {
+                var t = TUNINGS[id]; if (!t) return;
+                _tunerTuning = id;
+                document.querySelectorAll('.tuner-string-btn.sb-guitar').forEach(function(b) {
+                    var s = b.dataset.str; var info = t.strings[s]; if (!info) return;
+                    b.dataset.midi = String(info.midi);
+                    b.dataset.args = String(info.midi);
+                    b.textContent = info.nm;
+                    b.setAttribute('aria-label', s + '번줄 ' + info.oct);
+                });
+                var lbl = document.getElementById('tunerTuningLabel'); if (lbl) lbl.textContent = t.label;
+                document.querySelectorAll('#tunerTuningMenu button[data-args]').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.args === id);
+                });
+                // 수동 타깃이 새 튜닝에 없는 음이면 해제
+                if (tunerTargetMidi != null) {
+                    var present = Object.keys(t.strings).some(function(k){ return t.strings[k].midi === tunerTargetMidi; });
+                    if (!present) tunerTargetMidi = null;
+                }
+                _refreshTunerButtons();
+                try { localStorage.setItem('tunerTuning', id); } catch (e) {}
+            }
+            window.setTunerTuning = function(id) {
+                applyTuning(id);
+                var m = document.getElementById('tunerTuningMenu'), btn = document.getElementById('tunerTuningBtn');
+                if (m) m.setAttribute('hidden', '');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            };
+            window.toggleTunerTuningMenu = function() {
+                var m = document.getElementById('tunerTuningMenu'), btn = document.getElementById('tunerTuningBtn');
+                if (!m) return;
+                if (m.hasAttribute('hidden')) { m.removeAttribute('hidden'); if (btn) btn.setAttribute('aria-expanded', 'true'); }
+                else { m.setAttribute('hidden', ''); if (btn) btn.setAttribute('aria-expanded', 'false'); }
             };
 
             // ─── 헤드스톡(머신헤드) 디자인 선택 — 3+3 / 6 인라인 ───────
@@ -10825,15 +10893,25 @@
             (function() {
                 // 저장된 헤드 디자인 복원
                 try { var d = localStorage.getItem('tunerHeadstock'); if (d === 'inline' || d === '3p3') window.setTunerHeadstock(d); } catch (e) {}
-                function closeHsMenu() {
-                    var m = document.getElementById('tunerHsMenu'); if (!m || m.hasAttribute('hidden')) return;
-                    m.setAttribute('hidden', ''); var b = document.getElementById('tunerHsBtn'); if (b) b.setAttribute('aria-expanded', 'false');
+                // 저장된 튜닝 복원
+                try { var tg = localStorage.getItem('tunerTuning'); if (tg && TUNINGS[tg]) applyTuning(tg); } catch (e) {}
+                // 열린 드롭다운(헤드 디자인 / 튜닝) 을 바깥 클릭·ESC 로 닫기
+                function closeTunerMenus(exceptSel) {
+                    document.querySelectorAll('.tuner-hs-select').forEach(function(sel) {
+                        if (sel === exceptSel) return;
+                        var menu = sel.querySelector('.tuner-hs-menu');
+                        if (menu && !menu.hasAttribute('hidden')) {
+                            menu.setAttribute('hidden', '');
+                            var b = sel.querySelector('button[aria-haspopup]');
+                            if (b) b.setAttribute('aria-expanded', 'false');
+                        }
+                    });
                 }
                 document.addEventListener('click', function(e) {
-                    var sel = document.querySelector('.tuner-hs-select');
-                    if (sel && !sel.contains(e.target)) closeHsMenu();
+                    var inside = e.target.closest ? e.target.closest('.tuner-hs-select') : null;
+                    closeTunerMenus(inside);   // 클릭한 드롭다운은 그대로 두고 나머지는 닫음
                 });
-                document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeHsMenu(); });
+                document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeTunerMenus(null); });
             })();
 
             function freqToNote(freq) {
