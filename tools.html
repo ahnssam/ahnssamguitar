@@ -5117,7 +5117,7 @@
         .tuner-hs-btn[aria-expanded="true"] .tuner-hs-caret { transform: rotate(180deg); }
         .tuner-hs-menu {
             position: absolute; top: calc(100% + 6px); right: 0; z-index: 30;
-            min-width: 190px; padding: 0.3rem;
+            min-width: 200px; width: max-content; max-width: 92vw; padding: 0.3rem;
             background: var(--bg-panel);
             border: 1px solid rgba(42,107,74,0.2); border-radius: 12px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.16);
@@ -5125,10 +5125,11 @@
         }
         .tuner-hs-menu[hidden] { display: none; }
         .tuner-hs-menu button {
-            display: flex; align-items: baseline; gap: 0.4rem;
+            display: flex; align-items: baseline; gap: 0.6rem;
             text-align: left; padding: 0.5rem 0.6rem; border-radius: 8px;
             background: transparent; border: none; cursor: pointer;
             font-family: inherit; font-size: 0.83rem; color: var(--text-primary);
+            white-space: nowrap;   /* 라벨·음이름이 줄바꿈되며 잘리지 않도록 */
         }
         .tuner-hs-menu button:hover:not([disabled]) { background: rgba(42,107,74,0.1); }
         .tuner-hs-menu button.active { background: rgba(82,168,114,0.16); color: var(--green-deep); font-weight: 600; }
@@ -8688,8 +8689,9 @@
                         </button>
                         <div class="tuner-hs-menu" id="tunerTuningMenu" hidden>
                             <button type="button" class="active" data-action="setTunerTuning" data-args="standard">스탠다드 <span class="tuner-hs-sub">E A D G B E</span></button>
+                            <button type="button" data-action="setTunerTuning" data-args="halfstep">드롭다운 <span class="tuner-hs-sub">(반음 내림)</span></button>
+                            <button type="button" data-action="setTunerTuning" data-args="dropd">드롭 D <span class="tuner-hs-sub">D A D G B E</span></button>
                             <button type="button" data-action="setTunerTuning" data-args="dadgad">DADGAD <span class="tuner-hs-sub">D A D G A D</span></button>
-                            <button type="button" data-action="setTunerTuning" data-args="okapi">Okapi Anger <span class="tuner-hs-sub">D♭ A♭ D♭ G♭ B♭ E♭ (Drop D 반음↓)</span></button>
                         </div>
                     </div>
                 </div>
@@ -10812,14 +10814,18 @@
                     '1': { midi: 64, nm: 'e',  oct: 'E4' }, '2': { midi: 59, nm: 'B',  oct: 'B3' },
                     '3': { midi: 55, nm: 'G',  oct: 'G3' }, '4': { midi: 50, nm: 'D',  oct: 'D3' },
                     '5': { midi: 45, nm: 'A',  oct: 'A2' }, '6': { midi: 40, nm: 'E',  oct: 'E2' } } },
+                dropd:    { label: '드롭 D', strings: {
+                    '1': { midi: 64, nm: 'e',  oct: 'E4' }, '2': { midi: 59, nm: 'B',  oct: 'B3' },
+                    '3': { midi: 55, nm: 'G',  oct: 'G3' }, '4': { midi: 50, nm: 'D',  oct: 'D3' },
+                    '5': { midi: 45, nm: 'A',  oct: 'A2' }, '6': { midi: 38, nm: 'D',  oct: 'D2' } } },
                 dadgad:   { label: 'DADGAD', strings: {
                     '1': { midi: 62, nm: 'd',  oct: 'D4' }, '2': { midi: 57, nm: 'A',  oct: 'A3' },
                     '3': { midi: 55, nm: 'G',  oct: 'G3' }, '4': { midi: 50, nm: 'D',  oct: 'D3' },
                     '5': { midi: 45, nm: 'A',  oct: 'A2' }, '6': { midi: 38, nm: 'D',  oct: 'D2' } } },
-                okapi:    { label: 'Okapi Anger', strings: {
+                halfstep: { label: '드롭다운', strings: {
                     '1': { midi: 63, nm: 'e♭', oct: 'E♭4' }, '2': { midi: 58, nm: 'B♭', oct: 'B♭3' },
                     '3': { midi: 54, nm: 'G♭', oct: 'G♭3' }, '4': { midi: 49, nm: 'D♭', oct: 'D♭3' },
-                    '5': { midi: 44, nm: 'A♭', oct: 'A♭2' }, '6': { midi: 37, nm: 'D♭', oct: 'D♭2' } } }
+                    '5': { midi: 44, nm: 'A♭', oct: 'A♭2' }, '6': { midi: 39, nm: 'E♭', oct: 'E♭2' } } }
             };
             var _tunerTuning = 'standard';
             function applyTuning(id) {
