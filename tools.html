@@ -20694,6 +20694,10 @@
                 });
             }
 
+            // 전 사이트 볼륨 부스트 — 다른 스크립트 블록(반주/모드 스케일)의
+            // SITE_GAIN_BOOST 와 값 일치시킬 것. 이 블록은 별도 IIFE 라 여기도 선언 필요.
+            // (누락 시 ReferenceError 로 프렛보드/스케일 클릭음 전체가 안 나게 됨)
+            const SITE_GAIN_BOOST = 1.78;
             // Simple volume getter — respect master volume if present
             function getMasterGainValue() {
                 // SITE_GAIN_BOOST 를 곱해 악기 재생(코드·스케일·피아노·지판)도
@@ -21496,9 +21500,16 @@
                                 strokeColor = '#2a5ba8';
                                 textColor = '#ffffff';
                             }
-                            svgContent += '<circle cx="' + cx + '" cy="' + cy +
-                                '" r="' + r + '" fill="' + fillColor + '" stroke="' + strokeColor +
-                                '" stroke-width="1.2"/>';
+                            if (bigDot) {
+                                svgContent += '<circle cx="' + cx + '" cy="' + cy +
+                                    '" r="' + r + '" fill="' + fillColor + '" stroke="' + strokeColor +
+                                    '" stroke-width="1.2"/>';
+                            } else {
+                                // 음정보기 꺼짐 — 작은 초록 도트를 그리지 않는다 (깔끔한 지판).
+                                // 투명 서클은 flashDot 의 리플 좌표용으로만 유지, 클릭은 hit rect 가 받음.
+                                svgContent += '<circle cx="' + cx + '" cy="' + cy +
+                                    '" r="' + r + '" fill="none" stroke="none"/>';
+                            }
 
                             if (showText && bigDot) {
                                 // 세로 모드에서 도트 위의 음 이름도 보드와 같이
