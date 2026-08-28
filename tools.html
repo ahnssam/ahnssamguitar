@@ -22248,6 +22248,17 @@
                 fbUpdateTrainingStats();
             }
 
+            // 지판 밖 클릭 — 마지막 클릭 흔적(파란 도트)과 위쪽 음이름 표시를 지운다.
+            //   지판(#fbSvg) 안 클릭은 fbHandleClick 이 처리하므로 제외.
+            document.addEventListener('click', function(e) {
+                if (!fbState.lastClick) return;
+                if (e.target.closest && e.target.closest('#fbSvg')) return;
+                fbState.lastClick = null;
+                var ro = document.getElementById('fbNoteReadout');
+                if (ro) { ro.textContent = ''; ro.classList.remove('on'); }
+                if (fbState.fb) fbRender();
+            });
+
             function fbUpdateTrainingStats() {
                 const tr = fbState.training;
                 const c = document.getElementById('fbTrainCorrect');
