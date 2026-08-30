@@ -9448,6 +9448,16 @@
                             <span class="fb-switch-slider"></span>
                             <span class="fb-switch-label">루트 강조</span>
                         </label>
+                        <label class="fb-switch" title="음이름 대신 도수(1, ♭3, 5…)로 표시">
+                            <input type="checkbox" id="scDegreeView" data-change="scToggleDegreeView" data-args="$checked">
+                            <span class="fb-switch-slider"></span>
+                            <span class="fb-switch-label">도수로 보기</span>
+                        </label>
+                        <label class="fb-switch" title="음이름을 한글 계이름(도레미…)으로 표시">
+                            <input type="checkbox" id="scSolfegeView" data-change="scToggleSolfegeView" data-args="$checked">
+                            <span class="fb-switch-slider"></span>
+                            <span class="fb-switch-label">계이름으로 보기</span>
+                        </label>
                         <label class="fb-switch">
                             <input type="checkbox" id="scVertical" data-change="scToggleVertical" data-args="$checked">
                             <span class="fb-switch-slider"></span>
@@ -21112,6 +21122,7 @@
                     wrongPick: null,        // { sIdx, fret } — 프렛보드 트레이닝 오답 프렛을 연한 붉은색으로
                     accidental: 'sharp',    // 'sharp' | 'flat' — 음이름 표기 (스케일 패널만 'flat' 전달)
                     boxes: null,            // 펜타/CAGED 포지션 박스 [{num,label,segs:[{lo,hi}|null,...]}]
+                    noteLabel: null,        // function(pc, midi) -> string — 도트 라벨 오버라이드 (도수/계이름 보기)
                     onFretClick: null,
                 }, options);
 
@@ -21287,10 +21298,12 @@
                         const openR = isRoot ? 12 : 10;
                         svgContent += '<circle cx="' + cx + '" cy="' + y + '" r="' + openR + '" ' +
                             'fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.2"/>';
+                        var _olbl = cfg.noteLabel ? cfg.noteLabel(pc, s.midi) : pcName(pc, cfg.accidental);
+                        var _ofs = (/[가-힣]/.test(_olbl) && _olbl.length >= 2) ? 8 : (isRoot ? 11 : 10);
                         svgContent += '<text x="' + cx + '" y="' + (y + 3.5) +
                             '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" ' +
-                            'font-size="' + (isRoot ? '11' : '10') + '" font-weight="700" fill="' + textFillAttr + '"' + textT +
-                            ' pointer-events="none">' + pcName(pc, cfg.accidental) + '</text>';
+                            'font-size="' + _ofs + '" font-weight="700" fill="' + textFillAttr + '"' + textT +
+                            ' pointer-events="none">' + _olbl + '</text>';
                         svgContent += '</g>';
                     });
 
@@ -21527,10 +21540,13 @@
                             if (showText && bigDot) {
                                 // 세로 모드에서 도트 위의 음 이름도 보드와 같이
                                 // 90° 회전 — counter-rotate 제거.
+                                // noteLabel 오버라이드(도수/계이름) — 한글 2자는 폰트 축소.
+                                var _lbl = cfg.noteLabel ? cfg.noteLabel(pc, midi) : pcName(pc, cfg.accidental);
+                                var _lfs = (/[가-힣]/.test(_lbl) && _lbl.length >= 2) ? 8 : 10;
                                 svgContent += '<text x="' + cx + '" y="' + (cy + 3.5) +
                                     '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" ' +
-                                    'font-size="10" font-weight="700" fill="' + textColor + '"' +
-                                    ' pointer-events="none">' + pcName(pc, cfg.accidental) + '</text>';
+                                    'font-size="' + _lfs + '" font-weight="700" fill="' + textColor + '"' +
+                                    ' pointer-events="none">' + _lbl + '</text>';
                             }
                             svgContent += '</g>';
                         }
@@ -21690,6 +21706,7 @@
                     zoom: 1,
                     vertical: false,
                     accidental: 'sharp',   // 'sharp' | 'flat' — 검은건반 음이름 표기
+                    noteLabel: null,       // function(pc, midi) -> string — 라벨 오버라이드 (도수/계이름)
                 }, options);
 
                 const WHITE_PCS_IN_OCT = ['C','D','E','F','G','A','B'];
@@ -21756,10 +21773,11 @@
                         // Note label at the very bottom of the key
                         if (isScale || cfg.showNotes) {
                             const labelColor = isScale ? 'rgba(26,36,33,0.85)' : 'rgba(26,36,33,0.5)';
+                            const wLbl = cfg.noteLabel ? cfg.noteLabel(pc, midi) : pcName(pc, cfg.accidental);
                             out += '<text x="' + (x + W_W/2) + '" y="' + (y + W_H - 14) +
                                 '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" ' +
                                 'font-size="12" font-weight="' + (isRoot ? '700' : '500') +
-                                '" fill="' + labelColor + '" pointer-events="none">' + pcName(pc, cfg.accidental) + '</text>';
+                                '" fill="' + labelColor + '" pointer-events="none">' + wLbl + '</text>';
                         }
                         out += '</g>';
                         return out;
@@ -21780,10 +21798,12 @@
                                     'fill="#72c492"/>';
                             }
                             // 스케일 구성음인 검은건반에는 음이름도 표시 (♯/♭ 토글 반영)
+                            const bLbl = cfg.noteLabel ? cfg.noteLabel(pc, midi) : pcName(pc, cfg.accidental);
+                            const bFs = (/[가-힣]/.test(bLbl) && bLbl.length >= 2) ? 8 : 10;
                             out += '<text x="' + (x + B_W/2) + '" y="' + (y + B_H - 4) +
                                 '" text-anchor="middle" font-family="Noto Sans KR, sans-serif" ' +
-                                'font-size="10" font-weight="' + (isRoot ? '700' : '600') +
-                                '" fill="#ffffff" pointer-events="none">' + pcName(pc, cfg.accidental) + '</text>';
+                                'font-size="' + bFs + '" font-weight="' + (isRoot ? '700' : '600') +
+                                '" fill="#ffffff" pointer-events="none">' + bLbl + '</text>';
                         }
                         out += '</g>';
                         return out;
@@ -22713,6 +22733,7 @@
                 scaleId: 'major',
                 accidental: 'sharp', // 'sharp' | 'flat' — 음이름 표기
                 accManual: false,    // 사용자가 ♯/♭ 토글을 직접 눌렀는지
+                labelMode: 'name',   // 'name'(음이름) | 'degree'(도수) | 'solfege'(한글 계이름)
                 showBoxes: false,    // 펜타/CAGED 포지션 박스 표시
                 emphasisBoxes: [],   // 강조할 박스 번호(1~5) — 비어있으면 전부 동일
                 showHighFrets: true, // 12프렛 이상 표시 (끄면 12프렛까지만)
@@ -22747,6 +22768,11 @@
                 if (boxChk) boxChk.checked = !!scState.showBoxes;
                 const hiChk = document.getElementById('scHighFrets');
                 if (hiChk) hiChk.checked = !!scState.showHighFrets;
+                // 도수/계이름 토글 — 상호 배타 (둘 다 끄면 음이름)
+                const degChk = document.getElementById('scDegreeView');
+                if (degChk) degChk.checked = (scState.labelMode === 'degree');
+                const solChk = document.getElementById('scSolfegeView');
+                if (solChk) solChk.checked = (scState.labelMode === 'solfege');
                 const hiSwitch = document.getElementById('scHighFretsSwitch');
                 if (hiSwitch) hiSwitch.style.display = (scState.inst === 'piano') ? 'none' : '';
                 // 박스 선택 피커 — 박스 보이기 켰고 지원 카테고리일 때만
@@ -22780,6 +22806,7 @@
                             zoom: scState.zoom,
                             vertical: scState.vertical,
                             accidental: scState.accidental,
+                            noteLabel: scNoteLabelFn(),
                             onKeyClick: function(midi) {
                                 playNoteOnInstrument('piano', midi);
                             },
@@ -22793,6 +22820,7 @@
                             zoom: scState.zoom,
                             vertical: scState.vertical,
                             accidental: scState.accidental,
+                            noteLabel: scNoteLabelFn(),
                         });
                     }
                 } else {
@@ -22831,6 +22859,7 @@
                             highlights: highlightsFn,
                             accidental: scState.accidental,
                             boxes: boxesData,
+                            noteLabel: scNoteLabelFn(),
                             onFretClick: function(sIdx, fret, midi) {
                                 playNoteOnInstrument(scState.inst, midi);
                                 scState.fb.flashDot(sIdx, fret, 'ok');
@@ -22848,6 +22877,7 @@
                             highlights: highlightsFn,
                             accidental: scState.accidental,
                             boxes: boxesData,
+                            noteLabel: scNoteLabelFn(),
                         });
                     }
                 }
@@ -22941,6 +22971,45 @@
                 const list = (scState.category === 'modes') ? scModesList() : (SCALE_LIBRARY[scState.category] || []);
                 return list.find(function(s) { return s.id === scState.scaleId; })
                     || list[0];
+            }
+
+            // ── 도수/계이름 라벨 ──────────────────────────────────────
+            // 한글 계이름 (fixed-do). ♯/♭ 표기는 현재 accidental 설정을 따른다.
+            const SC_SOLFEGE_SHARP = { 'C':'도','C#':'도♯','D':'레','D#':'레♯','E':'미','F':'파','F#':'파♯','G':'솔','G#':'솔♯','A':'라','A#':'라♯','B':'시' };
+            const SC_SOLFEGE_FLAT  = { 'C#':'레♭','D#':'미♭','F#':'솔♭','G#':'라♭','A#':'시♭' };
+            function scSolfegeLabel(pc) {
+                if (scState.accidental === 'flat' && SC_SOLFEGE_FLAT[pc]) return SC_SOLFEGE_FLAT[pc];
+                return SC_SOLFEGE_SHARP[pc] || pc;
+            }
+            // 도수 라벨 — 루트로부터의 반음 거리를 도수로.
+            //   7음 스케일은 intervals 상 위치로 철자 결정 (리디안 ♯4, 로크리안 ♭5 등 정확).
+            //   그 외(펜타·블루스)는 반음 거리 표준 표기, 블루스의 6반음은 ♭5 관례.
+            function scDegreeLabel(pc) {
+                const rootIdx = CHROMATIC.indexOf(scState.rootPc);
+                const pcIdx = CHROMATIC.indexOf(pc);
+                if (rootIdx < 0 || pcIdx < 0) return pc;
+                const semi = (pcIdx - rootIdx + 12) % 12;
+                const scale = scGetScale();
+                const MAJ = [0, 2, 4, 5, 7, 9, 11];
+                if (scale && scale.intervals.length === 7) {
+                    const di = scale.intervals.indexOf(semi);
+                    if (di >= 0) {
+                        const diff = semi - MAJ[di];
+                        const accs = diff === 0 ? '' : (diff < 0 ? '♭'.repeat(-diff) : '♯'.repeat(diff));
+                        return accs + (di + 1);
+                    }
+                }
+                const CHROM_DEG = ['1', '♭2', '2', '♭3', '3', '4', '♯4', '5', '♭6', '6', '♭7', '7'];
+                let lbl = CHROM_DEG[semi];
+                // 6반음(트라이톤): 블루스처럼 4도(5반음)도 함께 갖는 스케일이거나 ♭ 표기 선호면 ♭5
+                if (semi === 6 && ((scale && scale.intervals.indexOf(5) >= 0) || scState.accidental === 'flat')) lbl = '♭5';
+                return lbl;
+            }
+            // 현재 라벨 모드에 맞는 noteLabel 함수 (음이름 모드면 null → 기본 표기)
+            function scNoteLabelFn() {
+                if (scState.labelMode === 'degree') return function(pc) { return scDegreeLabel(pc); };
+                if (scState.labelMode === 'solfege') return function(pc) { return scSolfegeLabel(pc); };
+                return null;
             }
 
             // 박스(포지션)를 지원하는 카테고리인지 — 메이저/마이너 계열만.
@@ -23296,6 +23365,16 @@
 
             window.scToggleHighFrets = function(checked) {
                 scState.showHighFrets = !!checked;
+                scRender();
+            };
+
+            // 도수로 보기 / 계이름으로 보기 — 상호 배타. 둘 다 끄면 음이름.
+            window.scToggleDegreeView = function(checked) {
+                scState.labelMode = checked ? 'degree' : 'name';
+                scRender();
+            };
+            window.scToggleSolfegeView = function(checked) {
+                scState.labelMode = checked ? 'solfege' : 'name';
                 scRender();
             };
 
