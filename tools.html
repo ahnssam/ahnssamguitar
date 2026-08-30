@@ -17381,8 +17381,12 @@
                     }
                     if (wrap) break;
                     nextIdx = _skipNonMatchingVoltas(nextIdx, rg, pass);
-                    nextIdx = _advanceThroughSkipZone(nextIdx, rg);
-                    idx = nextIdx; count++;
+                    // 꼬리 skip zone (X 마커 뒤 빈 마디가 범위 끝까지) — advance 가
+                    // 범위 처음으로 '감기면' 한 패스가 끝난 것이므로 여기서 종료.
+                    // (라이브 재생에선 되감김이 의도된 동작이지만, 길이 계산에선 무한루프가 됨)
+                    var afterSkip = _advanceThroughSkipZone(nextIdx, rg);
+                    if (afterSkip < nextIdx) break;
+                    idx = afterSkip; count++;
                 }
                 // guard 소진 = 반복 구조가 끝까지 못 감 (예: :| 두 개가 같은 |: 로
                 // 계속 돌아가는 순환). looped 플래그로 알려 내보내기에서 안내한다.
