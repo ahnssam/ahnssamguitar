@@ -6660,6 +6660,22 @@
             border-radius: 8px;
             letter-spacing: 0.02em;
         }
+        /* '나만 보이는' (비공개) 뱃지 */
+        .loop-preset-badge-mine {
+            display: inline-block; margin-left: 0.3rem; padding: 0.05rem 0.4rem;
+            font-size: 0.66rem; font-weight: 700; color: #a06a00;
+            background: rgba(240, 193, 74, 0.22); border: 1px solid rgba(240,193,74,0.5);
+            border-radius: 8px; letter-spacing: 0.02em; white-space: nowrap;
+        }
+        .loop-preset-badge-mine i { font-size: 0.6rem; margin-right: 0.15rem; }
+        :root[data-theme="dark"] .loop-preset-badge-mine { color: #f0c14a; background: rgba(240,193,74,0.14); border-color: rgba(240,193,74,0.4); }
+        /* 카포 뱃지 */
+        .loop-preset-badge-capo {
+            display: inline-block; margin-left: 0.3rem; padding: 0.05rem 0.4rem;
+            font-size: 0.66rem; font-weight: 600; color: #6b5bd6;
+            background: rgba(120, 100, 220, 0.14); border-radius: 8px; letter-spacing: 0.02em; white-space: nowrap;
+        }
+        :root[data-theme="dark"] .loop-preset-badge-capo { color: #b9adf5; background: rgba(120,100,220,0.22); }
         /* 장르 그룹 헤더 */
         .loop-preset-group {
             padding: 0.4rem 0.7rem 0.2rem;
@@ -14442,6 +14458,8 @@
                 } finally {
                     _loopPresetsLoading = false;
                 }
+                // 로그인 상태면 내 비공개 프리셋도 이어서 로드해 병합
+                try { await loadMyPrivatePresets(); } catch (e) {}
                 // 데이터 로드 끝났으니 서브필터 옵션 + 열려있는 목록 갱신
                 try { renderSubFilterRow(); } catch (e) {}
                 try {
@@ -14450,6 +14468,44 @@
                 } catch (e) {}
                 return _loopPresetsCache || [];
             }
+
+            // ─── 내 비공개 프리셋 (로그인 사용자 전용) ───────────────────
+            //   공개 프리셋은 익명 클라이언트로 로드(안정적). 비공개는 RLS상
+            //   인증 클라이언트로만 보이므로 별도로 받아 캐시에 병합한다.
+            var _loopMyLoaded = false;
+            async function loadMyPrivatePresets(force) {
+                var user = (typeof loopCurrentUser === 'function') ? loopCurrentUser() : null;
+                var authc = (typeof loopAuthClient === 'function') ? loopAuthClient() : null;
+                if (!user || !authc) return;
+                if (_loopMyLoaded && !force) return;
+                try {
+                    var res = await authc.from('presets').select('*').eq('user_id', user.id)
+                        .order('sort_order', { ascending: true })
+                        .order('created_at', { ascending: true });
+                    if (res.error || !Array.isArray(res.data)) return;
+                    _loopMyLoaded = true;
+                    // 캐시에서 기존 '내 것'(user_id 있는 항목) 제거 후 새로 병합 → 중복 방지
+                    var base = (_loopPresetsCache || []).filter(function(p) { return !p.user_id; });
+                    _loopPresetsCache = base.concat(res.data);
+                    try { renderSubFilterRow(); } catch (e) {}
+                    var _ps = document.getElementById('loopPresetSearch');
+                    renderLoopPresetList(_ps ? _ps.value : '');
+                } catch (e) { /* 조용히 무시 */ }
+            }
+            // 로그인/로그아웃 시 내 프리셋 병합/제거
+            window.addEventListener('ahnssam-auth-settled', function(e) {
+                var user = e && e.detail && e.detail.user;
+                if (user) {
+                    _loopMyLoaded = false;
+                    loadMyPrivatePresets(true);
+                } else {
+                    _loopMyLoaded = false;
+                    _loopPresetsCache = (_loopPresetsCache || []).filter(function(p) { return !p.user_id; });
+                    try { renderSubFilterRow(); } catch (e2) {}
+                    var _ps = document.getElementById('loopPresetSearch');
+                    renderLoopPresetList(_ps ? _ps.value : '');
+                }
+            });
 
             function _escHtml(s) {
                 return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
@@ -14549,6 +14605,8 @@
                         '<div>' +
                             '<span class="loop-preset-item-name">' + _escHtml(p.name) + '</span>' +
                             (p.artist ? ' <span class="loop-preset-item-meta">· ' + _escHtml(p.artist) + '</span>' : '') +
+                            (p.is_public === false ? ' <span class="loop-preset-badge-mine"><i class="fas fa-lock"></i> 나만 보이는</span>' : '') +
+                            (p.capo ? ' <span class="loop-preset-badge-capo">' + _escHtml(p.capo) + '</span>' : '') +
                             (stars ? ' <span class="loop-preset-stars">' + stars + '</span>' : '') +
                             (p.genre && !groupMode ? ' <span class="loop-preset-genre">' + _escHtml(p.genre) + '</span>' : '') +
                         '</div>' +
