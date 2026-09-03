@@ -588,6 +588,11 @@ nav.scrolled .auth-btn:hover {
                     ? `class="auth-user-avatar has-image" style="--avatar-url: url('${avatarUrl.replace(/'/g, "\\'")}')" aria-label="${escapeHtml(initial)}"`
                     : `class="auth-user-avatar"`;
                 const avatarContent = avatarUrl ? '' : escapeHtml(initial);
+                // 운영자(본인) 계정에서만 노출되는 메뉴 — 프리셋 빌더
+                const OWNER_EMAILS = ['steveq2568@gmail.com'];
+                const isOwner = OWNER_EMAILS.indexOf(
+                    String((currentSession.user && currentSession.user.email) || '').toLowerCase()
+                ) !== -1;
                 const container = document.createElement('div');
                 container.style.position = 'relative';
                 container.style.display = 'inline-flex';
@@ -598,6 +603,7 @@ nav.scrolled .auth-btn:hover {
                     </button>
                     <div class="auth-user-menu" role="menu">
                         <button type="button" data-auth-action="mypage">마이페이지</button>
+                        ${isOwner ? '<button type="button" data-auth-action="builder">프리셋 빌더</button>' : ''}
                         <button type="button" data-auth-action="change-nickname">닉네임 변경</button>
                         <hr>
                         <button type="button" data-auth-action="signout">로그아웃</button>
@@ -618,6 +624,7 @@ nav.scrolled .auth-btn:hover {
                     if (a === 'signout') signOut();
                     else if (a === 'change-nickname') promptNicknameChange();
                     else if (a === 'mypage') goToMypage();
+                    else if (a === 'builder') window.location.href = 'presets-builder.html';
                 });
                 slot.appendChild(container);
             } else {
