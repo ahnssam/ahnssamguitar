@@ -6643,13 +6643,28 @@
             font-size: 0.85rem;
             flex-shrink: 0;
         }
-        /* 난이도 별 + 장르 배지 */
+        /* 난이도(레벨) + 장르 배지 */
         .loop-preset-stars {
-            color: #d4a52a;
-            font-size: 0.74rem;
+            display: inline-block;
+            color: #a07c10;
+            background: rgba(212, 165, 42, 0.16);
+            border-radius: 8px;
+            padding: 0.05rem 0.38rem;
+            font-size: 0.68rem;
+            font-weight: 700;
             letter-spacing: 0;
             margin-left: 0.3rem;
+            white-space: nowrap;
         }
+        :root[data-theme="dark"] .loop-preset-stars { color: #f0c14a; background: rgba(240,193,74,0.16); }
+        /* 레벨 구분 헤더 — 점선으로 구간 나눔 */
+        .loop-preset-level-group {
+            border-top: 1px dashed rgba(42,107,74,0.45);
+            margin-top: 0.45rem;
+            padding-top: 0.35rem;
+        }
+        .loop-preset-level-group:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+        :root[data-theme="dark"] .loop-preset-level-group { border-top-color: rgba(180,230,200,0.35); }
         .loop-preset-genre {
             display: inline-block;
             margin-left: 0.3rem;
@@ -8784,6 +8799,13 @@
                         <button type="button" class="loop-preset-mini" id="loopWmBtn" data-action="openWatermarkPdf" aria-label="PDF에 워터마크 입히기" title="PDF에 워터마크 입히기" hidden>W</button>
                         <button type="button" class="tool-help-btn loop-preset-help-btn" data-help="backing" aria-label="반주 도움말" aria-expanded="false">?</button>
                         <div class="loop-preset-list" id="loopPresetList">
+                            <!-- 목록 소스 — 내 악보(비공개)가 있을 때만 노출 -->
+                            <div class="loop-preset-sort-row loop-preset-source-row" id="loopPresetSourceRow" hidden>
+                                <span class="loop-preset-sort-label">목록</span>
+                                <button type="button" class="loop-preset-sort-btn active" data-src="all">전체</button>
+                                <button type="button" class="loop-preset-sort-btn" data-src="default">기본</button>
+                                <button type="button" class="loop-preset-sort-btn" data-src="mine">내 악보</button>
+                            </div>
                             <div class="loop-preset-sort-row" id="loopPresetSortRow">
                                 <span class="loop-preset-sort-label">정렬</span>
                                 <button type="button" class="loop-preset-sort-btn active" data-sort="alpha">가나다순</button>
@@ -14281,6 +14303,30 @@
             //   genre 모드: 'Pop' 같은 장르명
             // null = 서브 필터 비활성 (전체 표시)
             let _loopPresetSubFilter = null;
+            // 목록 소스 — all(전체) | default(기본 공개) | mine(내 악보=비공개)
+            let _loopPresetSource = 'all';
+            function _applySourceFilter(presets) {
+                if (_loopPresetSource === 'mine') {
+                    return presets.filter(function(p) { return p.is_public === false; });
+                }
+                if (_loopPresetSource === 'default') {
+                    return presets.filter(function(p) { return p.is_public !== false; });
+                }
+                return presets;
+            }
+            // 내 악보가 하나라도 있을 때만 소스 선택 행 노출
+            function _updateSourceRowVisibility() {
+                var row = document.getElementById('loopPresetSourceRow');
+                if (!row) return;
+                var has = (_loopPresetsCache || []).some(function(p) { return p.is_public === false; });
+                row.hidden = !has;
+                if (!has && _loopPresetSource !== 'all') {
+                    _loopPresetSource = 'all';
+                    row.querySelectorAll('.loop-preset-sort-btn').forEach(function(b) {
+                        b.classList.toggle('active', b.dataset.src === 'all');
+                    });
+                }
+            }
 
             // 한글 음절의 초성을 추출 (쌍자음은 단자음으로 정규화).
             //   '가' → 'ㄱ', '땅' → 'ㄷ', '쌀' → 'ㅅ'
@@ -14300,7 +14346,7 @@
 
             // 현재 정렬 모드에 맞는 서브필터 옵션 목록 반환 (실제 데이터에 존재하는 키만).
             function _computeSubFilterOptions() {
-                var presets = _loopPresetsCache || [];
+                var presets = _applySourceFilter(_loopPresetsCache || []);
                 if (presets.length === 0) return [];
                 if (_loopPresetSort === 'alpha') {
                     var seen = new Set();
@@ -14325,7 +14371,7 @@
                     var diffs = new Set();
                     presets.forEach(function(p) { if (p.difficulty) diffs.add(p.difficulty); });
                     return Array.from(diffs).sort(function(a, b) { return a - b; }).map(function(d) {
-                        return { val: d, label: '★'.repeat(d) };
+                        return { val: d, label: 'Lv.' + d };
                     });
                 }
                 if (_loopPresetSort === 'genre') {
@@ -14540,7 +14586,8 @@
             function renderLoopPresetList(filter) {
                 var itemsEl = document.getElementById('loopPresetItems');
                 if (!itemsEl) return;
-                var presets = _loopPresetsCache || [];
+                _updateSourceRowVisibility();
+                var presets = _applySourceFilter(_loopPresetsCache || []);
                 var f = (filter || '').trim();
                 var filtered;
                 var isSearching = !!f;
@@ -14592,7 +14639,10 @@
                 // 렌더링 — 장르별 모드 + 검색 안 할 때만 그룹 헤더 삽입
                 var html = '';
                 var lastGenre = null;
+                var lastLevel = null;
                 var groupMode = (!isSearching && _loopPresetSort === 'genre');
+                // 난이도순 정렬 + 서브필터 없음 → 레벨별 점선 구분선
+                var levelMode = (!isSearching && _loopPresetSort === 'difficulty' && !_loopPresetSubFilter);
                 filtered.forEach(function(p) {
                     if (groupMode) {
                         var g = p.genre || '기타';
@@ -14601,7 +14651,15 @@
                             lastGenre = g;
                         }
                     }
-                    var stars = (p.difficulty && p.difficulty > 0) ? '★'.repeat(p.difficulty) : '';
+                    if (levelMode) {
+                        var lvv = p.difficulty || 0;
+                        if (lvv !== lastLevel) {
+                            html += '<div class="loop-preset-group loop-preset-level-group">' +
+                                    (lvv > 0 ? '레벨 ' + lvv : '난이도 미정') + '</div>';
+                            lastLevel = lvv;
+                        }
+                    }
+                    var stars = (p.difficulty && p.difficulty > 0) ? 'Lv.' + p.difficulty : '';
                     html += '<div class="loop-preset-item" data-id="' + _escHtml(p.id) + '">' +
                         '<div>' +
                             '<span class="loop-preset-item-name">' + _escHtml(p.name) + '</span>' +
@@ -15374,6 +15432,20 @@
                         renderSubFilterRow();
                         var s = document.getElementById('loopPresetSearch');
                         renderLoopPresetList(s ? s.value : '');
+                    };
+                });
+                // 목록 소스 셀렉터 (전체 / 기본 / 내 악보)
+                document.querySelectorAll('#loopPresetSourceRow .loop-preset-sort-btn').forEach(function(btn) {
+                    btn.onclick = function(e) {
+                        e.stopPropagation();
+                        _loopPresetSource = btn.dataset.src || 'all';
+                        _loopPresetSubFilter = null;
+                        document.querySelectorAll('#loopPresetSourceRow .loop-preset-sort-btn').forEach(function(b) {
+                            b.classList.toggle('active', b === btn);
+                        });
+                        renderSubFilterRow();
+                        var s2 = document.getElementById('loopPresetSearch');
+                        renderLoopPresetList(s2 ? s2.value : '');
                     };
                 });
                 renderSubFilterRow();
