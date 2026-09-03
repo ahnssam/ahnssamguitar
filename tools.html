@@ -7404,9 +7404,11 @@
         .loop-grid.cols-16 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         .loop-grid.cols-32 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         /* 그리드 아래 '4마디 추가' — 희미한 점선 버튼 */
-        .loop-add-bars { display: flex; align-items: stretch; gap: 6px; width: 100%; margin: 0.15rem 0 0.6rem; }
+        .loop-add-bars { display: flex; align-items: stretch; gap: 6px; width: 100%; margin: 0.15rem 0 0.6rem; min-height: 46px; }
+        .loop-add-bars > * { min-height: 46px; }
         .loop-add-bars-main {
-            flex: 1; padding: 0.42rem; border: 1px dashed rgba(42,107,74,0.3); border-radius: 8px;
+            /* +4마디 — 가로는 살짝 좁게 (−1/+1/편집이 넓어진 만큼 자연히 줄어듦) */
+            flex: 1 1 auto; padding: 0.42rem 0.5rem; border: 1px dashed rgba(42,107,74,0.3); border-radius: 8px;
             background: transparent; color: rgba(42,107,74,0.55);
             font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer;
             transition: background .15s, color .15s, border-color .15s;
@@ -7415,9 +7417,45 @@
         .loop-add-bars-main:disabled { opacity: 0.3; cursor: default; }
         /* −1 / +1 — +4마디 와 동일한 투명 점선 스타일 (hover 시 색) */
         .loop-add-pm {
-            width: auto; min-width: 46px; height: auto; padding: 0 14px; border-radius: 8px;
+            /* −1 / +1 — 가로 살짝 넓게 */
+            width: auto; min-width: 64px; height: auto; padding: 0 20px; border-radius: 8px;
             border: 1px dashed rgba(42,107,74,0.3); background: transparent; color: rgba(42,107,74,0.55);
-            font-size: 0.85rem; font-weight: 700;
+            font-size: 0.9rem; font-weight: 700;
+        }
+        /* 편집 버튼 — +1 오른쪽 */
+        .loop-edit-btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem;
+            min-width: 74px; padding: 0 16px; border-radius: 8px;
+            border: 1px dashed rgba(42,107,74,0.3); background: transparent; color: rgba(42,107,74,0.6);
+            font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+            transition: background .15s, color .15s, border-color .15s;
+        }
+        .loop-edit-btn i { font-size: 0.75rem; }
+        .loop-edit-btn:hover { background: rgba(42,107,74,0.07); color: var(--green-deep); border-color: rgba(42,107,74,0.5); }
+        .loop-edit-btn.active {
+            background: var(--green-deep); color: #fff; border-style: solid; border-color: var(--green-deep);
+        }
+        :root[data-theme="dark"] .loop-edit-btn { color: rgba(180,220,195,0.55); border-color: rgba(180,220,195,0.22); }
+        :root[data-theme="dark"] .loop-edit-btn.active { background: var(--green-deep); color: #fff; }
+        /* 편집 모드 — 마디별 삭제(−) 버튼 */
+        .loop-cell-del {
+            position: absolute; top: -7px; right: -7px; z-index: 12;
+            width: 20px; height: 20px; line-height: 1; padding: 0;
+            border-radius: 50%; border: 1px solid #fff;
+            background: #c0392b; color: #fff;
+            font-family: inherit; font-size: 0.9rem; font-weight: 800;
+            cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .loop-cell-del:hover { background: #e04b39; transform: scale(1.12); }
+        /* +1 을 끌어와 삽입할 위치 표시 */
+        body.loop-inserting { cursor: copy; }
+        .loop-cell.insert-target { outline: 2px dashed var(--green-deep); outline-offset: 2px; }
+        .loop-cell.insert-target::before {
+            content: '여기 삽입'; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%,-50%); z-index: 14;
+            background: var(--green-deep); color: #fff; font-size: 0.62rem; font-weight: 700;
+            padding: 0.12rem 0.35rem; border-radius: 6px; white-space: nowrap; pointer-events: none;
         }
         .loop-add-pm:hover { background: rgba(42,107,74,0.07); color: var(--green-deep); border-color: rgba(42,107,74,0.5); }
         .loop-add-pm:disabled { opacity: 0.3; cursor: default; }
@@ -8914,7 +8952,8 @@
                     <div class="loop-add-bars">
                         <button type="button" class="loop-measures-pm loop-add-pm" data-action="adjustLoopBars" data-args="-1" aria-label="마디 1개 줄이기">−1</button>
                         <button type="button" class="loop-add-bars-main" id="loopAddBarsBtn" data-action="addLoopBars4" title="4마디 추가">＋ 4마디</button>
-                        <button type="button" class="loop-measures-pm loop-add-pm" data-action="adjustLoopBars" data-args="1" aria-label="마디 1개 늘리기">+1</button>
+                        <button type="button" class="loop-measures-pm loop-add-pm" id="loopPlusBtn" data-action="adjustLoopBars" data-args="1" aria-label="마디 1개 늘리기" title="클릭: 맨 뒤에 1마디 추가 · (편집 중) 드래그해서 마디 사이에 끼워넣기">+1</button>
+                        <button type="button" class="loop-edit-btn" id="loopEditBtn" data-action="toggleLoopEditMode" aria-pressed="false" title="마디 편집 — 마디 삭제(−) / +1 드래그로 중간 삽입"><i class="fas fa-pen"></i> 편집</button>
                     </div>
                     <!-- 전체 키 + 초기화 — 그리드와 BPM 사이 -->
                     <div class="loop-transpose-row">
@@ -16026,6 +16065,24 @@
                         });
                     })(i);
                     cell.appendChild(edgeT);
+                    // ─── 편집 모드: 이 마디 삭제(−) 버튼 ───────────────────────
+                    if (typeof loopEditMode !== 'undefined' && loopEditMode) {
+                        cell.classList.add('editing');
+                        var delBtn = document.createElement('button');
+                        delBtn.type = 'button';
+                        delBtn.className = 'loop-cell-del';
+                        delBtn.textContent = '−';
+                        delBtn.title = (i + 1) + '번 마디 삭제';
+                        (function(idx) {
+                            delBtn.addEventListener('pointerdown', function(ev) {
+                                ev.preventDefault(); ev.stopPropagation();
+                                if (loopActiveCommit) loopActiveCommit();
+                                closeLoopPicker();
+                                window.deleteLoopBarAt(idx);
+                            });
+                        })(i);
+                        cell.appendChild(delBtn);
+                    }
                     _cells.push(cell);
                 }
                 // 송폼이 있는 줄(4칸 단위)은 위쪽에 간격을 줘서 라벨이 들어갈 공간을 만든다.
@@ -17075,6 +17132,114 @@
             window.adjustLoopBars = function(delta) {
                 window.setLoopBars(loopBars + (parseInt(delta, 10) || 0));
             };
+
+            // ══════════ 마디 편집 모드 (삭제 / 중간 삽입) ══════════
+            //   편집 ON 이면 각 마디에 − 버튼이 뜨고, +1 을 마디 위로 끌어다 놓으면
+            //   그 자리에 빈 마디가 끼어든다. 코드·도돌이·볼타·송폼 인덱스를 함께 이동.
+            var loopEditMode = false;
+            function _reindexMap(map, at, delta) {
+                var out = {};
+                Object.keys(map || {}).forEach(function(k) {
+                    var idx = parseInt(k, 10);
+                    if (isNaN(idx)) return;
+                    if (delta > 0) out[idx >= at ? idx + 1 : idx] = map[k];
+                    else { if (idx === at) return; out[idx > at ? idx - 1 : idx] = map[k]; }
+                });
+                return out;
+            }
+            function _reindexSet(set, at, delta) {
+                var out = new Set();
+                (set || new Set()).forEach(function(idx) {
+                    if (delta > 0) out.add(idx >= at ? idx + 1 : idx);
+                    else { if (idx === at) return; out.add(idx > at ? idx - 1 : idx); }
+                });
+                return out;
+            }
+            function _shiftAllLoopMaps(at, delta) {
+                loopChords    = _reindexMap(loopChords,    at, delta);
+                loopChordsB   = _reindexMap(loopChordsB,   at, delta);
+                loopChordsC   = _reindexMap(loopChordsC,   at, delta);
+                loopChordsD   = _reindexMap(loopChordsD,   at, delta);
+                loopVoltas    = _reindexMap(loopVoltas,    at, delta);
+                loopSongForm  = _reindexMap(loopSongForm,  at, delta);
+                loopRepeats.left  = _reindexSet(loopRepeats.left,  at, delta);
+                loopRepeats.right = _reindexSet(loopRepeats.right, at, delta);
+                loopRangeStart = null; loopRangeEnd = null;
+            }
+            window.insertLoopBarAt = function(at) {
+                if (loopBars >= LOOP_BARS_MAX) return;
+                at = Math.max(0, Math.min(loopBars, parseInt(at, 10) || 0));
+                _shiftAllLoopMaps(at, 1);
+                window.setLoopBars(loopBars + 1);
+                try { loopOnStateChange(); } catch (e) {}
+            };
+            window.deleteLoopBarAt = function(at) {
+                if (loopBars <= LOOP_BARS_MIN) return;
+                at = Math.max(0, Math.min(loopBars - 1, parseInt(at, 10) || 0));
+                _shiftAllLoopMaps(at, -1);
+                window.setLoopBars(loopBars - 1);
+                try { loopOnStateChange(); } catch (e) {}
+            };
+            window.toggleLoopEditMode = function() {
+                loopEditMode = !loopEditMode;
+                var b = document.getElementById('loopEditBtn');
+                if (b) {
+                    b.classList.toggle('active', loopEditMode);
+                    b.setAttribute('aria-pressed', loopEditMode ? 'true' : 'false');
+                }
+                renderLoopGrid();
+                if (loopEditMode) _bindLoopPlusDrag();
+            };
+            // +1 버튼을 마디 위로 드래그 → 그 자리에 빈 마디 삽입 (편집 모드에서만)
+            function _bindLoopPlusDrag() {
+                var plus = document.getElementById('loopPlusBtn');
+                if (!plus || plus.dataset.dragBound) return;
+                plus.dataset.dragBound = '1';
+                var dragging = false, moved = false;
+                function clearTargets() {
+                    document.querySelectorAll('.loop-cell.insert-target').forEach(function(c) {
+                        c.classList.remove('insert-target');
+                    });
+                }
+                function cellAt(x, y) {
+                    var el = document.elementFromPoint(x, y);
+                    return (el && el.closest) ? el.closest('.loop-cell') : null;
+                }
+                plus.addEventListener('pointerdown', function(e) {
+                    if (!loopEditMode) return;
+                    dragging = true; moved = false;
+                    try { plus.setPointerCapture(e.pointerId); } catch (err) {}
+                    document.body.classList.add('loop-inserting');
+                });
+                plus.addEventListener('pointermove', function(e) {
+                    if (!dragging) return;
+                    moved = true;
+                    clearTargets();
+                    var c = cellAt(e.clientX, e.clientY);
+                    if (c) c.classList.add('insert-target');
+                });
+                plus.addEventListener('pointerup', function(e) {
+                    if (!dragging) return;
+                    dragging = false;
+                    document.body.classList.remove('loop-inserting');
+                    var c = cellAt(e.clientX, e.clientY);
+                    clearTargets();
+                    if (moved && c) {
+                        var idx = parseInt(c.dataset.idx, 10);
+                        if (!isNaN(idx)) {
+                            plus.dataset.suppressClick = '1';   // 끝에 추가되는 기본 동작 차단
+                            window.insertLoopBarAt(idx);
+                        }
+                    }
+                });
+                // 드래그로 삽입했으면 뒤이어 오는 click(=맨 뒤 +1)을 막는다
+                plus.addEventListener('click', function(e) {
+                    if (plus.dataset.suppressClick) {
+                        delete plus.dataset.suppressClick;
+                        e.preventDefault(); e.stopPropagation();
+                    }
+                }, true);
+            }
 
             window.setLoopBassStyle = function(style) {
                 if (!style) return;
