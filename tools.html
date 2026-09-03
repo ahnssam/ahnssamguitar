@@ -6676,6 +6676,18 @@
             border-radius: 8px;
             letter-spacing: 0.02em;
         }
+        /* 카포 안내 — 초기화 버튼 아래 */
+        .loop-capo-note {
+            display: flex; align-items: center; gap: 0.35rem;
+            margin: 0.45rem 0 0.2rem; padding: 0.4rem 0.7rem;
+            border: 1px solid rgba(120,100,220,0.35); border-radius: 8px;
+            background: rgba(120,100,220,0.10); color: #5a49b8;
+            font-size: 0.82rem; font-weight: 800; letter-spacing: 0.01em;
+        }
+        .loop-capo-note i { font-size: 0.8rem; }
+        .loop-capo-sub { font-size: 0.72rem; font-weight: 600; opacity: 0.75; margin-left: 0.1rem; }
+        .loop-capo-note[hidden] { display: none; }
+        :root[data-theme="dark"] .loop-capo-note { color: #b9adf5; background: rgba(120,100,220,0.20); border-color: rgba(160,145,240,0.38); }
         /* 목록 아이템 — 좌(정보) / 우(메타 + 별 + 연필) */
         .loop-preset-item-main { min-width: 0; flex: 1; }
         .loop-preset-item-right { display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0; }
@@ -8948,6 +8960,8 @@
                                 <i class="fas fa-redo"></i> 초기화
                             </button>
                         </div>
+                        <!-- 카포 안내 — 카포가 지정된 프리셋을 불러오면 표시 -->
+                        <div class="loop-capo-note" id="loopCapoNote" hidden></div>
                         <!-- 가상 피아노 (2옥타브 C4~C6) — '피아노 열기' 로 토글 -->
                         <div class="loop-mini-piano" id="loopMiniPiano" aria-label="미니 피아노 — 클릭해서 음정 듣기" hidden></div>
                         <div class="loop-adv" id="loopAdvanced" hidden>
@@ -14431,10 +14445,14 @@
                 if (_loopFavs.has(id)) _loopFavs.delete(id); else _loopFavs.add(id);
                 _saveFavs();
             }
-            // 내가 소유한(=내가 올린) 곡만 수정 가능 → 연필/공개토글은 본인에게만 보임
+            // 편집 권한 — 관리자(운영 계정)는 공용 프리셋 포함 전부, 그 외에는 본인이 올린 곡만.
+            //   로그인 안 했거나 다른 사용자에겐 연필/공개토글/삭제가 아예 렌더링되지 않는다.
             function _loopCanEdit(p) {
+                if (!p) return false;
                 var u = (typeof loopCurrentUser === 'function') ? loopCurrentUser() : null;
-                return !!(u && p && p.user_id && p.user_id === u.id);
+                if (!u) return false;
+                if (typeof _loopIsAdmin === 'function' && _loopIsAdmin()) return true;
+                return !!(p.user_id && p.user_id === u.id);
             }
             // 그 자리에서 펼쳐지는 수정 폼
             function _loopEditFormHtml(p) {
@@ -14442,6 +14460,13 @@
                 for (var i = 1; i <= 10; i++) {
                     lvOpts += '<option value="' + i + '"' + ((p.difficulty || 0) === i ? ' selected' : '') + '>Lv.' + i + '</option>';
                 }
+                // 카포 — 없음 / 1~5 (기존 값이 6 이상이면 그 값도 남겨둔다)
+                var curCapo = _capoNum(p.capo);
+                var capoOpts = '<option value=""' + (curCapo ? '' : ' selected') + '>없음</option>';
+                for (var c1 = 1; c1 <= 5; c1++) {
+                    capoOpts += '<option value="' + c1 + '"' + (curCapo === c1 ? ' selected' : '') + '>' + c1 + '</option>';
+                }
+                if (curCapo && curCapo > 5) capoOpts += '<option value="' + curCapo + '" selected>' + curCapo + '</option>';
                 var pub = (p.is_public !== false);
                 return '<div class="loop-preset-edit" data-editing="' + _escHtml(p.id) + '">' +
                     '<div class="loop-pe-row">' +
@@ -14452,7 +14477,7 @@
                         '<label>레벨<select data-f="difficulty">' + lvOpts + '</select></label>' +
                         '<label>장르<input type="text" data-f="genre" value="' + _escHtml(p.genre || '') + '"></label>' +
                         '<label>BPM<input type="number" min="20" max="240" data-f="bpm" value="' + (p.bpm || 90) + '"></label>' +
-                        '<label>카포<input type="text" data-f="capo" placeholder="예: Capo 2" value="' + _escHtml(p.capo || '') + '"></label>' +
+                        '<label>카포<select data-f="capo">' + capoOpts + '</select></label>' +
                     '</div>' +
                     '<div class="loop-pe-row loop-pe-foot">' +
                         '<button type="button" class="loop-pe-vis' + (pub ? ' pub' : '') + '" data-vis="1">' +
@@ -14535,16 +14560,24 @@
                         genre: (get('genre') || '').trim(),
                         difficulty: parseInt(get('difficulty'), 10) || null,
                         bpm: Math.max(20, Math.min(240, parseInt(get('bpm'), 10) || 90)),
-                        capo: (get('capo') || '').trim() || null,
+                        capo: (get('capo') || '').trim() ? ('Capo ' + parseInt(get('capo'), 10)) : null,
                         is_public: pubState
                     };
                     var authc = (typeof loopAuthClient === 'function') ? loopAuthClient() : null;
                     if (!authc) { msg.textContent = '로그인이 필요해요.'; return; }
+                    // 소유자 없는 공용 곡을 '나만 보기' 로 바꾸면 RLS상 아무도 못 보게 되므로
+                    // 이때는 현재 사용자를 소유자로 지정해 준다.
+                    if (!pubState && !p.user_id) {
+                        var _u = loopCurrentUser();
+                        if (_u) patch.user_id = _u.id;
+                    }
                     msg.textContent = '저장 중…';
                     try {
                         var res = await authc.from('presets').update(patch).eq('id', id);
                         if (res.error) { msg.textContent = '저장 실패: ' + res.error.message; return; }
                         Object.assign(p, patch);          // 캐시 즉시 반영
+                        // 지금 불러와 있는 곡이면 카포 안내도 갱신
+                        if (_loopActivePresetId === id) { try { _updateLoopCapoNote(patch.capo); } catch (e4) {} }
                         _loopEditingId = null;
                         var s = document.getElementById('loopPresetSearch');
                         try { renderSubFilterRow(); } catch (er) {}
@@ -15177,6 +15210,7 @@
                 var _sb0 = document.getElementById('loopSavePresetBtn');
                 if (_sb0) _sb0.title = '저장';
                 _loopActivePresetId = p.id;
+                _updateLoopCapoNote(p.capo);
                 _loopActivePresetRhythm = p.rhythm || '8beat';
                 // 커스텀 시퀀서 패턴 저장 — 베이스/피아노 각각 독립적으로 활성/비활성.
                 _loopActivePresetSequencer = (p.sequencer_pattern && typeof p.sequencer_pattern === 'object')
@@ -15297,6 +15331,21 @@
                 if (btn) btn.disabled = !has;
                 var btnAs = document.getElementById('loopSaveAsPresetBtn');
                 if (btnAs) btnAs.disabled = !has;
+            }
+            // 카포 안내 표시 — 'Capo 3' / '3' 등 어떤 형태로 저장돼 있어도 숫자만 뽑아 표기
+            function _capoNum(v) {
+                if (v == null || v === '') return null;
+                var m = String(v).match(/(\d+)/);
+                return m ? parseInt(m[1], 10) : null;
+            }
+            function _updateLoopCapoNote(capo) {
+                var el = document.getElementById('loopCapoNote');
+                if (!el) return;
+                var n = _capoNum(capo);
+                if (!n) { el.hidden = true; el.textContent = ''; return; }
+                el.hidden = false;
+                el.innerHTML = '<i class="fas fa-grip-lines-vertical"></i> 카포 ' + n +
+                               '<span class="loop-capo-sub">번 프렛에 끼우고 연주</span>';
             }
             // 현재 상태 → 프리셋 객체 (applyLoopPreset 과 호환되는 형태)
             function serializeLoopState(name, artist) {
@@ -17793,6 +17842,7 @@
                 _loopActivePresetSequencer = null;
                 _loopActivePresetId = null;
                 _loopActivePresetRhythm = null;
+                try { _updateLoopCapoNote(null); } catch (e) {}
                 _loopSavedSlot = null; _loopSavedName = null; _loopSavedArtist = null;
                 var _sbR = document.getElementById('loopSavePresetBtn');
                 if (_sbR) _sbR.title = '저장';
