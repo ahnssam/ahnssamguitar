@@ -6720,6 +6720,14 @@
         }
         .loop-pe-vis { border-color: rgba(42,107,74,0.35); background: rgba(42,107,74,0.08); color: var(--green-deep); }
         .loop-pe-vis.pub { background: rgba(70,130,220,0.14); border-color: rgba(70,130,220,0.4); color: #2f6bc0; }
+        .loop-pe-del {
+            padding: 0.32rem 0.7rem; border-radius: 7px; cursor: pointer;
+            font-family: inherit; font-size: 0.74rem; font-weight: 700;
+            border: 1px solid rgba(192,57,43,0.4); background: rgba(192,57,43,0.08); color: #c0392b;
+        }
+        .loop-pe-del:hover { background: rgba(192,57,43,0.18); }
+        .loop-pe-del i { font-size: 0.7rem; }
+        :root[data-theme="dark"] .loop-pe-del { color: #ff8a7a; border-color: rgba(255,138,122,0.35); background: rgba(192,57,43,0.16); }
         .loop-pe-cancel { border-color: rgba(120,120,120,0.3); background: transparent; color: var(--text-secondary); }
         .loop-pe-save { background: var(--green-deep); color: #fff; }
         .loop-pe-save:hover { filter: brightness(1.08); }
@@ -7702,7 +7710,7 @@
         .loop-cell {
             /* 세로 높이 고정 — 폭(2코드 vs 4코드 패널 너비)에 묶이지 않게 해서
                2코드/4코드 모드에서 마디 높이가 동일하게 보이도록. (4코드 현재보다 살짝 큼) */
-            min-height: 64px; display: flex; flex-direction: column;
+            min-height: 54px; display: flex; flex-direction: column;
             /* halves 컨테이너가 cell 전체 높이를 채우도록 stretch. 이전엔
                center 였는데, 그 경우 텍스트 영역만 hover/click hit 이 되고
                아래쪽 빈 공간이 죽은 영역이 됨 → "박스 아래쪽 클릭 안 됨" 버그. */
@@ -7999,11 +8007,11 @@
             .lp-page:last-child { break-after: auto; page-break-after: auto; }
         }
         .loop-cell-num {
-            font-size: 0.6rem; color: rgba(26, 36, 33, 0.45);
+            font-size: 0.52rem; color: rgba(26, 36, 33, 0.45);
             position: absolute; top: 2px; left: 0;
             /* 번호 라벨은 cell 좌상단에 떠 있는 hit 영역 — 클릭/드래그로
                시작 마디 / 범위 선택. 충분히 크게 만들어 모바일에서도 누르기 쉽게. */
-            min-width: 22px; height: 18px;
+            min-width: 20px; height: 16px;
             display: inline-flex; align-items: center; justify-content: center;
             cursor: pointer;
             border-bottom-right-radius: 6px;
@@ -14450,6 +14458,7 @@
                         '<button type="button" class="loop-pe-vis' + (pub ? ' pub' : '') + '" data-vis="1">' +
                             (pub ? '<i class="fas fa-globe"></i> 전체 공개' : '<i class="fas fa-tree"></i> 나만 보기') +
                         '</button>' +
+                        '<button type="button" class="loop-pe-del" title="이 프리셋 삭제"><i class="fas fa-trash"></i> 삭제</button>' +
                         '<span class="loop-pe-sp"></span>' +
                         '<button type="button" class="loop-pe-cancel">취소</button>' +
                         '<button type="button" class="loop-pe-save">저장</button>' +
@@ -14479,6 +14488,42 @@
                     _loopEditingId = null;
                     var s = document.getElementById('loopPresetSearch');
                     renderLoopPresetList(s ? s.value : '');
+                };
+                // 삭제 — 되돌릴 수 없으니 확인 창을 한 번 거친다
+                var delBtn = box.querySelector('.loop-pe-del');
+                if (delBtn) delBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    var ov = loopEnsureModal('loopPresetDelModal',
+                        '<div class="loop-modal-title">프리셋 삭제</div>' +
+                        '<div class="loop-modal-msg"><b>' + _escHtml(p.name) +
+                            (p.artist ? ' · ' + _escHtml(p.artist) : '') + '</b><br>' +
+                            '정말 삭제할까요? 되돌릴 수 없습니다.</div>' +
+                        '<div class="loop-modal-msg" id="loopPdMsg" style="margin-top:6px;"></div>' +
+                        '<div class="loop-modal-actions">' +
+                            '<button type="button" class="loop-modal-btn ghost" data-close>취소</button>' +
+                            '<button type="button" class="loop-modal-btn primary" id="loopPdOk">삭제</button>' +
+                        '</div>');
+                    ov.classList.add('open');
+                    var pdMsg = ov.querySelector('#loopPdMsg');
+                    ov.querySelector('#loopPdOk').onclick = async function() {
+                        var ac = (typeof loopAuthClient === 'function') ? loopAuthClient() : null;
+                        if (!ac) { pdMsg.textContent = '로그인이 필요해요.'; return; }
+                        pdMsg.textContent = '삭제 중…';
+                        try {
+                            var r = await ac.from('presets').delete().eq('id', id);
+                            if (r && r.error) { pdMsg.textContent = '삭제 실패: ' + r.error.message; return; }
+                            _loopPresetsCache = (_loopPresetsCache || []).filter(function(x) { return x.id !== id; });
+                            if (_loopActivePresetId === id) _loopActivePresetId = null;
+                            _loopEditingId = null;
+                            ov.classList.remove('open');
+                            loopToast('삭제했어요');
+                            try { renderSubFilterRow(); } catch (e3) {}
+                            var s2 = document.getElementById('loopPresetSearch');
+                            renderLoopPresetList(s2 ? s2.value : '');
+                        } catch (err) {
+                            pdMsg.textContent = '삭제 실패: ' + (err && err.message ? err.message : err);
+                        }
+                    };
                 };
                 box.querySelector('.loop-pe-save').onclick = async function(e) {
                     e.stopPropagation();
