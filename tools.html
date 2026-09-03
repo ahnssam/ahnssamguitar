@@ -6676,6 +6676,54 @@
             border-radius: 8px;
             letter-spacing: 0.02em;
         }
+        /* 목록 아이템 — 좌(정보) / 우(메타 + 별 + 연필) */
+        .loop-preset-item-main { min-width: 0; flex: 1; }
+        .loop-preset-item-right { display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0; }
+        .loop-fav-btn {
+            border: none; background: transparent; cursor: pointer; padding: 0 0.1rem;
+            font-size: 1rem; line-height: 1; color: rgba(120,120,120,0.55);
+            transition: color .15s, transform .12s;
+        }
+        .loop-fav-btn:hover { color: #e8b923; transform: scale(1.15); }
+        .loop-fav-btn.on { color: #e8b923; }
+        .loop-editp-btn {
+            border: none; background: transparent; cursor: pointer; padding: 0.1rem 0.2rem;
+            font-size: 0.76rem; color: rgba(42,107,74,0.6); transition: color .15s;
+        }
+        .loop-editp-btn:hover { color: var(--green-deep); }
+        :root[data-theme="dark"] .loop-editp-btn { color: rgba(180,230,200,0.6); }
+        /* 그 자리에서 펼쳐지는 수정 폼 */
+        .loop-preset-edit {
+            padding: 0.6rem 0.7rem; margin: 0 0 0.35rem;
+            border: 1px solid rgba(42,107,74,0.25); border-radius: 8px;
+            background: rgba(42,107,74,0.05);
+        }
+        :root[data-theme="dark"] .loop-preset-edit { background: rgba(255,255,255,0.05); border-color: rgba(180,230,200,0.22); }
+        .loop-pe-row { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.45rem; }
+        .loop-pe-row label {
+            display: flex; flex-direction: column; gap: 0.15rem; flex: 1 1 110px; min-width: 0;
+            font-size: 0.66rem; font-weight: 700; color: var(--text-secondary);
+        }
+        .loop-pe-row input, .loop-pe-row select {
+            padding: 0.3rem 0.4rem; border: 1px solid rgba(42,107,74,0.28); border-radius: 6px;
+            background: var(--bg-panel, #fff); color: var(--text-primary);
+            font-family: inherit; font-size: 0.78rem; font-weight: 600; min-width: 0;
+        }
+        :root[data-theme="dark"] .loop-pe-row input, :root[data-theme="dark"] .loop-pe-row select {
+            background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.16);
+        }
+        .loop-pe-foot { align-items: center; margin-bottom: 0; }
+        .loop-pe-sp { flex: 1; }
+        .loop-pe-vis, .loop-pe-cancel, .loop-pe-save {
+            padding: 0.32rem 0.7rem; border-radius: 7px; cursor: pointer;
+            font-family: inherit; font-size: 0.74rem; font-weight: 700; border: 1px solid transparent;
+        }
+        .loop-pe-vis { border-color: rgba(42,107,74,0.35); background: rgba(42,107,74,0.08); color: var(--green-deep); }
+        .loop-pe-vis.pub { background: rgba(70,130,220,0.14); border-color: rgba(70,130,220,0.4); color: #2f6bc0; }
+        .loop-pe-cancel { border-color: rgba(120,120,120,0.3); background: transparent; color: var(--text-secondary); }
+        .loop-pe-save { background: var(--green-deep); color: #fff; }
+        .loop-pe-save:hover { filter: brightness(1.08); }
+        .loop-pe-msg { font-size: 0.68rem; color: var(--text-secondary); margin-top: 0.3rem; }
         /* '나만 보이는' 곡 표시 — 나무 아이콘 */
         .loop-preset-mine-ico {
             margin-left: 0.35rem;
@@ -8843,8 +8891,9 @@
                         <div class="loop-save-wrap">
                             <button type="button" class="loop-preset-mini loop-save-toggle" id="loopSavePresetBtn" data-action="toggleSaveMenu" aria-haspopup="true" aria-expanded="false" title="저장" disabled><i class="fas fa-floppy-disk"></i><span>저장</span><i class="fas fa-chevron-down loop-save-caret" aria-hidden="true"></i></button>
                             <div class="loop-save-menu" id="loopSaveMenu" hidden>
-                                <button type="button" data-action="openSavePreset">저장</button>
-                                <button type="button" data-action="openSaveAsPreset">다른 이름으로 저장</button>
+                                <button type="button" data-action="openSavePreset">저장 (내 프리셋)</button>
+                                <button type="button" data-action="openSaveAsPreset">다른 이름으로 저장 (내 프리셋)</button>
+                                <button type="button" id="loopSaveSharedBtn" data-action="openSaveShared" hidden>저장 (공용 프리셋)</button>
                                 <button type="button" id="loopExportMenuBtn" data-action="openExportPreset" hidden>파일로 내보내기</button>
                             </div>
                         </div>
@@ -8858,6 +8907,8 @@
                                 <button type="button" class="loop-preset-sort-btn active" data-sort="alpha">가나다순</button>
                                 <button type="button" class="loop-preset-sort-btn" data-sort="difficulty">난이도순</button>
                                 <button type="button" class="loop-preset-sort-btn" data-sort="genre">장르별</button>
+                                <!-- 즐겨찾기만 보기 -->
+                                <button type="button" class="loop-preset-mine-btn loop-fav-filter" id="loopFavBtn" title="즐겨찾기만 보기">★ 즐겨찾기</button>
                                 <!-- 나만 보이는 곡만 보기 토글 (내 악보가 있을 때만 노출) -->
                                 <button type="button" class="loop-preset-mine-btn" id="loopMineBtn" hidden title="나만 보이는 곡만 보기"><i class="fas fa-tree"></i> 나만 보이는</button>
                             </div>
@@ -14353,11 +14404,120 @@
             //   genre 모드: 'Pop' 같은 장르명
             // null = 서브 필터 비활성 (전체 표시)
             let _loopPresetSubFilter = null;
+            // ═══════ 즐겨찾기 / 곡 정보 수정 ═══════
+            let _loopFavs = new Set();
+            let _loopFavOnly = false;
+            let _loopEditingId = null;
+            (function _loadFavs() {
+                try {
+                    var raw = localStorage.getItem('loopFavs');
+                    if (raw) JSON.parse(raw).forEach(function(id) { _loopFavs.add(id); });
+                } catch (e) {}
+            })();
+            function _saveFavs() {
+                try { localStorage.setItem('loopFavs', JSON.stringify(Array.from(_loopFavs))); } catch (e) {}
+            }
+            function _loopIsFav(id) { return _loopFavs.has(String(id)); }
+            function _loopToggleFav(id) {
+                id = String(id);
+                if (_loopFavs.has(id)) _loopFavs.delete(id); else _loopFavs.add(id);
+                _saveFavs();
+            }
+            // 내가 소유한(=내가 올린) 곡만 수정 가능 → 연필/공개토글은 본인에게만 보임
+            function _loopCanEdit(p) {
+                var u = (typeof loopCurrentUser === 'function') ? loopCurrentUser() : null;
+                return !!(u && p && p.user_id && p.user_id === u.id);
+            }
+            // 그 자리에서 펼쳐지는 수정 폼
+            function _loopEditFormHtml(p) {
+                var lvOpts = '';
+                for (var i = 1; i <= 10; i++) {
+                    lvOpts += '<option value="' + i + '"' + ((p.difficulty || 0) === i ? ' selected' : '') + '>Lv.' + i + '</option>';
+                }
+                var pub = (p.is_public !== false);
+                return '<div class="loop-preset-edit" data-editing="' + _escHtml(p.id) + '">' +
+                    '<div class="loop-pe-row">' +
+                        '<label>곡명<input type="text" data-f="name" value="' + _escHtml(p.name || '') + '"></label>' +
+                        '<label>아티스트<input type="text" data-f="artist" value="' + _escHtml(p.artist || '') + '"></label>' +
+                    '</div>' +
+                    '<div class="loop-pe-row">' +
+                        '<label>레벨<select data-f="difficulty">' + lvOpts + '</select></label>' +
+                        '<label>장르<input type="text" data-f="genre" value="' + _escHtml(p.genre || '') + '"></label>' +
+                        '<label>BPM<input type="number" min="20" max="240" data-f="bpm" value="' + (p.bpm || 90) + '"></label>' +
+                        '<label>카포<input type="text" data-f="capo" placeholder="예: Capo 2" value="' + _escHtml(p.capo || '') + '"></label>' +
+                    '</div>' +
+                    '<div class="loop-pe-row loop-pe-foot">' +
+                        '<button type="button" class="loop-pe-vis' + (pub ? ' pub' : '') + '" data-vis="1">' +
+                            (pub ? '<i class="fas fa-globe"></i> 전체 공개' : '<i class="fas fa-tree"></i> 나만 보기') +
+                        '</button>' +
+                        '<span class="loop-pe-sp"></span>' +
+                        '<button type="button" class="loop-pe-cancel">취소</button>' +
+                        '<button type="button" class="loop-pe-save">저장</button>' +
+                    '</div>' +
+                    '<div class="loop-pe-msg"></div>' +
+                '</div>';
+            }
+            function _bindLoopEditForm(root) {
+                var box = root.querySelector('.loop-preset-edit');
+                if (!box) return;
+                box.onclick = function(e) { e.stopPropagation(); };
+                var id = box.dataset.editing;
+                var p = (_loopPresetsCache || []).find(function(x) { return x.id === id; });
+                if (!p) return;
+                var visBtn = box.querySelector('.loop-pe-vis');
+                var pubState = (p.is_public !== false);
+                visBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    pubState = !pubState;
+                    visBtn.classList.toggle('pub', pubState);
+                    visBtn.innerHTML = pubState
+                        ? '<i class="fas fa-globe"></i> 전체 공개'
+                        : '<i class="fas fa-tree"></i> 나만 보기';
+                };
+                box.querySelector('.loop-pe-cancel').onclick = function(e) {
+                    e.stopPropagation();
+                    _loopEditingId = null;
+                    var s = document.getElementById('loopPresetSearch');
+                    renderLoopPresetList(s ? s.value : '');
+                };
+                box.querySelector('.loop-pe-save').onclick = async function(e) {
+                    e.stopPropagation();
+                    var msg = box.querySelector('.loop-pe-msg');
+                    var get = function(f) { var el = box.querySelector('[data-f="' + f + '"]'); return el ? el.value : ''; };
+                    var patch = {
+                        name: (get('name') || '').trim() || p.name,
+                        artist: (get('artist') || '').trim(),
+                        genre: (get('genre') || '').trim(),
+                        difficulty: parseInt(get('difficulty'), 10) || null,
+                        bpm: Math.max(20, Math.min(240, parseInt(get('bpm'), 10) || 90)),
+                        capo: (get('capo') || '').trim() || null,
+                        is_public: pubState
+                    };
+                    var authc = (typeof loopAuthClient === 'function') ? loopAuthClient() : null;
+                    if (!authc) { msg.textContent = '로그인이 필요해요.'; return; }
+                    msg.textContent = '저장 중…';
+                    try {
+                        var res = await authc.from('presets').update(patch).eq('id', id);
+                        if (res.error) { msg.textContent = '저장 실패: ' + res.error.message; return; }
+                        Object.assign(p, patch);          // 캐시 즉시 반영
+                        _loopEditingId = null;
+                        var s = document.getElementById('loopPresetSearch');
+                        try { renderSubFilterRow(); } catch (er) {}
+                        renderLoopPresetList(s ? s.value : '');
+                    } catch (err) {
+                        msg.textContent = '저장 실패: ' + (err && err.message ? err.message : err);
+                    }
+                };
+            }
+
             // 목록 소스 — all(전체) | mine(나만 보이는 곡만)
             let _loopPresetSource = 'all';
             function _applySourceFilter(presets) {
                 if (_loopPresetSource === 'mine') {
-                    return presets.filter(function(p) { return p.is_public === false; });
+                    presets = presets.filter(function(p) { return p.is_public === false; });
+                }
+                if (_loopFavOnly) {
+                    presets = presets.filter(function(p) { return _loopIsFav(p.id); });
                 }
                 return presets;
             }
@@ -14705,8 +14865,10 @@
                         }
                     }
                     var stars = (p.difficulty && p.difficulty > 0) ? 'Lv.' + p.difficulty : '';
+                    var _isFav = _loopIsFav(p.id);
+                    var _canEdit = _loopCanEdit(p);
                     html += '<div class="loop-preset-item" data-id="' + _escHtml(p.id) + '">' +
-                        '<div>' +
+                        '<div class="loop-preset-item-main">' +
                             '<span class="loop-preset-item-name">' + _escHtml(p.name) + '</span>' +
                             (p.artist ? ' <span class="loop-preset-item-meta">· ' + _escHtml(p.artist) + '</span>' : '') +
                             (p.is_public === false ? ' <i class="fas fa-tree loop-preset-mine-ico" title="나만 보이는 곡"></i>' : '') +
@@ -14714,17 +14876,43 @@
                             (stars ? ' <span class="loop-preset-stars">' + stars + '</span>' : '') +
                             (p.genre && !groupMode ? ' <span class="loop-preset-genre">' + _escHtml(p.genre) + '</span>' : '') +
                         '</div>' +
-                        '<span class="loop-preset-item-meta">' + (p.bpm || 90) + ' BPM · ' + (p.bars || 4) + '마디</span>' +
+                        '<div class="loop-preset-item-right">' +
+                            '<span class="loop-preset-item-meta">' + (p.bpm || 90) + ' BPM · ' + (p.bars || 4) + '마디</span>' +
+                            '<button type="button" class="loop-fav-btn' + (_isFav ? ' on' : '') + '" data-fav="' + _escHtml(p.id) + '" title="즐겨찾기" aria-label="즐겨찾기">' +
+                                (_isFav ? '★' : '☆') + '</button>' +
+                            (_canEdit ? '<button type="button" class="loop-editp-btn" data-editp="' + _escHtml(p.id) + '" title="곡 정보 수정"><i class="fas fa-pen"></i></button>' : '') +
+                        '</div>' +
                     '</div>';
+                    if (_canEdit && _loopEditingId === p.id) html += _loopEditFormHtml(p);
                 });
                 itemsEl.innerHTML = html;
                 itemsEl.querySelectorAll('.loop-preset-item').forEach(function(el) {
-                    el.onclick = function() {
+                    el.onclick = function(e) {
+                        if (e.target.closest('.loop-fav-btn') || e.target.closest('.loop-editp-btn')) return;
                         var id = el.dataset.id;
                         var p = (_loopPresetsCache || []).find(function(x) { return x.id === id; });
                         if (p) applyLoopPreset(p);
                     };
                 });
+                // 즐겨찾기 토글
+                itemsEl.querySelectorAll('[data-fav]').forEach(function(b) {
+                    b.onclick = function(e) {
+                        e.stopPropagation(); e.preventDefault();
+                        _loopToggleFav(b.dataset.fav);
+                        var s = document.getElementById('loopPresetSearch');
+                        renderLoopPresetList(s ? s.value : '');
+                    };
+                });
+                // 연필 — 그 자리에서 수정 폼 펼치기
+                itemsEl.querySelectorAll('[data-editp]').forEach(function(b) {
+                    b.onclick = function(e) {
+                        e.stopPropagation(); e.preventDefault();
+                        _loopEditingId = (_loopEditingId === b.dataset.editp) ? null : b.dataset.editp;
+                        var s = document.getElementById('loopPresetSearch');
+                        renderLoopPresetList(s ? s.value : '');
+                    };
+                });
+                _bindLoopEditForm(itemsEl);
             }
 
             // ─── 커스텀 시퀀서 헬퍼 (빌더에서 만든 sequencer_pattern 재생용) ──────
@@ -15195,9 +15383,11 @@
                 var menu = document.getElementById('loopSaveMenu');
                 var btn = document.getElementById('loopSavePresetBtn');
                 if (!menu) return;
-                // '파일로 내보내기'는 관리자 계정에게만 표시
+                // '파일로 내보내기' / '저장 (공용 프리셋)' 은 관리자 계정에게만 표시
                 var exp = document.getElementById('loopExportMenuBtn');
                 if (exp) { if (_loopIsAdmin()) exp.removeAttribute('hidden'); else exp.setAttribute('hidden', ''); }
+                var shb = document.getElementById('loopSaveSharedBtn');
+                if (shb) { if (_loopIsAdmin()) shb.removeAttribute('hidden'); else shb.setAttribute('hidden', ''); }
                 if (menu.hasAttribute('hidden')) {
                     menu.removeAttribute('hidden');
                     if (btn) btn.setAttribute('aria-expanded', 'true');
@@ -15216,6 +15406,79 @@
                 } else {
                     openSavePresetModal();
                 }
+            };
+            // ─── 저장 (공용 프리셋) — presets 테이블에 바로 저장 ────────────────
+            //   불러온 프리셋이 있으면 그 곡을 덮어쓰고, 없으면 새 곡으로 추가.
+            //   내 프리셋 10칸 슬롯과 무관하게 동작. (관리자 전용)
+            function _sharedPayload(name, artist) {
+                var s = serializeLoopState(name, artist);
+                var sp = s.sequencer_pattern || {};
+                // presets 테이블엔 chords_c/d 컬럼이 없어 sequencer_pattern 에 담는다
+                if (s.chords_c && Object.keys(s.chords_c).length) sp.chords_c = s.chords_c; else delete sp.chords_c;
+                if (s.chords_d && Object.keys(s.chords_d).length) sp.chords_d = s.chords_d; else delete sp.chords_d;
+                return {
+                    name: s.name, artist: s.artist, bpm: s.bpm, bars: s.bars, rhythm: s.rhythm,
+                    bass_style: s.bass_style, piano_style: s.piano_style,
+                    chords_a: s.chords_a, chords_b: s.chords_b,
+                    sequencer_pattern: sp, updated_at: new Date().toISOString()
+                };
+            }
+            window.openSaveShared = function() {
+                _closeSaveMenu();
+                if (!_loopIsAdmin()) { loopToast('권한이 없습니다'); return; }
+                if (!hasLoopInput()) { loopToast('먼저 코드를 입력해주세요'); return; }
+                var authc = loopAuthClient();
+                if (!authc) { loopLoginGate(); return; }
+                var target = _loopActivePresetId
+                    ? (_loopPresetsCache || []).find(function(x) { return x.id === _loopActivePresetId; })
+                    : null;
+                var body = target
+                    ? ('<div class="loop-modal-msg"><b>' + _escHtml(target.name) +
+                       (target.artist ? ' · ' + _escHtml(target.artist) : '') +
+                       '</b><br>이 공용 프리셋을 지금 내용으로 덮어쓸까요?</div>')
+                    : ('<div class="loop-modal-msg">공용 프리셋으로 새로 추가합니다.</div>' +
+                       '<input type="text" id="loopShName" class="loop-modal-input" placeholder="곡 제목" maxlength="60">' +
+                       '<input type="text" id="loopShArtist" class="loop-modal-input" placeholder="아티스트 (선택)" maxlength="60" style="margin-top:8px;">');
+                var ov = loopEnsureModal('loopSharedModal',
+                    '<div class="loop-modal-title">저장 (공용 프리셋)</div>' + body +
+                    '<div class="loop-modal-msg" id="loopShMsg" style="margin-top:6px;"></div>' +
+                    '<div class="loop-modal-actions">' +
+                        '<button type="button" class="loop-modal-btn ghost" data-close>취소</button>' +
+                        '<button type="button" class="loop-modal-btn primary" id="loopShOk">' +
+                            (target ? '덮어쓰기' : '추가') + '</button>' +
+                    '</div>');
+                ov.classList.add('open');
+                var msg = ov.querySelector('#loopShMsg');
+                ov.querySelector('#loopShOk').onclick = async function() {
+                    var nm = target ? target.name : ((ov.querySelector('#loopShName') || {}).value || '').trim();
+                    var ar = target ? (target.artist || '') : ((ov.querySelector('#loopShArtist') || {}).value || '').trim();
+                    if (!nm) { msg.textContent = '곡 제목을 입력해주세요.'; return; }
+                    msg.textContent = '저장 중…';
+                    try {
+                        var payload = _sharedPayload(nm, ar);
+                        var res;
+                        if (target) {
+                            res = await authc.from('presets').update(payload).eq('id', target.id);
+                        } else {
+                            // 새 곡 — 기본은 공개, 소유자는 나
+                            var u = loopCurrentUser();
+                            payload.is_public = true;
+                            if (u) payload.user_id = u.id;
+                            res = await authc.from('presets').insert(payload);
+                        }
+                        if (res && res.error) { msg.textContent = '저장 실패: ' + res.error.message; return; }
+                        if (target) Object.assign(target, payload);   // 캐시 즉시 반영
+                        else { _loopPresetsCache = null; _loopMyLoaded = false; await loadLoopPresets(); }
+                        ov.classList.remove('open');
+                        loopToast('공용 프리셋에 저장했어요');
+                        try {
+                            var s2 = document.getElementById('loopPresetSearch');
+                            renderLoopPresetList(s2 ? s2.value : '');
+                        } catch (e2) {}
+                    } catch (err) {
+                        msg.textContent = '저장 실패: ' + (err && err.message ? err.message : err);
+                    }
+                };
             };
             // 다른 이름으로 저장 — 항상 슬롯 선택 모달.
             window.openSaveAsPreset = function() {
@@ -15479,6 +15742,17 @@
                         renderLoopPresetList(s ? s.value : '');
                     };
                 });
+                // '즐겨찾기' 토글
+                var _favBtn = document.getElementById('loopFavBtn');
+                if (_favBtn) _favBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    _loopFavOnly = !_loopFavOnly;
+                    _loopPresetSubFilter = null;
+                    _favBtn.classList.toggle('active', _loopFavOnly);
+                    renderSubFilterRow();
+                    var s3 = document.getElementById('loopPresetSearch');
+                    renderLoopPresetList(s3 ? s3.value : '');
+                };
                 // '나만 보이는' 토글 — 내 비공개 곡만 보기
                 var _mineBtn = document.getElementById('loopMineBtn');
                 if (_mineBtn) _mineBtn.onclick = function(e) {
