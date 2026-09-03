@@ -6676,15 +6676,31 @@
             border-radius: 8px;
             letter-spacing: 0.02em;
         }
-        /* '나만 보이는' (비공개) 뱃지 */
-        .loop-preset-badge-mine {
-            display: inline-block; margin-left: 0.3rem; padding: 0.05rem 0.4rem;
-            font-size: 0.66rem; font-weight: 700; color: #a06a00;
-            background: rgba(240, 193, 74, 0.22); border: 1px solid rgba(240,193,74,0.5);
-            border-radius: 8px; letter-spacing: 0.02em; white-space: nowrap;
+        /* '나만 보이는' 곡 표시 — 나무 아이콘 */
+        .loop-preset-mine-ico {
+            margin-left: 0.35rem;
+            font-size: 0.76rem;
+            color: var(--green-deep);
+            vertical-align: baseline;
         }
-        .loop-preset-badge-mine i { font-size: 0.6rem; margin-right: 0.15rem; }
-        :root[data-theme="dark"] .loop-preset-badge-mine { color: #f0c14a; background: rgba(240,193,74,0.14); border-color: rgba(240,193,74,0.4); }
+        :root[data-theme="dark"] .loop-preset-mine-ico { color: #7fd0a0; }
+        /* '나만 보이는' 필터 토글 — 장르별 오른쪽 */
+        .loop-preset-mine-btn {
+            display: inline-flex; align-items: center; gap: 0.28rem;
+            margin-left: auto; padding: 0.24rem 0.6rem;
+            border: 1px solid rgba(42,107,74,0.28); border-radius: 999px;
+            background: transparent; color: var(--green-deep);
+            font-family: inherit; font-size: 0.72rem; font-weight: 700;
+            cursor: pointer; white-space: nowrap; transition: all 0.15s;
+        }
+        .loop-preset-mine-btn i { font-size: 0.72rem; }
+        .loop-preset-mine-btn:hover { background: rgba(82,168,114,0.14); }
+        .loop-preset-mine-btn.active {
+            background: var(--green-deep); color: #fff; border-color: var(--green-deep);
+        }
+        .loop-preset-mine-btn[hidden] { display: none; }
+        :root[data-theme="dark"] .loop-preset-mine-btn { color: #7fd0a0; border-color: rgba(180,230,200,0.3); }
+        :root[data-theme="dark"] .loop-preset-mine-btn.active { background: var(--green-deep); color: #fff; }
         /* 카포 뱃지 */
         .loop-preset-badge-capo {
             display: inline-block; margin-left: 0.3rem; padding: 0.05rem 0.4rem;
@@ -8837,18 +8853,13 @@
                         <button type="button" class="loop-preset-mini" id="loopWmBtn" data-action="openWatermarkPdf" aria-label="PDF에 워터마크 입히기" title="PDF에 워터마크 입히기" hidden>W</button>
                         <button type="button" class="tool-help-btn loop-preset-help-btn" data-help="backing" aria-label="반주 도움말" aria-expanded="false">?</button>
                         <div class="loop-preset-list" id="loopPresetList">
-                            <!-- 목록 소스 — 내 악보(비공개)가 있을 때만 노출 -->
-                            <div class="loop-preset-sort-row loop-preset-source-row" id="loopPresetSourceRow" hidden>
-                                <span class="loop-preset-sort-label">목록</span>
-                                <button type="button" class="loop-preset-sort-btn active" data-src="all">전체</button>
-                                <button type="button" class="loop-preset-sort-btn" data-src="default">기본</button>
-                                <button type="button" class="loop-preset-sort-btn" data-src="mine">내 악보</button>
-                            </div>
                             <div class="loop-preset-sort-row" id="loopPresetSortRow">
                                 <span class="loop-preset-sort-label">정렬</span>
                                 <button type="button" class="loop-preset-sort-btn active" data-sort="alpha">가나다순</button>
                                 <button type="button" class="loop-preset-sort-btn" data-sort="difficulty">난이도순</button>
                                 <button type="button" class="loop-preset-sort-btn" data-sort="genre">장르별</button>
+                                <!-- 나만 보이는 곡만 보기 토글 (내 악보가 있을 때만 노출) -->
+                                <button type="button" class="loop-preset-mine-btn" id="loopMineBtn" hidden title="나만 보이는 곡만 보기"><i class="fas fa-tree"></i> 나만 보이는</button>
                             </div>
                             <div class="loop-preset-subfilter-row" id="loopPresetSubFilterRow"></div>
                             <div id="loopPresetItems"></div>
@@ -14342,28 +14353,23 @@
             //   genre 모드: 'Pop' 같은 장르명
             // null = 서브 필터 비활성 (전체 표시)
             let _loopPresetSubFilter = null;
-            // 목록 소스 — all(전체) | default(기본 공개) | mine(내 악보=비공개)
+            // 목록 소스 — all(전체) | mine(나만 보이는 곡만)
             let _loopPresetSource = 'all';
             function _applySourceFilter(presets) {
                 if (_loopPresetSource === 'mine') {
                     return presets.filter(function(p) { return p.is_public === false; });
                 }
-                if (_loopPresetSource === 'default') {
-                    return presets.filter(function(p) { return p.is_public !== false; });
-                }
                 return presets;
             }
-            // 내 악보가 하나라도 있을 때만 소스 선택 행 노출
+            // '나만 보이는' 버튼은 내 비공개 곡이 있을 때만 노출 → 사실상 본인 계정에만 보임
             function _updateSourceRowVisibility() {
-                var row = document.getElementById('loopPresetSourceRow');
-                if (!row) return;
+                var btn = document.getElementById('loopMineBtn');
+                if (!btn) return;
                 var has = (_loopPresetsCache || []).some(function(p) { return p.is_public === false; });
-                row.hidden = !has;
+                btn.hidden = !has;
                 if (!has && _loopPresetSource !== 'all') {
                     _loopPresetSource = 'all';
-                    row.querySelectorAll('.loop-preset-sort-btn').forEach(function(b) {
-                        b.classList.toggle('active', b.dataset.src === 'all');
-                    });
+                    btn.classList.remove('active');
                 }
             }
 
@@ -14703,7 +14709,7 @@
                         '<div>' +
                             '<span class="loop-preset-item-name">' + _escHtml(p.name) + '</span>' +
                             (p.artist ? ' <span class="loop-preset-item-meta">· ' + _escHtml(p.artist) + '</span>' : '') +
-                            (p.is_public === false ? ' <span class="loop-preset-badge-mine"><i class="fas fa-lock"></i> 나만 보이는</span>' : '') +
+                            (p.is_public === false ? ' <i class="fas fa-tree loop-preset-mine-ico" title="나만 보이는 곡"></i>' : '') +
                             (p.capo ? ' <span class="loop-preset-badge-capo">' + _escHtml(p.capo) + '</span>' : '') +
                             (stars ? ' <span class="loop-preset-stars">' + stars + '</span>' : '') +
                             (p.genre && !groupMode ? ' <span class="loop-preset-genre">' + _escHtml(p.genre) + '</span>' : '') +
@@ -15460,12 +15466,12 @@
                     window.toggleLoopPresetList();
                 };
                 // 정렬 셀렉터
-                document.querySelectorAll('.loop-preset-sort-btn').forEach(function(btn) {
+                document.querySelectorAll('.loop-preset-sort-btn[data-sort]').forEach(function(btn) {
                     btn.onclick = function(e) {
                         e.stopPropagation();
                         _loopPresetSort = btn.dataset.sort;
                         _loopPresetSubFilter = null;   // 정렬 바뀌면 서브필터 초기화
-                        document.querySelectorAll('.loop-preset-sort-btn').forEach(function(b) {
+                        document.querySelectorAll('.loop-preset-sort-btn[data-sort]').forEach(function(b) {
                             b.classList.toggle('active', b === btn);
                         });
                         renderSubFilterRow();
@@ -15473,20 +15479,17 @@
                         renderLoopPresetList(s ? s.value : '');
                     };
                 });
-                // 목록 소스 셀렉터 (전체 / 기본 / 내 악보)
-                document.querySelectorAll('#loopPresetSourceRow .loop-preset-sort-btn').forEach(function(btn) {
-                    btn.onclick = function(e) {
-                        e.stopPropagation();
-                        _loopPresetSource = btn.dataset.src || 'all';
-                        _loopPresetSubFilter = null;
-                        document.querySelectorAll('#loopPresetSourceRow .loop-preset-sort-btn').forEach(function(b) {
-                            b.classList.toggle('active', b === btn);
-                        });
-                        renderSubFilterRow();
-                        var s2 = document.getElementById('loopPresetSearch');
-                        renderLoopPresetList(s2 ? s2.value : '');
-                    };
-                });
+                // '나만 보이는' 토글 — 내 비공개 곡만 보기
+                var _mineBtn = document.getElementById('loopMineBtn');
+                if (_mineBtn) _mineBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    _loopPresetSource = (_loopPresetSource === 'mine') ? 'all' : 'mine';
+                    _loopPresetSubFilter = null;
+                    _mineBtn.classList.toggle('active', _loopPresetSource === 'mine');
+                    renderSubFilterRow();
+                    var s2 = document.getElementById('loopPresetSearch');
+                    renderLoopPresetList(s2 ? s2.value : '');
+                };
                 renderSubFilterRow();
                 // 외부 클릭 시 닫기
                 document.addEventListener('pointerdown', function(e) {
