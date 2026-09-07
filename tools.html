@@ -8021,6 +8021,11 @@
         /* 인쇄용 리듬(스트로크) 패턴 — 악보 아래 여백에 작게 */
         .lp-rhythm { position: relative; z-index: 1; margin-top: 6mm; padding-top: 3mm; border-top: 1px dashed #b9c6bf; }
         .lp-rhythm-title { font-size: 11px; font-weight: 800; color: #3d5a4c; margin-bottom: 2mm; }
+        /* 송폼 흐름 — → Bridge → Chorus */
+        .lp-formflow { display: flex; flex-wrap: wrap; align-items: center; gap: 1.8mm; margin-bottom: 3mm; }
+        .lp-ff-arrow { font-size: 15px; font-weight: 800; color: #6a7a72; }
+        .lp-ff-box { display: inline-block; padding: 1mm 2.6mm; border: 1.4px solid #2a6b4a;
+            border-radius: 1.2mm; font-size: 13px; font-weight: 800; color: #2a6b4a; }
         /* 패턴 2개씩 한 줄 — 3번째부터 다음 줄 */
         .lp-rhythm-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5mm 6mm; align-items: start; }
         .lp-rhythm-row { display: flex; align-items: center; gap: 3mm; margin-bottom: 0; min-width: 0; }
@@ -8057,6 +8062,9 @@
         .lp-chart .loop-cell-edge .loop-repeat-dots { gap: 2.5px; margin: 0 1.5px; }
         /* X 로 표시된 마디 — 인쇄에서 안 보이게 (자리는 그대로 비워둠) */
         .lp-chart .loop-cell.skip-zone { visibility: hidden; }
+        /* TAB(타브악보) 이미지 — 악보 폭에 꽉 맞추고 비율 유지 */
+        .lp-tabimg { width: 100%; margin: 2mm 0 2.5mm; break-inside: avoid; page-break-inside: avoid; }
+        .lp-tabimg img { display: block; width: 100%; height: auto; }
         #loopPrintArea { display: none; }
         @media print {
             @page { margin: 0; }   /* 브라우저 날짜/제목/URL 머리글·바닥글 제거 */
@@ -8967,6 +8975,8 @@
                                 <button type="button" id="loopExportMenuBtn" data-action="openExportPreset" hidden>파일로 내보내기</button>
                             </div>
                         </div>
+                        <!-- 공용 프리셋 바로 저장 — 운영 계정(또는 로컬 툴)에서만 표시 -->
+                        <button type="button" class="loop-preset-mini" id="loopSharedSaveBtn" data-action="openSaveShared" aria-label="공용 프리셋에 저장" title="공용 프리셋에 저장" hidden><i class="fas fa-floppy-disk"></i><span>공용저장</span></button>
                         <button type="button" class="loop-preset-mini" id="loopPrintBtn" data-action="openPrintDialog" aria-label="악보 인쇄" title="악보 인쇄"><i class="fas fa-print"></i></button>
                         <button type="button" class="loop-preset-mini" id="loopMp3Btn" data-action="openMp3Dialog" aria-label="MP3로 내보내기" title="MP3로 내보내기 (반주 오디오 다운로드)"><i class="fas fa-download"></i></button>
                         <button type="button" class="loop-preset-mini" id="loopWmBtn" data-action="openWatermarkPdf" aria-label="PDF에 워터마크 입히기" title="PDF에 워터마크 입히기" hidden>W</button>
@@ -14878,6 +14888,11 @@
                 var sp = s.sequencer_pattern || {};
                 if (s.chords_c && Object.keys(s.chords_c).length) sp.chords_c = s.chords_c; else delete sp.chords_c;
                 if (s.chords_d && Object.keys(s.chords_d).length) sp.chords_d = s.chords_d; else delete sp.chords_d;
+                // 송폼 흐름(→ Bridge → Chorus) 도 함께 저장
+                if (Array.isArray(window.__LOCAL_TOOL_FORMFLOW)) {
+                    if (window.__LOCAL_TOOL_FORMFLOW.length) sp.formFlow = window.__LOCAL_TOOL_FORMFLOW.slice();
+                    else delete sp.formFlow;
+                }
                 // 툴에서 편집 중인 리듬 패턴도 함께 저장 (SVG 는 제외 — 데이터만)
                 if (Array.isArray(window.__LOCAL_TOOL_RHYTHM)) {
                     if (window.__LOCAL_TOOL_RHYTHM.length) {
@@ -15627,6 +15642,16 @@
                 var u = loopCurrentUser();
                 return !!(u && String(u.email || '').toLowerCase() === 'steveq2568@gmail.com');
             }
+            // 운영 계정(또는 로컬 툴)에서만 보이는 UI 를 로그인 상태에 맞춰 갱신
+            function _syncAdminUI() {
+                var b = document.getElementById('loopSharedSaveBtn');
+                if (!b) return;
+                if (_loopIsAdmin()) b.removeAttribute('hidden');
+                else b.setAttribute('hidden', '');
+            }
+            window.addEventListener('ahnssam-auth-settled', function() { try { _syncAdminUI(); } catch (e) {} });
+            document.addEventListener('DOMContentLoaded', function() { try { _syncAdminUI(); } catch (e) {} });
+            setTimeout(function() { try { _syncAdminUI(); } catch (e) {} }, 800);
             window.toggleSaveMenu = function() {
                 var menu = document.getElementById('loopSaveMenu');
                 var btn = document.getElementById('loopSavePresetBtn');
@@ -16654,6 +16679,8 @@
                     for (var _ci = 0; _ci < _cells.length; _ci++) grid.appendChild(_cells[_ci]);
                     _spaceRows(grid);
                 }
+                // 로컬 툴이 그리드 위에 얹은 것(TAB 이미지 등)을 다시 그리도록 알림
+                try { if (typeof window.__onLoopGridRendered === 'function') window.__onLoopGridRendered(); } catch (e) {}
                 _syncLoopViewControls();
                 var _pl = document.getElementById('loopPageLabel');
                 if (_pl) _pl.textContent = (loopCurPage + 1) + ' / ' + _loopTotalPages();
@@ -17238,6 +17265,22 @@
                     // 볼타(1·2도돌이)가 있으면 줄 위에 그만큼 자리를 띄운다
                     if (cell.classList.contains('has-volta')) row.classList.add('lp-row-volta');
                 });
+                // 로컬 툴에서 넣은 TAB 이미지를 줄 사이에 삽입 (악보 폭에 맞춤 · 비율 유지)
+                var _tabs = window.__LOCAL_TOOL_TABS;
+                if (Array.isArray(_tabs) && _tabs.length) {
+                    var rowsNow = Array.prototype.slice.call(chart.children);
+                    // 뒤에서부터 넣어야 인덱스가 밀리지 않음
+                    _tabs.slice().sort(function(a, b) { return b.afterRow - a.afterRow; }).forEach(function(t) {
+                        var wrap = document.createElement('div');
+                        wrap.className = 'lp-tabimg';
+                        var im = document.createElement('img');
+                        im.src = t.src;
+                        wrap.appendChild(im);
+                        var at = Math.max(0, Math.min(t.afterRow | 0, rowsNow.length));
+                        if (at >= rowsNow.length) chart.appendChild(wrap);
+                        else chart.insertBefore(wrap, rowsNow[at]);
+                    });
+                }
                 // 마지막 줄이 4칸 미만이면 빈 칸으로 채워 4열 폭 유지
                 if (row) {
                     for (var z = row.children.length; z < 4; z++) {
@@ -17401,10 +17444,28 @@
             //   window.__LOCAL_TOOL_RHYTHM 에 툴이 패턴 배열을 심어준다.
             function _lpRhythmBlock() {
                 var pats = window.__LOCAL_TOOL_RHYTHM;
-                if (!Array.isArray(pats) || !pats.length) return null;
+                var flow = window.__LOCAL_TOOL_FORMFLOW;
+                var hasPats = Array.isArray(pats) && pats.length;
+                var hasFlow = Array.isArray(flow) && flow.length;
+                if (!hasPats && !hasFlow) return null;
                 var GL = ['', '↓', '↑', '✕'];
                 var wrap = document.createElement('div');
                 wrap.className = 'lp-rhythm';
+                // 송폼 흐름 — → Bridge → Chorus (악보 아래 먼저)
+                if (hasFlow) {
+                    var ff = document.createElement('div');
+                    ff.className = 'lp-formflow';
+                    flow.forEach(function(name) {
+                        var ar = document.createElement('span');
+                        ar.className = 'lp-ff-arrow'; ar.textContent = '→';
+                        ff.appendChild(ar);
+                        var bx = document.createElement('span');
+                        bx.className = 'lp-ff-box'; bx.textContent = name;
+                        ff.appendChild(bx);
+                    });
+                    wrap.appendChild(ff);
+                }
+                if (!hasPats) return wrap;
                 var h = document.createElement('div');
                 h.className = 'lp-rhythm-title';
                 h.textContent = '리듬 패턴';
@@ -17615,8 +17676,10 @@
                         '<input type="text" id="lpArtist" class="loop-modal-input" placeholder="아티스트 (선택)" maxlength="60">' +
                         '<input type="number" id="lpCapo" class="loop-modal-input lp-capo-input" placeholder="카포" min="0" max="15" inputmode="numeric">' +
                     '</div>' +
-                    ((_localToolToken() && Array.isArray(window.__LOCAL_TOOL_RHYTHM) && window.__LOCAL_TOOL_RHYTHM.length)
-                        ? '<label class="lp-rhy-opt"><input type="checkbox" id="lpRhythm" checked> 리듬 패턴 같이 인쇄 <span>(악보 아래에 작게)</span></label>'
+                    ((_localToolToken() &&
+                      ((Array.isArray(window.__LOCAL_TOOL_RHYTHM) && window.__LOCAL_TOOL_RHYTHM.length) ||
+                       (Array.isArray(window.__LOCAL_TOOL_FORMFLOW) && window.__LOCAL_TOOL_FORMFLOW.length)))
+                        ? '<label class="lp-rhy-opt"><input type="checkbox" id="lpRhythm" checked> 송폼 흐름 · 리듬 패턴 같이 인쇄 <span>(악보 아래에 작게)</span></label>'
                         : '') +
                     '<div class="loop-modal-label">미리보기</div>' +
                     '<div id="lpPreview" class="loop-print-preview"></div>' +
