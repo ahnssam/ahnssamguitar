@@ -6676,6 +6676,23 @@
             border-radius: 8px;
             letter-spacing: 0.02em;
         }
+        /* ── 임베드 모드 (로컬 악보검색 툴에서 반주 패널만 떼서 쓸 때) ──
+           ?embed=1 로 열면 상단바·사이드바·모바일탭·헤더를 숨기고 반주 판떼기만 남긴다. */
+        body.embed-loop .topbar,
+        body.embed-loop .mobile-tab-strip,
+        body.embed-loop .sidebar,
+        body.embed-loop .sidebar-overlay,
+        body.embed-loop .tool-header,
+        body.embed-loop .tool-corner-actions,
+        body.embed-loop .coupang-banner,
+        body.embed-loop footer { display: none !important; }
+        body.embed-loop .tools-main {
+            margin: 0 !important; padding: 8px 10px !important;
+            max-width: none !important; width: 100% !important;
+        }
+        body.embed-loop { background: var(--bg-panel, #fff) !important; }
+        body.embed-loop .tool-panel { box-shadow: none !important; border: none !important; margin: 0 !important; }
+        body.embed-loop .tool-body { padding-top: 4px !important; }
         /* 카포 안내 — 초기화 버튼 아래 */
         .loop-capo-note {
             display: flex; align-items: center; gap: 0.35rem;
@@ -7998,6 +8015,21 @@
         /* 바닥 줄 — 가운데 크레딧, 같은 줄 맨 오른쪽에 쪽번호(1/2) */
         .lp-credit  { position: absolute; left: 12mm; right: 12mm; bottom: 8mm; text-align: center; font-size: 11px; color: #55625c; }
         .lp-pagenum { position: absolute; right: 12mm; bottom: 8mm; text-align: right; font-size: 11px; color: #55625c; z-index: 2; }
+        /* 인쇄용 리듬(스트로크) 패턴 — 악보 아래 여백에 작게 */
+        .lp-rhythm { position: relative; z-index: 1; margin-top: 6mm; padding-top: 3mm; border-top: 1px dashed #b9c6bf; }
+        .lp-rhythm-title { font-size: 11px; font-weight: 800; color: #3d5a4c; margin-bottom: 2mm; }
+        .lp-rhythm-row { display: flex; align-items: center; gap: 4mm; margin-bottom: 1.6mm; }
+        .lp-rhythm-name { font-size: 10px; font-weight: 700; color: #44534b; min-width: 34mm; }
+        .lp-rhythm-grid { display: flex; gap: 1px; }
+        .lp-rhythm-cell {
+            width: 6.4mm; height: 6.4mm; border: 0.5px solid #c7d2cc; border-radius: 1mm;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 800; color: #2f4a3d; background: #fff;
+        }
+        .lp-rhythm-cell.beat { background: #eef4f0; border-color: #a9bcb2; }
+        /* 인쇄 옵션 체크박스 */
+        .lp-rhy-opt { display: flex; align-items: center; gap: 6px; margin: 8px 0 2px; font-size: 0.82rem; font-weight: 700; cursor: pointer; }
+        .lp-rhy-opt span { font-weight: 500; opacity: 0.6; font-size: 0.76rem; }
         /* 인쇄용 마디 줄 — 화면과 같은 4열이지만 flex 줄 */
         .lp-chart .lp-row { display: flex; gap: 0.35rem; margin-bottom: 0.35rem; break-inside: avoid; page-break-inside: avoid; }
         .lp-chart .lp-row > .loop-cell { flex: 1 1 0; min-width: 0; break-inside: avoid; }
@@ -14768,7 +14800,103 @@
                 return _loopAnonClient;
             }
 
+            // ─── 로컬 악보검색 툴 모드 ────────────────────────────────────
+            //   툴이 이 페이지를 localhost 에서 서빙하면서 window.__LOCAL_TOOL_TOKEN 을
+            //   심어주면, 로그인 없이 토큰 RPC 로 프리셋을 읽고 쓴다.
+            //   (홈페이지로 접속했을 땐 이 값이 없으므로 기존 동작 그대로)
+            function _localToolToken() { return window.__LOCAL_TOOL_TOKEN || null; }
+            // 임베드 모드 — 반주 패널만 남기고 페이지 껍데기(상단바·사이드바 등)를 숨긴다
+            (function _applyEmbedMode() {
+                try {
+                    if (new URLSearchParams(window.location.search).get('embed') !== '1') return;
+                    var go = function() { document.body.classList.add('embed-loop'); };
+                    if (document.body) go();
+                    else document.addEventListener('DOMContentLoaded', go);
+                } catch (e) {}
+            })();
+            async function _localToolRpc(fn, body) {
+                var res = await fetch('https://qpcbrqgqylxkgdwoflku.supabase.co/rest/v1/rpc/' + fn, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': 'sb_publishable_5rr-OZ7Sqjk1nXn59R7XnQ_HInATuSV',
+                        'Authorization': 'Bearer sb_publishable_5rr-OZ7Sqjk1nXn59R7XnQ_HInATuSV',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            }
+            // 로컬 툴에서 현재 편집 내용을 DB 에 저장 (도돌이·볼타·송폼·마디·코드 전부 포함)
+            // 로컬 툴이 목록에서 곡을 고르면 호출 — 캐시에서 찾아 바로 적용
+            window.applyLoopPresetById = function(id) {
+                var p = (_loopPresetsCache || []).find(function(x) { return x.id === id; });
+                if (!p) return false;
+                try { if (typeof window.updateSoundMode === 'function') window.updateSoundMode('loop'); } catch (e) {}
+                applyLoopPreset(p);
+                return true;
+            };
+            // 로컬 툴이 현재 편집 상태를 통째로 가져갈 때 사용 (리듬패턴 병합 후 한 번에 저장)
+            window.localToolSerialize = function() {
+                if (!_loopActivePresetId) return null;
+                var s0 = serializeLoopState(_loopSavedName || '', _loopSavedArtist || '');
+                var sp0 = s0.sequencer_pattern || {};
+                if (s0.chords_c && Object.keys(s0.chords_c).length) sp0.chords_c = s0.chords_c; else delete sp0.chords_c;
+                if (s0.chords_d && Object.keys(s0.chords_d).length) sp0.chords_d = s0.chords_d; else delete sp0.chords_d;
+                return {
+                    id: _loopActivePresetId,
+                    patch: {
+                        bpm: s0.bpm, bars: s0.bars, rhythm: s0.rhythm,
+                        bass_style: s0.bass_style, piano_style: s0.piano_style,
+                        chords_a: s0.chords_a, chords_b: s0.chords_b, sequencer_pattern: sp0
+                    }
+                };
+            };
+            window.localToolSaveChart = async function() {
+                var tok = _localToolToken();
+                if (!tok) { loopToast('로컬 툴 모드가 아닙니다'); return false; }
+                if (!_loopActivePresetId) { loopToast('먼저 곡을 선택해주세요'); return false; }
+                var s = serializeLoopState(_loopSavedName || '', _loopSavedArtist || '');
+                var sp = s.sequencer_pattern || {};
+                if (s.chords_c && Object.keys(s.chords_c).length) sp.chords_c = s.chords_c; else delete sp.chords_c;
+                if (s.chords_d && Object.keys(s.chords_d).length) sp.chords_d = s.chords_d; else delete sp.chords_d;
+                // 툴에서 편집 중인 리듬 패턴도 함께 저장 (SVG 는 제외 — 데이터만)
+                if (Array.isArray(window.__LOCAL_TOOL_RHYTHM)) {
+                    if (window.__LOCAL_TOOL_RHYTHM.length) {
+                        sp.rhythmPatterns = window.__LOCAL_TOOL_RHYTHM.map(function(p) {
+                            return { name: p.name, section: p.section, meter: p.meter,
+                                     steps: p.steps, accents: p.accents };
+                        });
+                    } else { delete sp.rhythmPatterns; }
+                }
+                var patch = {
+                    bpm: s.bpm, bars: s.bars, rhythm: s.rhythm,
+                    bass_style: s.bass_style, piano_style: s.piano_style,
+                    chords_a: s.chords_a, chords_b: s.chords_b, sequencer_pattern: sp
+                };
+                try {
+                    var ok = await _localToolRpc('save_chart_for_tool',
+                        { token: tok, chart_id: _loopActivePresetId, patch: patch });
+                    loopToast(ok ? '저장했어요' : '저장 실패');
+                    return !!ok;
+                } catch (e) { loopToast('저장 실패: ' + e.message); return false; }
+            };
+
             async function loadLoopPresets() {
+                // 로컬 툴 모드 — 로그인 대신 토큰 RPC 로 전체 목록을 받는다
+                if (_localToolToken()) {
+                    if (_loopPresetsCache && _loopPresetsCache.length) return _loopPresetsCache;
+                    try {
+                        var rows = await _localToolRpc('charts_for_tool', { token: _localToolToken() });
+                        _loopPresetsCache = Array.isArray(rows) ? rows : [];
+                    } catch (e) { console.warn('[loop] local tool preset load failed', e); }
+                    try { renderSubFilterRow(); } catch (e) {}
+                    try {
+                        var _ps0 = document.getElementById('loopPresetSearch');
+                        renderLoopPresetList(_ps0 ? _ps0.value : '');
+                    } catch (e) {}
+                    return _loopPresetsCache || [];
+                }
                 // 비어있는(=실패했을 수 있는) 캐시는 재시도 허용 — 한 번 비면 새로고침
                 // 전까지 안 보이던 문제 방지. 실제 데이터가 들어왔을 때만 캐시 확정.
                 if (_loopPresetsCache && _loopPresetsCache.length) return _loopPresetsCache;
@@ -15135,6 +15263,7 @@
             //   null 이면 커스텀 없음 → 리듬 드로어에 "커스텀" 항목 미노출.
             var _loopActivePresetSequencer = null;
             var _loopActivePresetId = null;
+            var _loopActiveMeta = null;   // 불러온 프리셋의 제목·아티스트·카포 (인쇄 자동 채우기)
             // 커스텀이 선택됐을 때 사용할 드럼 리듬 (프리셋의 원래 rhythm).
             var _loopActivePresetRhythm = null;
             // 프리셋이 베이스/피아노 커스텀 시퀀서를 활성화하고 있는지.
@@ -15210,6 +15339,8 @@
                 var _sb0 = document.getElementById('loopSavePresetBtn');
                 if (_sb0) _sb0.title = '저장';
                 _loopActivePresetId = p.id;
+                // 인쇄 창 자동 채우기용 — 불러온 곡의 제목·아티스트·카포를 기억
+                _loopActiveMeta = { name: p.name || '', artist: p.artist || '', capo: p.capo || '' };
                 _updateLoopCapoNote(p.capo);
                 _loopActivePresetRhythm = p.rhythm || '8beat';
                 // 커스텀 시퀀서 패턴 저장 — 베이스/피아노 각각 독립적으로 활성/비활성.
@@ -15473,6 +15604,8 @@
             }
             // 관리자(파일 내보내기 노출 대상) — 특정 계정만
             function _loopIsAdmin() {
+                // 로컬 악보검색 툴(토큰 보유)은 로그인 없이도 관리자로 취급
+                if (typeof _localToolToken === 'function' && _localToolToken()) return true;
                 var u = loopCurrentUser();
                 return !!(u && String(u.email || '').toLowerCase() === 'steveq2568@gmail.com');
             }
@@ -15524,6 +15657,12 @@
                 _closeSaveMenu();
                 if (!_loopIsAdmin()) { loopToast('권한이 없습니다'); return; }
                 if (!hasLoopInput()) { loopToast('먼저 코드를 입력해주세요'); return; }
+                // 로컬 툴 모드 — 로그인 없이 토큰 RPC 로 현재 곡을 덮어쓴다
+                if (_localToolToken()) {
+                    if (!_loopActivePresetId) { loopToast('먼저 곡을 선택해주세요'); return; }
+                    window.localToolSaveChart();
+                    return;
+                }
                 var authc = loopAuthClient();
                 if (!authc) { loopLoginGate(); return; }
                 var target = _loopActivePresetId
@@ -17183,6 +17322,11 @@
                     if (p > 0) ch.style.marginTop = '8mm';    // 러닝헤더와 첫 마디줄 사이 간격
                     pagesRows[p].forEach(function(el) { ch.appendChild(el); });
                     pg.appendChild(ch);
+                    // 마지막 페이지 악보 아래 여백에 리듬 패턴 (옵션 켰을 때만)
+                    if (p === total - 1 && window.__LP_WITH_RHYTHM) {
+                        var rb = _lpRhythmBlock();
+                        if (rb) pg.appendChild(rb);
+                    }
                     var credit = document.createElement('div');
                     credit.className = 'lp-credit';
                     credit.textContent = '기타 반주 메이커 | 안쌤의 기타나무숲';
@@ -17196,6 +17340,46 @@
                     pages.push(pg);
                 }
                 return pages;
+            }
+            // ── 인쇄용 리듬(스트로크) 패턴 블록 — 로컬 악보검색 툴에서만 사용 ──
+            //   window.__LOCAL_TOOL_RHYTHM 에 툴이 패턴 배열을 심어준다.
+            function _lpRhythmBlock() {
+                var pats = window.__LOCAL_TOOL_RHYTHM;
+                if (!Array.isArray(pats) || !pats.length) return null;
+                var GL = ['', '↓', '↑', '✕'];
+                var wrap = document.createElement('div');
+                wrap.className = 'lp-rhythm';
+                var h = document.createElement('div');
+                h.className = 'lp-rhythm-title';
+                h.textContent = '리듬 패턴';
+                wrap.appendChild(h);
+                pats.forEach(function(p) {
+                    var meter = (p.meter === 16 || p.meter === 12) ? p.meter : 8;
+                    var steps = Array.isArray(p.steps) ? p.steps : [];
+                    var row = document.createElement('div');
+                    row.className = 'lp-rhythm-row';
+                    var nm = document.createElement('div');
+                    nm.className = 'lp-rhythm-name';
+                    nm.textContent = (p.name || '') + (p.section ? ' · ' + p.section : '');
+                    row.appendChild(nm);
+                    var grid = document.createElement('div');
+                    grid.className = 'lp-rhythm-grid';
+                    if (p.svg) {
+                        // 로컬 툴이 넘겨준 슬래시 기보 SVG (음표·빔·강세·스트로크 방향)
+                        grid.innerHTML = p.svg;
+                    } else {
+                        for (var i = 0; i < meter; i++) {
+                            var c = document.createElement('span');
+                            var down = (meter === 16 ? i % 4 === 0 : (meter === 12 ? i % 3 === 0 : i % 2 === 0));
+                            c.className = 'lp-rhythm-cell' + (down ? ' beat' : '');
+                            c.textContent = GL[steps[i] || 0] || '·';
+                            grid.appendChild(c);
+                        }
+                    }
+                    row.appendChild(grid);
+                    wrap.appendChild(row);
+                });
+                return wrap;
             }
             function doLoopPrint(title, artist, capo) {
                 var area = document.getElementById('loopPrintArea');
@@ -17371,6 +17555,9 @@
                         '<input type="text" id="lpArtist" class="loop-modal-input" placeholder="아티스트 (선택)" maxlength="60">' +
                         '<input type="number" id="lpCapo" class="loop-modal-input lp-capo-input" placeholder="카포" min="0" max="15" inputmode="numeric">' +
                     '</div>' +
+                    ((_localToolToken() && Array.isArray(window.__LOCAL_TOOL_RHYTHM) && window.__LOCAL_TOOL_RHYTHM.length)
+                        ? '<label class="lp-rhy-opt"><input type="checkbox" id="lpRhythm"> 리듬 패턴 같이 인쇄 <span>(악보 아래에 작게)</span></label>'
+                        : '') +
                     '<div class="loop-modal-label">미리보기</div>' +
                     '<div id="lpPreview" class="loop-print-preview"></div>' +
                     '<div class="loop-modal-actions">' +
@@ -17391,11 +17578,21 @@
                 var cEl = document.getElementById('lpCapo');
                 var prev = document.getElementById('lpPreview');
                 // 제목·아티스트 기본값 = 현재 프리셋 값 (저장/불러온 경우). 없으면 검색창 텍스트에서 추출.
-                var sName = _loopSavedName || (((document.getElementById('loopPresetSearch') || {}).value || '').replace(/^\s*\d+\.\s*/, '').replace(/^.*\s-\s/, ''));
+                // 제목·아티스트·카포 자동 채우기 — 내 프리셋 슬롯 값 > 불러온 프리셋 값 > 검색창 텍스트
+                var _meta = _loopActiveMeta || {};
+                var sName = _loopSavedName || _meta.name ||
+                    (((document.getElementById('loopPresetSearch') || {}).value || '').replace(/^\s*\d+\.\s*/, '').replace(/^.*\s-\s/, ''));
                 if (sName) tEl.value = sName;
-                if (_loopSavedArtist) aEl.value = _loopSavedArtist;
+                var sArtist = _loopSavedArtist || _meta.artist;
+                if (sArtist) aEl.value = sArtist;
+                if (_meta.capo) {
+                    var _cn = _capoNum(_meta.capo);
+                    if (_cn) cEl.value = _cn;
+                }
                 function refresh() {
                     prev.innerHTML = '';
+                    var _rhyChk = document.getElementById('lpRhythm');
+                    window.__LP_WITH_RHYTHM = !!(_rhyChk && _rhyChk.checked);
                     var pages = _buildPages(tEl.value, aEl.value, cEl.value);
                     pages.forEach(function(pg, idx) {
                         var label = document.createElement('div');
@@ -17423,6 +17620,8 @@
                         });
                     }); });
                 }
+                var _rhyOpt = document.getElementById('lpRhythm');
+                if (_rhyOpt) _rhyOpt.addEventListener('change', refresh);
                 tEl.addEventListener('input', refresh);
                 aEl.addEventListener('input', refresh);
                 cEl.addEventListener('input', refresh);
@@ -17841,6 +18040,7 @@
             function _doResetLoopAll() {
                 _loopActivePresetSequencer = null;
                 _loopActivePresetId = null;
+                _loopActiveMeta = null;
                 _loopActivePresetRhythm = null;
                 try { _updateLoopCapoNote(null); } catch (e) {}
                 _loopSavedSlot = null; _loopSavedName = null; _loopSavedArtist = null;
