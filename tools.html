@@ -7739,7 +7739,7 @@
         .loop-cell {
             /* 세로 높이 고정 — 폭(2코드 vs 4코드 패널 너비)에 묶이지 않게 해서
                2코드/4코드 모드에서 마디 높이가 동일하게 보이도록. (4코드 현재보다 살짝 큼) */
-            min-height: 54px; display: flex; flex-direction: column;
+            min-height: 46px; display: flex; flex-direction: column;
             /* halves 컨테이너가 cell 전체 높이를 채우도록 stretch. 이전엔
                center 였는데, 그 경우 텍스트 영역만 hover/click hit 이 되고
                아래쪽 빈 공간이 죽은 영역이 됨 → "박스 아래쪽 클릭 안 됨" 버그. */
@@ -7986,7 +7986,7 @@
         /* 3단계: 줄 간격 + 마디(셀) 세로 크기까지 축소 — 마지막 수단 */
         .lp-chart.lp-tight2 .lp-row { margin-bottom: 0.1rem; }
         .lp-chart.lp-tight2 .lp-row.lp-row-sf { margin-top: 26px; }
-        .lp-chart.lp-tight2 .loop-cell { min-height: 46px; }
+        .lp-chart.lp-tight2 .loop-cell { min-height: 20px; }
         /* 카포(왼쪽) · 아티스트(오른쪽) 한 줄 */
         .lp-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-top: 4px; }
         .lp-capo { text-align: left; font-size: 19px; font-weight: 700; color: #2a6b4a;
@@ -8018,8 +8018,11 @@
         /* 인쇄용 리듬(스트로크) 패턴 — 악보 아래 여백에 작게 */
         .lp-rhythm { position: relative; z-index: 1; margin-top: 6mm; padding-top: 3mm; border-top: 1px dashed #b9c6bf; }
         .lp-rhythm-title { font-size: 11px; font-weight: 800; color: #3d5a4c; margin-bottom: 2mm; }
-        .lp-rhythm-row { display: flex; align-items: center; gap: 4mm; margin-bottom: 1.6mm; }
-        .lp-rhythm-name { font-size: 10px; font-weight: 700; color: #44534b; min-width: 34mm; }
+        /* 패턴 2개씩 한 줄 — 3번째부터 다음 줄 */
+        .lp-rhythm-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5mm 6mm; align-items: start; }
+        .lp-rhythm-row { display: flex; align-items: center; gap: 3mm; margin-bottom: 0; min-width: 0; }
+        .lp-rhythm-name { font-size: 10px; font-weight: 700; color: #44534b;
+            max-width: 30mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .lp-rhythm-grid { display: flex; gap: 1px; }
         .lp-rhythm-cell {
             width: 6.4mm; height: 6.4mm; border: 0.5px solid #c7d2cc; border-radius: 1mm;
@@ -8039,6 +8042,9 @@
         .lp-chart .loop-cell-num:hover { background: transparent; color: inherit; }
         /* 인쇄 시 마디 구분선(테두리) 진하게 */
         .lp-chart .loop-cell { border-color: rgba(42,107,74,0.6); border-width: 1.3px; }
+        /* 인쇄 전용 — 마디 세로를 화면의 절반로, 마디 번호는 숨김 */
+        .lp-chart .loop-cell { min-height: 23px; padding-top: 0; }
+        .lp-chart .loop-cell-num { display: none !important; }
         #loopPrintArea { display: none; }
         @media print {
             @page { margin: 0; }   /* 브라우저 날짜/제목/URL 머리글·바닥글 제거 */
@@ -8051,11 +8057,11 @@
             .lp-page:last-child { break-after: auto; page-break-after: auto; }
         }
         .loop-cell-num {
-            font-size: 0.52rem; color: rgba(26, 36, 33, 0.45);
-            position: absolute; top: 2px; left: 0;
+            font-size: 0.46rem; color: rgba(26, 36, 33, 0.45);
+            position: absolute; top: 0px; left: -2px;
             /* 번호 라벨은 cell 좌상단에 떠 있는 hit 영역 — 클릭/드래그로
                시작 마디 / 범위 선택. 충분히 크게 만들어 모바일에서도 누르기 쉽게. */
-            min-width: 20px; height: 16px;
+            min-width: 18px; height: 14px;
             display: inline-flex; align-items: center; justify-content: center;
             cursor: pointer;
             border-bottom-right-radius: 6px;
@@ -17201,7 +17207,9 @@
                 var clone = grid.cloneNode(true);
                 clone.querySelectorAll('.loop-songform-pop,.loop-volta-picker,.loop-chord-picker,.loop-row-add').forEach(function(p) { p.remove(); });
                 var cells = Array.prototype.filter.call(clone.children, function(c) {
-                    return c.classList && c.classList.contains('loop-cell');
+                    // X 로 표시된(재생에서 건너뛰는) 마디는 인쇄에서 아예 제외
+                    return c.classList && c.classList.contains('loop-cell')
+                        && !c.classList.contains('skip-zone');
                 });
                 var row = null;
                 cells.forEach(function(cell, idx) {
@@ -17273,9 +17281,39 @@
                     if (cur.length) pr.push(cur);
                     return pr;
                 }
+                // 리듬 패턴을 같이 인쇄할 때 — 실제 높이를 재서 페이지 계산에 반영
+                var RHY_H = 0;
+                if (window.__LP_WITH_RHYTHM) {
+                    var rbM = _lpRhythmBlock();
+                    if (rbM) {
+                        meas.appendChild(rbM);
+                        RHY_H = rbM.offsetHeight + (parseFloat(getComputedStyle(rbM).marginTop) || 0);
+                        meas.removeChild(rbM);
+                    }
+                }
                 var capN = PAGE_CONTENT - SAFETY - RUNHEAD_SPACE;
                 var pagesRows = paginate(rows, PAGE_CONTENT - headH - SAFETY, capN);
                 var level = 0;   // 0=기본, 1=여백, 2=여백+폰트+줄간격, 3=+마디 세로 축소
+                // 한 페이지짜리 악보면 리듬까지 그 페이지 안에 넣는다.
+                //   리듬 높이를 뺀 채로 다시 계산하고, 넘치면 압축 단계를 올려가며 한 페이지로 맞춘다.
+                if (RHY_H > 0 && pagesRows.length === 1) {
+                    var capR = capN - RHY_H;
+                    var tryR = paginate(rows, PAGE_CONTENT - headH - SAFETY - RHY_H, capR);
+                    if (tryR.length === 1) { pagesRows = tryR; }
+                    else {
+                        var r1 = paginate(rows, (297 - 4 - 15) * K - headH1 - RHY_H, capR);
+                        if (r1.length === 1) { level = 1; pagesRows = r1; }
+                        else {
+                            var r2 = paginate(rowsTight, (297 - 3 - 8) * K - headH2 - RHY_H, capR);
+                            if (r2.length === 1) { level = 2; pagesRows = r2; }
+                            else {
+                                var r3 = paginate(rowsVeryTight, (297 - 3 - 8) * K - headH2 - RHY_H, capR);
+                                if (r3.length === 1) { level = 3; pagesRows = r3; }
+                                else { pagesRows = tryR; }   // 도저히 안 되면 2페이지 허용
+                            }
+                        }
+                    }
+                }
                 // 유도리: 마지막 페이지가 1~2줄만 넘친 경우 → 점점 강하게 줄여 한 페이지로 끌어올림.
                 //   1단계(여백) → 2단계(폰트·줄간격) → 3단계(마디 세로까지). 페이지 수가 실제로 줄 때 채택.
                 if (pagesRows.length >= 2 && pagesRows[pagesRows.length - 1].length <= 2) {
@@ -17298,7 +17336,7 @@
                 // 한 페이지짜리라도, 내용이 페이지를 어느 정도(80%+) 채울 때만 세로 중앙정렬.
                 //   짧은 악보는 제목/아티스트가 가운데로 내려가지 않게 위(top) 고정.
                 var singleCenter = false;
-                if (total === 1) {
+                if (total === 1 && !RHY_H) {   // 리듬을 같이 넣을 땐 위 정렬 (아래에 리듬 자리)
                     var contentH = headH + (rows.length ? rows[rows.length - 1].bottom : 0);
                     singleCenter = contentH >= PAGE_CONTENT * 0.8;
                 }
@@ -17353,6 +17391,10 @@
                 h.className = 'lp-rhythm-title';
                 h.textContent = '리듬 패턴';
                 wrap.appendChild(h);
+                // 2열로 배치 — 1·2번째가 한 줄, 3번째부터 다음 줄
+                var cols = document.createElement('div');
+                cols.className = 'lp-rhythm-cols';
+                wrap.appendChild(cols);
                 pats.forEach(function(p) {
                     var meter = (p.meter === 16 || p.meter === 12) ? p.meter : 8;
                     var steps = Array.isArray(p.steps) ? p.steps : [];
@@ -17377,7 +17419,7 @@
                         }
                     }
                     row.appendChild(grid);
-                    wrap.appendChild(row);
+                    cols.appendChild(row);
                 });
                 return wrap;
             }
