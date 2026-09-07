@@ -7835,22 +7835,25 @@
         /* 브래킷 — 좌측 세로선 + 상단 가로선 (오른쪽·아래는 열림).
            세로 꺾임을 '1.'/'2.' 바로 왼쪽(left:24px)으로 옮기고, 위쪽으로 크게(위로 확대).
            클릭 영역(.loop-cell-edge.top)은 그대로 두므로 표기만 커진다. */
+        /* 볼타(1·2도돌이) — 마디 위쪽 바깥으로 빼서 코드와 안 겹치게. 크기도 작게. */
         .loop-cell-volta {
-            position: absolute; top: 0; left: 24px; right: 0; height: 16px;
-            border-top: 2px solid var(--green-deep);
-            border-left: 2px solid var(--green-deep);
+            position: absolute; top: -11px; left: 16px; right: 0; height: 11px;
+            border-top: 1.5px solid var(--green-deep);
+            border-left: 1.5px solid var(--green-deep);
             pointer-events: none;
             z-index: 3;
         }
         .loop-volta-num {
-            /* .loop-cell-volta(=left:24px) 기준 위치. left:2px → 꺾임(세로선) 바로 오른쪽 */
-            position: absolute; top: 1px; left: 2px;
-            font-size: 0.66rem; font-weight: 700; line-height: 1;
+            position: absolute; top: 0px; left: 2px;
+            font-size: 0.55rem; font-weight: 700; line-height: 1;
             color: var(--green-deep);
             font-variant-numeric: tabular-nums;
         }
+        /* 볼타가 있는 줄은 위쪽에 그만큼 자리를 띄운다 (편집 화면·인쇄 공통) */
+        .loop-cell.loop-row-volta { margin-top: 14px; }
+        .lp-chart .lp-row.lp-row-volta { margin-top: 14px; }
         /* 볼타가 있는 마디는 코드를 살짝 오른쪽으로 밀어 볼타 표기와 안 겹치게 */
-        .loop-cell.has-volta .loop-cell-halves { padding-left: 10px; }
+        .loop-cell.has-volta .loop-cell-halves { padding-left: 0; }
         /* 도돌이표(|:)가 있는 마디도 코드를 오른쪽으로 밀어 도돌이 표기와 안 겹치게 */
         .loop-cell.has-lrepeat .loop-cell-halves { padding-left: 12px; }
         :root[data-theme="dark"] .loop-cell-volta { border-color: #b8d8c4; }
@@ -8042,9 +8045,11 @@
         .lp-chart .loop-cell-num:hover { background: transparent; color: inherit; }
         /* 인쇄 시 마디 구분선(테두리) 진하게 */
         .lp-chart .loop-cell { border-color: rgba(42,107,74,0.6); border-width: 1.3px; }
-        /* 인쇄 전용 — 마디 세로를 화면의 절반로, 마디 번호는 숨김 */
-        .lp-chart .loop-cell { min-height: 23px; padding-top: 0; }
+        /* 인쇄 전용 — 마디 세로를 줄이고 마디 번호는 숨김 */
+        .lp-chart .loop-cell { min-height: 32px; padding-top: 0; }
         .lp-chart .loop-cell-num { display: none !important; }
+        /* X 로 표시된 마디 — 인쇄에서 안 보이게 (자리는 그대로 비워둠) */
+        .lp-chart .loop-cell.skip-zone { visibility: hidden; }
         #loopPrintArea { display: none; }
         @media print {
             @page { margin: 0; }   /* 브라우저 날짜/제목/URL 머리글·바닥글 제거 */
@@ -16609,8 +16614,14 @@
                     var cs = container.querySelectorAll(':scope > .loop-cell');
                     for (var r = 0; r < cs.length; r += LOOP_COLS) {
                         var end = Math.min(r + LOOP_COLS, cs.length), any = false;
-                        for (var k = r; k < end; k++) if (cs[k].classList.contains('has-songform')) { any = true; break; }
+                        var anyV = false;
+                        for (var k = r; k < end; k++) {
+                            if (cs[k].classList.contains('has-songform')) any = true;
+                            if (cs[k].classList.contains('has-volta')) anyV = true;
+                        }
+                        // 송폼이 있으면 큰 여백, 없고 볼타만 있으면 볼타 높이만큼만 띄운다
                         if (any) for (var k2 = r; k2 < end; k2++) cs[k2].classList.add('loop-row-spaced');
+                        else if (anyV) for (var k3 = r; k3 < end; k3++) cs[k3].classList.add('loop-row-volta');
                     }
                 }
                 // ─── 레이아웃: 이어보기(단일 그리드) vs 페이지 나누기(페이지별 그리드) ───
@@ -17207,18 +17218,18 @@
                 var clone = grid.cloneNode(true);
                 clone.querySelectorAll('.loop-songform-pop,.loop-volta-picker,.loop-chord-picker,.loop-row-add').forEach(function(p) { p.remove(); });
                 var cells = Array.prototype.filter.call(clone.children, function(c) {
-                    // X 로 표시된(재생에서 건너뛰는) 마디는 인쇄에서 아예 제외
-                    return c.classList && c.classList.contains('loop-cell')
-                        && !c.classList.contains('skip-zone');
+                    return c.classList && c.classList.contains('loop-cell');
                 });
                 var row = null;
                 cells.forEach(function(cell, idx) {
                     // loop-row-spaced(셀 margin)는 제거하고, 대신 줄 단위로 lp-row-sf 로 위 공간 부여
-                    cell.classList.remove('range-start', 'range-end', 'in-range', 'loop-row-spaced', 'playing');
+                    cell.classList.remove('range-start', 'range-end', 'in-range', 'loop-row-spaced', 'loop-row-volta', 'playing');
                     if (idx % 4 === 0) { row = document.createElement('div'); row.className = 'lp-row'; chart.appendChild(row); }
                     row.appendChild(cell);
                     // 이 줄에 송폼 라벨이 있으면 줄 위에 여백 → 라벨이 마디 위에 뜨게
                     if (cell.classList.contains('has-songform')) row.classList.add('lp-row-sf');
+                    // 볼타(1·2도돌이)가 있으면 줄 위에 그만큼 자리를 띄운다
+                    if (cell.classList.contains('has-volta')) row.classList.add('lp-row-volta');
                 });
                 // 마지막 줄이 4칸 미만이면 빈 칸으로 채워 4열 폭 유지
                 if (row) {
@@ -17598,7 +17609,7 @@
                         '<input type="number" id="lpCapo" class="loop-modal-input lp-capo-input" placeholder="카포" min="0" max="15" inputmode="numeric">' +
                     '</div>' +
                     ((_localToolToken() && Array.isArray(window.__LOCAL_TOOL_RHYTHM) && window.__LOCAL_TOOL_RHYTHM.length)
-                        ? '<label class="lp-rhy-opt"><input type="checkbox" id="lpRhythm"> 리듬 패턴 같이 인쇄 <span>(악보 아래에 작게)</span></label>'
+                        ? '<label class="lp-rhy-opt"><input type="checkbox" id="lpRhythm" checked> 리듬 패턴 같이 인쇄 <span>(악보 아래에 작게)</span></label>'
                         : '') +
                     '<div class="loop-modal-label">미리보기</div>' +
                     '<div id="lpPreview" class="loop-print-preview"></div>' +
