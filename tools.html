@@ -24058,8 +24058,18 @@
                     // 12프렛 위로 되돌아온 박스가 경계에 얇게 잘려 보이지 않게.
                     if (lowArr[k] >= maxFret) break;
                     const num = ((((k - base) % 5) + 5) % 5) + 1;
+                    // 박스의 프렛 중심 — 저음현의 두 골격음 가운데.
+                    //   줄마다 골격음이 나오는 프렛 간격이 달라서(특히 B현) 인덱스를
+                    //   그대로 쓰면 박스가 어긋난다. 줄별로 '중심에 가장 가까운 두 음'을 고른다.
+                    const center = (lowArr[k] + lowArr[k + 1]) / 2;
                     const segs = perString.map(function(arr){
-                        return (k + 1 < arr.length) ? { lo: arr[k], hi: arr[k + 1] } : null;
+                        if (arr.length < 2) return null;
+                        let best = -1, bestD = Infinity;
+                        for (let i = 0; i + 1 < arr.length; i++) {
+                            const d = Math.abs((arr[i] + arr[i + 1]) / 2 - center);
+                            if (d < bestD) { bestD = d; best = i; }
+                        }
+                        return best < 0 ? null : { lo: arr[best], hi: arr[best + 1] };
                     });
                     if (segs.some(function(s){ return s && s.lo <= maxFret; })) {
                         boxes.push({ num: num, label: String(num), segs: segs });
