@@ -1434,7 +1434,10 @@
         }
         .chord-modal-inner svg {
             width: 100%;
+            /* 프렛 칸 수에 따라 viewBox 폭이 달라지므로 박스 비율을 고정하고
+               preserveAspectRatio(기본 meet)로 가운데 맞춘다. */
             height: auto;
+            aspect-ratio: 7 / 5;
             display: block;
         }
         .fingering-selector {
@@ -6539,7 +6542,6 @@
                 const pressedFrets = frets.filter(f => f != null && f > 0);
                 const maxFret = pressedFrets.length ? Math.max(...pressedFrets) : 0;
                 const minFret = pressedFrets.length ? Math.min(...pressedFrets) : 0;
-                const NUM_FRETS = 4;
                 let startFret;
                 if (chord.startFret !== undefined) {
                     startFret = chord.startFret;
@@ -6549,18 +6551,22 @@
                 } else {
                     startFret = 0;
                 }
+                // 프렛 칸 수는 코드가 실제로 쓰는 만큼만 (최소 3칸).
+                //   늘 4칸이면 C(3프렛까지) 같은 코드에 빈 칸이 하나 남는다.
+                const NUM_FRETS = Math.max(3, maxFret - startFret);
                 // Position of fret number label (1-indexed relFret), default 1 (leftmost)
                 const labelRelFret = (chord.labelAt !== undefined) ? chord.labelAt : 1;
 
                 // Horizontal layout (CCW 90° rotation):
                 // - Nut on LEFT, frets go RIGHT
                 // - Low E (string 0) at BOTTOM, High E (string 5) at TOP
-                const W = 140, H = 100;
                 const NUT_X = 28, TOP_Y = 22, STR_SP = 10, FR_W = 22;
                 const boardBottom = TOP_Y + STR_SP * 5;
                 const boardRight = NUT_X + FR_W * NUM_FRETS;
+                // 폭은 칸 수에 따라 달라진다 (카드 svg 는 width/height 100% 라 가운데 정렬됨)
+                const W = boardRight + 14, H = 100;
 
-                let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+                let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
                 svg += `<text x="${W/2}" y="14" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="'Playfair Display', serif">${chord.name}</text>`;
 
                 // Nut (thick vertical line on left) or fret number indicator

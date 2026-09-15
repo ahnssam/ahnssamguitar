@@ -4435,7 +4435,11 @@
         }
         .chord-modal-inner svg {
             width: 100%;
+            /* 프렛 칸 수에 따라 viewBox 폭이 달라지므로 박스 비율을 고정하고
+               preserveAspectRatio(기본 meet)로 가운데 맞춘다. 안 그러면 3칸짜리
+               코드가 모달에서 세로로 길쭉해진다. */
             height: auto;
+            aspect-ratio: 7 / 5;
             display: block;
         }
         .fingering-selector {
@@ -6206,6 +6210,9 @@
         #loopSavePresetBtn:disabled { opacity: 0.4; cursor: default; }
         :root[data-theme="dark"] .loop-preset-mini { color: var(--green-light); border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); }
         :root[data-theme="dark"] #loopSavePresetBtn:not(:disabled) { color: #fff; background: var(--green-dark); }
+        /* 공용저장 — 아이콘+텍스트라 고정폭(30px)을 풀고 글자에 맞춰 넓힌다 */
+        #loopSharedSaveBtn { width: auto; min-width: 0; padding: 0 0.55rem; gap: 0.3rem; white-space: nowrap; font-weight: 700; }
+        #loopSharedSaveBtn[hidden] { display: none; }
         /* 저장 버튼(아이콘+텍스트) + 드롭다운 (저장 / 다른 이름으로 저장) */
         .loop-save-wrap { position: relative; display: inline-flex; flex: 0 0 auto; }
         .loop-save-toggle { width: auto; height: 30px; gap: 0.3rem; padding: 0 0.55rem; white-space: nowrap; font-weight: 700; }
@@ -7992,6 +7999,10 @@
         .lp-chart.lp-tight2 .loop-cell { min-height: 20px; }
         /* 카포(왼쪽) · 아티스트(오른쪽) 한 줄 */
         .lp-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-top: 4px; }
+        /* 코드 다이어그램이 가운데 끼면 세로 가운데 맞춤 + 양옆(카포·아티스트)은 폭 고정 */
+        .lp-meta.has-cd { align-items: center; gap: 4mm; }
+        .lp-meta.has-cd > .lp-capo,
+        .lp-meta.has-cd > .lp-artist { flex: 0 0 22mm; }
         .lp-capo { text-align: left; font-size: 19px; font-weight: 700; color: #2a6b4a;
             font-family: 'Noto Sans CJK KR', 'Noto Sans KR', sans-serif; }
         /* 워터마크 — 흑백 로고, 반시계 45도. 각 페이지 안 내용 뒤(z-index 0). */
@@ -8019,6 +8030,34 @@
         .lp-credit  { position: absolute; left: 12mm; right: 12mm; bottom: 8mm; text-align: center; font-size: 11px; color: #55625c; }
         .lp-pagenum { position: absolute; right: 12mm; bottom: 8mm; text-align: right; font-size: 11px; color: #55625c; z-index: 2; }
         /* 인쇄용 리듬(스트로크) 패턴 — 악보 아래 여백에 작게 */
+        /* ── 코드 다이어그램 (악보검색 툴 전용) ──
+           제목 바로 아래, 카포·아티스트와 같은 줄 가운데. 별도 줄을 만들지 않는다. */
+        .lp-chorddiag {
+            position: relative; z-index: 1;
+            flex: 1 1 auto; min-width: 0;
+            display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: center;
+            gap: 0 1mm;
+        }
+        /* 프렛 칸 수에 따라 폭이 달라지므로 '높이'로 크기를 맞춘다 (폭은 자동).
+           SVG 에 width/height 속성이 박혀 있어 width:auto 가 비율대로 풀린다. */
+        .lp-chorddiag .lp-cd-item { flex: 0 0 auto; color: #23402f; }
+        .lp-chorddiag svg { display: block; height: 14mm; width: auto; }
+        .lp-chorddiag .chord-finger-num { fill: #fff; }
+        /* 개수가 많으면 자동으로 작게 — 가운데 쓸 수 있는 폭이 약 134mm */
+        .lp-chorddiag.cd-sm  svg { height: 12mm; }
+        .lp-chorddiag.cd-xs  svg { height: 10mm; }
+        .lp-chorddiag.cd-xxs svg { height: 8.5mm; }
+        /* 화면(편집 중) — 인쇄와 같은 자리, 마디 그리드 바로 위 */
+        .loop-chorddiag {
+            display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: center; gap: 0 4px;
+            margin: 0 0 0.5rem; padding-bottom: 0.4rem;
+            border-bottom: 1px dashed rgba(42,107,74,0.28);
+        }
+        .loop-chorddiag[hidden] { display: none; }
+        .loop-chorddiag .lp-cd-item { flex: 0 0 auto; color: var(--green-deep); }
+        .loop-chorddiag svg { display: block; height: 52px; width: auto; }
+        :root[data-theme="dark"] .loop-chorddiag { border-bottom-color: rgba(255,255,255,0.18); }
+        :root[data-theme="dark"] .loop-chorddiag .lp-cd-item { color: var(--green-light); }
         .lp-rhythm { position: relative; z-index: 1; margin-top: 6mm; padding-top: 3mm; border-top: 1px dashed #b9c6bf; }
         .lp-rhythm-title { font-size: 11px; font-weight: 800; color: #3d5a4c; margin-bottom: 2mm; }
         /* 송폼 흐름 — → Bridge → Chorus */
@@ -8174,6 +8213,13 @@
             color: rgba(180, 190, 200, 0.45);
         }
         .loop-cell-half + .loop-cell-half { border-left: 1px solid rgba(42, 107, 74, 0.1); }
+        /* 코드 칸에 코드 아닌 메모/지시어를 같이 적었을 때 — 그 텍스트만 절반 크기 */
+        .loop-cell-half .loop-half-note {
+            font-size: 0.5em;
+            font-weight: 500;
+            opacity: 0.82;
+            letter-spacing: 0;
+        }
         .loop-chord-picker {
             display: none; position: absolute; z-index: 10;
             top: 100%;
@@ -8500,15 +8546,15 @@
                content. */
             .coupang-banner { margin: auto auto 0; }
 
-            /* ===== Loop: 모바일에서 셀을 위아래로 더 키움 (탭 hit 범위 확대) ===== */
-            /* 4열 grid 라 셀 가로 폭이 좁고, 기존 aspect-ratio 2.2 면 세로
-               40px 안팎으로 너무 납작해서 빈 마디 + / 코드 글자 영역이
-               손가락으로 누르기 어려웠음. ratio 를 1.3 정도로 낮춰 셀 자체를
-               세로로 키우고, min-height 도 안전망으로 64px 깔아둠. */
+            /* ===== Loop: 모바일(세로모드) 마디 높이 ===== */
+            /* 예전엔 탭 영역을 넓히려고 셀을 세로로 키웠는데(64px + 상하 패딩),
+               그 결과 세로모드에서만 마디가 데스크톱보다 두꺼워 보였다.
+               → 높이는 데스크톱과 동일하게 맞추고(46px, 패딩 0), 글자만 폭에
+                 맞춰 작게 유지한다. */
             .loop-cell-half {
                 font-size: clamp(0.8rem, 3vw, 0.95rem);
                 line-height: 1.05;
-                padding: 0.25rem 0;
+                padding: 0;
             }
             .loop-cell-half.empty {
                 font-size: clamp(0.8rem, 2.5vw, 0.9rem);
@@ -8516,16 +8562,17 @@
             .loop-cell {
                 /* 모바일도 데스크톱과 동일한 고정 높이 (폭 기준 비율 제거) */
                 aspect-ratio: auto;
-                min-height: 64px;
+                min-height: 46px;
             }
-            /* 마디 번호 hit 영역 — 모바일에선 손끝으로 누르기 쉽게 더 크게 */
+            /* 마디 번호 hit 영역 — 데스크톱보다 살짝만 크게. 셀이 46px 라
+               예전처럼 24px 로 키우면 도돌이표 자리가 없어져 찌그러진다. */
             .loop-cell-num {
-                font-size: 0.7rem;
-                min-width: 28px;
-                height: 24px;
+                font-size: 0.56rem;
+                min-width: 24px;
+                height: 17px;
             }
-            /* 모바일은 번호가 더 크니 도돌이 가장자리를 그만큼 더 아래에서 시작 */
-            .loop-cell-edge.left, .loop-cell-edge.right { top: 27px; }
+            /* 번호 아래에서 도돌이 가장자리 시작 (번호 높이와 맞춤) */
+            .loop-cell-edge.left, .loop-cell-edge.right { top: 17px; }
 
             /* ===== Ear-training (음정 테스트): score row layout ===== */
             /* In portrait / narrow viewports we lay out four items in a
@@ -8979,6 +9026,8 @@
                         <button type="button" class="loop-preset-mini" id="loopSharedSaveBtn" data-action="openSaveShared" aria-label="공용 프리셋에 저장" title="공용 프리셋에 저장" hidden><i class="fas fa-floppy-disk"></i><span>공용저장</span></button>
                         <button type="button" class="loop-preset-mini" id="loopPrintBtn" data-action="openPrintDialog" aria-label="악보 인쇄" title="악보 인쇄"><i class="fas fa-print"></i></button>
                         <button type="button" class="loop-preset-mini" id="loopMp3Btn" data-action="openMp3Dialog" aria-label="MP3로 내보내기" title="MP3로 내보내기 (반주 오디오 다운로드)"><i class="fas fa-download"></i></button>
+                        <!-- 악보검색(로컬) 툴에서는 MP3 자리에 '이미지로 저장' 이 들어간다 -->
+                        <button type="button" class="loop-preset-mini" id="loopImgBtn" data-action="saveLoopImagePng" aria-label="이미지로 저장" title="악보를 PNG 이미지로 저장 (인쇄물과 동일)" hidden><i class="fas fa-image"></i></button>
                         <button type="button" class="loop-preset-mini" id="loopWmBtn" data-action="openWatermarkPdf" aria-label="PDF에 워터마크 입히기" title="PDF에 워터마크 입히기" hidden>W</button>
                         <button type="button" class="tool-help-btn loop-preset-help-btn" data-help="backing" aria-label="반주 도움말" aria-expanded="false">?</button>
                         <div class="loop-preset-list" id="loopPresetList">
@@ -9091,6 +9140,8 @@
                             </div>
                         </div>
                     </div>
+                    <!-- 코드 다이어그램 줄 — 악보검색(로컬) 툴에서만 채워짐. 제목 아래·첫 마디줄 위. -->
+                    <div class="loop-chorddiag" id="loopChordDiag" hidden></div>
                     <div class="loop-grid cols-4" id="loopGrid"></div>
                     <!-- 그리드 바로 아래 — 마디 수 조정 (+4마디 / −1 / +1) -->
                     <div class="loop-add-bars">
@@ -14902,6 +14953,11 @@
                         });
                     } else { delete sp.rhythmPatterns; }
                 }
+                // 코드 다이어그램 목록 (['C','Am','F','G'])
+                if (Array.isArray(window.__LOCAL_TOOL_CHORDDIAG)) {
+                    if (window.__LOCAL_TOOL_CHORDDIAG.length) sp.chordDiagrams = window.__LOCAL_TOOL_CHORDDIAG.slice();
+                    else delete sp.chordDiagrams;
+                }
                 var patch = {
                     bpm: s.bpm, bars: s.bars, rhythm: s.rhythm,
                     bass_style: s.bass_style, piano_style: s.piano_style,
@@ -15644,6 +15700,12 @@
             }
             // 운영 계정(또는 로컬 툴)에서만 보이는 UI 를 로그인 상태에 맞춰 갱신
             function _syncAdminUI() {
+                // 악보검색(로컬) 툴 — MP3 내보내기 대신 '이미지로 저장' 을 같은 자리에 둔다
+                var isTool = (typeof _localToolToken === 'function') && !!_localToolToken();
+                var mp3 = document.getElementById('loopMp3Btn');
+                var img = document.getElementById('loopImgBtn');
+                if (mp3) { if (isTool) mp3.setAttribute('hidden', ''); else mp3.removeAttribute('hidden'); }
+                if (img) { if (isTool) img.removeAttribute('hidden'); else img.setAttribute('hidden', ''); }
                 var b = document.getElementById('loopSharedSaveBtn');
                 if (!b) return;
                 if (_loopIsAdmin()) b.removeAttribute('hidden');
@@ -16426,6 +16488,54 @@
 
             // 셀 텍스트가 네모 밖으로 넘치지 않도록 글자 크기를 줄여 맞춘다.
             //   여러 줄(Shift+Enter)도 가로·세로 모두 박스 안에 들어오게 축소.
+            // ─── 코드 칸 안의 '코드 아닌 텍스트' 축소 ─────────────────────
+            // 한 칸에 코드 말고 메모/지시어(예: "C 천천히", "Rit.", 줄바꿈 주석)를
+            // 같이 적는 경우가 있다. 코드는 그대로 두고 텍스트만 절반 크기로 줄인다.
+            //   판정은 느슨한 parseChordName 대신 전용 정규식 — parseChordName 은
+            //   'Chorus' 를 root C 로 받아버려서 여기 쓰면 안 된다.
+            var _HALF_CHORD_RE = new RegExp(
+                '^[A-G][#b♯♭]?' +                                  // 루트
+                '(?:m|min|maj|M|Δ|△|dim|o|°|ø|aug|\\+|-)?' +  // 성질
+                '(?:69|6\\/9|11|13|5|6|7|9)?' +                              // 텐션
+                '(?:\\([^)]*\\)|(?:[\\s]?(?:sus|add|alt|no|omit|maj|M|Δ|b|#|♭|♯|\\+|-)+(?:2|4|5|6|7|9|11|13)?\\)?))*' +
+                '(?:/[A-G][#b♯♭]?)?$'
+            );
+            function _halfIsChordish(t) {
+                if (!t) return true;
+                if (/^[—–%\/|.\-:()\[\]→,]+$/.test(t)) return true;   // 기호는 그대로
+                if (/^n\.?c\.?$/i.test(t)) return true;
+                if (/^[xX×]$/.test(t)) return true;
+                return _HALF_CHORD_RE.test(t);
+            }
+            function _halfEsc(s) {
+                return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+            // 코드 아닌 토큰이 하나도 없으면 null (= 그냥 textContent 로 두라는 뜻)
+            function _halfMarkup(text) {
+                var parts = String(text).split(/(\s+)/).filter(function(t) { return t !== ''; });
+                var seg = [], pend = '';
+                for (var i = 0; i < parts.length; i++) {
+                    var t = parts[i];
+                    if (/^\s+$/.test(t)) { pend += t; continue; }
+                    var isC = _halfIsChordish(t);
+                    if (!seg.length && pend) { seg.push({ chord: true, text: pend }); pend = ''; }
+                    if (seg.length && seg[seg.length - 1].chord === isC) seg[seg.length - 1].text += pend + t;
+                    else seg.push({ chord: isC, text: pend + t });
+                    pend = '';
+                }
+                if (pend) { if (seg.length) seg[seg.length - 1].text += pend; else seg.push({ chord: true, text: pend }); }
+                var hasText = seg.some(function(s) { return !s.chord; });
+                if (!hasText) return null;
+                return seg.map(function(s) {
+                    return s.chord ? _halfEsc(s.text)
+                                   : '<span class="loop-half-note">' + _halfEsc(s.text) + '</span>';
+                }).join('');
+            }
+            function _setHalfContent(el, text) {
+                var mk = _halfMarkup(text);
+                if (mk === null) el.textContent = text;
+                else el.innerHTML = mk;
+            }
             function _fitChordText(el) {
                 if (!el) return;
                 el.style.whiteSpace = 'pre';   // 입력한 줄바꿈 보존 + 자동 줄바꿈 방지
@@ -16548,7 +16658,7 @@
                             el.textContent = 'x';
                         } else if (direct) {
                             el.className = 'loop-cell-half';
-                            el.textContent = direct;
+                            _setHalfContent(el, direct);   // 코드는 그대로, 텍스트만 절반 크기
                             el.dataset.fit = '1';
                             // 앞 공백(들여쓰기) 이 있으면 왼쪽 정렬로 그 만큼 띄워 보이게
                             if (/^\s/.test(String(direct).split('\n')[0])) el.classList.add('lead');
@@ -17232,6 +17342,13 @@
                         '<div class="lp-capo">' + (capoTxt ? _escHtml(capoTxt) : '') + '</div>' +
                         '<div class="lp-artist">' + (artist ? _escHtml(artist) : '') + '</div>' +
                     '</div>';
+                // 코드 다이어그램 — 카포/아티스트와 같은 줄 가운데 (제목 바로 아래)
+                var cd = _lpChordDiagBlock(false);
+                if (cd) {
+                    var meta = head.querySelector('.lp-meta');
+                    meta.classList.add('has-cd');
+                    meta.insertBefore(cd, meta.lastElementChild);
+                }
                 return head;
             }
             // 인쇄 워터마크 — 사이트 로고를 흑백(grayscale)으로, 페이지 가로 1/3, 반시계 45도, 투명도 50%.
@@ -17330,7 +17447,8 @@
                 chart.classList.add('lp-tight2');
                 var rowsVeryTight = _measRows();              // 줄 간격 + 마디 세로 축소 (3단계)
                 chart.classList.remove('lp-tight2');
-                document.body.removeChild(meas);
+                // NB: meas 는 아래 리듬/다이어그램 높이까지 잰 뒤에 떼어낸다.
+                //     (먼저 떼면 detached 라 offsetHeight 가 0 → 한 페이지 맞춤이 안 먹음)
                 // 그리디 페이지 분할 헬퍼 (cap1=1페이지 용량, capN=이후 페이지 용량)
                 function paginate(rowsArr, cap1, capN) {
                     var pr = [], cur = [], start = rowsArr.length ? rowsArr[0].top : 0, cap = cap1;
@@ -17352,6 +17470,8 @@
                         meas.removeChild(rbM);
                     }
                 }
+                // 코드 다이어그램은 머리글(_printHead) 안에 들어가므로 headH 에 이미 포함됨
+                document.body.removeChild(meas);
                 var capN = PAGE_CONTENT - SAFETY - RUNHEAD_SPACE;
                 var pagesRows = paginate(rows, PAGE_CONTENT - headH - SAFETY, capN);
                 var level = 0;   // 0=기본, 1=여백, 2=여백+폰트+줄간격, 3=+마디 세로 축소
@@ -17409,7 +17529,7 @@
                     if (p === 0) {
                         var h0 = _printHead(title, artist, capo);
                         if (headCls) h0.className += ' ' + headCls;
-                        pg.appendChild(h0);
+                        pg.appendChild(h0);   // 코드 다이어그램은 _printHead 안(카포·아티스트 줄)에 포함
                     } else {
                         var rh = document.createElement('div');
                         rh.className = 'lp-runhead';
@@ -17440,6 +17560,66 @@
                 }
                 return pages;
             }
+            // ── 코드 다이어그램 줄 — 로컬 악보검색 툴에서만 사용 ──
+            //   window.__LOCAL_TOOL_CHORDDIAG = ['C','Am','F','G'] 형태로 툴이 심어준다.
+            //   제목(머리글) 아래 · 첫 마디줄 위에 들어간다.
+            function _lpChordDiagBlock(forScreen) {
+                var names = window.__LOCAL_TOOL_CHORDDIAG;
+                if (!Array.isArray(names) || !names.length) return null;
+                if (typeof window._findChordDiagramByName !== 'function' ||
+                    typeof window._renderChordSVG !== 'function') return null;
+                var wrap = document.createElement('div');
+                wrap.className = forScreen ? 'loop-chorddiag' : 'lp-chorddiag';
+                var n = 0;
+                names.forEach(function(nm) {
+                    var ch = window._findChordDiagramByName(nm);
+                    if (!ch) return;
+                    var item = document.createElement('div');
+                    item.className = 'lp-cd-item';
+                    // 코드악보용 — 운지 번호 없이, 프렛 칸을 채우는 미니 표기
+                    item.innerHTML = window._renderChordSVG(ch, { fingers: false, style: 'mini' });
+                    wrap.appendChild(item);
+                    n++;
+                });
+                if (!n) return null;
+                // 카포·아티스트 사이 가운데 폭(약 134mm)에 한 줄로 담기게 개수에 따라 축소
+                if (!forScreen) {
+                    if (n > 16) wrap.classList.add('cd-xxs');
+                    else if (n > 13) wrap.classList.add('cd-xs');
+                    else if (n > 10) wrap.classList.add('cd-sm');
+                }
+                return wrap;
+            }
+            // 현재 악보에 쓰인 코드 이름을 나온 순서대로 중복 없이 — 툴의 '자동 추출' 용.
+            //   메모/지시어(코드 아닌 텍스트)와 'x'(쉼) 는 제외.
+            window.localToolChartChords = function() {
+                var keys = _loopSlotKeys();
+                var out = [], seen = {};
+                for (var i = 0; i < loopBars; i++) {
+                    for (var k = 0; k < keys.length; k++) {
+                        var raw = _loopSlotMap(keys[k])[i];
+                        if (!raw || _isChordRest(raw)) continue;
+                        String(raw).split(/[\s\n]+/).forEach(function(tok) {
+                            if (!tok || !_halfIsChordish(tok)) return;
+                            if (!/^[A-G]/.test(tok)) return;        // 기호·N.C. 제외
+                            var key = tok.replace(/♭/g, 'b').replace(/♯/g, '#');
+                            if (seen[key]) return;
+                            seen[key] = 1; out.push(key);
+                        });
+                    }
+                }
+                return out;
+            };
+            // 편집 화면(임베드)의 다이어그램 줄 갱신 — 툴이 값을 바꿀 때마다 호출.
+            window.renderLoopChordDiagrams = function() {
+                var host = document.getElementById('loopChordDiag');
+                if (!host) return;
+                var blk = _lpChordDiagBlock(true);
+                host.innerHTML = '';
+                if (!blk) { host.setAttribute('hidden', ''); return; }
+                while (blk.firstChild) host.appendChild(blk.firstChild);
+                host.removeAttribute('hidden');
+            };
             // ── 인쇄용 리듬(스트로크) 패턴 블록 — 로컬 악보검색 툴에서만 사용 ──
             //   window.__LOCAL_TOOL_RHYTHM 에 툴이 패턴 배열을 심어준다.
             function _lpRhythmBlock() {
@@ -17666,6 +17846,27 @@
                     loopToast('PDF 처리 중 오류가 발생했어요');
                 });
             }
+
+            // 현재 프리셋의 제목·아티스트·카포 자동 채우기 (인쇄 다이얼로그와 동일 규칙)
+            function _lpAutoMeta() {
+                var _meta = _loopActiveMeta || {};
+                var name = _loopSavedName || _meta.name ||
+                    (((document.getElementById('loopPresetSearch') || {}).value || '')
+                        .replace(/^\s*\d+\.\s*/, '').replace(/^.*\s-\s/, ''));
+                var artist = _loopSavedArtist || _meta.artist || '';
+                var capo = _meta.capo ? (_capoNum(_meta.capo) || '') : '';
+                return { name: name || '', artist: artist, capo: capo };
+            }
+            // 악보검색 툴 전용 — 인쇄물과 똑같은 모양으로 PNG 저장 (다이얼로그 없이 바로)
+            window.saveLoopImagePng = function() {
+                if (!hasLoopInput()) { loopToast('먼저 코드를 입력해주세요'); return; }
+                var m = _lpAutoMeta();
+                // 리듬·송폼이 있으면 인쇄 기본값과 같이 함께 넣는다
+                window.__LP_WITH_RHYTHM =
+                    !!((Array.isArray(window.__LOCAL_TOOL_RHYTHM) && window.__LOCAL_TOOL_RHYTHM.length) ||
+                       (Array.isArray(window.__LOCAL_TOOL_FORMFLOW) && window.__LOCAL_TOOL_FORMFLOW.length));
+                _saveLoopImage('png', m.name, m.artist, m.capo);
+            };
 
             window.openPrintDialog = function() {
                 if (!hasLoopInput()) { loopToast('먼저 코드를 입력해주세요'); return; }
@@ -20094,13 +20295,19 @@
 
             window._CHORDS = CHORDS;
             window._renderChordSVG = renderChordSVG;
-            function renderChordSVG(chord) {
+            // opts:
+            //   fingers: false  → 운지 번호 숨김
+            //   style: 'mini'   → 프렛 간격을 좁히고, 누르는 자리를 프렛 칸을 꽉 채우는
+            //                     블록으로 그린다 (작게 넣는 코드악보용)
+            function renderChordSVG(chord, opts) {
+                opts = opts || {};
+                const mini = opts.style === 'mini';
+                const showFingers = opts.fingers !== false;
                 const frets = chord.frets;
                 const fingers = chord.fingers;
                 const pressedFrets = frets.filter(f => f != null && f > 0);
                 const maxFret = pressedFrets.length ? Math.max(...pressedFrets) : 0;
                 const minFret = pressedFrets.length ? Math.min(...pressedFrets) : 0;
-                const NUM_FRETS = 4;
                 let startFret;
                 if (chord.startFret !== undefined) {
                     startFret = chord.startFret;
@@ -20110,17 +20317,28 @@
                 } else {
                     startFret = 0;
                 }
+                // 프렛 칸 수는 코드가 실제로 쓰는 만큼만 (최소 3칸).
+                //   예전엔 늘 4칸이라 C(3프렛까지) 같은 코드에 빈 칸이 하나 남았다.
+                const NUM_FRETS = Math.max(3, maxFret - startFret);
                 const labelRelFret = (chord.labelAt !== undefined) ? chord.labelAt : 1;
-                const W = 140, H = 100;
-                const NUT_X = 28, TOP_Y = 22, STR_SP = 10, FR_W = 22;
+                const TOP_Y = mini ? 19 : 22;
+                const STR_SP = 10;
+                const FR_W = mini ? 15 : 22;
+                const NUT_X = mini ? 22 : 28;
+                const OPEN_X = NUT_X - (mini ? 8 : 10);      // ×/○ 표시 x
+                const RIGHT_PAD = mini ? 7 : 14;
                 const boardBottom = TOP_Y + STR_SP * 5;
                 const boardRight = NUT_X + FR_W * NUM_FRETS;
+                // 폭은 칸 수에 따라 달라진다. 카드(.chord-card svg)는 width/height 100% 라
+                //   preserveAspectRatio 로 가운데 정렬되어 레이아웃은 그대로.
+                const W = boardRight + RIGHT_PAD;
+                const H = boardBottom + (mini ? 13 : 28);
 
                 // SVG strokes/fills use currentColor so the parent .chord-card's
                 // CSS `color` controls the chord look — easy light/dark theming.
-                let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-                svg += `<text x="${W/2}" y="14" text-anchor="middle" fill="currentColor" font-size="13" font-weight="700" font-family="'Playfair Display', serif">${chord.name}</text>`;
-                if (chord.sub) {
+                let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
+                svg += `<text x="${W/2}" y="${mini ? 12 : 14}" text-anchor="middle" fill="currentColor" font-size="${mini ? 12 : 13}" font-weight="700" font-family="'Playfair Display', serif">${chord.name}</text>`;
+                if (chord.sub && !mini) {
                     svg += `<text x="${W/2}" y="${H - 2.5}" text-anchor="middle" fill="currentColor" opacity="0.55" font-size="6.6" font-family="'Noto Sans KR', sans-serif">${chord.sub}</text>`;
                 }
 
@@ -20129,7 +20347,7 @@
                 } else {
                     const labelX = NUT_X + FR_W * (labelRelFret - 0.5);
                     const labelFret = startFret + labelRelFret;
-                    svg += `<text x="${labelX}" y="${boardBottom + 15}" fill="currentColor" opacity="0.7" font-size="7.5" text-anchor="middle">${labelFret}fr</text>`;
+                    svg += `<text x="${labelX}" y="${boardBottom + (mini ? 10 : 15)}" fill="currentColor" opacity="0.7" font-size="${mini ? 7 : 7.5}" text-anchor="middle">${labelFret}fr</text>`;
                 }
 
                 for (let i = 0; i <= NUM_FRETS; i++) {
@@ -20150,6 +20368,9 @@
                         barreGroups[key].strings.push(s);
                     }
                 }
+                const barred = {};          // 미니에서 바레로 이미 칠한 줄
+                const BLK_W = FR_W - 3;     // 미니 블록 — 프렛 칸을 가로로 꽉 채움
+                const BLK_H = 7.4;
                 Object.keys(barreGroups).forEach(function(key) {
                     const group = barreGroups[key];
                     if (group.strings.length < 2) return;
@@ -20160,23 +20381,34 @@
                     const x = NUT_X + FR_W * (relFret - 0.5);
                     const yTop = TOP_Y + (5 - maxS) * STR_SP;
                     const yBot = TOP_Y + (5 - minS) * STR_SP;
-                    svg += `<rect x="${x - 6.5}" y="${yTop - 6.5}" width="13" height="${yBot - yTop + 13}" rx="6.5" fill="none" stroke="currentColor" stroke-opacity="0.5" stroke-width="0.9"/>`;
+                    if (mini) {
+                        // 미니 — 바레는 프렛 칸을 채우는 하나의 굵은 막대로
+                        group.strings.forEach(function(s) { barred[s] = 1; });
+                        svg += `<rect x="${x - BLK_W / 2}" y="${yTop - BLK_H / 2}" width="${BLK_W}" height="${yBot - yTop + BLK_H}" rx="${BLK_H / 2}" fill="currentColor"/>`;
+                    } else {
+                        svg += `<rect x="${x - 6.5}" y="${yTop - 6.5}" width="13" height="${yBot - yTop + 13}" rx="6.5" fill="none" stroke="currentColor" stroke-opacity="0.5" stroke-width="0.9"/>`;
+                    }
                 });
 
                 for (let s = 0; s < 6; s++) {
                     const y = TOP_Y + (5 - s) * STR_SP;
                     const fret = frets[s];
                     if (fret === null) {
-                        svg += `<text x="${NUT_X - 10}" y="${y + 3}" text-anchor="middle" fill="currentColor" opacity="0.95" font-size="9" font-weight="600">×</text>`;
+                        svg += `<text x="${OPEN_X}" y="${y + 3}" text-anchor="middle" fill="currentColor" opacity="0.95" font-size="${mini ? 8 : 9}" font-weight="600">×</text>`;
                     } else if (fret === 0) {
-                        svg += `<circle cx="${NUT_X - 10}" cy="${y}" r="3.2" fill="none" stroke="currentColor" stroke-opacity="0.95" stroke-width="1.3"/>`;
+                        svg += `<circle cx="${OPEN_X}" cy="${y}" r="${mini ? 2.8 : 3.2}" fill="none" stroke="currentColor" stroke-opacity="0.95" stroke-width="1.3"/>`;
                     } else {
                         const relFret = fret - startFret;
                         if (relFret >= 1 && relFret <= NUM_FRETS) {
                             const x = NUT_X + FR_W * (relFret - 0.5);
-                            svg += `<circle cx="${x}" cy="${y}" r="4.8" fill="currentColor"/>`;
+                            if (mini) {
+                                if (barred[s]) continue;    // 바레 막대가 이미 덮었다
+                                svg += `<rect x="${x - BLK_W / 2}" y="${y - BLK_H / 2}" width="${BLK_W}" height="${BLK_H}" rx="${BLK_H / 2}" fill="currentColor"/>`;
+                            } else {
+                                svg += `<circle cx="${x}" cy="${y}" r="4.8" fill="currentColor"/>`;
+                            }
                             const fnum = fingers[s];
-                            if (fnum && fnum > 0) {
+                            if (showFingers && fnum && fnum > 0) {
                                 // Use a class so dark mode can flip the number to dark green
                                 // (white on light-green is low contrast in dark theme).
                                 svg += `<text class="chord-finger-num" x="${x}" y="${y+2.8}" text-anchor="middle" font-size="7.5" font-weight="700">${fnum}</text>`;
@@ -20188,6 +20420,187 @@
                 svg += '</svg>';
                 return svg;
             }
+
+            // ─── 코드 이름 → 다이어그램 찾기 (악보검색 툴의 '코드 다이어그램' 기능용) ──
+            //   1) CHORDS 라이브러리 정확히 일치
+            //   2) 이명동음 (C# ↔ Db) · m7♭5 ↔ m7b5 표기 흡수
+            //   3) 그래도 없으면 루트+성질로 이동식(바레) 폼 생성 — sus4/add9/6 등 커버
+            (function() {
+                var PC = { 'C':0,'C#':1,'Db':1,'D':2,'D#':3,'Eb':3,'E':4,'Fb':4,'E#':5,'F':5,
+                           'F#':6,'Gb':6,'G':7,'G#':8,'Ab':8,'A':9,'A#':10,'Bb':10,'B':11,'Cb':11 };
+                var SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+                var FLAT  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+                // 6번줄 루트(E폼) / 5번줄 루트(A폼) 이동식 그립.
+                //   offsets: 루트 프렛 기준 상대 프렛 (null = 뮤트), 낮은 6번줄부터.
+                var SHAPES = {
+                    //                 E폼 offsets            E폼 fingers        A폼 offsets            A폼 fingers
+                    '':      { e6:[0,2,2,1,0,0],     f6:[1,3,4,2,1,1], a5:[null,0,2,2,2,0],   f5:[0,1,3,3,3,1] },
+                    'm':     { e6:[0,2,2,0,0,0],     f6:[1,3,4,1,1,1], a5:[null,0,2,2,1,0],   f5:[0,1,3,4,2,1] },
+                    '7':     { e6:[0,2,0,1,0,0],     f6:[1,3,1,2,1,1], a5:[null,0,2,0,2,0],   f5:[0,1,3,1,4,1] },
+                    'm7':    { e6:[0,2,0,0,0,0],     f6:[1,3,1,1,1,1], a5:[null,0,2,0,1,0],   f5:[0,1,3,1,2,1] },
+                    'maj7':  { e6:[0,2,1,1,0,0],     f6:[1,4,2,3,1,1], a5:[null,0,2,1,2,0],   f5:[0,1,3,2,4,1] },
+                    'm7b5':  { e6:[0,null,0,0,-1,null], f6:[2,0,3,4,1,0], a5:[null,0,1,0,1,null], f5:[0,1,3,2,4,0] },
+                    'dim7':  { e6:[0,null,-1,0,-1,null], f6:[3,0,1,4,2,0], a5:[null,0,1,-1,1,null], f5:[0,2,3,1,4,0] },
+                    'dim':   { e6:[0,null,-1,0,-1,null], f6:[3,0,1,4,2,0], a5:[null,0,1,-1,1,null], f5:[0,2,3,1,4,0] },
+                    'sus4':  { e6:[0,2,2,2,0,0],     f6:[1,3,4,4,1,1], a5:[null,0,2,2,3,0],   f5:[0,1,2,3,4,1] },
+                    'sus2':  { e6:[0,2,null,-1,0,0], f6:[1,3,0,2,1,1], a5:[null,0,2,2,0,0],   f5:[0,1,3,4,1,1] },
+                    '6':     { e6:[0,2,2,1,2,0],     f6:[1,3,4,2,4,1], a5:[null,0,2,2,2,2],   f5:[0,1,3,3,3,3] },
+                    'm6':    { e6:[0,2,2,0,2,0],     f6:[1,3,4,1,4,1], a5:[null,0,2,1,1,null], f5:[0,1,4,2,3,0] },
+                    '9':     { e6:[0,2,0,1,2,0],     f6:[1,3,1,2,4,1], a5:[null,0,2,0,2,2],   f5:[0,1,3,1,4,4] },
+                    'add9':  { e6:[0,2,2,1,0,2],     f6:[1,3,4,2,1,4], a5:[null,0,2,4,2,0],   f5:[0,1,2,4,3,0] },
+                    'm9':    { e6:[0,2,0,0,2,0],     f6:[1,3,1,1,4,1], a5:[null,0,2,0,1,2],   f5:[0,1,3,1,2,4] },
+                    'maj9':  { e6:[0,2,1,1,2,0],     f6:[1,3,2,2,4,1], a5:[null,0,2,1,2,2],   f5:[0,1,3,2,4,4] },
+                    'aug':   { e6:[0,3,2,1,1,null],  f6:[1,4,3,2,2,0], a5:[null,0,3,2,2,null], f5:[0,1,4,2,3,0] },
+                    '7sus4': { e6:[0,2,0,2,0,0],     f6:[1,3,1,4,1,1], a5:[null,0,2,0,3,0],   f5:[0,1,3,1,4,1] },
+                    '5':     { e6:[0,2,2,null,null,null], f6:[1,3,4,0,0,0], a5:[null,0,2,2,null,null], f5:[0,1,3,4,0,0] }
+                };
+                // 라이브러리에 없지만 훨씬 흔하게 쓰는 개방현 그립 — 이동식 폼보다 먼저 쓴다
+                var OPEN = {
+                    'Dsus4': { frets:[null,null,0,2,3,3], fingers:[0,0,0,1,3,4] },
+                    'Dsus2': { frets:[null,null,0,2,3,0], fingers:[0,0,0,1,2,0] },
+                    'Asus4': { frets:[null,0,2,2,3,0],    fingers:[0,0,1,2,4,0] },
+                    'Asus2': { frets:[null,0,2,2,0,0],    fingers:[0,0,1,2,0,0] },
+                    'Esus4': { frets:[0,2,2,2,0,0],       fingers:[0,1,2,3,0,0] },
+                    'Csus2': { frets:[null,3,0,0,3,3],    fingers:[0,2,0,0,3,4] },
+                    'Csus4': { frets:[null,3,3,0,1,1],    fingers:[0,3,4,0,1,1] },
+                    'Gsus4': { frets:[3,3,0,0,1,3],       fingers:[2,3,0,0,1,4] },
+                    'Cadd9': { frets:[null,3,2,0,3,0],    fingers:[0,2,1,0,3,0] },
+                    'Gadd9': { frets:[3,0,0,2,0,3],       fingers:[2,0,0,1,0,3] },
+                    'Dadd9': { frets:[null,5,4,2,3,0],    fingers:[0,4,3,1,2,0] },
+                    'C6':    { frets:[null,3,2,2,1,0],    fingers:[0,4,2,3,1,0] },
+                    'D6':    { frets:[null,null,0,2,0,2], fingers:[0,0,0,2,0,3] },
+                    'E6':    { frets:[0,2,2,1,2,0],       fingers:[0,2,3,1,4,0] },
+                    'G6':    { frets:[3,2,0,0,0,0],       fingers:[3,2,0,0,0,0] },
+                    'A6':    { frets:[null,0,2,2,2,2],    fingers:[0,0,1,1,1,1] },
+                    'Am6':   { frets:[null,0,2,2,1,2],    fingers:[0,0,2,3,1,4] },
+                    'Em6':   { frets:[0,2,2,0,2,0],       fingers:[0,2,3,0,4,0] },
+                    'Dm6':   { frets:[null,null,0,2,0,1], fingers:[0,0,0,2,0,1] },
+                    'Em9':   { frets:[0,2,0,0,0,2],       fingers:[0,2,0,0,0,3] },
+                    'Aadd9': { frets:[null,0,2,4,2,0],    fingers:[0,0,1,4,2,0] },
+                    'Fadd9': { frets:[null,null,3,2,1,3], fingers:[0,0,3,2,1,4] }
+                };
+                // 입력 표기 → SHAPES 키
+                function qualKey(rest) {
+                    var r = String(rest || '').replace(/♭/g, 'b').replace(/♯/g, '#').trim();
+                    var t = r.toLowerCase();
+                    if (!t) return '';
+                    if (t === 'm' || t === 'min' || t === '-') return 'm';
+                    if (t === 'maj7' || r === 'M7' || r === 'Δ7' || r === '△7' || r === 'Δ') return 'maj7';
+                    if (t === 'maj9' || t === 'm9(maj)' || r === 'M9') return 'maj9';
+                    if (t === 'm7' || t === 'min7' || t === '-7') return 'm7';
+                    if (t === 'm9' || t === 'min9') return 'm9';
+                    if (t === 'm6' || t === 'min6') return 'm6';
+                    if (t === 'm7b5' || t === 'min7b5' || r === 'ø' || r === 'ø7' || t === 'halfdim' || t === 'half-dim') return 'm7b5';
+                    if (t === 'dim7' || r === '°7' || t === 'o7') return 'dim7';
+                    if (t === 'dim' || r === '°' || t === 'o') return 'dim';
+                    if (t === 'aug' || t === 'augmented' || r === '+' || t === '+5' || t === '#5') return 'aug';
+                    if (t === '7sus4' || t === '7sus' || t === 'sus47') return '7sus4';
+                    if (t === 'sus4' || t === 'sus') return 'sus4';
+                    if (t === 'sus2') return 'sus2';
+                    if (t === 'add9' || t === 'add2' || t === '(add9)' || t === '2') return 'add9';
+                    if (t === '7') return '7';
+                    if (t === '9') return '9';
+                    if (t === '6' || t === '69' || t === '6/9') return '6';
+                    if (t === '11' || t === '13') return '9';       // 근사
+                    if (t === '5') return '5';                       // 파워코드
+                    if (/^7(b|#)(5|9|13)$/.test(t)) return '7';      // 7b9, 7#9, 7#5 … → 도미넌트로 근사
+                    if (/^m7/.test(t)) return 'm7';
+                    if (/^maj/.test(t)) return 'maj7';
+                    if (/^m/.test(t) && !/^maj/.test(t)) return 'm';
+                    return null;
+                }
+                function buildMovable(rootPc, key, displayName) {
+                    var S = SHAPES[key];
+                    if (!S) return null;
+                    // 6번줄 루트(개방 E=4) 프렛 · 5번줄 루트(개방 A=9) 프렛 → 둘 중 낮은 자리 채택
+                    var cands = [
+                        { off: S.e6, fg: S.f6, P: ((rootPc - 4) % 12 + 12) % 12 },
+                        { off: S.a5, fg: S.f5, P: ((rootPc - 9) % 12 + 12) % 12 }
+                    ].filter(function(c) { return c.off; });
+                    cands.forEach(function(c) {
+                        var lo = function() {
+                            return Math.min.apply(null, c.off.filter(function(o) { return o !== null; })
+                                                             .map(function(o) { return c.P + o; }));
+                        };
+                        while (lo() < 0) c.P += 12;                 // 음수 프렛 방지
+                        c.frets = c.off.map(function(o) { return o === null ? null : c.P + o; });
+                        var pressed = c.frets.filter(function(f) { return f != null && f > 0; });
+                        c.hi = pressed.length ? Math.max.apply(null, pressed) : 0;
+                    });
+                    cands.sort(function(a, b) { return a.hi - b.hi; });
+                    var pick = cands[0];
+                    if (!pick) return null;
+                    var obj = { name: displayName, cat: 'auto', level: 3,
+                                frets: pick.frets, fingers: pick.fg.slice(), _generated: true };
+                    var pr = pick.frets.filter(function(f) { return f != null && f > 0; });
+                    if (pr.length) {
+                        var maxF = Math.max.apply(null, pr), minF = Math.min.apply(null, pr);
+                        if (maxF > 4) { obj.startFret = Math.max(0, minF - 1); obj.labelAt = 1; }
+                    }
+                    return obj;
+                }
+                // 소문자로 쳐도 알아듣게 — 루트(와 슬래시 베이스)의 첫 글자만 대문자로.
+                //   'c'→'C', 'am7'→'Am7', 'f#m'→'F#m', 'bb'→'Bb', 'c/g'→'C/G'
+                //   뒤쪽은 손대지 않는다: m(마이너) 과 M(메이저7) 처럼 대소문자가 뜻을 가른다.
+                window._normalizeChordInput = function(s) {
+                    var t = String(s || '').trim().replace(/♭/g, 'b').replace(/♯/g, '#');
+                    if (!t) return '';
+                    t = t.replace(/^([a-g])/, function(_, c) { return c.toUpperCase(); });
+                    t = t.replace(/\/\s*([a-g])/, function(_, c) { return '/' + c.toUpperCase(); });
+                    return t;
+                };
+                window._findChordDiagramByName = function(raw) {
+                    if (!raw) return null;
+                    var name = window._normalizeChordInput(String(raw).split('\n')[0]);
+                    if (!name) return null;
+                    // 슬래시 베이스 분리 — 다이어그램은 윗화음 기준으로 그리고 이름만 원본 유지
+                    var display = name, upper = name;
+                    var si = name.lastIndexOf('/');
+                    if (si > 0 && /^[A-G][#b]?$/.test(name.slice(si + 1))) upper = name.slice(0, si);
+                    var m = upper.match(/^([A-G][#b]?)(.*)$/);
+                    if (!m) return null;
+                    var rootPc = PC[m[1]];
+                    if (rootPc === undefined) return null;
+                    var rest = (m[2] || '').trim();
+                    var cands = [upper, SHARP[rootPc] + rest, FLAT[rootPc] + rest];
+                    if (/b5/.test(rest)) cands.push(SHARP[rootPc] + rest.replace(/b5/, '♭5'),
+                                                    FLAT[rootPc] + rest.replace(/b5/, '♭5'));
+                    // 1) 자주 쓰는 개방현 그립 (라이브러리에 없는 sus/add9/6 등)
+                    for (var j = 0; j < cands.length; j++) {
+                        var op = OPEN[cands[j]];
+                        if (op) {
+                            return { name: display, cat: 'open', level: 2,
+                                     frets: op.frets.slice(), fingers: op.fingers.slice() };
+                        }
+                    }
+                    // 2) 라이브러리 일치.
+                    //    손으로 정리한 기본 그립(cat !== 'jazz')이 있으면 그걸 먼저 —
+                    //    자동 생성된 재즈 보이싱은 음이 적어 "프렛이 낮다"는 이유로 이기면
+                    //    개방 Am7·E7 같은 표준 그립을 밀어내 버린다.
+                    var best = null, bestHi = Infinity;
+                    cands.forEach(function(cn) {
+                        var want = cn.toLowerCase();
+                        CHORDS.forEach(function(c) {
+                            if (c.name.toLowerCase() !== want) return;
+                            if (best && best.cat !== 'jazz' && c.cat === 'jazz') return;
+                            var pr = c.frets.filter(function(f) { return f != null && f > 0; });
+                            var hi = pr.length ? Math.max.apply(null, pr) : 0;
+                            // 기본 그립이 처음 나오면 재즈 후보를 밀어내고 채택
+                            if (c.cat !== 'jazz' && (!best || best.cat === 'jazz')) { bestHi = hi; best = c; return; }
+                            if (hi < bestHi) { bestHi = hi; best = c; }
+                        });
+                    });
+                    if (best) {
+                        var cp = Object.assign({}, best);
+                        cp.name = display;      // 악보에 적힌 표기 그대로 (Bb, C/G …)
+                        return cp;
+                    }
+                    // 3) 이동식 폼 생성
+                    var key = qualKey(rest);
+                    if (key === null) return null;
+                    return buildMovable(rootPc, key, display);
+                };
+            })();
 
             let chordsRendered = false;
             let currentFilter = 'all';
