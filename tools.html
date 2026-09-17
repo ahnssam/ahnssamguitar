@@ -17868,6 +17868,10 @@
                 _saveLoopImage('png', m.name, m.artist, m.capo);
             };
 
+            // 악보검색(로컬 툴)에서 '인쇄 모양' 미리보기를 띄울 수 있게 페이지 빌더를 노출한다.
+            window._lpBuildPages = function(title, artist, capo) { return _buildPages(title, artist, capo); };
+            window._lpRhythmBlk = function() { return _lpRhythmBlock(); };
+
             window.openPrintDialog = function() {
                 if (!hasLoopInput()) { loopToast('먼저 코드를 입력해주세요'); return; }
                 var ov = loopEnsureModal('loopPrintModal',
@@ -20323,7 +20327,7 @@
                 const labelRelFret = (chord.labelAt !== undefined) ? chord.labelAt : 1;
                 const TOP_Y = mini ? 19 : 22;
                 const STR_SP = 10;
-                const FR_W = mini ? 15 : 22;
+                const FR_W = mini ? 12 : 22;   // mini: 좌우 폭을 살짝 줄임 (15→12)
                 const NUT_X = mini ? 22 : 28;
                 const OPEN_X = NUT_X - (mini ? 8 : 10);      // ×/○ 표시 x
                 const RIGHT_PAD = mini ? 7 : 14;
@@ -20337,7 +20341,10 @@
                 // SVG strokes/fills use currentColor so the parent .chord-card's
                 // CSS `color` controls the chord look — easy light/dark theming.
                 let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
-                svg += `<text x="${W/2}" y="${mini ? 12 : 14}" text-anchor="middle" fill="currentColor" font-size="${mini ? 12 : 13}" font-weight="700" font-family="'Playfair Display', serif">${chord.name}</text>`;
+                // mini(코드악보용) 는 코드명을 '지판' 기준 가운데로 — 왼쪽 ×/○ 여백 때문에
+                //   전체 폭 가운데(W/2)로 두면 지판보다 왼쪽으로 밀려 보인다.
+                const nameX = mini ? (NUT_X + boardRight) / 2 : W / 2;
+                svg += `<text x="${nameX}" y="${mini ? 12 : 14}" text-anchor="middle" fill="currentColor" font-size="${mini ? 12 : 13}" font-weight="700" font-family="'Playfair Display', serif">${chord.name}</text>`;
                 if (chord.sub && !mini) {
                     svg += `<text x="${W/2}" y="${H - 2.5}" text-anchor="middle" fill="currentColor" opacity="0.55" font-size="6.6" font-family="'Noto Sans KR', sans-serif">${chord.sub}</text>`;
                 }
