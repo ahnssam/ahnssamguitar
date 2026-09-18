@@ -7512,11 +7512,25 @@
         .loop-grid.cols-16 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         .loop-grid.cols-32 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         /* 그리드 아래 '4마디 추가' — 희미한 점선 버튼 */
-        .loop-add-bars { display: flex; align-items: stretch; gap: 6px; width: 100%; margin: 0.15rem 0 0.6rem; min-height: 46px; }
+        /* −1 / ＋4마디 / +1 / 편집 — 네 버튼 동일 폭 + 줄 가운데 정렬.
+           주의: .loop-add-bars-main 에 flex:1 을 주면 남는 폭을 전부 먹어서
+           width 를 줘도 안 먹으므로 반드시 flex: 0 0 auto 로 고정한다. */
+        .loop-add-bars { display: flex; align-items: stretch; justify-content: center; gap: 6px; width: 100%; margin: 0.15rem 0 0.6rem; min-height: 46px; }
         .loop-add-bars > * { min-height: 46px; }
+        .loop-add-bars > .loop-add-pm,
+        .loop-add-bars > .loop-add-bars-main,
+        .loop-add-bars > .loop-edit-btn {
+            flex: 0 0 auto; width: 104px; min-width: 0; box-sizing: border-box;
+        }
+        @media (max-width: 560px) {
+            .loop-add-bars { gap: 4px; }
+            .loop-add-bars > .loop-add-pm,
+            .loop-add-bars > .loop-add-bars-main,
+            .loop-add-bars > .loop-edit-btn { width: 76px; font-size: 0.78rem; }
+            .loop-add-bars > .loop-add-pm { font-size: 0.82rem; }
+        }
         .loop-add-bars-main {
-            /* +4마디 — 가로는 살짝 좁게 (−1/+1/편집이 넓어진 만큼 자연히 줄어듦) */
-            flex: 1 1 auto; padding: 0.42rem 0.5rem; border: 1px dashed rgba(42,107,74,0.3); border-radius: 8px;
+            padding: 0.42rem 0.5rem; border: 1px dashed rgba(42,107,74,0.3); border-radius: 8px;
             background: transparent; color: rgba(42,107,74,0.55);
             font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer;
             transition: background .15s, color .15s, border-color .15s;
@@ -7525,15 +7539,22 @@
         .loop-add-bars-main:disabled { opacity: 0.3; cursor: default; }
         /* −1 / +1 — +4마디 와 동일한 투명 점선 스타일 (hover 시 색) */
         .loop-add-pm {
-            /* −1 / +1 — 가로 살짝 넓게 */
-            width: auto; min-width: 64px; height: auto; padding: 0 20px; border-radius: 8px;
+            height: auto; padding: 0 10px; border-radius: 8px;
             border: 1px dashed rgba(42,107,74,0.3); background: transparent; color: rgba(42,107,74,0.55);
             font-size: 0.9rem; font-weight: 700;
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem;
+            white-space: nowrap;
+        }
+        /* +1 안의 드래그 손잡이(⠿) — "끌어서 사이에 끼울 수 있다" 표시 */
+        .loop-plus-grip { font-size: 0.8rem; opacity: 0.55; line-height: 1; }
+        /* 드래그 중 고스트 복제본 방지 */
+        #loopPlusBtn, .loop-cell-move {
+            -webkit-user-drag: none; user-select: none; -webkit-user-select: none; touch-action: none;
         }
         /* 편집 버튼 — +1 오른쪽 */
         .loop-edit-btn {
             display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem;
-            min-width: 74px; padding: 0 16px; border-radius: 8px;
+            padding: 0 10px; border-radius: 8px;
             border: 1px dashed rgba(42,107,74,0.3); background: transparent; color: rgba(42,107,74,0.6);
             font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; white-space: nowrap;
             transition: background .15s, color .15s, border-color .15s;
@@ -7556,15 +7577,43 @@
             display: flex; align-items: center; justify-content: center;
         }
         .loop-cell-del:hover { background: #e04b39; transform: scale(1.12); }
-        /* +1 을 끌어와 삽입할 위치 표시 */
-        body.loop-inserting { cursor: copy; }
-        .loop-cell.insert-target { outline: 2px dashed var(--green-deep); outline-offset: 2px; }
-        .loop-cell.insert-target::before {
-            content: '여기 삽입'; position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%,-50%); z-index: 14;
-            background: var(--green-deep); color: #fff; font-size: 0.62rem; font-weight: 700;
-            padding: 0.12rem 0.35rem; border-radius: 6px; white-space: nowrap; pointer-events: none;
+        /* 마디 사이 "틈"에 표시되는 드롭 위치선 —
+           document.body 에 fixed 로 붙여 뷰포트 좌표를 쓴다.
+           (그리드에 붙이면 offset parent 가 달라져 위치가 어긋남) */
+        body.loop-inserting { cursor: grabbing; }
+        body.loop-inserting .loop-cell { cursor: grabbing; }
+        .bar-drop {
+            position: fixed; width: 4px; border-radius: 3px;
+            background: var(--green-deep);
+            box-shadow: 0 0 10px rgba(42,107,74,0.55);
+            pointer-events: none; z-index: 10000;
         }
+        .bar-drop::after {                  /* 선 한가운데 동그란 ＋ */
+            content: '＋';
+            position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+            width: 30px; height: 30px; border-radius: 50%; box-sizing: border-box;
+            background: var(--green-deep); color: #fff; border: 2px solid rgba(255,255,255,0.92);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: 800; line-height: 1;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.35);
+        }
+        /* Ctrl/Cmd 를 누른 채 끌면 "복사" — 색과 기호를 바꿔 구분 */
+        .bar-drop.copy { background: #c9761f; box-shadow: 0 0 10px rgba(201,118,31,0.55); }
+        .bar-drop.copy::after { content: '⧉'; background: #c9761f; }
+        /* 편집 모드 — 마디 이동 손잡이(⠿), 오른쪽 아래 모서리 */
+        .loop-cell-move {
+            position: absolute; bottom: -7px; right: -7px; z-index: 12;
+            width: 20px; height: 20px; line-height: 1; padding: 0;
+            border-radius: 50%; border: 1px solid #fff;
+            background: var(--green-deep); color: #fff;
+            font-family: inherit; font-size: 0.72rem; font-weight: 800;
+            cursor: grab; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .loop-cell-move:hover { transform: scale(1.12); }
+        .loop-cell-move:active { cursor: grabbing; }
+        /* 이동 중인 원본 마디 — 흐리게 */
+        .loop-cell.bar-moving { opacity: 0.4; }
         .loop-add-pm:hover { background: rgba(42,107,74,0.07); color: var(--green-deep); border-color: rgba(42,107,74,0.5); }
         .loop-add-pm:disabled { opacity: 0.3; cursor: default; }
         :root[data-theme="dark"] .loop-add-bars-main,
@@ -9147,8 +9196,8 @@
                     <div class="loop-add-bars">
                         <button type="button" class="loop-measures-pm loop-add-pm" data-action="adjustLoopBars" data-args="-1" aria-label="마디 1개 줄이기">−1</button>
                         <button type="button" class="loop-add-bars-main" id="loopAddBarsBtn" data-action="addLoopBars4" title="4마디 추가">＋ 4마디</button>
-                        <button type="button" class="loop-measures-pm loop-add-pm" id="loopPlusBtn" data-action="adjustLoopBars" data-args="1" aria-label="마디 1개 늘리기" title="클릭: 맨 뒤에 1마디 추가 · (편집 중) 드래그해서 마디 사이에 끼워넣기">+1</button>
-                        <button type="button" class="loop-edit-btn" id="loopEditBtn" data-action="toggleLoopEditMode" aria-pressed="false" title="마디 편집 — 마디 삭제(−) / +1 드래그로 중간 삽입"><i class="fas fa-pen"></i> 편집</button>
+                        <button type="button" class="loop-measures-pm loop-add-pm" id="loopPlusBtn" data-args="1" draggable="false" aria-label="마디 1개 늘리기" title="클릭: 맨 뒤에 1마디 추가 · 드래그: 마디 사이에 끼워넣기"><span class="loop-plus-grip" aria-hidden="true">⠿</span>+1</button>
+                        <button type="button" class="loop-edit-btn" id="loopEditBtn" data-action="toggleLoopEditMode" aria-pressed="false" title="마디 편집 — 마디 삭제(−) / ⠿ 드래그로 마디 이동 (Ctrl·Cmd 누르고 끌면 복사)"><i class="fas fa-pen"></i> 편집</button>
                     </div>
                     <!-- 전체 키 + 초기화 — 그리드와 BPM 사이 -->
                     <div class="loop-transpose-row">
@@ -16748,6 +16797,29 @@
                             });
                         })(i);
                         cell.appendChild(delBtn);
+                        // ─── 편집 모드: 마디 이동 손잡이(⠿) ───────────────────
+                        //   끌어서 다른 틈에 놓으면 이동, Ctrl/Cmd 누른 채면 복사.
+                        var mvBtn = document.createElement('button');
+                        mvBtn.type = 'button';
+                        mvBtn.className = 'loop-cell-move';
+                        mvBtn.textContent = '⠿';
+                        mvBtn.setAttribute('draggable', 'false');
+                        mvBtn.title = (i + 1) + '번 마디 이동 — 끌어서 놓기 (Ctrl·Cmd 누르고 끌면 복사)';
+                        mvBtn.addEventListener('dragstart', function(ev) { ev.preventDefault(); });
+                        (function(idx, cellEl) {
+                            mvBtn.addEventListener('pointerdown', function(ev) {
+                                ev.preventDefault(); ev.stopPropagation();
+                                if (loopActiveCommit) loopActiveCommit();
+                                closeLoopPicker();
+                                cellEl.classList.add('bar-moving');
+                                _beginBarDrag(ev, {
+                                    copyAware: true,
+                                    onDrop: function(target, copy) { window.moveLoopBar(idx, target, copy); },
+                                    onEnd: function() { cellEl.classList.remove('bar-moving'); }
+                                });
+                            });
+                        })(i, cell);
+                        cell.appendChild(mvBtn);
                     }
                     _cells.push(cell);
                 }
@@ -16798,6 +16870,7 @@
                 // 좌측 가장자리 — 클릭(도돌이 토글) + 드래그(마디 범위 선택) 핸들러.
                 // grid 위임 방식으로 한 번만 부착 (재렌더 후에도 동일 grid 엘리먼트라 유효).
                 _bindLoopEdgeInteractions(grid);
+                _bindLoopPlusDrag();   // +1 드래그는 편집 모드와 무관하게 항상 활성
                 // 코드 텍스트가 네모를 넘치지 않게 글자 크기 맞춤 (멀티라인 포함).
                 grid.querySelectorAll('.loop-cell-half[data-fit]').forEach(function(el) {
                     _fitChordText(el);
@@ -18081,6 +18154,53 @@
                 window.setLoopBars(loopBars - 1);
                 try { loopOnStateChange(); } catch (e) {}
             };
+            // ── 마디 이동 / 복사 ────────────────────────────────────────
+            //   한 마디의 내용(코드 a~d · 볼타 · 송폼 · 도돌이)을 통째로 읽고 쓴다.
+            function _loopBarData(idx) {
+                return {
+                    a: loopChords[idx], b: loopChordsB[idx],
+                    c: loopChordsC[idx], d: loopChordsD[idx],
+                    volta: loopVoltas[idx], songform: loopSongForm[idx],
+                    repL: loopRepeats.left.has(idx), repR: loopRepeats.right.has(idx)
+                };
+            }
+            function _setLoopBarData(idx, d) {
+                function put(map, v) {
+                    if (v == null || v === '') delete map[idx]; else map[idx] = v;
+                }
+                put(loopChords, d.a);  put(loopChordsB, d.b);
+                put(loopChordsC, d.c); put(loopChordsD, d.d);
+                put(loopVoltas, d.volta); put(loopSongForm, d.songform);
+                if (d.repL) loopRepeats.left.add(idx);  else loopRepeats.left.delete(idx);
+                if (d.repR) loopRepeats.right.add(idx); else loopRepeats.right.delete(idx);
+            }
+            //   from 마디를 to "틈"으로 옮긴다. copy=true 면 원본을 두고 복제.
+            //   to 는 삽입 틈 인덱스(0 = 맨 앞, loopBars = 맨 뒤).
+            window.moveLoopBar = function(from, to, copy) {
+                from = parseInt(from, 10); to = parseInt(to, 10);
+                if (isNaN(from) || isNaN(to)) return;
+                if (from < 0 || from >= loopBars) return;
+                to = Math.max(0, Math.min(loopBars, to));
+                var data = _loopBarData(from);
+                if (copy) {
+                    if (loopBars >= LOOP_BARS_MAX) return;
+                    _shiftAllLoopMaps(to, 1);              // to 이상 한 칸 밀기
+                    _setLoopBarData(to, data);
+                    window.setLoopBars(loopBars + 1);      // 내부에서 재렌더
+                } else {
+                    // 제자리(자기 앞/뒤 틈)로 놓으면 아무 일도 없음
+                    if (to === from || to === from + 1) return;
+                    if (loopBars <= LOOP_BARS_MIN) return;
+                    _shiftAllLoopMaps(from, -1);           // 원본 제거
+                    var t = (to > from) ? to - 1 : to;     // 제거로 당겨진 만큼 보정
+                    _shiftAllLoopMaps(t, 1);               // 넣을 자리 벌리기
+                    _setLoopBarData(t, data);
+                    renderLoopGrid();                      // 마디 수는 그대로
+                    resetPlaybackPosition();
+                }
+                try { loopOnStateChange(); } catch (e) {}
+            };
+
             window.toggleLoopEditMode = function() {
                 loopEditMode = !loopEditMode;
                 var b = document.getElementById('loopEditBtn');
@@ -18091,55 +18211,133 @@
                 renderLoopGrid();
                 if (loopEditMode) _bindLoopPlusDrag();
             };
-            // +1 버튼을 마디 위로 드래그 → 그 자리에 빈 마디 삽입 (편집 모드에서만)
+            // ── 마디 사이 "틈" 드롭 위치선 ────────────────────────────────
+            //   후보는 틈 하나당 하나. 8마디면 후보 9개(맨 앞 + 사이 7 + 맨 뒤)이고
+            //   위치는 (앞마디.right + 뒷마디.left)/2 — 마디의 좌/우 끝을 각각
+            //   후보로 넣으면 같은 틈에 후보가 둘이 생겨 선이 좌우로 튄다.
+            var _barDrop = { el: null, target: -1 };
+            function _barDropEl() {
+                if (!_barDrop.el) {
+                    var m = document.createElement('div');
+                    m.className = 'bar-drop';
+                    document.body.appendChild(m);   // fixed + 뷰포트 좌표
+                    _barDrop.el = m;
+                }
+                return _barDrop.el;
+            }
+            function _barDropHide() {
+                if (_barDrop.el && _barDrop.el.parentNode) _barDrop.el.parentNode.removeChild(_barDrop.el);
+                _barDrop.el = null;
+                _barDrop.target = -1;
+            }
+            // 커서 위치 → 삽입 인덱스. 그리드 밖이면 선을 지우고 -1.
+            function _barDropUpdate(clientX, clientY, isCopy) {
+                var grid = document.getElementById('loopGrid');
+                if (!grid) { _barDropHide(); return -1; }
+                var cells = [].slice.call(grid.querySelectorAll('.loop-cell'));
+                if (!cells.length) { _barDropHide(); return -1; }
+                // 그리드 밖(여유 PAD) → 취소. 이 상태로 놓으면 아무 일도 없어야 한다.
+                var g = grid.getBoundingClientRect(), PAD = 40;
+                if (clientX < g.left - PAD || clientX > g.right + PAD ||
+                    clientY < g.top - PAD  || clientY > g.bottom + PAD) {
+                    _barDropHide(); return -1;
+                }
+                var rects = cells.map(function(c) {
+                    return { r: c.getBoundingClientRect(), i: parseInt(c.dataset.idx, 10) };
+                }).filter(function(o) {
+                    // 숨겨진 페이지의 마디(rect 0) 는 후보에서 제외
+                    return !isNaN(o.i) && o.r.width > 0 && o.r.height > 0;
+                });
+                if (!rects.length) { _barDropHide(); return -1; }
+                // ① 커서가 있는 줄(row)을 먼저 확정 — 안 그러면 윗줄·아랫줄 경계가 섞인다
+                var rowTop = null, bestDy = 1e9;
+                rects.forEach(function(o) {
+                    var r = o.r;
+                    var dy = (clientY < r.top) ? (r.top - clientY)
+                           : (clientY > r.bottom) ? (clientY - r.bottom) : 0;
+                    if (dy < bestDy - 0.5) { bestDy = dy; rowTop = r.top; }
+                });
+                // ② 그 줄 안에서만 좌우로 틈 후보를 만든다
+                var row = rects.filter(function(o) { return Math.abs(o.r.top - rowTop) <= 2; });
+                row.sort(function(p, q) { return p.r.left - q.r.left; });
+                if (!row.length) { _barDropHide(); return -1; }
+                var gaps = [{ x: row[0].r.left - 5, idx: row[0].i }];
+                for (var k = 1; k < row.length; k++) {
+                    gaps.push({ x: (row[k - 1].r.right + row[k].r.left) / 2, idx: row[k].i });
+                }
+                var last = row[row.length - 1];
+                gaps.push({ x: last.r.right + 5, idx: last.i + 1 });
+                var pick = gaps[0];
+                gaps.forEach(function(gp) {
+                    if (Math.abs(clientX - gp.x) < Math.abs(clientX - pick.x)) pick = gp;
+                });
+                var m = _barDropEl();
+                m.classList.toggle('copy', !!isCopy);
+                m.style.left   = (pick.x - 2) + 'px';
+                m.style.top    = row[0].r.top + 'px';
+                m.style.height = row[0].r.height + 'px';
+                _barDrop.target = pick.idx;
+                return pick.idx;
+            }
+            // 공용 드래그 시작 — opts: { onDrop(targetIdx, ev), onClick(ev), copyAware }
+            function _beginBarDrag(startEv, opts) {
+                var pid = startEv.pointerId, moved = false;
+                var sx = startEv.clientX, sy = startEv.clientY, THRESH = 4;
+                function isCopy(ev) { return !!(opts.copyAware && (ev.ctrlKey || ev.metaKey)); }
+                function onMove(ev) {
+                    if (ev.pointerId !== pid) return;
+                    if (!moved) {
+                        var dx = ev.clientX - sx, dy = ev.clientY - sy;
+                        if (dx * dx + dy * dy < THRESH * THRESH) return;
+                        moved = true;
+                        document.body.classList.add('loop-inserting');
+                    }
+                    _barDropUpdate(ev.clientX, ev.clientY, isCopy(ev));
+                }
+                function onUp(ev) {
+                    if (ev.pointerId !== pid) return;
+                    var t = _barDrop.target, copy = isCopy(ev);
+                    cleanup();
+                    if (moved) { if (t >= 0 && opts.onDrop) opts.onDrop(t, copy, ev); }
+                    else if (opts.onClick) opts.onClick(ev);
+                }
+                function onKey(ev) { if (ev.key === 'Escape') { moved = false; cleanup(); } }
+                function cleanup() {
+                    document.body.classList.remove('loop-inserting');
+                    _barDropHide();
+                    if (opts.onEnd) opts.onEnd();
+                    document.removeEventListener('pointermove', onMove, true);
+                    document.removeEventListener('pointerup', onUp, true);
+                    document.removeEventListener('pointercancel', onUp, true);
+                    document.removeEventListener('keydown', onKey, true);
+                }
+                document.addEventListener('pointermove', onMove, true);
+                document.addEventListener('pointerup', onUp, true);
+                document.addEventListener('pointercancel', onUp, true);
+                document.addEventListener('keydown', onKey, true);
+            }
+
+            // +1 버튼 — 클릭: 맨 뒤 1마디 추가 / 드래그: 마디 사이에 끼워넣기 (항상 가능)
             function _bindLoopPlusDrag() {
                 var plus = document.getElementById('loopPlusBtn');
                 if (!plus || plus.dataset.dragBound) return;
                 plus.dataset.dragBound = '1';
-                var dragging = false, moved = false;
-                function clearTargets() {
-                    document.querySelectorAll('.loop-cell.insert-target').forEach(function(c) {
-                        c.classList.remove('insert-target');
-                    });
-                }
-                function cellAt(x, y) {
-                    var el = document.elementFromPoint(x, y);
-                    return (el && el.closest) ? el.closest('.loop-cell') : null;
-                }
+                plus.setAttribute('draggable', 'false');
+                plus.addEventListener('dragstart', function(e) { e.preventDefault(); });
                 plus.addEventListener('pointerdown', function(e) {
-                    if (!loopEditMode) return;
-                    dragging = true; moved = false;
-                    try { plus.setPointerCapture(e.pointerId); } catch (err) {}
-                    document.body.classList.add('loop-inserting');
+                    if (plus.disabled) return;
+                    // preventDefault — 브라우저가 버튼을 반투명 복제해 커서를 따라다니게 하는 것 방지
+                    e.preventDefault();
+                    _beginBarDrag(e, {
+                        onDrop: function(target) {
+                            if (loopActiveCommit) loopActiveCommit();
+                            closeLoopPicker();
+                            window.insertLoopBarAt(target);
+                        },
+                        // 움직이지 않았으면 기존 동작 — 맨 뒤에 1마디 추가
+                        onClick: function() { window.adjustLoopBars(1); }
+                    });
                 });
-                plus.addEventListener('pointermove', function(e) {
-                    if (!dragging) return;
-                    moved = true;
-                    clearTargets();
-                    var c = cellAt(e.clientX, e.clientY);
-                    if (c) c.classList.add('insert-target');
-                });
-                plus.addEventListener('pointerup', function(e) {
-                    if (!dragging) return;
-                    dragging = false;
-                    document.body.classList.remove('loop-inserting');
-                    var c = cellAt(e.clientX, e.clientY);
-                    clearTargets();
-                    if (moved && c) {
-                        var idx = parseInt(c.dataset.idx, 10);
-                        if (!isNaN(idx)) {
-                            plus.dataset.suppressClick = '1';   // 끝에 추가되는 기본 동작 차단
-                            window.insertLoopBarAt(idx);
-                        }
-                    }
-                });
-                // 드래그로 삽입했으면 뒤이어 오는 click(=맨 뒤 +1)을 막는다
-                plus.addEventListener('click', function(e) {
-                    if (plus.dataset.suppressClick) {
-                        delete plus.dataset.suppressClick;
-                        e.preventDefault(); e.stopPropagation();
-                    }
-                }, true);
             }
 
             window.setLoopBassStyle = function(style) {
