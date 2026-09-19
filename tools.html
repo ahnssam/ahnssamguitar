@@ -15570,18 +15570,19 @@
                 gtag('event', 'loop_preset_apply', { id: p.id, name: p.name, hasCustom: !!_loopActivePresetSequencer });
             }
 
-            // ── 코드악보 부가 데이터 연결 (다이어그램·리듬·송폼 흐름) ──
-            //   악보검색(로컬) 툴이 저장해둔 sequencer_pattern.chordDiagrams /
-            //   rhythmPatterns / formFlow 를, 관리자 계정으로 로그인한 홈페이지에서도
-            //   로컬 툴과 똑같이 전역에 실어 화면(다이어그램 줄)과 인쇄에 반영한다.
-            //   로컬 툴 모드에선 툴이 직접 관리하므로 건드리지 않는다.
+            // ── 코드악보 부가 데이터 연결 (코드 다이어그램) ──
+            //   악보검색(로컬) 툴이 저장해둔 sequencer_pattern.chordDiagrams 를,
+            //   관리자 계정으로 로그인한 홈페이지에서도 화면(다이어그램 줄)과
+            //   인쇄에 똑같이 반영한다. 로컬 툴 모드에선 툴이 직접 관리하므로 건드리지 않는다.
+            //   NOTE: 리듬 패턴(rhythmPatterns)·송폼 흐름(formFlow) 은 여기서 다루지 않는다.
+            //   로컬 툴은 슬래시 기보 SVG 를 자체 생성해 넣는데 홈페이지엔 그 생성기가 없어
+            //   ↓↑✕ 격자라는 다른 모양으로 나오기 때문. 홈페이지 자체 리듬 입력 기능이
+            //   생기면 그때 함께 정리할 것.
             function _syncChartExtras() {
                 if (typeof _localToolToken === 'function' && _localToolToken()) return;
                 var sp = _loopActivePresetSequencer;
                 var show = _loopIsAdmin() && !!sp;
                 window.__LOCAL_TOOL_CHORDDIAG = (show && Array.isArray(sp.chordDiagrams)) ? sp.chordDiagrams.slice() : [];
-                window.__LOCAL_TOOL_RHYTHM   = (show && Array.isArray(sp.rhythmPatterns)) ? sp.rhythmPatterns.slice() : [];
-                window.__LOCAL_TOOL_FORMFLOW = (show && Array.isArray(sp.formFlow)) ? sp.formFlow.slice() : [];
                 if (typeof window.renderLoopChordDiagrams === 'function') window.renderLoopChordDiagrams();
             }
             // 로그인이 프리셋 적용보다 늦게 풀리는 경우 — auth 확정 시 한 번 더 동기화
