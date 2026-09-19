@@ -15557,6 +15557,8 @@
                 loopVoltas = (sp && sp.voltas && typeof sp.voltas === 'object') ? Object.assign({}, sp.voltas) : {};
                 // 송폼(구성) 라벨 — 있으면 로드, 없으면 초기화
                 loopSongForm = (sp && sp.songForm && typeof sp.songForm === 'object') ? Object.assign({}, sp.songForm) : {};
+                // 코드악보 부가 데이터(다이어그램·리듬·송폼 흐름) — 관리자 로그인 시 홈에서도 표시
+                _syncChartExtras();
                 renderLoopGrid();
                 if (typeof updateLoopStyleAvailability === 'function') updateLoopStyleAvailability();
                 // 재생 위치 리셋
@@ -15567,6 +15569,25 @@
                 if (search) search.value = p.name;
                 gtag('event', 'loop_preset_apply', { id: p.id, name: p.name, hasCustom: !!_loopActivePresetSequencer });
             }
+
+            // ── 코드악보 부가 데이터 연결 (다이어그램·리듬·송폼 흐름) ──
+            //   악보검색(로컬) 툴이 저장해둔 sequencer_pattern.chordDiagrams /
+            //   rhythmPatterns / formFlow 를, 관리자 계정으로 로그인한 홈페이지에서도
+            //   로컬 툴과 똑같이 전역에 실어 화면(다이어그램 줄)과 인쇄에 반영한다.
+            //   로컬 툴 모드에선 툴이 직접 관리하므로 건드리지 않는다.
+            function _syncChartExtras() {
+                if (typeof _localToolToken === 'function' && _localToolToken()) return;
+                var sp = _loopActivePresetSequencer;
+                var show = _loopIsAdmin() && !!sp;
+                window.__LOCAL_TOOL_CHORDDIAG = (show && Array.isArray(sp.chordDiagrams)) ? sp.chordDiagrams.slice() : [];
+                window.__LOCAL_TOOL_RHYTHM   = (show && Array.isArray(sp.rhythmPatterns)) ? sp.rhythmPatterns.slice() : [];
+                window.__LOCAL_TOOL_FORMFLOW = (show && Array.isArray(sp.formFlow)) ? sp.formFlow.slice() : [];
+                if (typeof window.renderLoopChordDiagrams === 'function') window.renderLoopChordDiagrams();
+            }
+            // 로그인이 프리셋 적용보다 늦게 풀리는 경우 — auth 확정 시 한 번 더 동기화
+            window.addEventListener('ahnssam-auth-settled', function() {
+                try { if (_loopActivePresetId) _syncChartExtras(); } catch (e) {}
+            });
 
             function openLoopPresetList() {
                 var list = document.getElementById('loopPresetList');
@@ -18568,6 +18589,8 @@
                 _loopActivePresetId = null;
                 _loopActiveMeta = null;
                 _loopActivePresetRhythm = null;
+                // 코드악보 부가 데이터(다이어그램·리듬)도 함께 비움 (관리자 홈 표시용)
+                try { _syncChartExtras(); } catch (e) {}
                 try { _updateLoopCapoNote(null); } catch (e) {}
                 _loopSavedSlot = null; _loopSavedName = null; _loopSavedArtist = null;
                 var _sbR = document.getElementById('loopSavePresetBtn');
