@@ -15839,14 +15839,27 @@
             function _deckEnsure() {
                 var host = document.getElementById('chartDeck');
                 if (host) return host;
-                var sec = document.getElementById('loopSection');
+                // 반주 패널 자체에 붙인다 — 열면 흰 박스 오른쪽 빈 공간으로 나란히 선다
+                var sec = document.getElementById('metronomePanel') || document.getElementById('loopSection');
                 if (!sec) return null;
                 if (!document.getElementById('chart-deck-css')) {
                     var st = document.createElement('style');
                     st.id = 'chart-deck-css';
                     st.textContent = [
-                        '#chartDeck{display:none;margin-top:1rem;padding-top:.9rem;border-top:2px dashed rgba(42,107,74,.3)}',
+                        // 작업대는 반주 흰 박스 오른쪽에 나란히 서는 별도 카드
+                        '#chartDeck{display:none;background:var(--bg-panel);border:1px solid rgba(42,107,74,.12);',
+                        'border-radius:14px;padding:1.1rem 1rem;margin-bottom:.8rem;min-width:0}',
                         '#chartDeck.open{display:block}',
+                        'body.deck-open #metronomePanel.tool-panel.active{display:grid;align-items:start;',
+                        'grid-template-columns:minmax(0,1fr) minmax(300px,420px);column-gap:1rem}',
+                        'body.deck-open #metronomePanel > .tool-header{grid-column:1/-1;grid-row:1}',
+                        'body.deck-open #metronomePanel > .tool-body{grid-column:1;grid-row:2;justify-self:start}',
+                        'body.deck-open #metronomePanel > #chartDeck{grid-column:2;grid-row:2;',
+                        'position:sticky;top:calc(var(--topbar-h) + 1rem);max-height:calc(100vh - var(--topbar-h) - 3rem);overflow:auto}',
+                        'body.deck-open #metronomePanel > .tool-mobile-yt-slot{grid-column:1/-1;grid-row:3}',
+                        // 좁은 화면에선 옆이 아니라 아래로
+                        '@media (max-width:1180px){body.deck-open #metronomePanel.tool-panel.active{display:flex}',
+                        'body.deck-open #metronomePanel > #chartDeck{position:static;max-height:none}}',
                         '#chartDeck .dk-head{display:flex;align-items:center;gap:8px;font-size:.92rem;font-weight:800;color:var(--green-deep);margin-bottom:.3rem}',
                         '#chartDeck .dk-head b{flex:1}',
                         '#chartDeck .dk-hint{font-size:.7rem;opacity:.6;margin:.15rem 0 .45rem;line-height:1.5}',
@@ -16358,6 +16371,7 @@
                         var open = !host.classList.contains('open');
                         host.classList.toggle('open', open);
                         btn.classList.toggle('active', open);
+                        document.body.classList.toggle('deck-open', open);
                         if (open) {
                             _deckRender();
                             _tabRender();
