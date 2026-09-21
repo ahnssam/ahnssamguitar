@@ -10835,6 +10835,11 @@
             }
             // 반주 모드 전용 레이아웃 클래스 (시작 + TAP 한 행 등)
             document.body.classList.toggle('mode-backing', isBacking);
+            // 코드악보 작업대는 반주 전용 — 메트로놈으로 넘어가면 손잡이째 치운다.
+            //   (두 메뉴가 같은 패널을 쓰기 때문에 패널 display 만으로는 안 숨겨진다)
+            if (typeof window._deckSetVisible === 'function') {
+                try { window._deckSetVisible(isBacking); } catch (e) {}
+            }
             // 도움말 / 유튜브 버튼의 data 속성을 반주/메트로놈에 맞게 갱신.
             // 도움말 텍스트(TOOL_HELP_TEXT) 와 유튜브 검색(TOOL_YOUTUBE_LINKS)
             // 둘 다 'backing' / 'metronome' 키로 따로 등록돼 있음.
@@ -15616,6 +15621,7 @@
             //   데이터는 전부 presets.sequencer_pattern 에 저장되므로 로컬 툴과 왕복 호환된다.
             var _deckPats = [], _deckFlow = [], _deckCd = [];
             var _deckShowChords = false, _deckDragFrom = null;
+            var _deckWantOpen = false;   // 반주로 돌아왔을 때 열린 상태를 되살리기 위한 기억
             try { _deckShowChords = localStorage.getItem('deck_show_chords_v1') === '1'; } catch (e) {}
 
             function _deckEsc(s) {
@@ -16414,6 +16420,7 @@
                         var host = _deckEnsure();
                         if (!host) return;
                         var open = !host.classList.contains('open');
+                        _deckWantOpen = open;
                         host.classList.toggle('open', open);
                         document.body.classList.toggle('deck-open', open);
                         btn.textContent = open ? '«' : '»';
@@ -16429,7 +16436,31 @@
                 }
                 panel.classList.add('deck-host');
                 btn.removeAttribute('hidden');
+                // 반주 메뉴일 때만 — 메트로놈과 패널을 공유하므로 여기서 한 번 더 걸러준다
+                if (!document.body.classList.contains('mode-backing')) { _deckHide(); return; }
+                var host = document.getElementById('chartDeck');
+                if (_deckWantOpen && host) {
+                    host.classList.add('open');
+                    document.body.classList.add('deck-open');
+                    btn.textContent = '«';
+                    btn.title = '작업대 닫기';
+                }
             }
+            // 작업대·손잡이 치우기 (열려 있던 상태는 _deckWantOpen 에 남겨 둔다)
+            function _deckHide() {
+                var panel = document.getElementById('metronomePanel');
+                var btn = document.getElementById('deckHandle');
+                var host = document.getElementById('chartDeck');
+                if (btn) { btn.setAttribute('hidden', ''); btn.textContent = '»'; }
+                if (host) host.classList.remove('open');
+                if (panel) panel.classList.remove('deck-host');
+                document.body.classList.remove('deck-open');
+            }
+            // 반주 ↔ 메트로놈 전환 시 호출 (applyMetronomeBackingUi)
+            window._deckSetVisible = function(on) {
+                if (!on) { _deckHide(); return; }
+                _deckSyncBtn();
+            };
             document.addEventListener('DOMContentLoaded', function() { try { _deckSyncBtn(); } catch (e) {} });
 
             // ══════════ TAB(타브악보) 이미지 — chart_tabs 테이블 ══════════
