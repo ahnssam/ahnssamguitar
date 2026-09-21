@@ -15871,16 +15871,30 @@
                         '#chartDeck{display:none;background:var(--bg-panel);border:1px solid rgba(42,107,74,.12);',
                         'border-radius:14px;padding:1.1rem 1rem;margin-bottom:.8rem;min-width:0}',
                         '#chartDeck.open{display:block}',
-                        'body.deck-open #metronomePanel.tool-panel.active{display:grid;align-items:start;',
-                        'grid-template-columns:minmax(0,1fr) minmax(300px,420px);column-gap:1rem}',
-                        'body.deck-open #metronomePanel > .tool-header{grid-column:1/-1;grid-row:1}',
-                        'body.deck-open #metronomePanel > .tool-body{grid-column:1;grid-row:2;justify-self:start}',
-                        'body.deck-open #metronomePanel > #chartDeck{grid-column:2;grid-row:2;',
+                        // [악보 박스] [여는 손잡이] [작업대] 3칸 — 손잡이는 박스 바로 바깥 오른쪽
+                        '#metronomePanel.tool-panel.active.deck-host{display:grid;align-items:start;',
+                        'grid-template-columns:minmax(0,max-content) auto 0;column-gap:.35rem}',
+                        'body.deck-open #metronomePanel.tool-panel.active.deck-host{',
+                        'grid-template-columns:minmax(0,1fr) auto minmax(300px,420px)}',
+                        '#metronomePanel.deck-host > .tool-header{grid-column:1/-1;grid-row:1}',
+                        '#metronomePanel.deck-host > .tool-body{grid-column:1;grid-row:2;justify-self:start}',
+                        '#metronomePanel.deck-host > .tool-mobile-yt-slot{grid-column:1/-1;grid-row:3}',
+                        '#metronomePanel.deck-host > #chartDeck{grid-column:3;grid-row:2;',
                         'position:sticky;top:calc(var(--topbar-h) + 1rem);max-height:calc(100vh - var(--topbar-h) - 3rem);overflow:auto}',
-                        'body.deck-open #metronomePanel > .tool-mobile-yt-slot{grid-column:1/-1;grid-row:3}',
+                        // 손잡이 — 박스 오른쪽 바깥에 붙는 얇은 탭
+                        '#deckHandle{grid-column:2;grid-row:2;align-self:start;position:sticky;',
+                        'top:calc(var(--topbar-h) + 3rem);width:20px;height:60px;padding:0;cursor:pointer;',
+                        'display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;',
+                        'line-height:1;color:var(--green-deep);background:var(--bg-panel);',
+                        'border:1px solid rgba(42,107,74,.16);border-left:none;border-radius:0 9px 9px 0;',
+                        'transition:background .15s,color .15s}',
+                        '#deckHandle:hover{background:rgba(42,107,74,.1)}',
+                        '#deckHandle[hidden]{display:none}',
                         // 좁은 화면에선 옆이 아니라 아래로
-                        '@media (max-width:1180px){body.deck-open #metronomePanel.tool-panel.active{display:flex}',
-                        'body.deck-open #metronomePanel > #chartDeck{position:static;max-height:none}}',
+                        '@media (max-width:1180px){#metronomePanel.tool-panel.active.deck-host{display:flex}',
+                        '#metronomePanel.deck-host > #chartDeck{position:static;max-height:none}',
+                        '#deckHandle{position:static;width:auto;height:auto;padding:4px 10px;border-radius:9px;',
+                        'border-left:1px solid rgba(42,107,74,.16);align-self:flex-start;margin-bottom:.5rem}}',
                         '#chartDeck .dk-head{display:flex;align-items:center;gap:8px;font-size:.92rem;font-weight:800;color:var(--green-deep);margin-bottom:.3rem}',
                         '#chartDeck .dk-head b{flex:1}',
                         '#chartDeck .dk-hint{font-size:.7rem;opacity:.6;margin:.15rem 0 .45rem;line-height:1.5}',
@@ -16371,28 +16385,34 @@
                 for (var j = 0; j < Math.min(oldC.length, L); j++) p.chords[j] = oldC[j] || '';
             }
 
-            // 작업대 열기 버튼 — 관리자 로그인 시에만 프리셋 바에 나타난다
+            // 작업대 여는 손잡이 — 악보 박스 오른쪽 바깥의 » 탭. 관리자 로그인 시에만 보인다.
             function _deckSyncBtn() {
                 if (typeof _localToolToken === 'function' && _localToolToken()) return;  // 로컬 툴엔 자체 작업대가 있음
-                var bar = document.querySelector('.loop-preset-bar');
-                if (!bar) return;
-                var btn = document.getElementById('loopDeckBtn');
-                if (!_loopIsAdmin()) { if (btn) btn.setAttribute('hidden', ''); return; }
+                var panel = document.getElementById('metronomePanel');
+                if (!panel) return;
+                var btn = document.getElementById('deckHandle');
+                if (!_loopIsAdmin()) {
+                    if (btn) btn.setAttribute('hidden', '');
+                    panel.classList.remove('deck-host');
+                    document.body.classList.remove('deck-open');
+                    return;
+                }
                 if (!btn) {
+                    _deckEnsure();                       // 손잡이보다 먼저 작업대 자리를 잡아둔다
                     btn = document.createElement('button');
                     btn.type = 'button';
-                    btn.className = 'loop-preset-mini';
-                    btn.id = 'loopDeckBtn';
-                    btn.title = '코드악보 작업대 — 다이어그램 · 리듬 패턴 · 송폼';
-                    btn.setAttribute('aria-label', '코드악보 작업대');
-                    btn.innerHTML = '<i class="fas fa-pen-ruler"></i>';
+                    btn.id = 'deckHandle';
+                    btn.title = '코드악보 작업대 열기 — 다이어그램 · 리듬 패턴 · TAB · 송폼';
+                    btn.setAttribute('aria-label', '코드악보 작업대 열기');
+                    btn.textContent = '»';
                     btn.onclick = function() {
                         var host = _deckEnsure();
                         if (!host) return;
                         var open = !host.classList.contains('open');
                         host.classList.toggle('open', open);
-                        btn.classList.toggle('active', open);
                         document.body.classList.toggle('deck-open', open);
+                        btn.textContent = open ? '«' : '»';
+                        btn.title = (open ? '작업대 닫기' : '코드악보 작업대 열기');
                         if (open) {
                             _deckRender();
                             _tabRender();
@@ -16400,10 +16420,9 @@
                             if (ffi) ffi.value = _deckFlow.join(' > ');
                         }
                     };
-                    var ref = document.getElementById('loopPrintBtn');
-                    if (ref && ref.parentNode === bar) bar.insertBefore(btn, ref);
-                    else bar.appendChild(btn);
+                    panel.appendChild(btn);
                 }
+                panel.classList.add('deck-host');
                 btn.removeAttribute('hidden');
             }
             document.addEventListener('DOMContentLoaded', function() { try { _deckSyncBtn(); } catch (e) {} });
