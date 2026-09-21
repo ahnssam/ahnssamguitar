@@ -15872,10 +15872,14 @@
                         'border-radius:14px;padding:1.1rem 1rem;margin-bottom:.8rem;min-width:0}',
                         '#chartDeck.open{display:block}',
                         // [악보 박스] [여는 손잡이] [작업대] 3칸 — 손잡이는 박스 바로 바깥 오른쪽
+                        // 트랙을 내용 크기로 잡고 묶음을 가운데 정렬 — 작업대를 닫으면 악보가
+                        //   원래대로 가운데, 열면 작업대가 오른쪽에 붙으면서 악보가 왼쪽으로 밀린다.
+                        //   (1fr 로 잡으면 악보와 작업대 사이가 멀찍이 벌어진다)
                         '#metronomePanel.tool-panel.active.deck-host{display:grid;align-items:start;',
-                        'grid-template-columns:minmax(0,max-content) auto 0;column-gap:.35rem}',
+                        'justify-content:center;',
+                        'grid-template-columns:minmax(0,max-content) max-content 0;column-gap:.35rem}',
                         'body.deck-open #metronomePanel.tool-panel.active.deck-host{',
-                        'grid-template-columns:minmax(0,1fr) auto minmax(300px,420px)}',
+                        'grid-template-columns:minmax(0,max-content) max-content clamp(300px,26vw,420px)}',
                         '#metronomePanel.deck-host > .tool-header{grid-column:1/-1;grid-row:1}',
                         '#metronomePanel.deck-host > .tool-body{grid-column:1;grid-row:2;justify-self:start}',
                         '#metronomePanel.deck-host > .tool-mobile-yt-slot{grid-column:1/-1;grid-row:3}',
@@ -15891,7 +15895,8 @@
                         '#deckHandle:hover{background:rgba(42,107,74,.1)}',
                         '#deckHandle[hidden]{display:none}',
                         // 좁은 화면에선 옆이 아니라 아래로
-                        '@media (max-width:1180px){#metronomePanel.tool-panel.active.deck-host{display:flex}',
+                        '@media (max-width:1180px){#metronomePanel.tool-panel.active.deck-host{display:flex;',
+                        'justify-content:flex-start}',
                         '#metronomePanel.deck-host > #chartDeck{position:static;max-height:none}',
                         '#deckHandle{position:static;width:auto;height:auto;padding:4px 10px;border-radius:9px;',
                         'border-left:1px solid rgba(42,107,74,.16);align-self:flex-start;margin-bottom:.5rem}}',
@@ -16792,12 +16797,13 @@
             }
             // 운영 계정(또는 로컬 툴)에서만 보이는 UI 를 로그인 상태에 맞춰 갱신
             function _syncAdminUI() {
-                // 악보검색(로컬) 툴 — MP3 내보내기 대신 '이미지로 저장' 을 같은 자리에 둔다
+                // '이미지로 저장'은 어디서나 보인다 (인쇄 다이얼로그 안에 있던 버튼을 밖으로 뺀 것).
+                //   악보검색(로컬) 툴에서는 MP3 내보내기를 감추고 그 자리를 이미지가 차지한다.
                 var isTool = (typeof _localToolToken === 'function') && !!_localToolToken();
                 var mp3 = document.getElementById('loopMp3Btn');
                 var img = document.getElementById('loopImgBtn');
                 if (mp3) { if (isTool) mp3.setAttribute('hidden', ''); else mp3.removeAttribute('hidden'); }
-                if (img) { if (isTool) img.removeAttribute('hidden'); else img.setAttribute('hidden', ''); }
+                if (img) img.removeAttribute('hidden');
                 var b = document.getElementById('loopSharedSaveBtn');
                 if (!b) return;
                 if (_loopIsAdmin()) b.removeAttribute('hidden');
@@ -18845,21 +18851,59 @@
                 name = name.replace(/[\\/:*?"<>|\n\r\t]+/g, '_').replace(/\s+/g, ' ').trim();
                 return name || '악보';
             }
+            // 저장 위치 묻기 — File System Access API 가 있으면 저장창(폴더 선택)을 띄운다.
+            //   반드시 클릭 직후(사용자 제스처가 살아 있을 때) 불러야 창이 열린다.
+            //   반환: 파일 핸들 / null(=이 브라우저는 다운로드 폴더로) / false(=사용자가 취소)
+            async function _askSaveHandle(filename, mime, desc, ext) {
+                if (typeof window.showSaveFilePicker !== 'function') return null;
+                try {
+                    var accept = {}; accept[mime] = [ext];
+                    return await window.showSaveFilePicker({
+                        suggestedName: filename,
+                        types: [{ description: desc, accept: accept }]
+                    });
+                } catch (abort) {
+                    return false;          // 취소 — 조용히 종료
+                }
+            }
+            async function _writeBlob(handle, blob, filename) {
+                if (handle) {
+                    var w = await handle.createWritable();
+                    await w.write(blob);
+                    await w.close();
+                    return;
+                }
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url; a.download = filename;
+                document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
+            }
             // 현재 악보를 이미지로 저장. 실제 A4 크기로 고해상도 캡처.
             //   1페이지면 이미지 1장, 2페이지 이상이면 모든 페이지를 zip 으로 묶어 저장.
             async function _saveLoopImage(fmt, title, artist, capo) {
-                loopToast('이미지 만드는 중…');
                 try {
-                    await _ensureHtml2canvas();
+                    // 1) 페이지 구성은 동기 — 여기까지는 사용자 제스처가 살아 있다.
                     var pages = _buildPages(title, artist, capo);
-                    var holder = document.createElement('div');
-                    holder.style.cssText = 'position:fixed;left:-10000px;top:0;background:#fff;z-index:-1;';
-                    pages.forEach(function(p) { holder.appendChild(p); });
-                    document.body.appendChild(holder);
                     var base = _loopFileBase(title, artist);
                     var isJpg = (fmt === 'jpeg');
                     var mime = isJpg ? 'image/jpeg' : 'image/png';
                     var ext = isJpg ? '.jpg' : '.png';
+                    var multi = pages.length > 1;
+                    // 2) 저장 위치 먼저 묻기 (렌더링 뒤에 물으면 제스처가 만료돼 창이 안 뜬다)
+                    var handle = await _askSaveHandle(
+                        base + (multi ? '.zip' : ext),
+                        multi ? 'application/zip' : mime,
+                        multi ? 'ZIP 파일' : (isJpg ? 'JPEG 이미지' : 'PNG 이미지'),
+                        multi ? '.zip' : ext);
+                    if (handle === false) return;
+                    // 3) 렌더링
+                    loopToast('이미지 만드는 중…');
+                    await _ensureHtml2canvas();
+                    var holder = document.createElement('div');
+                    holder.style.cssText = 'position:fixed;left:-10000px;top:0;background:#fff;z-index:-1;';
+                    pages.forEach(function(p) { holder.appendChild(p); });
+                    document.body.appendChild(holder);
                     // 이미지 파일 끝에 프리셋 데이터를 숨겨 심는다(표시엔 영향 없음).
                     //   빌더 '프리셋 업로드'가 이 데이터를 꺼내 폼에 그대로 복원.
                     var metaTail = null;
@@ -18881,12 +18925,8 @@
                         blobs.push(await _blobWithMeta(canvas));
                     }
                     document.body.removeChild(holder);
-                    if (blobs.length === 1) {
-                        var url = URL.createObjectURL(blobs[0]);
-                        var a = document.createElement('a');
-                        a.href = url; a.download = base + ext;
-                        document.body.appendChild(a); a.click(); a.remove();
-                        setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
+                    if (!multi) {
+                        await _writeBlob(handle, blobs[0], base + ext);
                         loopToast('이미지로 저장했어요');
                     } else {
                         // 여러 장 → zip 으로 묶기 (각 이미지에 프리셋 데이터 포함)
@@ -18894,11 +18934,7 @@
                         var zip = new window.JSZip();
                         blobs.forEach(function(b, idx) { zip.file(base + '_' + (idx + 1) + ext, b); });
                         var blob = await zip.generateAsync({ type: 'blob' });
-                        var zurl = URL.createObjectURL(blob);
-                        var za = document.createElement('a');
-                        za.href = zurl; za.download = base + '.zip';
-                        document.body.appendChild(za); za.click(); za.remove();
-                        setTimeout(function() { URL.revokeObjectURL(zurl); }, 4000);
+                        await _writeBlob(handle, blob, base + '.zip');
                         loopToast(pages.length + '장을 zip 으로 저장했어요');
                     }
                     try { gtag('event', 'loop_save_image', { fmt: fmt, pages: pages.length }); } catch (e) {}
