@@ -15574,21 +15574,988 @@
             //   악보검색(로컬) 툴이 저장해둔 sequencer_pattern.chordDiagrams 를,
             //   관리자 계정으로 로그인한 홈페이지에서도 화면(다이어그램 줄)과
             //   인쇄에 똑같이 반영한다. 로컬 툴 모드에선 툴이 직접 관리하므로 건드리지 않는다.
-            //   NOTE: 리듬 패턴(rhythmPatterns)·송폼 흐름(formFlow) 은 여기서 다루지 않는다.
-            //   로컬 툴은 슬래시 기보 SVG 를 자체 생성해 넣는데 홈페이지엔 그 생성기가 없어
-            //   ↓↑✕ 격자라는 다른 모양으로 나오기 때문. 홈페이지 자체 리듬 입력 기능이
-            //   생기면 그때 함께 정리할 것.
+            //   리듬 패턴(rhythmPatterns)·송폼 흐름(formFlow) 도 함께 되살린다 — 아래 작업대가
+            //   로컬 툴과 같은 슬래시 기보 SVG 생성기를 갖고 있어 모양이 똑같이 나온다.
             function _syncChartExtras() {
+                try { _tabsLoad(_loopActivePresetId); } catch (e) {}
                 if (typeof _localToolToken === 'function' && _localToolToken()) return;
                 var sp = _loopActivePresetSequencer;
                 var show = _loopIsAdmin() && !!sp;
-                window.__LOCAL_TOOL_CHORDDIAG = (show && Array.isArray(sp.chordDiagrams)) ? sp.chordDiagrams.slice() : [];
-                if (typeof window.renderLoopChordDiagrams === 'function') window.renderLoopChordDiagrams();
+                _deckLoad(show ? sp : null);
+                _deckSyncBtn();
             }
             // 로그인이 프리셋 적용보다 늦게 풀리는 경우 — auth 확정 시 한 번 더 동기화
             window.addEventListener('ahnssam-auth-settled', function() {
                 try { if (_loopActivePresetId) _syncChartExtras(); } catch (e) {}
+                try { _deckSyncBtn(); } catch (e) {}
             });
+
+            // ══════════ 코드악보 작업대 (관리자 전용) ══════════
+            //   악보검색(로컬 툴)에서 만들던 편집 기능 — 코드 다이어그램 · 리듬 패턴 · 송폼 흐름 —
+            //   을 홈페이지에서도 그대로 쓸 수 있게 옮겨온 것. 어느 컴퓨터에서든 같은 작업이 된다.
+            //   데이터는 전부 presets.sequencer_pattern 에 저장되므로 로컬 툴과 왕복 호환된다.
+            var _deckPats = [], _deckFlow = [], _deckCd = [];
+            var _deckShowChords = false, _deckDragFrom = null;
+            try { _deckShowChords = localStorage.getItem('deck_show_chords_v1') === '1'; } catch (e) {}
+
+            function _deckEsc(s) {
+                return String(s == null ? '' : s).replace(/[&<>"]/g, function(c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+                });
+            }
+            function _deckBarsOf(p) { return (p && p.bars === 2) ? 2 : 1; }
+            function _deckLabels(meter) {
+                if (meter === 16) return ['1','e','&','a','2','e','&','a','3','e','&','a','4','e','&','a'];
+                if (meter === 12) return ['1','&','a','2','&','a','3','&','a','4','&','a'];
+                return ['1','&','2','&','3','&','4','&'];
+            }
+            // 16비트는 스트로크 방향이 자리로 고정 — 1·&·2·& 는 다운, e·a 는 업
+            function _deckFixedDir(meter, i) { return meter !== 16 ? null : ((i % 2 === 0) ? 1 : 2); }
+            function _deckNormalize(p) {
+                if (p.meter !== 16) return;
+                for (var i = 0; i < p.steps.length; i++) {
+                    var st = p.steps[i];
+                    if (st === 1 || st === 2) p.steps[i] = _deckFixedDir(16, i);
+                }
+            }
+
+            // ── 리듬악보(슬래시 기보) SVG — 악보검색 툴과 똑같은 그림을 홈에서도 그린다 ──
+            //   칸 상태: 0 없음(앞 음이 이어짐) · 1 다운 · 2 업 · 3 뮤트(✕) · 4 쉼표
+            function _deckSvg(p, cw) {
+                var n = p.meter, steps = p.steps || [], acc = p.accents || [];
+                var W = cw || 20, H = 56, totalW = n * W;
+                var baseY = 36, beamY = 14;
+                var grp = n === 16 ? 4 : (n === 12 ? 3 : 2);
+                var HW = 4.5, HH = 3.5;
+                var stemX = function(i) { return i * W + W / 2 + HW; };
+                var CN = '#2f4a3d', CM = '#5f7a6b', CR = '#8a998f';
+                var s = '<svg viewBox="0 0 ' + totalW + ' ' + H + '" width="' + totalW + '" height="' + H +
+                        '" xmlns="http://www.w3.org/2000/svg">';
+                s += '<line x1="0" y1="' + baseY + '" x2="' + totalW + '" y2="' + baseY +
+                     '" stroke="#b3c2ba" stroke-width="1"/>';
+                // 타점 = 다운·업·뮤트
+                var onsets = [];
+                for (var i0 = 0; i0 < n; i0++) {
+                    var v0 = steps[i0] || 0;
+                    if (v0 === 1 || v0 === 2 || v0 === 3) onsets.push(i0);
+                }
+                // 음 길이 = 다음 타점 또는 쉼표까지 (최대 한 박)
+                var durOf = {};
+                onsets.forEach(function(idx) {
+                    var groupEnd = (Math.floor(idx / grp) + 1) * grp, stop = n;
+                    for (var j = idx + 1; j < n; j++) { if ((steps[j] || 0) !== 0) { stop = j; break; } }
+                    var d = Math.min(stop, groupEnd) - idx;
+                    durOf[idx] = Math.max(1, Math.min(d, grp));
+                });
+                var beamsFor = function(d) { return d >= grp ? 0 : (grp === 3 ? 1 : (d * 2 >= grp ? 1 : 2)); };
+                var nbOf = {};
+                onsets.forEach(function(i) { nbOf[i] = beamsFor(durOf[i]); });
+                function beamLine(x1, x2, L) {
+                    var y = (L === 1) ? beamY + 1.5 : beamY + 6.6;
+                    var w = (L === 1) ? 3 : 2.2;
+                    return '<line x1="' + Math.min(x1, x2) + '" y1="' + y + '" x2="' + Math.max(x1, x2) +
+                           '" y2="' + y + '" stroke="' + CN + '" stroke-width="' + w + '"/>';
+                }
+                // 쉼표 — 꼬리가 동그라미 아래쪽에 붙는다. hooks: 1=8분, 2=16분
+                function restEighth(x, hooks) {
+                    var r = '<path d="M' + (x + 2.4) + ',' + (baseY - 6.8) + ' L' + (x - 2.2) + ',' + (baseY + 5.0) +
+                            '" stroke="' + CR + '" stroke-width="1.5" fill="none" stroke-linecap="round"/>' +
+                            '<path d="M' + (x + 2.4) + ',' + (baseY - 6.8) + ' C' + (x + 1.6) + ',' + (baseY - 4.9) +
+                            ' ' + (x + 0.4) + ',' + (baseY - 3.9) + ' ' + (x - 0.9) + ',' + (baseY - 4.1) +
+                            '" stroke="' + CR + '" stroke-width="1.3" fill="none" stroke-linecap="round"/>' +
+                            '<circle cx="' + (x - 1.6) + '" cy="' + (baseY - 5.8) + '" r="1.9" fill="' + CR + '"/>';
+                    if (hooks >= 2) {
+                        r += '<path d="M' + (x + 1.0) + ',' + (baseY - 2.9) + ' C' + (x + 0.3) + ',' + (baseY - 1.4) +
+                             ' ' + (x - 0.8) + ',' + (baseY - 0.7) + ' ' + (x - 2.0) + ',' + (baseY - 0.9) +
+                             '" stroke="' + CR + '" stroke-width="1.3" fill="none" stroke-linecap="round"/>' +
+                             '<circle cx="' + (x - 2.6) + '" cy="' + (baseY - 2.6) + '" r="1.9" fill="' + CR + '"/>';
+                    }
+                    return r;
+                }
+                function restQuarter(x) {
+                    return '<path d="M' + (x - 1.8) + ',' + (baseY - 7.4) + ' L' + (x + 1.8) + ',' + (baseY - 3.4) +
+                           ' L' + (x - 1.6) + ',' + (baseY + 0.3) + ' L' + (x + 1.9) + ',' + (baseY + 3.7) +
+                           ' C' + (x + 0.2) + ',' + (baseY + 3.1) + ' ' + (x - 1.2) + ',' + (baseY + 4.3) +
+                           ' ' + (x - 0.2) + ',' + (baseY + 6.4) + '" stroke="' + CR +
+                           '" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+                }
+                // 쉼표는 '쉼표(4)'로 넣은 칸에만. 길이는 음표와 같은 규칙 —
+                //   다음 타점/쉼표 또는 박 끝까지 (최대 한 박).
+                for (var i1 = 0; i1 < n; i1++) {
+                    if ((steps[i1] || 0) !== 4) continue;
+                    var rEnd = (Math.floor(i1 / grp) + 1) * grp, rStop = n;
+                    for (var j1 = i1 + 1; j1 < n; j1++) { if ((steps[j1] || 0) !== 0) { rStop = j1; break; } }
+                    var rd = Math.max(1, Math.min(Math.min(rStop, rEnd) - i1, grp));
+                    var rx = i1 * W + (rd * W) / 2;
+                    if (rd >= grp) s += restQuarter(rx);
+                    else s += restEighth(rx, rd * 2 >= grp ? 1 : 2);
+                }
+                // 박별 빔 — 빈칸(앞 음 이어짐)은 빔을 끊지 않고, 쉼표에서만 끊는다
+                var flagged = {}, beamedAt = {};
+                for (var g = 0; g < n; g += grp) {
+                    var lo = g, hi = g + grp;
+                    var inG = onsets.filter(function(i) { return i >= lo && i < hi; });
+                    if (inG.length === 0) continue;
+                    var maxL = Math.max.apply(null, inG.map(function(i) { return nbOf[i]; }));
+                    if (maxL < 1) continue;
+                    if (inG.length === 1) { if (nbOf[inG[0]] >= 1) flagged[inG[0]] = true; continue; }
+                    for (var L = 1; L <= maxL; L++) {
+                        var run = [];
+                        var flush = (function(L) {
+                            return function() {
+                                if (run.length >= 2) {
+                                    s += beamLine(stemX(run[0]), stemX(run[run.length - 1]), L);
+                                    run.forEach(function(i) { beamedAt[i] = true; });
+                                } else if (run.length === 1) {
+                                    var i = run[0];
+                                    if (beamedAt[i]) s += beamLine(stemX(i), stemX(i) - Math.min(W * 0.45, 7), L);
+                                    else flagged[i] = true;
+                                }
+                                run = [];
+                            };
+                        })(L);
+                        for (var i3 = g; i3 < g + grp; i3++) {
+                            var v3 = steps[i3] || 0;
+                            if (v3 === 4) { flush(); continue; }   // 쉼표 → 빔 끊김
+                            if (v3 === 0) continue;                // 빈칸 → 앞 음이 이어짐
+                            if (nbOf[i3] >= L) run.push(i3); else flush();
+                        }
+                        flush();
+                    }
+                }
+                // 음표
+                onsets.forEach(function(i) {
+                    var st = steps[i], x = i * W + W / 2, sx = stemX(i);
+                    s += '<line x1="' + sx + '" y1="' + (baseY - HH) + '" x2="' + sx + '" y2="' + beamY +
+                         '" stroke="' + CN + '" stroke-width="1.6"/>';
+                    if (flagged[i]) {
+                        for (var f = 0; f < nbOf[i]; f++) {
+                            s += '<path d="M' + (sx - 0.5) + ',' + (beamY + f * 5.1 - 0.4) +
+                                 ' c 4.8,1.4 5.8,4.8 3.2,8.6" stroke="' + CN +
+                                 '" stroke-width="2.2" fill="none" stroke-linecap="round"/>';
+                        }
+                    }
+                    if (st === 3) {
+                        s += '<path d="M' + (x - 4) + ',' + (baseY - 4) + ' L' + (x + 4) + ',' + (baseY + 4) +
+                             ' M' + (x + 4) + ',' + (baseY - 4) + ' L' + (x - 4) + ',' + (baseY + 4) +
+                             '" stroke="' + CM + '" stroke-width="1.8" fill="none"/>';
+                    } else {
+                        s += '<path d="M' + (x - HW) + ',' + (baseY + HH) + ' L' + (x + HW) + ',' + (baseY - HH) +
+                             ' L' + (x + HW) + ',' + (baseY - HH + 4) + ' L' + (x - HW) + ',' + (baseY + HH + 4) +
+                             ' Z" fill="' + CN + '"/>';
+                    }
+                    if (acc[i]) {
+                        s += '<text x="' + sx + '" y="' + (beamY - 4) +
+                             '" text-anchor="middle" font-size="11" font-weight="800" fill="' + CN + '">&gt;</text>';
+                    }
+                });
+                // 스트로크 방향 글자
+                for (var i4 = 0; i4 < n; i4++) {
+                    var st4 = steps[i4] || 0, x4 = i4 * W + W / 2;
+                    var g2 = st4 === 1 ? '↓' : st4 === 2 ? '↑' : st4 === 3 ? '✕' : '';
+                    if (g2) {
+                        s += '<text x="' + x4 + '" y="' + (H - 2) +
+                             '" text-anchor="middle" font-size="12" font-weight="800" fill="' +
+                             (st4 === 3 ? CM : CN) + '">' + g2 + '</text>';
+                    }
+                }
+                return s + '</svg>';
+            }
+            // 2마디짜리는 마디선으로 이어 그린다
+            function _deckSvgMulti(p, cw) {
+                var bars = _deckBarsOf(p), m = p.meter, W = cw || 20;
+                if (bars <= 1) return _deckSvg(p, cw);
+                var measureW = m * W, gap = 12, H = 56, total = bars * measureW + (bars - 1) * gap;
+                var inner = function(str) { return str.replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, ''); };
+                var s = '<svg viewBox="0 0 ' + total + ' ' + H + '" width="' + total + '" height="' + H +
+                        '" xmlns="http://www.w3.org/2000/svg">';
+                for (var b = 0; b < bars; b++) {
+                    var sub = { meter: m, steps: p.steps.slice(b * m, (b + 1) * m),
+                                accents: (p.accents || []).slice(b * m, (b + 1) * m) };
+                    var dx = b * (measureW + gap);
+                    s += '<g transform="translate(' + dx + ',0)">' + inner(_deckSvg(sub, W)) + '</g>';
+                    if (b < bars - 1) {
+                        var bx = dx + measureW + gap / 2;
+                        s += '<line x1="' + bx + '" y1="8" x2="' + bx + '" y2="46" stroke="#7a8f84" stroke-width="1.6"/>';
+                    }
+                }
+                return s + '</svg>';
+            }
+            window._deckRhythmSvg = _deckSvgMulti;   // 인쇄 블록에서 재사용
+
+            // ── 작업대 → 화면/인쇄로 값 밀어넣기 ──
+            function _deckPush() {
+                window.__LOCAL_TOOL_RHYTHM = _deckPats.map(function(p) {
+                    return { name: p.name, section: p.section, meter: p.meter, bars: _deckBarsOf(p),
+                             steps: p.steps, accents: p.accents,
+                             svg: _deckSvgMulti(p, p.meter === 16 ? 13 : 19) };
+                });
+                window.__LOCAL_TOOL_FORMFLOW = _deckFlow.slice();
+                window.__LOCAL_TOOL_CHORDDIAG = _deckCd.slice();
+                if (typeof window.renderLoopChordDiagrams === 'function') window.renderLoopChordDiagrams();
+            }
+            // 저장 페이로드에 실어보낼 부가 데이터
+            function _deckExtras(sp) {
+                if (_deckPats.length) {
+                    sp.rhythmPatterns = _deckPats.map(function(p) {
+                        return { name: p.name, section: p.section, meter: p.meter, bars: _deckBarsOf(p),
+                                 steps: p.steps, accents: p.accents, chords: p.chords };
+                    });
+                } else { delete sp.rhythmPatterns; }
+                if (_deckCd.length) sp.chordDiagrams = _deckCd.slice(); else delete sp.chordDiagrams;
+                if (_deckFlow.length) sp.formFlow = _deckFlow.slice(); else delete sp.formFlow;
+                return sp;
+            }
+            // 프리셋을 불러올 때 — 저장돼 있던 작업 내용을 작업대로 되살린다
+            function _deckLoad(sp) {
+                _deckPats = [];
+                _deckFlow = [];
+                _deckCd = [];
+                if (sp) {
+                    if (Array.isArray(sp.rhythmPatterns)) {
+                        _deckPats = sp.rhythmPatterns.map(function(p) {
+                            var meter = (p.meter === 16 || p.meter === 12) ? p.meter : 8;
+                            var bars = (p.bars === 2) ? 2 : 1, L = meter * bars;
+                            var steps = new Array(L), accents = new Array(L), chords = new Array(L);
+                            for (var i = 0; i < L; i++) {
+                                steps[i] = (Array.isArray(p.steps) && p.steps[i]) || 0;
+                                accents[i] = (Array.isArray(p.accents) && p.accents[i]) || 0;
+                                chords[i] = (Array.isArray(p.chords) && p.chords[i]) || '';
+                            }
+                            return { name: p.name || '리듬', section: p.section || '', meter: meter,
+                                     bars: bars, steps: steps, accents: accents, chords: chords };
+                        });
+                    }
+                    if (Array.isArray(sp.formFlow)) _deckFlow = sp.formFlow.slice();
+                    if (Array.isArray(sp.chordDiagrams)) _deckCd = sp.chordDiagrams.slice();
+                }
+                _deckPush();
+                _deckRender();
+                var ffi = document.getElementById('dkFfInput');
+                if (ffi) ffi.value = _deckFlow.join(' > ');
+            }
+
+            // ── 작업대 UI ──
+            function _deckEnsure() {
+                var host = document.getElementById('chartDeck');
+                if (host) return host;
+                var sec = document.getElementById('loopSection');
+                if (!sec) return null;
+                if (!document.getElementById('chart-deck-css')) {
+                    var st = document.createElement('style');
+                    st.id = 'chart-deck-css';
+                    st.textContent = [
+                        '#chartDeck{display:none;margin-top:1rem;padding-top:.9rem;border-top:2px dashed rgba(42,107,74,.3)}',
+                        '#chartDeck.open{display:block}',
+                        '#chartDeck .dk-head{display:flex;align-items:center;gap:8px;font-size:.92rem;font-weight:800;color:var(--green-deep);margin-bottom:.3rem}',
+                        '#chartDeck .dk-head b{flex:1}',
+                        '#chartDeck .dk-hint{font-size:.7rem;opacity:.6;margin:.15rem 0 .45rem;line-height:1.5}',
+                        '#chartDeck .dk-btn{padding:3px 9px;font-size:.74rem;font-weight:700;border:1px solid rgba(42,107,74,.35);',
+                        'border-radius:6px;background:#fff;color:var(--green-deep);cursor:pointer}',
+                        '#chartDeck .dk-btn:hover{background:rgba(42,107,74,.08)}',
+                        '#chartDeck .dk-btn.danger{color:#a4462f;border-color:rgba(164,70,47,.4)}',
+                        '#chartDeck .dk-chk{display:flex;align-items:center;gap:4px;font-size:.72rem;font-weight:600;cursor:pointer}',
+                        '#chartDeck .dk-sec{border-bottom:1px dashed rgba(42,107,74,.25);margin-bottom:.7rem;padding-bottom:.6rem}',
+                        '#chartDeck .dk-add{position:relative;margin-bottom:.4rem}',
+                        '#chartDeck .dk-add input{width:100%;padding:5px 8px;border:1px solid rgba(42,107,74,.3);border-radius:7px;font:inherit;font-size:.78rem}',
+                        '#chartDeck .dk-sug{position:absolute;z-index:40;left:0;right:0;top:100%;margin-top:3px;background:#fff;',
+                        'border:1px solid rgba(42,107,74,.3);border-radius:8px;padding:6px;max-height:210px;overflow:auto;',
+                        'grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:4px;box-shadow:0 6px 18px rgba(0,0,0,.12)}',
+                        '#chartDeck .dk-sug-item{cursor:pointer;border:1px solid transparent;border-radius:6px;padding:2px}',
+                        '#chartDeck .dk-sug-item:hover,#chartDeck .dk-sug-item.on{border-color:var(--green-deep);background:rgba(42,107,74,.07)}',
+                        '#chartDeck .dk-sug-item svg{display:block;height:40px;width:auto}',
+                        '#chartDeck .dk-cdlist{display:flex;flex-wrap:wrap;gap:6px}',
+                        '#chartDeck .dk-chip{position:relative;padding:2px 3px 3px;border:1px solid rgba(42,107,74,.3);',
+                        'border-radius:7px;background:#fff;cursor:grab}',
+                        '#chartDeck .dk-chip svg{display:block;height:44px;width:auto}',
+                        '#chartDeck .dk-chip.drop-before{box-shadow:-3px 0 0 var(--green-deep)}',
+                        '#chartDeck .dk-chip.drop-after{box-shadow:3px 0 0 var(--green-deep)}',
+                        '#chartDeck .dk-chip .dk-x{position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;',
+                        'border:none;background:#a4462f;color:#fff;font-size:10px;line-height:16px;padding:0;cursor:pointer;opacity:0}',
+                        '#chartDeck .dk-chip:hover .dk-x{opacity:1}',
+                        '#chartDeck .dk-chip.noshape{display:flex;align-items:center;justify-content:center;width:46px;height:50px;',
+                        'font-size:.72rem;font-weight:700;color:#8a8a8a}',
+                        '#chartDeck .dk-box{border:1px solid rgba(42,107,74,.25);border-radius:9px;padding:7px 8px;margin-bottom:7px;background:#fbfdfc}',
+                        '#chartDeck .dk-top{display:flex;align-items:center;gap:4px;margin-bottom:6px;flex-wrap:wrap}',
+                        '#chartDeck .dk-top input,#chartDeck .dk-top select{padding:3px 5px;border:1px solid rgba(42,107,74,.3);',
+                        'border-radius:6px;font:inherit;font-size:.74rem;max-width:100%;background:#fff}',
+                        '#chartDeck .dk-name{flex:1 1 100%;min-width:0;font-weight:700}',
+                        '#chartDeck .dk-grid{display:flex;gap:4px}',
+                        '#chartDeck .dk-step{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:1px}',
+                        '#chartDeck .dk-grid .dk-step.downbeat:not(:first-child){border-left:1px dashed rgba(60,90,75,.32);margin-left:3px;padding-left:3px}',
+                        '#chartDeck .dk-cell{width:100%;height:40px;border:1px solid rgba(42,107,74,.28);border-radius:4px;',
+                        'background:#f1f6f3;cursor:pointer;display:flex;align-items:center;justify-content:center;',
+                        'font-size:22px;font-weight:800;line-height:1;user-select:none}',
+                        '#chartDeck .dk-cell:hover{background:#e3ece7}',
+                        '#chartDeck .dk-cell.on{background:rgba(90,160,255,.16);border-color:#2a6b4a;color:#1d5136}',
+                        '#chartDeck .dk-cell.mute{background:rgba(95,122,107,.16);border-color:rgba(95,122,107,.55);color:#3d5145}',
+                        '#chartDeck .dk-cell.rest{color:#8a998f}',
+                        '#chartDeck .dk-cell .restmark{opacity:.7}',
+                        '#chartDeck .dk-acc{width:100%;height:13px;display:flex;align-items:center;justify-content:center;',
+                        'font-size:11px;font-weight:800;color:#2a6b4a;border:1px solid transparent;border-radius:3px;cursor:pointer}',
+                        '#chartDeck .dk-acc.on{background:rgba(90,160,255,.16);border-color:#2a6b4a}',
+                        '#chartDeck .dk-acc.dim{opacity:.25;cursor:default}',
+                        '#chartDeck .dk-beat{font-size:8px;opacity:.45}',
+                        '#chartDeck .dk-step.downbeat .dk-beat{opacity:.9;font-weight:800}',
+                        '#chartDeck .dk-chords{display:flex;gap:4px;margin-top:3px}',
+                        '#chartDeck .dk-chord{flex:1;width:100%;min-width:0;text-align:center;padding:2px 1px;',
+                        'border:1px solid rgba(42,107,74,.3);border-radius:4px;font:inherit;font-size:.66rem;font-weight:700;background:#fff}',
+                        '#chartDeck .dk-barlabel{font-size:10px;font-weight:800;opacity:.55;margin:8px 0 2px}',
+                        '#chartDeck .dk-prev{margin-top:6px;padding-top:5px;border-top:1px dashed rgba(42,107,74,.25)}',
+                        '#chartDeck .dk-prev-lab{font-size:9px;opacity:.5;margin-bottom:3px}',
+                        '#chartDeck .dk-prev-svg{background:#fff;border:1px solid rgba(42,107,74,.25);border-radius:5px;padding:3px;overflow-x:auto}',
+                        '#chartDeck .dk-tablist{display:flex;flex-wrap:wrap;gap:7px}',
+                        '#chartDeck .dk-tab{position:relative;width:96px;border:1px solid rgba(42,107,74,.3);border-radius:7px;',
+                        'padding:3px;background:#fff}',
+                        '#chartDeck .dk-tab.unplaced{border-style:dashed;opacity:.72}',
+                        '#chartDeck .dk-tab img{display:block;width:100%;height:auto;cursor:grab}',
+                        '#chartDeck .dk-tab-no{position:absolute;top:-6px;left:-6px;min-width:16px;height:16px;border-radius:8px;',
+                        'background:#2a6b4a;color:#fff;font-size:10px;font-weight:800;line-height:16px;text-align:center;padding:0 3px}',
+                        '#chartDeck .dk-tab-del{position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;',
+                        'border:none;background:#a4462f;color:#fff;font-size:10px;line-height:16px;padding:0;cursor:pointer;opacity:0}',
+                        '#chartDeck .dk-tab:hover .dk-tab-del{opacity:1}',
+                        'body.tab-dragging #loopGrid{outline:2px dashed #2a6b4a;outline-offset:3px}',
+                        '#chartDeck .dk-ff input{width:100%;padding:5px 8px;border:1px solid rgba(42,107,74,.3);border-radius:7px;font:inherit;font-size:.78rem}',
+                        '#chartDeck .dk-ff-prev{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:5px;font-size:.75rem}',
+                        '#chartDeck .dk-ff-box{padding:1px 7px;border:1px solid rgba(42,107,74,.35);border-radius:5px;background:#fff;font-weight:700}',
+                        ':root[data-theme="dark"] #chartDeck .dk-box,:root[data-theme="dark"] #chartDeck .dk-chip,',
+                        ':root[data-theme="dark"] #chartDeck .dk-prev-svg{background:rgba(255,255,255,.06)}'
+                    ].join('');
+                    document.head.appendChild(st);
+                }
+                host = document.createElement('div');
+                host.id = 'chartDeck';
+                host.innerHTML =
+                    '<div class="dk-sec">' +
+                        '<div class="dk-head"><b>코드 다이어그램</b>' +
+                            '<button type="button" class="dk-btn" id="dkCdAuto">악보에서 가져오기</button>' +
+                            '<button type="button" class="dk-btn" id="dkCdClear">비우기</button></div>' +
+                        '<div class="dk-hint">제목 아래 · 카포/아티스트 줄 가운데에 인쇄됩니다 · 드래그로 순서 변경</div>' +
+                        '<div class="dk-add"><input id="dkCdInput" placeholder="코드 입력 — 예: c, am7, f#m" autocomplete="off">' +
+                        '<div id="dkCdSug" class="dk-sug" style="display:none"></div></div>' +
+                        '<div id="dkCdList" class="dk-cdlist"></div>' +
+                    '</div>' +
+                    '<div class="dk-head"><b>리듬 패턴</b>' +
+                        '<label class="dk-chk"><input type="checkbox" id="dkChordToggle"> 코드 입력</label>' +
+                        '<button type="button" class="dk-btn" id="dkAdd">+ 추가</button></div>' +
+                    '<div class="dk-hint">칸 클릭 → 빈칸 ↓ ↑ ✕ 쉼 · Shift+클릭 = 강세<br>16비트는 방향 고정 (1·2·3·4·&amp; 다운, e·a 업)</div>' +
+                    '<div id="dkList"></div>' +
+                    '<div class="dk-sec" style="margin-top:.8rem;padding-top:.7rem;border-top:1px dashed rgba(42,107,74,.25)">' +
+                        '<div class="dk-head"><b>TAB 이미지</b>' +
+                            '<label class="dk-btn" style="cursor:pointer">+ 추가' +
+                            '<input type="file" id="dkTabFile" accept="image/*" multiple hidden></label></div>' +
+                        '<div class="dk-hint">올린 뒤 <b>악보로 드래그</b>하면 그 줄 아래에 들어갑니다 (화면·인쇄 공통)</div>' +
+                        '<div id="dkTabList" class="dk-tablist"></div>' +
+                    '</div>' +
+                    '<div class="dk-sec dk-ff" style="border-bottom:none;margin-top:.8rem;padding-top:.7rem;border-top:1px dashed rgba(42,107,74,.25)">' +
+                        '<div class="dk-head"><b>송폼 흐름</b></div>' +
+                        '<div class="dk-hint">악보 뒤로 이어지는 구성 — 예: Bridge &gt; Chorus &gt; Ending</div>' +
+                        '<input id="dkFfInput" placeholder="Bridge > Chorus > Ending" autocomplete="off">' +
+                        '<div id="dkFfPrev" class="dk-ff-prev"></div>' +
+                    '</div>';
+                sec.appendChild(host);
+                _deckBind(host);
+                return host;
+            }
+
+            var DECK_REST = '<svg class="restmark" width="14" height="24" viewBox="0 0 14 24" aria-hidden="true">' +
+                '<path d="M10.2,5.2 L4.9,18.6" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/>' +
+                '<path d="M10.2,5.2 C9.2,7.6 7.6,8.8 5.7,8.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>' +
+                '<circle cx="5.0" cy="6.2" r="2.4" fill="currentColor"/></svg>';
+            var DECK_GLYPH = ['', '↓', '↑', '✕'];
+
+            function _deckSections() {
+                var sf = (_loopActivePresetSequencer && _loopActivePresetSequencer.songForm) || {};
+                var out = [], seen = {};
+                Object.keys(sf).forEach(function(k) {
+                    var v = sf[k];
+                    if (v && !seen[v]) { seen[v] = 1; out.push(v); }
+                });
+                return out;
+            }
+
+            function _deckRender() {
+                var host = document.getElementById('chartDeck');
+                if (!host) return;
+                _deckRenderCd();
+                _deckRenderFlow();
+                var box = document.getElementById('dkList');
+                if (!box) return;
+                var secs = _deckSections();
+                box.innerHTML = _deckPats.map(function(p, pi) {
+                    var labels = _deckLabels(p.meter);
+                    var bars = _deckBarsOf(p);
+                    if (!Array.isArray(p.accents)) p.accents = new Array(p.meter * bars).fill(0);
+                    var grp = p.meter === 16 ? 4 : (p.meter === 12 ? 3 : 2);
+                    var gridHtml = '';
+                    for (var b = 0; b < bars; b++) {
+                        var cells = '';
+                        for (var li = 0; li < p.meter; li++) {
+                            var si = b * p.meter + li, s = p.steps[si] || 0;
+                            var cls = s === 4 ? 'rest' : (s === 3 ? 'mute' : (s === 0 ? '' : 'on'));
+                            var down = (p.meter === 16 ? li % 4 === 0 : (p.meter === 12 ? li % 3 === 0 : li % 2 === 0));
+                            var on = (s === 1 || s === 2 || s === 3), ac = !!p.accents[si];
+                            var glyph = s === 4 ? DECK_REST : (DECK_GLYPH[s] || '');
+                            cells += '<div class="dk-step ' + (down ? 'downbeat' : '') + '">' +
+                                '<div class="dk-acc ' + (ac ? 'on' : '') + ' ' + (on ? '' : 'dim') +
+                                '" data-a="' + pi + '" data-as="' + si + '" title="강세">' + (ac ? '›' : '') + '</div>' +
+                                '<div class="dk-cell ' + cls + '" data-p="' + pi + '" data-s="' + si + '">' + glyph + '</div>' +
+                                '<div class="dk-beat">' + (labels[li] || '') + '</div></div>';
+                        }
+                        var chordRow = '';
+                        if (_deckShowChords) {
+                            chordRow = '<div class="dk-chords">';
+                            for (var lj = 0; lj < p.meter; lj++) {
+                                var ci = b * p.meter + lj;
+                                chordRow += '<input class="dk-chord" data-c="' + pi + '" data-ci="' + ci +
+                                    '" value="' + _deckEsc((p.chords || [])[ci] || '') + '" placeholder="·">';
+                            }
+                            chordRow += '</div>';
+                        }
+                        if (bars > 1) gridHtml += '<div class="dk-barlabel">' + (b + 1) + '마디</div>';
+                        gridHtml += '<div class="dk-grid">' + cells + '</div>' + chordRow;
+                    }
+                    var secOpts = ['<option value="">구간 전체</option>'].concat(secs.map(function(x) {
+                        return '<option value="' + _deckEsc(x) + '"' + (p.section === x ? ' selected' : '') + '>' +
+                               _deckEsc(x) + '</option>';
+                    })).join('');
+                    return '<div class="dk-box">' +
+                        '<div class="dk-top">' +
+                            '<input class="dk-name" data-pn="' + pi + '" value="' + _deckEsc(p.name || '') + '" placeholder="패턴 이름">' +
+                            '<select data-ps="' + pi + '">' + secOpts + '</select>' +
+                            '<select data-pm="' + pi + '">' +
+                                '<option value="8"' + (p.meter === 8 ? ' selected' : '') + '>8비트</option>' +
+                                '<option value="16"' + (p.meter === 16 ? ' selected' : '') + '>16비트</option>' +
+                                '<option value="12"' + (p.meter === 12 ? ' selected' : '') + '>셔플(12)</option>' +
+                            '</select>' +
+                            '<select data-pb="' + pi + '">' +
+                                '<option value="1"' + (bars === 1 ? ' selected' : '') + '>1마디</option>' +
+                                '<option value="2"' + (bars === 2 ? ' selected' : '') + '>2마디</option>' +
+                            '</select>' +
+                            '<button type="button" class="dk-btn danger" data-pd="' + pi + '">삭제</button>' +
+                        '</div>' + gridHtml +
+                        '<div class="dk-prev"><div class="dk-prev-lab">리듬악보 (인쇄되는 모양)</div>' +
+                        '<div class="dk-prev-svg">' + _deckSvgMulti(p, p.meter === 16 ? 15 : 22) + '</div></div>' +
+                    '</div>';
+                }).join('') || '<div class="dk-hint">아직 패턴이 없습니다. [+ 추가] 를 눌러보세요.</div>';
+                _deckPush();
+            }
+
+            function _deckRenderFlow() {
+                var box = document.getElementById('dkFfPrev');
+                if (!box) return;
+                box.innerHTML = _deckFlow.map(function(x) {
+                    return '<span>→</span><span class="dk-ff-box">' + _deckEsc(x) + '</span>';
+                }).join('');
+            }
+
+            function _deckCdSvg(name, opts) {
+                try {
+                    if (typeof window._findChordDiagramByName !== 'function' ||
+                        typeof window._renderChordSVG !== 'function') return null;
+                    var ch = window._findChordDiagramByName(name);
+                    if (ch) return window._renderChordSVG(ch, opts || { fingers: false, style: 'mini' });
+                } catch (e) {}
+                return null;
+            }
+            function _deckRenderCd() {
+                var box = document.getElementById('dkCdList');
+                if (!box) return;
+                if (!_deckCd.length) {
+                    box.innerHTML = '<div class="dk-hint">비어 있습니다. [악보에서 가져오기] 를 눌러보세요.</div>';
+                    return;
+                }
+                box.innerHTML = _deckCd.map(function(nm, i) {
+                    var svg = _deckCdSvg(nm);
+                    return svg
+                        ? '<div class="dk-chip" draggable="true" data-cdi="' + i + '" title="' + _deckEsc(nm) + '">' +
+                          svg + '<button type="button" class="dk-x" data-cdx="' + i + '">✕</button></div>'
+                        : '<div class="dk-chip noshape" draggable="true" data-cdi="' + i + '" title="' + _deckEsc(nm) +
+                          ' — 그립을 못 찾았어요">' + _deckEsc(nm) +
+                          '<button type="button" class="dk-x" data-cdx="' + i + '">✕</button></div>';
+                }).join('');
+            }
+
+            var DECK_QUALS = ['', 'm', '7', 'm7', 'maj7', '6', 'm6', 'sus4', 'sus2', 'add9', '9',
+                              'm9', 'maj9', 'm7b5', 'dim7', 'aug', '7sus4', '5'];
+            function _deckCdNorm(n) {
+                try {
+                    if (typeof window._normalizeChordInput === 'function') return window._normalizeChordInput(n);
+                } catch (e) {}
+                return String(n || '').trim().replace(/♭/g, 'b').replace(/♯/g, '#')
+                    .replace(/^([a-g])/, function(c) { return c.toUpperCase(); })
+                    .replace(/\/\s*([a-g])/, function(m, c) { return '/' + c.toUpperCase(); });
+            }
+            function _deckCdCloseSug() {
+                var b = document.getElementById('dkCdSug');
+                if (b) { b.style.display = 'none'; b.innerHTML = ''; }
+            }
+            function _deckCdSuggest() {
+                var box = document.getElementById('dkCdSug'), inp = document.getElementById('dkCdInput');
+                if (!box || !inp) return;
+                var norm = _deckCdNorm(inp.value);
+                var m = norm.match(/^([A-G][#b]?)(.*)$/);
+                if (!m) { _deckCdCloseSug(); return; }
+                var root = m[1], rest = m[2] || '', restL = rest.toLowerCase(), names;
+                if (rest.indexOf('/') >= 0) {
+                    names = [norm];
+                } else {
+                    names = DECK_QUALS.filter(function(s) { return s.toLowerCase().indexOf(restL) === 0; })
+                                      .map(function(s) { return root + s; });
+                    if (rest && names.indexOf(norm) < 0) names.unshift(norm);
+                }
+                var items = names.map(function(n) { return { n: n, svg: _deckCdSvg(n) }; })
+                                 .filter(function(x) { return x.svg; }).slice(0, 24);
+                if (!items.length) { _deckCdCloseSug(); return; }
+                box.innerHTML = items.map(function(it, i) {
+                    return '<div class="dk-sug-item' + (i === 0 ? ' on' : '') + '" data-cds="' + _deckEsc(it.n) +
+                           '" title="' + _deckEsc(it.n) + '">' + it.svg + '</div>';
+                }).join('');
+                box.style.display = 'grid';
+            }
+            function _deckCdPick(n) {
+                if (!n) return;
+                _deckCd.push(n);
+                var inp = document.getElementById('dkCdInput');
+                if (inp) inp.value = '';
+                _deckCdCloseSug();
+                _deckRenderCd();
+                _deckPush();
+            }
+
+            function _deckBind(host) {
+                // ── 코드 다이어그램 ──
+                var inp = document.getElementById('dkCdInput');
+                if (inp) {
+                    inp.addEventListener('input', _deckCdSuggest);
+                    inp.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') { e.preventDefault(); _deckCdPick(_deckCdNorm(inp.value)); }
+                        else if (e.key === 'Escape') _deckCdCloseSug();
+                    });
+                    inp.addEventListener('blur', function() { setTimeout(_deckCdCloseSug, 120); });
+                }
+                var sug = document.getElementById('dkCdSug');
+                if (sug) sug.addEventListener('mousedown', function(e) {
+                    var it = e.target.closest ? e.target.closest('[data-cds]') : null;
+                    if (!it) return;
+                    e.preventDefault();
+                    _deckCdPick(it.getAttribute('data-cds'));
+                });
+                var auto = document.getElementById('dkCdAuto');
+                if (auto) auto.onclick = function() {
+                    var names = [];
+                    try { if (typeof window.localToolChartChords === 'function') names = window.localToolChartChords() || []; } catch (e) {}
+                    if (!names.length) { loopToast('악보에서 코드를 찾지 못했어요'); return; }
+                    var have = {};
+                    _deckCd.forEach(function(x) { have[x] = 1; });
+                    names.forEach(function(n) { if (!have[n]) { _deckCd.push(n); have[n] = 1; } });
+                    _deckRenderCd(); _deckPush();
+                };
+                var clr = document.getElementById('dkCdClear');
+                if (clr) clr.onclick = function() { _deckCd = []; _deckRenderCd(); _deckPush(); };
+                var cdList = document.getElementById('dkCdList');
+                if (cdList) {
+                    cdList.addEventListener('click', function(e) {
+                        var x = e.target.closest ? e.target.closest('[data-cdx]') : null;
+                        if (!x) return;
+                        e.stopPropagation();
+                        _deckCd.splice(parseInt(x.getAttribute('data-cdx'), 10), 1);
+                        _deckRenderCd(); _deckPush();
+                    });
+                    cdList.addEventListener('dragstart', function(e) {
+                        var el = e.target.closest ? e.target.closest('[data-cdi]') : null;
+                        if (!el) return;
+                        _deckDragFrom = parseInt(el.getAttribute('data-cdi'), 10);
+                        try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(_deckDragFrom)); } catch (_) {}
+                    });
+                    cdList.addEventListener('dragover', function(e) {
+                        var el = e.target.closest ? e.target.closest('[data-cdi]') : null;
+                        if (!el || _deckDragFrom === null) return;
+                        e.preventDefault();
+                        var r = el.getBoundingClientRect(), after = (e.clientX - r.left) > r.width / 2;
+                        cdList.querySelectorAll('.dk-chip').forEach(function(c) { c.classList.remove('drop-before', 'drop-after'); });
+                        el.classList.add(after ? 'drop-after' : 'drop-before');
+                    });
+                    cdList.addEventListener('drop', function(e) {
+                        var el = e.target.closest ? e.target.closest('[data-cdi]') : null;
+                        if (!el || _deckDragFrom === null) return;
+                        e.preventDefault();
+                        var r = el.getBoundingClientRect();
+                        var to = parseInt(el.getAttribute('data-cdi'), 10) + ((e.clientX - r.left) > r.width / 2 ? 1 : 0);
+                        var moved = _deckCd.splice(_deckDragFrom, 1)[0];
+                        if (_deckDragFrom < to) to--;
+                        _deckCd.splice(Math.max(0, Math.min(to, _deckCd.length)), 0, moved);
+                        _deckDragFrom = null;
+                        _deckRenderCd(); _deckPush();
+                    });
+                    cdList.addEventListener('dragend', function() {
+                        _deckDragFrom = null;
+                        cdList.querySelectorAll('.dk-chip').forEach(function(c) { c.classList.remove('drop-before', 'drop-after'); });
+                    });
+                }
+                // ── 리듬 패턴 ──
+                var add = document.getElementById('dkAdd');
+                if (add) add.onclick = function() {
+                    _deckPats.push({ name: '리듬 ' + (_deckPats.length + 1), section: '', meter: 8, bars: 1,
+                                     steps: new Array(8).fill(0), accents: new Array(8).fill(0),
+                                     chords: new Array(8).fill('') });
+                    _deckRender();
+                };
+                var ct = document.getElementById('dkChordToggle');
+                if (ct) {
+                    ct.checked = _deckShowChords;
+                    ct.addEventListener('change', function(e) {
+                        _deckShowChords = e.target.checked;
+                        try { localStorage.setItem('deck_show_chords_v1', _deckShowChords ? '1' : '0'); } catch (_) {}
+                        _deckRender();
+                    });
+                }
+                var list = document.getElementById('dkList');
+                if (list) {
+                    list.addEventListener('click', function(e) {
+                        var t = e.target.closest ? e.target : null;
+                        if (!t) return;
+                        var cell = t.closest('[data-p]');
+                        if (cell) {
+                            var pi = +cell.getAttribute('data-p'), si = +cell.getAttribute('data-s'), p = _deckPats[pi];
+                            if (!p) return;
+                            if (e.shiftKey) { p.accents[si] = p.accents[si] ? 0 : 1; _deckRender(); return; }
+                            var fixed = _deckFixedDir(p.meter, si), cur = p.steps[si] || 0;
+                            // 순환: 없음 → 다운 → 업 → ✕ → 쉼표 → 없음
+                            if (fixed) p.steps[si] = cur === 0 ? fixed : (cur === fixed ? 3 : (cur === 3 ? 4 : 0));
+                            else p.steps[si] = (cur + 1) % 5;
+                            var nv = p.steps[si];
+                            if (nv === 0 || nv === 4) p.accents[si] = 0;
+                            _deckRender();
+                            return;
+                        }
+                        var accEl = t.closest('[data-a]');
+                        if (accEl) {
+                            var ai = +accEl.getAttribute('data-a'), as = +accEl.getAttribute('data-as'), pa = _deckPats[ai];
+                            if (!pa) return;
+                            var c0 = pa.steps[as] || 0;
+                            if (c0 === 0 || c0 === 4) return;
+                            pa.accents[as] = pa.accents[as] ? 0 : 1;
+                            _deckRender();
+                            return;
+                        }
+                        var del = t.closest('[data-pd]');
+                        if (del) { _deckPats.splice(+del.getAttribute('data-pd'), 1); _deckRender(); }
+                    });
+                    list.addEventListener('input', function(e) {
+                        var el = e.target;
+                        if (el.classList.contains('dk-chord')) {
+                            var p = _deckPats[+el.getAttribute('data-c')];
+                            if (!p) return;
+                            if (!Array.isArray(p.chords)) p.chords = [];
+                            p.chords[+el.getAttribute('data-ci')] = el.value;
+                        } else if (el.hasAttribute('data-pn')) {
+                            var pn = _deckPats[+el.getAttribute('data-pn')];
+                            if (pn) pn.name = el.value;
+                        }
+                    });
+                    list.addEventListener('change', function(e) {
+                        var el = e.target, p;
+                        if (el.hasAttribute('data-ps')) {
+                            p = _deckPats[+el.getAttribute('data-ps')];
+                            if (p) p.section = el.value;
+                        } else if (el.hasAttribute('data-pm')) {
+                            p = _deckPats[+el.getAttribute('data-pm')];
+                            if (!p) return;
+                            _deckResize(p, +el.value, _deckBarsOf(p));
+                            _deckNormalize(p);
+                            _deckRender();
+                        } else if (el.hasAttribute('data-pb')) {
+                            p = _deckPats[+el.getAttribute('data-pb')];
+                            if (!p) return;
+                            _deckResize(p, p.meter, +el.value === 2 ? 2 : 1);
+                            _deckRender();
+                        } else if (el.classList.contains('dk-chord')) {
+                            _deckRender();
+                        }
+                    });
+                }
+                // ── TAB 이미지 ──
+                var tf = document.getElementById('dkTabFile');
+                if (tf) tf.addEventListener('change', async function(e) {
+                    var files = Array.prototype.slice.call(e.target.files || []);
+                    e.target.value = '';
+                    for (var i = 0; i < files.length; i++) await _tabAdd(files[i]);
+                });
+                var tl = document.getElementById('dkTabList');
+                if (tl) {
+                    tl.addEventListener('click', function(e) {
+                        var d = e.target.closest ? e.target.closest('[data-tabdel]') : null;
+                        if (!d) return;
+                        _tabItems.splice(parseInt(d.getAttribute('data-tabdel'), 10), 1);
+                        _tabSaveMeta();
+                    });
+                    tl.addEventListener('dragstart', function(e) {
+                        var im = e.target.closest ? e.target.closest('[data-tabdrag]') : null;
+                        if (!im) return;
+                        _tabDragIdx = parseInt(im.getAttribute('data-tabdrag'), 10);
+                        try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(_tabDragIdx)); } catch (_) {}
+                        document.body.classList.add('tab-dragging');
+                    });
+                    tl.addEventListener('dragend', function() {
+                        _tabDragIdx = null;
+                        document.body.classList.remove('tab-dragging');
+                    });
+                }
+                // 마디 격자 위에 떨어뜨리면 그 줄 아래로 배치
+                var grid = document.getElementById('loopGrid');
+                if (grid && !grid.__tabDrop) {
+                    grid.__tabDrop = true;
+                    grid.addEventListener('dragover', function(e) { if (_tabDragIdx !== null) e.preventDefault(); });
+                    grid.addEventListener('drop', function(e) {
+                        if (_tabDragIdx === null) return;
+                        e.preventDefault();
+                        var t = _tabItems[_tabDragIdx];
+                        _tabDragIdx = null;
+                        document.body.classList.remove('tab-dragging');
+                        if (!t) return;
+                        t.after_row = _tabRowFromY(e.clientY);
+                        _tabSaveMeta();
+                    });
+                }
+                // ── 송폼 흐름 ──
+                var ff = document.getElementById('dkFfInput');
+                if (ff) ff.addEventListener('input', function(e) {
+                    _deckFlow = String(e.target.value || '').split(/[>,→]/)
+                        .map(function(x) { return x.trim(); }).filter(Boolean);
+                    _deckRenderFlow(); _deckPush();
+                });
+            }
+            function _deckResize(p, meter, bars) {
+                var oldS = p.steps.slice(), oldA = (p.accents || []).slice(), oldC = (p.chords || []).slice();
+                var L = meter * bars;
+                p.meter = meter; p.bars = bars;
+                p.steps = new Array(L).fill(0);
+                p.accents = new Array(L).fill(0);
+                p.chords = new Array(L).fill('');
+                for (var k = 0; k < Math.min(oldS.length, L); k++) { p.steps[k] = oldS[k]; p.accents[k] = oldA[k] || 0; }
+                for (var j = 0; j < Math.min(oldC.length, L); j++) p.chords[j] = oldC[j] || '';
+            }
+
+            // 작업대 열기 버튼 — 관리자 로그인 시에만 프리셋 바에 나타난다
+            function _deckSyncBtn() {
+                if (typeof _localToolToken === 'function' && _localToolToken()) return;  // 로컬 툴엔 자체 작업대가 있음
+                var bar = document.querySelector('.loop-preset-bar');
+                if (!bar) return;
+                var btn = document.getElementById('loopDeckBtn');
+                if (!_loopIsAdmin()) { if (btn) btn.setAttribute('hidden', ''); return; }
+                if (!btn) {
+                    btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'loop-preset-mini';
+                    btn.id = 'loopDeckBtn';
+                    btn.title = '코드악보 작업대 — 다이어그램 · 리듬 패턴 · 송폼';
+                    btn.setAttribute('aria-label', '코드악보 작업대');
+                    btn.innerHTML = '<i class="fas fa-pen-ruler"></i>';
+                    btn.onclick = function() {
+                        var host = _deckEnsure();
+                        if (!host) return;
+                        var open = !host.classList.contains('open');
+                        host.classList.toggle('open', open);
+                        btn.classList.toggle('active', open);
+                        if (open) {
+                            _deckRender();
+                            _tabRender();
+                            var ffi = document.getElementById('dkFfInput');
+                            if (ffi) ffi.value = _deckFlow.join(' > ');
+                        }
+                    };
+                    var ref = document.getElementById('loopPrintBtn');
+                    if (ref && ref.parentNode === bar) bar.insertBefore(btn, ref);
+                    else bar.appendChild(btn);
+                }
+                btn.removeAttribute('hidden');
+            }
+            document.addEventListener('DOMContentLoaded', function() { try { _deckSyncBtn(); } catch (e) {} });
+
+            // ══════════ TAB(타브악보) 이미지 — chart_tabs 테이블 ══════════
+            //   악보검색(로컬 툴)과 홈페이지가 같은 데이터를 쓴다. 이미지는 base64 로 DB 에 들어가고
+            //   화면·인쇄에는 data URL 로 붙는다. 읽기는 누구나, 쓰기는 관리자(또는 로컬 툴 토큰)만.
+            var _tabItems = [], _tabChartId = null, _tabDragIdx = null;
+
+            function _tabSrc(t) { return 'data:' + (t.mime || 'image/png') + ';base64,' + t.data; }
+            function _tabPush() {
+                window.__LOCAL_TOOL_TABS = _tabItems
+                    .filter(function(t) { return t.after_row !== null && t.after_row !== undefined; })
+                    .map(function(t) { return { src: _tabSrc(t), afterRow: t.after_row | 0 }; });
+                _tabInjectIntoGrid();
+            }
+            async function _tabsLoad(chartId) {
+                _tabChartId = chartId || null;
+                _tabItems = [];
+                if (!_tabChartId) { _tabPush(); _tabRender(); return _tabItems; }
+                try {
+                    var tok = _localToolToken();
+                    if (tok) {
+                        var rows = await _localToolRpc('tabs_for_tool', { token: tok, chart_id: _tabChartId });
+                        _tabItems = Array.isArray(rows) ? rows : [];
+                    } else {
+                        var c = await loopAnonClient();
+                        if (c) {
+                            var res = await c.from('chart_tabs').select('id,sort_order,after_row,mime,data')
+                                .eq('chart_id', _tabChartId).order('sort_order', { ascending: true });
+                            if (res && !res.error && Array.isArray(res.data)) _tabItems = res.data;
+                        }
+                    }
+                } catch (e) { console.warn('[tabs] load fail', e); }
+                _tabPush();
+                _tabRender();
+                return _tabItems;
+            }
+            // 이미지를 너무 크지 않게 줄여 base64 로 (가로 1400px 상한)
+            function _tabShrink(file) {
+                return new Promise(function(resolve, reject) {
+                    var fr = new FileReader();
+                    fr.onerror = function() { reject(new Error('읽기 실패')); };
+                    fr.onload = function() {
+                        var img = new Image();
+                        img.onerror = function() { reject(new Error('이미지가 아닙니다')); };
+                        img.onload = function() {
+                            var maxW = 1400, w = img.naturalWidth, h = img.naturalHeight;
+                            if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+                            var cv = document.createElement('canvas');
+                            cv.width = w; cv.height = h;
+                            cv.getContext('2d').drawImage(img, 0, 0, w, h);
+                            var url = cv.toDataURL('image/png');
+                            resolve({ mime: 'image/png', data: url.slice(url.indexOf(',') + 1) });
+                        };
+                        img.src = fr.result;
+                    };
+                    fr.readAsDataURL(file);
+                });
+            }
+            async function _tabAdd(file) {
+                if (!_tabChartId) { loopToast('먼저 곡을 선택해주세요'); return false; }
+                var shrunk;
+                try { shrunk = await _tabShrink(file); }
+                catch (e) { loopToast('이미지를 읽지 못했어요'); return false; }
+                try {
+                    var tok = _localToolToken();
+                    if (tok) {
+                        await _localToolRpc('add_tab_for_tool',
+                            { token: tok, chart_id: _tabChartId, mime: shrunk.mime, data: shrunk.data });
+                    } else {
+                        var authc = loopAuthClient();
+                        if (!authc) { loopLoginGate(); return false; }
+                        var next = _tabItems.reduce(function(m, t) { return Math.max(m, (t.sort_order | 0) + 1); }, 0);
+                        var res = await authc.from('chart_tabs').insert({
+                            chart_id: _tabChartId, sort_order: next, after_row: null,
+                            mime: shrunk.mime, data: shrunk.data
+                        });
+                        if (res && res.error) { loopToast('업로드 실패: ' + res.error.message); return false; }
+                    }
+                } catch (e) { loopToast('업로드 실패: ' + (e && e.message ? e.message : e)); return false; }
+                await _tabsLoad(_tabChartId);
+                return true;
+            }
+            // 배치(after_row)·순서·삭제를 한 번에 반영
+            async function _tabSaveMeta() {
+                if (!_tabChartId) return false;
+                var meta = _tabItems.map(function(t, i) {
+                    return { id: t.id, after_row: (t.after_row === null || t.after_row === undefined) ? null : (t.after_row | 0),
+                             sort_order: i };
+                });
+                try {
+                    var tok = _localToolToken();
+                    if (tok) {
+                        await _localToolRpc('set_tabs_meta_for_tool',
+                            { token: tok, chart_id: _tabChartId, meta: meta });
+                    } else {
+                        var authc = loopAuthClient();
+                        if (!authc) { loopLoginGate(); return false; }
+                        var keep = meta.map(function(m) { return m.id; });
+                        var del = keep.length
+                            ? await authc.from('chart_tabs').delete().eq('chart_id', _tabChartId).not('id', 'in', '(' + keep.join(',') + ')')
+                            : await authc.from('chart_tabs').delete().eq('chart_id', _tabChartId);
+                        if (del && del.error) { loopToast('저장 실패: ' + del.error.message); return false; }
+                        for (var i = 0; i < meta.length; i++) {
+                            var r = await authc.from('chart_tabs')
+                                .update({ after_row: meta[i].after_row, sort_order: meta[i].sort_order })
+                                .eq('id', meta[i].id);
+                            if (r && r.error) { loopToast('저장 실패: ' + r.error.message); return false; }
+                        }
+                    }
+                } catch (e) { loopToast('저장 실패: ' + (e && e.message ? e.message : e)); return false; }
+                _tabPush();
+                _tabRender();
+                return true;
+            }
+            // 화면의 마디 격자 줄 사이에 끼워 보여주기 (인쇄와 같은 자리)
+            function _tabInjectIntoGrid() {
+                var grid = document.getElementById('loopGrid');
+                if (!grid) return;
+                Array.prototype.slice.call(grid.querySelectorAll('.tool-tabimg')).forEach(function(el) { el.remove(); });
+                var cells = Array.prototype.slice.call(grid.querySelectorAll('.loop-cell'));
+                if (!cells.length) return;
+                _tabItems.forEach(function(t, ti) {
+                    if (t.after_row === null || t.after_row === undefined) return;
+                    var at = Math.max(0, (t.after_row | 0)) * 4;
+                    var wrap = document.createElement('div');
+                    wrap.className = 'tool-tabimg';
+                    wrap.style.cssText = 'grid-column:1/-1;margin:6px 0;position:relative;';
+                    var im = document.createElement('img');
+                    im.src = _tabSrc(t);
+                    im.style.cssText = 'display:block;width:100%;height:auto;border-radius:4px;';
+                    wrap.appendChild(im);
+                    var del = document.createElement('button');
+                    del.type = 'button'; del.textContent = '✕';
+                    del.title = '악보에서 빼기 (목록에는 그대로)';
+                    del.style.cssText = 'position:absolute;top:-7px;right:-7px;width:20px;height:20px;line-height:1;' +
+                        'border-radius:50%;border:1px solid #fff;background:#c0392b;color:#fff;font-size:12px;' +
+                        'font-weight:800;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.3);z-index:20;';
+                    del.onclick = function(ev) {
+                        ev.preventDefault(); ev.stopPropagation();
+                        _tabItems[ti].after_row = null;
+                        _tabSaveMeta();
+                    };
+                    wrap.appendChild(del);
+                    var ref = cells[at];
+                    if (ref && ref.parentNode) ref.parentNode.insertBefore(wrap, ref);
+                    else if (cells[cells.length - 1].parentNode) cells[cells.length - 1].parentNode.appendChild(wrap);
+                });
+            }
+            // 마우스 y 좌표 → 몇 번째 줄(4마디) 아래인지
+            function _tabRowFromY(y) {
+                var grid = document.getElementById('loopGrid');
+                if (!grid) return 0;
+                var cells = Array.prototype.slice.call(grid.querySelectorAll('.loop-cell'));
+                var row = 0;
+                cells.forEach(function(c, ci) {
+                    var r = c.getBoundingClientRect();
+                    if (y > r.top + r.height / 2) row = Math.floor(ci / 4) + 1;
+                });
+                return row;
+            }
+            function _tabRender() {
+                var box = document.getElementById('dkTabList');
+                if (!box) return;
+                if (!_tabChartId) { box.innerHTML = '<div class="dk-hint">곡을 선택하면 추가할 수 있어요.</div>'; return; }
+                box.innerHTML = _tabItems.map(function(t, i) {
+                    var un = (t.after_row === null || t.after_row === undefined);
+                    return '<div class="dk-tab' + (un ? ' unplaced' : '') + '">' +
+                        '<span class="dk-tab-no">' + (i + 1) + '</span>' +
+                        '<img src="' + _tabSrc(t) + '" data-tabdrag="' + i + '" draggable="true" title="악보로 끌어다 놓기">' +
+                        '<button type="button" class="dk-tab-del" data-tabdel="' + i + '" title="삭제">✕</button></div>';
+                }).join('') || '<div class="dk-hint">아직 없습니다.</div>';
+            }
+            // 반주 격자를 다시 그릴 때마다 TAB 을 재삽입 (로컬 툴이 쓰던 훅과 같은 이름)
+            (function() {
+                var prev = window.__onLoopGridRendered;
+                window.__onLoopGridRendered = function() {
+                    try { if (typeof prev === 'function') prev(); } catch (e) {}
+                    try { _tabInjectIntoGrid(); } catch (e) {}
+                };
+            })();
+            // 로컬 툴(악보검색)이 불러다 쓰는 창구
+            window.chartTabsLoad    = function(id) { return _tabsLoad(id); };
+            window.chartTabsList    = function() { return _tabItems.slice(); };
+            window.chartTabsAddFile = function(f) { return _tabAdd(f); };
+            window.chartTabsSetMeta = function(items) { if (items) _tabItems = items; return _tabSaveMeta(); };
 
             function openLoopPresetList() {
                 var list = document.getElementById('loopPresetList');
@@ -15822,6 +16789,8 @@
                 // presets 테이블엔 chords_c/d 컬럼이 없어 sequencer_pattern 에 담는다
                 if (s.chords_c && Object.keys(s.chords_c).length) sp.chords_c = s.chords_c; else delete sp.chords_c;
                 if (s.chords_d && Object.keys(s.chords_d).length) sp.chords_d = s.chords_d; else delete sp.chords_d;
+                // 작업대에서 만든 코드 다이어그램·리듬 패턴·송폼 흐름도 함께 저장
+                try { _deckExtras(sp); } catch (e) {}
                 return {
                     name: s.name, artist: s.artist, bpm: s.bpm, bars: s.bars, rhythm: s.rhythm,
                     bass_style: s.bass_style, piano_style: s.piano_style,
