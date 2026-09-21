@@ -8107,6 +8107,24 @@
         .loop-chorddiag svg { display: block; height: 52px; width: auto; }
         :root[data-theme="dark"] .loop-chorddiag { border-bottom-color: rgba(255,255,255,0.18); }
         :root[data-theme="dark"] .loop-chorddiag .lp-cd-item { color: var(--green-light); }
+        /* ── 화면(반주 작업 영역)의 리듬 줄 — 마디 추가 버튼 바로 아래 ──
+           인쇄 블록(.lp-rhythm)을 그대로 쓰되 mm 단위 여백만 화면용으로 바꾼다. */
+        .loop-rhythmbar { margin: 0 0 0.6rem; }
+        .loop-rhythmbar[hidden] { display: none; }
+        .loop-rhythmbar .lp-rhythm { margin-top: 0; padding-top: 0.5rem; border-top-color: rgba(42,107,74,0.28); }
+        .loop-rhythmbar .lp-rhythm-title { font-size: 0.78rem; color: var(--green-deep); margin-bottom: 0.35rem; }
+        .loop-rhythmbar .lp-formflow { gap: 6px; margin-bottom: 0.55rem; }
+        .loop-rhythmbar .lp-ff-box { padding: 3px 9px; border-radius: 5px; }
+        .loop-rhythmbar .lp-rhythm-cols { gap: 0.5rem 1.2rem; }
+        .loop-rhythmbar .lp-rhythm-row { gap: 0.6rem; }
+        .loop-rhythmbar .lp-rhythm-name { max-width: 110px; }
+        .loop-rhythmbar .lp-rhythm-grid { background: #fff; border-radius: 5px; padding: 2px 3px; overflow-x: auto; }
+        /* 기보는 항상 흰 바탕 기준 색이라 다크모드에서도 카드만 밝게 둔다 */
+        :root[data-theme="dark"] .loop-rhythmbar .lp-rhythm { border-top-color: rgba(255,255,255,0.18); }
+        :root[data-theme="dark"] .loop-rhythmbar .lp-rhythm-title { color: var(--green-light); }
+        :root[data-theme="dark"] .loop-rhythmbar .lp-ff-arrow { color: #9fb3a8; }
+        :root[data-theme="dark"] .loop-rhythmbar .lp-ff-box { color: var(--green-light); border-color: var(--green-light); }
+        :root[data-theme="dark"] .loop-rhythmbar .lp-rhythm-name { color: #cfe0d6; }
         .lp-rhythm { position: relative; z-index: 1; margin-top: 6mm; padding-top: 3mm; border-top: 1px dashed #b9c6bf; }
         .lp-rhythm-title { font-size: 11px; font-weight: 800; color: #3d5a4c; margin-bottom: 2mm; }
         /* 송폼 흐름 — → Bridge → Chorus */
@@ -9199,6 +9217,8 @@
                         <button type="button" class="loop-measures-pm loop-add-pm" id="loopPlusBtn" data-args="1" draggable="false" aria-label="마디 1개 늘리기" title="클릭: 맨 뒤에 1마디 추가 · 드래그: 마디 사이에 끼워넣기"><span class="loop-plus-grip" aria-hidden="true">⠿</span>+1</button>
                         <button type="button" class="loop-edit-btn" id="loopEditBtn" data-action="toggleLoopEditMode" aria-pressed="false" title="마디 편집 — 마디 삭제(−) / ⠿ 드래그로 마디 이동 (Ctrl·Cmd 누르고 끌면 복사)"><i class="fas fa-pen"></i> 편집</button>
                     </div>
+                    <!-- 리듬(스트로크) 패턴 — 마디 추가 줄 바로 아래. 저장된 패턴이 있을 때만. -->
+                    <div class="loop-rhythmbar" id="loopRhythmBar" hidden></div>
                     <!-- 전체 키 + 초기화 — 그리드와 BPM 사이 -->
                     <div class="loop-transpose-row">
                         <div class="loop-style-group" title="모든 코드를 반음 단위로 이동">
@@ -15793,6 +15813,7 @@
                 window.__LOCAL_TOOL_FORMFLOW = _deckFlow.slice();
                 window.__LOCAL_TOOL_CHORDDIAG = _deckCd.slice();
                 if (typeof window.renderLoopChordDiagrams === 'function') window.renderLoopChordDiagrams();
+                if (typeof window.renderLoopRhythmBar === 'function') window.renderLoopRhythmBar();
             }
             // 저장 페이로드에 실어보낼 부가 데이터
             function _deckExtras(sp) {
@@ -18421,7 +18442,7 @@
                         '<div class="lp-artist">' + (artist ? _escHtml(artist) : '') + '</div>' +
                     '</div>';
                 // 코드 다이어그램 — 카포/아티스트와 같은 줄 가운데 (제목 바로 아래)
-                var cd = _lpChordDiagBlock(false);
+                var cd = _lpExtrasOn() ? _lpChordDiagBlock(false) : null;
                 if (cd) {
                     var meta = head.querySelector('.lp-meta');
                     meta.classList.add('has-cd');
@@ -18540,7 +18561,7 @@
                 }
                 // 리듬 패턴을 같이 인쇄할 때 — 실제 높이를 재서 페이지 계산에 반영
                 var RHY_H = 0;
-                if (window.__LP_WITH_RHYTHM) {
+                if (_lpExtrasOn()) {
                     var rbM = _lpRhythmBlock();
                     if (rbM) {
                         meas.appendChild(rbM);
@@ -18620,7 +18641,7 @@
                     pagesRows[p].forEach(function(el) { ch.appendChild(el); });
                     pg.appendChild(ch);
                     // 마지막 페이지 악보 아래 여백에 리듬 패턴 (옵션 켰을 때만)
-                    if (p === total - 1 && window.__LP_WITH_RHYTHM) {
+                    if (p === total - 1 && _lpExtrasOn()) {
                         var rb = _lpRhythmBlock();
                         if (rb) pg.appendChild(rb);
                     }
@@ -18698,6 +18719,17 @@
                 while (blk.firstChild) host.appendChild(blk.firstChild);
                 host.removeAttribute('hidden');
             };
+            // 마디 추가 줄 아래 리듬(스트로크) 패턴 — 저장된 패턴/송폼 흐름이 있을 때만 보인다.
+            window.renderLoopRhythmBar = function() {
+                var host = document.getElementById('loopRhythmBar');
+                if (!host) return;
+                host.innerHTML = '';
+                var blk = _lpRhythmBlock();
+                if (!blk) { host.setAttribute('hidden', ''); return; }
+                blk.classList.add('lp-rhythm-screen');
+                host.appendChild(blk);
+                host.removeAttribute('hidden');
+            };
             // ── 인쇄용 리듬(스트로크) 패턴 블록 — 로컬 악보검색 툴에서만 사용 ──
             //   window.__LOCAL_TOOL_RHYTHM 에 툴이 패턴 배열을 심어준다.
             function _lpRhythmBlock() {
@@ -18746,6 +18778,11 @@
                     if (p.svg) {
                         // 로컬 툴이 넘겨준 슬래시 기보 SVG (음표·빔·강세·스트로크 방향)
                         grid.innerHTML = p.svg;
+                    } else if (steps.length && typeof window._deckRhythmSvg === 'function') {
+                        // SVG 를 못 받은 경우(저장된 steps 만 있을 때) — 작업대의 기보 생성기로 직접 그린다
+                        grid.innerHTML = window._deckRhythmSvg(
+                            { meter: meter, steps: steps, accents: p.accents || [], bars: p.bars },
+                            meter === 16 ? 13 : 19);
                     } else {
                         for (var i = 0; i < meter; i++) {
                             var c = document.createElement('span');
@@ -18925,57 +18962,42 @@
                 });
             }
 
-            // 현재 프리셋의 제목·아티스트·카포 자동 채우기 (인쇄 다이얼로그와 동일 규칙)
-            function _lpAutoMeta() {
-                var _meta = _loopActiveMeta || {};
-                var name = _loopSavedName || _meta.name ||
-                    (((document.getElementById('loopPresetSearch') || {}).value || '')
-                        .replace(/^\s*\d+\.\s*/, '').replace(/^.*\s-\s/, ''));
-                var artist = _loopSavedArtist || _meta.artist || '';
-                var capo = _meta.capo ? (_capoNum(_meta.capo) || '') : '';
-                return { name: name || '', artist: artist, capo: capo };
+            // 리듬·송폼·코드 다이어그램 중 하나라도 들어 있나 (체크박스 노출/기본 체크 판단)
+            function _lpHasExtras() {
+                return (Array.isArray(window.__LOCAL_TOOL_RHYTHM) && window.__LOCAL_TOOL_RHYTHM.length > 0) ||
+                       (Array.isArray(window.__LOCAL_TOOL_FORMFLOW) && window.__LOCAL_TOOL_FORMFLOW.length > 0) ||
+                       (Array.isArray(window.__LOCAL_TOOL_CHORDDIAG) && window.__LOCAL_TOOL_CHORDDIAG.length > 0);
             }
-            // 악보검색 툴 전용 — 인쇄물과 똑같은 모양으로 PNG 저장 (다이얼로그 없이 바로)
-            window.saveLoopImagePng = function() {
-                if (!hasLoopInput()) { loopToast('먼저 코드를 입력해주세요'); return; }
-                var m = _lpAutoMeta();
-                // 리듬·송폼이 있으면 인쇄 기본값과 같이 함께 넣는다
-                window.__LP_WITH_RHYTHM =
-                    !!((Array.isArray(window.__LOCAL_TOOL_RHYTHM) && window.__LOCAL_TOOL_RHYTHM.length) ||
-                       (Array.isArray(window.__LOCAL_TOOL_FORMFLOW) && window.__LOCAL_TOOL_FORMFLOW.length));
-                _saveLoopImage('png', m.name, m.artist, m.capo);
-            };
+            // 체크박스를 끈 경우에만 숨긴다. 값이 없으면(툴의 '인쇄 모양' 미리보기 등) 켠 것으로 본다.
+            function _lpExtrasOn() { return window.__LP_WITH_RHYTHM !== false; }
 
             // 악보검색(로컬 툴)에서 '인쇄 모양' 미리보기를 띄울 수 있게 페이지 빌더를 노출한다.
             window._lpBuildPages = function(title, artist, capo) { return _buildPages(title, artist, capo); };
             window._lpRhythmBlk = function() { return _lpRhythmBlock(); };
 
-            window.openPrintDialog = function() {
+            // 인쇄 / 이미지 저장 공통 다이얼로그 — 미리보기와 '리듬·코드 같이 넣기' 체크는 동일.
+            //   mode: 'print' | 'image'
+            function _openOutputDialog(mode) {
+                var isImg = (mode === 'image');
                 if (!hasLoopInput()) { loopToast('먼저 코드를 입력해주세요'); return; }
+                var showExtras = _localToolToken() && _lpHasExtras();
                 var ov = loopEnsureModal('loopPrintModal',
-                    '<div class="loop-modal-title">악보 인쇄</div>' +
+                    '<div class="loop-modal-title">' + (isImg ? '이미지로 저장' : '악보 인쇄') + '</div>' +
                     '<input type="text" id="lpTitle" class="loop-modal-input" placeholder="제목" maxlength="60">' +
                     '<div class="lp-ac-row">' +
                         '<input type="text" id="lpArtist" class="loop-modal-input" placeholder="아티스트 (선택)" maxlength="60">' +
                         '<input type="number" id="lpCapo" class="loop-modal-input lp-capo-input" placeholder="카포" min="0" max="15" inputmode="numeric">' +
                     '</div>' +
-                    ((_localToolToken() &&
-                      ((Array.isArray(window.__LOCAL_TOOL_RHYTHM) && window.__LOCAL_TOOL_RHYTHM.length) ||
-                       (Array.isArray(window.__LOCAL_TOOL_FORMFLOW) && window.__LOCAL_TOOL_FORMFLOW.length)))
-                        ? '<label class="lp-rhy-opt"><input type="checkbox" id="lpRhythm" checked> 송폼 흐름 · 리듬 패턴 같이 인쇄 <span>(악보 아래에 작게)</span></label>'
+                    (showExtras
+                        ? '<label class="lp-rhy-opt"><input type="checkbox" id="lpRhythm" checked> 리듬 패턴 · 송폼 흐름 · 코드 다이어그램 같이 넣기</label>'
                         : '') +
                     '<div class="loop-modal-label">미리보기</div>' +
                     '<div id="lpPreview" class="loop-print-preview"></div>' +
                     '<div class="loop-modal-actions">' +
-                        '<div class="lp-img-wrap">' +
-                            '<button type="button" class="loop-modal-btn ghost" id="lpImgBtn"><i class="fas fa-image" aria-hidden="true"></i> 이미지로 저장</button>' +
-                            '<div class="lp-img-pop" id="lpImgPop" hidden>' +
-                                '<button type="button" data-fmt="png">PNG</button>' +
-                                '<button type="button" data-fmt="jpeg">JPEG</button>' +
-                            '</div>' +
-                        '</div>' +
                         '<button type="button" class="loop-modal-btn ghost" data-close>취소</button>' +
-                        '<button type="button" class="loop-modal-btn primary" id="lpPrintGo">프린트</button>' +
+                        '<button type="button" class="loop-modal-btn primary" id="lpPrintGo">' +
+                            (isImg ? '<i class="fas fa-image" aria-hidden="true"></i> PNG로 저장' : '프린트') +
+                        '</button>' +
                     '</div>');
                 ov.setAttribute('data-no-outside-close', '');   // 바깥 클릭으로 닫히지 않게 — 취소만
                 ov.classList.add('open');
@@ -18998,6 +19020,7 @@
                 function refresh() {
                     prev.innerHTML = '';
                     var _rhyChk = document.getElementById('lpRhythm');
+                    // 체크박스가 없으면(넣을 게 없음) 끈 것으로 — 어차피 표시할 내용이 없다
                     window.__LP_WITH_RHYTHM = !!(_rhyChk && _rhyChk.checked);
                     var pages = _buildPages(tEl.value, aEl.value, cEl.value);
                     pages.forEach(function(pg, idx) {
@@ -19033,27 +19056,18 @@
                 cEl.addEventListener('input', refresh);
                 refresh();
                 setTimeout(function() { try { tEl.focus(); } catch (e) {} }, 50);
-                document.getElementById('lpPrintGo').onclick = function() { doLoopPrint(tEl.value, aEl.value, cEl.value); };
-                // 이미지로 저장 — PNG/JPEG 말풍선
-                var imgBtn = document.getElementById('lpImgBtn');
-                var imgPop = document.getElementById('lpImgPop');
-                if (imgBtn && imgPop) {
-                    imgBtn.onclick = function(e) {
-                        e.stopPropagation();
-                        var willShow = imgPop.hidden;
-                        imgPop.hidden = !willShow;
-                        if (willShow) {
-                            var closer = function(ev) {
-                                if (!ev.target.closest || !ev.target.closest('.lp-img-wrap')) { imgPop.hidden = true; document.removeEventListener('pointerdown', closer, true); }
-                            };
-                            setTimeout(function() { document.addEventListener('pointerdown', closer, true); }, 0);
-                        }
-                    };
-                    imgPop.querySelectorAll('[data-fmt]').forEach(function(b) {
-                        b.onclick = function() { imgPop.hidden = true; _saveLoopImage(b.getAttribute('data-fmt'), tEl.value, aEl.value, cEl.value); };
-                    });
-                }
-            };
+                document.getElementById('lpPrintGo').onclick = function() {
+                    if (isImg) {
+                        ov.classList.remove('open');
+                        _saveLoopImage('png', tEl.value, aEl.value, cEl.value);
+                    } else {
+                        doLoopPrint(tEl.value, aEl.value, cEl.value);
+                    }
+                };
+            }
+            window.openPrintDialog   = function() { _openOutputDialog('print'); };
+            // 악보검색 툴 전용 — 인쇄와 같은 미리보기를 띄우고 PNG 로 저장
+            window.saveLoopImagePng  = function() { _openOutputDialog('image'); };
 
             // 워터마크 버튼(프린트 옆 W) — 클릭 시 PDF 업로드 후 워터마크 적용. 관리자 전용.
             window.openWatermarkPdf = function() {
