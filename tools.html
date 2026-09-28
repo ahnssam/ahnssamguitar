@@ -15022,8 +15022,10 @@
                 if (Array.isArray(window.__LOCAL_TOOL_RHYTHM)) {
                     if (window.__LOCAL_TOOL_RHYTHM.length) {
                         sp.rhythmPatterns = window.__LOCAL_TOOL_RHYTHM.map(function(p) {
-                            return { name: p.name, section: p.section, meter: p.meter,
-                                     steps: p.steps, accents: p.accents };
+                            return { name: p.name, section: p.section, meter: p.meter, bars: p.bars,
+                                     steps: p.steps, accents: p.accents, chords: p.chords,
+                                     bar: (p.bar === null || p.bar === undefined) ? null : (p.bar | 0),
+                                     arrows: p.arrows !== false, inbar: p.inbar === true };
                         });
                     } else { delete sp.rhythmPatterns; }
                 }
@@ -15621,6 +15623,8 @@
             //   데이터는 전부 presets.sequencer_pattern 에 저장되므로 로컬 툴과 왕복 호환된다.
             var _deckPats = [], _deckFlow = [], _deckCd = [];
             var _deckShowChords = false, _deckDragFrom = null;
+            var _deckBarArrows = true;   // 마디 전용 리듬에 ↓↑✕ 표시
+            var _deckBarInBar = false;   // true: 마디 안(코드 오른쪽) / false: 마디 아래
             var _deckWantOpen = false;   // 반주로 돌아왔을 때 열린 상태를 되살리기 위한 기억
             try { _deckShowChords = localStorage.getItem('deck_show_chords_v1') === '1'; } catch (e) {}
 
@@ -15647,9 +15651,10 @@
 
             // ── 리듬악보(슬래시 기보) SVG — 악보검색 툴과 똑같은 그림을 홈에서도 그린다 ──
             //   칸 상태: 0 없음(앞 음이 이어짐) · 1 다운 · 2 업 · 3 뮤트(✕) · 4 쉼표
-            function _deckSvg(p, cw) {
+            //  noArrows: ↓↑✕ 방향 글자를 빼고 그만큼 아래 여백도 줄인다
+            function _deckSvg(p, cw, noArrows) {
                 var n = p.meter, steps = p.steps || [], acc = p.accents || [];
-                var W = cw || 20, H = 56, totalW = n * W;
+                var W = cw || 20, H = noArrows ? 42 : 56, totalW = n * W;
                 var baseY = 36, beamY = 14;
                 var grp = n === 16 ? 4 : (n === 12 ? 3 : 2);
                 var HW = 4.5, HH = 3.5;
@@ -15776,22 +15781,24 @@
                     }
                 });
                 // 스트로크 방향 글자
-                for (var i4 = 0; i4 < n; i4++) {
-                    var st4 = steps[i4] || 0, x4 = i4 * W + W / 2;
-                    var g2 = st4 === 1 ? '↓' : st4 === 2 ? '↑' : st4 === 3 ? '✕' : '';
-                    if (g2) {
-                        s += '<text x="' + x4 + '" y="' + (H - 2) +
-                             '" text-anchor="middle" font-size="12" font-weight="800" fill="' +
-                             (st4 === 3 ? CM : CN) + '">' + g2 + '</text>';
+                if (!noArrows) {
+                    for (var i4 = 0; i4 < n; i4++) {
+                        var st4 = steps[i4] || 0, x4 = i4 * W + W / 2;
+                        var g2 = st4 === 1 ? '↓' : st4 === 2 ? '↑' : st4 === 3 ? '✕' : '';
+                        if (g2) {
+                            s += '<text x="' + x4 + '" y="' + (H - 2) +
+                                 '" text-anchor="middle" font-size="12" font-weight="800" fill="' +
+                                 (st4 === 3 ? CM : CN) + '">' + g2 + '</text>';
+                        }
                     }
                 }
                 return s + '</svg>';
             }
             // 2마디짜리는 마디선으로 이어 그린다
-            function _deckSvgMulti(p, cw) {
+            function _deckSvgMulti(p, cw, noArrows) {
                 var bars = _deckBarsOf(p), m = p.meter, W = cw || 20;
-                if (bars <= 1) return _deckSvg(p, cw);
-                var measureW = m * W, gap = 12, H = 56, total = bars * measureW + (bars - 1) * gap;
+                if (bars <= 1) return _deckSvg(p, cw, noArrows);
+                var measureW = m * W, gap = 12, H = noArrows ? 42 : 56, total = bars * measureW + (bars - 1) * gap;
                 var inner = function(str) { return str.replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, ''); };
                 var s = '<svg viewBox="0 0 ' + total + ' ' + H + '" width="' + total + '" height="' + H +
                         '" xmlns="http://www.w3.org/2000/svg">';
@@ -15799,10 +15806,10 @@
                     var sub = { meter: m, steps: p.steps.slice(b * m, (b + 1) * m),
                                 accents: (p.accents || []).slice(b * m, (b + 1) * m) };
                     var dx = b * (measureW + gap);
-                    s += '<g transform="translate(' + dx + ',0)">' + inner(_deckSvg(sub, W)) + '</g>';
+                    s += '<g transform="translate(' + dx + ',0)">' + inner(_deckSvg(sub, W, noArrows)) + '</g>';
                     if (b < bars - 1) {
                         var bx = dx + measureW + gap / 2;
-                        s += '<line x1="' + bx + '" y1="8" x2="' + bx + '" y2="46" stroke="#7a8f84" stroke-width="1.6"/>';
+                        s += '<line x1="' + bx + '" y1="8" x2="' + bx + '" y2="' + (H - 10) + '" stroke="#7a8f84" stroke-width="1.6"/>';
                     }
                 }
                 return s + '</svg>';
@@ -15813,9 +15820,18 @@
             function _deckPush() {
                 window.__LOCAL_TOOL_RHYTHM = _deckPats.map(function(p) {
                     return { name: p.name, section: p.section, meter: p.meter, bars: _deckBarsOf(p),
-                             steps: p.steps, accents: p.accents,
+                             steps: p.steps, accents: p.accents, chords: p.chords,
+                             bar: (p.bar === null || p.bar === undefined) ? null : (p.bar | 0),
                              svg: _deckSvgMulti(p, p.meter === 16 ? 13 : 19) };
                 });
+                // 마디 전용 리듬 — 그 마디 칸 아래에만 작게
+                window.__LOCAL_TOOL_BARRHYTHM = _deckPats
+                    .filter(function(p) { return p.bar !== null && p.bar !== undefined; })
+                    .map(function(p) {
+                        return { bar: p.bar | 0, arrows: p.arrows !== false, inbar: p.inbar === true,
+                                 svg: _deckSvgMulti(p, p.meter === 16 ? 9 : 14, p.arrows === false) };
+                    });
+                try { _applyBarRhythms(); } catch (e) {}
                 window.__LOCAL_TOOL_FORMFLOW = _deckFlow.slice();
                 window.__LOCAL_TOOL_CHORDDIAG = _deckCd.slice();
                 if (typeof window.renderLoopChordDiagrams === 'function') window.renderLoopChordDiagrams();
@@ -15826,7 +15842,9 @@
                 if (_deckPats.length) {
                     sp.rhythmPatterns = _deckPats.map(function(p) {
                         return { name: p.name, section: p.section, meter: p.meter, bars: _deckBarsOf(p),
-                                 steps: p.steps, accents: p.accents, chords: p.chords };
+                                 steps: p.steps, accents: p.accents, chords: p.chords,
+                                 bar: (p.bar === null || p.bar === undefined) ? null : (p.bar | 0),
+                                 arrows: p.arrows !== false, inbar: p.inbar === true };
                     });
                 } else { delete sp.rhythmPatterns; }
                 if (_deckCd.length) sp.chordDiagrams = _deckCd.slice(); else delete sp.chordDiagrams;
@@ -15849,8 +15867,11 @@
                                 accents[i] = (Array.isArray(p.accents) && p.accents[i]) || 0;
                                 chords[i] = (Array.isArray(p.chords) && p.chords[i]) || '';
                             }
+                            var bar = (p.bar === null || p.bar === undefined) ? null : (p.bar | 0);
+                            if (bar !== null) { _deckBarArrows = (p.arrows !== false); _deckBarInBar = (p.inbar === true); }
                             return { name: p.name || '리듬', section: p.section || '', meter: meter,
-                                     bars: bars, steps: steps, accents: accents, chords: chords };
+                                     bars: bars, steps: steps, accents: accents, chords: chords,
+                                     bar: bar, arrows: (p.arrows !== false), inbar: (p.inbar === true) };
                         });
                     }
                     if (Array.isArray(sp.formFlow)) _deckFlow = sp.formFlow.slice();
@@ -15907,7 +15928,11 @@
                         '#deckHandle{position:static;width:auto;height:auto;padding:4px 10px;border-radius:9px;',
                         'border-left:1px solid rgba(42,107,74,.16);align-self:flex-start;margin-bottom:.5rem}}',
                         '#chartDeck .dk-head{display:flex;align-items:center;gap:8px;font-size:.92rem;font-weight:800;color:var(--green-deep);margin-bottom:.3rem}',
+                        '#chartDeck .dk-head{flex-wrap:wrap}',
                         '#chartDeck .dk-head b{flex:1}',
+                        '#chartDeck .dk-bigbtn{padding:6px 13px;font-size:.84rem;font-weight:800}',
+                        '#chartDeck #dkBarAdd{cursor:grab}',
+                        '#chartDeck #dkBarAdd.dragging{opacity:.5}',
                         '#chartDeck .dk-hint{font-size:.7rem;opacity:.6;margin:.15rem 0 .45rem;line-height:1.5}',
                         '#chartDeck .dk-btn{padding:3px 9px;font-size:.74rem;font-weight:700;border:1px solid rgba(42,107,74,.35);',
                         'border-radius:6px;background:#fff;color:var(--green-deep);cursor:pointer}',
@@ -15939,6 +15964,8 @@
                         '#chartDeck .dk-top input,#chartDeck .dk-top select{padding:3px 5px;border:1px solid rgba(42,107,74,.3);',
                         'border-radius:6px;font:inherit;font-size:.74rem;max-width:100%;background:#fff}',
                         '#chartDeck .dk-name{flex:1 1 100%;min-width:0;font-weight:700}',
+                        '#chartDeck .dk-box.barrhy{border-color:rgba(42,107,74,.6)}',
+                        '#chartDeck .dk-barname{display:block;font-size:.76rem;color:var(--green-deep);padding:3px 2px}',
                         '#chartDeck .dk-grid{display:flex;gap:4px}',
                         '#chartDeck .dk-step{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:1px}',
                         '#chartDeck .dk-grid .dk-step.downbeat:not(:first-child){border-left:1px dashed rgba(60,90,75,.32);margin-left:3px;padding-left:3px}',
@@ -15995,8 +16022,12 @@
                         '<div id="dkCdList" class="dk-cdlist"></div>' +
                     '</div>' +
                     '<div class="dk-head"><b>리듬 패턴</b>' +
+                        '<label class="dk-chk" title="마디 전용 리듬에 ↓↑✕ 방향 표시"><input type="checkbox" id="dkBarArrow" checked> 화살표</label>' +
+                        '<label class="dk-chk" title="켜면 마디 안 코드 오른쪽에, 끄면 마디 아래 줄에"><input type="checkbox" id="dkBarInBar"> 마디 안</label>' +
                         '<label class="dk-chk"><input type="checkbox" id="dkChordToggle"> 코드 입력</label>' +
-                        '<button type="button" class="dk-btn" id="dkAdd">+ 추가</button></div>' +
+                        '<button type="button" class="dk-btn dk-bigbtn" id="dkAdd">+ 추가</button>' +
+                        '<button type="button" class="dk-btn dk-bigbtn" id="dkBarAdd" draggable="true" ' +
+                        'title="악보의 마디로 끌어다 놓으면 그 마디 아래에 리듬이 들어갑니다">♪ 특정리듬 추가</button></div>' +
                     '<div class="dk-hint">칸 클릭 → 빈칸 ↓ ↑ ✕ 쉼 · Shift+클릭 = 강세<br>16비트는 방향 고정 (1·2·3·4·&amp; 다운, e·a 업)</div>' +
                     '<div id="dkList"></div>' +
                     '<div class="dk-sec" style="margin-top:.8rem;padding-top:.7rem;border-top:1px dashed rgba(42,107,74,.25)">' +
@@ -16078,10 +16109,14 @@
                         return '<option value="' + _deckEsc(x) + '"' + (p.section === x ? ' selected' : '') + '>' +
                                _deckEsc(x) + '</option>';
                     })).join('');
-                    return '<div class="dk-box">' +
+                    // 마디 전용 리듬은 이름 대신 '몇 마디 리듬'으로 고정 표시
+                    var isBar = (p.bar !== null && p.bar !== undefined);
+                    return '<div class="dk-box' + (isBar ? ' barrhy' : '') + '">' +
                         '<div class="dk-top">' +
-                            '<input class="dk-name" data-pn="' + pi + '" value="' + _deckEsc(p.name || '') + '" placeholder="패턴 이름">' +
-                            '<select data-ps="' + pi + '">' + secOpts + '</select>' +
+                            (isBar
+                              ? '<span class="dk-name dk-barname">♪ ' + ((p.bar | 0) + 1) + '마디 리듬</span>'
+                              : '<input class="dk-name" data-pn="' + pi + '" value="' + _deckEsc(p.name || '') + '" placeholder="패턴 이름">') +
+                            (isBar ? '' : '<select data-ps="' + pi + '">' + secOpts + '</select>') +
                             '<select data-pm="' + pi + '">' +
                                 '<option value="8"' + (p.meter === 8 ? ' selected' : '') + '>8비트</option>' +
                                 '<option value="16"' + (p.meter === 16 ? ' selected' : '') + '>16비트</option>' +
@@ -16094,7 +16129,8 @@
                             '<button type="button" class="dk-btn danger" data-pd="' + pi + '">삭제</button>' +
                         '</div>' + gridHtml +
                         '<div class="dk-prev"><div class="dk-prev-lab">리듬악보 (인쇄되는 모양)</div>' +
-                        '<div class="dk-prev-svg">' + _deckSvgMulti(p, p.meter === 16 ? 15 : 22) + '</div></div>' +
+                        '<div class="dk-prev-svg">' +
+                        _deckSvgMulti(p, p.meter === 16 ? 15 : 22, isBar && p.arrows === false) + '</div></div>' +
                     '</div>';
                 }).join('') || '<div class="dk-hint">아직 패턴이 없습니다. [+ 추가] 를 눌러보세요.</div>';
                 _deckPush();
@@ -16254,12 +16290,42 @@
                 }
                 // ── 리듬 패턴 ──
                 var add = document.getElementById('dkAdd');
-                if (add) add.onclick = function() {
-                    _deckPats.push({ name: '리듬 ' + (_deckPats.length + 1), section: '', meter: 8, bars: 1,
-                                     steps: new Array(8).fill(0), accents: new Array(8).fill(0),
-                                     chords: new Array(8).fill('') });
-                    _deckRender();
-                };
+                if (add) add.onclick = function() { _deckAddPattern(null); };
+                var badd = document.getElementById('dkBarAdd');
+                if (badd) {
+                    badd.addEventListener('dragstart', function(e) {
+                        badd.classList.add('dragging');
+                        try { e.dataTransfer.effectAllowed = 'copy'; e.dataTransfer.setData('text/plain', 'barrhy'); } catch (_) {}
+                        if (typeof window.barRhyDrag === 'function') window.barRhyDrag(true);
+                    });
+                    badd.addEventListener('dragend', function() {
+                        badd.classList.remove('dragging');
+                        if (typeof window.barRhyDrag === 'function') window.barRhyDrag(false);
+                    });
+                }
+                // 마디 전용 리듬 — 화살표 / 위치 토글 (모든 마디 리듬에 한꺼번에)
+                var ba = document.getElementById('dkBarArrow');
+                if (ba) {
+                    ba.checked = _deckBarArrows;
+                    ba.addEventListener('change', function(e) {
+                        _deckBarArrows = e.target.checked;
+                        _deckPats.forEach(function(p) {
+                            if (p.bar !== null && p.bar !== undefined) p.arrows = _deckBarArrows;
+                        });
+                        _deckRender();
+                    });
+                }
+                var bi = document.getElementById('dkBarInBar');
+                if (bi) {
+                    bi.checked = _deckBarInBar;
+                    bi.addEventListener('change', function(e) {
+                        _deckBarInBar = e.target.checked;
+                        _deckPats.forEach(function(p) {
+                            if (p.bar !== null && p.bar !== undefined) p.inbar = _deckBarInBar;
+                        });
+                        _deckRender();
+                    });
+                }
                 var ct = document.getElementById('dkChordToggle');
                 if (ct) {
                     ct.checked = _deckShowChords;
@@ -16385,6 +16451,33 @@
                     _deckRenderFlow(); _deckPush();
                 });
             }
+            // 패턴 추가 — bar 를 주면 '그 마디 전용 리듬'
+            function _deckAddPattern(bar) {
+                var isBar = (bar !== null && bar !== undefined);
+                if (isBar && _deckPats.some(function(p) { return p.bar === (bar | 0); })) {
+                    loopToast(((bar | 0) + 1) + '마디엔 이미 리듬이 있어요');
+                    return;
+                }
+                _deckPats.push({
+                    name: isBar ? ((bar | 0) + 1) + '마디 리듬' : ('리듬 ' + (_deckPats.length + 1)),
+                    section: '', meter: 8, bars: 1, bar: isBar ? (bar | 0) : null,
+                    arrows: _deckBarArrows, inbar: _deckBarInBar,
+                    steps: new Array(8).fill(0), accents: new Array(8).fill(0), chords: new Array(8).fill('')
+                });
+                _deckRender();
+                if (isBar) loopToast(((bar | 0) + 1) + '마디 리듬을 추가했어요');
+            }
+            // 판떼기의 '특정리듬 추가' 를 마디에 떨어뜨렸을 때
+            window.__onBarRhythmDrop = function(bar) {
+                var host = _deckEnsure();
+                if (host && !host.classList.contains('open')) {
+                    host.classList.add('open');
+                    document.body.classList.add('deck-open');
+                    var hb = document.getElementById('deckHandle');
+                    if (hb) { hb.textContent = '«'; }
+                }
+                _deckAddPattern(bar);
+            };
             function _deckResize(p, meter, bars) {
                 var oldS = p.steps.slice(), oldA = (p.accents || []).slice(), oldC = (p.chords || []).slice();
                 var L = meter * bars;
@@ -16646,6 +16739,131 @@
             window.chartTabsList    = function() { return _tabItems.slice(); };
             window.chartTabsAddFile = function(f) { return _tabAdd(f); };
             window.chartTabsSetMeta = function(items) { if (items) _tabItems = items; return _tabSaveMeta(); };
+
+            // ══════════ 마디별 리듬 — 특정 마디 아래에만 붙는 리듬 ══════════
+            //   window.__LOCAL_TOOL_BARRHYTHM = [{bar:3, svg:'<svg…>'}] 형태로 들어온다.
+            //   악보 아래 '리듬 패턴' 블록에는 안 나오고, 그 마디 칸 안쪽 아래에만 그려진다.
+            //   인쇄는 화면 그리드를 복제하므로 화면에 넣어두면 인쇄물에도 그대로 따라간다.
+            (function() {
+                if (document.getElementById('bar-rhythm-css')) return;
+                var st = document.createElement('style');
+                st.id = 'bar-rhythm-css';
+                st.textContent =
+                    // 마디 줄과 다음 줄 사이에 생기는 얇은 띠 — 해당 마디 자리에만 작게 그린다
+                    '.lp-barrhy-strip{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));' +
+                    'gap:0.35rem;margin:-0.35rem 0 0;pointer-events:none}' +
+                    '.lp-barrhy{min-width:0;overflow:hidden}' +
+                    // SVG 위쪽(빔 위 빈 공간)을 잘라내 마디 바로 밑에 붙게 한다
+                    '.lp-barrhy svg{display:block;height:40px;width:auto;max-width:100%;margin:-9px auto 0}' +
+                    '.lp-chart .lp-barrhy-strip{margin:-0.4rem 0 0.1rem;break-inside:avoid}' +
+                    // 마디 '안' — 코드 오른쪽 같은 줄
+                    '.lp-barrhy-in{flex:0 0 auto;display:flex;align-items:center;margin-left:auto;' +
+                    'padding-right:5px;overflow:visible}' +
+                    '.lp-barrhy-in svg{height:34px;width:auto;margin:0}' +
+                    '.loop-cell.barrhy-drop{outline:2px dashed var(--green-deep);outline-offset:-2px}';
+                document.head.appendChild(st);
+            })();
+            // 한 줄(4마디)에 속한 마디 리듬들을 모아 '줄 사이 띠' 하나를 만든다
+            function _barRhyStrip(items) {
+                var strip = document.createElement('div');
+                strip.className = 'lp-barrhy-strip';
+                for (var c = 0; c < 4; c++) {
+                    var slot = document.createElement('div');
+                    slot.className = 'lp-barrhy';
+                    var hit = items.filter(function(r) { return (r.bar | 0) % 4 === c; })[0];
+                    if (hit) slot.innerHTML = hit.svg;
+                    strip.appendChild(slot);
+                }
+                return strip;
+            }
+            function _barRhyByRow() {
+                var list = window.__LOCAL_TOOL_BARRHYTHM;
+                var rows = {};
+                if (!Array.isArray(list)) return rows;
+                list.forEach(function(r) {
+                    if (r.inbar || r.bar === null || r.bar === undefined || !r.svg) return;
+                    var row = Math.floor((r.bar | 0) / 4);
+                    (rows[row] = rows[row] || []).push(r);
+                });
+                return rows;
+            }
+            function _applyBarRhythms() {
+                var grid = document.getElementById('loopGrid');
+                if (!grid) return;
+                Array.prototype.slice.call(grid.querySelectorAll('.lp-barrhy-strip,.lp-barrhy-in'))
+                    .forEach(function(el) { el.remove(); });
+                // 마디 '안'에 넣는 것 — 코드 오른쪽, 같은 줄
+                (window.__LOCAL_TOOL_BARRHYTHM || []).forEach(function(r) {
+                    if (!r.inbar || r.bar === null || r.bar === undefined || !r.svg) return;
+                    var cell = grid.querySelector('.loop-cell[data-idx="' + (r.bar | 0) + '"]');
+                    var halves = cell && cell.querySelector('.loop-cell-halves');
+                    if (!halves) return;
+                    var box = document.createElement('div');
+                    box.className = 'lp-barrhy lp-barrhy-in';
+                    box.innerHTML = r.svg;
+                    halves.appendChild(box);
+                });
+                var rows = _barRhyByRow();
+                Object.keys(rows).map(Number).sort(function(a, b) { return a - b; }).forEach(function(row) {
+                    var strip = _barRhyStrip(rows[row]);
+                    var nextCell = grid.querySelector('.loop-cell[data-idx="' + ((row + 1) * 4) + '"]');
+                    if (nextCell) grid.insertBefore(strip, nextCell);
+                    else grid.appendChild(strip);
+                });
+            }
+            window.applyBarRhythms = _applyBarRhythms;
+            (function() {
+                var prev = window.__onLoopGridRendered;
+                window.__onLoopGridRendered = function() {
+                    try { if (typeof prev === 'function') prev(); } catch (e) {}
+                    try { _applyBarRhythms(); } catch (e) {}
+                };
+            })();
+            // '특정리듬 추가' 버튼은 리듬 패널(악보검색 / 작업대) 쪽에 있고,
+            //   드래그가 시작되면 이 창구로 알려준다. 판떼기는 마디 위 드롭만 받는다.
+            window.barRhyDrag = function(on) {
+                window.__barRhyDragging = !!on;
+                if (!on) _clearBarRhyMark();
+            };
+            function _clearBarRhyMark() {
+                var grid = document.getElementById('loopGrid');
+                if (!grid) return;
+                Array.prototype.slice.call(grid.querySelectorAll('.barrhy-drop'))
+                    .forEach(function(c) { c.classList.remove('barrhy-drop'); });
+            }
+            function _bindBarRhyDrop() {
+                var grid = document.getElementById('loopGrid');
+                if (!grid || grid.__barRhyBound) return;
+                grid.__barRhyBound = true;
+                grid.addEventListener('dragover', function(e) {
+                    if (!window.__barRhyDragging) return;
+                    var cell = e.target.closest ? e.target.closest('.loop-cell') : null;
+                    if (!cell) return;
+                    e.preventDefault();
+                    _clearBarRhyMark();
+                    cell.classList.add('barrhy-drop');
+                });
+                grid.addEventListener('dragleave', function(e) {
+                    if (!window.__barRhyDragging) return;
+                    if (!grid.contains(e.relatedTarget)) _clearBarRhyMark();
+                });
+                grid.addEventListener('drop', function(e) {
+                    if (!window.__barRhyDragging) return;
+                    var cell = e.target.closest ? e.target.closest('.loop-cell') : null;
+                    _clearBarRhyMark();
+                    window.__barRhyDragging = false;
+                    if (!cell) return;
+                    e.preventDefault();
+                    var idx = parseInt(cell.dataset.idx, 10);
+                    if (isNaN(idx)) return;
+                    if (typeof window.__onBarRhythmDrop === 'function') window.__onBarRhythmDrop(idx);
+                    else loopToast('리듬 패널이 열려 있어야 해요');
+                });
+            }
+            document.addEventListener('DOMContentLoaded', function() {
+                try { _bindBarRhyDrop(); } catch (e) {}
+                setTimeout(function() { try { _bindBarRhyDrop(); } catch (e) {} }, 800);
+            });
 
             function openLoopPresetList() {
                 var list = document.getElementById('loopPresetList');
@@ -18522,7 +18740,7 @@
                 var grid = document.getElementById('loopGrid');
                 if (!grid) return chart;
                 var clone = grid.cloneNode(true);
-                clone.querySelectorAll('.loop-songform-pop,.loop-volta-picker,.loop-chord-picker,.loop-row-add').forEach(function(p) { p.remove(); });
+                clone.querySelectorAll('.loop-songform-pop,.loop-volta-picker,.loop-chord-picker,.loop-row-add,.lp-barrhy-strip').forEach(function(p) { p.remove(); });
                 var cells = Array.prototype.filter.call(clone.children, function(c) {
                     return c.classList && c.classList.contains('loop-cell');
                 });
@@ -18537,10 +18755,21 @@
                     // 볼타(1·2도돌이)가 있으면 줄 위에 그만큼 자리를 띄운다
                     if (cell.classList.contains('has-volta')) row.classList.add('lp-row-volta');
                 });
+                // 마디 전용 리듬 — 그 마디가 있는 줄 바로 아래에 얇은 띠로 (해당 마디 자리에만)
+                var _brRows = _barRhyByRow();
+                Object.keys(_brRows).map(Number).sort(function(a, b) { return b - a; }).forEach(function(rw) {
+                    var rowEl = chart.children[rw];
+                    if (!rowEl) return;
+                    var strip = _barRhyStrip(_brRows[rw]);
+                    if (rowEl.nextSibling) chart.insertBefore(strip, rowEl.nextSibling);
+                    else chart.appendChild(strip);
+                });
                 // 로컬 툴에서 넣은 TAB 이미지를 줄 사이에 삽입 (악보 폭에 맞춤 · 비율 유지)
                 var _tabs = window.__LOCAL_TOOL_TABS;
                 if (Array.isArray(_tabs) && _tabs.length) {
-                    var rowsNow = Array.prototype.slice.call(chart.children);
+                    var rowsNow = Array.prototype.filter.call(chart.children, function(el) {
+                        return el.classList && el.classList.contains('lp-row');
+                    });
                     // 뒤에서부터 넣어야 인덱스가 밀리지 않음
                     _tabs.slice().sort(function(a, b) { return b.afterRow - a.afterRow; }).forEach(function(t) {
                         var wrap = document.createElement('div');
@@ -18789,7 +19018,10 @@
             // ── 인쇄용 리듬(스트로크) 패턴 블록 — 로컬 악보검색 툴에서만 사용 ──
             //   window.__LOCAL_TOOL_RHYTHM 에 툴이 패턴 배열을 심어준다.
             function _lpRhythmBlock() {
-                var pats = window.__LOCAL_TOOL_RHYTHM;
+                // 마디 전용 리듬(bar 지정)은 그 마디 아래에만 그려지므로 여기선 뺀다
+                var pats = (window.__LOCAL_TOOL_RHYTHM || []).filter(function(p) {
+                    return p.bar === null || p.bar === undefined;
+                });
                 var flow = window.__LOCAL_TOOL_FORMFLOW;
                 var hasPats = Array.isArray(pats) && pats.length;
                 var hasFlow = Array.isArray(flow) && flow.length;
@@ -21861,14 +22093,85 @@
                     t = t.replace(/\/\s*([a-g])/, function(_, c) { return '/' + c.toUpperCase(); });
                     return t;
                 };
+                // ── 분수코드(슬래시) — 윗화음 그립에 베이스음을 실제로 반영한다 ──
+                //   예전엔 'D/F#' 를 그냥 D 모양으로 그려서 6번줄 2프렛(F#)이 빠졌다.
+                //   저음현부터 훑어서 베이스음을 놓을 수 있는 가장 낮은 줄을 찾고,
+                //   그보다 아래 줄은 뮤트한다. 마땅한 자리가 없으면 윗화음 그대로 둔다.
+                var STR_PC = [4, 9, 2, 7, 11, 4];        // 6번줄(E)부터 1번줄(e)까지
+                function applySlashBass(ch, bassPc) {
+                    if (!ch || bassPc == null) return ch;
+                    var f = ch.frets.slice(), fg = (ch.fingers || []).slice();
+                    var pressed = f.filter(function(x) { return x != null && x > 0; });
+                    var hi = pressed.length ? Math.max.apply(null, pressed) : 0;
+                    var lo = pressed.length ? Math.min.apply(null, pressed) : 0;
+                    // 베이스를 새로 짚을 수 있는 프렛 범위 (개방 포지션이면 0~4)
+                    var openPos = hi <= 4;
+                    function frOk(fr) {
+                        if (fr === 0) return true;
+                        return openPos ? (fr >= 1 && fr <= 4)
+                                       : (fr >= Math.max(1, lo - 1) && fr <= hi + 1);
+                    }
+                    var lowIdx = 0;
+                    while (lowIdx < 6 && f[lowIdx] == null) lowIdx++;
+                    if (lowIdx >= 6) return ch;
+                    // 이미 최저음이 베이스음이면 손댈 것 없음
+                    if ((STR_PC[lowIdx] + f[lowIdx]) % 12 === bassPc) return ch;
+                    for (var b = 0; b < 6; b++) {
+                        var cur = f[b], fr = null;
+                        if (cur != null && (STR_PC[b] + cur) % 12 === bassPc) {
+                            fr = cur;             // 이미 그 줄이 베이스음 — 아래 줄만 뮤트
+                        } else {
+                            // 베이스음이 나오는 프렛을 찾아 새로(또는 바꿔) 짚는다
+                            var want = ((bassPc - STR_PC[b]) % 12 + 12) % 12;
+                            if (frOk(want)) fr = want;
+                            else if (frOk(want + 12)) fr = want + 12;
+                            // 쓰고 있던 줄을 바꾸는 경우 — 그 음이 위쪽 줄에도 있어야 안전
+                            if (fr !== null && cur != null) {
+                                var lostPc = (STR_PC[b] + cur) % 12, dup = false;
+                                for (var s2 = b + 1; s2 < 6; s2++) {
+                                    if (f[s2] != null && (STR_PC[s2] + f[s2]) % 12 === lostPc) { dup = true; break; }
+                                }
+                                if (!dup) fr = null;
+                            }
+                        }
+                        if (fr === null) continue;
+                        // 아래 줄을 뮤트했을 때 울리는 줄이 3개 미만이면 포기 (모양이 망가짐)
+                        var left = 0;
+                        for (var s = b; s < 6; s++) if (s === b || f[s] != null) left++;
+                        if (left < 3) continue;
+                        for (var k = 0; k < b; k++) { f[k] = null; fg[k] = 0; }
+                        if (f[b] !== fr) {
+                            f[b] = fr;
+                            // 같은 프렛을 쓰는 손가락이 있으면 그 번호, 없으면 안 쓴 번호
+                            var same = 0;
+                            for (var q = 0; q < 6; q++) if (q !== b && f[q] === fr && fg[q] > 0) { same = fg[q]; break; }
+                            if (!same && fr > 0) {
+                                var used = {};
+                                for (var q2 = 0; q2 < 6; q2++) if (q2 !== b && fg[q2] > 0) used[fg[q2]] = 1;
+                                for (var n = 1; n <= 4; n++) if (!used[n]) { same = n; break; }
+                            }
+                            fg[b] = fr === 0 ? 0 : (same || 0);
+                        }
+                        var out = Object.assign({}, ch);
+                        out.frets = f; out.fingers = fg;
+                        delete out.fingerings; delete out.defaultFingering;   // 윗화음 운지는 더 이상 안 맞음
+                        delete out.startFret;  delete out.labelAt;            // 프렛 범위가 바뀜 → 다시 계산
+                        return out;
+                    }
+                    return ch;
+                }
                 window._findChordDiagramByName = function(raw) {
                     if (!raw) return null;
                     var name = window._normalizeChordInput(String(raw).split('\n')[0]);
                     if (!name) return null;
-                    // 슬래시 베이스 분리 — 다이어그램은 윗화음 기준으로 그리고 이름만 원본 유지
-                    var display = name, upper = name;
+                    // 슬래시 베이스 분리 — 윗화음으로 그립을 찾고, 마지막에 베이스음을 얹는다
+                    var display = name, upper = name, bassPc = null;
                     var si = name.lastIndexOf('/');
-                    if (si > 0 && /^[A-G][#b]?$/.test(name.slice(si + 1))) upper = name.slice(0, si);
+                    if (si > 0 && /^[A-G][#b]?$/.test(name.slice(si + 1))) {
+                        upper = name.slice(0, si);
+                        var bp = PC[name.slice(si + 1)];
+                        if (bp !== undefined) bassPc = bp;
+                    }
                     var m = upper.match(/^([A-G][#b]?)(.*)$/);
                     if (!m) return null;
                     var rootPc = PC[m[1]];
@@ -21881,8 +22184,8 @@
                     for (var j = 0; j < cands.length; j++) {
                         var op = OPEN[cands[j]];
                         if (op) {
-                            return { name: display, cat: 'open', level: 2,
-                                     frets: op.frets.slice(), fingers: op.fingers.slice() };
+                            return applySlashBass({ name: display, cat: 'open', level: 2,
+                                     frets: op.frets.slice(), fingers: op.fingers.slice() }, bassPc);
                         }
                     }
                     // 2) 라이브러리 일치.
@@ -21905,12 +22208,14 @@
                     if (best) {
                         var cp = Object.assign({}, best);
                         cp.name = display;      // 악보에 적힌 표기 그대로 (Bb, C/G …)
-                        return cp;
+                        cp.frets = best.frets.slice();
+                        cp.fingers = (best.fingers || []).slice();
+                        return applySlashBass(cp, bassPc);
                     }
                     // 3) 이동식 폼 생성
                     var key = qualKey(rest);
                     if (key === null) return null;
-                    return buildMovable(rootPc, key, display);
+                    return applySlashBass(buildMovable(rootPc, key, display), bassPc);
                 };
             })();
 
