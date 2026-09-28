@@ -15957,6 +15957,17 @@
                         '#chartDeck .dk-chip .dk-x{position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;',
                         'border:none;background:#a4462f;color:#fff;font-size:10px;line-height:16px;padding:0;cursor:pointer;opacity:0}',
                         '#chartDeck .dk-chip:hover .dk-x{opacity:1}',
+                        '#chartDeck .dk-chip.custom{border-color:var(--green-deep);border-style:dashed}',
+                        '#chartDeck .dk-manual{margin:6px 0;padding:7px 8px;border:1px solid rgba(42,107,74,.45);',
+                        'border-radius:8px;background:#fff}',
+                        '#chartDeck .dk-manual-row{display:flex;gap:6px;align-items:flex-start;margin-bottom:5px}',
+                        '#chartDeck .dk-manual-row:last-child{margin-bottom:0}',
+                        '#chartDeck .dk-manual input{flex:1;min-width:0;box-sizing:border-box;padding:6px 8px;',
+                        'border:1px solid rgba(42,107,74,.3);border-radius:6px;font:inherit;font-size:.76rem}',
+                        '#chartDeck .dk-manual-prev{flex:0 0 auto;min-width:56px;min-height:56px;display:flex;',
+                        'align-items:center;justify-content:center;border:1px solid rgba(42,107,74,.25);border-radius:6px}',
+                        '#chartDeck .dk-manual-prev svg{display:block;height:54px;width:auto}',
+                        '#chartDeck .dk-manual-foot{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px}',
                         '#chartDeck .dk-chip.noshape{display:flex;align-items:center;justify-content:center;width:46px;height:50px;',
                         'font-size:.72rem;font-weight:700;color:#8a8a8a}',
                         '#chartDeck .dk-box{border:1px solid rgba(42,107,74,.25);border-radius:9px;padding:7px 8px;margin-bottom:7px;background:#fbfdfc}',
@@ -16015,10 +16026,26 @@
                     '<div class="dk-sec">' +
                         '<div class="dk-head"><b>코드 다이어그램</b>' +
                             '<button type="button" class="dk-btn" id="dkCdAuto">악보에서 가져오기</button>' +
+                            '<button type="button" class="dk-btn" id="dkCdManual">✎ 직접 입력</button>' +
                             '<button type="button" class="dk-btn" id="dkCdClear">비우기</button></div>' +
                         '<div class="dk-hint">제목 아래 · 카포/아티스트 줄 가운데에 인쇄됩니다 · 드래그로 순서 변경</div>' +
                         '<div class="dk-add"><input id="dkCdInput" placeholder="코드 입력 — 예: c, am7, f#m" autocomplete="off">' +
                         '<div id="dkCdSug" class="dk-sug" style="display:none"></div></div>' +
+                        // 라이브러리 그립이 맘에 안 들 때 — 운지를 직접 적어 넣는다
+                        '<div class="dk-manual" id="dkCdManualBox" style="display:none">' +
+                            '<div class="dk-manual-row">' +
+                                '<input id="dkmName" placeholder="코드 이름 — 예: Cadd9" autocomplete="off">' +
+                                '<input id="dkmFrets" placeholder="운지 (6→1번줄) — 예: x32030" autocomplete="off">' +
+                            '</div>' +
+                            '<div class="dk-manual-row">' +
+                                '<div class="dk-manual-prev" id="dkmPrev"></div>' +
+                                '<div class="dk-manual-foot">' +
+                                    '<span class="dk-hint" style="flex:1 1 100%;margin:0">x·- = 뮤트, 0 = 개방현.<br>10프렛 이상은 쉼표로: x,10,12,12,x,x</span>' +
+                                    '<button type="button" class="dk-btn" id="dkmAdd">담기</button>' +
+                                    '<button type="button" class="dk-btn" id="dkmClose">닫기</button>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
                         '<div id="dkCdList" class="dk-cdlist"></div>' +
                     '</div>' +
                     '<div class="dk-head"><b>리듬 패턴</b>' +
@@ -16144,14 +16171,16 @@
                 }).join('');
             }
 
-            function _deckCdSvg(name, opts) {
+            function _deckCdSvg(entry, opts) {
                 try {
-                    if (typeof window._findChordDiagramByName !== 'function' ||
-                        typeof window._renderChordSVG !== 'function') return null;
-                    var ch = window._findChordDiagramByName(name);
+                    if (typeof window._renderChordSVG !== 'function') return null;
+                    var ch = window.chordDiagResolve(entry);
                     if (ch) return window._renderChordSVG(ch, opts || { fingers: false, style: 'mini' });
                 } catch (e) {}
                 return null;
+            }
+            function _deckCdLabel(entry) {
+                return (entry && typeof entry === 'object') ? (entry.name || '코드') : String(entry || '');
             }
             function _deckRenderCd() {
                 var box = document.getElementById('dkCdList');
@@ -16160,10 +16189,13 @@
                     box.innerHTML = '<div class="dk-hint">비어 있습니다. [악보에서 가져오기] 를 눌러보세요.</div>';
                     return;
                 }
-                box.innerHTML = _deckCd.map(function(nm, i) {
-                    var svg = _deckCdSvg(nm);
+                box.innerHTML = _deckCd.map(function(entry, i) {
+                    var nm = _deckCdLabel(entry);
+                    var custom = (entry && typeof entry === 'object') ? ' custom' : '';
+                    var svg = _deckCdSvg(entry);
                     return svg
-                        ? '<div class="dk-chip" draggable="true" data-cdi="' + i + '" title="' + _deckEsc(nm) + '">' +
+                        ? '<div class="dk-chip' + custom + '" draggable="true" data-cdi="' + i + '" title="' +
+                          _deckEsc(nm) + (custom ? ' (직접 입력)' : '') + '">' +
                           svg + '<button type="button" class="dk-x" data-cdx="' + i + '">✕</button></div>'
                         : '<div class="dk-chip noshape" draggable="true" data-cdi="' + i + '" title="' + _deckEsc(nm) +
                           ' — 그립을 못 찾았어요">' + _deckEsc(nm) +
@@ -16242,10 +16274,49 @@
                     try { if (typeof window.localToolChartChords === 'function') names = window.localToolChartChords() || []; } catch (e) {}
                     if (!names.length) { loopToast('악보에서 코드를 찾지 못했어요'); return; }
                     var have = {};
-                    _deckCd.forEach(function(x) { have[x] = 1; });
+                    _deckCd.forEach(function(x) { have[_deckCdLabel(x)] = 1; });
                     names.forEach(function(n) { if (!have[n]) { _deckCd.push(n); have[n] = 1; } });
                     _deckRenderCd(); _deckPush();
                 };
+                // 운지 직접 입력
+                var mbox = document.getElementById('dkCdManualBox');
+                if (mbox) {
+                    var mn = document.getElementById('dkmName'), mf = document.getElementById('dkmFrets');
+                    var mp = document.getElementById('dkmPrev');
+                    var mdraw = function() {
+                        var frets = window.parseFretSpec(mf.value);
+                        if (!frets) { mp.innerHTML = '<span class="dk-hint" style="margin:0">운지 6칸</span>'; return; }
+                        var svg = _deckCdSvg({ name: (mn.value || '').trim() || '?', frets: frets,
+                                               fingers: [0, 0, 0, 0, 0, 0] });
+                        mp.innerHTML = svg || '<span class="dk-hint" style="margin:0">그릴 수 없음</span>';
+                    };
+                    var mb = document.getElementById('dkCdManual');
+                    if (mb) mb.onclick = function() {
+                        var open = mbox.style.display === 'none';
+                        mbox.style.display = open ? 'block' : 'none';
+                        if (open) { _deckCdCloseSug(); mdraw(); mn.focus(); }
+                    };
+                    var mc = document.getElementById('dkmClose');
+                    if (mc) mc.onclick = function() { mbox.style.display = 'none'; };
+                    mn.addEventListener('input', mdraw);
+                    mf.addEventListener('input', mdraw);
+                    var madd = function() {
+                        var frets = window.parseFretSpec(mf.value);
+                        if (!frets) { loopToast('운지를 6칸으로 적어주세요 — 예: x32010'); mf.focus(); return; }
+                        var name = (mn.value || '').trim();
+                        if (!name) { loopToast('코드 이름을 적어주세요'); mn.focus(); return; }
+                        _deckCd.push({ name: name, frets: frets, fingers: [0, 0, 0, 0, 0, 0] });
+                        mn.value = ''; mf.value = ''; mdraw(); mn.focus();
+                        _deckRenderCd(); _deckPush();
+                    };
+                    var ma = document.getElementById('dkmAdd');
+                    if (ma) ma.onclick = madd;
+                    [mn, mf].forEach(function(el) {
+                        el.addEventListener('keydown', function(e) {
+                            if (e.key === 'Enter') { e.preventDefault(); madd(); }
+                        });
+                    });
+                }
                 var clr = document.getElementById('dkCdClear');
                 if (clr) clr.onclick = function() { _deckCd = []; _deckRenderCd(); _deckPush(); };
                 var cdList = document.getElementById('dkCdList');
@@ -18947,16 +19018,42 @@
             // ── 코드 다이어그램 줄 — 로컬 악보검색 툴에서만 사용 ──
             //   window.__LOCAL_TOOL_CHORDDIAG = ['C','Am','F','G'] 형태로 툴이 심어준다.
             //   제목(머리글) 아래 · 첫 마디줄 위에 들어간다.
+            // 다이어그램 목록의 한 칸 → 코드 객체.
+            //   문자열이면 코드 라이브러리에서 찾고, {name,frets} 객체면 직접 입력한 운지 그대로 쓴다.
+            window.chordDiagResolve = function(entry) {
+                if (entry && typeof entry === 'object' && Array.isArray(entry.frets)) return entry;
+                if (typeof window._findChordDiagramByName === 'function') {
+                    return window._findChordDiagramByName(entry) || null;
+                }
+                return null;
+            };
+            // 'x32010' / 'x,3,2,0,1,0' / '-,10,12,12,x,x' → [null,3,2,0,1,0] (6~1번줄 순)
+            window.parseFretSpec = function(spec) {
+                var s = String(spec || '').trim();
+                if (!s) return null;
+                var parts = (s.indexOf(',') >= 0 || s.indexOf(' ') >= 0)
+                    ? s.split(/[,\s]+/).filter(Boolean)
+                    : s.split('');
+                if (parts.length !== 6) return null;
+                var out = [];
+                for (var i = 0; i < 6; i++) {
+                    var p = String(parts[i]).toLowerCase();
+                    if (p === 'x' || p === '-' || p === '.') { out.push(null); continue; }
+                    var v = parseInt(p, 10);
+                    if (isNaN(v) || v < 0 || v > 24) return null;
+                    out.push(v);
+                }
+                return out;
+            };
             function _lpChordDiagBlock(forScreen) {
                 var names = window.__LOCAL_TOOL_CHORDDIAG;
                 if (!Array.isArray(names) || !names.length) return null;
-                if (typeof window._findChordDiagramByName !== 'function' ||
-                    typeof window._renderChordSVG !== 'function') return null;
+                if (typeof window._renderChordSVG !== 'function') return null;
                 var wrap = document.createElement('div');
                 wrap.className = forScreen ? 'loop-chorddiag' : 'lp-chorddiag';
                 var n = 0;
                 names.forEach(function(nm) {
-                    var ch = window._findChordDiagramByName(nm);
+                    var ch = window.chordDiagResolve(nm);
                     if (!ch) return;
                     var item = document.createElement('div');
                     item.className = 'lp-cd-item';
@@ -22142,15 +22239,25 @@
                         for (var k = 0; k < b; k++) { f[k] = null; fg[k] = 0; }
                         if (f[b] !== fr) {
                             f[b] = fr;
-                            // 같은 프렛을 쓰는 손가락이 있으면 그 번호, 없으면 안 쓴 번호
-                            var same = 0;
-                            for (var q = 0; q < 6; q++) if (q !== b && f[q] === fr && fg[q] > 0) { same = fg[q]; break; }
-                            if (!same && fr > 0) {
-                                var used = {};
-                                for (var q2 = 0; q2 < 6; q2++) if (q2 !== b && fg[q2] > 0) used[fg[q2]] = 1;
-                                for (var n = 1; n <= 4; n++) if (!used[n]) { same = n; break; }
+                            // 손가락 번호 고르기.
+                            //   같은 프렛의 손가락을 그냥 따라 쓰면 안 된다 — 렌더러가
+                            //   '같은 손가락 + 같은 프렛' 을 바레로 보고 막대를 그려버린다.
+                            //   (D/F# 이 6~3번줄 바레처럼 보이던 원인)
+                            //   이미 두 줄 이상을 누르는 진짜 바레일 때만 그 번호를 이어 쓴다.
+                            var pick = 0;
+                            if (fr > 0) {
+                                var cnt = {};
+                                for (var q = 0; q < 6; q++) {
+                                    if (q !== b && f[q] === fr && fg[q] > 0) cnt[fg[q]] = (cnt[fg[q]] || 0) + 1;
+                                }
+                                Object.keys(cnt).forEach(function(n) { if (cnt[n] >= 2 && !pick) pick = +n; });
+                                if (!pick) {
+                                    var used = {};
+                                    for (var q2 = 0; q2 < 6; q2++) if (q2 !== b && fg[q2] > 0) used[fg[q2]] = 1;
+                                    for (var n2 = 1; n2 <= 4; n2++) if (!used[n2]) { pick = n2; break; }
+                                }
                             }
-                            fg[b] = fr === 0 ? 0 : (same || 0);
+                            fg[b] = pick;
                         }
                         var out = Object.assign({}, ch);
                         out.frets = f; out.fingers = fg;
