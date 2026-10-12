@@ -6158,6 +6158,30 @@
             transition: background 0.15s, color 0.15s;
         }
         .sp-chip:hover:not(.active) { background: rgba(42, 107, 74, 0.14); }
+        /* 속도 0.05 단위 조절 버튼 — 슬라이더 바로 아래 */
+        .sp-step-row { display: flex; gap: 0.5rem; margin-top: -0.9rem; padding-left: 2.9rem; }
+        .sp-step-btn {
+            flex: 1 1 0;
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+            padding: 0.45rem 0.6rem;
+            border-radius: 9px;
+            background: rgba(42, 107, 74, 0.08);
+            border: 1px solid rgba(42, 107, 74, 0.25);
+            color: var(--green-deep);
+            font-family: inherit; cursor: pointer;
+            transition: background 0.15s, opacity 0.15s;
+        }
+        .sp-step-btn i { font-size: 0.95rem; }
+        .sp-step-btn small { font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+        .sp-step-btn:hover:not([disabled]) { background: rgba(42, 107, 74, 0.16); }
+        .sp-step-btn:active:not([disabled]) { background: rgba(42, 107, 74, 0.24); }
+        .sp-step-btn[disabled] { opacity: 0.35; cursor: default; }
+        :root[data-theme="dark"] .sp-step-btn {
+            background: rgba(150, 200, 175, 0.08);
+            border-color: rgba(150, 200, 175, 0.25);
+            color: var(--green-light);
+        }
+        :root[data-theme="dark"] .sp-step-btn:hover:not([disabled]) { background: rgba(150, 200, 175, 0.16); }
         .sp-chip-custom:not(.active) { border-style: dashed; font-weight: 500; color: var(--text-secondary); }
         @media (max-width: 480px) {
             .sp-speed-chips { gap: 0.25rem; }
@@ -10408,6 +10432,15 @@
                         <input type="range" id="spSpeed" min="0.25" max="2" step="0.05" value="1" title="재생 속도 (0.25x ~ 2x, 0.05 단위)">
                         <span id="spSpeedVal" class="ls-fader-val">1.00x</span>
                     </div>
+                    <!-- 속도 한 칸씩(0.05) 조절 버튼 — 슬라이더 드래그 대신 클릭 -->
+                    <div class="sp-step-row">
+                        <button type="button" class="sp-step-btn" id="spSpeedDown" title="속도 0.05 느리게 (↓ 키)" aria-label="속도 0.05 느리게">
+                            <i class="fas fa-chevron-left" aria-hidden="true"></i><small>− 0.05</small>
+                        </button>
+                        <button type="button" class="sp-step-btn" id="spSpeedUp" title="속도 0.05 빠르게 (↑ 키)" aria-label="속도 0.05 빠르게">
+                            <small>+ 0.05</small><i class="fas fa-chevron-right" aria-hidden="true"></i>
+                        </button>
+                    </div>
                     <div class="ls-pitch-row">
                         <label class="ls-toggle" title="끄면(기본) 속도를 바꿔도 음정이 유지됩니다. 켜면 속도와 함께 음정도 변합니다(테이프처럼).">
                             <input type="checkbox" id="spPitchFollow">
@@ -10725,7 +10758,7 @@
         // a 1-2 line explanation. Click to open, click anywhere or another
         // help button to close.
         const TOOL_HELP_TEXT = {
-            slowplayer: '음악 파일을 열어 속도를 바꿔 듣고, 원하는 구간만 반복하는 연습용 플레이어예요. 파일은 내 기기 안에서만 재생돼요.\n\n• 파일 열기 버튼을 누르거나 파일을 화면에 끌어다 놓으세요 (mp3·wav·m4a 등).\n• 파형을 클릭하면 재생 위치(빨간 선)가 그 지점으로 옮겨져요. 재생 중이면 거기서부터 이어서 재생되고, 정지 상태면 위치만 옮겨집니다. 우측 하단 슬라이더로 파형을 확대할 수 있어요.\n• 구간반복: 파형 양 끝 핸들을 끌거나, 마우스로 파형을 드래그하거나, 재생 중 A 시작점 → B 끝점 버튼을 누르세요. LOOP 버튼으로 켜고 끕니다.\n• 속도: 0.5x~1.5x 버튼으로 바로 고르거나, 슬라이더로 0.25x~2x 를 0.05 단위로 조절해요. 기본은 음정 유지, 피치 변동을 켜면 음정도 함께 변해요.\n• 단축키: 스페이스=재생/일시정지, ←/→=5초 이동(Shift 는 1초), ↑/↓=속도 0.05, A/B=구간 지정, L=구간반복.',
+            slowplayer: '음악 파일을 열어 속도를 바꿔 듣고, 원하는 구간만 반복하는 연습용 플레이어예요. 파일은 내 기기 안에서만 재생돼요.\n\n• 파일 열기 버튼을 누르거나 파일을 화면에 끌어다 놓으세요 (mp3·wav·m4a 등).\n• 파형을 클릭하면 재생 위치(빨간 선)가 그 지점으로 옮겨져요. 재생 중이면 거기서부터 이어서 재생되고, 정지 상태면 위치만 옮겨집니다. 우측 하단 슬라이더로 파형을 확대할 수 있어요.\n• 구간반복: 파형 양 끝 핸들을 끌거나, 마우스로 파형을 드래그하거나, 재생 중 A 시작점 → B 끝점 버튼을 누르세요. LOOP 버튼으로 켜고 끕니다.\n• 속도: 0.5x~1.5x 버튼으로 바로 고르거나, 슬라이더나 그 아래 화살표 버튼으로 0.25x~2x 를 0.05 단위로 조절해요. 기본은 음정 유지, 피치 변동을 켜면 음정도 함께 변해요.\n• 단축키: 스페이스=재생/일시정지, ←/→=5초 이동(Shift 는 1초), ↑/↓=속도 0.05, A/B=구간 지정, L=구간반복.',
             loopstation: '마이크로 친 소리를 자동 녹음해 즉시 반복 재생하는 루프스테이션이에요.\n\n• 준비 버튼으로 마이크를 켜고(다시 누르면 감지 중지), RECORD 또는 R 키를 누르면 신호 대기 → 소리가 들어오면 자동 녹음돼요.\n• 녹음 중 RECORD·R·아무 키로 정지하면 즉시 반복 재생. 루프가 도는 동안 다시 녹음하면 위에 겹쳐(오버더빙) 쌓여요.\n• 오토 더빙(녹음 후 자동 재대기)·연속 더빙(정지 전까지 계속) 토글 지원.\n• 스페이스바=재생/일시정지, REVERSE 역재생, UNDO 마지막 레이어 되돌리기.\n• 파형 양옆 핸들로 시작·끝점 트림, 볼륨·속도(10~200%) 페이더 제공.',
             tuner: '기기 마이크로 들어오는 소리의 음높이를 분석해 정확한 튜닝을 알려줍니다. 기타·베이스·우쿨렐레·바이올린 모두 지원해요.',
             metronome: '메트로놈 : BPM에 맞춰 클릭이나 목소리(1/2/3/4)가 나옵니다. 박자(2/4·3/4·4/4·6/8) 기준점을 전환 가능.\n\n드럼 : BPM에 맞춰 드럼 리듬이 재생됩니다. 8비트·16비트·셔플락 등 자주 쓰이는 패턴 모음.\n\n탭 BPM: 박자에 맞춰 키보드/버튼 누르면 BPM 자동 측정.',
@@ -22160,6 +22193,9 @@
                 applyRate();
                 var sl = $('spSpeed'); if (sl) sl.value = rate;
                 var lbl = $('spSpeedVal'); if (lbl) lbl.textContent = rate.toFixed(2) + 'x';
+                var dn = $('spSpeedDown'), up = $('spSpeedUp');
+                if (dn) dn.disabled = rate <= SP_MIN + 1e-6;
+                if (up) up.disabled = rate >= SP_MAX - 1e-6;
                 var preset = false;
                 document.querySelectorAll('#spSpeedChips .sp-chip[data-rate]').forEach(function(ch) {
                     var on = Math.abs(+ch.dataset.rate - rate) < 1e-6;
@@ -22447,6 +22483,8 @@
                     else $('spSpeed').focus();   // '직접' 칩 — 슬라이더로 안내
                 });
                 $('spSpeed').oninput = function(e) { setSpeed(+e.target.value); };
+                $('spSpeedDown').onclick = function() { setSpeed(sp_speed - SP_STEP); };
+                $('spSpeedUp').onclick = function() { setSpeed(sp_speed + SP_STEP); };
                 $('spPitchFollow').onchange = applyRate;
                 $('spVol').oninput = function(e) {
                     $('spVolVal').textContent = e.target.value + '%';
