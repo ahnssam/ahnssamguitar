@@ -6158,6 +6158,11 @@
             transition: background 0.15s, color 0.15s;
         }
         .sp-chip:hover:not(.active) { background: rgba(42, 107, 74, 0.14); }
+        .sp-chip-custom:not(.active) { border-style: dashed; font-weight: 500; color: var(--text-secondary); }
+        @media (max-width: 480px) {
+            .sp-speed-chips { gap: 0.25rem; }
+            .sp-chip { min-width: 0; padding: 0.5rem 0.1rem; font-size: 0.78rem; }
+        }
         .sp-chip.active { background: var(--green-mid); border-color: var(--green-mid); color: var(--white); }
         :root[data-theme="dark"] .sp-chip {
             background: rgba(150, 200, 175, 0.08);
@@ -10395,6 +10400,7 @@
                         <button type="button" class="sp-chip active" data-rate="1">1x</button>
                         <button type="button" class="sp-chip" data-rate="1.25">1.25x</button>
                         <button type="button" class="sp-chip" data-rate="1.5">1.5x</button>
+                        <button type="button" class="sp-chip sp-chip-custom" id="spChipCustom" title="슬라이더로 0.05 단위 직접 조절">직접</button>
                     </div>
                     <div class="ls-fader">
                         <span class="ls-fader-ico" title="재생 속도" aria-label="재생 속도"><i class="fas fa-gauge-high"></i></span>
@@ -22153,9 +22159,18 @@
                 applyRate();
                 var sl = $('spSpeed'); if (sl) sl.value = rate;
                 var lbl = $('spSpeedVal'); if (lbl) lbl.textContent = rate.toFixed(2) + 'x';
-                document.querySelectorAll('#spSpeedChips .sp-chip').forEach(function(ch) {
-                    ch.classList.toggle('active', Math.abs(+ch.dataset.rate - rate) < 1e-6);
+                var preset = false;
+                document.querySelectorAll('#spSpeedChips .sp-chip[data-rate]').forEach(function(ch) {
+                    var on = Math.abs(+ch.dataset.rate - rate) < 1e-6;
+                    if (on) preset = true;
+                    ch.classList.toggle('active', on);
                 });
+                // 프리셋에 없는 속도면 '직접' 칩에 현재 값을 표시하고 켠다
+                var cc = $('spChipCustom');
+                if (cc) {
+                    cc.classList.toggle('active', !preset);
+                    cc.textContent = preset ? '직접' : rate.toFixed(2) + 'x';
+                }
             }
             // 도구 볼륨 × 사이트 상단 마스터 볼륨
             function applyVolume() {
@@ -22426,7 +22441,9 @@
                 // 속도 — 버튼(프리셋) + 슬라이더(0.05 단위)
                 $('spSpeedChips').addEventListener('click', function(e) {
                     var ch = e.target.closest ? e.target.closest('.sp-chip') : null;
-                    if (ch) setSpeed(+ch.dataset.rate);
+                    if (!ch) return;
+                    if (ch.dataset.rate) setSpeed(+ch.dataset.rate);
+                    else $('spSpeed').focus();   // '직접' 칩 — 슬라이더로 안내
                 });
                 $('spSpeed').oninput = function(e) { setSpeed(+e.target.value); };
                 $('spPitchFollow').onchange = applyRate;
