@@ -6116,6 +6116,57 @@
         }
         :root[data-theme="dark"] .ls-btn:hover { background: rgba(150, 200, 175, 0.16); }
 
+        /* ===== 구간반복 플레이어 (slowplayer) — 파형/트랜스포트/페이더는 ls-* 공용 ===== */
+        .sp-drop.dragover { outline: 2px dashed var(--green-mid); outline-offset: 3px; border-radius: 12px; }
+        .sp-file-info { flex: 1 1 150px; min-width: 0; }
+        .sp-file-name {
+            font-size: 0.9rem; font-weight: 600; color: var(--text-primary);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .sp-file-sub { font-size: 0.72rem; color: var(--text-light); margin-top: 0.15rem; }
+        .sp-file-sub.error { color: #c94545; }
+        .sp-time {
+            flex-shrink: 0;
+            font-size: 0.95rem; font-weight: 600; color: var(--green-deep);
+            font-variant-numeric: tabular-nums;
+        }
+        :root[data-theme="dark"] .sp-time { color: var(--green-light); }
+        .sp-wave { cursor: pointer; touch-action: pan-x; }
+        /* 구간반복 꺼져 있을 땐 A/B 핸들을 흐리게 */
+        .sp-loop-off .ls-trim { opacity: 0.45; }
+        .sp-ab-row {
+            display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+            margin: 0.7rem 0 1rem;
+        }
+        .sp-ab-row .ls-btn[disabled] { opacity: 0.4; cursor: default; }
+        .sp-ab-readout {
+            margin-left: auto;
+            font-size: 0.8rem; color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+        }
+        .sp-speed-chips { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .sp-chip {
+            flex: 1 1 0; min-width: 3.4em;
+            padding: 0.5rem 0.4rem;
+            border-radius: 999px;
+            background: rgba(42, 107, 74, 0.08);
+            border: 1px solid rgba(42, 107, 74, 0.25);
+            color: var(--text-primary);
+            font-family: inherit; font-size: 0.86rem; font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        .sp-chip:hover:not(.active) { background: rgba(42, 107, 74, 0.14); }
+        .sp-chip.active { background: var(--green-mid); border-color: var(--green-mid); color: var(--white); }
+        :root[data-theme="dark"] .sp-chip {
+            background: rgba(150, 200, 175, 0.08);
+            border-color: rgba(150, 200, 175, 0.25);
+            color: rgba(220, 233, 226, 0.9);
+        }
+        :root[data-theme="dark"] .sp-chip:hover:not(.active) { background: rgba(150, 200, 175, 0.16); }
+        :root[data-theme="dark"] .sp-chip.active { background: var(--green-mid); border-color: var(--green-mid); color: #fff; }
+
         /* ===== Sound mode toggle ===== */
         .sound-toggle {
             display: flex;
@@ -8827,6 +8878,9 @@
             <button class="menu-item" data-tool="loopstation" data-action="switchTool" data-args="loopstation">
                 <i class="fas fa-record-vinyl"></i><span>루프스테이션</span><span class="menu-badge menu-badge-new">NEW</span><span class="menu-pin" data-action="togglePin" data-args="loopstation" role="button" aria-label="상단 탭에 고정"><i class="fas fa-thumbtack"></i></span>
             </button>
+            <button class="menu-item" data-tool="slowplayer" data-action="switchTool" data-args="slowplayer">
+                <i class="fas fa-repeat"></i><span>구간반복 플레이어</span><span class="menu-badge menu-badge-new">NEW</span><span class="menu-pin" data-action="togglePin" data-args="slowplayer" role="button" aria-label="상단 탭에 고정"><i class="fas fa-thumbtack"></i></span>
+            </button>
             <button class="menu-item" data-tool="taptempo" data-action="switchTool" data-args="taptempo">
                 <i class="fas fa-hand-pointer"></i><span>탭템포</span><span class="menu-pin" data-action="togglePin" data-args="taptempo" role="button" aria-label="상단 탭에 고정"><i class="fas fa-thumbtack"></i></span>
             </button>
@@ -8879,7 +8933,7 @@
             <div class="tool-body">
                 <div class="home-hero">
                     <h1 class="home-title">안쌤의 기타나무숲 <span>연습도구</span></h1>
-                    <p class="home-sub">튜너·메트로놈·반주·청음·루프스테이션까지,<br>기타 연습에 필요한 도구를 한 곳에 !</p>
+                    <p class="home-sub">튜너·메트로놈·반주·청음·루프스테이션·구간반복까지,<br>기타 연습에 필요한 도구를 한 곳에 !</p>
                 </div>
 
                 <div class="home-section-label">연습 도구</div>
@@ -8903,6 +8957,11 @@
                         <span class="home-card-ico"><i class="fas fa-record-vinyl"></i></span>
                         <span class="home-card-name">루프스테이션 <span class="home-card-badge">NEW</span></span>
                         <span class="home-card-desc">마이크 자동 녹음·반복·오버더빙</span>
+                    </button>
+                    <button class="home-card" data-action="switchTool" data-args="slowplayer" data-tool="slowplayer">
+                        <span class="home-card-ico"><i class="fas fa-repeat"></i></span>
+                        <span class="home-card-name">구간반복 플레이어 <span class="home-card-badge">NEW</span></span>
+                        <span class="home-card-desc">음악 파일 배속 재생·구간반복</span>
                     </button>
                     <button class="home-card" data-action="switchTool" data-args="taptempo" data-tool="taptempo">
                         <span class="home-card-ico"><i class="fas fa-hand-pointer"></i></span>
@@ -10253,6 +10312,113 @@
             </div>
         </section>
 
+        <!-- 구간반복 플레이어 (slowplayer) — 음악 파일 배속 재생 + 구간반복 -->
+        <section class="tool-panel" id="slowplayerPanel">
+            <div class="tool-header">
+                <div class="tool-header-icon"><i class="fas fa-repeat"></i></div>
+                <h1>구간반복 플레이어</h1>
+            </div>
+            <div class="tool-body sp-drop" id="spDrop">
+                <button type="button" class="tool-help-btn tool-help-corner" data-help="slowplayer" aria-label="구간반복 플레이어 도움말" aria-expanded="false">?</button>
+
+                <!-- 파일 열기 + 파일명 + 재생 시간 -->
+                <div class="ls-top">
+                    <button class="ls-mic-btn" id="spFileBtn" type="button" title="음악 파일 열기">
+                        <i class="fas fa-folder-open"></i>
+                        <span>파일 열기</span>
+                    </button>
+                    <input type="file" id="spFileInput" accept="audio/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.opus,.mp4" hidden>
+                    <div class="sp-file-info">
+                        <div class="sp-file-name" id="spFileName">음악 파일을 열거나 여기에 끌어다 놓으세요</div>
+                        <div class="sp-file-sub" id="spFileSub">파일은 내 기기 안에서만 재생되고 서버로 전송되지 않아요</div>
+                    </div>
+                    <div class="sp-time" id="spTime">0:00.0 / 0:00.0</div>
+                </div>
+
+                <!-- 파형 (클릭=그 지점부터 재생, 마우스 드래그=구간 지정) -->
+                <div class="ls-wave-wrap sp-loop-off" id="spWaveWrap">
+                    <div class="ls-wave-scroll" id="spWaveScroll">
+                        <div class="ls-wave-inner" id="spWaveInner">
+                            <canvas class="ls-wave sp-wave" id="spWave"></canvas>
+                            <div class="ls-trim ls-trim-start" id="spTrimStart" style="display:none;" title="구간 시작점(A) 드래그"><span class="ls-trim-grip"></span></div>
+                            <div class="ls-trim ls-trim-end" id="spTrimEnd" style="display:none;left:100%;" title="구간 끝점(B) 드래그"><span class="ls-trim-grip"></span></div>
+                        </div>
+                    </div>
+                    <div class="ls-wave-empty" id="spWaveEmpty">음악 파일을 열면 파형이 표시됩니다</div>
+                    <div class="ls-zoom disabled" id="spZoomCtl" title="파형 확대/축소">
+                        <i class="fas fa-arrows-left-right" aria-hidden="true"></i>
+                        <input type="range" id="spZoom" min="100" max="800" step="10" value="100" aria-label="파형 확대/축소" disabled>
+                    </div>
+                </div>
+
+                <!-- 트랜스포트 -->
+                <div class="ls-transport">
+                    <button class="ls-tp-btn" id="spStartBtn" type="button" title="처음(구간반복 중이면 구간 시작점)으로" disabled>
+                        <span class="ls-tp-ico"><i class="fas fa-backward-step"></i></span>
+                        <span class="ls-tp-label">START</span>
+                    </button>
+                    <button class="ls-tp-btn" id="spBackBtn" type="button" title="5초 뒤로" disabled>
+                        <span class="ls-tp-ico"><i class="fas fa-rotate-left"></i></span>
+                        <span class="ls-tp-label">-5s</span>
+                        <span class="ls-tp-key">←</span>
+                    </button>
+                    <button class="ls-tp-btn ls-tp-play" id="spPlayBtn" type="button" title="재생 / 일시정지" disabled>
+                        <span class="ls-tp-ico"><i class="fas fa-play"></i></span>
+                        <span class="ls-tp-label">PLAY</span>
+                        <span class="ls-tp-key">SPACE</span>
+                    </button>
+                    <button class="ls-tp-btn" id="spFwdBtn" type="button" title="5초 앞으로" disabled>
+                        <span class="ls-tp-ico"><i class="fas fa-rotate-right"></i></span>
+                        <span class="ls-tp-label">+5s</span>
+                        <span class="ls-tp-key">→</span>
+                    </button>
+                    <button class="ls-tp-btn" id="spLoopBtn" type="button" title="구간반복 켜기 / 끄기" disabled>
+                        <span class="ls-tp-ico"><i class="fas fa-repeat"></i></span>
+                        <span class="ls-tp-label">LOOP</span>
+                        <span class="ls-tp-key">L</span>
+                    </button>
+                </div>
+
+                <!-- 구간(A-B) 지정 -->
+                <div class="sp-ab-row">
+                    <button class="ls-btn" id="spSetA" type="button" title="지금 재생 위치를 구간 시작점으로 (A 키)" disabled><i class="fas fa-flag"></i> A 시작점</button>
+                    <button class="ls-btn" id="spSetB" type="button" title="지금 재생 위치를 구간 끝점으로 (B 키)" disabled><i class="fas fa-flag-checkered"></i> B 끝점</button>
+                    <button class="ls-btn ls-btn-clear" id="spClearAB" type="button" title="구간 지정 해제" disabled><i class="fas fa-xmark"></i> 구간 해제</button>
+                    <span class="sp-ab-readout" id="spAbReadout">구간반복 꺼짐</span>
+                </div>
+
+                <!-- 속도 / 볼륨 -->
+                <div class="ls-master-row">
+                    <div class="sp-speed-chips" id="spSpeedChips" role="group" aria-label="재생 속도 선택">
+                        <button type="button" class="sp-chip" data-rate="0.5">0.5x</button>
+                        <button type="button" class="sp-chip" data-rate="0.75">0.75x</button>
+                        <button type="button" class="sp-chip active" data-rate="1">1x</button>
+                        <button type="button" class="sp-chip" data-rate="1.25">1.25x</button>
+                        <button type="button" class="sp-chip" data-rate="1.5">1.5x</button>
+                    </div>
+                    <div class="ls-fader">
+                        <span class="ls-fader-ico" title="재생 속도" aria-label="재생 속도"><i class="fas fa-gauge-high"></i></span>
+                        <span class="ls-fader-name">속도</span>
+                        <input type="range" id="spSpeed" min="0.25" max="2" step="0.05" value="1" title="재생 속도 (0.25x ~ 2x, 0.05 단위)">
+                        <span id="spSpeedVal" class="ls-fader-val">1.00x</span>
+                    </div>
+                    <div class="ls-pitch-row">
+                        <label class="ls-toggle" title="끄면(기본) 속도를 바꿔도 음정이 유지됩니다. 켜면 속도와 함께 음정도 변합니다(테이프처럼).">
+                            <input type="checkbox" id="spPitchFollow">
+                            <span class="ls-toggle-sw"></span>
+                            <span class="ls-toggle-txt">피치 변동 <span class="ls-pitch-hint">(속도에 따라 음정도 변경)</span></span>
+                        </label>
+                    </div>
+                    <div class="ls-fader">
+                        <span class="ls-fader-ico" title="볼륨" aria-label="볼륨"><i class="fas fa-volume-high"></i></span>
+                        <span class="ls-fader-name">볼륨</span>
+                        <input type="range" id="spVol" min="0" max="100" value="100">
+                        <span id="spVolVal" class="ls-fader-val">100%</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Rankings (filled by ear-ranking.js) -->
         <section class="tool-panel" id="rankingPanel"></section>
 
@@ -10406,6 +10572,10 @@
                 title: '루프스테이션 | 안쌤의 기타나무숲',
                 desc: '마이크 자동 녹음, 키 하나로 반복 재생. 오버더빙·역재생·트림·속도 조절까지.',
             },
+            slowplayer: {
+                title: '구간반복 플레이어 (배속 재생) | 안쌤의 기타나무숲',
+                desc: '음악 파일을 열어 음정 그대로 느리게·빠르게 듣고, 파형에서 구간을 잡아 반복 연습하세요.',
+            },
             ranking: {
                 title: '랭킹 | 안쌤의 기타나무숲',
                 desc: '청음 트레이닝 시즌(분기) 점수·연속 랭킹.',
@@ -10549,6 +10719,7 @@
         // a 1-2 line explanation. Click to open, click anywhere or another
         // help button to close.
         const TOOL_HELP_TEXT = {
+            slowplayer: '음악 파일을 열어 속도를 바꿔 듣고, 원하는 구간만 반복하는 연습용 플레이어예요. 파일은 내 기기 안에서만 재생돼요.\n\n• 파일 열기 버튼을 누르거나 파일을 화면에 끌어다 놓으세요 (mp3·wav·m4a 등).\n• 파형을 클릭하면 그 지점부터 재생돼요. 우측 하단 슬라이더로 파형을 확대할 수 있어요.\n• 구간반복: 파형 양 끝 핸들을 끌거나, 마우스로 파형을 드래그하거나, 재생 중 A 시작점 → B 끝점 버튼을 누르세요. LOOP 버튼으로 켜고 끕니다.\n• 속도: 0.5x~1.5x 버튼으로 바로 고르거나, 슬라이더로 0.25x~2x 를 0.05 단위로 조절해요. 기본은 음정 유지, 피치 변동을 켜면 음정도 함께 변해요.\n• 단축키: 스페이스=재생/일시정지, ←/→=5초 이동(Shift 는 1초), ↑/↓=속도 0.05, A/B=구간 지정, L=구간반복.',
             loopstation: '마이크로 친 소리를 자동 녹음해 즉시 반복 재생하는 루프스테이션이에요.\n\n• 준비 버튼으로 마이크를 켜고(다시 누르면 감지 중지), RECORD 또는 R 키를 누르면 신호 대기 → 소리가 들어오면 자동 녹음돼요.\n• 녹음 중 RECORD·R·아무 키로 정지하면 즉시 반복 재생. 루프가 도는 동안 다시 녹음하면 위에 겹쳐(오버더빙) 쌓여요.\n• 오토 더빙(녹음 후 자동 재대기)·연속 더빙(정지 전까지 계속) 토글 지원.\n• 스페이스바=재생/일시정지, REVERSE 역재생, UNDO 마지막 레이어 되돌리기.\n• 파형 양옆 핸들로 시작·끝점 트림, 볼륨·속도(10~200%) 페이더 제공.',
             tuner: '기기 마이크로 들어오는 소리의 음높이를 분석해 정확한 튜닝을 알려줍니다. 기타·베이스·우쿨렐레·바이올린 모두 지원해요.',
             metronome: '메트로놈 : BPM에 맞춰 클릭이나 목소리(1/2/3/4)가 나옵니다. 박자(2/4·3/4·4/4·6/8) 기준점을 전환 가능.\n\n드럼 : BPM에 맞춰 드럼 리듬이 재생됩니다. 8비트·16비트·셔플락 등 자주 쓰이는 패턴 모음.\n\n탭 BPM: 박자에 맞춰 키보드/버튼 누르면 BPM 자동 측정.',
@@ -10876,7 +11047,7 @@
         // ===== 모바일 메뉴 핀(즐겨찾기) =====
         // 핀한 메뉴가 상단 탭의 오른쪽부터 채워짐(최대 4). localStorage 저장.
         const PIN_FIXED = new Set(['tuner','metronome','backing']);
-        const PIN_DYN_ELIGIBLE = new Set(['loopstation','eartraining','chords','fretboard','scales','progression','piano','capo','taptempo']);
+        const PIN_DYN_ELIGIBLE = new Set(['loopstation','slowplayer','eartraining','chords','fretboard','scales','progression','piano','capo','taptempo']);
         const _PINFB_SVG = '<span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="3" width="15" height="10" fill="none" stroke="currentColor" stroke-width="1.2" rx="0.6"/><line x1="2" y1="3" x2="2" y2="13" stroke="currentColor" stroke-width="1.6"/><line x1="5.5" y1="3" x2="5.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="9" y1="3" x2="9" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="12.5" y1="3" x2="12.5" y2="13" stroke="currentColor" stroke-width="0.9"/><line x1="0.5" y1="5" x2="15.5" y2="5" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="7" x2="15.5" y2="7" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="9" x2="15.5" y2="9" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><line x1="0.5" y1="11" x2="15.5" y2="11" stroke="currentColor" stroke-width="0.5" opacity="0.55"/><circle cx="7.25" cy="8" r="0.85" fill="currentColor" opacity="0.75"/></svg></span>';
         const _PINPN_SVG = '<span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="2.5" width="15" height="12" fill="none" stroke="currentColor" stroke-width="1.1" rx="1"/><line x1="4.25" y1="2.5" x2="4.25" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="8" y1="2.5" x2="8" y2="14.5" stroke="currentColor" stroke-width="0.8"/><line x1="11.75" y1="2.5" x2="11.75" y2="14.5" stroke="currentColor" stroke-width="0.8"/><rect x="2.8" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="6.55" y="2.5" width="2.9" height="7" fill="currentColor"/><rect x="10.3" y="2.5" width="2.9" height="7" fill="currentColor"/></svg></span>';
         const _PINCHORD_SVG = '<span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><g stroke="currentColor" stroke-width="0.85" opacity="0.5"><line x1="0.7" y1="3" x2="15.3" y2="3"/><line x1="0.7" y1="5.5" x2="15.3" y2="5.5"/><line x1="0.7" y1="8" x2="15.3" y2="8"/><line x1="0.7" y1="10.5" x2="15.3" y2="10.5"/><line x1="0.7" y1="13" x2="15.3" y2="13"/></g><line x1="7.05" y1="4.2" x2="7.05" y2="11.8" stroke="currentColor" stroke-width="1"/><g fill="currentColor"><ellipse cx="5.1" cy="10.5" rx="2.15" ry="1.5"/><ellipse cx="5.1" cy="8" rx="2.15" ry="1.5"/><ellipse cx="5.1" cy="5.5" rx="2.15" ry="1.5"/></g></svg></span>';
@@ -10885,6 +11056,7 @@
             metronome:   { label: '메트로놈', icon: 'fa-stopwatch' },
             backing:     { label: '반주',   icon: 'fa-drum' },
             loopstation: { label: '루프',   icon: 'fa-record-vinyl' },
+            slowplayer:  { label: '구간반복', icon: 'fa-repeat' },
             taptempo:    { label: '탭템포', icon: 'fa-hand-pointer' },
             piano:       { label: '피아노', iconHtml: _PINPN_SVG },
             eartraining: { label: '음정',   icon: 'fa-headphones' },
@@ -11007,6 +11179,7 @@
             const CHORD_SVG = '<span class="cwk-icon" aria-hidden="true"><svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><g stroke="currentColor" stroke-width="0.85" opacity="0.5"><line x1="0.7" y1="3" x2="15.3" y2="3"/><line x1="0.7" y1="5.5" x2="15.3" y2="5.5"/><line x1="0.7" y1="8" x2="15.3" y2="8"/><line x1="0.7" y1="10.5" x2="15.3" y2="10.5"/><line x1="0.7" y1="13" x2="15.3" y2="13"/></g><line x1="7.05" y1="4.2" x2="7.05" y2="11.8" stroke="currentColor" stroke-width="1"/><g fill="currentColor"><ellipse cx="5.1" cy="10.5" rx="2.15" ry="1.5"/><ellipse cx="5.1" cy="8" rx="2.15" ry="1.5"/><ellipse cx="5.1" cy="5.5" rx="2.15" ry="1.5"/></g></svg></span>';
             const DYN = {
                 loopstation: { label: '루프',   icon: 'fa-record-vinyl' },
+                slowplayer:  { label: '구간반복', icon: 'fa-repeat' },
                 eartraining: { label: '음정',   icon: 'fa-headphones' },
                 chords:      { label: '코드',   icon: 'fa-guitar' },
                 fretboard:   { label: '지판',   iconHtml: FB_SVG },
@@ -11046,6 +11219,9 @@
             if (tool === 'loopstation' && typeof window.initLoopStation === 'function') window.initLoopStation();
             // 다른 도구로 이동 시 루프스테이션 마이크/재생 정지
             if (tool !== 'loopstation' && typeof window.stopLoopStation === 'function') window.stopLoopStation();
+            if (tool === 'slowplayer' && typeof window.initSlowPlayer === 'function') window.initSlowPlayer();
+            // 다른 도구로 이동 시 구간반복 플레이어 일시정지
+            if (tool !== 'slowplayer' && typeof window.stopSlowPlayer === 'function') window.stopSlowPlayer();
 
             if (isMobile()) closeSidebarMobile();
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -11056,7 +11232,7 @@
         //   #metronome           (canonical — 해시 라우팅, 뒤로가기 지원)
         //   ?tool=metronome      (legacy fallback for older shared links)
         (function() {
-            const VALID = new Set(['home','tuner','metronome','backing','loopstation','eartraining','chords','fretboard','scales','chordcompose','progression','piano','capo','taptempo','ranking','mypage']);
+            const VALID = new Set(['home','tuner','metronome','backing','loopstation','slowplayer','eartraining','chords','fretboard','scales','chordcompose','progression','piano','capo','taptempo','ranking','mypage']);
             function readToolFromUrl() {
                 // 해시 우선 (현재 내비게이션 상태), 쿼리는 구버전 링크 호환용
                 const h = (window.location.hash || '').replace('#','').toLowerCase();
@@ -21796,6 +21972,584 @@
         })();
     </script>
     <!-- END LOOP STATION -->
+
+    <!-- ========== 구간반복 플레이어 (slowplayer) ==========
+         음악 파일을 열어 배속 재생 + A-B 구간반복. 파형/핸들/줌 UI 는 루프스테이션과 같은 방식.
+         재생은 <audio> 의 playbackRate + preservesPitch 를 써서 긴 곡도 즉시 속도가 바뀐다
+         (루프스테이션의 오프라인 WSOLA 는 곡 전체를 다시 계산해야 해서 여기선 쓰지 않음).
+         파형은 decodeAudioData 로 한 번 디코드해 피크만 남기고 PCM 은 버린다.
+         switchTool 가 initSlowPlayer/stopSlowPlayer 를 호출. -->
+    <script>
+        (function() {
+            const SP_MIN = 0.25, SP_MAX = 2, SP_STEP = 0.05;
+            const PEAKS_PER_SEC = 200;         // 기본 피크 해상도 (초당 버킷 수)
+            const MAX_BASE_PEAKS = 60000;      // 긴 곡은 버킷 수 상한
+            const MIN_GAP_SEC = 0.1;           // A-B 최소 간격
+            const SKIP_SEC = 5;
+            const MAX_DECODE_BYTES = 200 * 1024 * 1024;  // 이보다 크면 파형 생략(재생만)
+
+            // ─── 상태 ──────────────────────────────────────────────────
+            let sp_audio = null;
+            let sp_objUrl = null;
+            let sp_dur = 0;                 // 곡 길이(초)
+            let sp_basePeaks = null;        // {min,max} 고정 해상도 피크
+            let sp_peaks = null;            // 캔버스 폭에 맞춘 피크
+            let sp_loopOn = false;
+            let sp_a = 0, sp_b = 0;         // 구간 시작/끝 (초)
+            let sp_inRegion = false;        // 재생 위치가 구간 안에 들어온 적 있는지 (B 통과 감지용)
+            let sp_speed = 1;
+            let sp_zoom = 1;
+            let sp_rafId = 0;
+            let sp_initialized = false;
+            let sp_loadToken = 0;           // 파일 교체 시 이전 디코드 결과 무시용
+            let sp_userScrollUntil = 0;
+            let sp_autoScrolling = false;
+
+            function $(id) { return document.getElementById(id); }
+            function cssVar(n) {
+                return getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+            }
+            function fmt(t) {
+                if (!isFinite(t) || t < 0) t = 0;
+                var m = Math.floor(t / 60), s = t - m * 60;
+                return m + ':' + (s < 10 ? '0' : '') + s.toFixed(1);
+            }
+            function setSub(msg, isErr) {
+                var el = $('spFileSub'); if (!el) return;
+                el.textContent = msg || '';
+                el.classList.toggle('error', !!isErr);
+            }
+            function hasFile() { return sp_dur > 0; }
+
+            // ─── 파일 불러오기 ────────────────────────────────────────
+            function loadFile(file) {
+                if (!file) return;
+                var token = ++sp_loadToken;
+                try { sp_audio.pause(); } catch (e) {}
+                if (sp_objUrl) { try { URL.revokeObjectURL(sp_objUrl); } catch (e) {} }
+                sp_objUrl = URL.createObjectURL(file);
+                sp_dur = 0; sp_basePeaks = null; sp_peaks = null;
+                sp_loopOn = false; sp_a = 0; sp_b = 0; sp_inRegion = false;
+                if (sp_zoom !== 1) { $('spZoom').value = 100; setZoom(1); }
+                sp_audio.src = sp_objUrl;
+                applyRate();
+                $('spFileName').textContent = file.name;
+                setSub('불러오는 중…');
+                updateUi(); draw();
+                try { if (window.gtag) window.gtag('event', 'slowplayer_load'); } catch (e) {}
+
+                if (file.size > MAX_DECODE_BYTES) {
+                    setSub('파일이 커서 파형은 생략했어요. 재생·구간반복은 그대로 쓸 수 있어요.');
+                    return;
+                }
+                var AC = window.AudioContext || window.webkitAudioContext;
+                if (!AC || !file.arrayBuffer) return;
+                var ctx;
+                file.arrayBuffer().then(function(ab) {
+                    ctx = new AC();
+                    // 콜백/프로미스 양쪽 지원 (구형 Safari 는 콜백만)
+                    return new Promise(function(res, rej) {
+                        var p = ctx.decodeAudioData(ab, res, rej);
+                        if (p && p.then) p.then(res, rej);
+                    });
+                }).then(function(buf) {
+                    if (token !== sp_loadToken) return;
+                    sp_basePeaks = computeBasePeaks(buf);
+                    resamplePeaks();
+                    setSub('파일은 내 기기 안에서만 재생되고 서버로 전송되지 않아요');
+                    updateUi(); draw();
+                }).catch(function() {
+                    if (token !== sp_loadToken) return;
+                    if (hasFile()) setSub('파형을 만들 수 없는 형식이에요. 재생·구간반복은 그대로 쓸 수 있어요.');
+                }).then(function() {
+                    try { if (ctx && ctx.close) ctx.close(); } catch (e) {}
+                });
+            }
+            // 디코드된 버퍼 → 고정 해상도 min/max 피크 (최대 2채널 평균). PCM 은 보관하지 않는다.
+            function computeBasePeaks(buf) {
+                var n = buf.length;
+                var cols = Math.max(1, Math.min(MAX_BASE_PEAKS, Math.ceil(buf.duration * PEAKS_PER_SEC)));
+                var c0 = buf.getChannelData(0);
+                var c1 = buf.numberOfChannels > 1 ? buf.getChannelData(1) : null;
+                var step = n / cols;
+                var mn = new Float32Array(cols), mx = new Float32Array(cols);
+                for (var x = 0; x < cols; x++) {
+                    var s = Math.floor(x * step), e = Math.floor((x + 1) * step);
+                    if (e <= s) e = s + 1;
+                    if (e > n) e = n;
+                    var lo = 1, hi = -1;
+                    for (var i = s; i < e; i++) {
+                        var v = c1 ? (c0[i] + c1[i]) * 0.5 : c0[i];
+                        if (v < lo) lo = v;
+                        if (v > hi) hi = v;
+                    }
+                    if (hi < lo) { lo = 0; hi = 0; }
+                    mn[x] = lo; mx[x] = hi;
+                }
+                return { min: mn, max: mx };
+            }
+            // 기본 피크 → 현재 캔버스 폭(확대 반영)에 맞춰 재집계
+            function resamplePeaks() {
+                var c = $('spWave');
+                if (!c || !sp_basePeaks) { sp_peaks = null; return; }
+                var cols = c.width, nb = sp_basePeaks.min.length;
+                var bmn = sp_basePeaks.min, bmx = sp_basePeaks.max;
+                var step = nb / cols;
+                var mn = new Float32Array(cols), mx = new Float32Array(cols);
+                for (var x = 0; x < cols; x++) {
+                    var s = Math.floor(x * step), e = Math.floor((x + 1) * step);
+                    if (s >= nb) s = nb - 1;
+                    if (e <= s) e = s + 1;
+                    if (e > nb) e = nb;
+                    var lo = 1, hi = -1;
+                    for (var i = s; i < e; i++) {
+                        if (bmn[i] < lo) lo = bmn[i];
+                        if (bmx[i] > hi) hi = bmx[i];
+                    }
+                    mn[x] = lo; mx[x] = hi;
+                }
+                sp_peaks = { min: mn, max: mx };
+            }
+
+            // ─── 재생 / 이동 ──────────────────────────────────────────
+            function seek(t) {
+                if (!hasFile()) return;
+                t = Math.max(0, Math.min(sp_dur, t));
+                try { sp_audio.currentTime = t; } catch (e) {}
+                sp_inRegion = (t >= sp_a && t < sp_b);
+                draw(); updateTime();
+            }
+            function play() {
+                if (!hasFile()) return;
+                if (sp_audio.ended || sp_audio.currentTime >= sp_dur - 0.02) seek(sp_loopOn ? sp_a : 0);
+                applyVolume();
+                var p = sp_audio.play();
+                if (p && p.catch) p.catch(function() {});
+            }
+            function togglePlay() {
+                if (!hasFile()) return;
+                if (sp_audio.paused) play(); else sp_audio.pause();
+            }
+            // 구간 끝(B)을 지나면 시작점(A)으로. rAF(화면) 와 timeupdate(백그라운드 탭) 양쪽에서 호출.
+            function checkLoop() {
+                if (!sp_loopOn || !hasFile() || sp_audio.paused) return;
+                var t = sp_audio.currentTime;
+                if (t >= sp_a && t < sp_b) sp_inRegion = true;
+                else if (sp_inRegion && t >= sp_b) seek(sp_a);
+            }
+            function applyRate() {
+                if (!sp_audio) return;
+                var keep = !$('spPitchFollow').checked;   // 기본 = 음정 유지
+                sp_audio.preservesPitch = keep;
+                sp_audio.mozPreservesPitch = keep;
+                sp_audio.webkitPreservesPitch = keep;
+                sp_audio.defaultPlaybackRate = sp_speed;  // src 교체 후에도 유지
+                sp_audio.playbackRate = sp_speed;
+            }
+            function setSpeed(rate) {
+                rate = Math.round(rate / SP_STEP) * SP_STEP;
+                rate = Math.max(SP_MIN, Math.min(SP_MAX, +rate.toFixed(2)));
+                sp_speed = rate;
+                applyRate();
+                var sl = $('spSpeed'); if (sl) sl.value = rate;
+                var lbl = $('spSpeedVal'); if (lbl) lbl.textContent = rate.toFixed(2) + 'x';
+                document.querySelectorAll('#spSpeedChips .sp-chip').forEach(function(ch) {
+                    ch.classList.toggle('active', Math.abs(+ch.dataset.rate - rate) < 1e-6);
+                });
+            }
+            // 도구 볼륨 × 사이트 상단 마스터 볼륨
+            function applyVolume() {
+                if (!sp_audio) return;
+                var ms = $('masterVolSlider');
+                var site = ms ? (+ms.value) / 100 : 1;
+                var v = Math.max(0, Math.min(1, (+$('spVol').value) / 100 * site));
+                if (Math.abs(sp_audio.volume - v) > 1e-3) sp_audio.volume = v;
+            }
+
+            // ─── 구간(A-B) ────────────────────────────────────────────
+            function setLoop(on) {
+                sp_loopOn = !!on && hasFile();
+                var t = sp_audio.currentTime;
+                sp_inRegion = (t >= sp_a && t < sp_b);
+                updateUi(); draw();
+            }
+            function setA() {
+                if (!hasFile()) return;
+                sp_a = Math.min(sp_audio.currentTime, sp_dur - MIN_GAP_SEC);
+                if (sp_b - sp_a < MIN_GAP_SEC) sp_b = sp_dur;   // 끝점보다 뒤를 찍으면 끝점은 곡 끝으로
+                sp_inRegion = true;
+                updateUi(); draw();
+            }
+            function setB() {
+                if (!hasFile()) return;
+                var t = sp_audio.currentTime;
+                if (t - sp_a < MIN_GAP_SEC) return;             // 시작점보다 앞/같은 위치는 무시
+                sp_b = t;
+                sp_loopOn = true;
+                seek(sp_a);
+                updateUi();
+            }
+            function clearAB() {
+                sp_a = 0; sp_b = sp_dur; sp_loopOn = false; sp_inRegion = false;
+                updateUi(); draw();
+            }
+
+            // ─── UI 갱신 ──────────────────────────────────────────────
+            function updateTime() {
+                var el = $('spTime'); if (!el) return;
+                el.textContent = fmt(sp_audio ? sp_audio.currentTime : 0) + ' / ' + fmt(sp_dur);
+            }
+            function updateUi() {
+                var has = hasFile();
+                ['spStartBtn', 'spBackBtn', 'spPlayBtn', 'spFwdBtn', 'spLoopBtn', 'spSetA', 'spSetB', 'spClearAB'].forEach(function(id) {
+                    var b = $(id); if (b) b.disabled = !has;
+                });
+                var play = $('spPlayBtn');
+                if (play) {
+                    var playing = has && !sp_audio.paused;
+                    var pi = play.querySelector('i'), pl = play.querySelector('.ls-tp-label');
+                    if (pi) pi.className = playing ? 'fas fa-pause' : 'fas fa-play';
+                    if (pl) pl.textContent = playing ? 'PAUSE' : 'PLAY';
+                    play.classList.toggle('active', playing);
+                }
+                var loop = $('spLoopBtn'); if (loop) loop.classList.toggle('active', sp_loopOn);
+                var wrap = $('spWaveWrap'); if (wrap) wrap.classList.toggle('sp-loop-off', !sp_loopOn);
+                var ro = $('spAbReadout');
+                if (ro) {
+                    ro.textContent = !has ? '구간반복 꺼짐'
+                        : (sp_loopOn ? '반복 ' : '구간 ') + fmt(sp_a) + ' ~ ' + fmt(sp_b) +
+                          ' (' + (sp_b - sp_a).toFixed(1) + '초)' + (sp_loopOn ? '' : ' · 반복 꺼짐');
+                }
+                var empty = $('spWaveEmpty');
+                if (empty) {
+                    if (!has) { empty.textContent = '음악 파일을 열면 파형이 표시됩니다'; empty.style.display = ''; }
+                    else if (!sp_basePeaks) { empty.textContent = '파형 분석 중…'; empty.style.display = ''; }
+                    else empty.style.display = 'none';
+                }
+                var zoom = $('spZoom'), zoomCtl = $('spZoomCtl');
+                if (zoom) zoom.disabled = !has;
+                if (zoomCtl) zoomCtl.classList.toggle('disabled', !has);
+                var hs = $('spTrimStart'), he = $('spTrimEnd');
+                if (hs) { hs.style.display = has ? '' : 'none'; hs.style.left = (has ? sp_a / sp_dur * 100 : 0) + '%'; }
+                if (he) { he.style.display = has ? '' : 'none'; he.style.left = (has ? sp_b / sp_dur * 100 : 100) + '%'; }
+                updateTime();
+            }
+
+            // ─── 파형 ─────────────────────────────────────────────────
+            function sizeCanvas() {
+                var c = $('spWave'); if (!c) return;
+                var r = c.getBoundingClientRect();
+                var dpr = window.devicePixelRatio || 1;
+                c.width = Math.max(1, Math.round(r.width * dpr));
+                c.height = Math.max(1, Math.round(r.height * dpr));
+                resamplePeaks();
+                draw();
+            }
+            function setZoom(z) {
+                z = Math.max(1, Math.min(8, z));
+                var scroll = $('spWaveScroll'), c = $('spWave'), inner = $('spWaveInner');
+                var dpr = window.devicePixelRatio || 1;
+                var centerFrac = 0.5;
+                if (scroll && c && c.width > 0) {
+                    centerFrac = (scroll.scrollLeft + scroll.clientWidth / 2) / (c.width / dpr);
+                }
+                sp_zoom = z;
+                if (inner) inner.style.width = (z * 100) + '%';
+                sizeCanvas();
+                if (scroll && c) {
+                    var Wcss = c.width / dpr;
+                    sp_autoScrolling = true;
+                    scroll.scrollLeft = Math.max(0, centerFrac * Wcss - scroll.clientWidth / 2);
+                    sp_autoScrolling = false;
+                }
+            }
+            // 확대 상태에서 재생 커서가 화면 밖으로 나가면 따라가기 (직접 스크롤 직후엔 잠시 보류)
+            function followPlayhead() {
+                if (sp_zoom <= 1 || !hasFile() || sp_audio.paused) return;
+                var now = (window.performance && performance.now) ? performance.now() : Date.now();
+                if (now < sp_userScrollUntil) return;
+                var scroll = $('spWaveScroll'), c = $('spWave');
+                if (!scroll || !c) return;
+                var Wcss = c.width / (window.devicePixelRatio || 1);
+                var cx = (sp_audio.currentTime / sp_dur) * Wcss;
+                var view = scroll.clientWidth, left = scroll.scrollLeft, margin = view * 0.12;
+                var target = null;
+                if (cx < left + margin) target = cx - margin;
+                else if (cx > left + view - margin) target = cx - view + margin;
+                if (target != null) {
+                    sp_autoScrolling = true;
+                    scroll.scrollLeft = Math.max(0, Math.min(Wcss - view, target));
+                    sp_autoScrolling = false;
+                }
+            }
+            function draw() {
+                var c = $('spWave'); if (!c) return;
+                var g = c.getContext('2d'), W = c.width, H = c.height, mid = H / 2;
+                var dpr = window.devicePixelRatio || 1;
+                g.clearRect(0, 0, W, H);
+                g.fillStyle = (cssVar('--green-mid') || '#52a872');
+                if (sp_peaks && hasFile()) {
+                    var mn = sp_peaks.min, mx = sp_peaks.max, scale = mid * 0.92;
+                    for (var x = 0; x < mx.length; x++) {
+                        var yTop = mid - mx[x] * scale, yBot = mid - mn[x] * scale;
+                        var h = yBot - yTop; if (h < 1) h = 1;
+                        g.fillRect(x, yTop, 1, h);
+                    }
+                } else {
+                    g.globalAlpha = 0.25;
+                    g.fillRect(0, mid, W, 1);
+                    g.globalAlpha = 1;
+                }
+                if (!hasFile()) return;
+                // 구간반복 중 — 구간 바깥 디밍 + 경계선
+                if (sp_loopOn) {
+                    var sX = sp_a / sp_dur * W, eX = sp_b / sp_dur * W;
+                    g.fillStyle = 'rgba(15,25,20,0.46)';
+                    if (sX > 0) g.fillRect(0, 0, sX, H);
+                    if (eX < W) g.fillRect(eX, 0, W - eX, H);
+                    g.fillStyle = (cssVar('--green-deep') || '#2a6b4a');
+                    g.fillRect(sX, 0, dpr, H);
+                    g.fillRect(eX - dpr, 0, dpr, H);
+                }
+                // 재생 위치 커서
+                var cx = (sp_audio.currentTime / sp_dur) * W;
+                g.fillStyle = '#e23b3b';
+                g.fillRect(cx, 0, 2 * dpr, H);
+            }
+            function tick() {
+                sp_rafId = 0;
+                if (!sp_audio) return;
+                checkLoop();
+                applyVolume();
+                draw(); updateTime(); followPlayhead();
+                if (!sp_audio.paused) sp_rafId = requestAnimationFrame(tick);
+            }
+            function ensureTick() { if (!sp_rafId) sp_rafId = requestAnimationFrame(tick); }
+
+            // ─── 키보드 ───────────────────────────────────────────────
+            function onKeydown(e) {
+                var panel = $('slowplayerPanel');
+                if (!panel || !panel.classList.contains('active')) return;
+                var el = e.target, tag = (el && el.tagName || '').toLowerCase();
+                if (tag === 'textarea' || tag === 'select' || (tag === 'input' && el.type !== 'range')) return;
+                if (e.metaKey || e.ctrlKey || e.altKey) return;
+                if (!hasFile()) return;
+                var step = e.shiftKey ? 1 : SKIP_SEC;
+                switch (e.code) {
+                    case 'Space':      e.preventDefault(); togglePlay(); break;
+                    case 'ArrowLeft':  e.preventDefault(); seek(sp_audio.currentTime - step); break;
+                    case 'ArrowRight': e.preventDefault(); seek(sp_audio.currentTime + step); break;
+                    case 'ArrowUp':    e.preventDefault(); setSpeed(sp_speed + SP_STEP); break;
+                    case 'ArrowDown':  e.preventDefault(); setSpeed(sp_speed - SP_STEP); break;
+                    case 'KeyA':       e.preventDefault(); setA(); break;
+                    case 'KeyB':       e.preventDefault(); setB(); break;
+                    case 'KeyL':       e.preventDefault(); setLoop(!sp_loopOn); break;
+                }
+            }
+
+            // ─── 초기화 ───────────────────────────────────────────────
+            function initSlowPlayer() {
+                if (sp_initialized) { sizeCanvas(); return; }
+                sp_initialized = true;
+
+                sp_audio = new Audio();
+                sp_audio.preload = 'auto';
+                sp_audio.addEventListener('loadedmetadata', function() {
+                    var d = sp_audio.duration;
+                    if (!isFinite(d) || d <= 0) return;
+                    sp_dur = d; sp_a = 0; sp_b = d;
+                    if (sp_basePeaks) setSub('파일은 내 기기 안에서만 재생되고 서버로 전송되지 않아요');
+                    else setSub('파형 분석 중… (재생은 바로 할 수 있어요)');
+                    updateUi(); draw();
+                });
+                sp_audio.addEventListener('durationchange', function() {
+                    var d = sp_audio.duration;
+                    if (!isFinite(d) || d <= 0 || !sp_dur || d === sp_dur) return;
+                    if (sp_b >= sp_dur - 1e-3 || sp_b > d) sp_b = d;   // 끝점이 곡 끝이었으면 따라감
+                    sp_dur = d;
+                    updateUi(); draw();
+                });
+                sp_audio.addEventListener('play', function() { updateUi(); ensureTick(); });
+                sp_audio.addEventListener('pause', function() { updateUi(); draw(); });
+                sp_audio.addEventListener('timeupdate', checkLoop);
+                sp_audio.addEventListener('ended', function() {
+                    // 구간 끝이 곡 끝인 경우 — 반복 중이면 시작점으로 돌아가 계속 재생
+                    if (sp_loopOn) { seek(sp_a); play(); }
+                    else { updateUi(); draw(); }
+                });
+                sp_audio.addEventListener('error', function() {
+                    if (!sp_audio.src) return;
+                    sp_dur = 0;
+                    setSub('이 파일은 재생할 수 없어요. mp3·wav·m4a 같은 오디오 파일로 시도해 보세요.', true);
+                    updateUi(); draw();
+                });
+
+                // 파일 열기 / 끌어다 놓기
+                $('spFileBtn').onclick = function() { $('spFileInput').click(); };
+                $('spFileInput').onchange = function(e) {
+                    loadFile(e.target.files && e.target.files[0]);
+                    e.target.value = '';   // 같은 파일을 다시 골라도 change 가 뜨게
+                };
+                (function() {
+                    var drop = $('spDrop'); if (!drop) return;
+                    var depth = 0;
+                    function isFiles(e) {
+                        var t = e.dataTransfer && e.dataTransfer.types;
+                        return !!t && Array.prototype.indexOf.call(t, 'Files') >= 0;
+                    }
+                    drop.addEventListener('dragenter', function(e) {
+                        if (!isFiles(e)) return;
+                        e.preventDefault(); depth++; drop.classList.add('dragover');
+                    });
+                    drop.addEventListener('dragover', function(e) { if (isFiles(e)) e.preventDefault(); });
+                    drop.addEventListener('dragleave', function() {
+                        depth = Math.max(0, depth - 1);
+                        if (!depth) drop.classList.remove('dragover');
+                    });
+                    drop.addEventListener('drop', function(e) {
+                        if (!isFiles(e)) return;
+                        e.preventDefault(); depth = 0; drop.classList.remove('dragover');
+                        loadFile(e.dataTransfer.files && e.dataTransfer.files[0]);
+                    });
+                })();
+
+                // 트랜스포트
+                $('spPlayBtn').onclick = togglePlay;
+                $('spStartBtn').onclick = function() { seek(sp_loopOn ? sp_a : 0); };
+                $('spBackBtn').onclick = function() { seek(sp_audio.currentTime - SKIP_SEC); };
+                $('spFwdBtn').onclick = function() { seek(sp_audio.currentTime + SKIP_SEC); };
+                $('spLoopBtn').onclick = function() { setLoop(!sp_loopOn); };
+                $('spSetA').onclick = setA;
+                $('spSetB').onclick = setB;
+                $('spClearAB').onclick = clearAB;
+
+                // 속도 — 버튼(프리셋) + 슬라이더(0.05 단위)
+                $('spSpeedChips').addEventListener('click', function(e) {
+                    var ch = e.target.closest ? e.target.closest('.sp-chip') : null;
+                    if (ch) setSpeed(+ch.dataset.rate);
+                });
+                $('spSpeed').oninput = function(e) { setSpeed(+e.target.value); };
+                $('spPitchFollow').onchange = applyRate;
+                $('spVol').oninput = function(e) {
+                    $('spVolVal').textContent = e.target.value + '%';
+                    applyVolume();
+                };
+                // 슬라이더 조작 후 포커스를 풀어 스페이스/방향키 단축키가 바로 먹게
+                ['spSpeed', 'spVol', 'spZoom'].forEach(function(id) {
+                    var el = $(id); if (el) el.addEventListener('change', function() { el.blur(); });
+                });
+                var ms = $('masterVolSlider'); if (ms) ms.addEventListener('input', applyVolume);
+
+                // 확대/축소
+                $('spZoom').oninput = function(e) { setZoom((+e.target.value) / 100); };
+                $('spWaveScroll').addEventListener('scroll', function() {
+                    if (sp_autoScrolling) return;
+                    var now = (window.performance && performance.now) ? performance.now() : Date.now();
+                    sp_userScrollUntil = now + 1200;
+                });
+
+                // 구간 핸들(A/B) 드래그 — 잡는 순간 구간반복이 켜진다
+                (function() {
+                    function fracFromClientX(clientX) {
+                        var r = $('spWave').getBoundingClientRect();
+                        return Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+                    }
+                    function bind(el, isStart) {
+                        if (!el) return;
+                        var dragging = false, moved = false;
+                        el.addEventListener('pointerdown', function(e) {
+                            if (!hasFile()) return;
+                            dragging = true; moved = false;
+                            try { el.setPointerCapture(e.pointerId); } catch (err) {}
+                            e.preventDefault(); e.stopPropagation();
+                        });
+                        el.addEventListener('pointermove', function(e) {
+                            if (!dragging) return;
+                            moved = true;
+                            var t = fracFromClientX(e.clientX) * sp_dur;
+                            if (isStart) sp_a = Math.max(0, Math.min(sp_b - MIN_GAP_SEC, t));
+                            else         sp_b = Math.min(sp_dur, Math.max(sp_a + MIN_GAP_SEC, t));
+                            sp_loopOn = true;
+                            updateUi(); draw();
+                        });
+                        function endDrag() {
+                            if (!dragging) return;
+                            dragging = false;
+                            if (!moved) return;
+                            // 재생 위치가 새 구간 밖이면 시작점으로
+                            var t = sp_audio.currentTime;
+                            if (t < sp_a || t >= sp_b) seek(sp_a);
+                            else sp_inRegion = true;
+                        }
+                        el.addEventListener('pointerup', endDrag);
+                        el.addEventListener('pointercancel', endDrag);
+                    }
+                    bind($('spTrimStart'), true);
+                    bind($('spTrimEnd'), false);
+                })();
+
+                // 파형 클릭 → 그 지점부터 재생. 마우스 드래그 → 구간 지정(터치는 스크롤과 겹쳐 제외).
+                (function() {
+                    var c = $('spWave'); if (!c) return;
+                    var downX = null, startFrac = 0, selecting = false, suppressClick = false;
+                    function frac(clientX) {
+                        var r = c.getBoundingClientRect();
+                        return Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+                    }
+                    c.addEventListener('pointerdown', function(e) {
+                        if (!hasFile() || e.pointerType !== 'mouse' || e.button !== 0) return;
+                        downX = e.clientX; startFrac = frac(e.clientX); selecting = false;
+                        try { c.setPointerCapture(e.pointerId); } catch (err) {}
+                    });
+                    c.addEventListener('pointermove', function(e) {
+                        if (downX == null) return;
+                        if (!selecting && Math.abs(e.clientX - downX) < 6) return;
+                        selecting = true;
+                        var f = frac(e.clientX);
+                        var a = Math.min(startFrac, f) * sp_dur, b = Math.max(startFrac, f) * sp_dur;
+                        if (b - a < MIN_GAP_SEC) return;
+                        sp_a = a; sp_b = b; sp_loopOn = true;
+                        updateUi(); draw();
+                    });
+                    function end() {
+                        if (downX == null) return;
+                        downX = null;
+                        if (selecting) {
+                            selecting = false;
+                            suppressClick = true;
+                            setTimeout(function() { suppressClick = false; }, 0);
+                            seek(sp_a);
+                        }
+                    }
+                    c.addEventListener('pointerup', end);
+                    c.addEventListener('pointercancel', end);
+                    c.addEventListener('click', function(e) {
+                        if (suppressClick) { suppressClick = false; return; }
+                        if (!hasFile()) return;
+                        seek(frac(e.clientX) * sp_dur);
+                        play();
+                    });
+                })();
+
+                document.addEventListener('keydown', onKeydown);
+                window.addEventListener('resize', function() {
+                    if ($('slowplayerPanel').classList.contains('active')) sizeCanvas();
+                });
+                window.addEventListener('themechange', draw);
+
+                sizeCanvas();
+                setSpeed(1);
+                updateUi();
+            }
+            function stopSlowPlayer() {
+                if (sp_audio && !sp_audio.paused) sp_audio.pause();
+            }
+
+            window.initSlowPlayer = initSlowPlayer;
+            window.stopSlowPlayer = stopSlowPlayer;
+        })();
+    </script>
+    <!-- END 구간반복 플레이어 -->
 
     <script>
         // ========== TAP TEMPO ==========
