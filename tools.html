@@ -2067,6 +2067,19 @@
             }
             .tool-corner-actions { gap: 0.3rem; }
         }
+        /* ? 버튼 크기 통일 — 전체 도구·가로/세로 화면 공통으로 작게(20px).
+           도구별로 흩어진 크기 지정(26/28/32px)을 한 번에 덮어쓰려고 !important 사용.
+           보이는 원은 작아도 ::after 로 터치 영역은 넉넉히(32px) 유지. */
+        .tool-help-btn,
+        .tool-help-btn.tool-help-mobile {
+            width: 20px !important;
+            height: 20px !important;
+            font-size: 0.7rem !important;
+            border-width: 1.2px !important;
+        }
+        .tool-help-btn:not(.tool-help-corner):not(.et-help-corner):not(.tool-help-mobile),
+        .tool-help-mobile.in-slot { position: relative; }
+        .tool-help-btn::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; }
         /* 메트로놈: ? 슬롯과 BPM 사이의 시각적 간격을 죈다. 데스크탑·모바일 동일.
            5rem Playfair 글리프의 캡-하이트 위 여백까지 흡수하기 위해 큰 음수 margin 사용. */
         #metronomePanel .metronome-bpm {
@@ -10850,6 +10863,16 @@
                     }
                     return;
                 }
+                // 패널 안에 고정 ? 버튼이 이미 있으면 떠있는 ? 는 숨긴다
+                // (루프스테이션·배속 플레이어 등 — 세로 화면에서 ? 두 개가 겹쳐 보이던 문제)
+                try {
+                    const ownPanel = document.getElementById(toolKey + 'Panel');
+                    if (ownPanel && ownPanel.querySelector('.tool-help-btn:not(.tool-help-mobile)')) {
+                        mobileHelp.classList.add('hidden');
+                        mobileYt.classList.add('hidden');
+                        return;
+                    }
+                } catch (e) {}
                 // 음정 트레이닝은 활성 모드(음 맞추기/두 음 비교/코드 맞추기)에 따라
                 // 다른 도움말 키 사용 (eartraining_pitch / _interval / _chord)
                 let helpKey = toolKey;
