@@ -6147,6 +6147,66 @@
         .sp-wave { cursor: pointer; touch-action: pan-x; }
         /* 구간반복 꺼져 있을 땐 A/B 핸들을 흐리게 */
         .sp-loop-off .ls-trim { opacity: 0.45; }
+        /* 마커 — 파형 위 레인에 번호 핀 + 파형을 가로지르는 세로선(캔버스) */
+        .sp-wave-wrap { height: 172px; }
+        #spWave { position: absolute; left: 0; top: 22px; width: 100%; height: calc(100% - 22px); }
+        .sp-wave-wrap .ls-trim { top: 22px; }
+        .sp-marker-lane {
+            position: absolute; left: 0; right: 0; top: 0; height: 22px;
+            z-index: 6;
+            background: rgba(42, 107, 74, 0.08);
+            border-bottom: 1px solid rgba(42, 107, 74, 0.16);
+            cursor: copy;
+        }
+        .sp-marker-lane[hidden] { display: none; }
+        :root[data-theme="dark"] .sp-marker-lane { background: rgba(150, 200, 175, 0.08); border-bottom-color: rgba(150, 200, 175, 0.16); }
+        .sp-marker-hint {
+            display: inline-block; margin-left: 8px;
+            line-height: 21px; font-size: 0.68rem; color: var(--text-light);
+            pointer-events: none; white-space: nowrap;
+        }
+        .sp-marker {
+            position: absolute; top: 2px;
+            transform: translateX(-50%);
+            min-width: 18px; height: 16px; padding: 0 4px;
+            border: none; border-radius: 4px;
+            background: #f08a24; color: #fff;
+            font-family: inherit; font-size: 0.64rem; font-weight: 700; line-height: 16px;
+            font-variant-numeric: tabular-nums;
+            cursor: grab; touch-action: none;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+        }
+        .sp-marker::before {
+            /* 넓은 터치 영역 */
+            content: ''; position: absolute; left: -6px; right: -6px; top: -3px; bottom: -4px;
+        }
+        .sp-marker::after {
+            content: ''; position: absolute; left: 50%; top: 100%; transform: translateX(-50%);
+            border-left: 4px solid transparent; border-right: 4px solid transparent;
+            border-top: 4px solid #f08a24;
+        }
+        .sp-marker:hover { background: #e07812; }
+        .sp-marker:hover::after { border-top-color: #e07812; }
+        .sp-marker.dragging { cursor: grabbing; opacity: 0.85; }
+        .sp-mark-btn {
+            position: absolute; left: 7px; bottom: 10px; z-index: 6;
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.18rem 0.55rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(240, 138, 36, 0.55);
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.14);
+            color: #c96a10;
+            font-family: inherit; font-size: 0.72rem; font-weight: 700;
+            cursor: pointer;
+        }
+        .sp-mark-btn kbd {
+            font-family: inherit; font-size: 0.58rem; font-weight: 600;
+            padding: 0 0.25rem; border: 1px solid currentColor; border-radius: 3px; opacity: 0.7;
+        }
+        .sp-mark-btn:hover:not([disabled]) { background: #fff4e8; }
+        .sp-mark-btn[disabled] { opacity: 0.4; cursor: default; }
+        :root[data-theme="dark"] .sp-mark-btn { background: rgba(20, 30, 26, 0.8); color: #f5a65a; }
         /* 구간 정보 — 파형 바로 아래, 구간을 지정했을 때만 표시 */
         .sp-region-info {
             display: flex; align-items: center; justify-content: center; gap: 0.45rem;
@@ -10392,9 +10452,11 @@
                 </div>
 
                 <!-- 파형 (클릭=재생 위치 이동, 마우스 드래그=구간 지정) -->
-                <div class="ls-wave-wrap sp-loop-off" id="spWaveWrap">
+                <div class="ls-wave-wrap sp-wave-wrap sp-loop-off" id="spWaveWrap">
                     <div class="ls-wave-scroll" id="spWaveScroll">
                         <div class="ls-wave-inner" id="spWaveInner">
+                            <!-- 마커 레인 (파형 위) — 빈 곳 클릭=마커 추가, 마커 클릭=이동, 드래그=옮기기, 더블클릭=삭제 -->
+                            <div class="sp-marker-lane" id="spMarkerLane" hidden></div>
                             <canvas class="ls-wave sp-wave" id="spWave"></canvas>
                             <div class="ls-trim ls-trim-start" id="spTrimStart" style="display:none;" title="구간 시작점(A) 드래그"><span class="ls-trim-grip"></span></div>
                             <div class="ls-trim ls-trim-end" id="spTrimEnd" style="display:none;left:100%;" title="구간 끝점(B) 드래그"><span class="ls-trim-grip"></span></div>
@@ -10405,6 +10467,10 @@
                         <i class="fas fa-arrows-left-right" aria-hidden="true"></i>
                         <input type="range" id="spZoom" min="100" max="800" step="10" value="100" aria-label="파형 확대/축소" disabled>
                     </div>
+                    <!-- 지금 재생 위치에 마커 추가 — 파형 좌측 하단 -->
+                    <button type="button" class="sp-mark-btn" id="spMarkBtn" title="지금 재생 위치에 마커 추가 (M 키)" disabled>
+                        <i class="fas fa-flag" aria-hidden="true"></i> 마커 <kbd>M</kbd>
+                    </button>
                 </div>
 
                 <!-- 구간 정보 (구간을 지정했을 때만) -->
@@ -10792,7 +10858,7 @@
         // a 1-2 line explanation. Click to open, click anywhere or another
         // help button to close.
         const TOOL_HELP_TEXT = {
-            slowplayer: '음악 파일을 열어 속도를 바꿔 듣고, 원하는 구간만 반복하는 연습용 플레이어예요. 파일은 내 기기 안에서만 재생돼요.\n\n• 파일 열기 버튼을 누르거나 파일을 화면에 끌어다 놓으세요 (mp3·wav·m4a 등).\n• 파형을 클릭하면 재생 위치(빨간 선)가 그 지점으로 옮겨져요. 재생 중이면 거기서부터 이어서 재생되고, 정지 상태면 위치만 옮겨집니다. 우측 하단 슬라이더로 파형을 확대할 수 있어요.\n• 구간반복: 파형 양 끝 핸들을 끌거나 마우스로 파형을 드래그하면 구간이 잡히고, 구간 정보가 파형 아래에 표시돼요. LOOP 로 반복을 켜고 끄고, CLEAR 로 구간을 해제합니다.\n• 속도: 0.5x~1.5x 버튼으로 바로 고르거나, “직접” 버튼을 눌러 나오는 슬라이더·화살표 버튼으로 0.25x~2x 를 0.05 단위로 조절해요. 마지막에 맞춘 속도는 “직접” 버튼 아래에 남아서, 다시 누르면 그 속도로 돌아가요. 기본은 음정 유지, 피치 변동을 켜면 음정도 함께 변해요.\n• 단축키: 스페이스=재생/일시정지, ←/→=5초 이동(Shift 는 1초), ↑/↓=속도 0.05, A/B=지금 위치를 구간 시작/끝으로, L=구간반복, C=구간 해제.',
+            slowplayer: '음악 파일을 열어 속도를 바꿔 듣고, 원하는 구간만 반복하는 연습용 플레이어예요. 파일은 내 기기 안에서만 재생돼요.\n\n• 파일 열기 버튼을 누르거나 파일을 화면에 끌어다 놓으세요 (mp3·wav·m4a 등).\n• 파형을 클릭하면 재생 위치(빨간 선)가 그 지점으로 옮겨져요. 재생 중이면 거기서부터 이어서 재생되고, 정지 상태면 위치만 옮겨집니다. 우측 하단 슬라이더로 파형을 확대할 수 있어요.\n• 구간반복: 파형 양 끝 핸들을 끌거나 마우스로 파형을 드래그하면 구간이 잡히고, 구간 정보가 파형 아래에 표시돼요. LOOP 로 반복을 켜고 끄고, CLEAR 로 구간을 해제합니다. 반복이 켜진 상태에서 재생을 누르면 구간 시작점부터 재생돼요.\n• 마커: 파형 위 띠를 누르거나 M 키·마커 버튼으로 지금 위치에 표시해요. 마커를 누르면 그 위치로 이동, 끌면 옮기기, 더블클릭하면 삭제돼요.\n• 속도: 0.5x~1.5x 버튼으로 바로 고르거나, “직접” 버튼을 눌러 나오는 슬라이더·화살표 버튼으로 0.25x~2x 를 0.05 단위로 조절해요. 마지막에 맞춘 속도는 “직접” 버튼 아래에 남아서, 다시 누르면 그 속도로 돌아가요. 기본은 음정 유지, 피치 변동을 켜면 음정도 함께 변해요.\n• 단축키: 스페이스=재생/일시정지, ←/→=5초 이동(Shift 는 1초), ↑/↓=속도 0.05, A/B=지금 위치를 구간 시작/끝으로, L=구간반복, C=구간 해제, M=마커 추가.',
             loopstation: '마이크로 친 소리를 자동 녹음해 즉시 반복 재생하는 루프스테이션이에요.\n\n• 준비 버튼으로 마이크를 켜고(다시 누르면 감지 중지), RECORD 또는 R 키를 누르면 신호 대기 → 소리가 들어오면 자동 녹음돼요.\n• 녹음 중 RECORD·R·아무 키로 정지하면 즉시 반복 재생. 루프가 도는 동안 다시 녹음하면 위에 겹쳐(오버더빙) 쌓여요.\n• 오토 더빙(녹음 후 자동 재대기)·연속 더빙(정지 전까지 계속) 토글 지원.\n• 스페이스바=재생/일시정지, REVERSE 역재생, UNDO 마지막 레이어 되돌리기.\n• 파형 양옆 핸들로 시작·끝점 트림, 볼륨·속도(10~200%) 페이더 제공.',
             tuner: '기기 마이크로 들어오는 소리의 음높이를 분석해 정확한 튜닝을 알려줍니다. 기타·베이스·우쿨렐레·바이올린 모두 지원해요.',
             metronome: '메트로놈 : BPM에 맞춰 클릭이나 목소리(1/2/3/4)가 나옵니다. 박자(2/4·3/4·4/4·6/8) 기준점을 전환 가능.\n\n드럼 : BPM에 맞춰 드럼 리듬이 재생됩니다. 8비트·16비트·셔플락 등 자주 쓰이는 패턴 모음.\n\n탭 BPM: 박자에 맞춰 키보드/버튼 누르면 BPM 자동 측정.',
@@ -22081,6 +22147,7 @@
             let sp_a = 0, sp_b = 0;         // 구간 시작/끝 (초)
             let sp_inRegion = false;        // 재생 위치가 구간 안에 들어온 적 있는지 (B 통과 감지용)
             let sp_speed = 1;
+            let sp_markers = [];            // 마커 위치들 (초, 오름차순)
             let sp_lastCustom = null;       // 마지막으로 쓴 커스텀(프리셋 아닌) 속도 — '직접' 칩에 표시/복원
             let sp_zoom = 1;
             let sp_rafId = 0;
@@ -22107,6 +22174,39 @@
             function hasFile() { return sp_dur > 0; }
             // 구간이 곡 전체가 아닌 범위로 지정돼 있는지
             function hasRegion() { return hasFile() && (sp_a > 0.001 || sp_b < sp_dur - 0.001); }
+            function fracX(clientX) {
+                var r = $('spWave').getBoundingClientRect();
+                return Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+            }
+
+            // ─── 마커 ─────────────────────────────────────────────────
+            function renderMarkers() {
+                var lane = $('spMarkerLane'); if (!lane) return;
+                var has = hasFile();
+                lane.hidden = !has;
+                var mb = $('spMarkBtn'); if (mb) mb.disabled = !has;
+                if (!has) { lane.innerHTML = ''; return; }
+                var html = '';
+                for (var i = 0; i < sp_markers.length; i++) {
+                    var t = sp_markers[i];
+                    html += '<button type="button" class="sp-marker" data-i="' + i + '" style="left:' + (t / sp_dur * 100) +
+                            '%" title="마커 ' + (i + 1) + ' · ' + fmt(t) + ' — 클릭: 이동 · 드래그: 옮기기 · 더블클릭: 삭제">' + (i + 1) + '</button>';
+                }
+                if (!sp_markers.length) html = '<span class="sp-marker-hint">여기를 누르거나 M 키로 마커 추가</span>';
+                lane.innerHTML = html;
+            }
+            function addMarker(t) {
+                if (!hasFile()) return;
+                t = Math.max(0, Math.min(sp_dur, t));
+                for (var i = 0; i < sp_markers.length; i++) if (Math.abs(sp_markers[i] - t) < 0.05) return;   // 같은 자리 중복 방지
+                sp_markers.push(t);
+                sp_markers.sort(function(a, b) { return a - b; });
+                renderMarkers(); draw();
+            }
+            function removeMarker(i) {
+                sp_markers.splice(i, 1);
+                renderMarkers(); draw();
+            }
 
             // ─── 파일 불러오기 ────────────────────────────────────────
             function loadFile(file) {
@@ -22117,6 +22217,7 @@
                 sp_objUrl = URL.createObjectURL(file);
                 sp_dur = 0; sp_basePeaks = null; sp_peaks = null;
                 sp_loopOn = false; sp_a = 0; sp_b = 0; sp_inRegion = false;
+                sp_markers = [];
                 if (sp_zoom !== 1) { $('spZoom').value = 100; setZoom(1); }
                 sp_audio.src = sp_objUrl;
                 applyRate();
@@ -22215,7 +22316,10 @@
             }
             function togglePlay() {
                 if (!hasFile()) return;
-                if (sp_audio.paused) play(); else sp_audio.pause();
+                if (sp_audio.paused) {
+                    if (sp_loopOn) seek(sp_a);   // 구간반복 중이면 항상 구간 시작점부터 재생
+                    play();
+                } else sp_audio.pause();
             }
             // 구간 끝(B)을 지나면 시작점(A)으로. rAF(화면) 와 timeupdate(백그라운드 탭) 양쪽에서 호출.
             function checkLoop() {
@@ -22426,6 +22530,11 @@
                     g.fillRect(sX, 0, dpr, H);
                     g.fillRect(eX - dpr, 0, dpr, H);
                 }
+                // 마커 세로선
+                if (sp_markers.length) {
+                    g.fillStyle = 'rgba(240,138,36,0.75)';
+                    for (var mi = 0; mi < sp_markers.length; mi++) g.fillRect(sp_markers[mi] / sp_dur * W - dpr / 2, 0, dpr, H);
+                }
                 // 재생 위치 커서
                 var cx = (sp_audio.currentTime / sp_dur) * W;
                 g.fillStyle = '#e23b3b';
@@ -22460,6 +22569,7 @@
                     case 'KeyB':       e.preventDefault(); setB(); break;
                     case 'KeyL':       e.preventDefault(); setLoop(!sp_loopOn); break;
                     case 'KeyC':       if (hasRegion()) { e.preventDefault(); clearAB(); } break;
+                    case 'KeyM':       e.preventDefault(); addMarker(sp_audio.currentTime); break;
                 }
             }
 
@@ -22476,14 +22586,15 @@
                     sp_dur = d; sp_a = 0; sp_b = d;
                     if (sp_basePeaks) setSub('파일은 내 기기 안에서만 재생되고 서버로 전송되지 않아요');
                     else setSub('파형 분석 중… (재생은 바로 할 수 있어요)');
-                    updateUi(); draw();
+                    renderMarkers(); updateUi(); draw();
                 });
                 sp_audio.addEventListener('durationchange', function() {
                     var d = sp_audio.duration;
                     if (!isFinite(d) || d <= 0 || !sp_dur || d === sp_dur) return;
                     if (sp_b >= sp_dur - 1e-3 || sp_b > d) sp_b = d;   // 끝점이 곡 끝이었으면 따라감
                     sp_dur = d;
-                    updateUi(); draw();
+                    sp_markers = sp_markers.filter(function(t) { return t <= d; });
+                    renderMarkers(); updateUi(); draw();
                 });
                 sp_audio.addEventListener('play', function() { updateUi(); ensureTick(); });
                 sp_audio.addEventListener('pause', function() { updateUi(); draw(); });
@@ -22497,7 +22608,7 @@
                     if (!sp_audio.src) return;
                     sp_dur = 0;
                     setSub('이 파일은 재생할 수 없어요. mp3·wav·m4a 같은 오디오 파일로 시도해 보세요.', true);
-                    updateUi(); draw();
+                    renderMarkers(); updateUi(); draw();
                 });
 
                 // 파일 열기 / 끌어다 놓기
@@ -22649,6 +22760,54 @@
                         if (suppressClick) { suppressClick = false; return; }
                         if (!hasFile()) return;
                         seek(frac(e.clientX) * sp_dur);   // 재생 중이면 그대로 이어서 재생, 정지 상태면 위치만 이동
+                    });
+                })();
+
+                // 마커 — 버튼/레인 클릭으로 추가, 마커 클릭=이동, 드래그=옮기기, 더블클릭=삭제
+                $('spMarkBtn').onclick = function() { addMarker(sp_audio.currentTime); };
+                (function() {
+                    var lane = $('spMarkerLane'); if (!lane) return;
+                    var drag = null, suppressClick = false;
+                    lane.addEventListener('pointerdown', function(e) {
+                        var el = e.target.closest ? e.target.closest('.sp-marker') : null;
+                        if (!el) return;
+                        e.preventDefault(); e.stopPropagation();
+                        drag = { i: +el.dataset.i, el: el, startX: e.clientX, moved: false };
+                        try { el.setPointerCapture(e.pointerId); } catch (err) {}
+                    });
+                    lane.addEventListener('pointermove', function(e) {
+                        if (!drag) return;
+                        if (!drag.moved && Math.abs(e.clientX - drag.startX) < 4) return;
+                        drag.moved = true;
+                        drag.el.classList.add('dragging');
+                        var t = fracX(e.clientX) * sp_dur;
+                        sp_markers[drag.i] = t;
+                        drag.el.style.left = (t / sp_dur * 100) + '%';
+                        draw();
+                    });
+                    function endDrag() {
+                        if (!drag) return;
+                        var d = drag; drag = null;
+                        suppressClick = true;
+                        setTimeout(function() { suppressClick = false; }, 0);
+                        if (d.moved) {
+                            sp_markers.sort(function(a, b) { return a - b; });
+                            renderMarkers(); draw();
+                        } else {
+                            seek(sp_markers[d.i]);   // 재생 중이면 거기서 이어서, 정지면 위치만
+                        }
+                    }
+                    lane.addEventListener('pointerup', endDrag);
+                    lane.addEventListener('pointercancel', endDrag);
+                    lane.addEventListener('dblclick', function(e) {
+                        var el = e.target.closest ? e.target.closest('.sp-marker') : null;
+                        if (!el) return;
+                        e.preventDefault();
+                        removeMarker(+el.dataset.i);
+                    });
+                    lane.addEventListener('click', function(e) {
+                        if (suppressClick || e.target !== lane) return;
+                        addMarker(fracX(e.clientX) * sp_dur);
                     });
                 })();
 
