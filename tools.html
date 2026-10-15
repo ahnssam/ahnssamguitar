@@ -6204,6 +6204,13 @@
         }
         :root[data-theme="dark"] .sp-step-btn:hover:not([disabled]) { background: rgba(150, 200, 175, 0.16); }
         .sp-chip-custom:not(.active) { border-style: dashed; font-weight: 500; color: var(--text-secondary); }
+        .sp-chip-custom[aria-expanded="true"]:not(.active) { border-style: solid; border-color: var(--green-mid); }
+        /* '직접' 칩 — 프리셋 속도일 때 마지막 커스텀 속도를 아래에 작게 */
+        .sp-chip-custom { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; }
+        .sp-chip-custom small { font-size: 0.66rem; font-weight: 600; opacity: 0.8; font-variant-numeric: tabular-nums; margin-top: 0.08rem; }
+        .sp-custom-box { display: flex; flex-direction: column; gap: 0.7rem; margin-top: -0.5rem; }
+        .sp-custom-box[hidden] { display: none; }
+        .sp-custom-box .sp-step-row { margin-top: 0; }
         @media (max-width: 480px) {
             .sp-speed-chips { gap: 0.25rem; }
             .sp-chip { min-width: 0; padding: 0.5rem 0.1rem; font-size: 0.78rem; }
@@ -10449,8 +10456,10 @@
                         <button type="button" class="sp-chip active" data-rate="1">1x</button>
                         <button type="button" class="sp-chip" data-rate="1.25">1.25x</button>
                         <button type="button" class="sp-chip" data-rate="1.5">1.5x</button>
-                        <button type="button" class="sp-chip sp-chip-custom" id="spChipCustom" title="슬라이더로 0.05 단위 직접 조절">직접</button>
+                        <button type="button" class="sp-chip sp-chip-custom" id="spChipCustom" title="속도를 0.05 단위로 직접 조절" aria-expanded="false" aria-controls="spCustomBox">직접</button>
                     </div>
+                    <!-- '직접' 칩을 누르면 열리는 속도 페이더 + 0.05 단위 버튼 -->
+                    <div class="sp-custom-box" id="spCustomBox" hidden>
                     <div class="ls-fader">
                         <span class="ls-fader-ico" title="재생 속도" aria-label="재생 속도"><i class="fas fa-gauge-high"></i></span>
                         <span class="ls-fader-name">속도</span>
@@ -10465,6 +10474,7 @@
                         <button type="button" class="sp-step-btn" id="spSpeedUp" title="속도 0.05 빠르게 (↑ 키)" aria-label="속도 0.05 빠르게">
                             <span class="sp-step-txt"><b>빠르게</b><small>+ 0.05배</small></span><i class="fas fa-chevron-right" aria-hidden="true"></i>
                         </button>
+                    </div>
                     </div>
                     <div class="ls-pitch-row">
                         <label class="ls-toggle" title="끄면(기본) 속도를 바꿔도 음정이 유지됩니다. 켜면 속도와 함께 음정도 변합니다(테이프처럼).">
@@ -10783,7 +10793,7 @@
         // a 1-2 line explanation. Click to open, click anywhere or another
         // help button to close.
         const TOOL_HELP_TEXT = {
-            slowplayer: '음악 파일을 열어 속도를 바꿔 듣고, 원하는 구간만 반복하는 연습용 플레이어예요. 파일은 내 기기 안에서만 재생돼요.\n\n• 파일 열기 버튼을 누르거나 파일을 화면에 끌어다 놓으세요 (mp3·wav·m4a 등).\n• 파형을 클릭하면 재생 위치(빨간 선)가 그 지점으로 옮겨져요. 재생 중이면 거기서부터 이어서 재생되고, 정지 상태면 위치만 옮겨집니다. 우측 하단 슬라이더로 파형을 확대할 수 있어요.\n• 구간반복: 파형 양 끝 핸들을 끌거나 마우스로 파형을 드래그하면 구간이 잡히고, 구간 정보가 파형 아래에 표시돼요. LOOP 로 반복을 켜고 끄고, CLEAR 로 구간을 해제합니다.\n• 속도: 0.5x~1.5x 버튼으로 바로 고르거나, 슬라이더나 그 아래 화살표 버튼으로 0.25x~2x 를 0.05 단위로 조절해요. 기본은 음정 유지, 피치 변동을 켜면 음정도 함께 변해요.\n• 단축키: 스페이스=재생/일시정지, ←/→=5초 이동(Shift 는 1초), ↑/↓=속도 0.05, A/B=지금 위치를 구간 시작/끝으로, L=구간반복, C=구간 해제.',
+            slowplayer: '음악 파일을 열어 속도를 바꿔 듣고, 원하는 구간만 반복하는 연습용 플레이어예요. 파일은 내 기기 안에서만 재생돼요.\n\n• 파일 열기 버튼을 누르거나 파일을 화면에 끌어다 놓으세요 (mp3·wav·m4a 등).\n• 파형을 클릭하면 재생 위치(빨간 선)가 그 지점으로 옮겨져요. 재생 중이면 거기서부터 이어서 재생되고, 정지 상태면 위치만 옮겨집니다. 우측 하단 슬라이더로 파형을 확대할 수 있어요.\n• 구간반복: 파형 양 끝 핸들을 끌거나 마우스로 파형을 드래그하면 구간이 잡히고, 구간 정보가 파형 아래에 표시돼요. LOOP 로 반복을 켜고 끄고, CLEAR 로 구간을 해제합니다.\n• 속도: 0.5x~1.5x 버튼으로 바로 고르거나, “직접” 버튼을 눌러 나오는 슬라이더·화살표 버튼으로 0.25x~2x 를 0.05 단위로 조절해요. 마지막에 맞춘 속도는 “직접” 버튼 아래에 남아서, 다시 누르면 그 속도로 돌아가요. 기본은 음정 유지, 피치 변동을 켜면 음정도 함께 변해요.\n• 단축키: 스페이스=재생/일시정지, ←/→=5초 이동(Shift 는 1초), ↑/↓=속도 0.05, A/B=지금 위치를 구간 시작/끝으로, L=구간반복, C=구간 해제.',
             loopstation: '마이크로 친 소리를 자동 녹음해 즉시 반복 재생하는 루프스테이션이에요.\n\n• 준비 버튼으로 마이크를 켜고(다시 누르면 감지 중지), RECORD 또는 R 키를 누르면 신호 대기 → 소리가 들어오면 자동 녹음돼요.\n• 녹음 중 RECORD·R·아무 키로 정지하면 즉시 반복 재생. 루프가 도는 동안 다시 녹음하면 위에 겹쳐(오버더빙) 쌓여요.\n• 오토 더빙(녹음 후 자동 재대기)·연속 더빙(정지 전까지 계속) 토글 지원.\n• 스페이스바=재생/일시정지, REVERSE 역재생, UNDO 마지막 레이어 되돌리기.\n• 파형 양옆 핸들로 시작·끝점 트림, 볼륨·속도(10~200%) 페이더 제공.',
             tuner: '기기 마이크로 들어오는 소리의 음높이를 분석해 정확한 튜닝을 알려줍니다. 기타·베이스·우쿨렐레·바이올린 모두 지원해요.',
             metronome: '메트로놈 : BPM에 맞춰 클릭이나 목소리(1/2/3/4)가 나옵니다. 박자(2/4·3/4·4/4·6/8) 기준점을 전환 가능.\n\n드럼 : BPM에 맞춰 드럼 리듬이 재생됩니다. 8비트·16비트·셔플락 등 자주 쓰이는 패턴 모음.\n\n탭 BPM: 박자에 맞춰 키보드/버튼 누르면 BPM 자동 측정.',
@@ -22072,6 +22082,7 @@
             let sp_a = 0, sp_b = 0;         // 구간 시작/끝 (초)
             let sp_inRegion = false;        // 재생 위치가 구간 안에 들어온 적 있는지 (B 통과 감지용)
             let sp_speed = 1;
+            let sp_lastCustom = null;       // 마지막으로 쓴 커스텀(프리셋 아닌) 속도 — '직접' 칩에 표시/복원
             let sp_zoom = 1;
             let sp_rafId = 0;
             let sp_initialized = false;
@@ -22239,12 +22250,20 @@
                     if (on) preset = true;
                     ch.classList.toggle('active', on);
                 });
-                // 프리셋에 없는 속도면 '직접' 칩에 현재 값을 표시하고 켠다
+                if (!preset) sp_lastCustom = rate;
+                // 프리셋에 없는 속도 → '직접' 칩에 현재 값 + 켜짐.
+                // 프리셋 속도 → '직접' 아래에 마지막 커스텀 속도를 작게 남겨 둔다.
                 var cc = $('spChipCustom');
                 if (cc) {
                     cc.classList.toggle('active', !preset);
-                    cc.textContent = preset ? '직접' : rate.toFixed(2) + 'x';
+                    if (!preset) cc.textContent = rate.toFixed(2) + 'x';
+                    else cc.innerHTML = '직접' + (sp_lastCustom != null ? '<small>' + sp_lastCustom.toFixed(2) + 'x</small>' : '');
                 }
+            }
+            function setCustomOpen(open) {
+                var box = $('spCustomBox'), cc = $('spChipCustom');
+                if (box) box.hidden = !open;
+                if (cc) cc.setAttribute('aria-expanded', open ? 'true' : 'false');
             }
             // 도구 볼륨 × 사이트 상단 마스터 볼륨
             function applyVolume() {
@@ -22523,8 +22542,12 @@
                 $('spSpeedChips').addEventListener('click', function(e) {
                     var ch = e.target.closest ? e.target.closest('.sp-chip') : null;
                     if (!ch) return;
-                    if (ch.dataset.rate) setSpeed(+ch.dataset.rate);
-                    else $('spSpeed').focus();   // '직접' 칩 — 슬라이더로 안내
+                    if (ch.dataset.rate) { setSpeed(+ch.dataset.rate); setCustomOpen(false); return; }
+                    // '직접' 칩 — 페이더 열기(마지막 커스텀 속도로 복원). 열린 상태에서 다시 누르면 닫기.
+                    var box = $('spCustomBox');
+                    if (box && !box.hidden) { setCustomOpen(false); return; }
+                    if (sp_lastCustom != null) setSpeed(sp_lastCustom);
+                    setCustomOpen(true);
                 });
                 $('spSpeed').oninput = function(e) { setSpeed(+e.target.value); };
                 $('spSpeedDown').onclick = function() { setSpeed(sp_speed - SP_STEP); };
