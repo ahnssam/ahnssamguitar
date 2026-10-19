@@ -8099,6 +8099,30 @@
         .loop-cell.has-volta .loop-cell-halves { padding-left: 0; }
         /* 도돌이표(|:)가 있는 마디도 코드를 오른쪽으로 밀어 도돌이 표기와 안 겹치게 */
         .loop-cell.has-lrepeat .loop-cell-halves { padding-left: 12px; }
+        /* ───── 박자표(2/4 등) — 마디 왼쪽에 숫자를 위아래로. 도돌이(|:)가 있으면 그 오른쪽.
+           Shift/Ctrl + 왼쪽 가장자리 클릭으로 입력. 표기 전용(재생 박자는 그대로). ───── */
+        .loop-tsig {
+            position: absolute; top: 14px; bottom: 0; left: 4px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            pointer-events: none;   /* 클릭은 아래 도돌이 가장자리가 받는다 */
+            z-index: 4;
+            font-family: 'Times New Roman', Georgia, serif;
+            font-weight: 800; font-size: 0.95rem; line-height: 0.82;
+            color: var(--green-deep);
+        }
+        .loop-tsig > span { display: block; }
+        .loop-cell.has-lrepeat .loop-tsig { left: 17px; }
+        .loop-cell.has-tsig .loop-cell-halves { padding-left: 14px; }
+        .loop-cell.has-tsig.has-lrepeat .loop-cell-halves { padding-left: 26px; }
+        :root[data-theme="dark"] .loop-tsig { color: #b8d8c4; }
+        /* 박자표 선택 팝업 */
+        .loop-tsig-picker .lv-pick-btn { min-width: 38px; }
+        .loop-tsig-picker .loop-tsig-custom { display: flex; gap: 4px; align-items: center; margin-top: 6px; }
+        .loop-tsig-picker .loop-tsig-custom input {
+            width: 64px; padding: 3px 6px; font-size: 0.8rem;
+            border: 1px solid rgba(42,107,74,0.35); border-radius: 6px;
+            background: var(--bg-panel); color: inherit;
+        }
         :root[data-theme="dark"] .loop-cell-volta { border-color: #b8d8c4; }
         :root[data-theme="dark"] .loop-volta-num { color: #b8d8c4; }
         /* 코드 칸 들여쓰기(앞 공백) 표시 — 왼쪽 정렬 (공백 보존은 _fitChordText 의 white-space:pre) */
@@ -8353,6 +8377,8 @@
         .lp-chart .loop-cell-edge .loop-repeat-bars > .thick { width: 2.4px; }
         .lp-chart .loop-cell-edge .loop-repeat-bars > .thin { width: 1.2px; }
         .lp-chart .loop-cell-edge .loop-repeat-dots { gap: 2.5px; margin: 0 1.5px; }
+        /* 인쇄 — 마디 번호가 없으니 박자표도 도돌이처럼 마디 위아래 끝까지 */
+        .lp-chart .loop-tsig { top: 3px; bottom: 3px; color: #1f3a2c; }
         /* X 로 표시된 마디 — 인쇄에서 안 보이게 (자리는 그대로 비워둠) */
         .lp-chart .loop-cell.skip-zone { visibility: hidden; }
         /* TAB(타브악보) 이미지 — 악보 폭에 꽉 맞추고 비율 유지 */
@@ -11946,6 +11972,9 @@
             let loopRepeats = { left: new Set(), right: new Set() };
             //   loopVoltas : { [마디idx]: [1] / [2,3] } — 마디 위쪽 볼타(엔딩) 번호 집합. 'N.' / 'N-M.' 표시.
             let loopVoltas = {};
+            //   loopTimeSigs : { [마디idx]: '2/4' } — 그 마디 앞에 박자표 표기 (표기 전용, 재생 박자는 그대로).
+            //   Shift/Ctrl + 왼쪽 가장자리(도돌이 자리) 클릭으로 입력. sequencer_pattern.timeSigs 로 저장.
+            let loopTimeSigs = {};
             //   loopSongForm : { [마디idx]: '전주' 등 } — 마디 위쪽 송폼(구성) 라벨. 자유 입력.
             let loopSongForm = {};
             let _consumedRights = new Set();
@@ -15960,6 +15989,8 @@
                 }
                 // 볼타 — 프리셋엔 보통 없음(있으면 sp.voltas 로 로드), 없으면 초기화
                 loopVoltas = (sp && sp.voltas && typeof sp.voltas === 'object') ? Object.assign({}, sp.voltas) : {};
+                // 박자표(2/4 등) — 있으면 로드, 없으면 초기화
+                loopTimeSigs = (sp && sp.timeSigs && typeof sp.timeSigs === 'object') ? Object.assign({}, sp.timeSigs) : {};
                 // 송폼(구성) 라벨 — 있으면 로드, 없으면 초기화
                 loopSongForm = (sp && sp.songForm && typeof sp.songForm === 'object') ? Object.assign({}, sp.songForm) : {};
                 // 코드악보 부가 데이터(다이어그램·리듬·송폼 흐름) — 관리자 로그인 시 홈에서도 표시
@@ -17551,6 +17582,9 @@
                 sp.repeats = { left: Array.from(loopRepeats.left), right: Array.from(loopRepeats.right) };
                 if (loopVoltas && Object.keys(loopVoltas).length) sp.voltas = Object.assign({}, loopVoltas);
                 if (loopSongForm && Object.keys(loopSongForm).length) sp.songForm = Object.assign({}, loopSongForm);
+                // 박자표 — 비었으면 지워서 예전 값이 남지 않게 (로컬툴·홈 저장 모두 여기를 거친다)
+                if (loopTimeSigs && Object.keys(loopTimeSigs).length) sp.timeSigs = Object.assign({}, loopTimeSigs);
+                else delete sp.timeSigs;
                 sp.segs = loopSegs;   // 마디당 코드 칸 수 (2 / 4)
                 sp.bassCustom = (loopBassStyle === 'custom');
                 sp.pianoCustom = (loopPianoStyle === 'custom');
@@ -18676,7 +18710,16 @@
                     var edgeL = document.createElement('div');
                     edgeL.className = 'loop-cell-edge left' + (loopRepeats.left.has(i) ? ' has-repeat' : '');
                     if (loopRepeats.left.has(i)) cell.classList.add('has-lrepeat');   // 코드 우측 이동용
-                    edgeL.title = '클릭: 도돌이표 |: 토글  ·  드래그: 마디 범위 선택';
+                    edgeL.title = '클릭: 도돌이표 |: 토글  ·  Shift/Ctrl+클릭: 박자표(2/4 등)  ·  드래그: 마디 범위 선택';
+                    // 박자표 — 마디 왼쪽에 분자/분모를 위아래로 (표기 전용)
+                    var _ts = _parseTimeSig(loopTimeSigs[i]);
+                    if (_ts) {
+                        cell.classList.add('has-tsig');
+                        var tsEl = document.createElement('div');
+                        tsEl.className = 'loop-tsig';
+                        tsEl.innerHTML = '<span>' + _ts.n + '</span><span>' + _ts.d + '</span>';
+                        cell.appendChild(tsEl);
+                    }
                     edgeL.innerHTML = '<span class="loop-repeat-bars"><span class="thick"></span><span class="thin"></span></span><span class="loop-repeat-dots"><span></span><span></span></span>';
                     cell.appendChild(edgeL);
                     var edgeR = document.createElement('div');
@@ -18852,6 +18895,8 @@
                         startY: e.clientY,
                         dragged: false,
                         fromNum: isNum,
+                        // Shift/Ctrl(Cmd) 누른 채 왼쪽 가장자리 클릭 → 도돌이 대신 박자표 입력
+                        tsig: !isNum && (e.shiftKey || e.ctrlKey || e.metaKey),
                         pointerId: e.pointerId
                     };
                     try { grid.setPointerCapture(e.pointerId); } catch(err) {}
@@ -18885,6 +18930,10 @@
                             if (loopActiveCommit) loopActiveCommit();
                             closeLoopPicker();
                             openSongFormInput(s.startIdx);
+                        } else if (s.tsig) {
+                            if (loopActiveCommit) loopActiveCommit();
+                            closeLoopPicker();
+                            openTimeSigPicker(s.startIdx);              // 박자표 선택
                         } else {
                             window.toggleLoopRepeat('left', s.startIdx);   // 도돌이 |: 토글
                         }
@@ -19276,6 +19325,80 @@
                     document.addEventListener('keydown', onKey);
                 }, 0);
             }
+
+            // ══════════ 박자표 (2/4 · 3/4 · 6/8 …) ══════════
+            //   Shift/Ctrl + 왼쪽 가장자리 클릭 → 팝업에서 고르거나 직접 입력. 그 마디 앞에 분자/분모 표기.
+            //   예) 5마디만 2/4 → 5마디에 2/4, 6마디에 4/4 를 넣으면 다시 4/4 로 돌아온 표기가 된다.
+            //   표기 전용 — 반주 재생 박자는 바뀌지 않는다.
+            function _parseTimeSig(v) {
+                var m = String(v == null ? '' : v).match(/^\s*(\d{1,2})\s*\/\s*(\d{1,2})\s*$/);
+                if (!m) return null;
+                var n = parseInt(m[1], 10), d = parseInt(m[2], 10);
+                if (!n || !d) return null;
+                return { n: n, d: d, text: n + '/' + d };
+            }
+            window._parseTimeSig = _parseTimeSig;
+            function openTimeSigPicker(idx) {
+                var grid = document.getElementById('loopGrid');
+                if (!grid) return;
+                var cell = grid.querySelector('.loop-cell[data-idx="' + idx + '"]');
+                if (!cell) return;
+                closeVoltaPicker();
+                var cur = _parseTimeSig(loopTimeSigs[idx]);
+                var presets = ['2/4', '3/4', '4/4', '5/4', '6/8', '12/8'];
+                var pop = document.createElement('div');
+                pop.className = 'loop-volta-picker loop-tsig-picker';   // 볼타 팝업 모양·닫기 규칙 재사용
+                var html = '<div class="lv-pick-title">' + (idx + 1) + '마디 박자표</div><div class="lv-pick-btns">';
+                presets.forEach(function(p) {
+                    html += '<button type="button" class="lv-pick-btn' + (cur && cur.text === p ? ' active' : '') +
+                            '" data-ts="' + p + '">' + p + '</button>';
+                });
+                html += '</div><div class="loop-tsig-custom"><input type="text" inputmode="numeric" placeholder="예: 7/8" value="' +
+                        (cur && presets.indexOf(cur.text) < 0 ? cur.text : '') + '">' +
+                        '<button type="button" class="lv-pick-btn" data-ts-ok>입력</button>' +
+                        (cur ? '<button type="button" class="lv-pick-btn" data-ts="">지우기</button>' : '') + '</div>' +
+                        '<div class="lv-pick-hint">다음 마디에 4/4 를 넣으면 다시 4/4 로 표기돼요. (표기 전용)</div>';
+                pop.innerHTML = html;
+                cell.appendChild(pop);
+
+                var done = false;
+                function apply(v) {
+                    if (done) return;
+                    done = true;
+                    loopActiveCommit = null;
+                    document.removeEventListener('pointerdown', onDocDown);
+                    document.removeEventListener('keydown', onKey);
+                    if (v !== undefined) {
+                        var ts = _parseTimeSig(v);
+                        if (ts) loopTimeSigs[idx] = ts.text; else if (v === '') delete loopTimeSigs[idx];
+                    }
+                    pop.remove();
+                    renderLoopGrid();
+                    try { loopOnStateChange(); } catch (e) {}
+                }
+                var inp = pop.querySelector('input');
+                function onDocDown(e) { if (!pop.contains(e.target)) apply(undefined); }   // 바깥 클릭 = 그대로 닫기
+                function onKey(e) {
+                    if (e.key === 'Escape') { e.preventDefault(); apply(undefined); }
+                    else if (e.key === 'Enter') { e.preventDefault(); apply(inp.value.trim() ? inp.value : undefined); }
+                }
+                loopActiveCommit = function() { apply(undefined); };
+                pop.querySelectorAll('[data-ts]').forEach(function(btn) {
+                    btn.addEventListener('click', function(e) { e.stopPropagation(); apply(btn.dataset.ts); });
+                });
+                pop.querySelector('[data-ts-ok]').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (!_parseTimeSig(inp.value)) { inp.focus(); inp.select(); return; }
+                    apply(inp.value);
+                });
+                inp.addEventListener('keydown', function(e) { e.stopPropagation(); onKey(e); });
+                inp.addEventListener('pointerdown', function(e) { e.stopPropagation(); });
+                setTimeout(function() {
+                    document.addEventListener('pointerdown', onDocDown);
+                    document.addEventListener('keydown', onKey);
+                }, 0);
+            }
+            window.openTimeSigPicker = openTimeSigPicker;
             window.openVoltaPicker = openVoltaPicker;
             // 송폼(구성) 자유입력 — 마디 번호 클릭 시 작은 입력 팝업.
             //   엔터/바깥클릭 = 저장, Esc = 취소, 빈 값 = 제거.
@@ -20146,6 +20269,7 @@
                 loopChordsC   = _reindexMap(loopChordsC,   at, delta);
                 loopChordsD   = _reindexMap(loopChordsD,   at, delta);
                 loopVoltas    = _reindexMap(loopVoltas,    at, delta);
+                loopTimeSigs  = _reindexMap(loopTimeSigs,  at, delta);
                 loopSongForm  = _reindexMap(loopSongForm,  at, delta);
                 loopRepeats.left  = _reindexSet(loopRepeats.left,  at, delta);
                 loopRepeats.right = _reindexSet(loopRepeats.right, at, delta);
@@ -20172,7 +20296,8 @@
                     a: loopChords[idx], b: loopChordsB[idx],
                     c: loopChordsC[idx], d: loopChordsD[idx],
                     volta: loopVoltas[idx], songform: loopSongForm[idx],
-                    repL: loopRepeats.left.has(idx), repR: loopRepeats.right.has(idx)
+                    repL: loopRepeats.left.has(idx), repR: loopRepeats.right.has(idx),
+                    tsig: loopTimeSigs[idx]
                 };
             }
             function _setLoopBarData(idx, d) {
@@ -20182,6 +20307,7 @@
                 put(loopChords, d.a);  put(loopChordsB, d.b);
                 put(loopChordsC, d.c); put(loopChordsD, d.d);
                 put(loopVoltas, d.volta); put(loopSongForm, d.songform);
+                put(loopTimeSigs, d.tsig);
                 if (d.repL) loopRepeats.left.add(idx);  else loopRepeats.left.delete(idx);
                 if (d.repR) loopRepeats.right.add(idx); else loopRepeats.right.delete(idx);
             }
@@ -20479,6 +20605,7 @@
                 loopRepeats.left.clear();
                 loopRepeats.right.clear();
                 loopVoltas = {};
+                loopTimeSigs = {};
                 loopSongForm = {};
                 _prevPianoVoicing = null;
                 _lastPianoSegmentKey = null;
