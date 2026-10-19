@@ -3063,6 +3063,29 @@
         }
         .fb-note-readout.on { opacity: 1; }
         :root[data-theme="dark"] .fb-note-readout { color: var(--green-light); }
+        /* 보기 범위 (몇 번줄 몇 프렛 ~ 몇 번줄 몇 프렛) */
+        .fb-range-row { gap: 0.45rem; }
+        .fb-range-pt { display: inline-flex; gap: 0.3rem; }
+        .fb-range-sel {
+            height: 30px; padding: 0 0.4rem;
+            border-radius: 8px;
+            border: 1px solid rgba(42, 107, 74, 0.3);
+            background: rgba(255, 255, 255, 0.85);
+            color: var(--text-primary);
+            font-family: inherit; font-size: 0.78rem; font-weight: 600;
+            cursor: pointer;
+        }
+        :root[data-theme="dark"] .fb-range-sel { background: rgba(255,255,255,0.05); border-color: rgba(150,200,175,0.3); color: rgba(232,240,236,0.9); }
+        :root[data-theme="dark"] .fb-range-sel option { background: #1d2a26; }
+        .fb-range-tilde { font-size: 0.85rem; color: var(--text-secondary); }
+        .fb-range-all {
+            height: 30px; padding: 0 0.7rem; border-radius: 8px;
+            border: 1px solid rgba(42, 107, 74, 0.3); background: rgba(42, 107, 74, 0.06);
+            color: var(--green-deep); font-family: inherit; font-size: 0.74rem; font-weight: 600; cursor: pointer;
+        }
+        .fb-range-all:hover:not([disabled]) { background: rgba(42, 107, 74, 0.14); }
+        .fb-range-all[disabled] { opacity: 0.4; cursor: default; }
+        :root[data-theme="dark"] .fb-range-all { color: var(--green-light); border-color: rgba(150,200,175,0.3); background: rgba(150,200,175,0.08); }
         /* 근음 일괄 해제 버튼 */
         .fb-root-clear {
             flex-shrink: 0; padding: 0 0.6rem; height: 30px; border-radius: 8px;
@@ -9796,6 +9819,20 @@
                                 <button class="fb-inst-option" data-inst="bass5" data-action="fbSetInstrument" data-args="bass5"><i class="fas fa-guitar"></i> 베이스 5현</button>
                             </div>
                         </div>
+                    </div>
+                    <!-- 보기 범위 — 몇 번줄 몇 프렛 ~ 몇 번줄 몇 프렛 (탐색 모드 전용) -->
+                    <div class="fb-control-row fb-range-row" id="fbRangeRow">
+                        <span class="fb-root-label">보기 범위</span>
+                        <div class="fb-range-pt">
+                            <select id="fbRangeS1" class="fb-range-sel" aria-label="시작 줄"></select>
+                            <select id="fbRangeF1" class="fb-range-sel" aria-label="시작 프렛"></select>
+                        </div>
+                        <span class="fb-range-tilde">~</span>
+                        <div class="fb-range-pt">
+                            <select id="fbRangeS2" class="fb-range-sel" aria-label="끝 줄"></select>
+                            <select id="fbRangeF2" class="fb-range-sel" aria-label="끝 프렛"></select>
+                        </div>
+                        <button type="button" class="fb-range-all" id="fbRangeAll" title="전체 지판 보기">전체</button>
                     </div>
                 </div>
 
@@ -25554,6 +25591,7 @@
                     highlightRoot: false,
                     activeHighlights: null, // Map "sIdx_fret" -> true (주황/빨강 표시)
                     trainingRange: null,    // { stringMin, stringMax, fretMin, fretMax }
+                    viewRange: null,        // { stringMin, stringMax, fretMin, fretMax } — 보기 범위 (프렛은 잘라서, 줄은 흐리게)
                     zoom: 1,                // visual scale factor (1 = 기본, 1.75 = 75% 확대)
                     keepAllDots: false,     // true 면 highlights 함수가 있어도 비-하이라이트 도트를 숨기지 않음
                     wrongPick: null,        // { sIdx, fret } — 프렛보드 트레이닝 오답 프렛을 연한 붉은색으로
@@ -25635,9 +25673,33 @@
                     // viewBox 는 고정 — 내부 좌표계가 바뀌면 드래그/탭 히트 영역
                     // 계산이 어긋나므로, 화면상의 width/height 만 zoom 배율로 키운다.
                     const zoom = cfg.zoom || 1;
-                    svg.setAttribute('viewBox', '0 0 ' + viewW + ' ' + viewH);
-                    svg.setAttribute('width', viewW * zoom);
-                    svg.setAttribute('height', viewH * zoom);
+                    // 보기 범위 — 프렛 구간만 보이게 viewBox 를 잘라낸다.
+                    // 내부 좌표는 그대로라 도트 클릭/드래그(elementFromPoint) 판정은 영향 없음.
+                    let cropA = 0, cropLen = boardW;   // 보드 가로축(x) 기준 잘라낼 시작/길이
+                    const vr = cfg.viewRange;
+                    if (vr && (vr.fretMin > 0 || vr.fretMax < nFrets)) {
+                        const fMax = Math.min(vr.fretMax, nFrets);
+                        const x0 = vr.fretMin > 0 ? (padL + fretPos(vr.fretMin - 1) - 8) : 0;
+                        const x1 = fMax >= nFrets ? boardW : (padL + fretPos(fMax) + 10);
+                        cropA = Math.max(0, x0);
+                        cropLen = Math.max(40, x1 - cropA);
+                    }
+                    if (rotate) {
+                        svg.setAttribute('viewBox', '0 ' + cropA + ' ' + viewW + ' ' + cropLen);
+                        svg.setAttribute('width', viewW * zoom);
+                        svg.setAttribute('height', cropLen * zoom);
+                    } else {
+                        // 잘라낸 구간이 좁으면 화면 폭에 맞춰 키운다 (최대 2.2배)
+                        let fit = 1;
+                        if (cropLen < boardW) {
+                            const host = svg.closest ? svg.closest('.fb-scroller') : null;
+                            const avail = host ? host.clientWidth - 8 : 0;
+                            if (avail > 0) fit = Math.min(2.2, Math.max(1, avail / (cropLen * zoom)));
+                        }
+                        svg.setAttribute('viewBox', cropA + ' 0 ' + cropLen + ' ' + viewH);
+                        svg.setAttribute('width', cropLen * zoom * fit);
+                        svg.setAttribute('height', viewH * zoom * fit);
+                    }
 
                     // Main rotated group — holds everything EXCEPT fret numbers.
                     // rotate(90) + translate(boardH, 0) maps (x, y) → (boardH - y, x).
@@ -25688,7 +25750,7 @@
                     // the scale/root colors so the picture is consistent across
                     // fret 0 and the rest of the board.
                     const inScaleModeOpen = typeof cfg.highlights === 'function';
-                    const trOpen = cfg.trainingRange;
+                    const trOpen = cfg.trainingRange || cfg.viewRange;
                     strings.forEach(function(s, idx) {
                         const pc = midiToPitchClass(s.midi);
                         const y = stringY(idx);
@@ -25857,7 +25919,7 @@
                     // --- Note dots (interactive) ---
                     // Fret 0 is handled by the open-string buttons above — skip it here.
                     const inScaleMode = typeof cfg.highlights === 'function';
-                    const tr = cfg.trainingRange;
+                    const tr = cfg.trainingRange || cfg.viewRange;
                     function inTrainRange(sI, fr) {
                         if (!tr) return true;
                         return sI >= tr.stringMin && sI <= tr.stringMax &&
@@ -26538,6 +26600,7 @@
                 mode: 'explore',       // 'explore' | 'training'
                 rootPcs: new Set(),    // 다중 근음 강조 (여러 pc 동시 강조)
                 lastClick: null,       // 탐색 모드 마지막 클릭 흔적 { sIdx, fret }
+                viewRange: null,       // 보기 범위 { s1, f1, s2, f2 } (줄 index 0=1번줄) | null=전체
                 training: {
                     active: false,
                     targetPc: null,    // pitch class to find
@@ -26578,10 +26641,76 @@
                 return { stringMin: sMin, stringMax: sMax, fretMin: fMin, fretMax: fMax };
             }
 
+            function fbCurrentViewRange() {
+                const v = fbState.viewRange;
+                if (!v || fbState.mode === 'training') return null;
+                return {
+                    stringMin: Math.min(v.s1, v.s2), stringMax: Math.max(v.s1, v.s2),
+                    fretMin: Math.min(v.f1, v.f2), fretMax: Math.max(v.f1, v.f2),
+                };
+            }
+            // 보기 범위 셀렉트 채우기 (악기가 바뀌면 줄 수가 달라지므로 다시)
+            function fbFillRangeSelects() {
+                const t = TUNINGS[fbState.inst];
+                if (!t) return;
+                const nS = t.strings.length, nF = t.maxFrets;
+                const v = fbState.viewRange || { s1: 0, f1: 0, s2: nS - 1, f2: nF };
+                v.s1 = Math.min(v.s1, nS - 1); v.s2 = Math.min(v.s2, nS - 1);
+                v.f1 = Math.min(v.f1, nF);     v.f2 = Math.min(v.f2, nF);
+                function fill(id, n, fmt, val) {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    let h = '';
+                    for (let i = 0; i < n; i++) h += '<option value="' + i + '">' + fmt(i) + '</option>';
+                    el.innerHTML = h;
+                    el.value = String(val);
+                }
+                fill('fbRangeS1', nS, function(i) { return (i + 1) + '번줄'; }, v.s1);
+                fill('fbRangeS2', nS, function(i) { return (i + 1) + '번줄'; }, v.s2);
+                fill('fbRangeF1', nF + 1, function(i) { return i === 0 ? '개방' : i + '프렛'; }, v.f1);
+                fill('fbRangeF2', nF + 1, function(i) { return i === 0 ? '개방' : i + '프렛'; }, v.f2);
+                const all = document.getElementById('fbRangeAll');
+                if (all) all.disabled = !fbState.viewRange;
+            }
+            function fbReadRange() {
+                const t = TUNINGS[fbState.inst];
+                if (!t) return;
+                const g = function(id) { return parseInt(document.getElementById(id).value, 10) || 0; };
+                const v = { s1: g('fbRangeS1'), f1: g('fbRangeF1'), s2: g('fbRangeS2'), f2: g('fbRangeF2') };
+                const full = Math.min(v.s1, v.s2) === 0 && Math.max(v.s1, v.s2) === t.strings.length - 1 &&
+                             Math.min(v.f1, v.f2) === 0 && Math.max(v.f1, v.f2) === t.maxFrets;
+                fbState.viewRange = full ? null : v;
+                const all = document.getElementById('fbRangeAll');
+                if (all) all.disabled = !fbState.viewRange;
+                fbRender();
+                const sc = document.getElementById('fbScroller');
+                if (sc) sc.scrollLeft = 0;
+            }
+            window.fbBindRange = function() {
+                ['fbRangeS1', 'fbRangeF1', 'fbRangeS2', 'fbRangeF2'].forEach(function(id) {
+                    const el = document.getElementById(id);
+                    if (el && !el._fbBound) { el._fbBound = true; el.addEventListener('change', fbReadRange); }
+                });
+                const all = document.getElementById('fbRangeAll');
+                if (all && !all._fbBound) {
+                    all._fbBound = true;
+                    all.addEventListener('click', function() {
+                        fbState.viewRange = null;
+                        fbFillRangeSelects();
+                        fbRender();
+                    });
+                }
+                fbFillRangeSelects();
+            };
+
             function fbRender() {
                 const svgEl = document.getElementById('fbSvg');
                 if (!svgEl) return;
                 const tr = fbCurrentTrainingRange();
+                const vr = fbCurrentViewRange();
+                // 보기 범위는 탐색 모드에서만
+                const rangeRow = document.getElementById('fbRangeRow');
+                if (rangeRow) rangeRow.style.display = fbState.mode === 'training' ? 'none' : '';
                 // 정답/오답 직후 target pc 의 모든 프렛 위치를 초록으로 공개
                 const reveal = (fbState.mode === 'training' &&
                                 fbState.training.revealCorrect &&
@@ -26609,6 +26738,7 @@
                         vertical: fbState.vertical,
                         zoom: fbState.zoom,
                         trainingRange: tr,
+                        viewRange: vr,
                         highlights: revealHighlights,
                         keepAllDots: keepAllDots,
                         wrongPick: wrongPick,
@@ -26625,6 +26755,7 @@
                         vertical: fbState.vertical,
                         zoom: fbState.zoom,
                         trainingRange: tr,
+                        viewRange: vr,
                         highlights: revealHighlights,
                         keepAllDots: keepAllDots,
                         wrongPick: wrongPick,
@@ -26892,6 +27023,7 @@
                 syncInstDropdown('#fretboardPanel', inst);
                 // String count may change → re-cap the current level's string range
                 fbApplyCurrentLevel();
+                if (typeof window.fbBindRange === 'function') window.fbBindRange();
                 // Preload bass samples if switching to bass
                 // Bass is pure synth — no sample preload needed
                 fbRender();
@@ -27079,6 +27211,7 @@
             };
 
             window.initFretboard = function() {
+                if (typeof window.fbBindRange === 'function') window.fbBindRange();
                 // Default to level 1, apply once so UI matches state
                 if (!fbState.training.level) fbState.training.level = 1;
                 fbApplyCurrentLevel();
