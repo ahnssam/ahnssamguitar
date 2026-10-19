@@ -8110,7 +8110,9 @@
             font-weight: 800; font-size: 0.95rem; line-height: 0.82;
             color: var(--green-deep);
         }
-        .loop-tsig > span { display: block; }
+        .loop-tsig > span { display: block; min-width: 0.75em; text-align: center; }
+        /* 분자/분모 사이 가로선 (2 ─ 4) */
+        .loop-tsig > span:first-child { border-bottom: 1.5px solid currentColor; padding-bottom: 1px; margin-bottom: 2px; }
         .loop-cell.has-lrepeat .loop-tsig { left: 17px; }
         .loop-cell.has-tsig .loop-cell-halves { padding-left: 14px; }
         .loop-cell.has-tsig.has-lrepeat .loop-cell-halves { padding-left: 26px; }
@@ -15450,6 +15452,7 @@
                     var ok = await _localToolRpc('save_chart_for_tool',
                         { token: tok, chart_id: _loopActivePresetId, patch: patch });
                     loopToast(ok ? '저장했어요' : '저장 실패');
+                    if (ok) { try { window.__loopMarkClean(); } catch (e) {} }   // 저장했으니 '나가시겠습니까' 안 띄움
                     return !!ok;
                 } catch (e) { loopToast('저장 실패: ' + e.message); return false; }
             };
@@ -15672,6 +15675,7 @@
                         if (e.target.closest('.loop-fav-btn') || e.target.closest('.loop-editp-btn')) return;
                         var id = el.dataset.id;
                         var p = (_loopPresetsCache || []).find(function(x) { return x.id === id; });
+                        if (p && p.id !== _loopActivePresetId && !window.__loopConfirmLeave()) return;   // 저장 안 한 변경 확인
                         if (p) applyLoopPreset(p);
                     };
                 });
@@ -16003,6 +16007,8 @@
                 closeLoopPresetList();
                 var search = document.getElementById('loopPresetSearch');
                 if (search) search.value = p.name;
+                // 방금 불러온 상태 = 저장된 상태 (부가 데이터가 늦게 붙는 것까지 기다렸다 한 번 더)
+                try { window.__loopMarkClean(); setTimeout(window.__loopMarkClean, 400); } catch (e) {}
                 gtag('event', 'loop_preset_apply', { id: p.id, name: p.name, hasCustom: !!_loopActivePresetSequencer });
             }
 
@@ -17621,6 +17627,44 @@
                     return true;
                 } catch (e) { return false; }
             }
+            // ══════════ 저장 안 한 변경 감지 — 창 닫기·다른 곡 열기 전에 '나가시겠습니까?' ══════════
+            //   곡을 불러온 직후·저장 직후의 '저장될 내용'을 기억해 두고, 지금 내용과 다르면 변경 있음.
+            //   (코드·도돌이·박자표·송폼 + 로컬툴/작업대의 리듬·다이어그램·송폼흐름·가사까지 비교)
+            var _loopCleanSig = null;
+            function _loopSaveSig() {
+                try {
+                    var x = { s: serializeLoopState('', '') };
+                    if (Array.isArray(window.__LOCAL_TOOL_RHYTHM)) {
+                        x.rhy = window.__LOCAL_TOOL_RHYTHM.map(function(p) {
+                            var q = Object.assign({}, p); delete q.svg; return q;   // 그림(svg)은 비교에서 뺀다
+                        });
+                    }
+                    x.cd = window.__LOCAL_TOOL_CHORDDIAG || null;
+                    x.ff = window.__LOCAL_TOOL_FORMFLOW || null;
+                    x.ly = window.__LOCAL_TOOL_LYRICS || null;
+                    try { x.deck = _deckExtras({}); } catch (e) {}
+                    return JSON.stringify(x);
+                } catch (e) { return null; }
+            }
+            // 지금 상태를 '저장된 상태'로 기억 (불러온 직후·저장 성공 후)
+            window.__loopMarkClean = function() { _loopCleanSig = _loopSaveSig(); };
+            // 저장 안 한 변경이 있는지 — 불러온 적 없으면 입력이 있을 때만 변경으로 본다
+            window.__loopIsDirty = function() {
+                var now = _loopSaveSig();
+                if (now === null) return false;
+                if (_loopCleanSig === null) return !!(typeof hasLoopInput === 'function' && hasLoopInput());
+                return now !== _loopCleanSig;
+            };
+            var LOOP_LEAVE_MSG = '저장하지 않은 변경이 있어요.\n저장하지 않고 다른 곡을 열까요?';
+            window.__loopConfirmLeave = function() {
+                return !window.__loopIsDirty() || confirm(LOOP_LEAVE_MSG);
+            };
+            // 창 닫기·새로고침 — 변경이 있으면 브라우저 기본 '사이트에서 나가시겠습니까?' 확인
+            window.addEventListener('beforeunload', function(e) {
+                try {
+                    if (window.__loopIsDirty()) { e.preventDefault(); e.returnValue = ''; return ''; }
+                } catch (err) {}
+            });
             function loopOnStateChange() {
                 updateSavePresetBtnState();
                 clearTimeout(_loopDraftTimer);
@@ -17823,6 +17867,7 @@
                         else { _loopPresetsCache = null; _loopMyLoaded = false; await loadLoopPresets(); }
                         ov.classList.remove('open');
                         loopToast('공용 프리셋에 저장했어요');
+                        try { window.__loopMarkClean(); } catch (e) {}
                         try {
                             var s2 = document.getElementById('loopPresetSearch');
                             renderLoopPresetList(s2 ? s2.value : '');
@@ -17946,6 +17991,7 @@
                     if (_sb) _sb.title = '저장 ("' + name + '" 덮어쓰기)';
                     _loopSetPresetLabel(slot, name, artist);   // 검색창에 "번호. 아티스트 - 곡제목"
                     loopToast('저장이 완료되었습니다');
+                    try { window.__loopMarkClean(); } catch (e) {}
                 } catch (e) {
                     loopToast('저장 실패 — 잠시 후 다시 시도해주세요');
                 }
@@ -17984,6 +18030,7 @@
                         if (e.target.closest('[data-del-slot]') || e.target.closest('[data-edit-slot]') || e.target.closest('.loop-mp-name-input')) return;
                         var slot = parseInt(item.getAttribute('data-load-slot'), 10);
                         var s = slots[slot - 1];
+                        if (s && s.preset && !window.__loopConfirmLeave()) return;   // 저장 안 한 변경 확인
                         if (s && s.preset) { applyLoopPreset(s.preset); _loopSavedSlot = s.slot; _loopSavedName = s.name; _loopSavedArtist = _presetArtist(s); var _sb2 = document.getElementById('loopSavePresetBtn'); if (_sb2) _sb2.title = '저장 ("' + s.name + '" 덮어쓰기)'; _loopSetPresetLabel(s.slot, s.name, _loopSavedArtist); saveLoopDraft(); ov.classList.remove('open'); loopToast('"' + s.name + '" 불러옴'); }
                     });
                 });
