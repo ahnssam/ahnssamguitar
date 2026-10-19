@@ -6188,6 +6188,15 @@
         .sp-marker:hover { background: #e07812; }
         .sp-marker:hover::after { border-top-color: #e07812; }
         .sp-marker.dragging { cursor: grabbing; opacity: 0.85; }
+        /* 로우컷/하이컷 페이더 */
+        .sp-eq-ico { width: 30px; height: 18px; display: block; }
+        .sp-eq-fader .ls-fader-name { min-width: 3.3em; }
+        .sp-eq-val {
+            background: none; border: none; padding: 0; cursor: pointer;
+            font-family: inherit; min-width: 4.4em;
+        }
+        .sp-eq-val.on { color: var(--green-deep); font-weight: 700; }
+        :root[data-theme="dark"] .sp-eq-val.on { color: var(--green-light); }
         /* 구간 정보 — 파형 바로 아래, 구간을 지정했을 때만 표시 */
         .sp-region-info {
             display: flex; align-items: center; justify-content: center; gap: 0.45rem;
@@ -10525,6 +10534,23 @@
                             <span class="ls-toggle-txt">피치 변동 <span class="ls-pitch-hint">(속도에 따라 음정도 변경)</span></span>
                         </label>
                     </div>
+                    <!-- 로우컷(하이패스) / 하이컷(로우패스) — 20Hz~20kHz 로그 스케일 -->
+                    <div class="ls-fader sp-eq-fader">
+                        <span class="ls-fader-ico" title="로우컷 — 저음 줄이기" aria-hidden="true">
+                            <svg class="sp-eq-ico" viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M3 21 C 10 21, 12 5, 20 5 L 37 5"/></svg>
+                        </span>
+                        <span class="ls-fader-name">로우컷</span>
+                        <input type="range" id="spLowCut" min="0" max="100" step="0.5" value="0" aria-label="로우컷 (저음 줄이기)" title="오른쪽으로 갈수록 저음이 깎여요 (맨 왼쪽 = 끔)">
+                        <button type="button" id="spLowCutVal" class="ls-fader-val sp-eq-val" title="눌러서 끄기">끔</button>
+                    </div>
+                    <div class="ls-fader sp-eq-fader">
+                        <span class="ls-fader-ico" title="하이컷 — 고음 줄이기" aria-hidden="true">
+                            <svg class="sp-eq-ico" viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M3 5 L 20 5 C 28 5, 30 21, 37 21"/></svg>
+                        </span>
+                        <span class="ls-fader-name">하이컷</span>
+                        <input type="range" id="spHighCut" min="0" max="100" step="0.5" value="100" aria-label="하이컷 (고음 줄이기)" title="왼쪽으로 갈수록 고음이 깎여요 (맨 오른쪽 = 끔)">
+                        <button type="button" id="spHighCutVal" class="ls-fader-val sp-eq-val" title="눌러서 끄기">끔</button>
+                    </div>
                     <div class="ls-fader">
                         <span class="ls-fader-ico" title="볼륨" aria-label="볼륨"><i class="fas fa-volume-high"></i></span>
                         <span class="ls-fader-name">볼륨</span>
@@ -10835,7 +10861,7 @@
         // a 1-2 line explanation. Click to open, click anywhere or another
         // help button to close.
         const TOOL_HELP_TEXT = {
-            slowplayer: '음악 파일을 열어 속도를 바꿔 듣고, 원하는 구간만 반복하는 연습용 플레이어예요. 파일은 내 기기 안에서만 재생돼요.\n\n• 파일 열기 버튼을 누르거나 파일을 화면에 끌어다 놓으세요 (mp3·wav·m4a 등).\n• 파형을 클릭하면 재생 위치(빨간 선)가 그 지점으로 옮겨져요. 재생 중이면 거기서부터 이어서 재생되고, 정지 상태면 위치만 옮겨집니다. 우측 하단 슬라이더로 파형을 확대할 수 있어요.\n• 구간반복: 파형 양 끝 핸들을 끌거나 마우스로 파형을 드래그하면 구간이 잡히고, 구간 정보가 파형 아래에 표시돼요. LOOP 로 반복을 켜고 끄고, CLEAR 로 구간을 해제합니다. 반복이 켜진 상태에서 재생을 누르면 구간 시작점부터 재생돼요.\n• 마커: 파형 위 띠를 누르거나 M 키로 지금 위치에 표시해요. 마커를 누르면 그 위치로 이동, 끌면 옮기기, 더블클릭하면 삭제돼요.\n• 속도: 0.5x~1.5x 버튼으로 바로 고르거나, “직접” 버튼을 눌러 나오는 슬라이더·화살표 버튼으로 0.25x~2x 를 0.05 단위로 조절해요. 마지막에 맞춘 속도는 “직접” 버튼 아래에 남아서, 다시 누르면 그 속도로 돌아가요. 기본은 음정 유지, 피치 변동을 켜면 음정도 함께 변해요.\n• 단축키: 스페이스=재생/일시정지, ←/→=5초 이동(Shift 는 1초), ↑/↓=속도 0.05, A/B=지금 위치를 구간 시작/끝으로, L=구간반복, C=구간 해제, M=마커 추가.',
+            slowplayer: '음악 파일을 열어 속도를 바꿔 듣고, 원하는 구간만 반복하는 연습용 플레이어예요. 파일은 내 기기 안에서만 재생돼요.\n\n• 파일 열기 버튼을 누르거나 파일을 화면에 끌어다 놓으세요 (mp3·wav·m4a 등).\n• 파형을 클릭하면 재생 위치(빨간 선)가 그 지점으로 옮겨져요. 재생 중이면 거기서부터 이어서 재생되고, 정지 상태면 위치만 옮겨집니다. 우측 하단 슬라이더로 파형을 확대할 수 있어요.\n• 구간반복: 파형 양 끝 핸들을 끌거나 마우스로 파형을 드래그하면 구간이 잡히고, 구간 정보가 파형 아래에 표시돼요. LOOP 로 반복을 켜고 끄고, CLEAR 로 구간을 해제합니다. 반복이 켜진 상태에서 재생을 누르면 구간 시작점부터 재생돼요.\n• 마커: 파형 위 띠를 누르거나 M 키로 지금 위치에 표시해요. 마커를 누르면 그 위치로 이동, 끌면 옮기기, 더블클릭하면 삭제돼요.\n• 속도: 0.5x~1.5x 버튼으로 바로 고르거나, “직접” 버튼을 눌러 나오는 슬라이더·화살표 버튼으로 0.25x~2x 를 0.05 단위로 조절해요. 마지막에 맞춘 속도는 “직접” 버튼 아래에 남아서, 다시 누르면 그 속도로 돌아가요. 기본은 음정 유지, 피치 변동을 켜면 음정도 함께 변해요.\n• 로우컷/하이컷: 로우컷을 오른쪽으로 올리면 저음(베이스·킥)이, 하이컷을 왼쪽으로 내리면 고음(심벌·보컬 치찰음)이 깎여요. 기타 소리만 또렷하게 듣고 싶을 때 써 보세요. 값을 누르면 끔으로 돌아가요.\n• 단축키: 스페이스=재생/일시정지, ←/→=5초 이동(Shift 는 1초), ↑/↓=속도 0.05, A/B=지금 위치를 구간 시작/끝으로, L=구간반복, C=구간 해제, M=마커 추가.',
             loopstation: '마이크로 친 소리를 자동 녹음해 즉시 반복 재생하는 루프스테이션이에요.\n\n• 준비 버튼으로 마이크를 켜고(다시 누르면 감지 중지), RECORD 또는 R 키를 누르면 신호 대기 → 소리가 들어오면 자동 녹음돼요.\n• 녹음 중 RECORD·R·아무 키로 정지하면 즉시 반복 재생. 루프가 도는 동안 다시 녹음하면 위에 겹쳐(오버더빙) 쌓여요.\n• 오토 더빙(녹음 후 자동 재대기)·연속 더빙(정지 전까지 계속) 토글 지원.\n• 스페이스바=재생/일시정지, REVERSE 역재생, UNDO 마지막 레이어 되돌리기.\n• 파형 양옆 핸들로 시작·끝점 트림, 볼륨·속도(10~200%) 페이더 제공.',
             tuner: '기기 마이크로 들어오는 소리의 음높이를 분석해 정확한 튜닝을 알려줍니다. 기타·베이스·우쿨렐레·바이올린 모두 지원해요.',
             metronome: '메트로놈 : BPM에 맞춰 클릭이나 목소리(1/2/3/4)가 나옵니다. 박자(2/4·3/4·4/4·6/8) 기준점을 전환 가능.\n\n드럼 : BPM에 맞춰 드럼 리듬이 재생됩니다. 8비트·16비트·셔플락 등 자주 쓰이는 패턴 모음.\n\n탭 BPM: 박자에 맞춰 키보드/버튼 누르면 BPM 자동 측정.',
@@ -22124,7 +22150,9 @@
             let sp_a = 0, sp_b = 0;         // 구간 시작/끝 (초)
             let sp_inRegion = false;        // 재생 위치가 구간 안에 들어온 적 있는지 (B 통과 감지용)
             let sp_speed = 1;
-            let sp_markers = [];            // 마커 위치들 (초, 오름차순)
+            let sp_markers = [];
+            let sp_ctx = null;              // 재생용 AudioContext (필터 그래프) — 첫 재생 때 생성
+            let sp_lowCut = null, sp_highCut = null, sp_outGain = null;            // 마커 위치들 (초, 오름차순)
             let sp_lastCustom = null;       // 마지막으로 쓴 커스텀(프리셋 아닌) 속도 — '직접' 칩에 표시/복원
             let sp_zoom = 1;
             let sp_rafId = 0;
@@ -22286,6 +22314,8 @@
             function play() {
                 if (!hasFile()) return;
                 if (sp_audio.ended || sp_audio.currentTime >= sp_dur - 0.02) seek(sp_loopOn ? sp_a : 0);
+                ensureGraph();
+                if (sp_ctx && sp_ctx.state === 'suspended') { try { sp_ctx.resume(); } catch (e) {} }
                 applyVolume();
                 var p = sp_audio.play();
                 if (p && p.catch) p.catch(function() {});
@@ -22344,13 +22374,63 @@
                 if (box) box.hidden = !open;
                 if (cc) cc.setAttribute('aria-expanded', open ? 'true' : 'false');
             }
+            // ─── 로우컷 / 하이컷 ──────────────────────────────────────
+            // <audio> → 하이패스×2(로우컷) → 로우패스×2(하이컷) → 게인 → 출력.
+            // 필터를 2단씩 겹쳐 24dB/oct 로 확실히 깎이게. createMediaElementSource 는
+            // 요소당 한 번만 가능하고 사용자 동작 안에서 만들어야 해서 첫 재생 때 생성.
+            var EQ_MIN_HZ = 20, EQ_MAX_HZ = 20000;
+            function eqPosToHz(pos) { return EQ_MIN_HZ * Math.pow(EQ_MAX_HZ / EQ_MIN_HZ, pos / 100); }
+            function fmtHz(hz) { return hz >= 1000 ? (hz / 1000).toFixed(hz >= 10000 ? 0 : 1) + 'kHz' : Math.round(hz) + 'Hz'; }
+            function ensureGraph() {
+                if (sp_ctx || !sp_audio) return;
+                var AC = window.AudioContext || window.webkitAudioContext;
+                if (!AC) return;
+                try {
+                    var ctx = new AC();
+                    var src = ctx.createMediaElementSource(sp_audio);
+                    function biquad(type) {
+                        var f = ctx.createBiquadFilter();
+                        f.type = type; f.Q.value = 0.707;
+                        return f;
+                    }
+                    sp_lowCut = [biquad('highpass'), biquad('highpass')];
+                    sp_highCut = [biquad('lowpass'), biquad('lowpass')];
+                    sp_outGain = ctx.createGain();
+                    src.connect(sp_lowCut[0]);
+                    sp_lowCut[0].connect(sp_lowCut[1]);
+                    sp_lowCut[1].connect(sp_highCut[0]);
+                    sp_highCut[0].connect(sp_highCut[1]);
+                    sp_highCut[1].connect(sp_outGain);
+                    sp_outGain.connect(ctx.destination);
+                    sp_ctx = ctx;
+                    sp_audio.volume = 1;   // 볼륨은 이제 게인 노드가 담당
+                    applyEq();
+                } catch (e) { sp_ctx = null; }
+            }
+            function applyEq() {
+                var lo = +$('spLowCut').value, hi = +$('spHighCut').value;
+                var loOn = lo > 0.01, hiOn = hi < 99.99;
+                var lv = $('spLowCutVal'), hv = $('spHighCutVal');
+                if (lv) { lv.textContent = loOn ? fmtHz(eqPosToHz(lo)) : '끔'; lv.classList.toggle('on', loOn); }
+                if (hv) { hv.textContent = hiOn ? fmtHz(eqPosToHz(hi)) : '끔'; hv.classList.toggle('on', hiOn); }
+                if (!sp_ctx) return;
+                var nyq = sp_ctx.sampleRate / 2;
+                // 끔 = 들리는 대역 밖으로 보내 사실상 통과
+                var loHz = loOn ? eqPosToHz(lo) : 10;
+                var hiHz = hiOn ? Math.min(eqPosToHz(hi), nyq - 100) : nyq - 100;
+                var now = sp_ctx.currentTime;
+                sp_lowCut.forEach(function(f) { f.frequency.setTargetAtTime(loHz, now, 0.015); });
+                sp_highCut.forEach(function(f) { f.frequency.setTargetAtTime(hiHz, now, 0.015); });
+            }
             // 도구 볼륨 × 사이트 상단 마스터 볼륨
             function applyVolume() {
                 if (!sp_audio) return;
                 var ms = $('masterVolSlider');
                 var site = ms ? (+ms.value) / 100 : 1;
                 var v = Math.max(0, Math.min(1, (+$('spVol').value) / 100 * site));
-                if (Math.abs(sp_audio.volume - v) > 1e-3) sp_audio.volume = v;
+                if (sp_outGain) {
+                    if (Math.abs(sp_outGain.gain.value - v) > 1e-3) sp_outGain.gain.value = v;
+                } else if (Math.abs(sp_audio.volume - v) > 1e-3) sp_audio.volume = v;
             }
 
             // ─── 구간(A-B) ────────────────────────────────────────────
@@ -22639,12 +22719,17 @@
                 $('spSpeedDown').onclick = function() { setSpeed(sp_speed - SP_STEP); };
                 $('spSpeedUp').onclick = function() { setSpeed(sp_speed + SP_STEP); };
                 $('spPitchFollow').onchange = applyRate;
+                $('spLowCut').oninput = applyEq;
+                $('spHighCut').oninput = applyEq;
+                $('spLowCutVal').onclick = function() { $('spLowCut').value = 0; applyEq(); };
+                $('spHighCutVal').onclick = function() { $('spHighCut').value = 100; applyEq(); };
+                applyEq();
                 $('spVol').oninput = function(e) {
                     $('spVolVal').textContent = e.target.value + '%';
                     applyVolume();
                 };
                 // 슬라이더 조작 후 포커스를 풀어 스페이스/방향키 단축키가 바로 먹게
-                ['spSpeed', 'spVol', 'spZoom'].forEach(function(id) {
+                ['spSpeed', 'spVol', 'spZoom', 'spLowCut', 'spHighCut'].forEach(function(id) {
                     var el = $(id); if (el) el.addEventListener('change', function() { el.blur(); });
                 });
                 var ms = $('masterVolSlider'); if (ms) ms.addEventListener('input', applyVolume);
