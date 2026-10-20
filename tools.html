@@ -5265,6 +5265,27 @@
             cursor: pointer;
         }
         .et-prog-slot.locked { cursor: default; opacity: 0.75; }
+        /* 지금 울리는 코드의 칸 — 스트럼마다 살짝 떨리며 빛남 */
+        @keyframes etProgRing {
+            0%   { transform: scale(1); }
+            10%  { transform: scale(1.08) translateX(-1.5px); }
+            22%  { transform: scale(1.06) translateX(1.5px); }
+            34%  { transform: scale(1.04) translateX(-1px); }
+            46%  { transform: scale(1.03) translateX(1px); }
+            60%  { transform: scale(1.02) translateX(-0.5px); }
+            100% { transform: scale(1); }
+        }
+        @keyframes etProgRingGlow {
+            0%   { box-shadow: 0 0 0 3px rgba(114, 196, 146, 0.35), 0 0 16px rgba(114, 196, 146, 0.55); }
+            100% { box-shadow: 0 0 0 0 rgba(114, 196, 146, 0), 0 0 0 rgba(114, 196, 146, 0); }
+        }
+        .et-prog-slot.ringing {
+            border-color: var(--green-mid);
+            animation: etProgRing 0.6s ease-out, etProgRingGlow 0.85s ease-out;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .et-prog-slot.ringing { animation: etProgRingGlow 0.85s ease-out; }
+        }
         .et-prog-slot.correct { background: var(--green-mid); border-color: var(--green-mid); color: #fff; opacity: 1; }
         .et-prog-slot.wrong { background: #c73535; border-color: #c73535; color: #fff; opacity: 1; }
         :root[data-theme="dark"] .et-prog-slot { border-color: rgba(180, 230, 200, 0.3); color: rgba(232, 240, 236, 0.4); }
@@ -25326,7 +25347,23 @@
                 return progLoadKey(_etProgKey);
             };
 
+            // 재생 중인 코드에 맞춰 답 칸이 울리는 효과 — 스트럼 시각마다 예약
+            var _etProgPulseTimers = [];
+            function progClearPulses() {
+                _etProgPulseTimers.forEach(clearTimeout);
+                _etProgPulseTimers = [];
+                document.querySelectorAll('.et-prog-slot.ringing').forEach(function(el) { el.classList.remove('ringing'); });
+            }
+            function progPulseSlot(i) {
+                var el = document.querySelectorAll('#etProgSlots .et-prog-slot')[i];
+                if (!el) return;
+                el.classList.remove('ringing');
+                void el.offsetWidth;   // 애니메이션 재시작
+                el.classList.add('ringing');
+            }
+
             function etProgStopVoices() {
+                progClearPulses();
                 var now = _etCtx.currentTime;
                 _etProgVoices.forEach(function(v) {
                     try {
@@ -25359,7 +25396,8 @@
                 _etProgVoices.push({ src: src, g: g });
             }
 
-            function playProgression(seq, keyId) {
+            // pulse = 답 칸을 스트럼에 맞춰 울리게 할지 (문제 재생일 때만)
+            function playProgression(seq, keyId, pulse) {
                 if (_etCtx.state === 'suspended') _etCtx.resume();
                 return progLoadKey(keyId).then(function(bufs) {
                     etProgStopVoices();
@@ -25371,6 +25409,10 @@
                         var start = t0 + n * beat;
                         if (n < total - 1) progScheduleStrum(s, start, start + beat, 0.09);
                         else progScheduleStrum(s, start, start + 2.6, 0.25);
+                        if (pulse) {
+                            var delay = Math.max(0, (start - _etCtx.currentTime) * 1000);
+                            _etProgPulseTimers.push(setTimeout(progPulseSlot.bind(null, Math.floor(n / PROG_STRUMS_PER_CHORD)), delay));
+                        }
                     }
                 }).catch(function() {
                     var fb = document.getElementById('etProgFeedback');
@@ -25675,12 +25717,12 @@
                     b.classList.remove('correct', 'wrong', 'disabled', 'selected');
                 });
                 etProgUpdateNextState();
-                playProgression(_etProgAnswer, _etProgAnswerKey);
+                playProgression(_etProgAnswer, _etProgAnswerKey, true);
             };
 
             window.etProgListenBtn = function() {
                 if (_etProgAnswer === null || (_etProgGraded && _etProgRound.finished)) etProgPlayQuestion();
-                else playProgression(_etProgAnswer, _etProgAnswerKey);
+                else playProgression(_etProgAnswer, _etProgAnswerKey, !_etProgGraded);
             };
 
             window.etProgPick = function(ci) {
