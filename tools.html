@@ -5047,17 +5047,54 @@
             margin-bottom: 0.8rem;
         }
         .et-prog-slot {
-            min-width: 3.1rem;
-            padding: 0.45rem 0.4rem;
-            border-radius: 10px;
+            min-width: 5.2rem;
+            padding: 0.8rem 0.5rem;
+            border-radius: 12px;
             border: 1.5px dashed rgba(42, 107, 74, 0.3);
             background: transparent;
             color: rgba(26, 36, 33, 0.35);
             font-family: inherit;
-            font-size: 0.85rem;
+            font-size: 1.2rem;
             font-weight: 700;
             cursor: default;
         }
+        .et-prog-options { align-items: center; gap: 0.8rem; }
+        .et-prog-key-select {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.78rem;
+            font-family: inherit;
+            font-weight: 600;
+            border-radius: 16px;
+            border: 1px solid rgba(42, 107, 74, 0.25);
+            background: rgba(42, 107, 74, 0.06);
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+        :root[data-theme="dark"] .et-prog-key-select { background: #1d2a24; color: #e8f0ec; border-color: rgba(180, 230, 200, 0.28); }
+        /* 10문제 라운드 진행 + 타이머 */
+        .et-prog-round {
+            display: flex;
+            justify-content: center;
+            gap: 0.9rem;
+            align-items: center;
+            margin: -0.2rem auto 0.6rem;
+            padding: 0.35rem 0.9rem;
+            width: fit-content;
+            max-width: 100%;
+            flex-wrap: wrap;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: rgba(26, 36, 33, 0.55);
+            background: rgba(42, 107, 74, 0.05);
+            border: 1px solid rgba(42, 107, 74, 0.12);
+            border-radius: 999px;
+            font-variant-numeric: tabular-nums;
+        }
+        .et-prog-round.running { color: var(--green-deep); border-color: rgba(82, 168, 114, 0.35); }
+        .et-prog-round.done { color: #fff; background: var(--green-mid); border-color: var(--green-mid); font-size: 0.9rem; }
+        :root[data-theme="dark"] .et-prog-round { color: rgba(232, 240, 236, 0.6); background: rgba(180, 230, 200, 0.06); border-color: rgba(180, 230, 200, 0.2); }
+        :root[data-theme="dark"] .et-prog-round.running { color: #b4e6c8; }
+        :root[data-theme="dark"] .et-prog-round.done { color: #fff; background: var(--green-mid); }
         .et-prog-slot.filled {
             border-style: solid;
             border-color: var(--green-mid);
@@ -5077,6 +5114,7 @@
             .et-mode-btn { padding: 0.4rem 0.25rem; font-size: 0.8rem; line-height: 1.25; }
             .et-btn-word { display: block; }
             .et-btn-sep { display: none; }
+            .et-prog-slot { min-width: 4.4rem; padding: 0.7rem 0.4rem; font-size: 1.05rem; }
         }
         .et-choice-btn {
             padding: 0.7rem 0.3rem;
@@ -9818,12 +9856,13 @@
                         </div>
                         <div class="et-setting-row">
                             <span class="et-setting-label">옵션</span>
-                            <div class="et-setting-btns">
+                            <div class="et-setting-btns et-prog-options">
                                 <label class="fb-switch">
-                                    <input type="checkbox" id="etProgStartC" data-change="setETProgStartC" data-args="$checked">
+                                    <input type="checkbox" id="etProgStartTonic" data-change="setETProgStartTonic" data-args="$checked">
                                     <span class="fb-switch-slider"></span>
-                                    <span class="fb-switch-label">C로 시작</span>
+                                    <span class="fb-switch-label">1도로 시작</span>
                                 </label>
+                                <select class="et-prog-key-select" id="etProgKey" data-change="setETProgKey" data-args="$value" aria-label="키 선택"></select>
                             </div>
                         </div>
                     </div>
@@ -9843,6 +9882,10 @@
                         <div class="et-reset-col">
                             <button class="et-reset-btn-inline" data-action="etProgReset" title="초기화"><i class="fas fa-redo"></i><span>초기화</span></button>
                         </div>
+                    </div>
+                    <div class="et-prog-round" id="etProgRound">
+                        <span id="etProgRoundCount">문제 0/10</span>
+                        <span class="et-prog-timer" id="etProgTimer"><i class="fas fa-stopwatch"></i> 0.0초</span>
                     </div>
                     <div class="et-feedback" id="etProgFeedback"></div>
                     <div class="et-play-row">
@@ -11055,7 +11098,7 @@
             eartraining: '두 음 간격이나 코드, 코드 진행을 듣고 맞히는 훈련. 정답이 누적되면 랭킹에 반영돼요. 절대음감보다 상대음감 훈련에 효과적이에요.',
             eartraining_pitch:    '음정을 듣고 무슨 음정인지 맞추는 연습이에요. 어려움 난이도부터는 샵(♯) 음계까지 함께 출제됩니다.',
             eartraining_interval: '낮은 음과 높은 음 사이 간격을 맞추는 연습이에요. 절대음감 없이도 음악을 분석할 수 있게 해주는 상대음감 트레이닝의 핵심 방식.',
-            eartraining_prog:     'C 키 다이아토닉 코드(C·Dm·Em·F·G·Am·Bdim)로 된 진행을 듣고 순서대로 맞추는 연습이에요.\n\n• 단계 1~8 = 코드 개수. 코드마다 70BPM 으로 두 번씩 쳐줍니다.\n• C로 시작을 켜면 첫 코드는 항상 C로 고정돼요.\n• 아래 칸을 누르면 고른 코드를 뺄 수 있어요.\n\n점수는 이 화면에만 기록되고 랭킹에는 반영되지 않아요.',
+            eartraining_prog:     '고른 키의 다이아토닉 코드(1도~7도)로 된 진행을 듣고 순서대로 맞추는 연습이에요.\n\n• 단계 1~8 = 코드 개수. 코드마다 70BPM 으로 두 번씩 쳐줍니다.\n• 1도로 시작을 켜면 첫 코드는 항상 1도로 고정돼요.\n• 10문제가 한 라운드예요. 첫 문제를 들을 때 타이머가 시작되고, 10문제를 끝내면 걸린 시간을 알려줘요.\n• 아래 칸을 누르면 고른 코드를 뺄 수 있어요.\n\n점수는 이 화면에만 기록되고 랭킹에는 반영되지 않아요.',
             eartraining_chord:    '구성음을 듣고 어떤 코드인지 맞추는 연습이에요. 코드 사운드 자체에 익숙해지면 실전 연주에서 코드 진행을 빠르게 캐치할 수 있어 큰 도움이 됩니다.',
             chords: '기본·텐션·세븐스 코드까지 운지법과 사운드를 한 번에 검색·재생. 코드를 클릭하면 바로 그 코드 사운드가 들려요.',
             fretboard: '지판 위 모든 음의 위치를 시각화. 트레이닝 모드로 음 이름 맞추기 연습도 가능합니다.',
@@ -24979,38 +25022,61 @@
             };
 
             // --- Chord Progression mode ---
-            // C 키 다이아토닉 코드를 기타로 짧게 스트럼한 샘플(sounds/도_1.wav … 시_1.wav).
+            // 다이아토닉 코드를 기타로 짧게 스트럼한 샘플로 진행을 들려주고 순서대로 맞춘다.
             // 단계 N = 코드 N개짜리 진행. 단계와 상관없이 코드마다 70BPM 으로 두 번씩 친다.
+            // 10문제를 한 라운드로 끊고, 라운드를 끝내는 데 걸린 시간을 잰다.
             // 랭킹 서버 모드(ear_single/compare/chord)에 없는 모드라 점수는 로컬에만 누적.
-            const PROG_CHORDS = [
-                { file: '도', name: 'C',    roman: 'I' },
-                { file: '레', name: 'Dm',   roman: 'ii' },
-                { file: '미', name: 'Em',   roman: 'iii' },
-                { file: '파', name: 'F',    roman: 'IV' },
-                { file: '솔', name: 'G',    roman: 'V' },
-                { file: '라', name: 'Am',   roman: 'vi' },
-                { file: '시', name: 'Bdim', roman: 'vii°' }
+            const PROG_DEGREES = [
+                { offset: 0,  quality: '',    roman: 'I' },
+                { offset: 2,  quality: 'm',   roman: 'ii' },
+                { offset: 4,  quality: 'm',   roman: 'iii' },
+                { offset: 5,  quality: '',    roman: 'IV' },
+                { offset: 7,  quality: '',    roman: 'V' },
+                { offset: 9,  quality: 'm',   roman: 'vi' },
+                { offset: 11, quality: 'dim', roman: 'vii°' }
+            ];
+            // 녹음 세트 — 1도~7도 순서의 파일명(sounds/<이름>.wav).
+            // 새 키를 녹음하면 여기에 세트를 추가하고 PROG_KEYS 에서 shift: 0 으로 연결.
+            const PROG_SAMPLE_SETS = {
+                C: ['도_1', '레_1', '미_1', '파_1', '솔_1', '라_1', '시_1']
+            };
+            // samples = 사용할 녹음 세트, shift = 그 세트를 몇 반음 올려 재생할지(트랜스포즈).
+            const PROG_KEYS = [
+                { id: 'C',  root: 0, samples: 'C', shift: 0 },
+                { id: 'C#', root: 1, samples: 'C', shift: 1 }
             ];
             const PROG_BPM = 70;
             const PROG_STRUMS_PER_CHORD = 2;
             const PROG_PTS_PER_LEVEL = 10;      // 정답 1개당 단계 × 10점
+            const PROG_ROUND_SIZE = 10;
 
             let _etProgLevel = 1;
-            let _etProgStartC = false;
-            let _etProgAnswer = null;            // [chordIdx, ...]
+            let _etProgKey = 'C';
+            let _etProgStartTonic = false;
+            let _etProgAnswer = null;            // [degreeIdx, ...]
+            let _etProgAnswerKey = 'C';
             let _etProgPicks = [];
             let _etProgGraded = false;
             let _etProgStats = { score: 0, correct: 0, total: 0, streak: 0 };
             let _etProgHistory = [];
-            let _etProgBuffers = null;           // [{ buf, gain }] — PROG_CHORDS 순서
-            let _etProgLoading = null;
+            let _etProgSampleCache = {};         // 세트 id → Promise<[{ buf, gain }]>
             let _etProgVoices = [];              // 재생 중인 소스 — 다시 듣기 시 끊기용
+            let _etProgRound = { done: 0, correct: 0, start: 0, elapsed: 0, running: false, finished: false };
+            let _etProgTimerId = null;
 
-            window.etProgEnsureSamples = function() {
-                if (_etProgBuffers) return Promise.resolve(_etProgBuffers);
-                if (_etProgLoading) return _etProgLoading;
-                _etProgLoading = Promise.all(PROG_CHORDS.map(function(c) {
-                    return fetch(encodeURI('sounds/' + c.file + '_1.wav'))
+            function progKey(id) {
+                return PROG_KEYS.find(function(k) { return k.id === id; }) || PROG_KEYS[0];
+            }
+
+            function progChordName(keyId, deg) {
+                var k = progKey(keyId), d = PROG_DEGREES[deg];
+                return NOTE_NAMES[(k.root + d.offset) % 12] + d.quality;
+            }
+
+            function progLoadSet(setId) {
+                if (_etProgSampleCache[setId]) return _etProgSampleCache[setId];
+                var p = Promise.all(PROG_SAMPLE_SETS[setId].map(function(file) {
+                    return fetch(encodeURI('sounds/' + file + '.wav'))
                         .then(function(r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
                         .then(function(ab) { return _etCtx.decodeAudioData(ab); })
                         .then(function(buf) {
@@ -25019,14 +25085,14 @@
                             for (var i = 0; i < d.length; i++) { var a = Math.abs(d[i]); if (a > peak) peak = a; }
                             return { buf: buf, gain: peak > 0 ? 0.6 / peak : 1 };
                         });
-                })).then(function(list) {
-                    _etProgBuffers = list;
-                    return list;
-                }).catch(function(err) {
-                    _etProgLoading = null;
-                    throw err;
-                });
-                return _etProgLoading;
+                }));
+                p.catch(function() { delete _etProgSampleCache[setId]; });
+                _etProgSampleCache[setId] = p;
+                return p;
+            }
+
+            window.etProgEnsureSamples = function() {
+                return progLoadSet(progKey(_etProgKey).samples);
             };
 
             function etProgStopVoices() {
@@ -25041,9 +25107,11 @@
                 _etProgVoices = [];
             }
 
-            function playProgression(seq) {
+            function playProgression(seq, keyId) {
                 if (_etCtx.state === 'suspended') _etCtx.resume();
-                return etProgEnsureSamples().then(function(bufs) {
+                var key = progKey(keyId);
+                var rate = Math.pow(2, key.shift / 12);
+                return progLoadSet(key.samples).then(function(bufs) {
                     etProgStopVoices();
                     var beat = 60 / PROG_BPM;
                     var t0 = _etCtx.currentTime + 0.08;
@@ -25052,10 +25120,11 @@
                         var s = bufs[seq[Math.floor(n / PROG_STRUMS_PER_CHORD)]];
                         var start = t0 + n * beat;
                         // 다음 스트럼이 들어올 때 이전 울림을 짧게 정리 (마지막은 길게 울림)
-                        var end = n < total - 1 ? start + beat : start + Math.min(s.buf.duration, 3);
+                        var end = n < total - 1 ? start + beat : start + Math.min(s.buf.duration / rate, 3);
                         var src = _etCtx.createBufferSource();
                         var g = _etCtx.createGain();
                         src.buffer = s.buf;
+                        src.playbackRate.value = rate;
                         var vol = s.gain * SITE_GAIN_BOOST * 0.5;
                         g.gain.setValueAtTime(vol, start);
                         g.gain.setValueAtTime(vol, end - 0.06);
@@ -25075,26 +25144,86 @@
             function etProgRandomSeq() {
                 var seq = [];
                 for (var i = 0; i < _etProgLevel; i++) {
-                    if (i === 0 && _etProgStartC) { seq.push(0); continue; }
+                    if (i === 0 && _etProgStartTonic) { seq.push(0); continue; }
                     var idx;
                     // 같은 코드가 연달아 나오면 구분이 안 되므로 바로 앞 코드와는 다르게
-                    do { idx = Math.floor(Math.random() * PROG_CHORDS.length); }
+                    do { idx = Math.floor(Math.random() * PROG_DEGREES.length); }
                     while (i > 0 && idx === seq[i - 1]);
                     seq.push(idx);
                 }
                 return seq;
             }
 
-            function progSeqName(seq) {
-                return seq.map(function(i) { return PROG_CHORDS[i].name; }).join(' → ');
+            function progSeqName(seq, keyId) {
+                return seq.map(function(i) { return progChordName(keyId, i); }).join(' → ');
+            }
+
+            // ── 10문제 라운드 + 타이머 ──
+            function progFormatTime(ms) {
+                var sec = ms / 1000;
+                if (sec < 60) return sec.toFixed(1) + '초';
+                return Math.floor(sec / 60) + '분 ' + (sec % 60).toFixed(1) + '초';
+            }
+
+            function progRoundElapsed() {
+                var r = _etProgRound;
+                return r.running ? performance.now() - r.start : r.elapsed;
+            }
+
+            function renderProgRound() {
+                var el = document.getElementById('etProgRound');
+                if (!el) return;
+                var r = _etProgRound;
+                el.classList.toggle('running', r.running);
+                el.classList.toggle('done', r.finished);
+                var count = document.getElementById('etProgRoundCount');
+                var timer = document.getElementById('etProgTimer');
+                if (r.finished) {
+                    count.textContent = PROG_ROUND_SIZE + '문제 완료 · ' + r.correct + '/' + PROG_ROUND_SIZE + ' 정답';
+                } else {
+                    count.textContent = '문제 ' + Math.min(r.done + (r.running ? 1 : 0), PROG_ROUND_SIZE) + '/' + PROG_ROUND_SIZE;
+                }
+                timer.innerHTML = '<i class="fas fa-stopwatch"></i> ' + (r.finished ? '걸린 시간 ' : '') + progFormatTime(progRoundElapsed());
+            }
+
+            function progStopTimer() {
+                if (_etProgTimerId) { clearInterval(_etProgTimerId); _etProgTimerId = null; }
+            }
+
+            function progStartRound() {
+                progStopTimer();
+                _etProgRound = { done: 0, correct: 0, start: performance.now(), elapsed: 0, running: true, finished: false };
+                _etProgTimerId = setInterval(renderProgRound, 100);
+                renderProgRound();
+            }
+
+            function progResetRound() {
+                progStopTimer();
+                _etProgRound = { done: 0, correct: 0, start: 0, elapsed: 0, running: false, finished: false };
+                renderProgRound();
+            }
+
+            function progRoundAnswered(isCorrect) {
+                var r = _etProgRound;
+                if (!r.running) return;
+                r.done++;
+                if (isCorrect) r.correct++;
+                if (r.done >= PROG_ROUND_SIZE) {
+                    r.elapsed = performance.now() - r.start;
+                    r.running = false;
+                    r.finished = true;
+                    progStopTimer();
+                    try { gtag('event', 'ear_prog_round', { level: _etProgLevel, key: _etProgKey, correct: r.correct, seconds: Math.round(r.elapsed / 1000) }); } catch (e) {}
+                }
+                renderProgRound();
             }
 
             function renderProgChoices() {
                 var el = document.getElementById('etProgChoices');
                 if (!el) return;
-                el.innerHTML = PROG_CHORDS.map(function(c, i) {
+                el.innerHTML = PROG_DEGREES.map(function(d, i) {
                     return '<button class="et-choice-btn" data-pci="' + i + '" data-action="etProgPick" data-args="' + i + '">' +
-                        c.name + '<br><span style="font-size:0.7rem;opacity:0.5;">' + c.roman + '</span></button>';
+                        progChordName(_etProgKey, i) + '<br><span style="font-size:0.7rem;opacity:0.5;">' + d.roman + '</span></button>';
                 }).join('');
             }
 
@@ -25105,13 +25234,13 @@
                 for (var i = 0; i < _etProgLevel; i++) {
                     var pick = _etProgPicks[i];
                     var cls = 'et-prog-slot';
-                    var locked = i === 0 && _etProgStartC;
+                    var locked = i === 0 && _etProgStartTonic;
                     if (pick !== undefined) cls += ' filled';
                     if (locked) cls += ' locked';
                     if (_etProgGraded && _etProgAnswer) {
                         cls += pick === _etProgAnswer[i] ? ' correct' : ' wrong';
                     }
-                    var label = pick !== undefined ? PROG_CHORDS[pick].name : (i + 1);
+                    var label = pick !== undefined ? progChordName(_etProgAnswer ? _etProgAnswerKey : _etProgKey, pick) : (i + 1);
                     var act = (!locked && !_etProgGraded && pick !== undefined)
                         ? ' data-action="etProgUnpick" data-args="' + i + '"' : '';
                     html += '<button type="button" class="' + cls + '"' + act + '>' + label + '</button>';
@@ -25120,7 +25249,7 @@
             }
 
             function etProgResetPicks() {
-                _etProgPicks = _etProgStartC ? [0] : [];
+                _etProgPicks = _etProgStartTonic ? [0] : [];
             }
 
             function etProgUpdateNextState() {
@@ -25135,7 +25264,10 @@
             }
 
             window.etProgPlayQuestion = function() {
+                // 라운드 첫 문제(또는 지난 라운드를 끝낸 뒤)면 새 라운드 + 타이머 시작
+                if (!_etProgRound.running) progStartRound();
                 _etProgAnswer = etProgRandomSeq();
+                _etProgAnswerKey = _etProgKey;
                 _etProgGraded = false;
                 etProgResetPicks();
                 renderProgSlots();
@@ -25143,12 +25275,12 @@
                     b.classList.remove('correct', 'wrong', 'disabled', 'selected');
                 });
                 etProgUpdateNextState();
-                playProgression(_etProgAnswer);
+                playProgression(_etProgAnswer, _etProgAnswerKey);
             };
 
             window.etProgListenBtn = function() {
-                if (_etProgAnswer === null) etProgPlayQuestion();
-                else playProgression(_etProgAnswer);
+                if (_etProgAnswer === null || (_etProgGraded && _etProgRound.finished)) etProgPlayQuestion();
+                else playProgression(_etProgAnswer, _etProgAnswerKey);
             };
 
             window.etProgPick = function(ci) {
@@ -25161,7 +25293,7 @@
 
             window.etProgUnpick = function(i) {
                 if (_etProgGraded) return;
-                if (i === 0 && _etProgStartC) return;
+                if (i === 0 && _etProgStartTonic) return;
                 _etProgPicks.splice(i, 1);
                 renderProgSlots();
                 etProgUpdateNextState();
@@ -25176,7 +25308,7 @@
                 _etProgAnswer.forEach(function(a, i) { if (_etProgPicks[i] === a) hits++; });
                 var allCorrect = hits === _etProgLevel;
                 var fb = document.getElementById('etProgFeedback');
-                var answerStr = progSeqName(_etProgAnswer);
+                var answerStr = progSeqName(_etProgAnswer, _etProgAnswerKey);
                 if (allCorrect) {
                     _etProgStats.correct++;
                     _etProgStats.streak++;
@@ -25189,8 +25321,9 @@
                     fb.textContent = hits + '/' + _etProgLevel + ' 정답 — 정답: ' + answerStr;
                     fb.className = 'et-feedback wrong';
                 }
-                try { gtag('event', 'ear_prog_answer', { correct: allCorrect, level: _etProgLevel }); } catch (e) {}
+                try { gtag('event', 'ear_prog_answer', { correct: allCorrect, level: _etProgLevel, key: _etProgAnswerKey }); } catch (e) {}
                 updateETProgScores();
+                progRoundAnswered(allCorrect);
                 renderProgSlots();
                 document.querySelectorAll('#etProgChoices .et-choice-btn').forEach(function(b) {
                     b.classList.add('disabled');
@@ -25198,10 +25331,15 @@
                 _etProgHistory.push({
                     correct: allCorrect,
                     seq: _etProgAnswer.slice(),
-                    picked: _etProgPicks.slice()
+                    picked: _etProgPicks.slice(),
+                    key: _etProgAnswerKey
                 });
                 renderETProgHistory();
                 setEtBtnState('etProgNextBtn', 'next-active');
+                if (_etProgRound.finished) {
+                    var lbl = document.querySelector('#etProgNextBtn span');
+                    if (lbl) lbl.textContent = '새 라운드';
+                }
             }
 
             window.etProgNextBtnClick = function() {
@@ -25221,8 +25359,8 @@
                         ? '<span class="et-history-icon correct"><i class="fas fa-check"></i></span>'
                         : '<span class="et-history-icon wrong"><i class="fas fa-times"></i></span>';
                     var text = h.correct
-                        ? '<span class="et-h-answer">' + progSeqName(h.seq) + '</span>'
-                        : '<span class="et-h-wrong-pick">' + progSeqName(h.picked) + '</span> → <span class="et-h-answer">' + progSeqName(h.seq) + '</span>';
+                        ? '<span class="et-h-answer">' + progSeqName(h.seq, h.key) + '</span>'
+                        : '<span class="et-h-wrong-pick">' + progSeqName(h.picked, h.key) + '</span> → <span class="et-h-answer">' + progSeqName(h.seq, h.key) + '</span>';
                     return '<div class="et-history-item">' + icon +
                         '<span class="et-history-text">' + text + '</span>' +
                         '<button class="et-history-replay" data-action="etReplayProgHistory" data-args="' + i + '" title="다시듣기"><i class="fas fa-volume-up"></i></button>' +
@@ -25233,7 +25371,7 @@
 
             window.etReplayProgHistory = function(idx) {
                 var h = _etProgHistory[idx];
-                if (h) playProgression(h.seq);
+                if (h) playProgression(h.seq, h.key);
             };
 
             function updateETProgScores() {
@@ -25251,6 +25389,7 @@
                 _etProgHistory = [];
                 etProgResetPicks();
                 updateETProgScores();
+                progResetRound();
                 renderProgSlots();
                 var fb = document.getElementById('etProgFeedback');
                 fb.textContent = '';
@@ -25274,13 +25413,29 @@
                 etProgReset();
             };
 
-            window.setETProgStartC = function(on) {
-                _etProgStartC = !!on;
+            window.setETProgKey = function(keyId) {
+                _etProgKey = progKey(keyId).id;
+                renderProgChoices();
+                etProgReset();
+                etProgEnsureSamples();
+            };
+
+            window.setETProgStartTonic = function(on) {
+                _etProgStartTonic = !!on;
                 etProgReset();
             };
 
+            (function initProgKeySelect() {
+                var sel = document.getElementById('etProgKey');
+                if (!sel) return;
+                sel.innerHTML = PROG_KEYS.map(function(k) {
+                    return '<option value="' + k.id + '">' + k.id + ' 키</option>';
+                }).join('');
+                sel.value = _etProgKey;
+            })();
             renderProgChoices();
             renderProgSlots();
+            renderProgRound();
 
             // --- Pitch Identification mode ---
             const PITCH_NOTES_EASY = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
