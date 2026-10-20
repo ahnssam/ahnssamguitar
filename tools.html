@@ -12184,6 +12184,15 @@
                 // 코드 모양일 때만 root 만 대문자로 교정 (예: 'ㅠㅡ7' → 'bm7' → 'Bm7')
                 return en.charAt(0).toUpperCase() + en.slice(1);
             }
+            // Shift 를 깜빡하고 '#' 대신 '3' 을 친 경우 보정 — root/베이스 음 바로 뒤의 3 만 '#' 으로.
+            //   예) 'F3' → 'F#' / 'C3m7' → 'C#m7' / 'D/F3' → 'D/F#' / 'C13' 은 그대로.
+            //   변환 결과가 코드 모양일 때만 적용 (일반 텍스트는 손대지 않음).
+            function _fixSharpTypo(v) {
+                if (!v || v.indexOf('3') < 0) return v;
+                var fixed = v.replace(/^(\s*[A-G])3/, '$1#').replace(/(\/[A-G])3/, '$1#');
+                if (fixed === v) return v;
+                return _CHORD_RE.test(fixed.trim()) ? fixed : v;
+            }
             // 슬래시 베이스 우선, 없으면 코드 root. 베이스 악기 재생에 사용.
             //   예) 'C/G' → 'G' / 'F#m7/A' → 'A' / 'C' → 'C'
             function chordBassNote(name) {
@@ -19273,7 +19282,7 @@
                             delete chordMap[idx];
                         } else {
                             var lead = (raw.match(/^\s*/) || [''])[0];   // 앞 공백 개수 보존
-                            var v = _normalizeKoreanChordInput(rawTrim);
+                            var v = _fixSharpTypo(_normalizeKoreanChordInput(rawTrim));
                             if (v) chordMap[idx] = lead + v;
                             else delete chordMap[idx];
                         }
@@ -19281,7 +19290,7 @@
                         // 여러 줄 — 첫 줄을 코드로 정규화(재생용), 나머지 줄은 주석으로 보존(표시용)
                         var first = lines[0].trim();
                         var firstN = (first === 'x' || first === 'X' || first === 'ㅌ')
-                            ? 'x' : (_normalizeKoreanChordInput(first) || first);
+                            ? 'x' : _fixSharpTypo(_normalizeKoreanChordInput(first) || first);
                         var rest = lines.slice(1).map(function(s){ return s.replace(/\s+$/, ''); })
                                         .join('\n').replace(/\n+$/, '');
                         var combined = (firstN + (rest ? '\n' + rest : '')).replace(/^\n+|\n+$/g, '');
@@ -19309,16 +19318,37 @@
                     } else if (e.key === 'Escape') {
                         e.preventDefault();
                         cancel();
-                    } else if (e.key === 'Tab') {
+                    } else if (e.key === 'Tab' || e.code === 'Tab') {
                         // Tab → 저장 후 다음 칸을 바로 입력 상태로 연다.
                         //   'a'(1박) → 'b'(3박) → 다음 마디 'a' …  Shift+Tab 은 역방향.
                         e.preventDefault();
+                        // 한글 조합 중(예: 'ㅠ' 입력 직후) Tab 을 누르면 브라우저가 keydown 을
+                        // 조합 중 1번 + 조합 끝난 뒤 1번, 두 번 보낸다. 바로 처리하면 조합 글자가
+                        // 다음 칸에도 들어가고 Tab 이 한 번 더 먹어서 두 칸을 건너뛴다.
+                        // → 조합이 끝날 때까지 기다렸다가 딱 한 번만 이동.
+                        if (pendingTab) return;
+                        if (e.isComposing || e.keyCode === 229) {
+                            pendingTab = true;
+                            var shiftTab = e.shiftKey, ran = false;
+                            var runOnce = function() { if (ran) return; ran = true; goTab(shiftTab); };
+                            input.addEventListener('compositionend', function() { setTimeout(runOnce, 0); }, { once: true });
+                            setTimeout(runOnce, 300);   // compositionend 가 안 오는 환경 대비
+                            return;
+                        }
+                        // 직전 Tab 이동 직후 새 칸으로 들어온 중복 Tab 은 무시
+                        if (Date.now() - _loopTabMovedAt < 150) return;
+                        goTab(e.shiftKey);
+                    }
+                });
+                var pendingTab = false;
+                function goTab(shift) {
+                        _loopTabMovedAt = Date.now();
                         var curIdx = idx, curHalf = half;
                         commit();   // 저장 + 그리드 재렌더 (현재 input 은 사라짐)
                         var nextIdx, nextHalf;
                         var _keys = _loopSlotKeys();
                         var _ci = _keys.indexOf(curHalf); if (_ci < 0) _ci = 0;
-                        if (e.shiftKey) {
+                        if (shift) {
                             if (_ci > 0) { nextIdx = curIdx;     nextHalf = _keys[_ci - 1]; }
                             else         { nextIdx = curIdx - 1; nextHalf = _keys[_keys.length - 1]; }
                         } else {
@@ -19329,9 +19359,9 @@
                         if (nextIdx >= 0 && nextIdx < loopBars) {
                             openInlineChordInput(nextIdx, nextHalf);
                         }
-                    }
-                });
+                }
             }
+            var _loopTabMovedAt = 0;
             window.openInlineChordInput = openInlineChordInput;
             // 볼타(엔딩) 번호 선택 — 마디 위쪽 띠 클릭 시 1~5 숫자 버튼 팝업.
             //   여러 개 선택 가능(예: 2·3). 바깥 클릭/Esc/Enter 로 저장. 빈 선택이면 제거.
