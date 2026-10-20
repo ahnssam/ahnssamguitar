@@ -5168,39 +5168,62 @@
             text-align: left;
         }
         .pr-item {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
             border-radius: 10px;
-            padding: 0.35rem 0.45rem;
+            padding: 0.4rem 0.5rem;
             border: 1.5px solid rgba(114, 196, 146, 0.45);
             background: rgba(114, 196, 146, 0.08);
             min-width: 0;
         }
         .pr-item.wrong { border-color: rgba(199, 53, 53, 0.45); background: rgba(199, 53, 53, 0.05); }
-        .pr-line { display: flex; align-items: flex-start; gap: 0.35rem; }
-        .pr-lead { min-height: 1.6rem; }
-        .pr-line > .pr-replay { margin-top: -0.05rem; }
-        .pr-line + .pr-line { margin-top: 0.25rem; }
-        .pr-lead { display: inline-flex; align-items: center; gap: 0.3rem; width: 2.3rem; flex-shrink: 0; }
-        .pr-chips { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.22rem; }
-        .pr-num { font-size: 0.75rem; font-weight: 700; color: rgba(26, 36, 33, 0.45); min-width: 0.9rem; }
-        .pr-mark { font-size: 0.8rem; color: var(--green-mid); }
+        /* 번호 위, ✓/✗ 아래 */
+        .pr-lead {
+            display: flex; flex-direction: column; align-items: center;
+            width: 1.3rem; flex-shrink: 0; line-height: 1.1;
+        }
+        .pr-num { font-size: 0.78rem; font-weight: 800; color: rgba(26, 36, 33, 0.5); }
+        .pr-mark { font-size: 0.78rem; color: var(--green-mid); }
         .pr-item.wrong .pr-mark { color: #c73535; }
+        /* 코드들은 항상 한 줄 — 칸이 좁으면 줄바꿈 대신 칸이 같이 줄어든다 */
+        .pr-chips {
+            flex: 1 1 auto; min-width: 0;
+            display: flex; flex-wrap: nowrap; gap: 0.2rem;
+            align-items: flex-start;
+        }
+        .pr-cell {
+            flex: 1 1 0; min-width: 0; max-width: 3.4rem;
+            display: flex; flex-direction: column; align-items: stretch;
+        }
         .pr-replay {
             width: 26px; height: 26px; border-radius: 50%;
             border: 1px solid rgba(42, 107, 74, 0.25);
             background: #fff; color: var(--green-deep);
             cursor: pointer; font-size: 0.72rem; flex-shrink: 0;
         }
-        .pr-lbl { font-size: 0.66rem; font-weight: 700; color: var(--green-deep); }
         .pr-chip {
-            padding: 0.2rem 0.45rem;
+            padding: 0.22rem 0.1rem;
             border-radius: 6px;
             border: 1px solid rgba(114, 196, 146, 0.55);
             background: rgba(114, 196, 146, 0.15);
             color: var(--text-primary);
-            font-family: inherit; font-size: 0.8rem; font-weight: 700;
+            font-family: inherit; font-size: 0.78rem; font-weight: 700;
             cursor: pointer;
+            white-space: nowrap; overflow: hidden; text-overflow: clip;
+            text-align: center;
         }
         .pr-chip.bad { background: #c73535; border-color: #c73535; color: #fff; }
+        /* 틀린 칸 아래 — 정답 텍스트 (누르면 정답 소리) */
+        .pr-fix {
+            margin-top: 0.12rem;
+            padding: 0;
+            border: none; background: none;
+            color: var(--green-deep);
+            font-family: inherit; font-size: 0.7rem; font-weight: 800;
+            white-space: nowrap; overflow: hidden;
+            text-align: center; cursor: pointer; line-height: 1.15;
+        }
         .pr-actions { display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem; }
         .pr-btn {
             padding: 0.6rem 1.3rem; border-radius: 999px;
@@ -5211,22 +5234,20 @@
         @media (max-width: 480px) {
             .et-prog-summary { padding: 0.5rem; }
             .pr-card { padding: 1.1rem 0.6rem 0.9rem; max-height: calc(100vh - 1rem); }
-            .pr-grid { gap: 0.3rem; }
-            .pr-item { padding: 0.3rem 0.3rem; }
-            .pr-chip { font-size: 0.66rem; padding: 0.12rem 0.22rem; border-radius: 5px; }
-            .pr-chips { gap: 0.15rem; }
-            .pr-line { gap: 0.2rem; }
-            .pr-lead { width: 1.55rem; gap: 0.15rem; min-height: 1.3rem; }
-            .pr-num { font-size: 0.66rem; min-width: 0.7rem; }
-            .pr-mark { font-size: 0.68rem; }
-            .pr-lbl { font-size: 0.58rem; }
-            .pr-replay { width: 20px; height: 20px; font-size: 0.58rem; }
+            /* 폰은 반 칸에 코드 8개가 한 줄로 안 들어가서 1~10 을 한 줄씩 */
+            .pr-grid { grid-template-columns: 1fr; grid-template-rows: none; grid-auto-flow: row; gap: 0.3rem; }
+            .pr-item { padding: 0.3rem 0.4rem; gap: 0.35rem; }
+            .pr-chip { font-size: 0.66rem; padding-left: 0; padding-right: 0; letter-spacing: -0.03em; }
+            .pr-fix { font-size: 0.64rem; letter-spacing: -0.03em; }
+            .pr-chips { gap: 0.12rem; }
+            .pr-lead { width: 1.1rem; }
+            .pr-replay { width: 24px; height: 24px; font-size: 0.64rem; }
             .pr-stats { gap: 0.3rem 1.4rem; margin: 0.3rem 0 0.8rem; }
             .pr-stat-val { font-size: 1.7rem; }
         }
         :root[data-theme="dark"] .pr-card { background: linear-gradient(160deg, #1f2b25, #18221d); border-color: rgba(180, 230, 200, 0.18); color: #e8f0ec; }
         :root[data-theme="dark"] .pr-stat-lbl, :root[data-theme="dark"] .pr-num { color: rgba(232, 240, 236, 0.6); }
-        :root[data-theme="dark"] .pr-title, :root[data-theme="dark"] .pr-lbl { color: #b4e6c8; }
+        :root[data-theme="dark"] .pr-title, :root[data-theme="dark"] .pr-fix { color: #b4e6c8; }
         :root[data-theme="dark"] .pr-chip { color: #e8f0ec; }
         :root[data-theme="dark"] .pr-chip.bad { color: #fff; }
         :root[data-theme="dark"] .pr-replay { background: #23302a; color: #b4e6c8; border-color: rgba(180, 230, 200, 0.3); }
@@ -25572,11 +25593,18 @@
             }
 
             // ── 라운드 결과 팝업 — 10문제 히스토리를 왼쪽 5 / 오른쪽 5 로 ──
-            function progChipsHtml(seq, keyId, compareTo) {
-                return seq.map(function(d, i) {
-                    var bad = compareTo && compareTo[i] !== d;
-                    return '<button type="button" class="pr-chip' + (bad ? ' bad' : '') + '" data-action="etProgPlayChord" data-args="' +
-                        d + ',' + keyId + '">' + progChordName(keyId, d) + '</button>';
+            // 코드 한 칸 = 내가 고른 코드(누르면 소리) + 틀렸으면 그 아래 정답 텍스트(누르면 정답 소리)
+            function progCellsHtml(h) {
+                return h.seq.map(function(ans, i) {
+                    var pick = h.picked[i];
+                    var bad = pick !== ans;
+                    var html = '<span class="pr-cell"><button type="button" class="pr-chip' + (bad ? ' bad' : '') +
+                        '" data-action="etProgPlayChord" data-args="' + pick + ',' + h.key + '">' + progChordName(h.key, pick) + '</button>';
+                    if (bad) {
+                        html += '<button type="button" class="pr-fix" data-action="etProgPlayChord" data-args="' + ans + ',' + h.key +
+                            '" title="정답 듣기">' + progChordName(h.key, ans) + '</button>';
+                    }
+                    return html + '</span>';
                 }).join('');
             }
 
@@ -25597,19 +25625,14 @@
                     document.body.appendChild(ov);
                 }
                 var r = _etProgRound;
-                // 한 줄: 번호 ✓/✗ [코드들] 🔊 — 코드가 넘칠 때만 그 칸 안에서 줄바꿈.
-                // 틀린 문제는 아래 한 줄에 정답만 추가.
+                // [번호 위 / ✓·✗ 아래] [코드들 — 항상 한 줄, 틀린 칸 아래에 정답] [🔊]
                 var items = _etProgRoundHistory.map(function(h, i) {
-                    var html = '<div class="pr-item ' + (h.correct ? 'correct' : 'wrong') + '">' +
-                        '<div class="pr-line"><span class="pr-lead"><span class="pr-num">' + (i + 1) + '</span>' +
+                    return '<div class="pr-item ' + (h.correct ? 'correct' : 'wrong') + '">' +
+                        '<span class="pr-lead"><span class="pr-num">' + (i + 1) + '</span>' +
                         '<span class="pr-mark"><i class="fas ' + (h.correct ? 'fa-check' : 'fa-times') + '"></i></span></span>' +
-                        '<span class="pr-chips">' + (h.correct ? progChipsHtml(h.seq, h.key) : progChipsHtml(h.picked, h.key, h.seq)) + '</span>' +
-                        '<button type="button" class="pr-replay" data-action="etReplayProgRoundItem" data-args="' + i + '" title="다시듣기" aria-label="다시듣기"><i class="fas fa-volume-up"></i></button></div>';
-                    if (!h.correct) {
-                        html += '<div class="pr-line"><span class="pr-lead pr-lbl">정답</span>' +
-                            '<span class="pr-chips">' + progChipsHtml(h.seq, h.key) + '</span></div>';
-                    }
-                    return html + '</div>';
+                        '<span class="pr-chips">' + progCellsHtml(h) + '</span>' +
+                        '<button type="button" class="pr-replay" data-action="etReplayProgRoundItem" data-args="' + i + '" title="다시듣기" aria-label="다시듣기"><i class="fas fa-volume-up"></i></button>' +
+                        '</div>';
                 }).join('');
                 ov.innerHTML =
                     '<div class="pr-card">' +
