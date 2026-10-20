@@ -2687,7 +2687,7 @@ ${recentHtml}
         tuner: '튜너', metronome: '메트로놈', backing: '반주',
         taptempo: '탭템포', capo: '카포', chords: '코드 라이브러리',
         scales: '스케일', fretboard: '프렛보드', piano: '피아노',
-        eartraining: '음정 트레이닝',
+        eartraining: '이어 트레이닝',
     };
 
     function fmtDuration(sec) {
