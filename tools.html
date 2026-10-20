@@ -25165,7 +25165,7 @@
             // 다이아토닉 코드를 기타로 짧게 스트럼한 샘플로 진행을 들려주고 순서대로 맞춘다.
             // 단계 N = 코드 N개짜리 진행. 단계와 상관없이 코드마다 70BPM 으로 두 번씩 친다.
             // 10문제를 한 라운드로 끊고, 라운드를 끝내는 데 걸린 시간을 잰다.
-            // 랭킹 서버 모드(ear_single/compare/chord)에 없는 모드라 점수는 로컬에만 누적.
+            // 랭킹(종합)에는 mode 'ear_prog', 난이도 'lv1'~'lv8' 로 제출.
             const PROG_DEGREES = [
                 { offset: 0,  quality: '',    roman: 'I' },
                 { offset: 2,  quality: 'm',   roman: 'ii' },
@@ -25175,16 +25175,43 @@
                 { offset: 9,  quality: 'm',   roman: 'vi' },
                 { offset: 11, quality: 'dim', roman: 'vii°' }
             ];
-            // 녹음 세트 — 1도~7도 순서의 파일명(sounds/<이름>.wav).
-            // 새 키를 녹음하면 여기에 세트를 추가하고 PROG_KEYS 에서 shift: 0 으로 연결.
-            const PROG_SAMPLE_SETS = {
-                C: ['도_1', '레_1', '미_1', '파_1', '솔_1', '라_1', '시_1']
-            };
-            // samples = 사용할 녹음 세트, shift = 그 세트를 몇 반음 올려 재생할지(트랜스포즈).
-            const PROG_KEYS = [
-                { id: 'C',  root: 0, samples: 'C', shift: 0 },
-                { id: 'C#', root: 1, samples: 'C', shift: 1 }
+            // 녹음된 코드 샘플(sounds/<이름>_1.wav) — root = 근음 피치클래스(C=0).
+            // 키마다 필요한 코드는 녹음이 있으면 그대로 쓰고, 없으면 같은 종류(메이저/마이너/dim)
+            // 중 근음이 가장 가까운 녹음을 반음 단위로 트랜스포즈해서 쓴다.
+            // 새 코드를 녹음하면 여기에 한 줄 추가하면 모든 키에 자동 반영된다.
+            const PROG_SAMPLES = [
+                { file: 'C',     root: 0,  quality: '' },
+                { file: 'D',     root: 2,  quality: '' },
+                { file: 'E',     root: 4,  quality: '' },
+                { file: 'F',     root: 5,  quality: '' },
+                { file: 'G',     root: 7,  quality: '' },
+                { file: 'A',     root: 9,  quality: '' },
+                { file: 'B',     root: 11, quality: '' },
+                { file: 'Cm',    root: 0,  quality: 'm' },
+                { file: 'Dm',    root: 2,  quality: 'm' },
+                { file: 'Em',    root: 4,  quality: 'm' },
+                { file: 'Fm',    root: 5,  quality: 'm' },
+                { file: 'Gm',    root: 7,  quality: 'm' },
+                { file: 'Am',    root: 9,  quality: 'm' },
+                { file: 'F#dim', root: 6,  quality: 'dim' },
+                { file: 'Bdim',  root: 11, quality: 'dim' }
             ];
+            // 메이저 12키. flats = 코드 이름을 b 으로 표기 (E#·B# 은 F·C 로 단순 표기)
+            const PROG_KEYS = [
+                { id: 'C',  root: 0 },
+                { id: 'C#', root: 1 },
+                { id: 'D',  root: 2 },
+                { id: 'Eb', root: 3,  flats: true },
+                { id: 'E',  root: 4 },
+                { id: 'F',  root: 5,  flats: true },
+                { id: 'F#', root: 6 },
+                { id: 'G',  root: 7 },
+                { id: 'Ab', root: 8,  flats: true },
+                { id: 'A',  root: 9 },
+                { id: 'Bb', root: 10, flats: true },
+                { id: 'B',  root: 11 }
+            ];
+            const PROG_FLAT_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
             const PROG_BPM = 70;
             const PROG_STRUMS_PER_CHORD = 2;
             // 정답 1개당 10 × 단계 계수 — 랭킹(submit_ear_session) 계수와 동일하게 유지할 것
@@ -25200,7 +25227,6 @@
             let _etProgGraded = false;
             let _etProgStats = { score: 0, correct: 0, total: 0, streak: 0 };
             let _etProgHistory = [];
-            let _etProgSampleCache = {};         // 세트 id → Promise<[{ buf, gain }]>
             let _etProgVoices = [];              // 재생 중인 소스 — 다시 듣기 시 끊기용
             let _etProgRound = { done: 0, correct: 0, start: 0, elapsed: 0, running: false, finished: false };
             let _etProgTimerId = null;
@@ -25224,29 +25250,58 @@
 
             function progChordName(keyId, deg) {
                 var k = progKey(keyId), d = PROG_DEGREES[deg];
-                return NOTE_NAMES[(k.root + d.offset) % 12] + d.quality;
+                var pc = (k.root + d.offset) % 12;
+                return (k.flats ? PROG_FLAT_NAMES : NOTE_NAMES)[pc] + d.quality;
             }
 
-            function progLoadSet(setId) {
-                if (_etProgSampleCache[setId]) return _etProgSampleCache[setId];
-                var p = Promise.all(PROG_SAMPLE_SETS[setId].map(function(file) {
-                    return fetch(encodeURI('sounds/' + file + '.wav'))
-                        .then(function(r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
-                        .then(function(ab) { return _etCtx.decodeAudioData(ab); })
-                        .then(function(buf) {
-                            // 샘플마다 녹음 레벨이 달라 피크 기준으로 맞춘다.
-                            var d = buf.getChannelData(0), peak = 0;
-                            for (var i = 0; i < d.length; i++) { var a = Math.abs(d[i]); if (a > peak) peak = a; }
-                            return { buf: buf, gain: peak > 0 ? 0.6 / peak : 1 };
-                        });
-                }));
-                p.catch(function() { delete _etProgSampleCache[setId]; });
-                _etProgSampleCache[setId] = p;
+            // 근음 pc · 종류에 맞는 샘플 + 트랜스포즈 반음 수 (녹음이 있으면 shift 0)
+            function progPickSample(pc, quality) {
+                var best = null;
+                PROG_SAMPLES.forEach(function(smp) {
+                    if (smp.quality !== quality) return;
+                    var shift = ((pc - smp.root) % 12 + 18) % 12 - 6;   // -6 ~ +5
+                    var better = !best || Math.abs(shift) < Math.abs(best.shift) ||
+                        (Math.abs(shift) === Math.abs(best.shift) && shift > best.shift);
+                    if (better) best = { sample: smp, shift: shift };
+                });
+                return best;
+            }
+
+            var _etProgFileCache = {};           // 파일명 → Promise<{ buf, gain, offset }>
+            function progLoadFile(file) {
+                if (_etProgFileCache[file]) return _etProgFileCache[file];
+                // '#' 이 들어간 파일명(F#dim)이 있어 encodeURIComponent 필수
+                var p = fetch('sounds/' + encodeURIComponent(file + '_1.wav'))
+                    .then(function(r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+                    .then(function(ab) { return _etCtx.decodeAudioData(ab); })
+                    .then(function(buf) {
+                        // 샘플마다 녹음 레벨이 달라 피크 기준으로 맞추고,
+                        // 앞쪽 무음(최대 수십 ms)은 건너뛰어 스트럼이 박자에 딱 맞게 한다.
+                        var d = buf.getChannelData(0), peak = 0, i;
+                        for (i = 0; i < d.length; i++) { var a = Math.abs(d[i]); if (a > peak) peak = a; }
+                        var onset = 0;
+                        for (i = 0; i < d.length; i++) { if (Math.abs(d[i]) > peak * 0.1) { onset = i; break; } }
+                        var offset = Math.max(0, onset / buf.sampleRate - 0.005);
+                        return { buf: buf, gain: peak > 0 ? 0.6 / peak : 1, offset: offset };
+                    });
+                p.catch(function() { delete _etProgFileCache[file]; });
+                _etProgFileCache[file] = p;
                 return p;
             }
 
+            // 키의 1~7도 → [{ buf, gain, offset, rate }]
+            function progLoadKey(keyId) {
+                var k = progKey(keyId);
+                return Promise.all(PROG_DEGREES.map(function(d) {
+                    var pick = progPickSample((k.root + d.offset) % 12, d.quality);
+                    return progLoadFile(pick.sample.file).then(function(s) {
+                        return { buf: s.buf, gain: s.gain, offset: s.offset, rate: Math.pow(2, pick.shift / 12) };
+                    });
+                }));
+            }
+
             window.etProgEnsureSamples = function() {
-                return progLoadSet(progKey(_etProgKey).samples);
+                return progLoadKey(_etProgKey);
             };
 
             function etProgStopVoices() {
@@ -25261,11 +25316,30 @@
                 _etProgVoices = [];
             }
 
+            // 스트럼 하나 스케줄. releaseAt 부터 자연스럽게 줄어든다.
+            //   다음 스트럼이 있으면 그 박에 맞춰 짧게 겹치며 정리(손으로 줄을 다시 치는 느낌),
+            //   마지막 스트럼은 길게 울린다.
+            function progScheduleStrum(s, start, releaseAt, tau) {
+                var src = _etCtx.createBufferSource();
+                var g = _etCtx.createGain();
+                src.buffer = s.buf;
+                src.playbackRate.value = s.rate;
+                var vol = s.gain * SITE_GAIN_BOOST * 0.5;
+                var ringEnd = start + (s.buf.duration - s.offset) / s.rate;
+                releaseAt = Math.min(releaseAt, ringEnd);
+                g.gain.setValueAtTime(vol, start);
+                g.gain.setValueAtTime(vol, releaseAt);
+                g.gain.setTargetAtTime(0, releaseAt, tau);
+                src.connect(g);
+                g.connect(_etCtx.destination);
+                src.start(start, s.offset);
+                src.stop(Math.min(ringEnd, releaseAt + tau * 7) + 0.02);
+                _etProgVoices.push({ src: src, g: g });
+            }
+
             function playProgression(seq, keyId) {
                 if (_etCtx.state === 'suspended') _etCtx.resume();
-                var key = progKey(keyId);
-                var rate = Math.pow(2, key.shift / 12);
-                return progLoadSet(key.samples).then(function(bufs) {
+                return progLoadKey(keyId).then(function(bufs) {
                     etProgStopVoices();
                     var beat = 60 / PROG_BPM;
                     var t0 = _etCtx.currentTime + 0.08;
@@ -25273,21 +25347,8 @@
                     for (var n = 0; n < total; n++) {
                         var s = bufs[seq[Math.floor(n / PROG_STRUMS_PER_CHORD)]];
                         var start = t0 + n * beat;
-                        // 다음 스트럼이 들어올 때 이전 울림을 짧게 정리 (마지막은 길게 울림)
-                        var end = n < total - 1 ? start + beat : start + Math.min(s.buf.duration / rate, 3);
-                        var src = _etCtx.createBufferSource();
-                        var g = _etCtx.createGain();
-                        src.buffer = s.buf;
-                        src.playbackRate.value = rate;
-                        var vol = s.gain * SITE_GAIN_BOOST * 0.5;
-                        g.gain.setValueAtTime(vol, start);
-                        g.gain.setValueAtTime(vol, end - 0.06);
-                        g.gain.linearRampToValueAtTime(0.0001, end);
-                        src.connect(g);
-                        g.connect(_etCtx.destination);
-                        src.start(start);
-                        src.stop(end + 0.02);
-                        _etProgVoices.push({ src: src, g: g });
+                        if (n < total - 1) progScheduleStrum(s, start, start + beat, 0.09);
+                        else progScheduleStrum(s, start, start + 2.6, 0.25);
                     }
                 }).catch(function() {
                     var fb = document.getElementById('etProgFeedback');
@@ -25298,27 +25359,12 @@
             // 코드 하나만 한 번 스트럼 (채점 후 칸·히스토리 칩을 눌렀을 때)
             window.etProgPlayChord = function(deg, keyId) {
                 if (_etCtx.state === 'suspended') _etCtx.resume();
-                var key = progKey(keyId || _etProgAnswerKey);
-                var rate = Math.pow(2, key.shift / 12);
-                progLoadSet(key.samples).then(function(bufs) {
+                progLoadKey(keyId || _etProgAnswerKey).then(function(bufs) {
                     etProgStopVoices();
                     var s = bufs[deg];
                     if (!s) return;
                     var start = _etCtx.currentTime + 0.03;
-                    var end = start + Math.min(s.buf.duration / rate, 2.5);
-                    var src = _etCtx.createBufferSource();
-                    var g = _etCtx.createGain();
-                    src.buffer = s.buf;
-                    src.playbackRate.value = rate;
-                    var vol = s.gain * SITE_GAIN_BOOST * 0.5;
-                    g.gain.setValueAtTime(vol, start);
-                    g.gain.setValueAtTime(vol, end - 0.3);
-                    g.gain.linearRampToValueAtTime(0.0001, end);
-                    src.connect(g);
-                    g.connect(_etCtx.destination);
-                    src.start(start);
-                    src.stop(end + 0.02);
-                    _etProgVoices.push({ src: src, g: g });
+                    progScheduleStrum(s, start, start + 2.2, 0.25);
                 }).catch(function() {});
             };
 
