@@ -5071,6 +5071,8 @@
             color: var(--text-primary);
             cursor: pointer;
         }
+        /* 지옥: 키는 문제마다 자동으로 바뀜 — 선택은 막고 현재 키만 보여준다 */
+        .et-prog-key-select:disabled { cursor: default; opacity: 1; border-style: dashed; background: transparent; }
         :root[data-theme="dark"] .et-prog-key-select { background: #1d2a24; color: #e8f0ec; border-color: rgba(180, 230, 200, 0.28); }
         .et-prog-slot.playable { cursor: pointer; }
         .et-prog-break { flex-basis: 100%; height: 0; }
@@ -10057,6 +10059,7 @@
                                 <button class="et-diff-btn" data-plevel="6" data-action="setETProgLevel" data-args="6">6</button>
                                 <button class="et-diff-btn" data-plevel="7" data-action="setETProgLevel" data-args="7">7</button>
                                 <button class="et-diff-btn" data-plevel="8" data-action="setETProgLevel" data-args="8">8</button>
+                                <button class="et-diff-btn" data-plevel="hell" data-cdiff="hell" data-action="setETProgLevel" data-args="hell" title="문제마다 키가 바뀌고 코드 5~8개가 섞여 나와요">지옥</button>
                             </div>
                         </div>
                         <div class="et-setting-row">
@@ -11303,7 +11306,7 @@
             eartraining: '두 음 간격이나 코드, 코드 진행을 듣고 맞히는 훈련. 정답이 누적되면 랭킹에 반영돼요. 절대음감보다 상대음감 훈련에 효과적이에요.',
             eartraining_pitch:    '음정을 듣고 무슨 음정인지 맞추는 연습이에요. 어려움 난이도부터는 샵(♯) 음계까지 함께 출제됩니다.',
             eartraining_interval: '낮은 음과 높은 음 사이 간격을 맞추는 연습이에요. 절대음감 없이도 음악을 분석할 수 있게 해주는 상대음감 트레이닝의 핵심 방식.',
-            eartraining_prog:     '고른 키의 다이아토닉 코드(1도~7도)로 된 진행을 듣고 순서대로 맞추는 연습이에요.\n\n• 단계 1~8 = 코드 개수. 코드마다 70BPM 으로 두 번씩 쳐줍니다.\n• 1도로 시작을 켜면 첫 코드는 항상 1도로 고정돼요.\n• 10문제가 한 라운드예요. 첫 문제를 들을 때 타이머가 시작되고, 10문제를 끝내면 걸린 시간을 알려줘요.\n• 아래 칸을 누르면 고른 코드를 뺄 수 있어요.\n\n점수는 랭킹(종합)에 반영돼요. 단계가 높을수록 계수가 커져요 (1단계 ×1.0 ~ 8단계 ×3.0).',
+            eartraining_prog:     '고른 키의 다이아토닉 코드(1도~7도)로 된 진행을 듣고 순서대로 맞추는 연습이에요.\n\n• 단계 1~8 = 코드 개수. 코드마다 70BPM 으로 두 번씩 쳐줍니다.\n• 지옥: 문제마다 키가 바뀌고, 코드 개수도 5~8개가 섞여 나와요.\n• 1도로 시작을 켜면 첫 코드는 항상 1도로 고정돼요.\n• 10문제가 한 라운드예요. 첫 문제를 들을 때 타이머가 시작되고, 10문제를 끝내면 걸린 시간을 알려줘요.\n• 아래 칸을 누르면 고른 코드를 뺄 수 있어요.\n\n점수는 랭킹(종합)에 반영돼요. 단계가 높을수록 계수가 커져요 (1단계 ×1.0 ~ 8단계 ×3.0, 지옥 ×3.5).',
             eartraining_chord:    '구성음을 듣고 어떤 코드인지 맞추는 연습이에요. 코드 사운드 자체에 익숙해지면 실전 연주에서 코드 진행을 빠르게 캐치할 수 있어 큰 도움이 됩니다.',
             chords: '기본·텐션·세븐스 코드까지 운지법과 사운드를 한 번에 검색·재생. 코드를 클릭하면 바로 그 코드 사운드가 들려요.',
             fretboard: '지판 위 모든 음의 위치를 시각화. 트레이닝 모드로 음 이름 맞추기 연습도 가능합니다.',
@@ -25280,11 +25283,16 @@
             const PROG_BPM = 70;
             const PROG_STRUMS_PER_CHORD = 2;
             // 정답 1개당 10 × 단계 계수 — 랭킹(submit_ear_session) 계수와 동일하게 유지할 것
-            const PROG_LEVEL_COEF = { 1: 1.0, 2: 1.25, 3: 1.5, 4: 1.75, 5: 2.0, 6: 2.25, 7: 2.5, 8: 3.0 };
+            const PROG_LEVEL_COEF = { 1: 1.0, 2: 1.25, 3: 1.5, 4: 1.75, 5: 2.0, 6: 2.25, 7: 2.5, 8: 3.0, hell: 3.5 };
+            // 지옥: 문제마다 키를 무작위로 바꾸고, 코드 개수도 5~8개 중 무작위
+            const PROG_HELL_MIN = 5, PROG_HELL_MAX = 8;
             const PROG_ROUND_SIZE = 10;
 
-            let _etProgLevel = 2;
+            let _etProgLevel = 2;                // 1~8 또는 'hell'
             let _etProgKey = 'C';
+            let _etProgHellCount = PROG_HELL_MIN; // 지옥: 이번 문제 코드 개수
+            let _etProgHellKey = 'C';             // 지옥: 이번 문제 키
+            let _etProgHellFresh = false;         // 초기화 때 미리 굴린 값을 첫 문제에 그대로 쓰기
             let _etProgStartTonic = false;
             let _etProgAnswer = null;            // [degreeIdx, ...]
             let _etProgAnswerKey = 'C';
@@ -25297,14 +25305,29 @@
             let _etProgTimerId = null;
             let _etProgRoundHistory = [];         // 이번 라운드 10문제 — 결과 팝업용
 
+            function progIsHell() { return _etProgLevel === 'hell'; }
+            // 이번 문제의 코드 개수 / 키 / 랭킹 난이도 값
+            function progCount() { return progIsHell() ? _etProgHellCount : _etProgLevel; }
+            function progActiveKey() { return progIsHell() ? _etProgHellKey : _etProgKey; }
+            function progDiffKey() { return progIsHell() ? 'hell' : 'lv' + _etProgLevel; }
+
+            function progRollHell() {
+                _etProgHellCount = PROG_HELL_MIN + Math.floor(Math.random() * (PROG_HELL_MAX - PROG_HELL_MIN + 1));
+                var prev = _etProgHellKey, next;
+                do { next = PROG_KEYS[Math.floor(Math.random() * PROG_KEYS.length)].id; } while (next === prev);
+                _etProgHellKey = next;
+                var sel = document.getElementById('etProgKey');
+                if (sel) sel.value = next;
+            }
+
             function progTonicOn() {
-                return _etProgStartTonic && _etProgLevel > 1;
+                return _etProgStartTonic && (progIsHell() || _etProgLevel > 1);
             }
 
             function updateProgTonicToggle() {
                 var input = document.getElementById('etProgStartTonic');
                 var wrap = document.getElementById('etProgStartTonicWrap');
-                var off = _etProgLevel <= 1;
+                var off = !progIsHell() && _etProgLevel <= 1;
                 if (input) input.disabled = off;
                 if (wrap) wrap.classList.toggle('disabled', off);
             }
@@ -25366,6 +25389,8 @@
             }
 
             window.etProgEnsureSamples = function() {
+                // 지옥은 키가 계속 바뀌므로 전 키를 미리 받아 둔다 (샘플 15개 공유)
+                if (progIsHell()) return Promise.all(PROG_KEYS.map(function(k) { return progLoadKey(k.id); }));
                 return progLoadKey(_etProgKey);
             };
 
@@ -25525,7 +25550,7 @@
 
             function etProgRandomSeq() {
                 var seq = [];
-                for (var i = 0; i < _etProgLevel; i++) {
+                for (var i = 0; i < progCount(); i++) {
                     if (i === 0 && progTonicOn()) { seq.push(0); continue; }
                     // 같은 코드가 연달아 나오면 구분이 안 되므로 바로 앞 코드는 후보에서 뺀다
                     var prev = i > 0 ? seq[i - 1] : -1;
@@ -25600,7 +25625,7 @@
                     r.running = false;
                     r.finished = true;
                     progStopTimer();
-                    try { gtag('event', 'ear_prog_round', { level: _etProgLevel, key: _etProgKey, correct: r.correct, seconds: Math.round(r.elapsed / 1000) }); } catch (e) {}
+                    try { gtag('event', 'ear_prog_round', { level: _etProgLevel, key: progIsHell() ? 'random' : _etProgKey, correct: r.correct, seconds: Math.round(r.elapsed / 1000) }); } catch (e) {}
                 }
                 renderProgRound();
             }
@@ -25654,8 +25679,8 @@
                         '<div class="pr-stats">' +
                             '<div class="pr-stat"><span class="pr-stat-val">' + r.correct + '<small>/' + PROG_ROUND_SIZE + '</small></span><span class="pr-stat-lbl">정답</span></div>' +
                             '<div class="pr-stat"><span class="pr-stat-val">' + progFormatTime(r.elapsed) + '</span><span class="pr-stat-lbl">걸린 시간</span></div>' +
-                            '<div class="pr-stat"><span class="pr-stat-val">' + _etProgLevel + '</span><span class="pr-stat-lbl">단계</span></div>' +
-                            '<div class="pr-stat"><span class="pr-stat-val">' + _etProgKey + '</span><span class="pr-stat-lbl">키</span></div>' +
+                            '<div class="pr-stat"><span class="pr-stat-val">' + (progIsHell() ? '지옥' : _etProgLevel) + '</span><span class="pr-stat-lbl">단계</span></div>' +
+                            '<div class="pr-stat"><span class="pr-stat-val">' + (progIsHell() ? '랜덤' : _etProgKey) + '</span><span class="pr-stat-lbl">키</span></div>' +
                         '</div>' +
                         '<div class="pr-grid">' + items + '</div>' +
                         '<div class="pr-actions">' +
@@ -25687,7 +25712,7 @@
                 if (!el) return;
                 el.innerHTML = PROG_DEGREES.map(function(d, i) {
                     return '<button class="et-choice-btn" data-pci="' + i + '" data-action="etProgPick" data-args="' + i + '">' +
-                        progChordName(_etProgKey, i) + '<br><span style="font-size:0.7rem;opacity:0.5;">' + d.roman + '</span></button>';
+                        progChordName(progActiveKey(), i) + '<br><span style="font-size:0.7rem;opacity:0.5;">' + d.roman + '</span></button>';
                 }).join('');
             }
 
@@ -25695,7 +25720,8 @@
                 var el = document.getElementById('etProgSlots');
                 if (!el) return;
                 var html = '';
-                for (var i = 0; i < _etProgLevel; i++) {
+                var count = progCount();
+                for (var i = 0; i < count; i++) {
                     var pick = _etProgPicks[i];
                     var cls = 'et-prog-slot';
                     var locked = i === 0 && progTonicOn();
@@ -25704,7 +25730,7 @@
                     if (_etProgGraded && _etProgAnswer) {
                         cls += pick === _etProgAnswer[i] ? ' correct' : ' wrong';
                     }
-                    var label = pick !== undefined ? progChordName(_etProgAnswer ? _etProgAnswerKey : _etProgKey, pick) : (i + 1);
+                    var label = pick !== undefined ? progChordName(_etProgAnswer ? _etProgAnswerKey : progActiveKey(), pick) : (i + 1);
                     // 푸는 중: 누르면 그 칸 취소 / 채점 후: 누르면 정답 코드 소리
                     var act = '';
                     var missed = _etProgGraded && _etProgAnswer && pick !== _etProgAnswer[i];
@@ -25721,7 +25747,7 @@
                     }
                     html += '<button type="button" class="' + cls + '"' + act + '>' + label + '</button>';
                     // 5개 이상이면 두 줄로 고르게 나눈다 (8 → 4+4, 7 → 4+3, 6 → 3+3, 5 → 3+2)
-                    if (_etProgLevel > 4 && i === Math.ceil(_etProgLevel / 2) - 1) {
+                    if (count > 4 && i === Math.ceil(count / 2) - 1) {
                         html += '<span class="et-prog-break" aria-hidden="true"></span>';
                     }
                 }
@@ -25734,11 +25760,11 @@
 
             function etProgUpdateNextState() {
                 if (_etProgGraded) return;
-                var ready = _etProgAnswer && _etProgPicks.length === _etProgLevel;
+                var ready = _etProgAnswer && _etProgPicks.length === progCount();
                 setEtBtnState('etProgNextBtn', ready ? 'check-active' : 'check-disabled');
                 var fb = document.getElementById('etProgFeedback');
                 if (!_etProgAnswer) return;
-                var remaining = _etProgLevel - _etProgPicks.length;
+                var remaining = progCount() - _etProgPicks.length;
                 fb.textContent = remaining > 0 ? '들린 순서대로 코드 ' + remaining + '개를 골라주세요' : '';
                 fb.className = 'et-feedback';
             }
@@ -25747,9 +25773,15 @@
                 // 라운드 첫 문제(또는 지난 라운드를 끝낸 뒤)면 새 라운드 + 타이머 시작
                 if (!_etProgRound.running) progStartRound();
                 // 랭킹 라운드(10문제)도 이 라운드와 같이 간다 — 단계가 곧 난이도
-                try { if (window.earSession) window.earSession.startQuestion('ear_prog', 'lv' + _etProgLevel); } catch (e) {}
+                // 지옥: 문제마다 새 키 + 새 코드 개수 (초기화 직후 첫 문제는 미리 굴린 값 그대로)
+                if (progIsHell()) {
+                    if (!_etProgHellFresh) progRollHell();
+                    _etProgHellFresh = false;
+                    renderProgChoices();
+                }
+                try { if (window.earSession) window.earSession.startQuestion('ear_prog', progDiffKey()); } catch (e) {}
                 _etProgAnswer = etProgRandomSeq();
-                _etProgAnswerKey = _etProgKey;
+                _etProgAnswerKey = progActiveKey();
                 _etProgGraded = false;
                 etProgResetPicks();
                 renderProgSlots();
@@ -25767,7 +25799,7 @@
 
             window.etProgPick = function(ci) {
                 if (!_etProgAnswer || _etProgGraded) return;
-                if (_etProgPicks.length >= _etProgLevel) return;
+                if (_etProgPicks.length >= progCount()) return;
                 _etProgPicks.push(ci);
                 renderProgSlots();
                 etProgUpdateNextState();
@@ -25783,25 +25815,26 @@
 
             function etProgGradeAnswer() {
                 if (_etProgGraded || !_etProgAnswer) return;
-                if (_etProgPicks.length !== _etProgLevel) return;
+                var count = progCount();
+                if (_etProgPicks.length !== count) return;
                 _etProgGraded = true;
                 _etProgStats.total++;
                 var hits = 0;
                 _etProgAnswer.forEach(function(a, i) { if (_etProgPicks[i] === a) hits++; });
-                var allCorrect = hits === _etProgLevel;
+                var allCorrect = hits === count;
                 var fb = document.getElementById('etProgFeedback');
                 var answerStr = progSeqName(_etProgAnswer, _etProgAnswerKey);
                 if (allCorrect) {
                     _etProgStats.correct++;
                     _etProgStats.streak++;
-                    etTrackStreak(_etProgStats.streak, 'ear_prog', 'lv' + _etProgLevel);
+                    etTrackStreak(_etProgStats.streak, 'ear_prog', progDiffKey());
                     var pts = Math.floor(10 * (PROG_LEVEL_COEF[_etProgLevel] || 1));
                     _etProgStats.score += pts;
                     fb.textContent = '정답! +' + pts + '점 · ' + answerStr;
                     fb.className = 'et-feedback correct';
                 } else {
                     _etProgStats.streak = 0;
-                    fb.textContent = hits + '/' + _etProgLevel + ' 정답 — 정답: ' + answerStr;
+                    fb.textContent = hits + '/' + count + ' 정답 — 정답: ' + answerStr;
                     fb.className = 'et-feedback wrong';
                 }
                 try { if (window.earSession) window.earSession.recordAnswer(allCorrect); } catch (e) {}
@@ -25883,6 +25916,11 @@
                 _etProgAnswer = null;
                 _etProgGraded = false;
                 _etProgHistory = [];
+                if (progIsHell()) {
+                    progRollHell();
+                    _etProgHellFresh = true;
+                    renderProgChoices();
+                }
                 etProgResetPicks();
                 updateETProgScores();
                 progResetRound();
@@ -25902,12 +25940,19 @@
             };
 
             window.setETProgLevel = function(level) {
-                _etProgLevel = level;
+                _etProgLevel = level === 'hell' ? 'hell' : parseInt(level, 10);
                 document.querySelectorAll('#etProgMode .et-diff-btn').forEach(function(b) {
-                    b.classList.toggle('active', parseInt(b.dataset.plevel) === level);
+                    b.classList.toggle('active', b.dataset.plevel === String(_etProgLevel));
                 });
+                // 지옥은 키가 자동으로 바뀌므로 키 선택을 잠근다
+                var sel = document.getElementById('etProgKey');
+                if (sel) {
+                    sel.disabled = progIsHell();
+                    if (!progIsHell()) sel.value = _etProgKey;
+                }
                 updateProgTonicToggle();
                 etProgReset();
+                if (progIsHell()) etProgEnsureSamples();
             };
 
             window.setETProgKey = function(keyId) {
