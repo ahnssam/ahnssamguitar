@@ -5121,6 +5121,7 @@
             padding: 1rem;
         }
         .et-prog-summary.open { display: flex; }
+        .et-prog-summary.guard .pr-card { pointer-events: none; }
         .pr-card {
             position: relative;
             width: 100%; max-width: 760px;
@@ -25477,7 +25478,9 @@
                     ov.className = 'et-prog-summary';
                     ov.setAttribute('role', 'dialog');
                     ov.setAttribute('aria-modal', 'true');
-                    ov.addEventListener('click', function(e) { if (e.target === ov) closeETProgSummary(); });
+                    ov.addEventListener('click', function(e) {
+                        if (e.target === ov && !ov.classList.contains('guard')) closeETProgSummary();
+                    });
                     document.addEventListener('keydown', function(e) {
                         if (e.key === 'Escape' && ov.classList.contains('open')) closeETProgSummary();
                     });
@@ -25508,7 +25511,10 @@
                             '<button type="button" class="pr-btn primary" data-action="etProgSummaryNewRound"><i class="fas fa-redo"></i> 새 라운드</button>' +
                         '</div>' +
                     '</div>';
-                ov.classList.add('open');
+                // 뜨자마자 이어서 누른 클릭(정답확인 연타)이 팝업을 닫거나 버튼을 누르지 않게 잠깐 잠금
+                ov.classList.add('open', 'guard');
+                clearTimeout(ov._guardTimer);
+                ov._guardTimer = setTimeout(function() { ov.classList.remove('guard'); }, 800);
             }
 
             window.closeETProgSummary = function() {
@@ -25655,7 +25661,8 @@
                 renderProgSlots();
                 progFxSound(allCorrect);
                 progFxVisual(allCorrect);
-                if (_etProgRound.finished) setTimeout(openProgSummary, allCorrect ? 900 : 1700);
+                // 마지막 문제 채점 즉시 팝업 — 늦게 뜨면 같은 자리 '새 라운드'를 실수로 누르게 됨
+                if (_etProgRound.finished) openProgSummary();
                 document.querySelectorAll('#etProgChoices .et-choice-btn').forEach(function(b) {
                     b.classList.add('disabled');
                 });
@@ -25674,6 +25681,8 @@
             }
 
             window.etProgNextBtnClick = function() {
+                var sum = document.getElementById('etProgSummary');
+                if (sum && sum.classList.contains('open')) return;
                 var btn = document.getElementById('etProgNextBtn');
                 if (!btn || !btn.classList.contains('show')) return;
                 if (btn.dataset.state === 'next-active') etProgPlayQuestion();
