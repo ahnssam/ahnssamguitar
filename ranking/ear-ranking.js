@@ -413,6 +413,9 @@
 .rank-diff-medium { background: #4f8ad0; }
 .rank-diff-hard { background: #c8782a; }
 .rank-diff-hell { background: #c0392b; }
+/* 코드 진행 단계(lv1~lv8) — 한 가지 보라 톤 */
+.rank-diff-lv1, .rank-diff-lv2, .rank-diff-lv3, .rank-diff-lv4,
+.rank-diff-lv5, .rank-diff-lv6, .rank-diff-lv7, .rank-diff-lv8 { background: #7a5bb5; }
 .rank-period-curwrap { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
 .rank-period-sub { font-size: 0.62rem; color: rgba(26,36,33,0.45); font-weight: 500; }
 .rank-mode-pills { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0 0 0.9rem; flex: 1 1 auto; justify-content: flex-end; }
@@ -1419,17 +1422,21 @@
     const MODE_LABELS = {
         ear_single: '음 맞추기',
         ear_compare: '두 음 비교',
-        ear_chord: '코드 맞추기'
+        ear_chord: '코드 맞추기',
+        ear_prog: '코드 진행'
     };
-    const DIFF_LABELS = { easy: '쉬움', medium: '보통', hard: '어려움', hell: '지옥' };
-    const DIFF_COEF = { easy: 1.0, medium: 1.5, hard: 2.0, hell: 3.0 };
+    // 코드 진행은 난이도 대신 단계(lv1~lv8) — 계수는 서버 submit_ear_session 과 동일하게 유지할 것.
+    const DIFF_LABELS = { easy: '쉬움', medium: '보통', hard: '어려움', hell: '지옥',
+        lv1: '1단계', lv2: '2단계', lv3: '3단계', lv4: '4단계', lv5: '5단계', lv6: '6단계', lv7: '7단계', lv8: '8단계' };
+    const DIFF_COEF = { easy: 1.0, medium: 1.5, hard: 2.0, hell: 3.0,
+        lv1: 1.0, lv2: 1.25, lv3: 1.5, lv4: 1.75, lv5: 2.0, lv6: 2.25, lv7: 2.5, lv8: 3.0 };
     const SESSION_SIZE = 10;
 
     // ------------------------------------------------------------
     // Session tracker state
     // ------------------------------------------------------------
     const tracker = {
-        mode: null,          // 'ear_single' | 'ear_compare' | 'ear_chord'
+        mode: null,          // 'ear_single' | 'ear_compare' | 'ear_chord' | 'ear_prog'
         difficulty: null,    // 'easy' | 'medium' | 'hard'
         startedAt: null,     // Date — when first question started
         questionStartedAt: null, // Date — current question play time
@@ -1800,8 +1807,8 @@
     // 신규 랭킹 시스템 — 보드(점수/연속) + 분기(시즌)
     let _rankBoard = 'score';    // 'score' | 'streak'
     let _rankPeriod = null;      // 'YYYY-Qn' (null → 현재 분기)
-    let _rankBoardMode = 'all';  // 'all' | 'ear_single' | 'ear_compare' | 'ear_chord'
-    const RANK_MODE_LABEL = { all: '전체', ear_single: '음 맞추기', ear_compare: '두 음 비교', ear_chord: '코드 맞추기' };
+    let _rankBoardMode = 'all';  // 'all' | 'ear_single' | 'ear_compare' | 'ear_chord' | 'ear_prog'
+    const RANK_MODE_LABEL = { all: '전체', ear_single: '음 맞추기', ear_compare: '두 음 비교', ear_chord: '코드 맞추기', ear_prog: '코드 진행' };
     let _rankRows = [];          // 현재 보드의 전체 행
     let _rankPage = 1;           // 페이지 (20명 단위)
     const RANK_PAGE_SIZE = 20;
@@ -2046,6 +2053,7 @@
             <button class="rank-mode-pill" data-bmode="ear_single">음 맞추기</button>
             <button class="rank-mode-pill" data-bmode="ear_compare">두 음 비교</button>
             <button class="rank-mode-pill" data-bmode="ear_chord">코드 맞추기</button>
+            <button class="rank-mode-pill" data-bmode="ear_prog">코드 진행</button>
         </div>
     </div>
     <!-- 보기 안내문(종합/고수에 따라 내용 바뀜) + 새로고침 — 같은 줄 -->
@@ -2079,6 +2087,10 @@
             <div class="rank-help-hell-row">지옥</div><div class="rank-help-hell-row">× 3.0</div>
         </div>
         <p class="rank-help-line">
+            <b>코드 진행</b>은 단계별 계수예요 — 1단계 × 1.0 · 2단계 × 1.25 · 3단계 × 1.5 · 4단계 × 1.75 ·
+            5단계 × 2.0 · 6단계 × 2.25 · 7단계 × 2.5 · 8단계 × 3.0. (종합 랭킹에만 반영돼요.)
+        </p>
+        <p class="rank-help-line">
             <b>연속</b>은 틀리지 않고 연속으로 맞힌 <b>최고 기록</b>으로 순위를 매겨요.
         </p>
         <h3>티어 (피크 배지)</h3>
@@ -2090,7 +2102,7 @@
         <h3>참고</h3>
         <ul class="rank-help-list">
             <li>랭킹에서 <b>아이디를 누르면</b> 그 사람이 어떤 모드·난이도로 점수를 올렸는지 볼 수 있어요.</li>
-            <li>모드별(음 맞추기·두 음 비교·코드 맞추기)로 따로 랭킹을 볼 수도 있어요.</li>
+            <li>모드별(음 맞추기·두 음 비교·코드 맞추기·코드 진행)로 따로 랭킹을 볼 수도 있어요.</li>
             <li>응답 0.3초 미만은 찍기로 간주돼 점수에서 제외돼요.</li>
         </ul>
     </div>
@@ -2255,6 +2267,15 @@
         function rankSyncViewUI() {
             const note = panel.querySelector('#rankMasterNote');
             if (note) note.style.display = (_rankView === 'master') ? '' : 'none';
+            // 코드 진행은 아직 고수 집계 대상이 아니라 고수 보기에선 분야 필터에서 숨긴다
+            const progPill = panel.querySelector('.rank-mode-pill[data-bmode="ear_prog"]');
+            if (progPill) progPill.style.display = (_rankView === 'master') ? 'none' : '';
+            if (_rankView === 'master' && _rankBoardMode === 'ear_prog') {
+                _rankBoardMode = 'all';
+                panel.querySelectorAll('.rank-mode-pill').forEach(function(x) {
+                    x.classList.toggle('active', x.getAttribute('data-bmode') === 'all');
+                });
+            }
         }
         // 종합 / 고수 보기 토글
         panel.querySelectorAll('#rankViewTabs .rank-view-tab').forEach(function(t) {
@@ -2456,8 +2477,8 @@
 
     function rankDiffChips(by) {
         if (!by) return '';
-        const names = { easy: '쉬움', medium: '보통', hard: '어려움', hell: '지옥' };
-        const order = ['easy', 'medium', 'hard', 'hell'];
+        const names = DIFF_LABELS;
+        const order = ['easy', 'medium', 'hard', 'hell', 'lv1', 'lv2', 'lv3', 'lv4', 'lv5', 'lv6', 'lv7', 'lv8'];
         const parts = order.filter(function(k) { return by[k]; }).map(function(k) {
             return `<span class="rank-diff-chip rank-diff-${k}">${names[k]} ${Number(by[k]).toLocaleString()}</span>`;
         });
@@ -2543,8 +2564,8 @@
             rows = rows.filter(function(r) { return r.mode === _rankBoardMode; });
         }
         if (rows.length === 0) { body.innerHTML = '<div class="rank-empty">이 분기 점수 기록이 없어요.</div>'; return; }
-        const modeNames = { ear_single: '음 맞추기', ear_compare: '두 음 비교', ear_chord: '코드 맞추기' };
-        const diffNames = { easy: '쉬움', medium: '보통', hard: '어려움', hell: '지옥' };
+        const modeNames = MODE_LABELS;
+        const diffNames = DIFF_LABELS;
         const byMode = {}; let grand = 0;
         rows.forEach(function(r) {
             if (!byMode[r.mode]) byMode[r.mode] = { total: 0, diffs: [] };

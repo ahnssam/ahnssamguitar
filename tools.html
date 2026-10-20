@@ -11237,7 +11237,7 @@
             eartraining: '두 음 간격이나 코드, 코드 진행을 듣고 맞히는 훈련. 정답이 누적되면 랭킹에 반영돼요. 절대음감보다 상대음감 훈련에 효과적이에요.',
             eartraining_pitch:    '음정을 듣고 무슨 음정인지 맞추는 연습이에요. 어려움 난이도부터는 샵(♯) 음계까지 함께 출제됩니다.',
             eartraining_interval: '낮은 음과 높은 음 사이 간격을 맞추는 연습이에요. 절대음감 없이도 음악을 분석할 수 있게 해주는 상대음감 트레이닝의 핵심 방식.',
-            eartraining_prog:     '고른 키의 다이아토닉 코드(1도~7도)로 된 진행을 듣고 순서대로 맞추는 연습이에요.\n\n• 단계 1~8 = 코드 개수. 코드마다 70BPM 으로 두 번씩 쳐줍니다.\n• 1도로 시작을 켜면 첫 코드는 항상 1도로 고정돼요.\n• 10문제가 한 라운드예요. 첫 문제를 들을 때 타이머가 시작되고, 10문제를 끝내면 걸린 시간을 알려줘요.\n• 아래 칸을 누르면 고른 코드를 뺄 수 있어요.\n\n점수는 이 화면에만 기록되고 랭킹에는 반영되지 않아요.',
+            eartraining_prog:     '고른 키의 다이아토닉 코드(1도~7도)로 된 진행을 듣고 순서대로 맞추는 연습이에요.\n\n• 단계 1~8 = 코드 개수. 코드마다 70BPM 으로 두 번씩 쳐줍니다.\n• 1도로 시작을 켜면 첫 코드는 항상 1도로 고정돼요.\n• 10문제가 한 라운드예요. 첫 문제를 들을 때 타이머가 시작되고, 10문제를 끝내면 걸린 시간을 알려줘요.\n• 아래 칸을 누르면 고른 코드를 뺄 수 있어요.\n\n점수는 랭킹(종합)에 반영돼요. 단계가 높을수록 계수가 커져요 (1단계 ×1.0 ~ 8단계 ×3.0).',
             eartraining_chord:    '구성음을 듣고 어떤 코드인지 맞추는 연습이에요. 코드 사운드 자체에 익숙해지면 실전 연주에서 코드 진행을 빠르게 캐치할 수 있어 큰 도움이 됩니다.',
             chords: '기본·텐션·세븐스 코드까지 운지법과 사운드를 한 번에 검색·재생. 코드를 클릭하면 바로 그 코드 사운드가 들려요.',
             fretboard: '지판 위 모든 음의 위치를 시각화. 트레이닝 모드로 음 이름 맞추기 연습도 가능합니다.',
@@ -25186,7 +25186,8 @@
             ];
             const PROG_BPM = 70;
             const PROG_STRUMS_PER_CHORD = 2;
-            const PROG_PTS_PER_LEVEL = 10;      // 정답 1개당 단계 × 10점
+            // 정답 1개당 10 × 단계 계수 — 랭킹(submit_ear_session) 계수와 동일하게 유지할 것
+            const PROG_LEVEL_COEF = { 1: 1.0, 2: 1.25, 3: 1.5, 4: 1.75, 5: 2.0, 6: 2.25, 7: 2.5, 8: 3.0 };
             const PROG_ROUND_SIZE = 10;
 
             let _etProgLevel = 2;
@@ -25434,6 +25435,11 @@
 
             function progResetRound() {
                 progStopTimer();
+                // 화면 라운드를 처음부터 다시 하면 랭킹 라운드도 같이 버린다 (10문제 단위 맞춤)
+                try {
+                    var st = window.earSession && window.earSession.getState();
+                    if (st && st.mode === 'ear_prog') window.earSession.reset();
+                } catch (e) {}
                 _etProgRound = { done: 0, correct: 0, start: 0, elapsed: 0, running: false, finished: false };
                 _etProgRoundHistory = [];
                 renderProgRound();
@@ -25578,6 +25584,8 @@
             window.etProgPlayQuestion = function() {
                 // 라운드 첫 문제(또는 지난 라운드를 끝낸 뒤)면 새 라운드 + 타이머 시작
                 if (!_etProgRound.running) progStartRound();
+                // 랭킹 라운드(10문제)도 이 라운드와 같이 간다 — 단계가 곧 난이도
+                try { if (window.earSession) window.earSession.startQuestion('ear_prog', 'lv' + _etProgLevel); } catch (e) {}
                 _etProgAnswer = etProgRandomSeq();
                 _etProgAnswerKey = _etProgKey;
                 _etProgGraded = false;
@@ -25624,7 +25632,8 @@
                 if (allCorrect) {
                     _etProgStats.correct++;
                     _etProgStats.streak++;
-                    var pts = _etProgLevel * PROG_PTS_PER_LEVEL;
+                    etTrackStreak(_etProgStats.streak, 'ear_prog', 'lv' + _etProgLevel);
+                    var pts = Math.floor(10 * (PROG_LEVEL_COEF[_etProgLevel] || 1));
                     _etProgStats.score += pts;
                     fb.textContent = '정답! +' + pts + '점 · ' + answerStr;
                     fb.className = 'et-feedback correct';
@@ -25633,6 +25642,7 @@
                     fb.textContent = hits + '/' + _etProgLevel + ' 정답 — 정답: ' + answerStr;
                     fb.className = 'et-feedback wrong';
                 }
+                try { if (window.earSession) window.earSession.recordAnswer(allCorrect); } catch (e) {}
                 try { gtag('event', 'ear_prog_answer', { correct: allCorrect, level: _etProgLevel, key: _etProgAnswerKey }); } catch (e) {}
                 updateETProgScores();
                 _etProgRoundHistory.push({
