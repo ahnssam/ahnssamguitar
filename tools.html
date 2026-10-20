@@ -5072,23 +5072,21 @@
             cursor: pointer;
         }
         :root[data-theme="dark"] .et-prog-key-select { background: #1d2a24; color: #e8f0ec; border-color: rgba(180, 230, 200, 0.28); }
-        .et-prog-slot-col { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
         .et-prog-slot.playable { cursor: pointer; }
         .et-prog-slot.playable:active { transform: scale(0.95); }
-        /* 채점 후 틀린 칸 아래 — 원래 정답 (누르면 소리) */
-        .et-prog-slot-answer {
-            display: flex; flex-direction: column; align-items: center;
-            min-width: 4.2rem;
-            padding: 0.25rem 0.4rem;
-            border-radius: 8px;
-            border: 1.5px solid var(--green-mid);
-            background: rgba(114, 196, 146, 0.16);
+        /* 채점 후 틀린 칸 — 같은 칸 안에 내 답 + 정답 */
+        .et-prog-slot.wrong { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; padding-top: 0.45rem; padding-bottom: 0.45rem; }
+        .et-prog-slot-pick { text-decoration: line-through; text-decoration-thickness: 2px; opacity: 0.85; }
+        .et-prog-slot-ans {
+            margin-top: 0.2rem;
+            padding: 0.05rem 0.4rem;
+            border-radius: 6px;
+            background: #fff;
             color: var(--green-deep);
-            font-family: inherit; font-size: 0.95rem; font-weight: 700;
-            cursor: pointer; line-height: 1.15;
+            font-size: 0.78rem;
+            font-weight: 800;
+            white-space: nowrap;
         }
-        .et-prog-slot-answer span { font-size: 0.62rem; font-weight: 600; opacity: 0.7; }
-        :root[data-theme="dark"] .et-prog-slot-answer { color: #b4e6c8; }
         /* 정답 — 팡! 튀어오르며 초록 빛 / 오답 — 부들부들 흔들리고 축 처짐 */
         @keyframes etProgHit {
             0% { transform: scale(1); filter: none; }
@@ -25543,20 +25541,21 @@
                         cls += pick === _etProgAnswer[i] ? ' correct' : ' wrong';
                     }
                     var label = pick !== undefined ? progChordName(_etProgAnswer ? _etProgAnswerKey : _etProgKey, pick) : (i + 1);
-                    // 푸는 중: 누르면 그 칸 취소 / 채점 후: 누르면 그 코드 소리
+                    // 푸는 중: 누르면 그 칸 취소 / 채점 후: 누르면 정답 코드 소리
                     var act = '';
-                    if (_etProgGraded && pick !== undefined) {
-                        act = ' data-action="etProgPlayChord" data-args="' + pick + ',' + _etProgAnswerKey + '"';
+                    var missed = _etProgGraded && _etProgAnswer && pick !== _etProgAnswer[i];
+                    if (_etProgGraded && _etProgAnswer) {
+                        act = ' data-action="etProgPlayChord" data-args="' + _etProgAnswer[i] + ',' + _etProgAnswerKey + '"';
                         cls += ' playable';
                     } else if (!locked && pick !== undefined) {
                         act = ' data-action="etProgUnpick" data-args="' + i + '"';
                     }
-                    html += '<div class="et-prog-slot-col"><button type="button" class="' + cls + '"' + act + '>' + label + '</button>';
-                    if (_etProgGraded && _etProgAnswer && pick !== _etProgAnswer[i]) {
-                        html += '<button type="button" class="et-prog-slot-answer" data-action="etProgPlayChord" data-args="' +
-                            _etProgAnswer[i] + ',' + _etProgAnswerKey + '"><span>정답</span>' + progChordName(_etProgAnswerKey, _etProgAnswer[i]) + '</button>';
+                    // 틀린 칸은 같은 칸 안에 내 답(위) + 정답(아래)
+                    if (missed) {
+                        label = '<span class="et-prog-slot-pick">' + label + '</span>' +
+                            '<span class="et-prog-slot-ans">정답 ' + progChordName(_etProgAnswerKey, _etProgAnswer[i]) + '</span>';
                     }
-                    html += '</div>';
+                    html += '<button type="button" class="' + cls + '"' + act + '>' + label + '</button>';
                 }
                 el.innerHTML = html;
             }
