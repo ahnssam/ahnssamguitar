@@ -5073,6 +5073,7 @@
         }
         :root[data-theme="dark"] .et-prog-key-select { background: #1d2a24; color: #e8f0ec; border-color: rgba(180, 230, 200, 0.28); }
         .et-prog-slot.playable { cursor: pointer; }
+        .et-prog-break { flex-basis: 100%; height: 0; }
         .et-prog-slot.playable:active { transform: scale(0.95); }
         /* 채점 후 틀린 칸 — 같은 칸 안에 내 답 + 정답 */
         .et-prog-slot.wrong { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; padding-top: 0.45rem; padding-bottom: 0.45rem; }
@@ -25508,15 +25509,27 @@
                 });
             }
 
+            // 출제 비중 — vii°(dim)는 실제 곡에서 드물어 다른 코드의 절반만 나오게
+            const PROG_DEGREE_WEIGHTS = [1, 1, 1, 1, 1, 1, 0.5];
+            function progWeightedDegree(exclude) {
+                var total = 0, d;
+                for (d = 0; d < PROG_DEGREES.length; d++) if (d !== exclude) total += PROG_DEGREE_WEIGHTS[d];
+                var r = Math.random() * total;
+                for (d = 0; d < PROG_DEGREES.length; d++) {
+                    if (d === exclude) continue;
+                    r -= PROG_DEGREE_WEIGHTS[d];
+                    if (r < 0) return d;
+                }
+                return exclude === 0 ? 1 : 0;
+            }
+
             function etProgRandomSeq() {
                 var seq = [];
                 for (var i = 0; i < _etProgLevel; i++) {
                     if (i === 0 && progTonicOn()) { seq.push(0); continue; }
-                    var idx;
-                    // 같은 코드가 연달아 나오면 구분이 안 되므로 바로 앞 코드와는 다르게
-                    do { idx = Math.floor(Math.random() * PROG_DEGREES.length); }
-                    while (i > 0 && idx === seq[i - 1]);
-                    seq.push(idx);
+                    // 같은 코드가 연달아 나오면 구분이 안 되므로 바로 앞 코드는 후보에서 뺀다
+                    var prev = i > 0 ? seq[i - 1] : -1;
+                    seq.push(progWeightedDegree(prev));
                 }
                 return seq;
             }
@@ -25707,6 +25720,10 @@
                             '<span class="et-prog-slot-ans">정답 ' + progChordName(_etProgAnswerKey, _etProgAnswer[i]) + '</span>';
                     }
                     html += '<button type="button" class="' + cls + '"' + act + '>' + label + '</button>';
+                    // 5개 이상이면 두 줄로 고르게 나눈다 (8 → 4+4, 7 → 4+3, 6 → 3+3, 5 → 3+2)
+                    if (_etProgLevel > 4 && i === Math.ceil(_etProgLevel / 2) - 1) {
+                        html += '<span class="et-prog-break" aria-hidden="true"></span>';
+                    }
                 }
                 el.innerHTML = html;
             }
