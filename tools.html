@@ -16708,7 +16708,9 @@
                     .filter(function(p) { return p.bar !== null && p.bar !== undefined; })
                     .map(function(p) {
                         return { bar: p.bar | 0, arrows: p.arrows !== false, inbar: p.inbar === true,
-                                 svg: _deckSvgMulti(p, p.meter === 16 ? 9 : 14, p.arrows === false) };
+                                 svg: _deckSvgMulti(p, p.meter === 16 ? 9 : 14, p.arrows === false),
+                                 // 마디 폭에 맞춰 다시 그릴 수 있게 원본 데이터도 (박이 코드 칸 아래 오도록)
+                                 meter: p.meter, bars: _deckBarsOf(p), steps: p.steps, accents: p.accents };
                     });
                 try { _applyBarRhythms(); } catch (e) {}
                 window.__LOCAL_TOOL_FORMFLOW = _deckFlow.slice();
@@ -17741,7 +17743,11 @@
                     var slot = document.createElement('div');
                     slot.className = 'lp-barrhy';
                     var hit = items.filter(function(r) { return (r.bar | 0) % 4 === c; })[0];
-                    if (hit) slot.innerHTML = _svgFit(hit.svg, 0.85, 9);
+                    if (hit) {
+                        slot.innerHTML = _svgFit(hit.svg, 0.85, 9);
+                        slot.dataset.rhybar = String(hit.bar | 0);   // _barRhyFit 이 마디 폭에 맞춰 다시 그린다
+                        slot._rhy = hit;
+                    }
                     strip.appendChild(slot);
                 }
                 return strip;
@@ -17780,8 +17786,49 @@
                     if (nextCell) grid.insertBefore(strip, nextCell);
                     else grid.appendChild(strip);
                 });
+                try { _barRhyFit(grid); } catch (e) {}   // 박을 코드 칸 아래로
             }
             window.applyBarRhythms = _applyBarRhythms;
+            // 마디 아래 리듬 띠를 그 마디의 '코드 칸 영역' 폭에 맞춰 다시 그린다
+            //   → 1박이 첫 코드 칸 아래, 2박이 둘째 칸 아래 … (4칸일 때 한 박 = 한 칸)
+            //   음표 크기는 그대로 두고 칸 간격만 넓히거나 좁힌다. SVG 크기는 속성에 박아 인쇄·이미지에도 그대로.
+            //   root = 화면 그리드 또는 인쇄용 차트(측정용으로 문서에 붙어 있어야 함)
+            function _barRhyFit(root) {
+                if (!root || typeof window._deckRhythmSvg !== 'function') return;
+                Array.prototype.forEach.call(root.querySelectorAll('.lp-barrhy[data-rhybar]'), function(slot) {
+                    var r = slot._rhy;
+                    if (!r || !Array.isArray(r.steps) || !r.meter) return;      // 예전 데이터 — 그대로 둔다
+                    var cell = root.querySelector('.loop-cell[data-idx="' + slot.dataset.rhybar + '"]');
+                    var halves = cell && Array.prototype.filter.call(
+                        cell.querySelectorAll('.loop-cell-halves > .loop-cell-half'), function(h) { return h.offsetWidth > 0; });
+                    if (!halves || !halves.length) return;
+                    var a = halves[0].getBoundingClientRect(), b = halves[halves.length - 1].getBoundingClientRect();
+                    var sr = slot.getBoundingClientRect();
+                    // 화면/인쇄 미리보기는 transform 으로 축소돼 있을 수 있어 실제 배율을 반영
+                    var zoom = slot.offsetWidth ? (sr.width / slot.offsetWidth) : 1;
+                    if (!zoom || !isFinite(zoom)) zoom = 1;
+                    var target = (b.right - a.left) / zoom;              // 코드 칸 영역 폭(px)
+                    var offset = (a.left - sr.left) / zoom;              // 리듬 띠 칸 왼쪽에서 첫 코드 칸까지
+                    if (target < 20) return;
+                    var bars = (r.bars === 2) ? 2 : 1, n = r.meter * bars, gap = (bars - 1) * 12, scale = 0.85;
+                    var cw = (target / scale - gap) / n;
+                    var svg = window._deckRhythmSvg({ meter: r.meter, bars: bars, steps: r.steps, accents: r.accents || [] },
+                                                    cw, r.arrows === false);
+                    slot.innerHTML = _svgFit(svg, scale, 9);
+                    slot.style.paddingLeft = Math.max(0, Math.round(offset)) + 'px';
+                    var el = slot.querySelector('svg');
+                    if (el) el.style.margin = '0';
+                });
+            }
+            window._barRhyFit = _barRhyFit;
+            // 창 크기가 바뀌면 마디 폭도 바뀌므로 다시 맞춘다
+            (function() {
+                var t = null;
+                window.addEventListener('resize', function() {
+                    clearTimeout(t);
+                    t = setTimeout(function() { try { _barRhyFit(document.getElementById('loopGrid')); } catch (e) {} }, 150);
+                });
+            })();
             (function() {
                 var prev = window.__onLoopGridRendered;
                 window.__onLoopGridRendered = function() {
@@ -20181,6 +20228,7 @@
                 var headH2 = _measHead('hc2');    // 여백 + 폰트 축소
                 var chart = _buildPrintChart();
                 meas.appendChild(chart);
+                try { _barRhyFit(chart); } catch (e) {}   // 마디 리듬의 박을 코드 칸 아래로 (인쇄 폭 기준)
                 var rowEls = Array.prototype.slice.call(chart.children);
                 function _measRows() {
                     return rowEls.map(function(el) {
