@@ -6499,6 +6499,37 @@
         .sp-marker:hover { background: #e07812; }
         .sp-marker:hover::after { border-top-color: #e07812; }
         .sp-marker.dragging { cursor: grabbing; opacity: 0.85; }
+        /* LOOP 아래 작은 처음/끝 버튼 — 트랜스포트 오른쪽(LOOP·CLEAR 칸) 아래 */
+        .sp-ab-mini {
+            display: flex; justify-content: flex-end; gap: 0.35rem;
+            margin: -0.55rem 0 1rem auto; width: 29.5%; min-width: 150px;
+        }
+        .sp-ab-btn {
+            flex: 1 1 0;
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem;
+            padding: 0.3rem 0.4rem; border-radius: 8px;
+            background: rgba(42, 107, 74, 0.08); border: 1px solid rgba(42, 107, 74, 0.25);
+            color: var(--green-deep);
+            font-family: inherit; font-size: 0.74rem; font-weight: 700; cursor: pointer;
+        }
+        .sp-ab-btn i { font-size: 0.72rem; }
+        .sp-ab-btn:hover:not([disabled]) { background: rgba(42, 107, 74, 0.16); }
+        .sp-ab-btn[disabled] { opacity: 0.4; cursor: default; }
+        :root[data-theme="dark"] .sp-ab-btn { background: rgba(150,200,175,0.08); border-color: rgba(150,200,175,0.25); color: var(--green-light); }
+        /* 파형 확대 (파형 위) */
+        .sp-zoom-row {
+            display: flex; align-items: center; gap: 0.5rem;
+            margin: 0 0 0.45rem auto; max-width: 340px;
+            font-size: 0.78rem; color: var(--text-secondary);
+        }
+        .sp-zoom-row i { color: var(--green-deep); font-size: 0.8rem; }
+        :root[data-theme="dark"] .sp-zoom-row i { color: var(--green-light); }
+        .sp-zoom-row input[type=range] { flex: 1; min-width: 0; margin: 0; }
+        .sp-zoom-name { flex-shrink: 0; font-weight: 600; }
+        .sp-zoom-val { flex-shrink: 0; min-width: 3.4em; text-align: right; font-variant-numeric: tabular-nums; }
+        .sp-zoom-row.disabled { opacity: 0.4; pointer-events: none; }
+        /* 확대해도 캔버스는 화면 폭만큼만 — 스크롤 위치에 붙어 보이는 구간만 그린다 */
+        #spWave { width: auto; right: auto; }
         /* 로우컷/하이컷 페이더 */
         .sp-eq-ico { width: 30px; height: 18px; display: block; }
         .sp-eq-fader .ls-fader-name { min-width: 3.3em; }
@@ -10878,6 +10909,13 @@
                     <div class="sp-time" id="spTime">0:00.0 / 0:00.0</div>
                 </div>
 
+                <!-- 파형 확대/축소 — 파형 위쪽, 1배~100배 -->
+                <div class="sp-zoom-row disabled" id="spZoomCtl">
+                    <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                    <span class="sp-zoom-name">파형 확대</span>
+                    <input type="range" id="spZoom" min="0" max="1000" step="1" value="0" aria-label="파형 확대/축소" disabled>
+                    <span class="sp-zoom-val" id="spZoomVal">1배</span>
+                </div>
                 <!-- 파형 (클릭=재생 위치 이동, 마우스 드래그=구간 지정) -->
                 <div class="ls-wave-wrap sp-wave-wrap sp-loop-off" id="spWaveWrap">
                     <div class="ls-wave-scroll" id="spWaveScroll">
@@ -10890,10 +10928,6 @@
                         </div>
                     </div>
                     <div class="ls-wave-empty" id="spWaveEmpty">음악 파일을 열면 파형이 표시됩니다</div>
-                    <div class="ls-zoom disabled" id="spZoomCtl" title="파형 확대/축소">
-                        <i class="fas fa-arrows-left-right" aria-hidden="true"></i>
-                        <input type="range" id="spZoom" min="100" max="800" step="10" value="100" aria-label="파형 확대/축소" disabled>
-                    </div>
                 </div>
 
                 <!-- 구간 정보 (구간을 지정했을 때만) -->
@@ -10934,6 +10968,11 @@
                         <span class="ls-tp-label">CLEAR</span>
                         <span class="ls-tp-key">C</span>
                     </button>
+                </div>
+                <!-- LOOP 아래 — 지금 빨간 선 위치를 구간 처음/끝으로 -->
+                <div class="sp-ab-mini">
+                    <button type="button" class="sp-ab-btn" id="spSetA" title="지금 위치(빨간 선)를 구간 처음으로 (A 키)" disabled><i class="fas fa-arrow-right-to-bracket fa-flip-horizontal" aria-hidden="true"></i> 처음</button>
+                    <button type="button" class="sp-ab-btn" id="spSetB" title="지금 위치(빨간 선)를 구간 끝으로 (B 키)" disabled>끝 <i class="fas fa-arrow-right-to-bracket" aria-hidden="true"></i></button>
                 </div>
 
                 <!-- 속도 / 볼륨 -->
@@ -11298,7 +11337,7 @@
         // a 1-2 line explanation. Click to open, click anywhere or another
         // help button to close.
         const TOOL_HELP_TEXT = {
-            slowplayer: '음악 파일을 열어 속도를 바꿔 듣고, 원하는 구간만 반복하는 연습용 플레이어예요. 파일은 내 기기 안에서만 재생돼요.\n\n• 파일 열기 버튼을 누르거나 파일을 화면에 끌어다 놓으세요 (mp3·wav·m4a 등).\n• 파형을 클릭하면 재생 위치(빨간 선)가 그 지점으로 옮겨져요. 재생 중이면 거기서부터 이어서 재생되고, 정지 상태면 위치만 옮겨집니다. 우측 하단 슬라이더로 파형을 확대할 수 있어요.\n• 구간반복: 파형 양 끝 핸들을 끌거나 마우스로 파형을 드래그하면 구간이 잡히고, 구간 정보가 파형 아래에 표시돼요. LOOP 로 반복을 켜고 끄고, CLEAR 로 구간을 해제합니다. 반복이 켜진 상태에서 재생을 누르면 구간 시작점부터 재생돼요.\n• 마커: 파형 위 띠를 누르거나 M 키로 지금 위치에 표시해요. 마커를 누르면 그 위치로 이동, 끌면 옮기기, 더블클릭하면 삭제돼요.\n• 속도: 0.5x~1.5x 버튼으로 바로 고르거나, “직접” 버튼을 눌러 나오는 슬라이더·화살표 버튼으로 0.25x~2x 를 0.05 단위로 조절해요. 마지막에 맞춘 속도는 “직접” 버튼 아래에 남아서, 다시 누르면 그 속도로 돌아가요. 기본은 음정 유지, 피치 변동을 켜면 음정도 함께 변해요.\n• 로우컷/하이컷: 로우컷을 오른쪽으로 올리면 저음(베이스·킥)이, 하이컷을 왼쪽으로 내리면 고음(심벌·보컬 치찰음)이 깎여요. 기타 소리만 또렷하게 듣고 싶을 때 써 보세요. 값을 누르면 끔으로 돌아가요.\n• 단축키: 스페이스=재생/일시정지, ←/→=5초 이동(Shift 는 1초), ↑/↓=속도 0.05, A/B=지금 위치를 구간 시작/끝으로, L=구간반복, C=구간 해제, M=마커 추가.',
+            slowplayer: '음악 파일을 열어 속도를 바꿔 듣고, 원하는 구간만 반복하는 연습용 플레이어예요. 파일은 내 기기 안에서만 재생돼요.\n\n• 파일 열기 버튼을 누르거나 파일을 화면에 끌어다 놓으세요 (mp3·wav·m4a 등).\n• 파형을 클릭하면 재생 위치(빨간 선)가 그 지점으로 옮겨져요. 재생 중이면 거기서부터 이어서 재생되고, 정지 상태면 위치만 옮겨집니다. 파형 위 확대 슬라이더로 최대 100배까지 확대할 수 있어요.\n• 구간반복: 파형 양 끝 핸들을 끌거나 마우스로 파형을 드래그하면 구간이 잡히고, 구간 정보가 파형 아래에 표시돼요. LOOP 아래 처음/끝 버튼을 누르면 지금 빨간 선 위치가 구간의 처음/끝이 돼요. LOOP 로 반복을 켜고 끄고, CLEAR 로 구간을 해제합니다. 반복이 켜진 상태에서 재생을 누르면 구간 시작점부터 재생돼요.\n• 마커: 파형 위 띠를 누르거나 M 키로 지금 위치에 표시해요. 마커를 누르면 그 위치로 이동, 끌면 옮기기, 더블클릭하면 삭제돼요.\n• 속도: 0.5x~1.5x 버튼으로 바로 고르거나, “직접” 버튼을 눌러 나오는 슬라이더·화살표 버튼으로 0.25x~2x 를 0.05 단위로 조절해요. 마지막에 맞춘 속도는 “직접” 버튼 아래에 남아서, 다시 누르면 그 속도로 돌아가요. 기본은 음정 유지, 피치 변동을 켜면 음정도 함께 변해요.\n• 로우컷/하이컷: 로우컷을 오른쪽으로 올리면 저음(베이스·킥)이, 하이컷을 왼쪽으로 내리면 고음(심벌·보컬 치찰음)이 깎여요. 기타 소리만 또렷하게 듣고 싶을 때 써 보세요. 값을 누르면 끔으로 돌아가요.\n• 단축키: 스페이스=재생/일시정지, ←/→=5초 이동(Shift 는 1초), ↑/↓=속도 0.05, A/B=지금 위치를 구간 시작/끝으로, L=구간반복, C=구간 해제, M=마커 추가.',
             loopstation: '마이크로 친 소리를 자동 녹음해 즉시 반복 재생하는 루프스테이션이에요.\n\n• 준비 버튼으로 마이크를 켜고(다시 누르면 감지 중지), RECORD 또는 R 키를 누르면 신호 대기 → 소리가 들어오면 자동 녹음돼요.\n• 녹음 중 RECORD·R·아무 키로 정지하면 즉시 반복 재생. 루프가 도는 동안 다시 녹음하면 위에 겹쳐(오버더빙) 쌓여요.\n• 오토 더빙(녹음 후 자동 재대기)·연속 더빙(정지 전까지 계속) 토글 지원.\n• 스페이스바=재생/일시정지, REVERSE 역재생, UNDO 마지막 레이어 되돌리기.\n• 파형 양옆 핸들로 시작·끝점 트림, 볼륨·속도(10~200%) 페이더 제공.',
             tuner: '기기 마이크로 들어오는 소리의 음높이를 분석해 정확한 튜닝을 알려줍니다. 기타·베이스·우쿨렐레·바이올린 모두 지원해요.',
             metronome: '메트로놈 : BPM에 맞춰 클릭이나 목소리(1/2/3/4)가 나옵니다. 박자(2/4·3/4·4/4·6/8) 기준점을 전환 가능.\n\n드럼 : BPM에 맞춰 드럼 리듬이 재생됩니다. 8비트·16비트·셔플락 등 자주 쓰이는 패턴 모음.\n\n탭 BPM: 박자에 맞춰 키보드/버튼 누르면 BPM 자동 측정.',
@@ -22812,8 +22851,9 @@
     <script>
         (function() {
             const SP_MIN = 0.25, SP_MAX = 2, SP_STEP = 0.05;
-            const PEAKS_PER_SEC = 200;         // 기본 피크 해상도 (초당 버킷 수)
-            const MAX_BASE_PEAKS = 60000;      // 긴 곡은 버킷 수 상한
+            const PEAKS_PER_SEC = 1000;        // 기본 피크 해상도 (초당 버킷 수) — 100배 확대 대비
+            const MAX_BASE_PEAKS = 600000;     // 긴 곡은 버킷 수 상한 (~10분)
+            const MAX_ZOOM = 100;              // 파형 최대 확대 배율
             const MIN_GAP_SEC = 0.1;           // A-B 최소 간격
             const SKIP_SEC = 5;
             const MAX_DECODE_BYTES = 200 * 1024 * 1024;  // 이보다 크면 파형 생략(재생만)
@@ -22823,7 +22863,7 @@
             let sp_objUrl = null;
             let sp_dur = 0;                 // 곡 길이(초)
             let sp_basePeaks = null;        // {min,max} 고정 해상도 피크
-            let sp_peaks = null;            // 캔버스 폭에 맞춘 피크
+            let sp_viewCache = null;        // 보이는 구간 피크 캐시 {key, min, max}
             let sp_loopOn = false;
             let sp_a = 0, sp_b = 0;         // 구간 시작/끝 (초)
             let sp_inRegion = false;        // 재생 위치가 구간 안에 들어온 적 있는지 (B 통과 감지용)
@@ -22858,7 +22898,7 @@
             // 구간이 곡 전체가 아닌 범위로 지정돼 있는지
             function hasRegion() { return hasFile() && (sp_a > 0.001 || sp_b < sp_dur - 0.001); }
             function fracX(clientX) {
-                var r = $('spWave').getBoundingClientRect();
+                var r = $('spWaveInner').getBoundingClientRect();   // 확대된 전체 폭 기준
                 return Math.max(0, Math.min(1, (clientX - r.left) / r.width));
             }
 
@@ -22897,10 +22937,10 @@
                 try { sp_audio.pause(); } catch (e) {}
                 if (sp_objUrl) { try { URL.revokeObjectURL(sp_objUrl); } catch (e) {} }
                 sp_objUrl = URL.createObjectURL(file);
-                sp_dur = 0; sp_basePeaks = null; sp_peaks = null;
+                sp_dur = 0; sp_basePeaks = null; sp_viewCache = null;
                 sp_loopOn = false; sp_a = 0; sp_b = 0; sp_inRegion = false;
                 sp_markers = [];
-                if (sp_zoom !== 1) { $('spZoom').value = 100; setZoom(1); }
+                if (sp_zoom !== 1) { $('spZoom').value = 0; setZoom(1); }
                 sp_audio.src = sp_objUrl;
                 applyRate();
                 $('spFileName').textContent = file.name;
@@ -22925,7 +22965,7 @@
                 }).then(function(buf) {
                     if (token !== sp_loadToken) return;
                     sp_basePeaks = computeBasePeaks(buf);
-                    resamplePeaks();
+                    sp_viewCache = null;
                     setSub('파일은 내 기기 안에서만 재생되고 서버로 전송되지 않아요');
                     updateUi(); draw();
                 }).catch(function() {
@@ -22958,27 +22998,29 @@
                 }
                 return { min: mn, max: mx };
             }
-            // 기본 피크 → 현재 캔버스 폭(확대 반영)에 맞춰 재집계
-            function resamplePeaks() {
-                var c = $('spWave');
-                if (!c || !sp_basePeaks) { sp_peaks = null; return; }
-                var cols = c.width, nb = sp_basePeaks.min.length;
-                var bmn = sp_basePeaks.min, bmx = sp_basePeaks.max;
-                var step = nb / cols;
-                var mn = new Float32Array(cols), mx = new Float32Array(cols);
-                for (var x = 0; x < cols; x++) {
-                    var s = Math.floor(x * step), e = Math.floor((x + 1) * step);
-                    if (s >= nb) s = nb - 1;
-                    if (e <= s) e = s + 1;
-                    if (e > nb) e = nb;
+            // 지금 화면에 보이는 구간만 캔버스 열 수에 맞춰 피크 집계 (스크롤/확대/크기 바뀔 때만 다시)
+            function visiblePeaks(W, dpr, sl, innerW) {
+                if (!sp_basePeaks || innerW <= 0) return null;
+                var key = W + '|' + sl + '|' + innerW;
+                if (sp_viewCache && sp_viewCache.key === key) return sp_viewCache;
+                var bmn = sp_basePeaks.min, bmx = sp_basePeaks.max, nb = bmn.length;
+                var mn = new Float32Array(W), mx = new Float32Array(W);
+                for (var x = 0; x < W; x++) {
+                    var s0 = Math.floor((sl + x / dpr) / innerW * nb);
+                    var e0 = Math.floor((sl + (x + 1) / dpr) / innerW * nb);
+                    if (s0 >= nb) { mn[x] = 0; mx[x] = 0; continue; }
+                    if (s0 < 0) s0 = 0;
+                    if (e0 <= s0) e0 = s0 + 1;
+                    if (e0 > nb) e0 = nb;
                     var lo = 1, hi = -1;
-                    for (var i = s; i < e; i++) {
-                        if (bmn[i] < lo) lo = bmn[i];
-                        if (bmx[i] > hi) hi = bmx[i];
+                    for (var k = s0; k < e0; k++) {
+                        if (bmn[k] < lo) lo = bmn[k];
+                        if (bmx[k] > hi) hi = bmx[k];
                     }
                     mn[x] = lo; mx[x] = hi;
                 }
-                sp_peaks = { min: mn, max: mx };
+                sp_viewCache = { key: key, min: mn, max: mx };
+                return sp_viewCache;
             }
 
             // ─── 재생 / 이동 ──────────────────────────────────────────
@@ -23122,6 +23164,7 @@
                 if (!hasFile()) return;
                 sp_a = Math.min(sp_audio.currentTime, sp_dur - MIN_GAP_SEC);
                 if (sp_b - sp_a < MIN_GAP_SEC) sp_b = sp_dur;   // 끝점보다 뒤를 찍으면 끝점은 곡 끝으로
+                sp_loopOn = true;
                 sp_inRegion = true;
                 updateUi(); draw();
             }
@@ -23146,7 +23189,7 @@
             }
             function updateUi() {
                 var has = hasFile();
-                ['spStartBtn', 'spBackBtn', 'spPlayBtn', 'spFwdBtn', 'spLoopBtn'].forEach(function(id) {
+                ['spStartBtn', 'spBackBtn', 'spPlayBtn', 'spFwdBtn', 'spLoopBtn', 'spSetA', 'spSetB'].forEach(function(id) {
                     var b = $(id); if (b) b.disabled = !has;
                 });
                 var play = $('spPlayBtn');
@@ -23189,41 +23232,47 @@
             }
 
             // ─── 파형 ─────────────────────────────────────────────────
+            // 캔버스는 항상 화면(스크롤 영역) 폭만큼만 — 확대는 inner 폭으로 표현하고
+            // 캔버스를 스크롤 위치에 붙여 보이는 구간만 그린다. (100배 확대해도 캔버스 한계 안 넘음)
             function sizeCanvas() {
-                var c = $('spWave'); if (!c) return;
-                var r = c.getBoundingClientRect();
+                var c = $('spWave'), scroll = $('spWaveScroll'); if (!c || !scroll) return;
                 var dpr = window.devicePixelRatio || 1;
-                c.width = Math.max(1, Math.round(r.width * dpr));
+                var w = scroll.clientWidth;
+                c.style.width = w + 'px';
+                var r = c.getBoundingClientRect();
+                c.width = Math.max(1, Math.round(w * dpr));
                 c.height = Math.max(1, Math.round(r.height * dpr));
-                resamplePeaks();
+                sp_viewCache = null;
                 draw();
             }
+            function zoomToSlider(z) { return Math.round(Math.log(z) / Math.log(MAX_ZOOM) * 1000); }
+            function sliderToZoom(v) { return Math.pow(MAX_ZOOM, v / 1000); }
             function setZoom(z) {
-                z = Math.max(1, Math.min(8, z));
-                var scroll = $('spWaveScroll'), c = $('spWave'), inner = $('spWaveInner');
-                var dpr = window.devicePixelRatio || 1;
+                z = Math.max(1, Math.min(MAX_ZOOM, z));
+                var scroll = $('spWaveScroll'), inner = $('spWaveInner');
                 var centerFrac = 0.5;
-                if (scroll && c && c.width > 0) {
-                    centerFrac = (scroll.scrollLeft + scroll.clientWidth / 2) / (c.width / dpr);
+                if (scroll && inner && inner.clientWidth > 0) {
+                    centerFrac = (scroll.scrollLeft + scroll.clientWidth / 2) / inner.clientWidth;
                 }
                 sp_zoom = z;
                 if (inner) inner.style.width = (z * 100) + '%';
-                sizeCanvas();
-                if (scroll && c) {
-                    var Wcss = c.width / dpr;
+                var lbl = $('spZoomVal');
+                if (lbl) lbl.textContent = (z < 10 ? z.toFixed(1) : Math.round(z)) + '배';
+                if (scroll && inner) {
                     sp_autoScrolling = true;
-                    scroll.scrollLeft = Math.max(0, centerFrac * Wcss - scroll.clientWidth / 2);
+                    scroll.scrollLeft = Math.max(0, centerFrac * inner.clientWidth - scroll.clientWidth / 2);
                     sp_autoScrolling = false;
                 }
+                sizeCanvas();
             }
             // 확대 상태에서 재생 커서가 화면 밖으로 나가면 따라가기 (직접 스크롤 직후엔 잠시 보류)
             function followPlayhead() {
                 if (sp_zoom <= 1 || !hasFile() || sp_audio.paused) return;
                 var now = (window.performance && performance.now) ? performance.now() : Date.now();
                 if (now < sp_userScrollUntil) return;
-                var scroll = $('spWaveScroll'), c = $('spWave');
-                if (!scroll || !c) return;
-                var Wcss = c.width / (window.devicePixelRatio || 1);
+                var scroll = $('spWaveScroll'), inner = $('spWaveInner');
+                if (!scroll || !inner) return;
+                var Wcss = inner.clientWidth;
                 var cx = (sp_audio.currentTime / sp_dur) * Wcss;
                 var view = scroll.clientWidth, left = scroll.scrollLeft, margin = view * 0.12;
                 var target = null;
@@ -23236,13 +23285,18 @@
                 }
             }
             function draw() {
-                var c = $('spWave'); if (!c) return;
+                var c = $('spWave'), scroll = $('spWaveScroll'), inner = $('spWaveInner'); if (!c || !scroll || !inner) return;
                 var g = c.getContext('2d'), W = c.width, H = c.height, mid = H / 2;
                 var dpr = window.devicePixelRatio || 1;
+                var sl = scroll.scrollLeft, innerW = inner.clientWidth || 1;
+                c.style.left = sl + 'px';   // 캔버스를 지금 보이는 위치에 붙임
+                // 시간(초) → 캔버스 x(px)
+                function tx(t) { return ((t / sp_dur) * innerW - sl) * dpr; }
                 g.clearRect(0, 0, W, H);
                 g.fillStyle = (cssVar('--green-mid') || '#52a872');
-                if (sp_peaks && hasFile()) {
-                    var mn = sp_peaks.min, mx = sp_peaks.max, scale = mid * 0.92;
+                var vp = hasFile() ? visiblePeaks(W, dpr, sl, innerW) : null;
+                if (vp) {
+                    var mn = vp.min, mx = vp.max, scale = mid * 0.92;
                     for (var x = 0; x < mx.length; x++) {
                         var yTop = mid - mx[x] * scale, yBot = mid - mn[x] * scale;
                         var h = yBot - yTop; if (h < 1) h = 1;
@@ -23256,10 +23310,10 @@
                 if (!hasFile()) return;
                 // 구간반복 중 — 구간 바깥 디밍 + 경계선
                 if (sp_loopOn) {
-                    var sX = sp_a / sp_dur * W, eX = sp_b / sp_dur * W;
+                    var sX = tx(sp_a), eX = tx(sp_b);
                     g.fillStyle = 'rgba(15,25,20,0.46)';
-                    if (sX > 0) g.fillRect(0, 0, sX, H);
-                    if (eX < W) g.fillRect(eX, 0, W - eX, H);
+                    if (sX > 0) g.fillRect(0, 0, Math.min(sX, W), H);
+                    if (eX < W) g.fillRect(Math.max(0, eX), 0, W - Math.max(0, eX), H);
                     g.fillStyle = (cssVar('--green-deep') || '#2a6b4a');
                     g.fillRect(sX, 0, dpr, H);
                     g.fillRect(eX - dpr, 0, dpr, H);
@@ -23267,10 +23321,10 @@
                 // 마커 세로선
                 if (sp_markers.length) {
                     g.fillStyle = 'rgba(240,138,36,0.75)';
-                    for (var mi = 0; mi < sp_markers.length; mi++) g.fillRect(sp_markers[mi] / sp_dur * W - dpr / 2, 0, dpr, H);
+                    for (var mi = 0; mi < sp_markers.length; mi++) g.fillRect(tx(sp_markers[mi]) - dpr / 2, 0, dpr, H);
                 }
                 // 재생 위치 커서
-                var cx = (sp_audio.currentTime / sp_dur) * W;
+                var cx = tx(sp_audio.currentTime);
                 g.fillStyle = '#e23b3b';
                 g.fillRect(cx, 0, 2 * dpr, H);
             }
@@ -23381,6 +23435,8 @@
                 $('spFwdBtn').onclick = function() { seek(sp_audio.currentTime + SKIP_SEC); };
                 $('spLoopBtn').onclick = function() { setLoop(!sp_loopOn); };
                 $('spClearBtn').onclick = clearAB;
+                $('spSetA').onclick = setA;
+                $('spSetB').onclick = setB;
 
                 // 속도 — 버튼(프리셋) + 슬라이더(0.05 단위)
                 $('spSpeedChips').addEventListener('click', function(e) {
@@ -23413,8 +23469,11 @@
                 var ms = $('masterVolSlider'); if (ms) ms.addEventListener('input', applyVolume);
 
                 // 확대/축소
-                $('spZoom').oninput = function(e) { setZoom((+e.target.value) / 100); };
+                $('spZoom').oninput = function(e) { setZoom(sliderToZoom(+e.target.value)); };
+                var _spScrollRaf = 0;
                 $('spWaveScroll').addEventListener('scroll', function() {
+                    // 보이는 구간만 그리므로 스크롤하면 다시 그림
+                    if (!_spScrollRaf) _spScrollRaf = requestAnimationFrame(function() { _spScrollRaf = 0; draw(); });
                     if (sp_autoScrolling) return;
                     var now = (window.performance && performance.now) ? performance.now() : Date.now();
                     sp_userScrollUntil = now + 1200;
@@ -23422,10 +23481,7 @@
 
                 // 구간 핸들(A/B) 드래그 — 잡는 순간 구간반복이 켜진다
                 (function() {
-                    function fracFromClientX(clientX) {
-                        var r = $('spWave').getBoundingClientRect();
-                        return Math.max(0, Math.min(1, (clientX - r.left) / r.width));
-                    }
+                    function fracFromClientX(clientX) { return fracX(clientX); }
                     function bind(el, isStart) {
                         if (!el) return;
                         var dragging = false, moved = false;
@@ -23464,10 +23520,7 @@
                 (function() {
                     var c = $('spWave'); if (!c) return;
                     var downX = null, startFrac = 0, selecting = false, suppressClick = false;
-                    function frac(clientX) {
-                        var r = c.getBoundingClientRect();
-                        return Math.max(0, Math.min(1, (clientX - r.left) / r.width));
-                    }
+                    function frac(clientX) { return fracX(clientX); }
                     c.addEventListener('pointerdown', function(e) {
                         if (!hasFile() || e.pointerType !== 'mouse' || e.button !== 0) return;
                         downX = e.clientX; startFrac = frac(e.clientX); selecting = false;
