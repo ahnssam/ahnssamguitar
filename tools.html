@@ -16343,11 +16343,18 @@
             //   { type: 'loop:apply', preset } — 프리셋 적용 (빌더의 폼 데이터)
             //   { type: 'loop:start' }         — 재생 시작 (loop 모드로 전환 후)
             //   { type: 'loop:stop' }          — 재생 정지
+            //   { type: 'metro:bpm', bpm }     — 템포만 바꾸기 (학생관리 리더보드가 수업 중인 학생의 템포로 맞출 때)
             window.addEventListener('message', function(e) {
                 var msg = e && e.data;
                 if (!msg || typeof msg !== 'object') return;
                 try {
-                    if (msg.type === 'loop:apply' && msg.preset) {
+                    if (msg.type === 'metro:bpm') {
+                        var nb = Math.round(Number(msg.bpm));
+                        if (!(nb >= 20 && nb <= 240) || typeof window.updateBPM !== 'function') return;
+                        window.updateBPM(nb);
+                        var bs = document.getElementById('bpmSlider');
+                        if (bs) bs.value = nb;
+                    } else if (msg.type === 'loop:apply' && msg.preset) {
                         // 반주 모드로 전환
                         if (typeof window.updateSoundMode === 'function' && soundMode !== 'loop') {
                             window.updateSoundMode('loop');
