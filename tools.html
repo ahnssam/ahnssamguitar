@@ -15585,7 +15585,8 @@
                     if (typeof _localToolToken === 'function' && _localToolToken()) {
                         var ltPatch = { name: patch.name, artist: patch.artist, bpm: patch.bpm,
                                         difficulty: patch.difficulty,
-                                        capo: patch.capo || '' };   // 빈 값이어야 '카포 없음'으로 바뀐다 (null 은 기존값 유지)
+                                        // 카포 없음으로 바꿀 땐 '' 이어야 지워진다(null·생략은 기존값 유지). 원래 없던 곡은 안 보낸다.
+                                        capo: patch.capo || (p.capo ? '' : undefined) };
                         msg.textContent = '저장 중…';
                         try {
                             var ok = await _localToolRpc('save_chart_for_tool',
@@ -15847,6 +15848,14 @@
                 try { if (typeof window.updateSoundMode === 'function') window.updateSoundMode('loop'); } catch (e) {}
                 applyLoopPreset(p);
                 return true;
+            };
+            // 로컬 툴(악보검색) 곡 목록에서 곡 정보(곡명·아티스트·BPM·카포·레벨)를 고치면 — 여기 곡 목록에도 반영
+            window.__onChartMetaFromTool = function(id, patch) {
+                var p = (_loopPresetsCache || []).find(function(x) { return x.id === id; });
+                if (!p || !patch) return;
+                Object.assign(p, patch);
+                if (_loopActivePresetId === id) { try { _updateLoopCapoNote(p.capo); } catch (e) {} }
+                try { var s = document.getElementById('loopPresetSearch'); if (s && document.activeElement === s) renderLoopPresetList(s.value); } catch (e) {}
             };
             // 로컬 툴이 현재 편집 상태를 통째로 가져갈 때 사용 (리듬패턴 병합 후 한 번에 저장)
             window.localToolSerialize = function() {
