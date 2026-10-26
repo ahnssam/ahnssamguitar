@@ -8702,7 +8702,9 @@
         .lp-chart .lp-row > .loop-cell { flex: 1 1 0; min-width: 0; break-inside: avoid; }
         /* 인쇄 — 짧은 마디(2/4 등)는 보통 마디의 3/4 폭, 줄 끝은 그만큼 비워 화면과 같게 */
         .lp-chart .lp-row > .loop-cell.loop-half { flex-grow: 0.75; }
-        .lp-chart .lp-row > .lp-half-pad { flex: 0 1 0; min-width: 0; visibility: hidden; }
+        /* 줄 끝 빈 자리 — 앞에 생기는 마디 사이 간격(0.35rem)을 음수 여백으로 지운다.
+           안 지우면 간격이 하나 더 생긴 만큼 이 줄의 마디들이 조금씩 좁아져 위아래 줄과 세로줄이 어긋난다 */
+        .lp-chart .lp-row > .lp-half-pad { flex: 0 1 0; min-width: 0; visibility: hidden; margin-left: -0.35rem; }
         /* 송폼 라벨 줄은 위 공간(margin-top) 유지 → 화면처럼 라벨이 마디 위에 뜸 */
         .lp-chart .lp-row.lp-row-sf { margin-top: 42px; }
         .lp-chart .loop-cell-half.empty { visibility: hidden; }   /* 빈 '+' 칸 숨김 */
@@ -16884,6 +16886,10 @@
                         '#chartDeck .dk-barname{display:flex;align-items:center;gap:10px;flex-wrap:wrap;',
                         'font-size:.76rem;color:var(--green-deep);padding:3px 2px}',
                         '#chartDeck .dk-barname .dk-chk{margin-left:0;font-weight:600;opacity:.85}',
+                        '#chartDeck .dk-barno-wrap{display:inline-flex;align-items:center;gap:3px;font-weight:700}',
+                        '#chartDeck .dk-barno{width:3.2em;padding:2px 4px;border:1.5px solid rgba(42,107,74,.45);border-radius:6px;',
+                        'font:inherit;font-weight:800;text-align:center;color:var(--green-deep);background:var(--bg-panel,#fff)}',
+                        '#chartDeck .dk-barno:focus{outline:none;border-color:var(--green-deep);box-shadow:0 0 0 2px rgba(42,107,74,.15)}',
                         '#chartDeck .dk-grid{display:flex;gap:4px}',
                         '#chartDeck .dk-step{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:1px}',
                         '#chartDeck .dk-grid .dk-step.downbeat:not(:first-child){border-left:1px dashed rgba(60,90,75,.32);margin-left:3px;padding-left:3px}',
@@ -17041,12 +17047,14 @@
                         return '<option value="' + _deckEsc(x) + '"' + (p.section === x ? ' selected' : '') + '>' +
                                _deckEsc(x) + '</option>';
                     })).join('');
-                    // 마디 전용 리듬은 이름 대신 '몇 마디 리듬'으로 고정 표시
+                    // 마디 전용 리듬은 이름 대신 '몇 마디 리듬' — 마디 번호는 칸에서 바로 고쳐 다른 마디로 옮길 수 있다
                     var isBar = (p.bar !== null && p.bar !== undefined);
                     return '<div class="dk-box' + (isBar ? ' barrhy' : '') + '">' +
                         '<div class="dk-top">' +
                             (isBar
-                              ? '<span class="dk-name dk-barname">♪ ' + ((p.bar | 0) + 1) + '마디 리듬' +
+                              ? '<span class="dk-name dk-barname"><span class="dk-barno-wrap">♪ ' +
+                                '<input class="dk-barno" type="text" inputmode="numeric" data-pbar="' + pi + '" value="' + ((p.bar | 0) + 1) +
+                                '" title="몇 번째 마디의 리듬인지 — 숫자를 바꾸고 Enter">마디 리듬</span>' +
                                 '<label class="dk-chk" title="↓↑✕ 방향 표시"><input type="checkbox" data-parrow="' + pi + '"' +
                                 (p.arrows !== false ? ' checked' : '') + '> 화살표</label>' +
                                 '<label class="dk-chk" title="켜면 마디 안 코드 오른쪽에, 끄면 마디 아래 줄에">' +
@@ -17348,6 +17356,28 @@
                         if (el.hasAttribute('data-pinbar')) {
                             p = _deckPats[+el.getAttribute('data-pinbar')];
                             if (p) { p.inbar = el.checked; _deckBarInBar = el.checked; _deckRender(); }
+                            return;
+                        }
+                        // 마디 번호 칸 — 다른 마디로 옮기기 (Enter 또는 칸을 벗어날 때)
+                        if (el.hasAttribute('data-pbar')) {
+                            p = _deckPats[+el.getAttribute('data-pbar')];
+                            if (!p) return;
+                            var cur = (p.bar | 0) + 1;
+                            var nb = parseInt(String(el.value).replace(/[^0-9]/g, ''), 10);
+                            var max = loopBars;
+                            if (!nb || nb < 1 || nb > max) {
+                                loopToast('1 ~ ' + max + ' 사이의 마디 번호를 넣어주세요');
+                                el.value = cur; return;
+                            }
+                            if (nb === cur) { el.value = cur; return; }
+                            if (_deckPats.some(function(q) { return q !== p && q.bar === nb - 1; })) {
+                                loopToast(nb + '마디엔 이미 리듬이 있어요');
+                                el.value = cur; return;
+                            }
+                            p.bar = nb - 1;
+                            p.name = nb + '마디 리듬';
+                            _deckRender();
+                            loopToast(cur + '마디 리듬을 ' + nb + '마디로 옮겼어요');
                             return;
                         }
                         if (el.hasAttribute('data-ps')) {
@@ -17755,15 +17785,18 @@
             function _barRhyStrip(items) {
                 var strip = document.createElement('div');
                 strip.className = 'lp-barrhy-strip';
-                // 짧은 마디(2/4 등)가 있는 줄이면 띠 칸도 마디 폭 비율대로 (+ 줄 끝 빈 자리)
+                // 짧은 마디(2/4 등)가 있는 줄이면 띠도 마디 칸과 같은 16칸 격자(보통 마디 4칸, 짧은 마디 3칸)로 —
+                //   비율(fr)로만 나누면 '줄 끝 빈 자리' 앞에 간격이 하나 더 생겨 위 마디들과 조금씩 어긋난다
+                var rw = null;
                 try {
-                    var rw = items.length ? _loopRowWeights(Math.floor((items[0].bar | 0) / 4)) : null;
-                    if (rw) strip.style.gridTemplateColumns =
-                        rw.w.map(function(v) { return 'minmax(0,' + v + 'fr)'; }).join(' ') + ' minmax(0,' + rw.rest + 'fr)';
-                } catch (e) {}
+                    rw = items.length ? _loopRowWeights(Math.floor((items[0].bar | 0) / 4)) : null;
+                    if (rw) strip.style.gridTemplateColumns = 'repeat(' + (LOOP_COLS * 4) + ', minmax(0, 1fr))';
+                } catch (e) { rw = null; }
+                var startCol = 1;
                 for (var c = 0; c < 4; c++) {
                     var slot = document.createElement('div');
                     slot.className = 'lp-barrhy';
+                    if (rw) { slot.style.gridColumn = startCol + ' / span ' + rw.w[c]; startCol += rw.w[c]; }
                     var hit = items.filter(function(r) { return (r.bar | 0) % 4 === c; })[0];
                     if (hit) {
                         slot.innerHTML = _svgFit(hit.svg, 0.85, 9);
@@ -17832,14 +17865,20 @@
                     var target = (b.right - a.left) / zoom;              // 코드 칸 영역 폭(px)
                     var offset = (a.left - sr.left) / zoom;              // 리듬 띠 칸 왼쪽에서 첫 코드 칸까지
                     if (target < 20) return;
-                    var bars = (r.bars === 2) ? 2 : 1, n = r.meter * bars, gap = (bars - 1) * 12, scale = 0.85;
+                    // 박 간격은 코드 칸에 그대로 맞추고(칸 폭 / 칸 수), 음표 모양만 작게 그린다 — 축소 배율을 낮추고 그만큼 칸을 넓게 그림
+                    var bars = (r.bars === 2) ? 2 : 1, n = r.meter * bars, gap = (bars - 1) * 12, scale = 0.75;
                     var cw = (target / scale - gap) / n;
                     var svg = window._deckRhythmSvg({ meter: r.meter, bars: bars, steps: r.steps, accents: r.accents || [] },
                                                     cw, r.arrows === false);
                     slot.innerHTML = _svgFit(svg, scale, 9);
-                    slot.style.paddingLeft = Math.max(0, Math.round(offset)) + 'px';
+                    // 음표는 칸 한가운데(칸 폭의 절반)에 찍히는데, 코드 글자는 칸 왼쪽에서 들여쓰기만큼 안쪽에서 시작한다.
+                    //   → 음표가 코드 글자보다 왼쪽에 보이므로, 음표 중심이 코드 첫 글자 가운데쯤(들여쓰기 + 6px) 오도록 오른쪽으로 민다
+                    var indent = parseFloat(getComputedStyle(halves[0]).textIndent) || 0;
+                    var stepPx = cw * scale;
+                    var shift = Math.max(0, indent + 6 - stepPx / 2);
+                    slot.style.paddingLeft = Math.max(0, Math.round(offset + shift)) + 'px';
                     var el = slot.querySelector('svg');
-                    if (el) el.style.margin = '0';
+                    if (el) { el.style.margin = '0'; el.style.maxWidth = 'none'; }   // 오른쪽으로 민 만큼 줄어들면 박 간격이 코드 칸과 어긋난다
                 });
             }
             window._barRhyFit = _barRhyFit;
