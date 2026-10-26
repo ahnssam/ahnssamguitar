@@ -15462,6 +15462,8 @@
             //   로그인 안 했거나 다른 사용자에겐 연필/공개토글/삭제가 아예 렌더링되지 않는다.
             function _loopCanEdit(p) {
                 if (!p) return false;
+                // 로컬 툴(악보검색) — 로그인 대신 토큰으로 곡명·아티스트·BPM·카포·레벨을 고칠 수 있다
+                if (typeof _localToolToken === 'function' && _localToolToken()) return true;
                 var u = (typeof loopCurrentUser === 'function') ? loopCurrentUser() : null;
                 if (!u) return false;
                 if (typeof _loopIsAdmin === 'function' && _loopIsAdmin()) return true;
@@ -15481,6 +15483,8 @@
                 }
                 if (curCapo && curCapo > 5) capoOpts += '<option value="' + curCapo + '" selected>' + curCapo + '</option>';
                 var pub = (p.is_public !== false);
+                // 로컬 툴(악보검색)은 토큰 저장 통로가 장르·공개설정·삭제를 지원하지 않아 그 칸은 뺀다
+                var lt = (typeof _localToolToken === 'function') && !!_localToolToken();
                 return '<div class="loop-preset-edit" data-editing="' + _escHtml(p.id) + '">' +
                     '<div class="loop-pe-row">' +
                         '<label>곡명<input type="text" data-f="name" value="' + _escHtml(p.name || '') + '"></label>' +
@@ -15488,15 +15492,16 @@
                     '</div>' +
                     '<div class="loop-pe-row">' +
                         '<label>레벨<select data-f="difficulty">' + lvOpts + '</select></label>' +
-                        '<label>장르<input type="text" data-f="genre" value="' + _escHtml(p.genre || '') + '"></label>' +
+                        (lt ? '' : '<label>장르<input type="text" data-f="genre" value="' + _escHtml(p.genre || '') + '"></label>') +
                         '<label>BPM<input type="number" min="20" max="240" data-f="bpm" value="' + (p.bpm || 90) + '"></label>' +
                         '<label>카포<select data-f="capo">' + capoOpts + '</select></label>' +
                     '</div>' +
                     '<div class="loop-pe-row loop-pe-foot">' +
+                        (lt ? '' :
                         '<button type="button" class="loop-pe-vis' + (pub ? ' pub' : '') + '" data-vis="1">' +
                             (pub ? '<i class="fas fa-globe"></i> 전체 공개' : '<i class="fas fa-tree"></i> 나만 보기') +
                         '</button>' +
-                        '<button type="button" class="loop-pe-del" title="이 프리셋 삭제"><i class="fas fa-trash"></i> 삭제</button>' +
+                        '<button type="button" class="loop-pe-del" title="이 프리셋 삭제"><i class="fas fa-trash"></i> 삭제</button>') +
                         '<span class="loop-pe-sp"></span>' +
                         '<button type="button" class="loop-pe-cancel">취소</button>' +
                         '<button type="button" class="loop-pe-save">저장</button>' +
@@ -15513,7 +15518,7 @@
                 if (!p) return;
                 var visBtn = box.querySelector('.loop-pe-vis');
                 var pubState = (p.is_public !== false);
-                visBtn.onclick = function(e) {
+                if (visBtn) visBtn.onclick = function(e) {   // 로컬 툴에선 공개 버튼이 없다
                     e.stopPropagation();
                     pubState = !pubState;
                     visBtn.classList.toggle('pub', pubState);
@@ -15576,6 +15581,32 @@
                         capo: (get('capo') || '').trim() ? ('Capo ' + parseInt(get('capo'), 10)) : null,
                         is_public: pubState
                     };
+                    // 로컬 툴(악보검색) — 토큰 RPC 로 곡명·아티스트·BPM·카포·레벨만 저장 (장르·공개설정은 통로가 없음)
+                    if (typeof _localToolToken === 'function' && _localToolToken()) {
+                        var ltPatch = { name: patch.name, artist: patch.artist, bpm: patch.bpm,
+                                        difficulty: patch.difficulty,
+                                        capo: patch.capo || '' };   // 빈 값이어야 '카포 없음'으로 바뀐다 (null 은 기존값 유지)
+                        msg.textContent = '저장 중…';
+                        try {
+                            var ok = await _localToolRpc('save_chart_for_tool',
+                                { token: _localToolToken(), chart_id: id, patch: ltPatch });
+                            if (!ok) { msg.textContent = '저장 실패'; return; }
+                            Object.assign(p, ltPatch, { capo: ltPatch.capo || null });   // 캐시 즉시 반영
+                            if (_loopActivePresetId === id) { try { _updateLoopCapoNote(p.capo); } catch (e5) {} }
+                            // 악보검색 화면(곡 목록·제목)도 바로 갱신
+                            try { if (window.parent !== window && typeof window.parent.__onChartMetaSaved === 'function')
+                                      window.parent.__onChartMetaSaved(id, { name: p.name, artist: p.artist, bpm: p.bpm,
+                                                                             difficulty: p.difficulty, capo: p.capo }); } catch (e6) {}
+                            _loopEditingId = null;
+                            var sLt = document.getElementById('loopPresetSearch');
+                            try { renderSubFilterRow(); } catch (er2) {}
+                            renderLoopPresetList(sLt ? sLt.value : '');
+                            loopToast('곡 정보를 저장했어요');
+                        } catch (err2) {
+                            msg.textContent = '저장 실패: ' + (err2 && err2.message ? err2.message : err2);
+                        }
+                        return;
+                    }
                     var authc = (typeof loopAuthClient === 'function') ? loopAuthClient() : null;
                     if (!authc) { msg.textContent = '로그인이 필요해요.'; return; }
                     // 소유자 없는 공용 곡을 '나만 보기' 로 바꾸면 RLS상 아무도 못 보게 되므로
