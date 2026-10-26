@@ -8079,6 +8079,21 @@
             display: flex; align-items: center; justify-content: center;
         }
         .loop-cell-del:hover { background: #e04b39; transform: scale(1.12); }
+        /* 편집 모드 — 마디 아래쪽 1박 자리 ＋(왼쪽에 빈 마디 추가) · 4박 자리 ＋(오른쪽에 빈 마디 추가) */
+        .loop-cell-ins {
+            position: absolute; bottom: -9px; z-index: 12; transform: translateX(-50%);
+            width: 18px; height: 18px; line-height: 1; padding: 0;
+            border-radius: 50%; border: 1.5px solid var(--green-deep);
+            background: #fff; color: var(--green-deep);
+            font-family: inherit; font-size: 0.85rem; font-weight: 800;
+            cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .loop-cell-ins.l { left: 12.5%; }       /* 1박 한가운데 */
+        .loop-cell-ins.r { left: 82%; }         /* 4박 즈음 — 오른쪽 아래 이동 손잡이(⠿)와 안 겹치게 4박 가운데보다 조금 왼쪽 */
+        .loop-cell-ins:hover { background: var(--green-deep); color: #fff; transform: translateX(-50%) scale(1.12); }
+        .loop-cell-ins:disabled { opacity: 0.3; cursor: default; }
+        :root[data-theme="dark"] .loop-cell-ins { background: #1d2a23; color: var(--green-light); border-color: var(--green-light); }
         /* 마디 사이 "틈"에 표시되는 드롭 위치선 —
            document.body 에 fixed 로 붙여 뷰포트 좌표를 쓴다.
            (그리드에 붙이면 offset parent 가 달라져 위치가 어긋남) */
@@ -19338,6 +19353,24 @@
                             });
                         })(i);
                         cell.appendChild(delBtn);
+                        // ─── 편집 모드: 1박 자리 ＋ = 이 마디 왼쪽에, 4박 자리 ＋ = 오른쪽에 빈 마디 추가 ───
+                        [['l', 0, '앞(왼쪽)'], ['r', 1, '뒤(오른쪽)']].forEach(function(spec) {
+                            var insBtn = document.createElement('button');
+                            insBtn.type = 'button';
+                            insBtn.className = 'loop-cell-ins ' + spec[0];
+                            insBtn.textContent = '+';
+                            insBtn.title = (i + 1) + '번 마디 ' + spec[2] + '에 빈 마디 추가';
+                            if (loopBars >= LOOP_BARS_MAX) insBtn.disabled = true;
+                            (function(at) {
+                                insBtn.addEventListener('pointerdown', function(ev) {
+                                    ev.preventDefault(); ev.stopPropagation();
+                                    if (loopActiveCommit) loopActiveCommit();
+                                    closeLoopPicker();
+                                    window.insertLoopBarAt(at);
+                                });
+                            })(i + spec[1]);
+                            cell.appendChild(insBtn);
+                        });
                         // ─── 편집 모드: 마디 이동 손잡이(⠿) ───────────────────
                         //   끌어서 다른 틈에 놓으면 이동, Ctrl/Cmd 누른 채면 복사.
                         var mvBtn = document.createElement('button');
