@@ -11694,11 +11694,11 @@
                 }
                 ytLink.setAttribute('aria-label', isBacking ? '반주 관련 영상' : '메트로놈 관련 영상');
             }
-            // soundMode 강제 — backing → 'loop', metronome → 'click'.
+            // soundMode 강제 — backing → 'loop', metronome → 'click' (학생관리 리더보드에 임베드된 메트로놈은 'drums').
             // updateSoundMode 가 timeSig / clickType / drumRhythm / loopSection
             // 행 표시까지 한꺼번에 처리해줌.
             if (typeof window.updateSoundMode === 'function') {
-                try { window.updateSoundMode(isBacking ? 'loop' : 'click'); } catch(e) {}
+                try { window.updateSoundMode(isBacking ? 'loop' : (window.__embedMetro ? 'drums' : 'click')); } catch(e) {}
             }
         }
 
@@ -15850,6 +15850,11 @@
                 try {
                     if (new URLSearchParams(window.location.search).get('embed') !== '1') return;
                     var isMetro = new URLSearchParams(window.location.search).get('tool') === 'metronome';
+                    window.__embedMetro = isMetro;   // 학생관리 리더보드 메트로놈 — 드럼을 기본으로 (도구 전환 시 soundMode 강제하는 곳에서 사용)
+                    if (isMetro) {
+                        var drumsDefault = function() { try { if (typeof window.updateSoundMode === 'function') window.updateSoundMode('drums'); } catch (e) {} };
+                        if (document.readyState === 'complete') drumsDefault(); else window.addEventListener('load', drumsDefault);
+                    }
                     var go = function() { document.body.classList.add('embed-loop'); if (isMetro) document.body.classList.add('embed-metro'); };
                     if (document.body) go();
                     else document.addEventListener('DOMContentLoaded', go);
