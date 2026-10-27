@@ -7199,6 +7199,16 @@
         body.embed-loop { background: var(--bg-panel, #fff) !important; }
         body.embed-loop .tool-panel { box-shadow: none !important; border: none !important; margin: 0 !important; }
         body.embed-loop .tool-body { padding-top: 4px !important; }
+        /* 임베드 메트로놈(학생관리 리더보드) — 반주처럼 시작(넓게) + TAP(좁게)을 한 줄에, 키 안내(SPACE·ENTER)도 보이게.
+           (칸이 좁아 768px 이하 규칙에 걸려 키 안내가 숨겨지던 것을 다시 켠다) */
+        body.embed-metro .embed-play-row { display: grid; grid-template-columns: 3fr 1fr; column-gap: 0.7rem; align-items: stretch; margin-top: 0.6rem; }
+        body.embed-metro .embed-play-row #metronomeBtn { margin: 0; width: 100%; padding: 0.8rem 1.6rem; }
+        body.embed-metro .embed-play-row #metroTapBtn { margin: 0; width: 100%; flex-direction: column; gap: 0.25rem; padding: 0.55rem 0.8rem; }
+        body.embed-metro #metroTapBtn .tap-icon,
+        body.embed-metro #metroTapBtn .tap-label-long { display: none; }
+        body.embed-metro #metroTapBtn .tap-label-short { display: inline-block; font-size: 0.95rem; font-weight: 700; letter-spacing: 0.06em; }
+        body.embed-metro #metroTapBtn .kbd-hint { margin-left: 0; }
+        body.embed-metro .kbd-hint { display: inline-block; }
         /* 카포 안내 — 초기화 버튼 아래 */
         .loop-capo-note {
             display: flex; align-items: center; gap: 0.35rem;
@@ -15839,9 +15849,22 @@
             (function _applyEmbedMode() {
                 try {
                     if (new URLSearchParams(window.location.search).get('embed') !== '1') return;
-                    var go = function() { document.body.classList.add('embed-loop'); };
+                    var isMetro = new URLSearchParams(window.location.search).get('tool') === 'metronome';
+                    var go = function() { document.body.classList.add('embed-loop'); if (isMetro) document.body.classList.add('embed-metro'); };
                     if (document.body) go();
                     else document.addEventListener('DOMContentLoaded', go);
+                    // 임베드 메트로놈 — 시작 버튼과 TAP 버튼을 한 줄(반주와 같은 모양)로 묶는다. 버튼 동작은 data-action 위임이라 옮겨도 그대로
+                    if (isMetro) {
+                        var row = function() {
+                            var st = document.getElementById('metronomeBtn'), tp = document.getElementById('metroTapBtn');
+                            if (!st || !tp || document.getElementById('embedPlayRow')) return;
+                            var r = document.createElement('div');
+                            r.id = 'embedPlayRow'; r.className = 'embed-play-row';
+                            st.parentNode.insertBefore(r, st);
+                            r.appendChild(st); r.appendChild(tp);
+                        };
+                        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', row); else row();
+                    }
                 } catch (e) {}
             })();
             async function _localToolRpc(fn, body) {
@@ -16361,11 +16384,17 @@
             //   { type: 'loop:start' }         — 재생 시작 (loop 모드로 전환 후)
             //   { type: 'loop:stop' }          — 재생 정지
             //   { type: 'metro:bpm', bpm }     — 템포만 바꾸기 (학생관리 리더보드가 수업 중인 학생의 템포로 맞출 때)
+            //   { type: 'metro:toggle' }       — 재생/정지 (학생관리에서 스페이스)
+            //   { type: 'metro:tap' }          — 탭 템포 한 번 (학생관리에서 엔터)
             window.addEventListener('message', function(e) {
                 var msg = e && e.data;
                 if (!msg || typeof msg !== 'object') return;
                 try {
-                    if (msg.type === 'metro:bpm') {
+                    if (msg.type === 'metro:toggle') {
+                        if (typeof window.toggleMetronome === 'function') window.toggleMetronome();
+                    } else if (msg.type === 'metro:tap') {
+                        if (typeof window.metroTap === 'function') window.metroTap();
+                    } else if (msg.type === 'metro:bpm') {
                         var nb = Math.round(Number(msg.bpm));
                         if (!(nb >= 20 && nb <= 240) || typeof window.updateBPM !== 'function') return;
                         window.updateBPM(nb);
