@@ -6500,14 +6500,11 @@
         .sp-marker:hover::after { border-top-color: #e07812; }
         .sp-marker.dragging { cursor: grabbing; opacity: 0.85; }
         /* LOOP 아래 작은 처음/끝 버튼 — 트랜스포트 오른쪽(LOOP·CLEAR 칸) 아래 */
-        .sp-ab-mini {
-            display: flex; justify-content: flex-end; gap: 0.35rem;
-            margin: -0.55rem 0 1rem auto; width: 29.5%; min-width: 150px;
-        }
+        .sp-ab-mini { display: flex; justify-content: center; gap: 0.4rem; }
         .sp-ab-btn {
-            flex: 1 1 0;
+            flex: 0 0 auto;
             display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem;
-            padding: 0.3rem 0.4rem; border-radius: 8px;
+            padding: 0.32rem 0.7rem; border-radius: 8px; white-space: nowrap;
             background: rgba(42, 107, 74, 0.08); border: 1px solid rgba(42, 107, 74, 0.25);
             color: var(--green-deep);
             font-family: inherit; font-size: 0.74rem; font-weight: 700; cursor: pointer;
@@ -6540,9 +6537,21 @@
         .sp-eq-val.on { color: var(--green-deep); font-weight: 700; }
         :root[data-theme="dark"] .sp-eq-val.on { color: var(--green-light); }
         /* 구간 정보 — 파형 바로 아래, 구간을 지정했을 때만 표시 */
-        .sp-region-info {
-            display: flex; align-items: center; justify-content: center; gap: 0.45rem;
+        /* 파형 아래 줄 — 처음/끝 버튼은 가운데, 구간 정보는 오른쪽 */
+        .sp-under-wave {
+            display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 0.5rem;
             margin: -0.55rem 0 0.9rem;
+        }
+        .sp-under-wave .sp-ab-mini { grid-column: 2; }
+        .sp-under-wave .sp-region-info { grid-column: 3; justify-self: end; }
+        @media (max-width: 640px) {
+            .sp-under-wave { grid-template-columns: 1fr; }
+            .sp-under-wave .sp-ab-mini { grid-column: 1; justify-self: center; }
+            .sp-under-wave .sp-region-info { grid-column: 1; }
+        }
+        .sp-region-info {
+            display: flex; align-items: center; justify-content: flex-end; gap: 0.45rem;
+            margin: 0;
             font-size: 0.82rem; color: var(--text-secondary);
             font-variant-numeric: tabular-nums;
         }
@@ -10957,11 +10966,18 @@
                     <div class="ls-wave-empty" id="spWaveEmpty">음악 파일을 열면 파형이 표시됩니다</div>
                 </div>
 
-                <!-- 구간 정보 (구간을 지정했을 때만) -->
-                <div class="sp-region-info" id="spRegionInfo" hidden>
-                    <i class="fas fa-repeat" aria-hidden="true"></i>
-                    <span>구간 <b id="spRegionRange">0:00.0 ~ 0:00.0</b> (<span id="spRegionLen">0.0</span>초)</span>
-                    <span class="sp-region-state" id="spRegionState">반복 꺼짐</span>
+                <!-- 파형 아래 — 가운데: 지금 빨간 선 위치를 구간 처음/끝으로, 오른쪽: 구간 정보 -->
+                <div class="sp-under-wave">
+                    <div class="sp-ab-mini">
+                        <button type="button" class="sp-ab-btn" id="spSetA" title="지금 위치(빨간 선)를 구간 처음으로 (A 키)" disabled><i class="fas fa-arrow-right-to-bracket fa-flip-horizontal" aria-hidden="true"></i> 지금을 처음으로</button>
+                        <button type="button" class="sp-ab-btn" id="spSetB" title="지금 위치(빨간 선)를 구간 끝으로 (B 키)" disabled>지금을 끝으로 <i class="fas fa-arrow-right-to-bracket" aria-hidden="true"></i></button>
+                    </div>
+                    <!-- 구간 정보 (구간을 지정했을 때만) -->
+                    <div class="sp-region-info" id="spRegionInfo" hidden>
+                        <i class="fas fa-repeat" aria-hidden="true"></i>
+                        <span>구간 <b id="spRegionRange">0:00.0 ~ 0:00.0</b> (<span id="spRegionLen">0.0</span>초)</span>
+                        <span class="sp-region-state" id="spRegionState">반복 꺼짐</span>
+                    </div>
                 </div>
 
                 <!-- 트랜스포트 -->
@@ -10995,11 +11011,6 @@
                         <span class="ls-tp-label">CLEAR</span>
                         <span class="ls-tp-key">C</span>
                     </button>
-                </div>
-                <!-- LOOP 아래 — 지금 빨간 선 위치를 구간 처음/끝으로 -->
-                <div class="sp-ab-mini">
-                    <button type="button" class="sp-ab-btn" id="spSetA" title="지금 위치(빨간 선)를 구간 처음으로 (A 키)" disabled><i class="fas fa-arrow-right-to-bracket fa-flip-horizontal" aria-hidden="true"></i> 처음</button>
-                    <button type="button" class="sp-ab-btn" id="spSetB" title="지금 위치(빨간 선)를 구간 끝으로 (B 키)" disabled>끝 <i class="fas fa-arrow-right-to-bracket" aria-hidden="true"></i></button>
                 </div>
 
                 <!-- 속도 / 볼륨 -->
@@ -11364,7 +11375,7 @@
         // a 1-2 line explanation. Click to open, click anywhere or another
         // help button to close.
         const TOOL_HELP_TEXT = {
-            slowplayer: '음악 파일을 열어 속도를 바꿔 듣고, 원하는 구간만 반복하는 연습용 플레이어예요. 파일은 내 기기 안에서만 재생돼요.\n\n• 파일 열기 버튼을 누르거나 파일을 화면에 끌어다 놓으세요 (mp3·wav·m4a 등).\n• 파형을 클릭하면 재생 위치(빨간 선)가 그 지점으로 옮겨져요. 재생 중이면 거기서부터 이어서 재생되고, 정지 상태면 위치만 옮겨집니다. 파형 위 확대 슬라이더로 최대 100배까지 확대할 수 있어요.\n• 구간반복: 파형 양 끝 핸들을 끌거나 마우스로 파형을 드래그하면 구간이 잡히고, 구간 정보가 파형 아래에 표시돼요. LOOP 아래 처음/끝 버튼을 누르면 지금 빨간 선 위치가 구간의 처음/끝이 돼요. LOOP 로 반복을 켜고 끄고, CLEAR 로 구간을 해제합니다. 반복이 켜진 상태에서 재생을 누르면 구간 시작점부터 재생돼요.\n• 마커: 파형 위 띠를 누르거나 M 키로 지금 위치에 표시해요. 마커를 누르면 그 위치로 이동, 끌면 옮기기, 더블클릭하면 삭제돼요.\n• 속도: 0.5x~1.5x 버튼으로 바로 고르거나, “직접” 버튼을 눌러 나오는 슬라이더·화살표 버튼으로 0.25x~2x 를 0.05 단위로 조절해요. 마지막에 맞춘 속도는 “직접” 버튼 아래에 남아서, 다시 누르면 그 속도로 돌아가요. 기본은 음정 유지, 피치 변동을 켜면 음정도 함께 변해요.\n• 로우컷/하이컷: 로우컷을 오른쪽으로 올리면 저음(베이스·킥)이, 하이컷을 왼쪽으로 내리면 고음(심벌·보컬 치찰음)이 깎여요. 기타 소리만 또렷하게 듣고 싶을 때 써 보세요. 값을 누르면 끔으로 돌아가요.\n• 단축키: 스페이스=재생/일시정지, ←/→=5초 이동(Shift 는 1초), ↑/↓=속도 0.05, A/B=지금 위치를 구간 시작/끝으로, L=구간반복, C=구간 해제, M=마커 추가.',
+            slowplayer: '음악 파일을 열어 속도를 바꿔 듣고, 원하는 구간만 반복하는 연습용 플레이어예요. 파일은 내 기기 안에서만 재생돼요.\n\n• 파일 열기 버튼을 누르거나 파일을 화면에 끌어다 놓으세요 (mp3·wav·m4a 등).\n• 파형을 클릭하면 재생 위치(빨간 선)가 그 지점으로 옮겨져요. 재생 중이면 거기서부터 이어서 재생되고, 정지 상태면 위치만 옮겨집니다. 파형 위 확대 슬라이더로 최대 100배까지 확대할 수 있어요.\n• 구간반복: 파형 양 끝 핸들을 끌거나 마우스로 파형을 드래그하면 구간이 잡히고, 구간 정보가 파형 아래에 표시돼요. 파형 아래 지금을 처음으로 / 지금을 끝으로 버튼을 누르면 빨간 선 위치가 구간의 처음/끝이 돼요. LOOP 로 반복을 켜고 끄고, CLEAR 로 구간을 해제합니다. 반복이 켜진 상태에서 재생을 누르면 구간 시작점부터 재생돼요.\n• 마커: 파형 위 띠를 누르거나 M 키로 지금 위치에 표시해요. 마커를 누르면 그 위치로 이동, 끌면 옮기기, 더블클릭하면 삭제돼요.\n• 속도: 0.5x~1.5x 버튼으로 바로 고르거나, “직접” 버튼을 눌러 나오는 슬라이더·화살표 버튼으로 0.25x~2x 를 0.05 단위로 조절해요. 마지막에 맞춘 속도는 “직접” 버튼 아래에 남아서, 다시 누르면 그 속도로 돌아가요. 기본은 음정 유지, 피치 변동을 켜면 음정도 함께 변해요.\n• 로우컷/하이컷: 로우컷을 오른쪽으로 올리면 저음(베이스·킥)이, 하이컷을 왼쪽으로 내리면 고음(심벌·보컬 치찰음)이 깎여요. 기타 소리만 또렷하게 듣고 싶을 때 써 보세요. 값을 누르면 끔으로 돌아가요.\n• 단축키: 스페이스=재생/일시정지, ←/→=5초 이동(Shift 는 1초), ↑/↓=속도 0.05, A/B=지금 위치를 구간 시작/끝으로, L=구간반복, C=구간 해제, M=마커 추가.',
             loopstation: '마이크로 친 소리를 자동 녹음해 즉시 반복 재생하는 루프스테이션이에요.\n\n• 준비 버튼으로 마이크를 켜고(다시 누르면 감지 중지), RECORD 또는 R 키를 누르면 신호 대기 → 소리가 들어오면 자동 녹음돼요.\n• 녹음 중 RECORD·R·아무 키로 정지하면 즉시 반복 재생. 루프가 도는 동안 다시 녹음하면 위에 겹쳐(오버더빙) 쌓여요.\n• 오토 더빙(녹음 후 자동 재대기)·연속 더빙(정지 전까지 계속) 토글 지원.\n• 스페이스바=재생/일시정지, REVERSE 역재생, UNDO 마지막 레이어 되돌리기.\n• 파형 양옆 핸들로 시작·끝점 트림, 볼륨·속도(10~200%) 페이더 제공.',
             tuner: '기기 마이크로 들어오는 소리의 음높이를 분석해 정확한 튜닝을 알려줍니다. 기타·베이스·우쿨렐레·바이올린 모두 지원해요.',
             metronome: '메트로놈 : BPM에 맞춰 클릭이나 목소리(1/2/3/4)가 나옵니다. 박자(2/4·3/4·4/4·6/8) 기준점을 전환 가능.\n\n드럼 : BPM에 맞춰 드럼 리듬이 재생됩니다. 8비트·16비트·셔플락 등 자주 쓰이는 패턴 모음.\n\n탭 BPM: 박자에 맞춰 키보드/버튼 누르면 BPM 자동 측정.',
