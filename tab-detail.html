@@ -22,7 +22,6 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="https://ahnssamguitar.com/og-image.jpg">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    <script src="https://assets.lemonsqueezy.com/lemon.js" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -564,6 +563,24 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 25px rgba(42,107,74,0.4);
         }
+        /* 판매를 잠시 쉬는 상품 안내 */
+        .product-paused {
+            grid-column: 1 / -1;
+            max-width: 480px;
+            margin: 2rem auto;
+            padding: 3rem 1.5rem;
+            text-align: center;
+            border: 1.5px dashed rgba(42, 107, 74, 0.25);
+            border-radius: 18px;
+            color: var(--text-light, #7a8a82);
+        }
+        .product-paused i { font-size: 2rem; color: var(--green-mid); margin-bottom: 1rem; display: block; }
+        .product-paused h1 { font-size: 1.25rem; color: var(--text-dark, #1a2421); margin-bottom: 0.7rem; }
+        .product-paused p { font-size: 0.92rem; line-height: 1.7; margin-bottom: 1.4rem; }
+        .product-paused-link {
+            display: inline-block; padding: 0.7rem 1.4rem; border-radius: 999px;
+            background: var(--green-mid); color: #fff; font-weight: 700; font-size: 0.88rem;
+        }
         .btn-youtube {
             flex: 1;
             display: inline-flex;
@@ -836,7 +853,8 @@
                 </div>
             </div>
             <div class="product-actions">
-                <a href="https://ahnssamguitar.lemonsqueezy.com/checkout/buy/7d58ce39-364f-4d01-9d1e-18cb48bbdef0" target="_blank" class="lemonsqueezy-button btn-purchase" style="display: inline-block; text-align: center;">
+                <!-- 결제 링크는 products 의 checkoutUrl 로 채운다 (없으면 '판매 준비 중') -->
+                <a id="productBuyBtn" href="#" target="_blank" rel="noopener" class="btn-purchase" style="display: inline-block; text-align: center;">
                     <i class="fas fa-credit-card"></i> 구매하기
                 </a>
                 <a id="productYoutubeLink" href="#" target="_blank" class="btn-youtube" style="display:none;">
@@ -886,8 +904,13 @@
         }
 
         // Product data — add more entries here as you add products
+        //   checkoutUrl: 새 결제(PG) 링크. 비어 있으면 구매 버튼이 '판매 준비 중'으로 잠긴다.
+        //   hidden: true 면 판매를 잠시 쉬는 상품 — 상세 내용 대신 안내만 보여준다.
         const products = {
             1: {
+                // Lemon Squeezy 판매 중단(결제 수단 교체 중) — 잠시 숨김
+                hidden: true,
+                checkoutUrl: '',
                 title: '구름산',
                 img: 'tab/tab-01.webp',
                 price: '₩2,500',
@@ -901,8 +924,28 @@
         const params = new URLSearchParams(window.location.search);
         const productId = params.get('id');
 
-        if (productId && products[productId]) {
-            const p = products[productId];
+        const product = productId ? products[productId] : null;
+        if (!product || product.hidden) {
+            // 없는 상품이거나 판매를 잠시 쉬는 상품
+            document.getElementById('productContainer').innerHTML =
+                '<div class="product-paused">' +
+                    '<i class="fas fa-music"></i>' +
+                    '<h1>지금은 판매하지 않는 악보예요</h1>' +
+                    '<p>새로운 결제 방식으로 TAB악보 판매를 준비하고 있어요.<br>조금만 기다려 주세요!</p>' +
+                    '<a href="/#shop" class="product-paused-link">Shop 으로 돌아가기</a>' +
+                '</div>';
+            document.title = 'TAB악보 | 안쌤의 기타나무숲';
+        } else {
+            const p = product;
+            const buy = document.getElementById('productBuyBtn');
+            if (p.checkoutUrl) {
+                buy.href = p.checkoutUrl;
+            } else {
+                buy.removeAttribute('href');
+                buy.style.opacity = '0.55';
+                buy.style.cursor = 'default';
+                buy.innerHTML = '<i class="fas fa-hourglass-half"></i> 판매 준비 중';
+            }
             document.getElementById('productTitle').textContent = p.title;
             document.getElementById('productImg').src = p.img;
             document.getElementById('productImg').alt = p.title;

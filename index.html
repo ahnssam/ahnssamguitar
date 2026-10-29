@@ -67,7 +67,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="기타나무숲">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    <script src="https://assets.lemonsqueezy.com/lemon.js" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         /* ===== RESET & BASE ===== */
@@ -407,7 +406,7 @@
            웹 브라우저에서는 그대로 노출되고, 실물 도서(외부 링크)는 영향 없음. */
         .app-only-buy-note { display: none; }
         @media (display-mode: standalone) {
-            .lemonsqueezy-button { display: none !important; }
+            .tab-buy-btn { display: none !important; }
             .app-only-buy-note {
                 display: inline-block;
                 font-size: 0.82rem; color: var(--text-light, #7a8a82);
@@ -3249,6 +3248,19 @@
             transform: translateY(-1px);
         }
 
+        /* TAB악보 — 판매 준비 중 안내 */
+        .tab-empty-note {
+            max-width: 420px;
+            margin: 0 auto;
+            padding: 2.2rem 1.5rem;
+            text-align: center;
+            border: 1.5px dashed rgba(42, 107, 74, 0.25);
+            border-radius: 16px;
+            color: var(--text-light);
+        }
+        .tab-empty-note i { font-size: 1.6rem; color: var(--green-mid); margin-bottom: 0.8rem; display: block; }
+        .tab-empty-note p { font-size: 0.92rem; line-height: 1.7; }
+
         /* TAB악보 Detail Modal */
         .tab-modal {
             display: none;
@@ -4108,8 +4120,15 @@
 
         <!-- TAB악보 탭 -->
         <div id="shop-tab" class="shop-tab-content">
-            <p style="text-align: center; color: var(--text-light); font-size: 0.9rem; margin-bottom: 2rem;">악보를 클릭하면 상세 정보를 확인할 수 있습니다.</p>
-            <div class="tab-grid">
+            <!-- 판매 중인 악보가 생기면 이 안내문을 지우고 아래 tab-grid 에 카드를 넣는다 -->
+            <div class="tab-empty-note">
+                <i class="fas fa-music"></i>
+                <p>새로운 결제 방식으로 TAB악보 판매를 준비하고 있어요.<br>조금만 기다려 주세요!</p>
+            </div>
+            <div class="tab-grid"></div>
+            <!-- 판매 일시 중지(결제 수단 교체 중) — 카드 마크업은 보관만 하고 화면엔 안 나온다.
+                 다시 팔 때: 이 template 안의 카드를 위 tab-grid 로 옮기고, 구매하기 href 에 새 결제 링크를 넣는다. -->
+            <template id="tabCardsArchive">
                 <div class="tab-card">
                     <div class="tab-card-img-wrap" onclick="location.href='tab-detail.html?id=1'">
                         <img class="tab-card-img" src="tab/tab-01.webp" alt="구름산">
@@ -4118,11 +4137,11 @@
                     <div class="tab-card-info">
                         <div class="tab-card-title">구름산</div>
                         <div class="tab-card-price">₩2,500</div>
-                        <a href="https://ahnssamguitar.lemonsqueezy.com/checkout/buy/7d58ce39-364f-4d01-9d1e-18cb48bbdef0" target="_blank" class="lemonsqueezy-button tab-card-cart"><i class="fas fa-credit-card"></i> 구매하기</a>
+                        <a href="#" target="_blank" class="tab-buy-btn tab-card-cart"><i class="fas fa-credit-card"></i> 구매하기</a>
                         <span class="app-only-buy-note">구매는 웹사이트(ahnssamguitar.com)에서 가능해요.</span>
                     </div>
                 </div>
-            </div>
+            </template>
         </div>
 
     <!-- TAB악보 상세 모달 -->
@@ -4144,9 +4163,10 @@
                     중요: 구매 후 스팸 메일함을 확인해주세요.<br>
                     다운로드 링크가 스팸으로 분류될 수 있습니다.
                 </div>
-                <a href="https://ahnssamguitar.lemonsqueezy.com/checkout/buy/7d58ce39-364f-4d01-9d1e-18cb48bbdef0" target="_blank" class="lemonsqueezy-button tab-modal-btn" style="display: inline-block; text-align: center;">
-                    <i class="fas fa-credit-card"></i>&nbsp; 구매하기
-                </a>
+                <!-- 결제 수단 교체 중 — 새 결제 링크가 생기면 <a href="결제링크" class="tab-buy-btn tab-modal-btn"> 로 되돌린다 -->
+                <button type="button" class="tab-buy-btn tab-modal-btn" disabled style="display: inline-block; text-align: center; opacity: 0.55; cursor: default;">
+                    <i class="fas fa-hourglass-half"></i>&nbsp; 판매 준비 중
+                </button>
                 <span class="app-only-buy-note">구매는 웹사이트(ahnssamguitar.com)에서 가능해요. 앱에서는 구매가 지원되지 않습니다.</span>
             </div>
         </div>
