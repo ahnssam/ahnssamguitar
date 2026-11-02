@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>악보 관리 | 안쌤의 기타나무숲</title>
+<link rel="icon" href="/images/favicon-32x32.png">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    :root {
+        --green: #2a6b4a;
+        --green-2: #3a8a5c;
+        --green-bg: #f2f7f4;
+        --gold: #b8913f;
+        --ink: #151515;
+        --sub: #808080;
+        --line: #e6e6e6;
+        --red: #d94141;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+    body { font-family: 'Noto Sans KR', sans-serif; color: var(--ink); background: #f7f8f7; font-size: 14px; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+    header { background: #fff; border-bottom: 1px solid var(--line); }
+    header .wrap { display: flex; align-items: center; gap: 14px; height: 60px; }
+    header h1 { font-size: 16px; font-weight: 900; color: var(--green); }
+    header h1 small { color: var(--sub); font-weight: 500; margin-left: 6px; }
+    header .site { margin-left: auto; font-size: 13px; color: var(--sub); }
+
+    .gate { max-width: 420px; margin: 80px auto; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 34px; text-align: center; }
+    .gate i { font-size: 28px; color: var(--green); margin-bottom: 12px; }
+    .gate p { color: #555; margin-bottom: 16px; }
+    .gate code { background: #f3f3f3; padding: 2px 6px; border-radius: 4px; font-size: 12.5px; }
+
+    .btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 8px 14px; font-weight: 700; font-size: 13.5px; cursor: pointer; }
+    .btn:hover { border-color: #cfcfcf; }
+    .btn.primary { background: var(--green); border-color: var(--green); color: #fff; }
+    .btn.danger { color: var(--red); }
+    .btn:disabled { opacity: 0.5; cursor: default; }
+
+    .toolbar { display: flex; align-items: center; gap: 10px; margin: 26px 0 14px; }
+    .toolbar h2 { font-size: 20px; font-weight: 900; }
+    .toolbar .count { color: var(--sub); font-size: 13px; }
+    .toolbar .search { margin-left: auto; position: relative; }
+    .toolbar .search input { height: 36px; width: 240px; border: 1px solid var(--line); border-radius: 18px; padding: 0 14px 0 34px; background: #fff; }
+    .toolbar .search i { position: absolute; left: 13px; top: 11px; color: #aaa; font-size: 13px; }
+    .seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; }
+    .seg button { border: 0; background: none; padding: 7px 12px; font-size: 13px; cursor: pointer; color: #666; }
+    .seg button.on { background: var(--ink); color: #fff; font-weight: 700; }
+
+    table.list { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+    .list th { text-align: left; font-size: 12.5px; color: var(--sub); font-weight: 500; padding: 10px 12px; border-bottom: 1px solid var(--line); background: #fafafa; }
+    .list td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+    .list tr:last-child td { border-bottom: 0; }
+    .list .pv { width: 56px; height: 48px; border-radius: 4px; background: #f1f1f1 center top / cover no-repeat; border: 1px solid var(--line); }
+    .list .nm b { display: block; }
+    .list .nm small { color: var(--sub); }
+    .chip { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: var(--green-bg); color: var(--green); margin-right: 3px; }
+    .chip.cover { background: #eef1f5; color: #2f3e52; }
+    .chip.arrangement { background: #e9f0ff; color: #2e4fa8; }
+    .chip.original { background: #fbf2de; color: #8a6200; }
+    .lv { color: var(--green-2); letter-spacing: 1px; font-size: 10px; }
+    .lv .off { color: #ddd; }
+    .pub { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; }
+    .pub .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
+    .pub.on .dot { background: #2fb36d; }
+    .pub.on { color: #1f8a52; font-weight: 700; }
+    .nopdf { color: var(--red); font-size: 12px; }
+    .empty { text-align: center; padding: 50px; color: var(--sub); background: #fff; border: 1px dashed #d8d8d8; border-radius: 12px; }
+
+    /* 편집 창 */
+    .dim { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: none; z-index: 50; }
+    .dim.open { display: block; }
+    .editor { position: fixed; top: 0; right: 0; bottom: 0; width: min(760px, 100%); background: #fff; z-index: 51; transform: translateX(100%); transition: transform .2s; display: flex; flex-direction: column; }
+    .editor.open { transform: none; }
+    .ed-hd { display: flex; align-items: center; gap: 10px; padding: 16px 22px; border-bottom: 1px solid var(--line); }
+    .ed-hd h3 { font-size: 17px; font-weight: 900; }
+    .ed-hd .x { margin-left: auto; border: 0; background: none; font-size: 20px; cursor: pointer; color: #888; }
+    .ed-body { flex: 1; overflow-y: auto; padding: 20px 22px 30px; display: grid; grid-template-columns: 220px 1fr; gap: 24px; align-content: start; }
+    .ed-ft { display: flex; gap: 8px; padding: 14px 22px; border-top: 1px solid var(--line); }
+    .ed-ft .msg { margin-left: auto; align-self: center; font-size: 13px; color: var(--sub); }
+
+    .drop { border: 2px dashed #cfd9d3; border-radius: 12px; padding: 16px; text-align: center; color: #667; cursor: pointer; background: #fbfdfc; }
+    .drop.over { border-color: var(--green); background: var(--green-bg); }
+    .drop i { font-size: 24px; color: var(--green); display: block; margin-bottom: 6px; }
+    .drop b { display: block; font-size: 13px; }
+    .drop small { font-size: 12px; color: var(--sub); word-break: break-all; }
+    .pdfinfo { margin-top: 8px; font-size: 12.5px; color: #555; }
+    .pdfinfo.err { color: var(--red); }
+
+    /* 스토어 썸네일 미리보기 (그랩더기타식) */
+    .th { position: relative; aspect-ratio: 1 / 0.9; border-radius: 4px; overflow: hidden; background: #f2f2f2; margin-top: 14px; border: 1px solid var(--line); }
+    .th .paper { position: absolute; left: 16%; right: 16%; top: 8%; height: 50%; background: #fff center top / cover no-repeat; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+    .th .band { position: absolute; left: 0; right: 0; bottom: 0; height: 47%; padding: 0 9%; color: #fff; text-align: right; display: flex; flex-direction: column; justify-content: center; background: #2a6b4a; }
+    .th .t { font-weight: 900; font-size: 17px; line-height: 1.15; letter-spacing: -0.03em; }
+    .th .a { font-size: 10.5px; opacity: 0.85; margin-top: 2px; }
+    .th .d { font-size: 9px; letter-spacing: 1.5px; margin-top: 3px; }
+    .th .d .off { opacity: 0.3; }
+    .th .fa-guitar { position: absolute; left: 8%; bottom: 14%; font-size: 26px; opacity: 0.2; transform: rotate(-20deg); }
+    .th .tag { position: absolute; left: 7px; top: 7px; z-index: 2; font-size: 9px; font-weight: 900; letter-spacing: 0.06em; color: #fff; padding: 2px 7px; border-radius: 9px; background: #2a6b4a; }
+    .s-fingerstyle { background: #2a6b4a !important; }
+    .s-solo { background: #2f3e52 !important; }
+    .s-acoustic { background: #6f8a3a !important; }
+    .s-electric { background: #8a3a3a !important; }
+    .s-other { background: #555 !important; }
+    .s-original { background: #b8913f !important; }
+    .cap { font-size: 11.5px; color: var(--sub); margin-top: 6px; text-align: center; }
+
+    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; align-content: start; }
+    .f { display: flex; flex-direction: column; gap: 4px; }
+    .f.full { grid-column: 1 / -1; }
+    .f label { font-size: 12.5px; font-weight: 700; color: #444; }
+    .f label em { font-style: normal; color: var(--red); }
+    .f label small { font-weight: 400; color: var(--sub); margin-left: 4px; }
+    .f input, .f select, .f textarea { border: 1px solid #dadada; border-radius: 8px; padding: 8px 10px; background: #fff; outline: none; width: 100%; }
+    .f input:focus, .f select:focus, .f textarea:focus { border-color: var(--green); }
+    .f textarea { min-height: 70px; resize: vertical; }
+    .stars { display: flex; gap: 4px; }
+    .stars button { border: 1px solid #dadada; background: #fff; border-radius: 8px; width: 38px; height: 36px; cursor: pointer; color: #ccc; font-size: 13px; }
+    .stars button.on { color: var(--green-2); border-color: var(--green-2); }
+    .group { grid-column: 1 / -1; margin-top: 8px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; font-weight: 900; color: var(--green); }
+    .group small { font-weight: 400; color: var(--sub); margin-left: 6px; }
+    .toggle { display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; }
+    .toggle input { width: 18px; height: 18px; accent-color: var(--green); }
+
+    @media (max-width: 760px) {
+        .toolbar { flex-wrap: wrap; }
+        .toolbar .search { margin-left: 0; flex-basis: 100%; }
+        .toolbar .search input { width: 100%; }
+        .list .c-st, .list .c-lv, .list .c-up { display: none; }
+        .ed-body { grid-template-columns: 1fr; }
+        .fields { grid-template-columns: 1fr; }
+    }
+</style>
+</head>
+<body>
+<header>
+    <div class="wrap">
+        <h1>안쌤의 기타나무숲<small>악보 관리</small></h1>
+        <a class="site" href="/">사이트로 <i class="fas fa-arrow-up-right-from-square"></i></a>
+        <div class="auth-slot"></div>
+    </div>
+</header>
+
+<div id="gate" class="gate"><i class="fas fa-spinner fa-spin"></i><p>로그인 상태를 확인하고 있어요…</p></div>
+
+<main id="app" class="wrap" hidden>
+    <div class="toolbar">
+        <h2>판매 악보</h2><span class="count" id="count"></span>
+        <div class="seg" id="seg">
+            <button class="on" data-f="all">전체</button><button data-f="pub">공개</button><button data-f="draft">비공개</button>
+        </div>
+        <div class="search"><i class="fas fa-search"></i><input id="q" placeholder="곡명·가수 검색"></div>
+        <button class="btn primary" id="newBtn"><i class="fas fa-plus"></i> 새 악보</button>
+    </div>
+    <div id="listWrap"></div>
+</main>
+
+<div class="dim" id="dim"></div>
+<aside class="editor" id="editor" aria-label="악보 편집">
+    <div class="ed-hd"><h3 id="edTitle">새 악보</h3><button class="x" id="edClose" aria-label="닫기"><i class="fas fa-xmark"></i></button></div>
+    <div class="ed-body">
+        <div>
+            <div class="drop" id="drop">
+                <i class="fas fa-file-pdf"></i>
+                <b>PDF 올리기</b>
+                <small id="dropName">클릭하거나 끌어다 놓기</small>
+                <input type="file" id="pdfInput" accept="application/pdf" hidden>
+            </div>
+            <div class="pdfinfo" id="pdfInfo"></div>
+            <div class="th" id="thumb">
+                <span class="tag" id="thTag">FINGERSTYLE</span>
+                <div class="paper" id="thPaper"></div>
+                <div class="band" id="thBand"><i class="fas fa-guitar"></i><div class="t" id="thT">곡명</div><div class="a" id="thA">원곡 가수</div><div class="d" id="thD"></div></div>
+            </div>
+            <div class="cap">스토어에 보이는 썸네일 · 악보 윗부분은 PDF 첫 장에서 자동으로 만들어요</div>
+            <div style="text-align:center;margin-top:8px;"><button class="btn" id="pvBtn" type="button"><i class="far fa-image"></i> 미리보기 이미지 직접 고르기</button><input type="file" id="pvInput" accept="image/*" hidden></div>
+        </div>
+        <form class="fields" id="form" autocomplete="off">
+            <div class="f full"><label>곡명 <em>*</em></label><input name="title" required placeholder="예: 홍련화"></div>
+            <div class="f"><label>원제 <small>일본어·영어 원제 (선택)</small></label><input name="title_original" placeholder="예: 紅蓮華"></div>
+            <div class="f"><label>원곡 가수·출처</label><input name="artist" placeholder="예: LiSA · 귀멸의 칼날 OP"></div>
+            <div class="f"><label>종류 <em>*</em></label>
+                <select name="kind"><option value="cover">커버 (원곡 채보)</option><option value="arrangement">편곡</option><option value="original">자작곡</option></select></div>
+            <div class="f"><label>스타일</label>
+                <select name="style"><option value="fingerstyle">핑거스타일</option><option value="solo">솔로</option><option value="acoustic">어쿠스틱 (반주)</option><option value="electric">일렉</option><option value="other">기타</option></select></div>
+            <div class="f"><label>장르</label>
+                <select name="genre"><option value="">선택 안 함</option><option>가요·인디</option><option>J-POP·애니</option><option>팝</option><option>OST·연주곡</option><option>재즈·기타</option><option>자작곡</option></select></div>
+            <div class="f"><label>가격 (원) <em>*</em></label><input name="price" type="number" min="0" step="100" value="3000" required></div>
+            <div class="f"><label>난이도</label><div class="stars" id="stars"></div></div>
+            <div class="f"><label>페이지 수 <small>PDF에서 자동</small></label><input name="pages" type="number" min="1"></div>
+            <div class="f full"><label>유튜브 영상 <small>주소를 붙여넣으면 돼요</small></label><input name="youtube" placeholder="https://youtu.be/..."></div>
+            <div class="f full"><label>설명 <small>상세 페이지에 보여요 (선택)</small></label><textarea name="description" placeholder="예: 원곡 키 그대로, 카포 2프렛. 인트로부터 아웃트로까지 전곡."></textarea></div>
+
+            <div class="group">저작권 정보<small>음저협 정산·저작물 리스트용 (자작곡은 비워도 돼요)</small></div>
+            <div class="f"><label>작사</label><input name="lyricist"></div>
+            <div class="f"><label>작곡</label><input name="composer"></div>
+            <div class="f"><label>앨범</label><input name="album"></div>
+            <div class="f"><label>제작사·레이블</label><input name="label"></div>
+            <div class="f"><label>발매일</label><input name="release_date" placeholder="예: 2019-07-03"></div>
+            <div class="f"><label>음저협 저작물 코드</label><input name="komca_code"></div>
+
+            <div class="group">공개</div>
+            <label class="toggle f full"><input type="checkbox" name="published"> 스토어에 공개하기 <small style="font-weight:400;color:var(--sub);">PDF가 있어야 공개할 수 있어요</small></label>
+        </form>
+    </div>
+    <div class="ed-ft">
+        <button class="btn primary" id="saveBtn"><i class="fas fa-check"></i> 저장</button>
+        <button class="btn danger" id="delBtn" hidden><i class="far fa-trash-can"></i> 삭제</button>
+        <span class="msg" id="edMsg"></span>
+    </div>
+</aside>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+(function () {
+    'use strict';
+    const ADMIN_EMAIL = 'steveq2568@gmail.com';
+    const PREVIEW_BUCKET = 'sheet-previews';
+    const PDF_BUCKET = 'sheet-pdfs';
+    const KIND = { cover: '커버', arrangement: '편곡', original: '자작곡' };
+    const STYLE = { fingerstyle: ['핑거스타일', 'FINGERSTYLE'], solo: ['솔로', 'SOLO'], acoustic: ['어쿠스틱', 'ACOUSTIC'], electric: ['일렉', 'ELECTRIC'], other: ['기타', 'GUITAR'] };
+    if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const won = n => (Number(n) || 0).toLocaleString() + '원';
+    const lvDots = n => [1, 2, 3, 4, 5].map(i => i <= (n || 0) ? '●' : '<span class="off">●</span>').join('');
+
+    let sb = null;
+    let sheets = [];
+    let filesById = {};
+    let filter = 'all';
+    let editing = null;        // 편집 중인 행 (새 악보면 null)
+    let newPdf = null;         // 새로 고른 PDF 파일
+    let newPreview = null;     // 새로 만든/고른 미리보기 Blob
+    let difficulty = 3;
+
+    // ---------- 로그인 · 권한 ----------
+    function gate(icon, html) {
+        $('app').hidden = true;
+        $('gate').hidden = false;
+        $('gate').innerHTML = `<i class="fas ${icon}"></i>${html}`;
+    }
+    function onAuth(user) {
+        if (!user) {
+            gate('fa-lock', '<p>운영 계정으로 로그인해 주세요.</p><button class="btn primary" id="loginBtn">로그인</button>');
+            $('loginBtn').onclick = () => window.ahnssamAuth && window.ahnssamAuth.openLogin();
+            return;
+        }
+        if (String(user.email || '').toLowerCase() !== ADMIN_EMAIL) {
+            gate('fa-ban', `<p>이 페이지는 운영 계정만 쓸 수 있어요.<br><small>${esc(user.email)}</small></p>`);
+            return;
+        }
+        sb = window.ahnssamAuth.supabase;
+        $('gate').hidden = true;
+        $('app').hidden = false;
+        load();
+    }
+    window.addEventListener('ahnssam-auth-settled', e => onAuth(e.detail && e.detail.user));
+
+    // ---------- 목록 ----------
+    async function load() {
+        const { data, error } = await sb.from('sheets').select('*').order('created_at', { ascending: false });
+        if (error) {
+            const missing = /does not exist|schema cache|PGRST205|42P01/i.test(error.message + ' ' + error.code);
+            gate('fa-database', missing
+                ? '<p>악보 DB가 아직 준비되지 않았어요.<br><code>db/sheets_store.sql</code>을 Supabase에 적용해야 해요.</p>'
+                : `<p>악보 목록을 불러오지 못했어요.<br><small>${esc(error.message)}</small></p>`);
+            return;
+        }
+        sheets = data || [];
+        const files = await sb.from('sheet_files').select('sheet_id, file_name, file_size');
+        filesById = {};
+        (files.data || []).forEach(f => { filesById[f.sheet_id] = f; });
+        render();
+    }
+    function previewUrl(s) {
+        if (!s.preview_path) return '';
+        const url = sb.storage.from(PREVIEW_BUCKET).getPublicUrl(s.preview_path).data.publicUrl;
+        return url + '?v=' + encodeURIComponent(s.updated_at || '');
+    }
+    function render() {
+        const q = $('q').value.trim().toLowerCase();
+        const rows = sheets.filter(s =>
+            (filter === 'all' || (filter === 'pub' ? s.published : !s.published)) &&
+            (!q || [s.title, s.title_original, s.artist].join(' ').toLowerCase().includes(q)));
+        $('count').textContent = `${sheets.length}곡 · 공개 ${sheets.filter(s => s.published).length}`;
+        if (!sheets.length) {
+            $('listWrap').innerHTML = '<div class="empty"><i class="fas fa-music" style="font-size:24px;color:var(--green);display:block;margin-bottom:10px;"></i>아직 등록한 악보가 없어요. 오른쪽 위 <b>새 악보</b>로 첫 악보를 올려 보세요.</div>';
+            return;
+        }
+        $('listWrap').innerHTML = `<table class="list"><thead><tr><th></th><th>곡명</th><th class="c-st">종류·스타일</th><th class="c-lv">난이도</th><th>가격</th><th>상태</th><th class="c-up">수정일</th></tr></thead><tbody>${
+            rows.map(s => `<tr data-id="${s.id}">
+                <td><div class="pv" style="background-image:url('${previewUrl(s)}')"></div></td>
+                <td class="nm"><b>${esc(s.title)}</b><small>${esc(s.artist || '')}</small>${filesById[s.id] ? '' : '<div class="nopdf"><i class="fas fa-triangle-exclamation"></i> PDF 없음</div>'}</td>
+                <td class="c-st"><span class="chip ${s.kind}">${KIND[s.kind] || ''}</span>${s.style ? `<span class="chip">${STYLE[s.style][0]}</span>` : ''}</td>
+                <td class="c-lv"><span class="lv">${lvDots(s.difficulty)}</span></td>
+                <td>${won(s.price)}</td>
+                <td><span class="pub ${s.published ? 'on' : ''}" data-toggle="${s.id}"><span class="dot"></span>${s.published ? '공개' : '비공개'}</span></td>
+                <td class="c-up" style="color:var(--sub);font-size:12.5px;">${new Date(s.updated_at).toLocaleDateString('ko-KR')}</td>
+            </tr>`).join('')
+        }</tbody></table>`;
+    }
+    $('listWrap').addEventListener('click', async e => {
+        const t = e.target.closest('[data-toggle]');
+        if (t) {
+            e.stopPropagation();
+            const s = sheets.find(x => x.id === t.dataset.toggle);
+            if (!s.published && !filesById[s.id]) { alert('PDF를 먼저 올려야 공개할 수 있어요.'); return; }
+            const { error } = await sb.from('sheets').update({ published: !s.published }).eq('id', s.id);
+            if (error) { alert('바꾸지 못했어요: ' + error.message); return; }
+            load();
+            return;
+        }
+        const tr = e.target.closest('tr[data-id]');
+        if (tr) openEditor(sheets.find(x => x.id === tr.dataset.id));
+    });
+    $('seg').addEventListener('click', e => {
+        const b = e.target.closest('button'); if (!b) return;
+        filter = b.dataset.f;
+        [...$('seg').children].forEach(x => x.classList.toggle('on', x === b));
+        render();
+    });
+    $('q').addEventListener('input', render);
+
+    // ---------- 편집 창 ----------
+    const form = $('form');
+    function setDifficulty(n) {
+        difficulty = n;
+        $('stars').innerHTML = [1, 2, 3, 4, 5].map(i => `<button type="button" data-lv="${i}" class="${i <= n ? 'on' : ''}"><i class="fas fa-clover"></i></button>`).join('');
+        updateThumb();
+    }
+    $('stars').addEventListener('click', e => { const b = e.target.closest('[data-lv]'); if (b) setDifficulty(+b.dataset.lv); });
+
+    function openEditor(s) {
+        editing = s || null;
+        newPdf = null; newPreview = null;
+        form.reset();
+        $('edTitle').textContent = s ? '악보 수정' : '새 악보';
+        $('delBtn').hidden = !s;
+        $('edMsg').textContent = '';
+        $('pdfInfo').textContent = ''; $('pdfInfo').className = 'pdfinfo';
+        $('dropName').textContent = '클릭하거나 끌어다 놓기';
+        if (s) {
+            ['title', 'title_original', 'artist', 'kind', 'style', 'genre', 'price', 'pages', 'description', 'lyricist', 'composer', 'album', 'label', 'release_date', 'komca_code']
+                .forEach(k => { if (form.elements[k]) form.elements[k].value = s[k] == null ? '' : s[k]; });
+            form.elements.youtube.value = s.youtube_id ? 'https://youtu.be/' + s.youtube_id : '';
+            form.elements.published.checked = !!s.published;
+            const f = filesById[s.id];
+            if (f) { $('dropName').textContent = '현재: ' + (f.file_name || 'PDF'); $('pdfInfo').textContent = '새 PDF를 올리면 바뀌어요.'; }
+            $('thPaper').style.backgroundImage = s.preview_path ? `url('${previewUrl(s)}')` : '';
+        } else {
+            form.elements.price.value = 3000;
+            $('thPaper').style.backgroundImage = '';
+        }
+        setDifficulty(s && s.difficulty ? s.difficulty : 3);
+        $('dim').classList.add('open'); $('editor').classList.add('open');
+        setTimeout(() => form.elements.title.focus(), 200);
+    }
+    function closeEditor() { $('dim').classList.remove('open'); $('editor').classList.remove('open'); }
+    $('newBtn').onclick = () => openEditor(null);
+    $('edClose').onclick = closeEditor;
+    $('dim').onclick = closeEditor;
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEditor(); });
+
+    function updateThumb() {
+        const v = k => form.elements[k].value;
+        const style = v('style') || 'fingerstyle';
+        const color = v('kind') === 'original' ? 's-original' : 's-' + style;
+        $('thBand').className = 'band ' + color;
+        $('thTag').className = 'tag ' + color;
+        $('thTag').textContent = v('kind') === 'original' ? 'ORIGINAL' : STYLE[style][1];
+        $('thT').textContent = v('title') || '곡명';
+        $('thA').textContent = v('artist') || '원곡 가수';
+        $('thD').innerHTML = lvDots(difficulty);
+    }
+    form.addEventListener('input', updateThumb);
+
+    // ---------- PDF → 페이지 수 + 미리보기 이미지 ----------
+    const drop = $('drop');
+    drop.onclick = () => $('pdfInput').click();
+    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+    drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) usePdf(f); });
+    $('pdfInput').onchange = e => { const f = e.target.files[0]; if (f) usePdf(f); e.target.value = ''; };
+
+    async function usePdf(file) {
+        if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) { pdfMsg('PDF 파일만 올릴 수 있어요.', true); return; }
+        if (file.size > 50 * 1024 * 1024) { pdfMsg('50MB 이하 파일만 올릴 수 있어요.', true); return; }
+        newPdf = file;
+        $('dropName').textContent = file.name;
+        pdfMsg('PDF를 읽고 있어요…');
+        try {
+            const doc = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+            form.elements.pages.value = doc.numPages;
+            newPreview = await renderPreview(await doc.getPage(1));
+            $('thPaper').style.backgroundImage = `url('${URL.createObjectURL(newPreview)}')`;
+            pdfMsg(`${doc.numPages}페이지 · ${(file.size / 1024 / 1024).toFixed(1)}MB · 첫 장으로 미리보기를 만들었어요`);
+            if (!form.elements.title.value) {
+                form.elements.title.value = file.name.replace(/\.pdf$/i, '').replace(/[_]+/g, ' ').trim();
+                updateThumb();
+            }
+        } catch (err) {
+            console.error(err);
+            pdfMsg('PDF를 읽지 못했어요. 파일이 손상되지 않았는지 확인해 주세요.', true);
+            newPdf = null;
+        }
+    }
+    function pdfMsg(text, isErr) { $('pdfInfo').textContent = text; $('pdfInfo').className = 'pdfinfo' + (isErr ? ' err' : ''); }
+
+    // 첫 장 윗부분(제목 + 첫 줄들)만 잘라 미리보기로 쓴다 — 전체 악보는 공개하지 않는다
+    async function renderPreview(page) {
+        const base = page.getViewport({ scale: 1 });
+        const scale = 1000 / base.width;
+        const vp = page.getViewport({ scale });
+        const full = document.createElement('canvas');
+        full.width = Math.round(vp.width); full.height = Math.round(vp.height);
+        const ctx = full.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, full.width, full.height);
+        await page.render({ canvasContext: ctx, viewport: vp }).promise;
+        const crop = document.createElement('canvas');
+        crop.width = full.width; crop.height = Math.round(full.width * 0.72);
+        crop.getContext('2d').drawImage(full, 0, 0);
+        return toBlob(crop);
+    }
+    function toBlob(canvas) {
+        return new Promise(res => canvas.toBlob(b => {
+            if (b && b.type === 'image/webp') res(b);
+            else canvas.toBlob(res, 'image/jpeg', 0.88);   // webp 인코딩이 안 되는 브라우저
+        }, 'image/webp', 0.85));
+    }
+    $('pvBtn').onclick = () => $('pvInput').click();
+    $('pvInput').onchange = e => {
+        const f = e.target.files[0]; e.target.value = '';
+        if (!f) return;
+        if (f.size > 5 * 1024 * 1024) { alert('미리보기 이미지는 5MB 이하만 올릴 수 있어요.'); return; }
+        newPreview = f;
+        $('thPaper').style.backgroundImage = `url('${URL.createObjectURL(f)}')`;
+    };
+
+    // ---------- 저장 · 삭제 ----------
+    function youtubeId(v) {
+        v = (v || '').trim();
+        if (!v) return null;
+        const m = v.match(/(?:youtu\.be\/|v=|\/shorts\/|\/embed\/|\/live\/)([A-Za-z0-9_-]{11})/);
+        if (m) return m[1];
+        return /^[A-Za-z0-9_-]{11}$/.test(v) ? v : undefined;
+    }
+    const extOf = blob => blob.type === 'image/webp' ? 'webp' : blob.type === 'image/png' ? 'png' : 'jpg';
+
+    $('saveBtn').onclick = async () => {
+        const el = form.elements;
+        const title = el.title.value.trim();
+        if (!title) { el.title.focus(); $('edMsg').textContent = '곡명을 넣어 주세요.'; return; }
+        const yt = youtubeId(el.youtube.value);
+        if (yt === undefined) { el.youtube.focus(); $('edMsg').textContent = '유튜브 주소를 알아볼 수 없어요.'; return; }
+        const hasPdf = !!newPdf || !!(editing && filesById[editing.id]);
+        if (el.published.checked && !hasPdf) { $('edMsg').textContent = 'PDF를 올려야 공개할 수 있어요.'; return; }
+        const nul = v => (v || '').trim() || null;
+        const row = {
+            title,
+            title_original: nul(el.title_original.value),
+            artist: nul(el.artist.value),
+            kind: el.kind.value,
+            style: el.style.value || null,
+            genre: nul(el.genre.value),
+            difficulty,
+            price: Math.max(0, parseInt(el.price.value, 10) || 0),
+            pages: parseInt(el.pages.value, 10) || null,
+            youtube_id: yt,
+            description: nul(el.description.value),
+            lyricist: nul(el.lyricist.value),
+            composer: nul(el.composer.value),
+            album: nul(el.album.value),
+            label: nul(el.label.value),
+            release_date: nul(el.release_date.value),
+            komca_code: nul(el.komca_code.value),
+            published: el.published.checked,
+        };
+        $('saveBtn').disabled = true;
+        $('edMsg').textContent = '저장하고 있어요…';
+        try {
+            let id = editing && editing.id;
+            if (id) {
+                const { error } = await sb.from('sheets').update(row).eq('id', id);
+                if (error) throw error;
+            } else {
+                // 파일을 다 올리기 전에는 비공개로 만들어 두고, 끝나면 공개 여부를 반영한다
+                const { data, error } = await sb.from('sheets').insert({ ...row, published: false }).select('id').single();
+                if (error) throw error;
+                id = data.id;
+            }
+            if (newPreview) {
+                $('edMsg').textContent = '미리보기 이미지를 올리고 있어요…';
+                const path = `${id}.${extOf(newPreview)}`;
+                const up = await sb.storage.from(PREVIEW_BUCKET).upload(path, newPreview, { upsert: true, contentType: newPreview.type || 'image/jpeg', cacheControl: '3600' });
+                if (up.error) throw up.error;
+                const { error } = await sb.from('sheets').update({ preview_path: path }).eq('id', id);
+                if (error) throw error;
+            }
+            if (newPdf) {
+                $('edMsg').textContent = 'PDF를 올리고 있어요…';
+                const path = `${id}.pdf`;
+                const up = await sb.storage.from(PDF_BUCKET).upload(path, newPdf, { upsert: true, contentType: 'application/pdf' });
+                if (up.error) throw up.error;
+                const { error } = await sb.from('sheet_files').upsert({ sheet_id: id, pdf_path: path, file_name: newPdf.name, file_size: newPdf.size });
+                if (error) throw error;
+            }
+            if (!editing && row.published) {
+                const { error } = await sb.from('sheets').update({ published: true }).eq('id', id);
+                if (error) throw error;
+            }
+            closeEditor();
+            await load();
+        } catch (err) {
+            console.error(err);
+            $('edMsg').textContent = '저장하지 못했어요: ' + (err.message || err);
+        } finally {
+            $('saveBtn').disabled = false;
+        }
+    };
+
+    $('delBtn').onclick = async () => {
+        if (!editing) return;
+        if (!confirm(`'${editing.title}' 악보를 삭제할까요? PDF와 미리보기도 함께 지워지고 되돌릴 수 없어요.`)) return;
+        const id = editing.id;
+        $('edMsg').textContent = '삭제하고 있어요…';
+        const f = filesById[id];
+        if (f) await sb.storage.from(PDF_BUCKET).remove([`${id}.pdf`]);
+        if (editing.preview_path) await sb.storage.from(PREVIEW_BUCKET).remove([editing.preview_path]);
+        const { error } = await sb.from('sheets').delete().eq('id', id);
+        if (error) { $('edMsg').textContent = '삭제하지 못했어요: ' + error.message; return; }
+        closeEditor();
+        load();
+    };
+})();
+</script>
+<script src="/auth.js" defer></script>
+</body>
+</html>
