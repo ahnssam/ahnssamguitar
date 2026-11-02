@@ -4130,25 +4130,50 @@
 
         <!-- TAB악보 탭 -->
         <div id="shop-tab" class="shop-tab-content">
-            <!-- 결제 기능이 붙으면 이 안내문을 지우고, 카드의 '결제 준비 중'을 구매하기 버튼으로 바꾼다 -->
+            <!-- 악보 카드는 관리자 페이지(admin/sheets.html)에서 공개한 악보를 불러와 채운다 (아래 스크립트) -->
             <div class="tab-empty-note">
                 <i class="fas fa-music"></i>
-                <p>새 결제 기능을 준비하고 있어요.<br>곧 구매하실 수 있어요!</p>
+                <p id="tabNoteText">새 TAB악보를 준비하고 있어요.<br>조금만 기다려 주세요!</p>
             </div>
-            <div class="tab-grid">
-                <div class="tab-card">
-                    <div class="tab-card-img-wrap" onclick="location.href='tab-detail.html?id=1'">
-                        <img class="tab-card-img" src="tab/tab-01.webp" alt="구름산">
-                        <div class="tab-card-overlay"><span>자세히 보기</span></div>
-                    </div>
-                    <div class="tab-card-info">
-                        <div class="tab-card-title">구름산</div>
-                        <div class="tab-card-price">₩2,500</div>
-                        <span class="tab-buy-btn tab-card-cart" style="opacity: 0.55; cursor: default;"><i class="fas fa-hourglass-half"></i> 결제 준비 중</span>
-                        <span class="app-only-buy-note">구매는 웹사이트(ahnssamguitar.com)에서 가능해요.</span>
-                    </div>
-                </div>
-            </div>
+            <div class="tab-grid" id="tabGrid"></div>
+            <script>
+                // TAB악보 목록 — Supabase sheets 표에서 공개된 악보만 (auth.js 와 같은 공개 키)
+                (function () {
+                    var SB_URL = 'https://qpcbrqgqylxkgdwoflku.supabase.co';
+                    var SB_KEY = 'sb_publishable_5rr-OZ7Sqjk1nXn59R7XnQ_HInATuSV';
+                    function esc(s) {
+                        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                        });
+                    }
+                    fetch(SB_URL + '/rest/v1/sheets?select=id,title,price,preview_path,updated_at&published=eq.true&order=sort_order.desc,created_at.desc',
+                          { headers: { apikey: SB_KEY } })
+                        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                        .then(function (rows) {
+                            if (!rows.length) return;
+                            // 결제가 붙기 전까지는 카드의 버튼을 잠가 두고 안내만 바꾼다
+                            document.getElementById('tabNoteText').innerHTML = '새 결제 기능을 준비하고 있어요.<br>곧 구매하실 수 있어요!';
+                            document.getElementById('tabGrid').innerHTML = rows.map(function (s) {
+                                var img = s.preview_path
+                                    ? SB_URL + '/storage/v1/object/public/sheet-previews/' + encodeURIComponent(s.preview_path) + '?v=' + encodeURIComponent(s.updated_at)
+                                    : 'images/logo-vertical.webp';
+                                return '<div class="tab-card">' +
+                                    '<div class="tab-card-img-wrap" onclick="location.href=\'tab-detail.html?id=' + encodeURIComponent(s.id) + '\'">' +
+                                        '<img class="tab-card-img" src="' + esc(img) + '" alt="' + esc(s.title) + '" loading="lazy">' +
+                                        '<div class="tab-card-overlay"><span>자세히 보기</span></div>' +
+                                    '</div>' +
+                                    '<div class="tab-card-info">' +
+                                        '<div class="tab-card-title">' + esc(s.title) + '</div>' +
+                                        '<div class="tab-card-price">₩' + Number(s.price || 0).toLocaleString() + '</div>' +
+                                        '<span class="tab-buy-btn tab-card-cart" style="opacity: 0.55; cursor: default;"><i class="fas fa-hourglass-half"></i> 결제 준비 중</span>' +
+                                        '<span class="app-only-buy-note">구매는 웹사이트(ahnssamguitar.com)에서 가능해요.</span>' +
+                                    '</div>' +
+                                '</div>';
+                            }).join('');
+                        })
+                        .catch(function (e) { console.warn('[tab] 악보 목록을 불러오지 못했어요', e); });
+                })();
+            </script>
         </div>
 
     <!-- TAB악보 상세 모달 -->
