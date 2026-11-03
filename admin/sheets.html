@@ -66,6 +66,12 @@
     .chip.original { background: #fbf2de; color: #8a6200; }
     .lv { color: var(--green-2); letter-spacing: 1px; font-size: 10px; }
     .lv .off { color: #ddd; }
+    /* 목록에서 바로 난이도 바꾸기 — 올린 클로버까지 미리 칠해 보여 준다 */
+    .lv.pick { display: inline-flex; letter-spacing: 0; white-space: nowrap; }
+    .lv.pick button { border: 0; background: none; padding: 4px 1px; font-size: 12px; line-height: 1; cursor: pointer; color: var(--green-2); }
+    .lv.pick button.off { color: #ddd; }
+    .lv.pick:hover button { color: var(--green-2); }
+    .lv.pick button:hover ~ button { color: #ddd; }
     .pub { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
     .list .c-pr { white-space: nowrap; }
     .pub .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
@@ -359,7 +365,7 @@
                 <td><div class="pv" style="background-image:url('${previewUrl(s)}')"></div></td>
                 <td class="nm"><b>${esc(s.title)}</b><small>${esc(s.artist || '')}</small>${filesById[s.id] ? '<div class="haspdf"><i class="fas fa-circle-check"></i> PDF 있음</div>' : '<div class="nopdf"><i class="fas fa-triangle-exclamation"></i> PDF 없음</div>'}</td>
                 <td class="c-st"><span class="chip ${s.kind}">${KIND[s.kind] || ''}</span>${s.style ? `<span class="chip">${STYLE[s.style][0]}</span>` : ''}</td>
-                <td class="c-lv"><span class="lv">${lvDots(s.difficulty)}</span></td>
+                <td class="c-lv"><span class="lv pick" title="눌러서 난이도 바꾸기">${[1, 2, 3, 4, 5].map(i => `<button type="button" data-lv-set="${i}" class="${i <= (s.difficulty || 0) ? '' : 'off'}">●</button>`).join('')}</span></td>
                 <td class="c-pr">${won(s.price)}</td>
                 <td><span class="pub ${s.published ? 'on' : ''}" data-toggle="${s.id}"><span class="dot"></span>${s.published ? '공개' : '비공개'}</span></td>
                 <td class="c-up" style="color:var(--sub);font-size:12.5px;">${new Date(s.updated_at).toLocaleDateString('ko-KR')}</td>
@@ -367,6 +373,18 @@
         }</tbody></table>`;
     }
     $('listWrap').addEventListener('click', async e => {
+        const lv = e.target.closest('[data-lv-set]');
+        if (lv) {
+            e.stopPropagation();
+            const s = sheets.find(x => x.id === lv.closest('tr').dataset.id);
+            const n = +lv.dataset.lvSet, before = s.difficulty;
+            if (before === n) return;
+            s.difficulty = n; render();   // 먼저 바꿔 보여 주고, 저장 못 하면 되돌린다
+            const { data, error } = await sb.from('sheets').update({ difficulty: n }).eq('id', s.id).select().single();
+            if (error) { s.difficulty = before; render(); alert('난이도를 바꾸지 못했어요: ' + error.message); return; }
+            Object.assign(s, data); render();
+            return;
+        }
         const t = e.target.closest('[data-toggle]');
         if (t) {
             e.stopPropagation();
