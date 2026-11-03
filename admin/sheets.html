@@ -117,9 +117,9 @@
     /* 스토어 썸네일 미리보기: 악보 윗부분 + 완만한 대각선 색 면 + 종류 */
     .th { position: relative; aspect-ratio: 1 / 0.9; border-radius: 4px; overflow: hidden; background: #f2f2f2; margin-top: 14px; border: 1px solid var(--line); }
     .th .paper { position: absolute; left: 8%; top: 8%; width: 58%; height: 64%; background: #fff center top / cover no-repeat; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
-    .th .band { position: absolute; inset: 0; z-index: 1; padding: 0 7% 8%; color: #fff; text-align: right; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; }
+    .th .band { position: absolute; inset: 0; z-index: 1; padding: 0 7% 8%; color: var(--ink, #fff); text-shadow: 0 1px 2px rgb(0 0 0 / var(--shade, 0.18)); text-align: right; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; }
     .th .band::before, .th .band::after { content: ''; position: absolute; inset: 0; z-index: -1; }
-    .th .band::before { background: linear-gradient(160deg, var(--c), color-mix(in srgb, var(--c) 78%, #000)); clip-path: polygon(0 90%, 100% 12%, 100% 100%, 0 100%); }
+    .th .band::before { background: linear-gradient(160deg, var(--c), var(--c2)); clip-path: polygon(0 90%, 100% 12%, 100% 100%, 0 100%); }
     .th .band::after { background: var(--c); opacity: 0.35; clip-path: polygon(0 82%, 100% 4%, 100% 0, 0 78%); }
     .th .a { font-size: 9.5px; font-weight: 700; letter-spacing: 0.12em; opacity: 0.75; }
     .th .t { font-weight: 900; font-size: 18px; line-height: 1.15; letter-spacing: -0.03em; }
@@ -127,12 +127,14 @@
     .th .d .off { opacity: 0.3; }
     .th .fa-guitar { position: absolute; right: 9%; top: 34%; font-size: 22px; opacity: 0.25; transform: rotate(-20deg); }
     .th .tag { position: absolute; left: 7px; top: 7px; z-index: 2; font-size: 9px; font-weight: 900; letter-spacing: 0.06em; color: #fff; padding: 2px 7px; border-radius: 9px; background: #b8913f; }
-    .s-acoustic { --c: #6f8a3a; }
-    .s-electric { --c: #2f3e52; }
-    .s-solo { --c: #9b3446; }
-    .s-fingerstyle { --c: #2a6b4a; }
-    .s-bass { --c: #8a5a3b; }
-    .s-other { --c: #555; }
+    /* 메인과 같은 밝은 색 (노랑은 진한 글자) */
+    .s-acoustic { --c: #cf9a68; --c2: #b37b4b; }
+    .s-electric { --c: #63c46f; --c2: #42a854; }
+    .s-fingerstyle { --c: #ffd84a; --c2: #f7bd2b; --ink: #5b4200; --shade: 0; }
+    .s-solo { --c: #7cc3ff; --c2: #52a6f2; }
+    .s-chord { --c: #ff8a8a; --c2: #f06a6e; }
+    .s-bass { --c: #c8adff; --c2: #a98cf2; }
+    .s-other { --c: #8a8a8a; --c2: #6f6f6f; }
     .cap { font-size: 11.5px; color: var(--sub); margin-top: 6px; text-align: center; }
 
     .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; align-content: start; }
@@ -219,7 +221,7 @@
             <div class="f"><label>종류 <em>*</em></label>
                 <select name="kind"><option value="cover">커버 (원곡 채보)</option><option value="arrangement">편곡</option><option value="original">자작곡</option></select></div>
             <div class="f"><label>스타일</label>
-                <select name="style"><option value="acoustic">통기타</option><option value="electric">일렉기타</option><option value="fingerstyle">핑거스타일</option><option value="solo">기타솔로</option><option value="bass">베이스</option><option value="other">그 밖</option></select></div>
+                <select name="style"><option value="acoustic">통기타</option><option value="electric">일렉기타</option><option value="fingerstyle">핑거스타일</option><option value="solo">기타솔로</option><option value="chord">코드악보</option><option value="bass">베이스</option><option value="other">그 밖</option></select></div>
             <div class="f"><label>장르</label>
                 <select name="genre"><option value="">선택 안 함</option><option>가요</option><option>팝</option><option>J-POP</option><option>OST</option><option>록</option><option>연주곡</option><option>클래식</option><option>재즈</option><option>기타</option><option>자작곡</option></select></div>
             <div class="f"><label>가격 (원) <em>*</em></label><input name="price" type="number" min="0" step="500" value="3000" required></div>
@@ -255,7 +257,7 @@
     const PREVIEW_BUCKET = 'sheet-previews';
     const PDF_BUCKET = 'sheet-pdfs';
     const KIND = { cover: '커버', arrangement: '편곡', original: '자작곡' };
-    const STYLE = { acoustic: ['통기타', 'ACOUSTIC'], electric: ['일렉기타', 'ELECTRIC'], fingerstyle: ['핑거스타일', 'FINGERSTYLE'], solo: ['기타솔로', 'GUITAR SOLO'], bass: ['베이스', 'BASS'], other: ['기타', 'GUITAR'] };
+    const STYLE = { acoustic: ['통기타', 'ACOUSTIC'], electric: ['일렉기타', 'ELECTRIC'], fingerstyle: ['핑거스타일', 'FINGERSTYLE'], solo: ['기타솔로', 'GUITAR SOLO'], chord: ['코드악보', 'CHORD'], bass: ['베이스', 'BASS'], other: ['기타', 'GUITAR'] };
     if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
     const $ = id => document.getElementById(id);
@@ -485,6 +487,8 @@
         $('thD').innerHTML = lvDots(difficulty);
     }
     form.addEventListener('input', updateThumb);
+    // 코드악보(한 장짜리 코드 진행표)는 1,500원이 기본
+    form.elements.style.addEventListener('change', e => { if (e.target.value === 'chord') form.elements.price.value = 1500; });
 
     // ---------- PDF → 페이지 수 + 미리보기 이미지 ----------
     const drop = $('drop');

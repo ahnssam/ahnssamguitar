@@ -838,6 +838,8 @@
         <span>/</span>
         <a href="/#shop">TAB악보</a>
         <span>/</span>
+        <a id="crumbType" href="/#browse" hidden></a>
+        <span id="crumbTypeSep" hidden>/</span>
         <span id="crumbTitle"></span>
     </div>
 
@@ -944,7 +946,7 @@
         const SB_KEY = 'sb_publishable_5rr-OZ7Sqjk1nXn59R7XnQ_HInATuSV';
         // 예전 주소(tab-detail.html?id=1)로 걸린 링크(유튜브 설명란 등)도 계속 열리게
         const LEGACY_IDS = { '1': '6ab3b7d2-9096-4223-a127-2007009ff8f2' };
-        const STYLE_LABEL = { acoustic: '통기타', electric: '일렉기타', fingerstyle: '핑거스타일', solo: '기타솔로', bass: '베이스', other: '' };
+        const STYLE_LABEL = { acoustic: '통기타', electric: '일렉기타', fingerstyle: '핑거스타일', solo: '기타솔로', chord: '코드악보', bass: '베이스', other: '' };
         const ME = '<strong>안쌤 (안규호)</strong>';
 
         function escHtml(s) {
@@ -970,13 +972,22 @@
                 (p.title_original ? escHtml(p.title_original) + '<br>' : '') + by;
             document.getElementById('productTitle').textContent = p.title;
             document.getElementById('crumbTitle').textContent = p.title;
+            // 위치 표시에 종류(기타솔로 등) — 누르면 메인 목록이 그 종류로 걸러진다
+            const typeLabel = STYLE_LABEL[p.style];
+            if (typeLabel) {
+                const ct = document.getElementById('crumbType');
+                ct.textContent = typeLabel;
+                ct.href = '/?type=' + (p.style === 'fingerstyle' ? 'finger' : p.style) + '#browse';
+                ct.hidden = false;
+                document.getElementById('crumbTypeSep').hidden = false;
+            }
             const img = document.getElementById('productImg');
             img.src = p.preview_path
                 ? SB_URL + '/storage/v1/object/public/sheet-previews/' + encodeURIComponent(p.preview_path) + '?v=' + encodeURIComponent(p.updated_at)
                 : 'images/logo-vertical.webp';
             img.alt = p.title + ' 악보 미리보기';
             document.getElementById('productPrice').textContent = '₩' + Number(p.price || 0).toLocaleString();
-            document.getElementById('productStyle').textContent = p.style === 'bass' ? '베이스 TAB' : ['기타 TAB', STYLE_LABEL[p.style]].filter(Boolean).join(' · ');
+            document.getElementById('productStyle').textContent = p.style === 'bass' ? '베이스 TAB' : p.style === 'chord' ? '코드악보 · 코드 진행 한 장' : ['기타 TAB', STYLE_LABEL[p.style]].filter(Boolean).join(' · ');
             if (p.pages) document.getElementById('productPages').textContent = p.pages + '페이지';
             else document.getElementById('pagesRow').style.display = 'none';
             if (p.difficulty) document.getElementById('difficultyClover').innerHTML = renderClover(p.difficulty);
