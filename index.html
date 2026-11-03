@@ -228,12 +228,13 @@
     .s-finger { --c: #2a6b4a; background: var(--c); }
     .s-electric { --c: #2f3e52; background: var(--c); }
     .s-acoustic { --c: #6f8a3a; background: var(--c); }
+    .s-solo { --c: #9b3446; background: var(--c); }
     .s-bass { --c: #8a5a3b; background: var(--c); }
     .lv { color: var(--green-dark); font-size: 9.5px; letter-spacing: 1px; }
 
     /* ===== 새 악보 | 인기 악보 (세로 두 열) ===== */
     .three-col { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr); gap: 40px; }
-    /* 가운데 열: 종류별 작은 목록 2×2 (썸네일 없이) */
+    /* 가운데 열: 종류별 작은 목록 2열 (썸네일 없이) */
     .type-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 26px; margin-top: 12px; }
     .tbox-hd { display: flex; align-items: center; gap: 8px; padding: 6px 0 8px; border-bottom: 2px solid var(--c); }
     .tbox-hd .dot { width: 10px; height: 10px; border-radius: 3px; background: var(--c); }
@@ -248,6 +249,9 @@
     .mini .pr { font-size: 13px; font-weight: 700; white-space: nowrap; }
     .mini:hover .mt b { color: var(--c); }
     .tbox-empty { font-size: 12px; color: #aaa; padding: 10px 0; }
+    /* 종류가 홀수(5개)라 마지막 칸(베이스)은 한 줄 전체, 곡은 두 줄로 나란히 */
+    .tbox:last-child:nth-child(odd) { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 26px; }
+    .tbox:last-child:nth-child(odd) .tbox-hd, .tbox:last-child:nth-child(odd) .tbox-empty { grid-column: 1 / -1; }
     .row { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
     .row .no { width: 18px; font-size: 15px; font-weight: 700; color: #a8a8a8; text-align: center; flex: none; }
     .row:nth-child(-n+3) .no { color: var(--green-dark); }
@@ -597,7 +601,7 @@
             <a class="on" href="#" data-g="">전체</a><a href="#" data-g="가요">가요</a><a href="#" data-g="팝">팝</a><a href="#" data-g="J-POP">J-POP·애니</a><a href="#" data-g="OST">OST</a><a href="#" data-g="록">록</a><a href="#" data-g="연주곡">연주곡·클래식</a><a href="#" data-g="자작곡">안쌤 자작곡</a>
         </div>
         <div class="sub-filter">
-            <span><b>종류</b></span><span id="typeFilter"><a href="#" data-s="" class="on">전체</a><a href="#" data-s="acoustic">통기타</a><a href="#" data-s="electric">일렉기타</a><a href="#" data-s="finger">핑거스타일</a><a href="#" data-s="bass">베이스</a></span>
+            <span><b>종류</b></span><span id="typeFilter"><a href="#" data-s="" class="on">전체</a><a href="#" data-s="acoustic">통기타</a><a href="#" data-s="electric">일렉기타</a><a href="#" data-s="finger">핑거스타일</a><a href="#" data-s="solo">기타솔로</a><a href="#" data-s="bass">베이스</a></span>
             <span class="sort" id="sortBy"><a href="#" data-o="rec" class="on">추천순</a><a href="#" data-o="new">최신순</a><a href="#" data-o="pop">인기순</a><a href="#" data-o="low">낮은 가격순</a></span>
         </div>
         <table class="tbl">
@@ -679,8 +683,8 @@
     // 공개한 곡 = 사이트에서 바로 구매(상세 페이지). 아직 PDF 를 안 올린 곡 = 풀스코어 구매 페이지로.
     const SB_URL = 'https://qpcbrqgqylxkgdwoflku.supabase.co';
     const SB_KEY = 'sb_publishable_5rr-OZ7Sqjk1nXn59R7XnQ_HInATuSV';
-    const STYLE = { acoustic: ['s-acoustic', '통기타', 'ACOUSTIC'], electric: ['s-electric', '일렉기타', 'ELECTRIC'], finger: ['s-finger', '핑거스타일', 'FINGERSTYLE'], bass: ['s-bass', '베이스', 'BASS'] };
-    const COLOR = { acoustic: '#6f8a3a', electric: '#2f3e52', finger: '#2a6b4a', bass: '#8a5a3b' };
+    const STYLE = { acoustic: ['s-acoustic', '통기타', 'ACOUSTIC'], electric: ['s-electric', '일렉기타', 'ELECTRIC'], finger: ['s-finger', '핑거스타일', 'FINGERSTYLE'], solo: ['s-solo', '기타솔로', 'GUITAR SOLO'], bass: ['s-bass', '베이스', 'BASS'] };
+    const COLOR = { acoustic: '#6f8a3a', electric: '#2f3e52', finger: '#2a6b4a', solo: '#9b3446', bass: '#8a5a3b' };
     const LV = n => n ? [1, 2, 3, 4, 5].map(i => i <= n ? '●' : '<span class="off">●</span>').join('') : '';
     const esc = v => String(v ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     // DB 제목 중 맥 파일 이름에서 온 것은 한글 자모가 풀려 있어(NFD) 검색이 안 맞는다 — 모두 NFC 로 맞춰 비교
@@ -749,7 +753,7 @@
         $('typeGrid').innerHTML = Object.keys(STYLE).map(k => {
             const list = ALL.filter(x => x.s === k).sort(SORT.rec);
             return `<div class="tbox" style="--c:${COLOR[k]}"><div class="tbox-hd"><i class="dot"></i><b>${STYLE[k][1]}</b><span>${list.length}곡</span><a href="#browse" data-type="${k}">더보기 <i class="fas fa-chevron-right"></i></a></div>
-                ${list.slice(0, 4).map(mini).join('')}${list.length < 4 ? '<div class="tbox-empty">새 악보를 준비하고 있어요</div>' : ''}</div>`;
+                ${list.slice(0, 3).map(mini).join('')}${list.length < 3 ? '<div class="tbox-empty">새 악보를 준비하고 있어요</div>' : ''}</div>`;
         }).join('');
 
         // 장르별 표: 장르·종류 거르기, 검색, 정렬, 더 보기
