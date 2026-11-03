@@ -5076,6 +5076,18 @@
         :root[data-theme="dark"] .et-prog-key-select { background: #1d2a24; color: #e8f0ec; border-color: rgba(180, 230, 200, 0.28); }
         .et-prog-slot.playable { cursor: pointer; }
         .et-prog-break { flex-basis: 100%; height: 0; }
+        /* 진행 듣기 · 연속 듣기 — 둘이 합쳐 정답확인 버튼과 반반 */
+        .et-prog-listen { flex: 1; display: flex; gap: 0.4rem; min-width: 0; }
+        .et-prog-listen .et-play-btn { flex: 1; min-width: 0; flex-direction: column; gap: 0.25rem; padding: 0.6rem 0.3rem; font-size: 0.86rem; }
+        .et-prog-listen .et-play-btn.is-playing {
+            background: rgba(199, 53, 53, 0.08);
+            border-color: rgba(199, 53, 53, 0.45);
+            color: #b8322d;
+        }
+        :root[data-theme="dark"] .et-prog-listen .et-play-btn.is-playing { color: #ff9e94; border-color: rgba(244, 168, 164, 0.5); }
+        /* 결과 팝업 — 5문제(실전)일 때는 한 줄에 하나씩 */
+        .pr-card.narrow { max-width: 560px; }
+        .pr-grid.one-col { grid-template-columns: 1fr; grid-template-rows: none; grid-auto-flow: row; }
         .et-prog-slot.playable:active { transform: scale(0.95); }
         /* 채점 후 틀린 칸 — 같은 칸 안에 내 답 + 정답 */
         .et-prog-slot.wrong { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; padding-top: 0.45rem; padding-bottom: 0.45rem; }
@@ -9375,7 +9387,7 @@
         <button class="mobile-tab active" data-tool="tuner" data-action="switchTool" data-args="tuner"><i class="fas fa-microphone"></i><span>튜너</span></button>
         <button class="mobile-tab" data-tool="metronome" data-action="switchTool" data-args="metronome"><i class="fas fa-stopwatch"></i><span>메트로놈</span></button><!-- 모바일 탭은 라벨 짧게 — 메뉴와 헤더에는 "메트로놈 & 드럼" 으로 표시 -->
         <button class="mobile-tab" data-tool="backing" data-action="switchTool" data-args="backing"><i class="fas fa-drum"></i><span>반주</span></button>
-        <button class="mobile-tab" id="mobileDynamicTab" data-tool="eartraining" data-action="switchTool" data-args="@tool"><i class="fas fa-headphones"></i><span>음정</span></button>
+        <button class="mobile-tab" id="mobileDynamicTab" data-tool="eartraining" data-action="switchTool" data-args="@tool"><i class="fas fa-headphones"></i><span>이어</span></button>
         <button class="mobile-tab-more" data-action="toggleSidebar" aria-label="메뉴 열기"><i class="fas fa-bars"></i></button>
     </nav>
 
@@ -10141,6 +10153,11 @@
                                     <span class="fb-switch-slider"></span>
                                     <span class="fb-switch-label">1도로 시작</span>
                                 </label>
+                                <label class="fb-switch" id="etProgRandomKeyWrap" style="display:none;" title="문제마다 키가 바뀌고, 키는 정답 확인 후에 알려줘요">
+                                    <input type="checkbox" id="etProgRandomKey" data-change="setETProgRealRandomKey" data-args="$checked">
+                                    <span class="fb-switch-slider"></span>
+                                    <span class="fb-switch-label">키 계속 바꾸기</span>
+                                </label>
                                 <select class="et-prog-key-select" id="etProgKey" data-change="setETProgKey" data-args="$value" aria-label="키 선택"></select>
                             </div>
                         </div>
@@ -10168,10 +10185,17 @@
                     </div>
                     <div class="et-feedback" id="etProgFeedback"></div>
                     <div class="et-play-row">
-                        <button class="et-play-btn" id="etProgPlayBtn" data-action="etProgListenBtn">
-                            <i class="fas fa-volume-up"></i>
-                            <span>진행 듣기</span>
-                        </button>
+                        <!-- 한 번 듣기 / 계속 반복 — 재생 중엔 각각 '정지' 로 바뀐다 -->
+                        <div class="et-prog-listen">
+                            <button class="et-play-btn" id="etProgPlayBtn" data-action="etProgListenBtn">
+                                <i class="fas fa-volume-up"></i>
+                                <span>진행 듣기</span>
+                            </button>
+                            <button class="et-play-btn" id="etProgLoopBtn" data-action="etProgLoopBtn">
+                                <i class="fas fa-repeat"></i>
+                                <span>연속 듣기</span>
+                            </button>
+                        </div>
                         <button class="et-next-btn" id="etProgNextBtn" data-action="etProgNextBtnClick" data-state="check-disabled">
                             <i class="fas fa-check"></i>
                             <span>정답확인</span>
@@ -11387,7 +11411,7 @@
             eartraining: '두 음 간격이나 코드, 코드 진행을 듣고 맞히는 훈련. 정답이 누적되면 랭킹에 반영돼요. 절대음감보다 상대음감 훈련에 효과적이에요.',
             eartraining_pitch:    '음정을 듣고 무슨 음정인지 맞추는 연습이에요. 어려움 난이도부터는 샵(♯) 음계까지 함께 출제됩니다.',
             eartraining_interval: '낮은 음과 높은 음 사이 간격을 맞추는 연습이에요. 절대음감 없이도 음악을 분석할 수 있게 해주는 상대음감 트레이닝의 핵심 방식.',
-            eartraining_prog:     '고른 키의 다이아토닉 코드(1도~7도)로 된 진행을 듣고 순서대로 맞추는 연습이에요.\n\n• 단계 1~8 = 코드 개수. 코드마다 70BPM 으로 두 번씩 쳐줍니다.\n• 실전: 가요·팝에서 실제로 많이 쓰는 8마디 진행이 나와요 (캐논, 로열 로드, 6-4-1-5 …).\n• 지옥: 문제마다 키가 바뀌고, 코드 개수도 5~8개가 섞여 나와요.\n• 1도로 시작을 켜면 첫 코드는 항상 1도로 고정돼요.\n• 10문제가 한 라운드예요. 첫 문제를 들을 때 타이머가 시작되고, 10문제를 끝내면 걸린 시간을 알려줘요.\n• 아래 칸을 누르면 고른 코드를 뺄 수 있어요.\n\n점수는 랭킹(종합)에 반영돼요. 단계가 높을수록 계수가 커져요 (1단계 ×1.0 ~ 8단계 ×3.0, 실전 ×3.25, 지옥 ×3.5).',
+            eartraining_prog:     '고른 키의 다이아토닉 코드(1도~7도)로 된 진행을 듣고 순서대로 맞추는 연습이에요.\n\n• 단계 1~8 = 코드 개수. 코드마다 70BPM 으로 두 번씩 쳐줍니다.\n• 실전: 가요·팝에서 실제로 많이 쓰는 8마디 진행이 나와요 (캐논, 로열 로드, 6-4-1-5 …). 5문제가 한 세트이고, "키 계속 바꾸기"를 켜면 문제마다 키가 바뀌며 키는 정답 확인 후에 알려줘요.\n• 연속 듣기: 정지를 누를 때까지 진행을 계속 반복해요.\n• 지옥: 문제마다 키가 바뀌고, 코드 개수도 5~8개가 섞여 나와요.\n• 1도로 시작을 켜면 첫 코드는 항상 1도로 고정돼요.\n• 10문제가 한 라운드예요. 첫 문제를 들을 때 타이머가 시작되고, 10문제를 끝내면 걸린 시간을 알려줘요.\n• 아래 칸을 누르면 고른 코드를 뺄 수 있어요.\n\n점수는 랭킹(종합)에 반영돼요. 단계가 높을수록 계수가 커져요 (1단계 ×1.0 ~ 8단계 ×3.0, 실전 ×3.25, 지옥 ×3.5).',
             eartraining_chord:    '구성음을 듣고 어떤 코드인지 맞추는 연습이에요. 코드 사운드 자체에 익숙해지면 실전 연주에서 코드 진행을 빠르게 캐치할 수 있어 큰 도움이 됩니다.',
             chords: '기본·텐션·세븐스 코드까지 운지법과 사운드를 한 번에 검색·재생. 코드를 클릭하면 바로 그 코드 사운드가 들려요.',
             fretboard: '지판 위 모든 음의 위치를 시각화. 트레이닝 모드로 음 이름 맞추기 연습도 가능합니다.',
@@ -25280,6 +25304,7 @@
                 document.getElementById('etPitchMode').classList.toggle('active', mode === 'pitch');
                 document.getElementById('etChordMode').classList.toggle('active', mode === 'chord');
                 document.getElementById('etProgMode').classList.toggle('active', mode === 'prog');
+                if (mode !== 'prog' && window.etProgStopPlayback) etProgStopPlayback();
                 if (mode === 'prog') etProgEnsureSamples();
                 gtag('event', 'ear_mode_switch', { mode: mode });
                 // 모드 바뀌면 모바일 ? 버튼을 새 모드의 .et-settings-box 안으로 이동
@@ -25592,6 +25617,7 @@
             // 지옥: 문제마다 키를 무작위로 바꾸고, 코드 개수도 5~8개 중 무작위
             const PROG_HELL_MIN = 5, PROG_HELL_MAX = 8;
             const PROG_ROUND_SIZE = 10;
+            const PROG_ROUND_SIZE_REAL = 5;      // 실전은 5문제가 한 세트
 
             let _etProgLevel = 2;                // 1~8 또는 'hell'
             let _etProgKey = 'C';
@@ -25612,9 +25638,14 @@
 
             function progIsHell() { return _etProgLevel === 'hell'; }
             function progIsReal() { return _etProgLevel === 'real'; }
+            // 실전 '키 계속 바꾸기' — 문제마다 키를 바꾸고, 정답 확인 전까지 키를 숨긴다
+            let _etProgRealRandom = false;
+            function progRealRandom() { return progIsReal() && _etProgRealRandom; }
+            function progKeyHidden() { return progRealRandom() && !_etProgGraded; }
+            function progRoundSize() { return progIsReal() ? PROG_ROUND_SIZE_REAL : PROG_ROUND_SIZE; }
             // 이번 문제의 코드 개수 / 키 / 랭킹 난이도 값
             function progCount() { return progIsHell() ? _etProgHellCount : progIsReal() ? 8 : _etProgLevel; }
-            function progActiveKey() { return progIsHell() ? _etProgHellKey : _etProgKey; }
+            function progActiveKey() { return (progIsHell() || progRealRandom()) ? _etProgHellKey : _etProgKey; }
             function progDiffKey() { return progIsHell() || progIsReal() ? _etProgLevel : 'lv' + _etProgLevel; }
             function progLevelLabel() { return progIsHell() ? '지옥' : progIsReal() ? '실전' : String(_etProgLevel); }
 
@@ -25638,13 +25669,30 @@
             }
             var _etProgRealName = '';             // 이번 문제 진행 이름 (채점 후 보여줌)
 
-            function progRollHell() {
-                _etProgHellCount = PROG_HELL_MIN + Math.floor(Math.random() * (PROG_HELL_MAX - PROG_HELL_MIN + 1));
+            // 문제마다 바뀌는 키 (지옥 · 실전 키 계속 바꾸기) — 바로 전 키와는 다르게
+            function progRollKey() {
                 var prev = _etProgHellKey, next;
                 do { next = PROG_KEYS[Math.floor(Math.random() * PROG_KEYS.length)].id; } while (next === prev);
                 _etProgHellKey = next;
+                progSyncKeySelect();
+            }
+            function progRollHell() {
+                _etProgHellCount = PROG_HELL_MIN + Math.floor(Math.random() * (PROG_HELL_MAX - PROG_HELL_MIN + 1));
+                progRollKey();
+            }
+            // 키 선택 칸: 키가 자동으로 바뀌는 동안엔 잠그고, 숨김 중이면 '? 키'
+            function progSyncKeySelect() {
                 var sel = document.getElementById('etProgKey');
-                if (sel) sel.value = next;
+                if (!sel) return;
+                var auto = progIsHell() || progRealRandom();
+                sel.disabled = auto;
+                if (progKeyHidden()) sel.value = '?';
+                else if (auto) sel.value = _etProgAnswer ? _etProgAnswerKey : _etProgHellKey;
+                else sel.value = _etProgKey;
+            }
+            function progShowKeyToggle() {
+                var wrap = document.getElementById('etProgRandomKeyWrap');
+                if (wrap) wrap.style.display = progIsReal() ? '' : 'none';
             }
 
             function progTonicOn() {
@@ -25717,8 +25765,8 @@
             }
 
             window.etProgEnsureSamples = function() {
-                // 지옥은 키가 계속 바뀌므로 전 키를 미리 받아 둔다 (샘플 15개 공유)
-                if (progIsHell()) return Promise.all(PROG_KEYS.map(function(k) { return progLoadKey(k.id); }));
+                // 키가 계속 바뀌면(지옥·실전 랜덤) 전 키를 미리 받아 둔다 (샘플 15개 공유)
+                if (progIsHell() || progRealRandom()) return Promise.all(PROG_KEYS.map(function(k) { return progLoadKey(k.id); }));
                 return progLoadKey(_etProgKey);
             };
 
@@ -25737,8 +25785,29 @@
                 el.classList.add('ringing');
             }
 
+            // 진행 듣기('once') / 연속 듣기('loop') — 버튼이 '정지' 로 바뀌는 상태
+            var _etProgPlayMode = null;
+            var _etProgPlayTimers = [];
+            var _etProgPlayToken = 0;
+            function progSetPlayButtons() {
+                [['etProgPlayBtn', 'once', 'fa-volume-up', '진행 듣기'],
+                 ['etProgLoopBtn', 'loop', 'fa-repeat', '연속 듣기']].forEach(function(b) {
+                    var btn = document.getElementById(b[0]);
+                    if (!btn) return;
+                    var on = _etProgPlayMode === b[1];
+                    btn.classList.toggle('is-playing', on);
+                    var icon = btn.querySelector('i'), label = btn.querySelector('span');
+                    if (icon) icon.className = 'fas ' + (on ? 'fa-stop' : b[2]);
+                    if (label) label.textContent = on ? '정지' : b[3];
+                });
+            }
+
             function etProgStopVoices() {
                 progClearPulses();
+                _etProgPlayToken++;                    // 예약된 다음 반복·종료 처리 무효화
+                _etProgPlayTimers.forEach(clearTimeout);
+                _etProgPlayTimers = [];
+                if (_etProgPlayMode) { _etProgPlayMode = null; progSetPlayButtons(); }
                 var now = _etCtx.currentTime;
                 _etProgVoices.forEach(function(v) {
                     try {
@@ -25766,28 +25835,62 @@
                 g.gain.setTargetAtTime(0, releaseAt, tau);
                 src.connect(g);
                 g.connect(_etCtx.destination);
+                var stopAt = Math.min(ringEnd, releaseAt + tau * 7) + 0.02;
                 src.start(start, s.offset);
-                src.stop(Math.min(ringEnd, releaseAt + tau * 7) + 0.02);
-                _etProgVoices.push({ src: src, g: g });
+                src.stop(stopAt);
+                _etProgVoices.push({ src: src, g: g, end: stopAt });
             }
 
             // pulse = 답 칸을 스트럼에 맞춰 울리게 할지 (문제 재생일 때만)
-            function playProgression(seq, keyId, pulse) {
+            // mode  = 'once'(진행 듣기) / 'loop'(연속 듣기) — 그 버튼을 '정지' 로 바꾼다.
+            //         없으면 버튼과 상관없는 재생 (히스토리 다시 듣기 등)
+            function playProgression(seq, keyId, pulse, mode) {
                 if (_etCtx.state === 'suspended') _etCtx.resume();
                 return progLoadKey(keyId).then(function(bufs) {
                     etProgStopVoices();
+                    var token = _etProgPlayToken;
+                    var loop = mode === 'loop';
+                    _etProgPlayMode = mode || null;
+                    progSetPlayButtons();
                     var beat = 60 / PROG_BPM;
-                    var t0 = _etCtx.currentTime + 0.08;
                     var total = seq.length * PROG_STRUMS_PER_CHORD;
-                    for (var n = 0; n < total; n++) {
-                        var s = bufs[seq[Math.floor(n / PROG_STRUMS_PER_CHORD)]];
-                        var start = t0 + n * beat;
-                        if (n < total - 1) progScheduleStrum(s, start, start + beat, 0.09);
-                        else progScheduleStrum(s, start, start + 2.6, 0.25);
-                        if (pulse) {
-                            var delay = Math.max(0, (start - _etCtx.currentTime) * 1000);
-                            _etProgPulseTimers.push(setTimeout(progPulseSlot.bind(null, Math.floor(n / PROG_STRUMS_PER_CHORD)), delay));
+                    // 한 바퀴 스케줄 → 다음 바퀴 시작 시각을 돌려준다.
+                    // 반복 중이면 마지막 스트럼도 다음 바퀴 첫 박에 맞춰 정리한다.
+                    function cycle(t0) {
+                        var now = _etCtx.currentTime;
+                        _etProgVoices = _etProgVoices.filter(function(v) { return v.end > now; });
+                        for (var n = 0; n < total; n++) {
+                            var s = bufs[seq[Math.floor(n / PROG_STRUMS_PER_CHORD)]];
+                            var start = t0 + n * beat;
+                            if (n < total - 1 || loop) progScheduleStrum(s, start, start + beat, 0.09);
+                            else progScheduleStrum(s, start, start + 2.6, 0.25);
+                            if (pulse) {
+                                var delay = Math.max(0, (start - _etCtx.currentTime) * 1000);
+                                _etProgPulseTimers.push(setTimeout(progPulseSlot.bind(null, Math.floor(n / PROG_STRUMS_PER_CHORD)), delay));
+                            }
                         }
+                        return t0 + total * beat;
+                    }
+                    var t0 = _etCtx.currentTime + 0.08;
+                    var next = cycle(t0);
+                    if (loop) {
+                        // 다음 바퀴는 시작 직전에 예약 — 정지하면 token 이 바뀌어 멈춘다
+                        (function scheduleNext(at) {
+                            var wait = Math.max(0, (at - _etCtx.currentTime - 0.3) * 1000);
+                            _etProgPlayTimers.push(setTimeout(function() {
+                                if (token !== _etProgPlayToken) return;
+                                _etProgPulseTimers = [];
+                                scheduleNext(cycle(at));
+                            }, wait));
+                        })(next);
+                    } else if (mode) {
+                        // 한 번 듣기 — 마지막 울림이 끝나면 버튼을 되돌린다
+                        var endAt = t0 + (total - 1) * beat + 2.6;
+                        _etProgPlayTimers.push(setTimeout(function() {
+                            if (token !== _etProgPlayToken) return;
+                            _etProgPlayMode = null;
+                            progSetPlayButtons();
+                        }, Math.max(0, (endAt - _etCtx.currentTime) * 1000)));
                     }
                 }).catch(function() {
                     var fb = document.getElementById('etProgFeedback');
@@ -25917,10 +26020,11 @@
                 el.classList.toggle('done', r.finished);
                 var count = document.getElementById('etProgRoundCount');
                 var timer = document.getElementById('etProgTimer');
+                var size = r.size || progRoundSize();
                 if (r.finished) {
-                    count.textContent = PROG_ROUND_SIZE + '문제 완료 · ' + r.correct + '/' + PROG_ROUND_SIZE + ' 정답';
+                    count.textContent = size + '문제 완료 · ' + r.correct + '/' + size + ' 정답';
                 } else {
-                    count.textContent = '문제 ' + Math.min(r.done + (r.running ? 1 : 0), PROG_ROUND_SIZE) + '/' + PROG_ROUND_SIZE;
+                    count.textContent = '문제 ' + Math.min(r.done + (r.running ? 1 : 0), size) + '/' + size;
                 }
                 timer.innerHTML = '<i class="fas fa-stopwatch"></i> ' + (r.finished ? '걸린 시간 ' : '') + progFormatTime(progRoundElapsed());
             }
@@ -25931,7 +26035,7 @@
 
             function progStartRound() {
                 progStopTimer();
-                _etProgRound = { done: 0, correct: 0, start: performance.now(), elapsed: 0, running: true, finished: false };
+                _etProgRound = { done: 0, correct: 0, start: performance.now(), elapsed: 0, running: true, finished: false, size: progRoundSize() };
                 _etProgRoundHistory = [];
                 _etProgTimerId = setInterval(renderProgRound, 100);
                 renderProgRound();
@@ -25954,12 +26058,12 @@
                 if (!r.running) return;
                 r.done++;
                 if (isCorrect) r.correct++;
-                if (r.done >= PROG_ROUND_SIZE) {
+                if (r.done >= (r.size || PROG_ROUND_SIZE)) {
                     r.elapsed = performance.now() - r.start;
                     r.running = false;
                     r.finished = true;
                     progStopTimer();
-                    try { gtag('event', 'ear_prog_round', { level: _etProgLevel, key: progIsHell() ? 'random' : _etProgKey, correct: r.correct, seconds: Math.round(r.elapsed / 1000) }); } catch (e) {}
+                    try { gtag('event', 'ear_prog_round', { level: _etProgLevel, key: (progIsHell() || progRealRandom()) ? 'random' : _etProgKey, correct: r.correct, seconds: Math.round(r.elapsed / 1000) }); } catch (e) {}
                 }
                 renderProgRound();
             }
@@ -25997,6 +26101,7 @@
                     document.body.appendChild(ov);
                 }
                 var r = _etProgRound;
+                var size = r.size || PROG_ROUND_SIZE;
                 // [번호 위 / ✓·✗ 아래] [코드들 — 항상 한 줄, 틀린 칸 아래에 정답] [🔊]
                 var items = _etProgRoundHistory.map(function(h, i) {
                     return '<div class="pr-item ' + (h.correct ? 'correct' : 'wrong') + '"' +
@@ -26008,16 +26113,16 @@
                         '</div>';
                 }).join('');
                 ov.innerHTML =
-                    '<div class="pr-card">' +
+                    '<div class="pr-card' + (size <= 5 ? ' narrow' : '') + '">' +
                         '<button type="button" class="pr-close" data-action="closeETProgSummary" aria-label="닫기"><i class="fas fa-times"></i></button>' +
-                        '<div class="pr-title">' + PROG_ROUND_SIZE + '문제 완료</div>' +
+                        '<div class="pr-title">' + size + '문제 완료</div>' +
                         '<div class="pr-stats">' +
-                            '<div class="pr-stat"><span class="pr-stat-val">' + r.correct + '<small>/' + PROG_ROUND_SIZE + '</small></span><span class="pr-stat-lbl">정답</span></div>' +
+                            '<div class="pr-stat"><span class="pr-stat-val">' + r.correct + '<small>/' + size + '</small></span><span class="pr-stat-lbl">정답</span></div>' +
                             '<div class="pr-stat"><span class="pr-stat-val">' + progFormatTime(r.elapsed) + '</span><span class="pr-stat-lbl">걸린 시간</span></div>' +
                             '<div class="pr-stat"><span class="pr-stat-val">' + progLevelLabel() + '</span><span class="pr-stat-lbl">단계</span></div>' +
-                            '<div class="pr-stat"><span class="pr-stat-val">' + (progIsHell() ? '랜덤' : _etProgKey) + '</span><span class="pr-stat-lbl">키</span></div>' +
+                            '<div class="pr-stat"><span class="pr-stat-val">' + ((progIsHell() || progRealRandom()) ? '랜덤' : _etProgKey) + '</span><span class="pr-stat-lbl">키</span></div>' +
                         '</div>' +
-                        '<div class="pr-grid">' + items + '</div>' +
+                        '<div class="pr-grid' + (size <= 5 ? ' one-col' : '') + '">' + items + '</div>' +
                         '<div class="pr-actions">' +
                             '<button type="button" class="pr-btn" data-action="closeETProgSummary">닫기</button>' +
                             '<button type="button" class="pr-btn primary" data-action="etProgSummaryNewRound"><i class="fas fa-redo"></i> 새 라운드</button>' +
@@ -26045,9 +26150,13 @@
             function renderProgChoices() {
                 var el = document.getElementById('etProgChoices');
                 if (!el) return;
+                var hidden = progKeyHidden();
                 el.innerHTML = PROG_DEGREES.map(function(d, i) {
+                    // 키를 숨기는 동안엔 코드 이름 대신 도수만 (이름을 보면 키가 드러나므로)
+                    var main = hidden ? d.roman : progChordName(_etProgGraded && _etProgAnswer ? _etProgAnswerKey : progActiveKey(), i);
+                    var sub = hidden ? '&nbsp;' : d.roman;
                     return '<button class="et-choice-btn" data-pci="' + i + '" data-action="etProgPick" data-args="' + i + '">' +
-                        progChordName(progActiveKey(), i) + '<br><span style="font-size:0.7rem;opacity:0.5;">' + d.roman + '</span></button>';
+                        main + '<br><span style="font-size:0.7rem;opacity:0.5;">' + sub + '</span></button>';
                 }).join('');
             }
 
@@ -26065,7 +26174,9 @@
                     if (_etProgGraded && _etProgAnswer) {
                         cls += pick === _etProgAnswer[i] ? ' correct' : ' wrong';
                     }
-                    var label = pick !== undefined ? progChordName(_etProgAnswer ? _etProgAnswerKey : progActiveKey(), pick) : (i + 1);
+                    var label = pick === undefined ? (i + 1)
+                        : progKeyHidden() ? PROG_DEGREES[pick].roman
+                        : progChordName(_etProgAnswer ? _etProgAnswerKey : progActiveKey(), pick);
                     // 푸는 중: 누르면 그 칸 취소 / 채점 후: 누르면 정답 코드 소리
                     var act = '';
                     var missed = _etProgGraded && _etProgAnswer && pick !== _etProgAnswer[i];
@@ -26104,7 +26215,8 @@
                 fb.className = 'et-feedback';
             }
 
-            window.etProgPlayQuestion = function() {
+            window.etProgPlayQuestion = function(playMode) {
+                playMode = playMode === 'loop' ? 'loop' : 'once';
                 // 라운드 첫 문제(또는 지난 라운드를 끝낸 뒤)면 새 라운드 + 타이머 시작
                 if (!_etProgRound.running) progStartRound();
                 // 랭킹 라운드(10문제)도 이 라운드와 같이 간다 — 단계가 곧 난이도
@@ -26115,22 +26227,35 @@
                     renderProgChoices();
                 }
                 try { if (window.earSession) window.earSession.startQuestion('ear_prog', progDiffKey()); } catch (e) {}
+                _etProgGraded = false;
+                // 실전 키 계속 바꾸기: 문제마다 새 키 (숨김)
+                if (progRealRandom()) progRollKey();
                 _etProgAnswer = etProgRandomSeq();
                 _etProgAnswerKey = progActiveKey();
-                _etProgGraded = false;
                 etProgResetPicks();
                 renderProgSlots();
+                renderProgChoices();
+                progSyncKeySelect();
                 document.querySelectorAll('#etProgChoices .et-choice-btn').forEach(function(b) {
                     b.classList.remove('correct', 'wrong', 'disabled', 'selected');
                 });
                 etProgUpdateNextState();
-                playProgression(_etProgAnswer, _etProgAnswerKey, true);
+                playProgression(_etProgAnswer, _etProgAnswerKey, true, playMode);
             };
 
+            // 진행 듣기 — 한 번. 재생 중이면 정지
             window.etProgListenBtn = function() {
-                if (_etProgAnswer === null || (_etProgGraded && _etProgRound.finished)) etProgPlayQuestion();
-                else playProgression(_etProgAnswer, _etProgAnswerKey, !_etProgGraded);
+                if (_etProgPlayMode === 'once') { etProgStopVoices(); return; }
+                if (_etProgAnswer === null || (_etProgGraded && _etProgRound.finished)) etProgPlayQuestion('once');
+                else playProgression(_etProgAnswer, _etProgAnswerKey, !_etProgGraded, 'once');
             };
+            // 연속 듣기 — 정지할 때까지 계속 반복
+            window.etProgLoopBtn = function() {
+                if (_etProgPlayMode === 'loop') { etProgStopVoices(); return; }
+                if (_etProgAnswer === null || (_etProgGraded && _etProgRound.finished)) etProgPlayQuestion('loop');
+                else playProgression(_etProgAnswer, _etProgAnswerKey, !_etProgGraded, 'loop');
+            };
+            window.etProgStopPlayback = function() { etProgStopVoices(); };
 
             window.etProgPick = function(ci) {
                 if (!_etProgAnswer || _etProgGraded) return;
@@ -26152,13 +26277,17 @@
                 if (_etProgGraded || !_etProgAnswer) return;
                 var count = progCount();
                 if (_etProgPicks.length !== count) return;
+                var wasHidden = progKeyHidden();
                 _etProgGraded = true;
                 _etProgStats.total++;
+                // 숨겨 둔 키·코드 이름을 이제 보여준다
+                renderProgChoices();
+                progSyncKeySelect();
                 var hits = 0;
                 _etProgAnswer.forEach(function(a, i) { if (_etProgPicks[i] === a) hits++; });
                 var allCorrect = hits === count;
                 var fb = document.getElementById('etProgFeedback');
-                var answerStr = progSeqName(_etProgAnswer, _etProgAnswerKey);
+                var answerStr = (wasHidden ? '[' + _etProgAnswerKey + ' 키] ' : '') + progSeqName(_etProgAnswer, _etProgAnswerKey);
                 if (allCorrect) {
                     _etProgStats.correct++;
                     _etProgStats.streak++;
@@ -26257,8 +26386,9 @@
                 if (progIsHell()) {
                     progRollHell();
                     _etProgHellFresh = true;
-                    renderProgChoices();
                 }
+                renderProgChoices();
+                progSyncKeySelect();
                 etProgResetPicks();
                 updateETProgScores();
                 progResetRound();
@@ -26282,15 +26412,16 @@
                 document.querySelectorAll('#etProgMode .et-diff-btn').forEach(function(b) {
                     b.classList.toggle('active', b.dataset.plevel === String(_etProgLevel));
                 });
-                // 지옥은 키가 자동으로 바뀌므로 키 선택을 잠근다
-                var sel = document.getElementById('etProgKey');
-                if (sel) {
-                    sel.disabled = progIsHell();
-                    if (!progIsHell()) sel.value = _etProgKey;
-                }
+                progShowKeyToggle();
                 updateProgTonicToggle();
+                etProgReset();               // 키 선택 칸 잠금·표시도 여기서 맞춘다
+                if (progIsHell() || progRealRandom()) etProgEnsureSamples();
+            };
+
+            window.setETProgRealRandomKey = function(on) {
+                _etProgRealRandom = !!on;
                 etProgReset();
-                if (progIsHell()) etProgEnsureSamples();
+                if (_etProgRealRandom) etProgEnsureSamples();
             };
 
             window.setETProgKey = function(keyId) {
@@ -26308,7 +26439,8 @@
             (function initProgKeySelect() {
                 var sel = document.getElementById('etProgKey');
                 if (!sel) return;
-                sel.innerHTML = PROG_KEYS.map(function(k) {
+                // '? 키' — 실전 키 계속 바꾸기에서 정답 확인 전까지 보여주는 자리 (목록엔 안 나옴)
+                sel.innerHTML = '<option value="?" hidden>? 키</option>' + PROG_KEYS.map(function(k) {
                     return '<option value="' + k.id + '">' + k.id + ' 키</option>';
                 }).join('');
                 sel.value = _etProgKey;
