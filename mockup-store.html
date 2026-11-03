@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>시안 4 — 악보 스토어 메인 | 안쌤의 기타나무숲</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    :root {
+        /* 지금 사이트와 같은 색 */
+        --green-deep: #2a6b4a;
+        --green-dark: #3a8a5c;
+        --green-mid: #52a872;
+        --green-light: #72c492;
+        --green-pale: #b5e6c8;
+        --green-faint: #e2f5ea;
+        --cream: #f5fbf7;
+        --white: #ffffff;
+        --gold: #b8913f;
+        --ink: #151515;
+        --sub: #7a7a7a;
+        --line: #e6ece8;
+        --wrap: 1440px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans KR', sans-serif; color: var(--ink); background: #fff; font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    .wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 20px; }
+    .mock-flag { background: #fff6d6; color: #7a5b00; font-size: 12px; text-align: center; padding: 5px 12px; }
+
+    /* ===== 메뉴: 지금 사이트와 같은 느낌 (로고 · 가운데 메뉴 · 연습도구/로그인 알약 버튼 · SNS) ===== */
+    header { position: sticky; top: 0; z-index: 30; background: rgba(255,255,255,0.97); backdrop-filter: blur(8px); box-shadow: 0 1px 0 #eef2ef; }
+    .hd { max-width: 1440px; margin: 0 auto; padding: 0 32px; height: 84px; display: flex; align-items: center; gap: 24px; }
+    .hd .logo img { height: 60px; display: block; }
+    .nav { display: flex; gap: 38px; margin: 0 auto; font-size: 13.5px; font-weight: 600; letter-spacing: 0.15em; color: #333; }
+    .nav a.on { color: var(--green-deep); }
+    .hd-right { display: flex; align-items: center; gap: 10px; }
+    .pill-btn { display: inline-flex; align-items: center; gap: 7px; border: 1.5px solid var(--green-mid); color: var(--green-deep); background: #fff; border-radius: 999px; padding: 7px 16px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .pill-btn .av { width: 22px; height: 22px; border-radius: 50%; background: url('images/hero-photo-02.webp') center / cover; }
+    .sns-mini { display: flex; gap: 13px; margin-left: 8px; color: #444; font-size: 14px; align-items: center; }
+    .sns-mini b { font-size: 10px; background: #222; color: #7fd18e; border-radius: 3px; padding: 0 3px; }
+    .burger { display: none; font-size: 22px; color: var(--green-deep); margin-left: auto; }
+
+    /* ===== 배너: 지금 사이트 히어로 느낌 (초록 그라데이션 + 원형 사진) ===== */
+    .banner { position: relative; overflow: hidden; color: #fff; background: linear-gradient(135deg, #3a8a5c 0%, #2f7a50 50%, #52a872 100%); }
+    .banner::before { content: ''; position: absolute; inset: 0; opacity: 0.6;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E"); }
+    .banner .leaf { position: absolute; color: var(--green-pale); opacity: 0.18; }
+    .bn-inner { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) 330px 440px; align-items: center; gap: 36px; min-height: 250px; padding-top: 22px; padding-bottom: 22px; }
+    .bn-kicker { font-size: 12px; letter-spacing: 0.3em; color: var(--green-pale); font-weight: 500; }
+    .bn-title { font-family: 'Playfair Display', serif; font-size: 44px; font-weight: 900; line-height: 1.04; letter-spacing: -0.02em; margin: 10px 0 8px; }
+    .bn-kr { font-size: 19px; font-weight: 700; opacity: 0.95; letter-spacing: -0.02em; }
+    .bn-kr em { font-style: normal; color: #ffe9a8; }
+    .bn-visual { position: relative; width: 330px; height: 220px; }
+    .circle { position: absolute; border-radius: 50%; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.2); border: 3px solid rgba(255,255,255,0.35); }
+    .circle img { width: 100%; height: 100%; object-fit: cover; }
+    .c-main { width: 160px; height: 160px; left: 92px; top: 34px; z-index: 3; }
+    .c-1 { width: 84px; height: 84px; right: 6px; top: 4px; z-index: 2; }
+    .c-2 { width: 74px; height: 74px; left: 14px; bottom: 6px; z-index: 4; }
+    .c-3 { width: 66px; height: 66px; left: 24px; top: 2px; z-index: 2; }
+    /* 배너 오른쪽: 연습도구 홍보 */
+    .tp { display: grid; grid-template-columns: 196px minmax(0, 1fr); gap: 18px; align-items: center; padding: 16px 18px 16px 16px; border-radius: 22px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.24); color: #fff; transition: transform .3s ease, background-color .3s ease, box-shadow .3s ease; }
+    .tp:hover { transform: translateY(-4px); background: rgba(255,255,255,0.18); box-shadow: 0 18px 36px rgba(0,0,0,0.16); }
+    .tp-shots { position: relative; height: 176px; }
+    .tp-shots img { position: absolute; border-radius: 10px; background: #fff; border: 3px solid #fff; box-shadow: 0 10px 22px rgba(0,0,0,0.22); transition: transform .4s ease; }
+    .tp-shots .s-fret { width: 196px; left: 0; top: 0; transform: rotate(-2deg); opacity: 0.95; }
+    .tp-shots .s-met { width: 132px; right: -4px; top: 44px; transform: rotate(5deg); }
+    .tp-shots .s-tun { width: 118px; left: 2px; bottom: 0; transform: rotate(-4deg); z-index: 2; }
+    .tp:hover .s-fret { transform: rotate(-3deg) translateY(-4px); }
+    .tp:hover .s-met { transform: rotate(8deg) translate(6px, -2px); }
+    .tp:hover .s-tun { transform: rotate(-7deg) translate(-4px, 2px); }
+    .tp small { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.2em; color: #ffe9a8; }
+    .tp b { display: block; font-size: 21px; font-weight: 900; letter-spacing: -0.03em; margin: 4px 0 6px; }
+    .tp .tp-list { display: block; font-size: 12.5px; line-height: 1.6; color: rgba(255,255,255,0.8); }
+    .tp-btn { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; padding: 11px 20px; border-radius: 999px; background: #fff; color: var(--green-deep); font-size: 14.5px; font-weight: 900; box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
+    .tp-btn i { transition: transform .25s ease; }
+    .tp:hover .tp-btn i { transform: translateX(4px); }
+
+    /* ===== 검색 (배너 아래) ===== */
+    .search-sec { background: #fff; padding: 26px 0 0; }
+    .search-box { max-width: 680px; margin: 0 auto; display: flex; align-items: center; border: 2px solid var(--green-dark); border-radius: 30px; padding: 5px 5px 5px 22px; box-shadow: 0 8px 24px rgba(42,107,74,0.10); }
+    .search-box i { color: var(--green-dark); font-size: 16px; }
+    .search-box input { flex: 1; border: 0; outline: none; font: inherit; font-size: 15px; padding: 0 12px; min-width: 0; }
+    .search-box button { border: 0; background: var(--green-deep); color: #fff; font: inherit; font-weight: 700; border-radius: 24px; padding: 11px 26px; cursor: pointer; }
+    .kw { max-width: 680px; margin: 12px auto 0; display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; font-size: 13px; color: #999; }
+    .kw a { color: #555; }
+    .kw a:hover { color: var(--green-deep); }
+
+    /* ===== 공통 섹션 ===== */
+    .sec { padding: 64px 0; }
+    .bg-white { background: #fff; }
+    .bg-faint { background: var(--green-faint); }
+    .bg-cream { background: var(--cream); }
+    .col-hd { display: flex; align-items: baseline; gap: 10px; padding-bottom: 12px; border-bottom: 2px solid var(--green-deep); }
+    .col-hd small { font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 700; color: var(--green-mid); letter-spacing: 0.15em; }
+    .col-hd h2 { font-size: 19px; font-weight: 900; letter-spacing: -0.02em; }
+    .col-hd .tabs { display: flex; gap: 12px; font-size: 13px; color: #999; margin-left: 8px; }
+    .col-hd .tabs a.on { color: var(--green-deep); font-weight: 700; }
+    .more { margin-left: auto; font-size: 13px; color: #888; white-space: nowrap; }
+    .big-hd { text-align: center; margin-bottom: 44px; }
+    .big-hd .label { font-size: 0.8rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--green-mid); font-weight: 600; margin-bottom: 0.6rem; }
+    .big-hd h2 { font-family: 'Playfair Display', serif; font-size: 44px; font-weight: 700; color: var(--green-deep); line-height: 1.2; }
+    .big-hd .line { width: 60px; height: 3px; background: linear-gradient(90deg, var(--green-light), var(--green-pale)); margin: 14px auto 0; border-radius: 2px; }
+
+    /* ===== 악보 썸네일 (그랩더기타식) ===== */
+    .th { position: relative; aspect-ratio: 1 / 0.9; border-radius: 4px; overflow: hidden; background: #f3f5f4; }
+    .th .paper { position: absolute; left: 8%; top: 8%; width: 58%; height: 64%; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.12); padding: 6% 7%; }
+    .th .paper::before { content: ''; display: block; height: 6%; width: 50%; margin: 0 auto 8%; background: #3a3a3a; border-radius: 2px; }
+    .th .paper::after { content: ''; display: block; height: 76%; background: repeating-linear-gradient(to bottom, #bbb 0 1px, transparent 1px 3.5px); }
+    /* 왼쪽 아래 → 오른쪽 위로 완만한 대각선(약 35도)으로 색 면을 나눈다 */
+    .th .band { position: absolute; inset: 0; z-index: 1; background: transparent; padding: 0 7% 8%; color: #fff; text-align: right; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; }
+    .th .band::before, .th .band::after { content: ''; position: absolute; inset: 0; z-index: -1; }
+    .th .band::before { background: linear-gradient(160deg, var(--c), color-mix(in srgb, var(--c) 78%, #000)); clip-path: polygon(0 90%, 100% 12%, 100% 100%, 0 100%); }
+    .th .band::after { background: var(--c); opacity: 0.35; clip-path: polygon(0 82%, 100% 4%, 100% 0, 0 78%); }
+    .th .t, .th .a, .th .d { max-width: 66%; word-break: keep-all; }
+    .th .t { font-weight: 900; font-size: 15px; line-height: 1.15; letter-spacing: -0.03em; }
+    .th .a { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; opacity: 0.75; }
+    .th .d { font-size: 8.5px; letter-spacing: 1.5px; margin-top: 3px; }
+    .th .d .off, .lv .off { opacity: 0.3; }
+    .th .fa-guitar { position: absolute; right: 9%; top: 34%; font-size: 22px; opacity: 0.25; transform: rotate(-20deg); }
+    .th.sm { width: 76px; flex: none; }
+    .th.sm .t { font-size: 10.5px; max-width: none; white-space: nowrap; }
+    .th.sm .a, .th.sm .d, .th.sm .fa-guitar { display: none; }
+    .s-finger { --c: #2a6b4a; background: var(--c); }
+    .s-electric { --c: #2f3e52; background: var(--c); }
+    .s-acoustic { --c: #6f8a3a; background: var(--c); }
+    .s-bass { --c: #8a5a3b; background: var(--c); }
+    .lv { color: var(--green-dark); font-size: 9.5px; letter-spacing: 1px; }
+
+    /* ===== 새 악보 | 인기 악보 (세로 두 열) ===== */
+    .three-col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; }
+    /* 가운데 열: 종류 탭 + 리스트 */
+    .type-tabs { display: flex; gap: 16px; }
+    .type-tabs a { font-size: 17px; font-weight: 900; letter-spacing: -0.02em; color: #c5ccc8; transition: color .2s; }
+    .type-tabs a:hover { color: #8a948f; }
+    .type-tabs a.on { color: var(--ink); }
+    .type-tabs a.on::after { content: ''; display: block; height: 3px; border-radius: 2px; margin-top: 2px; background: var(--c, var(--green-deep)); }
+    .row { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .row .no { width: 18px; font-size: 15px; font-weight: 700; color: #a8a8a8; text-align: center; flex: none; }
+    .row:nth-child(-n+3) .no { color: var(--green-dark); }
+    .row .new { flex: none; font-size: 10px; font-weight: 900; color: #fff; background: #e85a4f; border-radius: 4px; padding: 1px 6px; }
+    .row .body { min-width: 0; flex: 1; }
+    .row .tt { font-weight: 700; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row .sub { font-size: 12.5px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row .meta { font-size: 12px; color: #9a9a9a; margin-top: 3px; display: flex; gap: 8px; align-items: center; }
+    .row .meta .fa-youtube { color: #e33; }
+    .row .pr { font-weight: 700; white-space: nowrap; }
+
+    /* ===== 교본 배너 ===== */
+    .books { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: 22px; }
+    .book { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 28px; align-items: center; background: #fff; border-radius: 22px; padding: 28px 30px; box-shadow: 0 10px 30px rgba(42,107,74,0.08); transition: box-shadow .3s ease; }
+    .book:hover { box-shadow: 0 18px 40px rgba(42,107,74,0.16); }
+    .book .cover { display: block; border-radius: 6px; overflow: hidden; box-shadow: 0 12px 26px rgba(0,0,0,0.18); transition: transform .35s ease, box-shadow .35s ease; }
+    .book .cover img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; }
+    .book:hover .cover { transform: translateY(-8px) rotate(-1.5deg); box-shadow: 0 22px 36px rgba(0,0,0,0.24); }
+    .book .pub { font-size: 11.5px; font-weight: 700; color: var(--gold); letter-spacing: 0.12em; }
+    .book h3 { font-size: 23px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.25; margin: 4px 0 8px; }
+    .book h3 span { display: block; font-size: 14px; font-weight: 700; color: var(--green-mid); letter-spacing: 0; }
+    .book p { color: #666; font-size: 13.5px; }
+    .book ul { list-style: none; margin: 10px 0 16px; font-size: 12.5px; color: #888; }
+    .book li::before { content: '✓'; color: var(--green-mid); font-weight: 900; margin-right: 6px; }
+    .stores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .stores a { display: flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; font-size: 13px; font-weight: 700; color: var(--green-deep); background: var(--cream); transition: background-color .2s, color .2s, border-color .2s, transform .2s, box-shadow .2s; }
+    .stores a:hover { background: var(--green-deep); border-color: var(--green-deep); color: #fff; transform: translateY(-2px); box-shadow: 0 6px 14px rgba(42,107,74,0.25); }
+    .partners-note { margin-top: 16px; text-align: center; font-size: 11.5px; color: #8a9a92; }
+
+    /* ===== 장르별 악보 ===== */
+    .genres { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 6px; }
+    .genres a { font-size: 13.5px; padding: 8px 16px; border-radius: 20px; background: #fff; border: 1px solid #dfe8e3; color: #555; }
+    .genres a.on { background: var(--green-deep); border-color: var(--green-deep); color: #fff; font-weight: 700; }
+    .sub-filter { display: flex; gap: 14px; align-items: center; font-size: 13px; color: #888; padding: 10px 0 14px; }
+    .sub-filter b { color: var(--ink); }
+    .sub-filter .sort { margin-left: auto; display: flex; gap: 12px; }
+    .tbl { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; }
+    .tbl th { font-size: 12.5px; font-weight: 500; color: #888; text-align: left; padding: 11px 10px; border-bottom: 1px solid var(--line); background: #f8faf9; }
+    .tbl td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    .tbl tr:last-child td { border-bottom: 0; }
+    .tbl .th.sm { width: 58px; }
+    .tbl .th.sm .t { font-size: 9px; }
+    .tbl .nm { font-weight: 700; }
+    .tbl .nm small { display: block; font-weight: 400; font-size: 12.5px; color: var(--sub); }
+    .tbl .st { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 10px; color: #fff; white-space: nowrap; }
+    .tbl .pr { font-weight: 700; text-align: right; white-space: nowrap; }
+    .tbl .yt { color: #e33; text-align: center; }
+    .center { text-align: center; padding-top: 26px; }
+    .pill { display: inline-block; border: 1.5px solid var(--green-deep); color: var(--green-deep); font-size: 13px; font-weight: 700; padding: 10px 30px; border-radius: 22px; background: #fff; }
+
+    /* ===== 지금 사이트 섹션들 ===== */
+    .cont-hd { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding-bottom: 14px; margin-bottom: 22px; border-bottom: 2px solid var(--green-deep); }
+    .cont-hd .label { font-size: 12px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--green-mid); font-weight: 600; }
+    .cont-hd h2 { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; color: var(--green-deep); line-height: 1.2; }
+    .stats { display: flex; }
+    .stats div { padding: 0 0 0 28px; margin-left: 28px; text-align: right; }
+    .stats div:first-child { margin-left: 0; }
+    .stats div + div { border-left: 1px solid var(--line); }
+    .stats b { display: block; font-family: 'Playfair Display', serif; font-size: 28px; line-height: 1.1; color: var(--green-deep); }
+    .stats span { font-size: 11.5px; color: var(--sub); letter-spacing: 0.15em; }
+    .sub-title { font-family: 'Playfair Display', serif; text-align: center; font-size: 28px; color: var(--green-deep); font-weight: 700; }
+    .sub-title + .line { width: 40px; height: 3px; background: linear-gradient(90deg, var(--green-light), var(--green-pale)); margin: 10px auto 28px; border-radius: 2px; }
+    .videos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .video { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 22px rgba(0,0,0,0.07); }
+    .video .vimg { aspect-ratio: 16 / 9; background: #e9efec center / cover no-repeat; }
+    .video .vb { padding: 12px 14px 16px; }
+    .video .ch { font-size: 12px; color: var(--green-deep); font-weight: 700; }
+    .video .vt { font-size: 14px; font-weight: 700; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.45; }
+    .video .when { font-size: 12px; color: #999; margin-top: 6px; }
+    .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--line), transparent); margin: 44px 0; }
+    .channels { display: grid; grid-template-columns: repeat(5, 1fr); gap: 22px; align-items: start; }
+    .chn { text-align: center; transition: transform .3s ease; }
+    .chn:hover { transform: translateY(-6px); }
+    .chn:nth-child(even) { margin-top: 44px; }
+    .chn i.top { color: var(--green-mid); font-size: 18px; margin-bottom: 10px; display: block; }
+    .chn .cimg { aspect-ratio: 3 / 4; border-radius: 16px; background: #ddd center / cover no-repeat; box-shadow: 0 10px 26px rgba(0,0,0,0.12); transition: box-shadow .3s ease; }
+    .chn:hover .cimg { box-shadow: 0 18px 34px rgba(0,0,0,0.2); }
+    .chn b { display: block; margin-top: 12px; font-size: 16px; }
+    .chn span { font-size: 12.5px; color: var(--sub); }
+    .ch-al { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 40px; align-items: start; }
+    .ch-al .channels { gap: 16px; margin-top: 20px; }
+    .ch-al .chn:nth-child(even) { margin-top: 0; }
+    .ch-al .chn b { font-size: 14.5px; }
+    .ch-al .chn span { font-size: 12px; display: block; line-height: 1.4; }
+    .al-box { background: var(--cream); border-radius: 22px; padding: 22px 24px 26px; }
+    .albums { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 20px; }
+    .album { text-align: center; transition: transform .3s ease; }
+    .album:hover { transform: translateY(-6px); }
+    .album img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 18px; box-shadow: 0 14px 34px rgba(42,107,74,0.18); }
+    .album b { display: block; margin-top: 12px; font-size: 15px; color: var(--green-deep); }
+    .album span { display: block; font-size: 12px; color: var(--green-mid); }
+    .about { display: grid; grid-template-columns: 340px minmax(0, 1fr) 320px; gap: 44px; align-items: center; }
+    .about img { width: 100%; border-radius: 22px; aspect-ratio: 4 / 5; object-fit: cover; object-position: top; }
+    .about h3 { color: var(--green-dark); font-size: 22px; line-height: 1.45; margin-bottom: 18px; }
+    .about p { color: #444; font-size: 15.5px; line-height: 2; margin-bottom: 16px; }
+    .about p strong { color: var(--green-dark); }
+    .contact-box { padding-left: 40px; border-left: 1px solid rgba(42,107,74,0.18); }
+    .cb-label { font-size: 12px; font-weight: 700; letter-spacing: 0.25em; color: var(--green-mid); margin-bottom: 14px; }
+    .contact { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin-bottom: 18px; }
+    .ct { display: flex; align-items: center; gap: 14px; background: #fff; border-radius: 16px; padding: 14px 16px; box-shadow: 0 6px 18px rgba(42,107,74,0.08); transition: transform .25s ease, box-shadow .25s ease; }
+    .ct:hover { transform: translateY(-3px); box-shadow: 0 12px 26px rgba(42,107,74,0.16); }
+    .ct .ci { flex: none; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; }
+    .ct b { display: block; font-size: 14.5px; }
+    .ct small { font-size: 12.5px; color: var(--sub); }
+    .sns { display: flex; gap: 10px; }
+    .sns a { width: 42px; height: 42px; border-radius: 12px; background: var(--green-deep); color: #fff; display: grid; place-items: center; font-size: 17px; transition: transform .2s, background-color .2s; }
+    .sns a:hover { transform: translateY(-3px); background: var(--green-mid); }
+
+    footer { background: linear-gradient(135deg, #3a8a5c 0%, #2f7a50 50%, #52a872 100%); color: rgba(255,255,255,0.6); text-align: center; padding: 40px 20px; font-size: 12.5px; line-height: 1.9; }
+    footer .fl { font-family: 'Playfair Display', serif; font-size: 22px; color: #fff; font-weight: 700; margin-bottom: 10px; }
+    footer .links { display: flex; justify-content: center; gap: 22px; margin-bottom: 14px; font-size: 13px; }
+    footer span + span::before { content: '|'; margin: 0 9px; opacity: 0.4; }
+
+    /* ===== 모바일 ===== */
+    @media (max-width: 1100px) {
+        .sns-mini { display: none; }
+        .nav { gap: 24px; }
+    }
+    @media (max-width: 1100px) {
+        .bn-inner { grid-template-columns: minmax(0, 1fr) 420px; }
+        .bn-visual { display: none; }
+        .three-col { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+        .type-col { grid-column: 1 / -1; order: 1; }
+        #typeList { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; }
+        .book { grid-template-columns: 150px minmax(0, 1fr); gap: 20px; }
+        .ch-al { grid-template-columns: minmax(0, 1fr); }
+        .about { grid-template-columns: 300px minmax(0, 1fr); gap: 36px; }
+        .contact-box { grid-column: 1 / -1; padding: 24px 0 0; border-left: 0; border-top: 1px solid rgba(42,107,74,0.18); }
+        .contact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 900px) {
+        .hd { height: 64px; padding: 0 16px; }
+        .hd .logo img { height: 44px; }
+        .nav, .hd-right { display: none; }
+        .burger { display: block; }
+        .bn-inner { grid-template-columns: minmax(0, 1fr); min-height: 0; gap: 18px; }
+        .tp { grid-template-columns: 132px minmax(0, 1fr); gap: 14px; padding: 12px; }
+        .tp-shots { height: 124px; }
+        .tp-shots .s-fret { width: 132px; }
+        .tp-shots .s-met { width: 92px; top: 30px; }
+        .tp-shots .s-tun { width: 80px; }
+        .tp b { font-size: 18px; }
+        .tp .tp-list { font-size: 11.5px; }
+        .tp-btn { margin-top: 10px; padding: 9px 16px; font-size: 13.5px; }
+        .bn-title { font-size: 36px; }
+        .bn-kr { font-size: 17px; }
+        .bn-visual { width: 300px; height: 230px; margin: 0 auto; }
+        .c-main { width: 160px; height: 160px; left: 70px; top: 36px; }
+        .c-1 { width: 80px; height: 80px; }
+        .c-2 { width: 70px; height: 70px; }
+        .c-3 { width: 62px; height: 62px; left: 16px; }
+        .search-sec { padding: 22px 0 0; }
+        .search-box { padding-left: 16px; }
+        .search-box input { font-size: 14px; }
+        .search-box button { padding: 10px 16px; }
+        .sec { padding: 44px 0; }
+        .three-col { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+        .type-col { order: 0; }
+        #typeList { grid-template-columns: minmax(0, 1fr); }
+        .type-tabs { gap: 12px; }
+        .type-tabs a { font-size: 15px; }
+        .stores a { padding: 8px 4px; white-space: nowrap; }
+        .stores a i { display: none; }
+        .row:nth-child(n+6) { display: none; }
+        .books { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+        .book { grid-template-columns: 120px minmax(0, 1fr); gap: 18px; padding: 20px; }
+        .book h3 { font-size: 19px; }
+        .book ul { display: none; }
+        .genres { overflow-x: auto; flex-wrap: nowrap; white-space: nowrap; }
+        .sub-filter .sort { display: none; }
+        .tbl thead, .tbl .c-art, .tbl .c-st, .tbl .c-lv, .tbl .yt { display: none; }
+        .big-hd h2 { font-size: 32px; }
+        .cont-hd { flex-direction: column; align-items: flex-start; }
+        .cont-hd h2 { font-size: 26px; }
+        .stats div { text-align: left; padding-left: 20px; margin-left: 20px; }
+        .stats b { font-size: 22px; }
+        .videos { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 78%; overflow-x: auto; padding-bottom: 6px; }
+        .channels { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 42%; overflow-x: auto; }
+        .chn:nth-child(even) { margin-top: 0; }
+        .albums { gap: 14px; }
+        .al-box { padding: 18px; }
+        .about { grid-template-columns: 1fr; gap: 26px; }
+        .about p { font-size: 14.5px; }
+        .contact { grid-template-columns: minmax(0, 1fr); }
+        .about img { max-height: 360px; }
+        footer span { display: block; }
+        footer span + span::before { content: none; }
+    }
+</style>
+</head>
+<body>
+<div class="mock-flag">시안 4 — 악보 목록·가격·순위는 예시예요. 구독자·조회수·최신 영상은 유튜브에서 실시간으로 불러와요.</div>
+
+<!-- 메뉴: 지금 사이트와 같은 구성 (로고는 이미지만) -->
+<header>
+    <div class="hd">
+        <a class="logo" href="#"><img src="images/logo-vertical.webp" alt="안쌤의 기타나무숲"></a>
+        <nav class="nav">
+            <a class="on" href="#sheets">TAB악보</a>
+            <a href="#books">교본</a>
+            <a href="#contents">콘텐츠</a>
+            <a href="#contact">CONTACT</a>
+        </nav>
+        <div class="hd-right">
+            <a class="pill-btn" href="#"><i class="fas fa-guitar"></i> 연습도구</a>
+            <a class="pill-btn" href="#"><span class="av"></span> 로그인</a>
+            <span class="sns-mini"><i class="fab fa-youtube"></i><i class="fab fa-instagram"></i><i class="fab fa-tiktok"></i><b>bl</b><i class="fas fa-mug-hot" style="color:#5cc06b"></i></span>
+        </div>
+        <i class="fas fa-bars burger"></i>
+    </div>
+</header>
+
+<!-- 배너: 지금 사이트 히어로를 줄여 담고, 악보 판매 내용으로 -->
+<section class="banner">
+    <i class="fas fa-leaf leaf" style="top: 18%; left: 4%; font-size: 26px;"></i>
+    <i class="fas fa-seedling leaf" style="bottom: 22%; left: 46%; font-size: 20px;"></i>
+    <i class="fas fa-leaf leaf" style="top: 12%; right: 38%; font-size: 18px; transform: rotate(40deg);"></i>
+    <div class="wrap bn-inner">
+        <div>
+            <div class="bn-kicker">AHNSSAM'S TAB SHEET</div>
+            <h1 class="bn-title">Ahnssam's<br>Guitar Forest</h1>
+            <p class="bn-kr">한 곡 한 곡 <em>직접 채보하고 편곡한</em> 안쌤의 기타 TAB악보</p>
+        </div>
+        <div class="bn-visual">
+            <div class="circle c-3"><img src="images/hero-photo-03.webp" alt=""></div>
+            <div class="circle c-main"><img src="images/hero-photo-01.webp" alt="안쌤"></div>
+            <div class="circle c-1"><img src="images/hero-photo-02.webp" alt=""></div>
+            <div class="circle c-2"><img src="images/hero-photo-04.webp" alt=""></div>
+        </div>
+        <a class="tp" href="#">
+            <div class="tp-shots">
+                <img class="s-fret" src="mockup-assets/tool-fretboard.jpg" alt="">
+                <img class="s-met" src="mockup-assets/tool-metronome.jpg" alt="">
+                <img class="s-tun" src="mockup-assets/tool-tuner.jpg" alt="">
+            </div>
+            <div>
+                <small>FREE PRACTICE TOOLS</small>
+                <b>무료 기타 연습도구</b>
+                <span class="tp-list">튜너 · 메트로놈 · 반주 · 이어 트레이닝 · 프렛보드까지</span>
+                <span class="tp-btn">연습도구 열기 <i class="fas fa-arrow-right"></i></span>
+            </div>
+        </a>
+    </div>
+</section>
+
+<!-- 검색 (배너 아래) -->
+<section class="search-sec">
+    <div class="wrap">
+        <div class="search-box"><i class="fas fa-search"></i><input placeholder="곡 제목, 가수 이름으로 악보 검색"><button>검색</button></div>
+        <div class="kw">많이 찾는 곡 <a href="#">홍련화</a><a href="#">인생의 회전목마</a><a href="#">Pretender</a><a href="#">APT.</a><a href="#">봄날, 벚꽃 그리고 너</a></div>
+    </div>
+</section>
+
+<!-- 새로 나온 악보 | 이달의 인기 악보 -->
+<section class="sec bg-white" id="sheets" style="padding-top: 44px;">
+    <div class="wrap three-col">
+        <div>
+            <div class="col-hd"><small>NEW</small><h2>새로 나온 악보</h2><a class="more" href="#">더보기 <i class="fas fa-chevron-right"></i></a></div>
+            <div id="newList"></div>
+        </div>
+        <div class="type-col">
+            <div class="col-hd"><small>TYPE</small>
+                <div class="type-tabs" id="typeTabs"><a class="on" href="#" data-type="acoustic">통기타</a><a href="#" data-type="electric">일렉기타</a><a href="#" data-type="finger">핑거스타일</a><a href="#" data-type="bass">베이스</a></div>
+                <a class="more" href="#">더보기 <i class="fas fa-chevron-right"></i></a></div>
+            <div id="typeList"></div>
+        </div>
+        <div>
+            <div class="col-hd"><small>BEST</small><h2>이달의 인기 악보</h2>
+                <div class="tabs"><a class="on" href="#">월간</a><a href="#">주간</a></div>
+                <a class="more" href="#">더보기 <i class="fas fa-chevron-right"></i></a></div>
+            <div id="bestList"></div>
+        </div>
+    </div>
+</section>
+
+<!-- 교본 배너 -->
+<section class="sec bg-faint" id="books" style="padding: 44px 0;">
+    <div class="wrap">
+        <div class="col-hd"><small>BOOKS</small><h2>교본 &amp; 악보집</h2><span style="color:#999;font-size:13px;">삼호ETM 출간</span></div>
+        <div class="books">
+            <div class="book">
+                <a class="cover" href="https://www.yes24.com/product/goods/165461908" target="_blank" rel="noopener"><img src="book/book-02.webp" alt="안쌤의 통기타 악보나무숲"></a>
+                <div>
+                    <div class="pub">REPERTOIRE BOOK</div>
+                    <h3><span>안쌤의</span>통기타 악보나무숲</h3>
+                    <p>스트로크부터 핑거스타일까지, 통기타 필수 레퍼토리북</p>
+                    <ul><li>꼭 쳐봐야 할 명곡 50곡</li><li>스타일별로 익히는 연주 팁</li><li>전곡 연주 영상 QR 수록</li></ul>
+                    <div class="stores">
+                        <a href="https://link.coupang.com/a/et54Hk" target="_blank" rel="noopener"><i class="fas fa-rocket"></i>쿠팡</a>
+                        <a href="https://www.yes24.com/product/goods/165461908" target="_blank" rel="noopener"><i class="fas fa-book-open"></i>YES24</a>
+                        <a href="https://product.kyobobook.co.kr/detail/S000218568813" target="_blank" rel="noopener"><i class="fas fa-store"></i>교보문고</a>
+                        <a href="https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=377257196" target="_blank" rel="noopener"><i class="fas fa-feather-alt"></i>알라딘</a>
+                    </div>
+                </div>
+            </div>
+            <div class="book">
+                <a class="cover" href="https://www.yes24.com/product/goods/143641094" target="_blank" rel="noopener"><img src="book/book-01.webp" alt="안쌤의 일렉기타 나무숲"></a>
+                <div>
+                    <div class="pub">GUIDE BOOK</div>
+                    <h3><span>안쌤의</span>일렉기타 나무숲</h3>
+                    <p>입문부터 마스터까지 한 권으로, 올인원 일렉기타 가이드북</p>
+                    <ul><li>단계별 레슨과 예제</li><li>인기 연습곡 50곡과 실전 팁</li><li>전곡 연주 영상 QR 수록</li></ul>
+                    <div class="stores">
+                        <a href="https://link.coupang.com/a/et52aH" target="_blank" rel="noopener"><i class="fas fa-rocket"></i>쿠팡</a>
+                        <a href="https://www.yes24.com/product/goods/143641094" target="_blank" rel="noopener"><i class="fas fa-book-open"></i>YES24</a>
+                        <a href="https://product.kyobobook.co.kr/detail/S000216047812" target="_blank" rel="noopener"><i class="fas fa-store"></i>교보문고</a>
+                        <a href="https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=360481438" target="_blank" rel="noopener"><i class="fas fa-feather-alt"></i>알라딘</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p class="partners-note">쿠팡 링크는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
+    </div>
+</section>
+
+<!-- 장르별 악보 -->
+<section class="sec bg-cream">
+    <div class="wrap">
+        <div class="col-hd"><small>BROWSE</small><h2>장르별 악보</h2><span style="color:#999;font-size:13px;">193곡</span></div>
+        <div class="genres">
+            <a class="on" href="#">전체</a><a href="#">가요·인디</a><a href="#">J-POP·애니</a><a href="#">팝</a><a href="#">OST·연주곡</a><a href="#">재즈·기타</a><a href="#">안쌤 자작곡</a>
+        </div>
+        <div class="sub-filter">
+            <span><b>종류</b></span><a href="#">통기타</a><a href="#">일렉기타</a><a href="#">핑거스타일</a><a href="#">베이스</a><a href="#">쉬운 악보</a>
+            <span class="sort"><b>최신순</b><a href="#">인기순</a><a href="#">낮은 가격순</a></span>
+        </div>
+        <table class="tbl">
+            <thead><tr><th style="width:76px;"></th><th>곡명</th><th class="c-art">원곡</th><th class="c-lv">난이도</th><th style="text-align:center;" class="yt">영상</th><th style="text-align:right;">가격</th></tr></thead>
+            <tbody id="allList"></tbody>
+        </table>
+        <div class="center"><a class="pill" href="#">악보 더 보기 <i class="fas fa-chevron-down"></i></a></div>
+    </div>
+</section>
+
+<!-- ===== 여기부터 지금 사이트의 섹션들 ===== -->
+<section class="sec bg-white" id="contents">
+    <div class="wrap">
+        <div class="cont-hd">
+            <div><div class="label">Ahnssam's Contents</div><h2>Latest Uploads</h2></div>
+            <div class="stats">
+                <div><b data-stat="subs">14만</b><span>전체 구독자</span></div>
+                <div><b data-stat="views">9687만</b><span>누적 조회수</span></div>
+            </div>
+        </div>
+        <div class="videos" id="videos"></div>
+        <div class="divider"></div>
+        <div class="ch-al">
+            <div>
+                <div class="col-hd"><small>CHANNELS</small><h2>유튜브 채널</h2></div>
+                <div class="channels">
+                    <a class="chn" href="#"><i class="fas fa-tree top"></i><div class="cimg" style="background-image:url('channel/forest-thumb.webp')"></div><b>기타나무숲</b><span>기타 컨텐츠, 커버, 리뷰 외</span></a>
+                    <a class="chn" href="#"><i class="fas fa-guitar top"></i><div class="cimg" style="background-image:url('channel/bgm-thumb.webp')"></div><b>기타브금</b><span>편히 들으며 쉬어가세요</span></a>
+                    <a class="chn" href="#"><i class="fas fa-music top"></i><div class="cimg" style="background-image:url('channel/sheet-thumb-new.webp')"></div><b>악보나무숲</b><span>TAB악보 미리보기 + 연주영상</span></a>
+                    <a class="chn" href="#"><i class="fas fa-microphone-alt top"></i><div class="cimg" style="background-image:url('channel/anq-thumb.webp')"></div><b>안큐 AnQ</b><span>안쌤의 자작곡, 아티스트 모드</span></a>
+                    <a class="chn" href="#"><i class="fas fa-compact-disc top"></i><div class="cimg" style="background-image:url('channel/session-thumb.webp')"></div><b>세션활동</b><span>영화·드라마·공연·음반 참여작</span></a>
+                </div>
+            </div>
+            <div class="al-box" id="album">
+                <div class="col-hd"><small>ALBUM</small><h2>안큐 AnQ 음원</h2></div>
+                <div class="albums">
+                    <div class="album"><img src="images/album-achim.jpg" alt=""><b>아침부터 저녁까지</b><span>26.05.11</span><span>안큐 · 싱글</span></div>
+                    <div class="album"><img src="images/album-jalja.jpg" alt=""><b>마지막 잘자</b><span>26.07.10</span><span>안큐 · 싱글</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="sec bg-faint" id="about">
+    <div class="wrap">
+        <div class="big-hd"><div class="label">About Me</div><h2>안쌤을 소개합니다</h2><div class="line"></div></div>
+        <div class="about">
+            <img src="images/about-photo.webp" alt="안쌤">
+            <div>
+                <h3>일상의 디테일을 끄집어내는<br>안쌤의 음악 놀이터</h3>
+                <p>안녕하세요, '안쌤의 기타나무숲' 안규호입니다.<br>재미있으면서도 왠지 마음에 남는 장면들을<br>기타와 노래로 기록하고 있습니다.</p>
+                <p>스튜디오 기타 세션과 라이브 무대에서 쌓아온 <strong>연주자</strong>로서의 진지한 모습부터, 음악적 노하우를 정교하게 담아낸 교본과 악보집을 집필하는 <strong>작가</strong>의 시선, 일상의 사소한 부분을 재치 있게 포착해내는 <strong>크리에이터</strong>로서의 감각까지-</p>
+            </div>
+            <div class="contact-box" id="contact">
+                <div class="cb-label">CONTACT · 연락하기</div>
+                <div class="contact">
+                    <a class="ct" href="#"><span class="ci" style="background:linear-gradient(135deg,#6aa577,#3c7752);color:#fff;"><i class="fas fa-envelope"></i></span><span><b>광고 및 비즈니스 문의</b><small>steveq2568@gmail.com</small></span></a>
+                    <a class="ct" href="#"><span class="ci" style="background:#f7e64a;color:#3a2420;"><i class="fas fa-comment"></i></span><span><b>레슨 문의 &amp; 질문</b><small>카카오톡 오픈채팅</small></span></a>
+                </div>
+                <div class="sns"><a href="#"><i class="fab fa-youtube"></i></a><a href="#"><i class="fab fa-instagram"></i></a><a href="#"><i class="fab fa-tiktok"></i></a><a href="#">bl</a><a href="#"><i class="fas fa-mug-hot"></i></a></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="fl">안쌤의 기타나무숲</div>
+    <div class="links"><a href="#">TAB악보</a><a href="#">교본</a><a href="#">이용약관</a><a href="#">개인정보 처리방침</a></div>
+    <span>상호: 안쌤의 기타나무숲</span><span>대표: 안규호</span><span>사업자등록번호: 453-22-00905</span><br>
+    <span>주소: 서울특별시 강남구 영동대로 210 쌍용종합상가 지하1층 3호</span><span>고객센터: 0507-1334-9804</span><span>이메일: ahnssamguitar@gmail.com</span><span>호스팅: GitHub</span>
+    <div style="margin-top:8px;">© 2026 안쌤의 기타나무숲. All rights reserved.</div>
+</footer>
+
+<script>
+    // ---------- 악보 (시안용 예시 — 실제로는 관리자 페이지에 등록한 악보) ----------
+    const STYLE = { acoustic: ['s-acoustic', '통기타', 'ACOUSTIC'], electric: ['s-electric', '일렉기타', 'ELECTRIC'], finger: ['s-finger', '핑거스타일', 'FINGERSTYLE'], bass: ['s-bass', '베이스', 'BASS'] };
+    const LV = n => [1, 2, 3, 4, 5].map(i => i <= n ? '●' : '<span class="off">●</span>').join('');
+    // 썸네일에는 곡명 대신 종류만 (곡명은 악보 미리보기와 옆 글자에 이미 보임)
+    const thumb = (s, lv, cls = '') => `<div class="th ${cls}"><div class="paper"></div><div class="band ${STYLE[s][0]}"><i class="fas fa-guitar"></i><div class="a">${STYLE[s][2]}</div><div class="t">${STYLE[s][1]}</div><div class="d">${LV(lv)}</div></div></div>`;
+    const row = (lead, [t, a, s, lv, p]) => `<a class="row" href="#">${lead}${thumb(s, lv, 'sm')}
+        <span class="body"><div class="tt">${t}</div><div class="sub">${a}</div><div class="meta"><span class="lv">${LV(lv)}</span><i class="fab fa-youtube"></i></div></span>
+        <span class="pr">${p.toLocaleString()}원</span></a>`;
+    const fresh = [
+        ['Pretender (Solo)', 'Official髭男dism', 'electric', 4, 4000],
+        ['말해줘 Say it', '요루시카', 'electric', 3, 4000],
+        ['홍련화', 'LiSA · 귀멸의 칼날 OP', 'finger', 4, 4000],
+        ['Sparkle', 'RADWIMPS · 너의 이름은 OST', 'finger', 3, 4000],
+        ['한 페이지가 될 수 있게', 'DAY6', 'acoustic', 2, 3000],
+        ['구름산', '안큐 · 안쌤 자작곡', 'finger', 3, 3500],
+    ];
+    const best = [
+        ['Pretender', 'Official髭男dism', 'electric', 3, 4000],
+        ['Way Back Home', 'SHAUN · 인트로', 'acoustic', 2, 2000],
+        ['봄날, 벚꽃 그리고 너', '에피톤 프로젝트', 'finger', 3, 3000],
+        ['Hello Mr. my yesterday', 'Hundred Percent Free · 명탐정 코난 ED', 'electric', 3, 4000],
+        ['인생의 회전목마', '히사이시 조 · 하울의 움직이는 성', 'finger', 4, 5000],
+        ['탄지로의 노래', '귀멸의 칼날 OST', 'finger', 3, 3000],
+    ];
+    document.getElementById('newList').innerHTML = fresh.map(r => row('<span class="new">NEW</span>', r)).join('');
+    document.getElementById('bestList').innerHTML = best.map((r, i) => row(`<span class="no">${i + 1}</span>`, r)).join('');
+    const byType = {
+        acoustic: [
+            ['한 페이지가 될 수 있게', 'DAY6', 'acoustic', 2, 3000], ['Way Back Home', 'SHAUN', 'acoustic', 2, 2000],
+            ['NIGHT DANCER', 'imase', 'acoustic', 2, 3000], ['Blueming', '아이유 · 안쌤 ver.', 'acoustic', 3, 3000],
+            ['사건의 지평선', '윤하', 'acoustic', 3, 3000], ['밤양갱', '비비', 'acoustic', 1, 2000],
+        ],
+        electric: [
+            ['Pretender (Solo)', 'Official髭男dism', 'electric', 4, 4000], ['말해줘 Say it', '요루시카', 'electric', 3, 4000],
+            ['Hello Mr. my yesterday', 'Hundred Percent Free · 명탐정 코난 ED', 'electric', 3, 4000], ['Mixed Nuts', 'Official髭男dism · SPY×FAMILY OP', 'electric', 4, 4000],
+            ['청춘 컴플렉스', '결속밴드 · 봇치 더 록!', 'electric', 4, 4000], ['Plastic Love', '타케우치 마리야', 'electric', 3, 3000],
+        ],
+        finger: [
+            ['홍련화', 'LiSA · 귀멸의 칼날 OP', 'finger', 4, 4000], ['인생의 회전목마', '히사이시 조 · 하울의 움직이는 성', 'finger', 4, 5000],
+            ['Sparkle', 'RADWIMPS · 너의 이름은 OST', 'finger', 3, 4000], ['봄날, 벚꽃 그리고 너', '에피톤 프로젝트', 'finger', 3, 3000],
+            ['구름산', '안큐 · 안쌤 자작곡', 'finger', 3, 3500], ['탄지로의 노래', '귀멸의 칼날 OST', 'finger', 3, 3000],
+        ],
+        bass: [
+            ['Hype Boy', 'NewJeans', 'bass', 2, 3000], ['청춘 컴플렉스', '결속밴드 · 봇치 더 록!', 'bass', 3, 3000],
+            ['Butter', 'BTS', 'bass', 2, 3000], ['주저하는 연인들을 위해', '잔나비', 'bass', 2, 3000],
+            ['Get Lucky', 'Daft Punk', 'bass', 3, 3000], ['Mixed Nuts', 'Official髭男dism', 'bass', 4, 4000],
+        ],
+    };
+    const typeTabs = document.getElementById('typeTabs');
+    const showType = type => {
+        typeTabs.querySelectorAll('a').forEach(a => a.classList.toggle('on', a.dataset.type === type));
+        typeTabs.style.setProperty('--c', getComputedStyle(document.querySelector('.s-' + type) || document.body).getPropertyValue('--c'));
+        document.getElementById('typeList').innerHTML = byType[type].map(r => row('', r)).join('');
+    };
+    typeTabs.addEventListener('click', e => { const a = e.target.closest('a'); if (!a) return; e.preventDefault(); showType(a.dataset.type); });
+    showType('acoustic');
+    const all = [
+        ['APT.', 'ROSÉ & Bruno Mars', 'finger', 2, 3000], ['시대를 초월한 마음', '이누야샤 OST', 'finger', 3, 3000],
+        ['IDOL', 'YOASOBI · 최애의 아이 OST', 'finger', 4, 4000], ['True', 'Martin Taylor', 'finger', 4, 4000],
+        ['NIGHT DANCER (쉬운 버전)', 'imase', 'acoustic', 2, 3000], ['Summer', '히사이시 조 · 기쿠지로의 여름', 'finger', 3, 3000],
+        ["Hedwig's Theme", '해리포터 OST', 'finger', 3, 3000], ['Blueming', '아이유 · 안쌤 ver.', 'acoustic', 3, 3000],
+    ];
+    document.getElementById('allList').innerHTML = all.map(([t, a, s, lv, p]) => `<tr>
+        <td>${thumb(s, lv, 'sm')}</td><td class="nm">${t}<small>${a}</small></td>
+        <td class="c-art" style="color:#666;font-size:13px;">${a.split(' · ')[0]}</td>
+        <td class="c-lv"><span class="lv">${LV(lv)}</span></td><td class="yt"><i class="fab fa-youtube"></i></td>
+        <td class="pr">${p.toLocaleString()}원</td></tr>`).join('');
+
+    // ---------- 유튜브 구독자·조회수·최신 영상 (지금 사이트와 같은 키·채널) ----------
+    (async function () {
+        const KEY = 'AIzaSyByMjrzYZwe8vOd6Ho-TxvxVBtq-YjM8Xc';
+        const CHANNELS = [
+            { id: 'UC0TC0fLj3ZahhlKcC9ebVrg', name: '기타나무숲', icon: 'fa-tree' },
+            { handle: 'ahnssamgtbgm', name: '기타브금', icon: 'fa-guitar' },
+            { handle: 'ahnssamguitartab', name: '악보나무숲', icon: 'fa-music' },
+            { handle: 'anqgtmusic', name: '안큐 AnQ', icon: 'fa-microphone-alt' },
+        ];
+        const fmt = n => n >= 1e8 ? (n / 1e8).toFixed(2).replace(/\.?0+$/, '') + '억' : n >= 1e4 ? ((v => v >= 100 ? Math.round(v) : v.toFixed(1).replace(/\.0$/, ''))(n / 1e4)) + '만' : n.toLocaleString();
+        const ago = iso => { const d = Math.floor((Date.now() - new Date(iso)) / 864e5); return d < 1 ? '오늘' : d < 7 ? d + '일 전' : d < 30 ? Math.floor(d / 7) + '주 전' : Math.floor(d / 30) + '개월 전'; };
+        const esc = s => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        try {
+            const chans = await Promise.all(CHANNELS.map(async ch => {
+                const q = ch.id ? 'id=' + ch.id : 'forHandle=' + encodeURIComponent(ch.handle);
+                const r = await (await fetch(`https://www.googleapis.com/youtube/v3/channels?part=statistics,contentDetails&${q}&key=${KEY}`)).json();
+                const it = r.items && r.items[0];
+                return it ? { ...ch, subs: +it.statistics.subscriberCount || 0, views: +it.statistics.viewCount || 0, uploads: it.contentDetails.relatedPlaylists.uploads } : null;
+            }));
+            const ok = chans.filter(Boolean);
+            if (ok.length) {
+                const subs = ok.reduce((s, c) => s + c.subs, 0), views = ok.reduce((s, c) => s + c.views, 0);
+                document.querySelectorAll('[data-stat="subs"]').forEach(el => el.textContent = fmt(subs));
+                document.querySelectorAll('[data-stat="views"]').forEach(el => el.textContent = fmt(views));
+            }
+            const vids = (await Promise.all(ok.map(async c => {
+                const r = await (await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=4&playlistId=${c.uploads}&key=${KEY}`)).json();
+                return (r.items || []).map(i => ({ id: i.snippet.resourceId.videoId, title: i.snippet.title, at: i.snippet.publishedAt, th: (i.snippet.thumbnails.maxres || i.snippet.thumbnails.high || i.snippet.thumbnails.medium || {}).url, ch: c }));
+            }))).flat().sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 4);
+            if (vids.length) document.getElementById('videos').innerHTML = vids.map(v => `<a class="video" href="https://www.youtube.com/watch?v=${v.id}" target="_blank">
+                <div class="vimg" style="background-image:url('${v.th}')"></div>
+                <div class="vb"><div class="ch"><i class="fas ${v.ch.icon}"></i> ${v.ch.name}</div><div class="vt">${esc(v.title)}</div><div class="when">${ago(v.at)}</div></div></a>`).join('');
+        } catch (e) { console.warn('유튜브 정보를 불러오지 못했어요', e); }
+    })();
+</script>
+</body>
+</html>
