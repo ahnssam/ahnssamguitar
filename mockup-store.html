@@ -43,21 +43,18 @@
     .sns-mini b { font-size: 10px; background: #222; color: #7fd18e; border-radius: 3px; padding: 0 3px; }
     .burger { display: none; font-size: 22px; color: var(--green-deep); margin-left: auto; }
 
-    /* ===== 배너: 지금 사이트 히어로 느낌 (초록 그라데이션 + 원형 사진) ===== */
-    .banner { position: relative; overflow: hidden; color: #fff; background: linear-gradient(135deg, #3a8a5c 0%, #2f7a50 50%, #52a872 100%); }
-    .banner::before { content: ''; position: absolute; inset: 0; opacity: 0.6;
-        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E"); }
-    .banner .leaf { position: absolute; color: var(--green-pale); opacity: 0.18; }
-    .bn-inner { position: relative; z-index: 1; display: grid; grid-template-columns: 330px minmax(0, 1fr) 440px; align-items: center; gap: 36px; min-height: 250px; padding-top: 22px; padding-bottom: 22px; }
-    .bn-head { padding-left: 8px; }   /* 사진 오른쪽에 살짝 띄워서 */
-    .bn-title { font-family: 'Playfair Display', serif; font-size: 44px; font-weight: 900; line-height: 1.04; letter-spacing: -0.02em; margin: 10px 0 8px; }
-    .bn-visual { position: relative; width: 330px; height: 220px; }
-    .circle { position: absolute; border-radius: 50%; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.2); border: 3px solid rgba(255,255,255,0.35); }
-    .circle img { width: 100%; height: 100%; object-fit: cover; }
-    .c-main { width: 160px; height: 160px; left: 92px; top: 34px; z-index: 3; }
-    .c-1 { width: 84px; height: 84px; right: 6px; top: 4px; z-index: 2; }
-    .c-2 { width: 74px; height: 74px; left: 14px; bottom: 6px; z-index: 4; }
-    .c-3 { width: 66px; height: 66px; left: 24px; top: 2px; z-index: 2; }
+    /* ===== 배너: 안쌤이 만든 배너 이미지(사진 + 제목) 왼쪽, 연습도구 홍보 오른쪽 ===== */
+    /* 배경색은 배너 이미지의 초록과 같게 — 이미지가 끝나는 곳에 경계가 안 보이게 */
+    .banner { --bh: 250px; position: relative; overflow: hidden; color: #fff; background: #31834f; }
+    /* 이미지(가로:세로 = 7.385:1)를 높이 --bh 로 깔고, 사진이 본문 왼쪽 줄에 오게 맞춘다.
+       이미지 안 사진은 가로 10%~46.5% 자리 — 가장자리는 흐리게 지워서 배경색과 이어지게 */
+    .bn-art-box { position: absolute; inset: 0; overflow: hidden; }
+    .bn-art { position: absolute; top: 0; height: var(--bh); width: calc(var(--bh) * 7.385); left: max(-158px, calc(50% - 878px));
+        background: url('images/banner-wide-forest-green.jpg') center / 100% 100% no-repeat;
+        -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 90%, transparent); mask-image: linear-gradient(to right, transparent, #000 6%, #000 90%, transparent); }
+    .bn-inner { position: relative; z-index: 1; display: flex; justify-content: flex-end; align-items: center; min-height: var(--bh); }
+    .bn-inner .tp { width: 440px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     /* 배너 오른쪽: 연습도구 홍보 */
     .tp { display: grid; grid-template-columns: 196px minmax(0, 1fr); gap: 18px; align-items: center; padding: 16px 18px 16px 16px; border-radius: 22px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.24); color: #fff; transition: transform .3s ease, background-color .3s ease, box-shadow .3s ease; }
     .tp:hover { transform: translateY(-4px); background: rgba(255,255,255,0.18); box-shadow: 0 18px 36px rgba(0,0,0,0.16); }
@@ -264,10 +261,17 @@
         .sns-mini { display: none; }
         .nav { gap: 24px; }
     }
+    /* 좁아지면 배너 이미지를 위에, 연습도구 홍보를 아래에 — 사진·제목이 가운데 오게 맞춤 */
+    @media (max-width: 1200px) {
+        .banner { --bh: clamp(112px, 30vw, 250px); }
+        .bn-art-box { position: relative; height: var(--bh); }
+        .bn-art { left: calc(50% - var(--bh) * 2.094);   /* 사진~제목 묶음이 화면 가운데 */
+            -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 90%, transparent), linear-gradient(#000 90%, transparent); -webkit-mask-composite: source-in;
+            mask-image: linear-gradient(to right, transparent, #000 6%, #000 90%, transparent), linear-gradient(#000 90%, transparent); mask-composite: intersect; }
+        .bn-inner { justify-content: center; min-height: 0; padding-bottom: 20px; }
+        .bn-inner .tp { width: min(100%, 560px); }
+    }
     @media (max-width: 1100px) {
-        .bn-inner { grid-template-columns: minmax(0, 1fr) 420px; }
-        .bn-visual { display: none; }
-        .bn-head { padding-left: 0; }
         .three-col { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
         .type-col { grid-column: 1 / -1; order: 1; }
         .type-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -282,7 +286,6 @@
         .hd .logo img { height: 44px; }
         .nav, .hd-right { display: none; }
         .burger { display: block; }
-        .bn-inner { grid-template-columns: minmax(0, 1fr); min-height: 0; gap: 18px; }
         .tp { grid-template-columns: 132px minmax(0, 1fr); gap: 14px; padding: 12px; }
         .tp-shots { height: 124px; }
         .tp-shots .s-fret { width: 132px; }
@@ -291,12 +294,6 @@
         .tp b { font-size: 18px; }
         .tp .tp-list { font-size: 11.5px; }
         .tp-btn { margin-top: 10px; padding: 9px 16px; font-size: 13.5px; }
-        .bn-title { font-size: 36px; }
-        .bn-visual { width: 300px; height: 230px; margin: 0 auto; }
-        .c-main { width: 160px; height: 160px; left: 70px; top: 36px; }
-        .c-1 { width: 80px; height: 80px; }
-        .c-2 { width: 70px; height: 70px; }
-        .c-3 { width: 62px; height: 62px; left: 16px; }
         .search-sec { padding: 22px 0 0; }
         .search-box { padding-left: 16px; }
         .search-box input { font-size: 14px; }
@@ -364,19 +361,9 @@
 
 <!-- 배너: 지금 사이트 히어로를 줄여 담고, 악보 판매 내용으로 -->
 <section class="banner">
-    <i class="fas fa-leaf leaf" style="top: 18%; left: 4%; font-size: 26px;"></i>
-    <i class="fas fa-seedling leaf" style="bottom: 22%; left: 46%; font-size: 20px;"></i>
-    <i class="fas fa-leaf leaf" style="top: 12%; right: 38%; font-size: 18px; transform: rotate(40deg);"></i>
+    <div class="bn-art-box"><div class="bn-art" role="img" aria-label="기타를 치는 안쌤 사진들과 Ahnssam's Guitar Forest 제목"></div></div>
     <div class="wrap bn-inner">
-        <div class="bn-visual">
-            <div class="circle c-3"><img src="images/hero-photo-03.webp" alt=""></div>
-            <div class="circle c-main"><img src="images/hero-photo-01.webp" alt="안쌤"></div>
-            <div class="circle c-1"><img src="images/hero-photo-02.webp" alt=""></div>
-            <div class="circle c-2"><img src="images/hero-photo-04.webp" alt=""></div>
-        </div>
-        <div class="bn-head">
-            <h1 class="bn-title">Ahnssam's<br>Guitar Forest</h1>
-        </div>
+        <h1 class="sr-only">안쌤의 기타나무숲 Ahnssam's Guitar Forest</h1>
         <a class="tp" href="#">
             <div class="tp-shots">
                 <img class="s-fret" src="mockup-assets/tool-fretboard.jpg" alt="">
