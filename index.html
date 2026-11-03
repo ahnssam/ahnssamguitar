@@ -674,7 +674,8 @@
 
 <script>
     // ---------- TAB악보 205곡 ----------
-    // 목록 = data/sheet-catalog.json (DB 205곡을 저장해 둔 것) 위에, 사이트에 공개한 곡은 DB 에서 실시간으로 덮어쓴다.
+    // 목록 = DB 함수 sheet_catalog() (공개 전 곡까지 목록에 필요한 칸만, db/sheet_catalog.sql).
+    // 그게 안 되면 data/sheet-catalog.json (11/3 저장본) 위에 공개한 곡만 DB 에서 덮어쓴다.
     // 공개한 곡 = 사이트에서 바로 구매(상세 페이지). 아직 PDF 를 안 올린 곡 = 풀스코어 구매 페이지로.
     const SB_URL = 'https://qpcbrqgqylxkgdwoflku.supabase.co';
     const SB_KEY = 'sb_publishable_5rr-OZ7Sqjk1nXn59R7XnQ_HInATuSV';
@@ -708,7 +709,20 @@
         fresh: (a, b) => (b.on - a.on) || (a.on ? String(b.up).localeCompare(String(a.up)) : String(b.c).localeCompare(String(a.c))),
     };
 
+    const tidy = list => list.filter(x => STYLE[x.s === 'fingerstyle' ? 'finger' : x.s])
+        .map(x => ({ ...x, t: String(x.t || '').normalize('NFC'), s: x.s === 'fingerstyle' ? 'finger' : x.s, k: norm(x.t + ' ' + (x.a || '')) }));
+
     async function loadSheets() {
+        try {
+            const r = await fetch(SB_URL + '/rest/v1/rpc/sheet_catalog', { method: 'POST', headers: { apikey: SB_KEY, 'Content-Type': 'application/json' }, body: '{}' });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const rows = await r.json();
+            if (rows.length) return tidy(rows.map(s => ({ id: s.id, c: s.fullscore_code, t: s.title, a: s.artist, s: s.style, g: s.genre, lv: s.difficulty, p: s.price, yt: s.youtube_id, o: s.fullscore_orders || 0, on: !!s.on_sale, up: s.updated_at })));
+        } catch (e) { console.warn('[sheets] 목록 함수를 못 불러와서 저장본으로 보여요', e); }
+        return loadSheetsFallback();
+    }
+
+    async function loadSheetsFallback() {
         let base = [], live = [];
         try { base = await (await fetch('data/sheet-catalog.json')).json(); } catch (e) { console.warn('[sheets] 목록 파일을 못 읽었어요', e); }
         try {
@@ -721,8 +735,7 @@
         // 풀스코어에 없던 새 악보(사이트에서 처음 만든 곡)도 넣는다
         const codes = new Set(base.map(x => x.c));
         live.filter(s => !s.fullscore_code || !codes.has(s.fullscore_code)).forEach(s => all.unshift(fromLive(s)));
-        return all.filter(x => STYLE[x.s === 'fingerstyle' ? 'finger' : x.s])
-            .map(x => ({ ...x, t: String(x.t || '').normalize('NFC'), s: x.s === 'fingerstyle' ? 'finger' : x.s, k: norm(x.t + ' ' + (x.a || '')) }));
+        return tidy(all);
     }
 
     loadSheets().then(ALL => {
