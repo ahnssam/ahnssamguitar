@@ -130,13 +130,22 @@
     .lv { color: var(--green-dark); font-size: 9.5px; letter-spacing: 1px; }
 
     /* ===== 새 악보 | 인기 악보 (세로 두 열) ===== */
-    .three-col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; }
-    /* 가운데 열: 종류 탭 + 리스트 */
-    .type-tabs { display: flex; gap: 16px; }
-    .type-tabs a { font-size: 17px; font-weight: 900; letter-spacing: -0.02em; color: #c5ccc8; transition: color .2s; }
-    .type-tabs a:hover { color: #8a948f; }
-    .type-tabs a.on { color: var(--ink); }
-    .type-tabs a.on::after { content: ''; display: block; height: 3px; border-radius: 2px; margin-top: 2px; background: var(--c, var(--green-deep)); }
+    .three-col { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr); gap: 40px; }
+    /* 가운데 열: 종류별 작은 목록 2×2 (썸네일 없이) */
+    .type-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 26px; margin-top: 12px; }
+    .tbox-hd { display: flex; align-items: center; gap: 8px; padding: 6px 0 8px; border-bottom: 2px solid var(--c); }
+    .tbox-hd .dot { width: 10px; height: 10px; border-radius: 3px; background: var(--c); }
+    .tbox-hd b { font-size: 15px; font-weight: 900; letter-spacing: -0.02em; }
+    .tbox-hd span { font-size: 12px; color: #999; }
+    .tbox-hd a { margin-left: auto; font-size: 12px; color: #888; }
+    .tbox-hd a:hover { color: var(--c); }
+    .mini { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--line); }
+    .mini .mt { flex: 1; min-width: 0; }
+    .mini .mt b { display: block; font-size: 13.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color .2s; }
+    .mini .mt small { display: block; font-size: 11.5px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mini .pr { font-size: 13px; font-weight: 700; white-space: nowrap; }
+    .mini:hover .mt b { color: var(--c); }
+    .tbox-empty { font-size: 12px; color: #aaa; padding: 10px 0; }
     .row { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
     .row .no { width: 18px; font-size: 15px; font-weight: 700; color: #a8a8a8; text-align: center; flex: none; }
     .row:nth-child(-n+3) .no { color: var(--green-dark); }
@@ -171,8 +180,10 @@
     .genres a { font-size: 13.5px; padding: 8px 16px; border-radius: 20px; background: #fff; border: 1px solid #dfe8e3; color: #555; }
     .genres a.on { background: var(--green-deep); border-color: var(--green-deep); color: #fff; font-weight: 700; }
     .sub-filter { display: flex; gap: 14px; align-items: center; font-size: 13px; color: #888; padding: 10px 0 14px; }
-    .sub-filter b { color: var(--ink); }
+    .sub-filter b, .sub-filter a.on { color: var(--ink); font-weight: 700; }
+    #typeFilter { display: flex; gap: 14px; }
     .sub-filter .sort { margin-left: auto; display: flex; gap: 12px; }
+    .sub-filter a:hover { color: var(--green-deep); }
     .tbl { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; }
     .tbl th { font-size: 12.5px; font-weight: 500; color: #888; text-align: left; padding: 11px 10px; border-bottom: 1px solid var(--line); background: #f8faf9; }
     .tbl td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
@@ -260,7 +271,7 @@
         .bn-visual { display: none; }
         .three-col { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
         .type-col { grid-column: 1 / -1; order: 1; }
-        #typeList { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; }
+        .type-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         .book { grid-template-columns: 150px minmax(0, 1fr); gap: 20px; }
         .ch-al { grid-template-columns: minmax(0, 1fr); }
         .about { grid-template-columns: 300px minmax(0, 1fr); gap: 36px; }
@@ -295,9 +306,13 @@
         .sec { padding: 44px 0; }
         .three-col { grid-template-columns: minmax(0, 1fr); gap: 40px; }
         .type-col { order: 0; }
-        #typeList { grid-template-columns: minmax(0, 1fr); }
-        .type-tabs { gap: 12px; }
-        .type-tabs a { font-size: 15px; }
+        .type-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+        .tbox .mini:nth-of-type(n+4) { display: none; }
+        .tbox-hd { gap: 6px; }
+        .tbox-hd b { font-size: 14px; white-space: nowrap; }
+        .tbox-hd span { font-size: 11px; white-space: nowrap; }
+        .tbox-hd a { font-size: 0; }
+        .tbox-hd a i { font-size: 11px; }
         .stores a { padding: 8px 4px; white-space: nowrap; }
         .stores a i { display: none; }
         .row:nth-child(n+6) { display: none; }
@@ -328,7 +343,7 @@
 </style>
 </head>
 <body>
-<div class="mock-flag">시안 4 — 악보 목록·가격·순위는 예시예요. 구독자·조회수·최신 영상은 유튜브에서 실시간으로 불러와요.</div>
+<div class="mock-flag">시안 — 악보 목록은 풀스코어에서 옮겨 올 205곡(새 가격)이에요. 인기 순위는 유튜브 조회수 기준 예시, 구독자·조회수·최신 영상은 실시간이에요.</div>
 
 <!-- 메뉴: 지금 사이트와 같은 구성 (로고는 이미지만) -->
 <header>
@@ -398,10 +413,8 @@
             <div id="newList"></div>
         </div>
         <div class="type-col">
-            <div class="col-hd"><small>TYPE</small>
-                <div class="type-tabs" id="typeTabs"><a class="on" href="#" data-type="acoustic">통기타</a><a href="#" data-type="electric">일렉기타</a><a href="#" data-type="finger">핑거스타일</a><a href="#" data-type="bass">베이스</a></div>
-                <a class="more" href="#">더보기 <i class="fas fa-chevron-right"></i></a></div>
-            <div id="typeList"></div>
+            <div class="col-hd"><small>TYPE</small><h2>종류별 악보</h2><a class="more" href="#">전체 보기 <i class="fas fa-chevron-right"></i></a></div>
+            <div class="type-grid" id="typeGrid"></div>
         </div>
         <div>
             <div class="col-hd"><small>BEST</small><h2>이달의 인기 악보</h2>
@@ -455,19 +468,19 @@
 <!-- 장르별 악보 -->
 <section class="sec bg-cream">
     <div class="wrap">
-        <div class="col-hd"><small>BROWSE</small><h2>장르별 악보</h2><span style="color:#999;font-size:13px;">193곡</span></div>
+        <div class="col-hd"><small>BROWSE</small><h2>장르별 악보</h2><span style="color:#999;font-size:13px;" id="allCount"></span></div>
         <div class="genres">
-            <a class="on" href="#">전체</a><a href="#">가요·인디</a><a href="#">J-POP·애니</a><a href="#">팝</a><a href="#">OST·연주곡</a><a href="#">재즈·기타</a><a href="#">안쌤 자작곡</a>
+            <a class="on" href="#" data-g="">전체</a><a href="#" data-g="가요">가요</a><a href="#" data-g="팝">팝</a><a href="#" data-g="J-POP">J-POP·애니</a><a href="#" data-g="OST">OST</a><a href="#" data-g="록">록</a><a href="#" data-g="연주곡">연주곡·클래식</a><a href="#" data-g="자작곡">안쌤 자작곡</a>
         </div>
         <div class="sub-filter">
-            <span><b>종류</b></span><a href="#">통기타</a><a href="#">일렉기타</a><a href="#">핑거스타일</a><a href="#">베이스</a><a href="#">쉬운 악보</a>
-            <span class="sort"><b>최신순</b><a href="#">인기순</a><a href="#">낮은 가격순</a></span>
+            <span><b>종류</b></span><span id="typeFilter"><a href="#" data-s="" class="on">전체</a><a href="#" data-s="acoustic">통기타</a><a href="#" data-s="electric">일렉기타</a><a href="#" data-s="finger">핑거스타일</a><a href="#" data-s="bass">베이스</a></span>
+            <span class="sort" id="sortBy"><a href="#" data-o="new" class="on">최신순</a><a href="#" data-o="pop">인기순</a><a href="#" data-o="low">낮은 가격순</a></span>
         </div>
         <table class="tbl">
-            <thead><tr><th style="width:76px;"></th><th>곡명</th><th class="c-art">원곡</th><th class="c-lv">난이도</th><th style="text-align:center;" class="yt">영상</th><th style="text-align:right;">가격</th></tr></thead>
+            <thead><tr><th style="width:76px;"></th><th>곡명</th><th class="c-art">장르</th><th class="c-lv">난이도</th><th style="text-align:center;" class="yt">영상</th><th style="text-align:right;">가격</th></tr></thead>
             <tbody id="allList"></tbody>
         </table>
-        <div class="center"><a class="pill" href="#">악보 더 보기 <i class="fas fa-chevron-down"></i></a></div>
+        <div class="center"><a class="pill" href="#" id="moreBtn">악보 더 보기 <i class="fas fa-chevron-down"></i></a></div>
     </div>
 </section>
 
@@ -536,73 +549,54 @@
 </footer>
 
 <script>
-    // ---------- 악보 (시안용 예시 — 실제로는 관리자 페이지에 등록한 악보) ----------
+    // ---------- 악보: 풀스코어에서 옮길 205곡 (mockup-assets/sheets.json, 새 가격) ----------
     const STYLE = { acoustic: ['s-acoustic', '통기타', 'ACOUSTIC'], electric: ['s-electric', '일렉기타', 'ELECTRIC'], finger: ['s-finger', '핑거스타일', 'FINGERSTYLE'], bass: ['s-bass', '베이스', 'BASS'] };
-    const LV = n => [1, 2, 3, 4, 5].map(i => i <= n ? '●' : '<span class="off">●</span>').join('');
+    const COLOR = { acoustic: '#6f8a3a', electric: '#2f3e52', finger: '#2a6b4a', bass: '#8a5a3b' };
+    const LV = n => n ? [1, 2, 3, 4, 5].map(i => i <= n ? '●' : '<span class="off">●</span>').join('') : '';
+    const esc = v => String(v ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     // 썸네일에는 곡명 대신 종류만 (곡명은 악보 미리보기와 옆 글자에 이미 보임)
     const thumb = (s, lv, cls = '') => `<div class="th ${cls}"><div class="paper"></div><div class="band ${STYLE[s][0]}"><i class="fas fa-guitar"></i><div class="a">${STYLE[s][2]}</div><div class="t">${STYLE[s][1]}</div><div class="d">${LV(lv)}</div></div></div>`;
-    const row = (lead, [t, a, s, lv, p]) => `<a class="row" href="#">${lead}${thumb(s, lv, 'sm')}
-        <span class="body"><div class="tt">${t}</div><div class="sub">${a}</div><div class="meta"><span class="lv">${LV(lv)}</span><i class="fab fa-youtube"></i></div></span>
-        <span class="pr">${p.toLocaleString()}원</span></a>`;
-    const fresh = [
-        ['Pretender (Solo)', 'Official髭男dism', 'electric', 4, 4000],
-        ['말해줘 Say it', '요루시카', 'electric', 3, 4000],
-        ['홍련화', 'LiSA · 귀멸의 칼날 OP', 'finger', 4, 4000],
-        ['Sparkle', 'RADWIMPS · 너의 이름은 OST', 'finger', 3, 4000],
-        ['한 페이지가 될 수 있게', 'DAY6', 'acoustic', 2, 3000],
-        ['구름산', '안큐 · 안쌤 자작곡', 'finger', 3, 3500],
-    ];
-    const best = [
-        ['Pretender', 'Official髭男dism', 'electric', 3, 4000],
-        ['Way Back Home', 'SHAUN · 인트로', 'acoustic', 2, 2000],
-        ['봄날, 벚꽃 그리고 너', '에피톤 프로젝트', 'finger', 3, 3000],
-        ['Hello Mr. my yesterday', 'Hundred Percent Free · 명탐정 코난 ED', 'electric', 3, 4000],
-        ['인생의 회전목마', '히사이시 조 · 하울의 움직이는 성', 'finger', 4, 5000],
-        ['탄지로의 노래', '귀멸의 칼날 OST', 'finger', 3, 3000],
-    ];
-    document.getElementById('newList').innerHTML = fresh.map(r => row('<span class="new">NEW</span>', r)).join('');
-    document.getElementById('bestList').innerHTML = best.map((r, i) => row(`<span class="no">${i + 1}</span>`, r)).join('');
-    const byType = {
-        acoustic: [
-            ['한 페이지가 될 수 있게', 'DAY6', 'acoustic', 2, 3000], ['Way Back Home', 'SHAUN', 'acoustic', 2, 2000],
-            ['NIGHT DANCER', 'imase', 'acoustic', 2, 3000], ['Blueming', '아이유 · 안쌤 ver.', 'acoustic', 3, 3000],
-            ['사건의 지평선', '윤하', 'acoustic', 3, 3000], ['밤양갱', '비비', 'acoustic', 1, 2000],
-        ],
-        electric: [
-            ['Pretender (Solo)', 'Official髭男dism', 'electric', 4, 4000], ['말해줘 Say it', '요루시카', 'electric', 3, 4000],
-            ['Hello Mr. my yesterday', 'Hundred Percent Free · 명탐정 코난 ED', 'electric', 3, 4000], ['Mixed Nuts', 'Official髭男dism · SPY×FAMILY OP', 'electric', 4, 4000],
-            ['청춘 컴플렉스', '결속밴드 · 봇치 더 록!', 'electric', 4, 4000], ['Plastic Love', '타케우치 마리야', 'electric', 3, 3000],
-        ],
-        finger: [
-            ['홍련화', 'LiSA · 귀멸의 칼날 OP', 'finger', 4, 4000], ['인생의 회전목마', '히사이시 조 · 하울의 움직이는 성', 'finger', 4, 5000],
-            ['Sparkle', 'RADWIMPS · 너의 이름은 OST', 'finger', 3, 4000], ['봄날, 벚꽃 그리고 너', '에피톤 프로젝트', 'finger', 3, 3000],
-            ['구름산', '안큐 · 안쌤 자작곡', 'finger', 3, 3500], ['탄지로의 노래', '귀멸의 칼날 OST', 'finger', 3, 3000],
-        ],
-        bass: [
-            ['Hype Boy', 'NewJeans', 'bass', 2, 3000], ['청춘 컴플렉스', '결속밴드 · 봇치 더 록!', 'bass', 3, 3000],
-            ['Butter', 'BTS', 'bass', 2, 3000], ['주저하는 연인들을 위해', '잔나비', 'bass', 2, 3000],
-            ['Get Lucky', 'Daft Punk', 'bass', 3, 3000], ['Mixed Nuts', 'Official髭男dism', 'bass', 4, 4000],
-        ],
-    };
-    const typeTabs = document.getElementById('typeTabs');
-    const showType = type => {
-        typeTabs.querySelectorAll('a').forEach(a => a.classList.toggle('on', a.dataset.type === type));
-        typeTabs.style.setProperty('--c', getComputedStyle(document.querySelector('.s-' + type) || document.body).getPropertyValue('--c'));
-        document.getElementById('typeList').innerHTML = byType[type].map(r => row('', r)).join('');
-    };
-    typeTabs.addEventListener('click', e => { const a = e.target.closest('a'); if (!a) return; e.preventDefault(); showType(a.dataset.type); });
-    showType('acoustic');
-    const all = [
-        ['APT.', 'ROSÉ & Bruno Mars', 'finger', 2, 3000], ['시대를 초월한 마음', '이누야샤 OST', 'finger', 3, 3000],
-        ['IDOL', 'YOASOBI · 최애의 아이 OST', 'finger', 4, 4000], ['True', 'Martin Taylor', 'finger', 4, 4000],
-        ['NIGHT DANCER (쉬운 버전)', 'imase', 'acoustic', 2, 3000], ['Summer', '히사이시 조 · 기쿠지로의 여름', 'finger', 3, 3000],
-        ["Hedwig's Theme", '해리포터 OST', 'finger', 3, 3000], ['Blueming', '아이유 · 안쌤 ver.', 'acoustic', 3, 3000],
-    ];
-    document.getElementById('allList').innerHTML = all.map(([t, a, s, lv, p]) => `<tr>
-        <td>${thumb(s, lv, 'sm')}</td><td class="nm">${t}<small>${a}</small></td>
-        <td class="c-art" style="color:#666;font-size:13px;">${a.split(' · ')[0]}</td>
-        <td class="c-lv"><span class="lv">${LV(lv)}</span></td><td class="yt"><i class="fab fa-youtube"></i></td>
-        <td class="pr">${p.toLocaleString()}원</td></tr>`).join('');
+    const row = (lead, x) => `<a class="row" href="#">${lead}${thumb(x.s, x.lv, 'sm')}
+        <span class="body"><div class="tt">${esc(x.t)}</div><div class="sub">${esc(x.a)}</div><div class="meta"><span class="lv">${LV(x.lv)}</span>${x.yt ? '<i class="fab fa-youtube"></i>' : ''}</div></span>
+        <span class="pr">${x.p.toLocaleString()}원</span></a>`;
+    const mini = x => `<a class="mini" href="#"><span class="mt"><b>${esc(x.t)}</b><small>${esc(x.a)}</small></span><span class="pr">${x.p.toLocaleString()}원</span></a>`;
+    const byViews = list => { const seen = new Set(); return [...list].sort((a, b) => b.v - a.v).filter(x => !x.yt || !seen.has(x.yt) && seen.add(x.yt)); };
+
+    fetch('mockup-assets/sheets.json').then(r => r.json()).then(raw => {
+        const ALL = raw.map(x => ({ ...x, s: x.s === 'fingerstyle' ? 'finger' : x.s }));
+        document.getElementById('newList').innerHTML = ALL.slice(0, 6).map(x => row('<span class="new">NEW</span>', x)).join('');
+        document.getElementById('bestList').innerHTML = byViews(ALL).slice(0, 6).map((x, i) => row(`<span class="no">${i + 1}</span>`, x)).join('');
+        document.getElementById('typeGrid').innerHTML = Object.keys(STYLE).map(k => {
+            const list = byViews(ALL.filter(x => x.s === k));
+            return `<div class="tbox" style="--c:${COLOR[k]}"><div class="tbox-hd"><i class="dot"></i><b>${STYLE[k][1]}</b><span>${list.length}곡</span><a href="#">더보기 <i class="fas fa-chevron-right"></i></a></div>
+                ${list.slice(0, 4).map(mini).join('') || ''}${list.length < 4 ? '<div class="tbox-empty">새 악보를 준비하고 있어요</div>' : ''}</div>`;
+        }).join('');
+
+        // 장르별 표: 장르·종류 거르기, 정렬, 더 보기
+        const st = { g: '', s: '', o: 'new', n: 10 };
+        const draw = () => {
+            let list = ALL.filter(x => (!st.g || x.g === st.g || (st.g === '연주곡' && x.g === '클래식')) && (!st.s || x.s === st.s));
+            if (st.o === 'pop') list = [...list].sort((a, b) => b.v - a.v);
+            if (st.o === 'low') list = [...list].sort((a, b) => a.p - b.p);
+            document.getElementById('allCount').textContent = list.length + '곡';
+            document.getElementById('allList').innerHTML = list.slice(0, st.n).map(x => `<tr>
+                <td>${thumb(x.s, x.lv, 'sm')}</td><td class="nm">${esc(x.t)}<small>${esc(x.a)}</small></td>
+                <td class="c-art" style="color:#666;font-size:13px;">${esc(x.g)}</td>
+                <td class="c-lv"><span class="lv">${LV(x.lv)}</span></td><td class="yt">${x.yt ? '<i class="fab fa-youtube"></i>' : ''}</td>
+                <td class="pr">${x.p.toLocaleString()}원</td></tr>`).join('');
+            document.getElementById('moreBtn').style.display = list.length > st.n ? '' : 'none';
+        };
+        const pick = (box, attr, key) => box.addEventListener('click', e => {
+            const a = e.target.closest('a'); if (!a) return; e.preventDefault();
+            box.querySelectorAll('a').forEach(b => b.classList.toggle('on', b === a));
+            st[key] = a.dataset[attr]; st.n = 10; draw();
+        });
+        pick(document.querySelector('.genres'), 'g', 'g');
+        pick(document.getElementById('typeFilter'), 's', 's');
+        pick(document.getElementById('sortBy'), 'o', 'o');
+        document.getElementById('moreBtn').addEventListener('click', e => { e.preventDefault(); st.n += 10; draw(); });
+        draw();
+    });
 
     // ---------- 유튜브 구독자·조회수·최신 영상 (지금 사이트와 같은 키·채널) ----------
     (async function () {
