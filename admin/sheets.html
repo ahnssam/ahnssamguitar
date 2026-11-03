@@ -267,6 +267,8 @@
     let newPdf = null;         // 새로 고른 PDF 파일
     let newPreview = null;     // 새로 만든/고른 미리보기 Blob
     let difficulty = 3;
+    let openedState = '';      // 편집창을 열었을 때 값 — 바깥을 눌렀을 때 바뀐 게 있으면 저장
+    let pdfReading = false;    // PDF 읽는 중에는 바깥을 눌러도 닫지 않는다
 
     // ---------- 로그인 · 권한 ----------
     function gate(icon, html) {
@@ -436,13 +438,20 @@
             $('thPaper').style.backgroundImage = '';
         }
         setDifficulty(s && s.difficulty ? s.difficulty : 3);
+        openedState = formState();
         $('dim').classList.add('open'); $('editor').classList.add('open');
         setTimeout(() => form.elements.title.focus(), 200);
     }
     function closeEditor() { $('dim').classList.remove('open'); $('editor').classList.remove('open'); }
+    const formState = () => [...form.elements].map(el => el.type === 'checkbox' ? el.checked : el.value).join('\u0001') + '|' + difficulty;
+    const isDirty = () => !!newPdf || !!newPreview || formState() !== openedState;
     $('newBtn').onclick = () => openEditor(null);
     $('edClose').onclick = closeEditor;
-    $('dim').onclick = closeEditor;
+    // 바깥(어두운 부분)을 누르면 바뀐 게 있을 때 저장하고 닫는다 — 저장 못 하면 창을 그대로 두고 이유를 보여 준다
+    $('dim').onclick = () => {
+        if (pdfReading || $('saveBtn').disabled) return;
+        if (isDirty()) save(); else closeEditor();
+    };
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEditor(); });
 
     function updateThumb() {
@@ -472,6 +481,7 @@
         newPdf = file;
         $('dropName').textContent = file.name;
         pdfMsg('PDF를 읽고 있어요…');
+        pdfReading = true;
         try {
             const doc = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
             form.elements.pages.value = doc.numPages;
@@ -486,6 +496,8 @@
             console.error(err);
             pdfMsg('PDF를 읽지 못했어요. 파일이 손상되지 않았는지 확인해 주세요.', true);
             newPdf = null;
+        } finally {
+            pdfReading = false;
         }
     }
     function pdfMsg(text, isErr) { $('pdfInfo').textContent = text; $('pdfInfo').className = 'pdfinfo' + (isErr ? ' err' : ''); }
@@ -530,7 +542,8 @@
     }
     const extOf = blob => blob.type === 'image/webp' ? 'webp' : blob.type === 'image/png' ? 'png' : 'jpg';
 
-    $('saveBtn').onclick = async () => {
+    $('saveBtn').onclick = () => save();
+    async function save() {
         const el = form.elements;
         const title = el.title.value.trim();
         if (!title) { el.title.focus(); $('edMsg').textContent = '곡명을 넣어 주세요.'; return; }
@@ -600,7 +613,7 @@
         } finally {
             $('saveBtn').disabled = false;
         }
-    };
+    }
 
     $('delBtn').onclick = async () => {
         if (!editing) return;
