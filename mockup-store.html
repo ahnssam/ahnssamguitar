@@ -49,10 +49,32 @@
     /* 이미지(가로:세로 = 7.385:1)를 높이 --bh 로 깔고, 사진이 본문 왼쪽 줄에 오게 맞춘다.
        이미지 안 사진은 가로 10%~46.5% 자리 — 가장자리는 흐리게 지워서 배경색과 이어지게 */
     .bn-art-box { position: absolute; inset: 0; overflow: hidden; }
-    .bn-art { position: absolute; top: 0; height: var(--bh); width: calc(var(--bh) * 7.385); left: max(-158px, calc(50% - 878px));
-        background: url('images/banner-wide-forest-green.jpg') center / 100% 100% no-repeat;
+    .bn-art, .bn-photos { position: absolute; top: 0; height: var(--bh); width: calc(var(--bh) * 7.385); left: max(-158px, calc(50% - 878px)); }
+    .bn-art { background: url('images/banner-wide-forest-green.jpg') center / 100% 100% no-repeat;
         -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 90%, transparent); mask-image: linear-gradient(to right, transparent, #000 6%, #000 90%, transparent); }
-    .bn-inner { position: relative; z-index: 1; display: flex; justify-content: flex-end; align-items: center; min-height: var(--bh); }
+    /* 지금 사이트 히어로의 십자 무늬 — 배너 이미지 위에도 깔리게 */
+    .banner::before { content: ''; position: absolute; inset: 0; z-index: 1; opacity: 0.6; pointer-events: none;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E"); }
+    /* 배너 이미지 속 동그라미 4개 자리에 실제 사진을 겹친다 (위치 = 원본 3796×514 이미지에서 잰 원의 중심·반지름) */
+    .bn-photos { z-index: 2; pointer-events: none; }
+    .bp { position: absolute; aspect-ratio: 1; border-radius: 50%; overflow: hidden; border: calc(var(--bh) * 0.012) solid #f3ead0;
+        box-shadow: 0 calc(var(--bh) * 0.012) calc(var(--bh) * 0.05) rgba(0,0,0,0.28); }
+    .bp img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .bp-tl   { left: 13.261%; top: 7.821%;  width: 4.489%; z-index: 1; }
+    .bp-main { left: 15.999%; top: 17.432%; width: 9.357%; z-index: 2; }
+    .bp-tr   { left: 23.285%; top: 7.160%;  width: 5.306%; z-index: 3; }
+    .bp-bl   { left: 12.466%; top: 52.432%; width: 4.916%; z-index: 3; }
+    .bp-main img { object-position: 50% 45%; }
+    .bp-tl img { object-position: 50% 22%; }
+    /* 떠다니는 나뭇잎 (지금 사이트 히어로와 같은 움직임) */
+    .bn-leaf { position: absolute; z-index: 1; color: var(--green-pale); opacity: 0.15; animation: bnLeaf 15s ease-in-out infinite; pointer-events: none; }
+    @keyframes bnLeaf {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        25% { transform: translateY(-14px) rotate(10deg); }
+        75% { transform: translateY(10px) rotate(-5deg); }
+    }
+    @media (prefers-reduced-motion: reduce) { .bn-leaf { animation: none; } }
+    .bn-inner { position: relative; z-index: 3; display: flex; justify-content: flex-end; align-items: center; min-height: var(--bh); }
     .bn-inner .tp { width: 440px; }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     /* 배너 오른쪽: 연습도구 홍보 */
@@ -265,7 +287,8 @@
     @media (max-width: 1200px) {
         .banner { --bh: clamp(112px, 30vw, 250px); }
         .bn-art-box { position: relative; height: var(--bh); }
-        .bn-art { left: calc(50% - var(--bh) * 2.094);   /* 사진~제목 묶음이 화면 가운데 */
+        .bn-art, .bn-photos { left: calc(50% - var(--bh) * 2.094); }   /* 사진~제목 묶음이 화면 가운데 */
+        .bn-art {
             -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 90%, transparent), linear-gradient(#000 90%, transparent); -webkit-mask-composite: source-in;
             mask-image: linear-gradient(to right, transparent, #000 6%, #000 90%, transparent), linear-gradient(#000 90%, transparent); mask-composite: intersect; }
         .bn-inner { justify-content: center; min-height: 0; padding-bottom: 20px; }
@@ -361,7 +384,19 @@
 
 <!-- 배너: 지금 사이트 히어로를 줄여 담고, 악보 판매 내용으로 -->
 <section class="banner">
-    <div class="bn-art-box"><div class="bn-art" role="img" aria-label="기타를 치는 안쌤 사진들과 Ahnssam's Guitar Forest 제목"></div></div>
+    <i class="fas fa-leaf bn-leaf" style="top: 14%; left: 51%; font-size: 30px;"></i>
+    <i class="fas fa-seedling bn-leaf" style="bottom: 12%; left: 58%; font-size: 22px; animation-delay: 4s;"></i>
+    <i class="fas fa-leaf bn-leaf" style="top: 8%; right: 2%; font-size: 24px; animation-delay: 8s;"></i>
+    <i class="fas fa-leaf bn-leaf" style="bottom: 8%; left: 3%; font-size: 20px; animation-delay: 11s;"></i>
+    <div class="bn-art-box">
+        <div class="bn-art" role="img" aria-label="기타를 치는 안쌤 사진들과 Ahnssam's Guitar Forest 제목"></div>
+        <div class="bn-photos" aria-hidden="true">
+            <span class="bp bp-tl"><img src="images/hero-photo-03.webp" alt=""></span>
+            <span class="bp bp-main"><img src="images/hero-photo-01.webp" alt=""></span>
+            <span class="bp bp-tr"><img src="images/hero-photo-02.webp" alt=""></span>
+            <span class="bp bp-bl"><img src="images/hero-photo-04.webp" alt=""></span>
+        </div>
+    </div>
     <div class="wrap bn-inner">
         <h1 class="sr-only">안쌤의 기타나무숲 Ahnssam's Guitar Forest</h1>
         <a class="tp" href="#">
