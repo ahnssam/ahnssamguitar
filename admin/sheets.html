@@ -66,11 +66,26 @@
     .chip.original { background: #fbf2de; color: #8a6200; }
     .lv { color: var(--green-2); letter-spacing: 1px; font-size: 10px; }
     .lv .off { color: #ddd; }
-    .pub { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; }
+    .pub { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
+    .list .c-pr { white-space: nowrap; }
     .pub .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
     .pub.on .dot { background: #2fb36d; }
     .pub.on { color: #1f8a52; font-weight: 700; }
     .nopdf { color: var(--red); font-size: 12px; }
+    .haspdf { color: #1f8a52; font-size: 12px; font-weight: 700; }
+    .list .rk { width: 64px; text-align: center; }
+    .list .rk b { display: block; font-size: 15px; font-weight: 900; color: var(--green); }
+    .list .rk small { color: var(--sub); font-size: 11px; white-space: nowrap; }
+    .list tr.done td { background: #f6fbf8; }
+    /* PDF 채운 진행 — 20곡쯤 채우면 새 메인 반영 검토 */
+    .progress { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; font-size: 13px; }
+    .progress .bar { flex: 1; height: 10px; border-radius: 6px; background: #eef1ef; overflow: hidden; position: relative; }
+    .progress .bar span { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, var(--green-2), var(--green)); border-radius: 6px; }
+    .progress .bar i { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--gold); }
+    .progress b { color: var(--green); }
+    .progress small { color: var(--sub); white-space: nowrap; }
+    .toolbar2 { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; align-items: center; }
+    .toolbar2 .lbl { font-size: 12.5px; color: var(--sub); }
     .empty { text-align: center; padding: 50px; color: var(--sub); background: #fff; border: 1px dashed #d8d8d8; border-radius: 12px; }
 
     /* 편집 창 */
@@ -160,6 +175,13 @@
         <div class="search"><i class="fas fa-search"></i><input id="q" placeholder="곡명·가수 검색"></div>
         <button class="btn primary" id="newBtn"><i class="fas fa-plus"></i> 새 악보</button>
     </div>
+    <div class="progress" id="progress" hidden></div>
+    <div class="toolbar2">
+        <span class="lbl">정렬</span>
+        <div class="seg" id="sortSeg"><button class="on" data-s="orders">풀스코어 주문순</button><button data-s="new">최신순</button></div>
+        <span class="lbl" style="margin-left:8px;">PDF</span>
+        <div class="seg" id="pdfSeg"><button class="on" data-p="all">전체</button><button data-p="none">없음</button><button data-p="has">있음</button></div>
+    </div>
     <div id="listWrap"></div>
 </main>
 
@@ -238,6 +260,9 @@
     let sheets = [];
     let filesById = {};
     let filter = 'all';
+    let sortBy = 'orders';     // 'orders' = 풀스코어 주문수 많은 순 / 'new' = 최신순
+    let pdfFilter = 'all';     // 'all' | 'none' | 'has'
+    const MAIN_GOAL = 20;      // PDF 이만큼 채우면 새 메인(mockup-store) 반영을 검토
     let editing = null;        // 편집 중인 행 (새 악보면 null)
     let newPdf = null;         // 새로 고른 PDF 파일
     let newPreview = null;     // 새로 만든/고른 미리보기 Blob
@@ -287,23 +312,53 @@
         const url = sb.storage.from(PREVIEW_BUCKET).getPublicUrl(s.preview_path).data.publicUrl;
         return url + '?v=' + encodeURIComponent(s.updated_at || '');
     }
+    // 풀스코어 주문수 순위 (주문 1건 이상만). 같은 수면 같은 순위.
+    function orderRanks() {
+        const ranked = sheets.filter(s => (s.fullscore_orders || 0) > 0).sort((a, b) => b.fullscore_orders - a.fullscore_orders);
+        const rank = {};
+        ranked.forEach((s, i) => {
+            rank[s.id] = (i > 0 && ranked[i - 1].fullscore_orders === s.fullscore_orders) ? rank[ranked[i - 1].id] : i + 1;
+        });
+        return rank;
+    }
+    function renderProgress() {
+        const total = sheets.length;
+        const done = sheets.filter(s => filesById[s.id]).length;
+        const el = $('progress');
+        el.hidden = !total;
+        if (!total) return;
+        const pct = Math.round(done / total * 100);
+        const goal = Math.min(100, MAIN_GOAL / total * 100);
+        el.innerHTML = `<span>PDF 채운 악보 <b>${done}</b> / ${total}</span>
+            <div class="bar"><span style="width:${pct}%"></span><i style="left:${goal}%" title="${MAIN_GOAL}곡"></i></div>
+            <small>${done >= MAIN_GOAL ? '🎉 ' + MAIN_GOAL + '곡 넘음 — 새 메인 반영 검토' : '새 메인 반영까지 ' + (MAIN_GOAL - done) + '곡'}</small>`;
+    }
     function render() {
         const q = $('q').value.trim().toLowerCase();
-        const rows = sheets.filter(s =>
+        const rank = orderRanks();
+        const hasOrders = Object.keys(rank).length > 0;
+        let rows = sheets.filter(s =>
             (filter === 'all' || (filter === 'pub' ? s.published : !s.published)) &&
+            (pdfFilter === 'all' || (pdfFilter === 'has' ? !!filesById[s.id] : !filesById[s.id])) &&
             (!q || [s.title, s.title_original, s.artist].join(' ').toLowerCase().includes(q)));
-        $('count').textContent = `${sheets.length}곡 · 공개 ${sheets.filter(s => s.published).length}`;
+        if (sortBy === 'orders') {
+            rows = rows.slice().sort((a, b) => ((b.fullscore_orders || 0) - (a.fullscore_orders || 0)) ||
+                (new Date(b.created_at) - new Date(a.created_at)));
+        }
+        $('count').textContent = `${sheets.length}곡 · PDF ${sheets.filter(s => filesById[s.id]).length} · 공개 ${sheets.filter(s => s.published).length}`;
+        renderProgress();
         if (!sheets.length) {
             $('listWrap').innerHTML = '<div class="empty"><i class="fas fa-music" style="font-size:24px;color:var(--green);display:block;margin-bottom:10px;"></i>아직 등록한 악보가 없어요. 오른쪽 위 <b>새 악보</b>로 첫 악보를 올려 보세요.</div>';
             return;
         }
-        $('listWrap').innerHTML = `<table class="list"><thead><tr><th></th><th>곡명</th><th class="c-st">종류·스타일</th><th class="c-lv">난이도</th><th>가격</th><th>상태</th><th class="c-up">수정일</th></tr></thead><tbody>${
-            rows.map(s => `<tr data-id="${s.id}">
+        $('listWrap').innerHTML = `<table class="list"><thead><tr><th class="rk" title="풀스코어 주문수 순위">주문순</th><th></th><th>곡명</th><th class="c-st">종류·스타일</th><th class="c-lv">난이도</th><th>가격</th><th>상태</th><th class="c-up">수정일</th></tr></thead><tbody>${
+            rows.map(s => `<tr data-id="${s.id}" class="${filesById[s.id] ? 'done' : ''}">
+                <td class="rk">${rank[s.id] ? `<b>${rank[s.id]}</b><small>주문 ${s.fullscore_orders}</small>` : `<small>${hasOrders ? '주문 0' : '-'}</small>`}</td>
                 <td><div class="pv" style="background-image:url('${previewUrl(s)}')"></div></td>
-                <td class="nm"><b>${esc(s.title)}</b><small>${esc(s.artist || '')}</small>${filesById[s.id] ? '' : '<div class="nopdf"><i class="fas fa-triangle-exclamation"></i> PDF 없음</div>'}</td>
+                <td class="nm"><b>${esc(s.title)}</b><small>${esc(s.artist || '')}</small>${filesById[s.id] ? '<div class="haspdf"><i class="fas fa-circle-check"></i> PDF 있음</div>' : '<div class="nopdf"><i class="fas fa-triangle-exclamation"></i> PDF 없음</div>'}</td>
                 <td class="c-st"><span class="chip ${s.kind}">${KIND[s.kind] || ''}</span>${s.style ? `<span class="chip">${STYLE[s.style][0]}</span>` : ''}</td>
                 <td class="c-lv"><span class="lv">${lvDots(s.difficulty)}</span></td>
-                <td>${won(s.price)}</td>
+                <td class="c-pr">${won(s.price)}</td>
                 <td><span class="pub ${s.published ? 'on' : ''}" data-toggle="${s.id}"><span class="dot"></span>${s.published ? '공개' : '비공개'}</span></td>
                 <td class="c-up" style="color:var(--sub);font-size:12.5px;">${new Date(s.updated_at).toLocaleDateString('ko-KR')}</td>
             </tr>`).join('')
@@ -330,6 +385,18 @@
         render();
     });
     $('q').addEventListener('input', render);
+    $('sortSeg').addEventListener('click', e => {
+        const b = e.target.closest('button'); if (!b) return;
+        sortBy = b.dataset.s;
+        [...$('sortSeg').children].forEach(x => x.classList.toggle('on', x === b));
+        render();
+    });
+    $('pdfSeg').addEventListener('click', e => {
+        const b = e.target.closest('button'); if (!b) return;
+        pdfFilter = b.dataset.p;
+        [...$('pdfSeg').children].forEach(x => x.classList.toggle('on', x === b));
+        render();
+    });
 
     // ---------- 편집 창 ----------
     const form = $('form');
