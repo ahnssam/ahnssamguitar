@@ -7,7 +7,7 @@
     'use strict';
 
     // 토스 개발자센터 > API 키 > 'API 개별 연동 키'의 클라이언트 키 (공개돼도 되는 키)
-    // test_ck_… 인 동안은 실제 돈이 빠지지 않고, 운영 계정만 결제할 수 있다 (서버에서도 막음)
+    // test_ck_… 인 동안은 실제 돈이 빠지지 않고, 결제 승인·PDF 는 운영 계정만 (서버에서 막음)
     const TOSS_CLIENT_KEY = 'test_ck_c19w1q40Vjj4RvsrxDKF76oVbAlUAm3HXq';
     const TOSS_SDK = 'https://js.tosspayments.com/v2/standard';
     const ADMIN_EMAIL = 'steveq2568@gmail.com';
@@ -17,8 +17,11 @@
     const auth = () => window.ahnssamAuth;
     const session = () => (auth() && auth().getSession()) || null;
     const isAdmin = () => String((session() && session().user.email) || '').toLowerCase() === ADMIN_EMAIL;
-    // 결제를 받을 수 있는 상태인지 (키가 없거나, 테스트 키인데 운영 계정이 아니면 '결제 준비 중')
-    const canPay = () => !!TOSS_CLIENT_KEY && (!isTest() || isAdmin());
+    // 결제창을 열 수 있는지 — 토스 심사 때 누구나 결제창 연동을 확인할 수 있게 테스트 키여도 연다
+    const canPay = () => !!TOSS_CLIENT_KEY;
+    // 결제창은 열리지만 실제 구매는 안 되는 상태 (테스트 키 + 운영 계정 아님).
+    // 테스트 결제라 돈이 안 빠지고, 승인 서버(toss-confirm)가 운영 계정만 승인해서 PDF 도 안 나간다.
+    const trialOnly = () => isTest() && !isAdmin();
 
     // 로그인 상태가 정해질 때까지 기다린다 (auth.js 가 SDK 를 늦게 불러올 수 있어서)
     let settled = false;
@@ -138,5 +141,5 @@
         try { return sessionStorage.getItem(RETURN_KEY); } catch (e) { return null; }
     }
 
-    window.ahnssamCheckout = { ready, buy, download, myPurchases, confirm, canPay, isTest, isAdmin, returnSheet };
+    window.ahnssamCheckout = { ready, buy, download, myPurchases, confirm, canPay, trialOnly, isTest, isAdmin, returnSheet };
 })();

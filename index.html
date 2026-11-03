@@ -692,7 +692,9 @@
     const linkAttrs = x => !href(x) ? '' : x.on ? `href="${esc(href(x))}"` : `href="${esc(href(x))}" target="_blank" rel="noopener"`;
     // 풀스코어 가격은 사이트 새 가격과 다를 수 있어서, 아직 안 올린 곡은 가격 대신 '풀스코어'로
     const price = x => x.on ? `${Number(x.p || 0).toLocaleString()}원` : `<span class="fs-link">${IS_APP ? '준비 중' : '풀스코어<i class="fas fa-arrow-up-right-from-square"></i>'}</span>`;
-    const chip = x => x.on ? '<span class="chip buy">바로 구매</span>' : '<span class="chip fs">풀스코어</span>';
+    // 실결제 전(checkout.js 가 테스트 키)에는 올린 곡도 아직 살 수 없어서 '곧 사이트 구매'로
+    let PAY_OPEN = false;
+    const chip = x => x.on ? `<span class="chip buy">${PAY_OPEN ? '바로 구매' : '곧 사이트 구매'}</span>` : '<span class="chip fs">풀스코어</span>';
     // 썸네일에는 곡명 대신 종류만 (곡명은 옆 글자에 이미 보임)
     const thumb = (s, lv, cls = '') => `<div class="th ${cls}"><div class="paper"></div><div class="band ${STYLE[s][0]}"><i class="fas fa-guitar"></i><div class="a">${STYLE[s][2]}</div><div class="t">${STYLE[s][1]}</div><div class="d">${LV(lv)}</div></div></div>`;
     const row = (lead, x) => `<a class="row" ${linkAttrs(x)}>${lead}${thumb(x.s, x.lv, 'sm')}
@@ -738,7 +740,9 @@
         return tidy(all);
     }
 
-    loadSheets().then(ALL => {
+    const domReady = new Promise(r => document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', r, { once: true }) : r());
+    Promise.all([loadSheets(), domReady]).then(([ALL]) => {
+        PAY_OPEN = !!(window.ahnssamCheckout && !window.ahnssamCheckout.isTest());
         const $ = id => document.getElementById(id);
         $('newList').innerHTML = [...ALL].sort(SORT.fresh).slice(0, 6).map(x => row('<span class="new">NEW</span>', x)).join('');
         $('bestList').innerHTML = [...ALL].sort(SORT.rec).slice(0, 6).map((x, i) => row(`<span class="no">${i + 1}</span>`, x)).join('');
@@ -845,6 +849,7 @@
     })();
 </script>
 <script src="auth.js" defer></script>
+<script src="checkout.js" defer></script>
 <!-- PWA service worker 등록 -->
 <script>
     if ('serviceWorker' in navigator) {
