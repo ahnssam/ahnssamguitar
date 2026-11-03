@@ -566,10 +566,12 @@
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(42,107,74,0.3);
         }
+        .btn-purchase:disabled { opacity: 0.55; cursor: default; transform: none; }
         .btn-purchase:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 25px rgba(42,107,74,0.4);
         }
+        .private-note { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 700; color: #a06a00; background: #fff3d6; border-radius: 8px; padding: 4px 10px; margin-bottom: 0.6rem; }
         /* 판매를 잠시 쉬는 상품 안내 */
         .product-paused {
             grid-column: 1 / -1;
@@ -778,6 +780,7 @@
     </style>
     <!-- Supabase auth (shared) -->
     <script src="auth.js" defer></script>
+    <script src="checkout.js" defer></script>
 </head>
 <body>
 
@@ -871,10 +874,10 @@
             </div>
             <p class="product-desc" id="productDesc" hidden></p>
             <div class="product-actions">
-                <!-- 결제 링크는 products 의 checkoutUrl 로 채운다 (없으면 '결제 준비 중') -->
-                <a id="productBuyBtn" href="#" target="_blank" rel="noopener" class="btn-purchase" style="display: inline-block; text-align: center;">
-                    <i class="fas fa-credit-card"></i> 구매하기
-                </a>
+                <!-- 구매하기 → checkout.js(토스 결제창). 이미 산 악보면 'PDF 내려받기' 로 바뀐다 -->
+                <button type="button" id="productBuyBtn" class="btn-purchase" disabled>
+                    <i class="fas fa-spinner fa-spin"></i> 확인 중
+                </button>
                 <a id="productYoutubeLink" href="#" target="_blank" class="btn-youtube" style="display:none;">
                     <i class="fab fa-youtube"></i> 유튜브 보기
                 </a>
@@ -974,12 +977,7 @@
             }
             document.title = p.title + ' - TAB악보 | 안쌤의 기타나무숲';
 
-            // 결제가 붙기 전까지 구매 버튼은 잠가 둔다
-            const buy = document.getElementById('productBuyBtn');
-            buy.removeAttribute('href');
-            buy.style.opacity = '0.55';
-            buy.style.cursor = 'default';
-            buy.innerHTML = '<i class="fas fa-hourglass-half"></i> 결제 준비 중';
+            setupBuy(p);
 
             // 유튜브 영상이 있으면 표시
             if (p.youtube_id) {
@@ -991,6 +989,41 @@
             }
         }
 
+        // 구매 버튼 — 결제를 받을 수 없으면 '결제 준비 중', 이미 산 악보면 'PDF 내려받기'
+        async function setupBuy(p) {
+            const btn = document.getElementById('productBuyBtn');
+            const set = (icon, text, onClick) => {
+                btn.innerHTML = '<i class="fas ' + icon + '"></i> ' + text;
+                btn.disabled = !onClick;
+                btn.onclick = onClick || null;
+            };
+            if (document.readyState === 'loading') await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
+            const C = window.ahnssamCheckout;
+            if (!C) { set('fa-hourglass-half', '결제 준비 중'); return; }
+            await C.ready();
+            if (!C.canPay()) { set('fa-hourglass-half', '결제 준비 중'); return; }
+            const showDownload = () => set('fa-download', 'PDF 내려받기', () => C.download(p.id, p.title));
+            let owned = false;
+            try { owned = (await C.myPurchases()).some(x => x.sheet_id === p.id); } catch (e) {}
+            if (owned) { showDownload(); return; }
+            set('fa-credit-card', '구매하기', async () => {
+                set('fa-spinner fa-spin', '결제창 여는 중');
+                const r = await C.buy(p.id);
+                if (r.status === 'owned') showDownload();
+                else if (r.status !== 'redirect') setupBuy(p);
+            });
+        }
+        // 운영 계정은 비공개 악보도 열어 볼 수 있다 (공개 전 확인·테스트 결제용)
+        async function loadPrivateForAdmin(id) {
+            if (document.readyState === 'loading') await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
+            const C = window.ahnssamCheckout;
+            if (!C) return null;
+            await C.ready();
+            if (!C.isAdmin()) return null;
+            const { data } = await window.ahnssamAuth.supabase.from('sheets').select('*').eq('id', id).maybeSingle();
+            return data || null;
+        }
+
         (async function loadSheet() {
             const raw = new URLSearchParams(window.location.search).get('id') || '';
             const id = LEGACY_IDS[raw] || raw;
@@ -999,8 +1032,16 @@
                 const res = await fetch(SB_URL + '/rest/v1/sheets?select=*&published=eq.true&id=eq.' + id, { headers: { apikey: SB_KEY } });
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const rows = await res.json();
-                if (rows.length) showSheet(rows[0]);
-                else showPaused();
+                const p = rows[0] || await loadPrivateForAdmin(id);
+                if (p) {
+                    showSheet(p);
+                    if (!p.published) {
+                        const note = document.createElement('div');
+                        note.className = 'private-note';
+                        note.innerHTML = '<i class="fas fa-eye-slash"></i> 비공개 악보예요 — 운영 계정에게만 보여요';
+                        document.getElementById('productTitle').before(note);
+                    }
+                } else showPaused();
             } catch (e) {
                 showPaused();
             }

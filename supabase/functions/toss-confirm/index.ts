@@ -1,0 +1,89 @@
+// 토스페이먼츠 결제 승인 — 결제창에서 돌아온 paymentKey·orderId·amount 를 받아 토스에 승인 요청하고,
+// 성공하면 주문을 '결제 완료'로 바꾸고 구매 기록(sheet_purchases)을 남긴다.
+// 비밀 키는 Supabase Edge Function Secrets 의 TOSS_SECRET_KEY (test_sk_… 면 테스트 결제).
+// 배포: verify_jwt=false (새 API 키 방식이라 함수 안에서 직접 로그인 확인)
+import { createClient } from 'npm:@supabase/supabase-js@2';
+
+const ADMIN_EMAIL = 'steveq2568@gmail.com';
+const cors = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+  if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
+
+  const secret = Deno.env.get('TOSS_SECRET_KEY') ?? '';
+  if (!secret) return json({ error: 'not_configured' }, 500);
+  const isTest = secret.startsWith('test_');
+
+  const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
+    auth: { persistSession: false },
+  });
+
+  // 로그인 확인
+  const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
+  const { data: userData } = token ? await db.auth.getUser(token) : { data: { user: null } };
+  const user = userData?.user;
+  if (!user) return json({ error: 'auth_required' }, 401);
+  // 테스트 키일 때는 운영 계정만 — 다른 사람이 테스트 카드로 PDF 를 받아 가지 못하게
+  if (isTest && (user.email ?? '').toLowerCase() !== ADMIN_EMAIL) return json({ error: 'test_mode_admin_only' }, 403);
+
+  let body: { paymentKey?: unknown; orderId?: unknown; amount?: unknown };
+  try { body = await req.json(); } catch { return json({ error: 'bad_request' }, 400); }
+  const paymentKey = typeof body.paymentKey === 'string' ? body.paymentKey : '';
+  const orderId = typeof body.orderId === 'string' ? body.orderId : '';
+  const amount = Number(body.amount);
+  if (!paymentKey || !orderId || !Number.isFinite(amount)) return json({ error: 'bad_request' }, 400);
+
+  const { data: order } = await db.from('sheet_orders').select('*').eq('order_id', orderId).maybeSingle();
+  if (!order || order.user_id !== user.id) return json({ error: 'order_not_found' }, 404);
+  // 새로고침 등으로 다시 들어와도 이미 끝난 결제면 그대로 성공
+  if (order.status === 'paid') return json({ ok: true, sheet_id: order.sheet_id });
+  if (order.status !== 'pending') return json({ error: 'order_closed', message: order.fail_message }, 409);
+
+  const fail = async (code: string, message: string) => {
+    await db.from('sheet_orders').update({ status: 'failed', fail_code: code, fail_message: message })
+      .eq('order_id', orderId).eq('status', 'pending');
+  };
+  if (amount !== order.amount) {
+    await fail('AMOUNT_MISMATCH', '결제 금액이 주문 금액과 달라요.');
+    return json({ error: 'amount_mismatch' }, 400);
+  }
+
+  const res = await fetch('https://api.tosspayments.com/v1/payments/confirm', {
+    method: 'POST',
+    headers: { Authorization: 'Basic ' + btoa(secret + ':'), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paymentKey, orderId, amount: order.amount }),
+  });
+  const pay = await res.json().catch(() => ({}));
+
+  if (!res.ok || pay.status !== 'DONE') {
+    // 동시에 두 번 승인된 경우(새로고침 겹침) 먼저 끝난 쪽이 이미 기록했으면 성공으로 본다
+    const { data: again } = await db.from('sheet_orders').select('status, sheet_id').eq('order_id', orderId).single();
+    if (again?.status === 'paid') return json({ ok: true, sheet_id: again.sheet_id });
+    await fail(pay.code ?? 'CONFIRM_FAILED', pay.message ?? '결제 승인에 실패했어요.');
+    return json({ error: 'confirm_failed', code: pay.code, message: pay.message }, 400);
+  }
+
+  const { error: upErr } = await db.from('sheet_orders').update({
+    status: 'paid',
+    is_test: isTest,
+    payment_key: paymentKey,
+    method: pay.method ?? null,
+    approved_at: pay.approvedAt ?? new Date().toISOString(),
+    receipt_url: pay.receipt?.url ?? null,
+  }).eq('order_id', orderId);
+  const { error: purErr } = await db.from('sheet_purchases')
+    .upsert({ user_id: user.id, sheet_id: order.sheet_id, order_id: orderId }, { onConflict: 'user_id,sheet_id', ignoreDuplicates: true });
+  if (upErr || purErr) {
+    // 돈은 빠졌는데 기록이 안 된 경우 — 로그를 남기고 사용자에게 문의 안내
+    console.error('record failed', orderId, upErr?.message, purErr?.message);
+    return json({ error: 'record_failed', order_id: orderId }, 500);
+  }
+  return json({ ok: true, sheet_id: order.sheet_id });
+});

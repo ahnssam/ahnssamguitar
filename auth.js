@@ -602,6 +602,7 @@ nav.scrolled .auth-btn:hover {
                         <span class="auth-user-name">${escapeHtml(nick)}</span>
                     </button>
                     <div class="auth-user-menu" role="menu">
+                        <button type="button" data-auth-action="purchases">구매한 악보</button>
                         ${isOwner
                             ? '<button type="button" data-auth-action="sheets">악보관리</button><button type="button" data-auth-action="builder">프리셋 빌더</button>'
                             : '<button type="button" data-auth-action="mypage">마이페이지</button>'}
@@ -626,6 +627,7 @@ nav.scrolled .auth-btn:hover {
                     else if (a === 'change-nickname') promptNicknameChange();
                     else if (a === 'mypage') goToMypage();
                     else if (a === 'sheets') window.location.href = '/admin/sheets.html';
+                    else if (a === 'purchases') window.location.href = '/purchases.html';
                     else if (a === 'builder') window.location.href = '/presets-builder.html';
                 });
                 slot.appendChild(container);
