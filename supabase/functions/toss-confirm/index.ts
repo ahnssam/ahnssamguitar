@@ -17,9 +17,14 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
 
-  const secret = Deno.env.get('TOSS_SECRET_KEY') ?? '';
+  // 붙여 넣을 때 딸려 온 공백·따옴표·이름표('TOSS_SECRET_KEY=' 등)는 떼고 키 모양 부분만 쓴다
+  const rawSecret = Deno.env.get('TOSS_SECRET_KEY') ?? '';
+  const found = rawSecret.match(/(test|live)_g?sk_[A-Za-z0-9_]+/) ?? rawSecret.match(/(test|live)_[a-z]+_[A-Za-z0-9_]+/);
+  const secret = found ? found[0] : rawSecret.trim().replace(/^['"]+|['"]+$/g, '');
   if (!secret) return json({ error: 'not_configured' }, 500);
   const isTest = secret.startsWith('test_');
+  // 키 종류만 (값은 절대 내보내지 않음): test_sk 가 맞고, test_gsk(결제위젯)·test_ck(클라이언트)면 잘못 넣은 것
+  const keyKind = (secret.match(/^(test|live)_[a-z]+_/)?.[0].slice(0, -1) ?? 'unknown') + (secret.includes('_docs_') ? '(docs)' : '');
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
     auth: { persistSession: false },
@@ -30,11 +35,28 @@ Deno.serve(async (req) => {
   const { data: userData } = token ? await db.auth.getUser(token) : { data: { user: null } };
   const user = userData?.user;
   if (!user) return json({ error: 'auth_required' }, 401);
-  // 테스트 키일 때는 운영 계정만 — 다른 사람이 테스트 카드로 PDF 를 받아 가지 못하게
-  if (isTest && (user.email ?? '').toLowerCase() !== ADMIN_EMAIL) return json({ error: 'test_mode_admin_only' }, 403);
+  // 실제 키(live_)가 아닐 때는 운영 계정만 — 다른 사람이 테스트 카드로 PDF 를 받아 가지 못하게
+  if (!secret.startsWith('live_') && (user.email ?? '').toLowerCase() !== ADMIN_EMAIL) return json({ error: 'test_mode_admin_only' }, 403);
 
-  let body: { paymentKey?: unknown; orderId?: unknown; amount?: unknown };
+  let body: { paymentKey?: unknown; orderId?: unknown; amount?: unknown; check?: unknown };
   try { body = await req.json(); } catch { return json({ error: 'bad_request' }, 400); }
+
+  // 키 점검 (운영 계정만) — 결제 없이 토스가 이 시크릿 키를 받아 주는지만 본다
+  if (body.check === true) {
+    if ((user.email ?? '').toLowerCase() !== ADMIN_EMAIL) return json({ error: 'admin_only' }, 403);
+    const r = await fetch('https://api.tosspayments.com/v1/payments/orders/ahnssam-key-check', {
+      headers: { Authorization: 'Basic ' + btoa(secret + ':') },
+    });
+    const p = await r.json().catch(() => ({}));
+    return json({
+      key_kind: keyKind,
+      had_extra_chars: rawSecret !== secret,
+      length: secret.length,   // test_sk_… 는 40자 남짓 — 훨씬 길면 다른 글을 붙여 넣은 것
+      key_ok: r.status !== 401 && p.code !== 'UNAUTHORIZED_KEY',
+      toss_code: p.code ?? null,
+    });
+  }
+
   const paymentKey = typeof body.paymentKey === 'string' ? body.paymentKey : '';
   const orderId = typeof body.orderId === 'string' ? body.orderId : '';
   const amount = Number(body.amount);
