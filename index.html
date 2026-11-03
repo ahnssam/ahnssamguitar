@@ -211,6 +211,10 @@
     .th .paper { position: absolute; left: 8%; top: 8%; width: 58%; height: 64%; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.12); padding: 6% 7%; }
     .th .paper::before { content: ''; display: block; height: 6%; width: 50%; margin: 0 auto 8%; background: #3a3a3a; border-radius: 2px; }
     .th .paper::after { content: ''; display: block; height: 76%; background: repeating-linear-gradient(to bottom, #bbb 0 1px, transparent 1px 3.5px); }
+    /* PDF 를 올린 곡: 가짜 줄 대신 실제 악보 윗부분(상세 페이지 미리보기와 같은 그림) */
+    .th .paper.real { padding: 0; overflow: hidden; }
+    .th .paper.real::before, .th .paper.real::after { display: none; }
+    .th .paper.real img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
     /* 왼쪽 아래 → 오른쪽 위로 완만한 대각선(약 35도)으로 색 면을 나눈다 */
     .th .band { position: absolute; inset: 0; z-index: 1; background: transparent; padding: 0 7% 8%; color: var(--ink, #fff); text-shadow: 0 1px 2px rgb(0 0 0 / var(--shade, 0.18)); text-align: right; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; }
     .th .band::before, .th .band::after { content: ''; position: absolute; inset: 0; z-index: -1; }
@@ -702,8 +706,10 @@
     let PAY_OPEN = false;
     const chip = x => x.on ? `<span class="chip buy">${PAY_OPEN ? '바로 구매' : '곧 사이트 구매'}</span>` : '<span class="chip fs">풀스코어</span>';
     // 썸네일에는 곡명 대신 종류만 (곡명은 옆 글자에 이미 보임)
-    const thumb = (s, lv, cls = '') => `<div class="th ${cls}"><div class="paper"></div><div class="band ${STYLE[s][0]}"><i class="fas fa-guitar"></i><div class="a">${STYLE[s][2]}</div><div class="t">${STYLE[s][1]}</div><div class="d">${LV(lv)}</div></div></div>`;
-    const row = (lead, x) => `<a class="row" ${linkAttrs(x)}>${lead}${thumb(x.s, x.lv, 'sm')}
+    const pvUrl = x => SB_URL + '/storage/v1/object/public/sheet-previews/' + encodeURIComponent(x.pv) + '?v=' + encodeURIComponent(x.up || '');
+    const paper = x => x.pv ? `<div class="paper real"><img src="${esc(pvUrl(x))}" alt="" loading="lazy" decoding="async"></div>` : '<div class="paper"></div>';
+    const thumb = (x, cls = '') => `<div class="th ${cls}">${paper(x)}<div class="band ${STYLE[x.s][0]}"><i class="fas fa-guitar"></i><div class="a">${STYLE[x.s][2]}</div><div class="t">${STYLE[x.s][1]}</div><div class="d">${LV(x.lv)}</div></div></div>`;
+    const row = (lead, x) => `<a class="row" ${linkAttrs(x)}>${lead}${thumb(x, 'sm')}
         <span class="body"><div class="tt">${esc(x.t)}</div><div class="sub">${esc(x.a)}</div><div class="meta">${chip(x)}<span class="lv">${LV(x.lv)}</span>${x.yt ? '<i class="fab fa-youtube"></i>' : ''}</div></span>
         <span class="pr">${price(x)}</span></a>`;
     const mini = x => `<a class="mini" ${linkAttrs(x)}><span class="mt"><b>${esc(x.t)}</b><small>${esc(x.a)}</small></span><span class="pr">${price(x)}</span></a>`;
@@ -722,10 +728,15 @@
 
     async function loadSheets() {
         try {
-            const r = await fetch(SB_URL + '/rest/v1/rpc/sheet_catalog', { method: 'POST', headers: { apikey: SB_KEY, 'Content-Type': 'application/json' }, body: '{}' });
+            const [r, pr] = await Promise.all([
+                fetch(SB_URL + '/rest/v1/rpc/sheet_catalog', { method: 'POST', headers: { apikey: SB_KEY, 'Content-Type': 'application/json' }, body: '{}' }),
+                // 썸네일용 실제 악보 윗부분 — 목록 함수에는 없는 칸이라 공개 곡만 따로 (못 받아도 목록은 그대로)
+                fetch(SB_URL + '/rest/v1/sheets?select=id,preview_path&published=eq.true&preview_path=not.is.null', { headers: { apikey: SB_KEY } }).catch(() => null),
+            ]);
             if (!r.ok) throw new Error('HTTP ' + r.status);
             const rows = await r.json();
-            if (rows.length) return tidy(rows.map(s => ({ id: s.id, c: s.fullscore_code, t: s.title, a: s.artist, s: s.style, g: s.genre, lv: s.difficulty, p: s.price, yt: s.youtube_id, o: s.fullscore_orders || 0, on: !!s.on_sale, up: s.updated_at })));
+            const pv = new Map(pr && pr.ok ? (await pr.json()).map(s => [s.id, s.preview_path]) : []);
+            if (rows.length) return tidy(rows.map(s => ({ id: s.id, c: s.fullscore_code, t: s.title, a: s.artist, s: s.style, g: s.genre, lv: s.difficulty, p: s.price, yt: s.youtube_id, o: s.fullscore_orders || 0, on: !!s.on_sale, up: s.updated_at, pv: pv.get(s.id) })));
         } catch (e) { console.warn('[sheets] 목록 함수를 못 불러와서 저장본으로 보여요', e); }
         return loadSheetsFallback();
     }
@@ -734,10 +745,10 @@
         let base = [], live = [];
         try { base = await (await fetch('data/sheet-catalog.json')).json(); } catch (e) { console.warn('[sheets] 목록 파일을 못 읽었어요', e); }
         try {
-            const r = await fetch(SB_URL + '/rest/v1/sheets?select=id,title,artist,style,genre,difficulty,price,youtube_id,fullscore_code,fullscore_orders,updated_at&published=eq.true', { headers: { apikey: SB_KEY } });
+            const r = await fetch(SB_URL + '/rest/v1/sheets?select=id,title,artist,style,genre,difficulty,price,youtube_id,fullscore_code,fullscore_orders,updated_at,preview_path&published=eq.true', { headers: { apikey: SB_KEY } });
             if (r.ok) live = await r.json();
         } catch (e) { console.warn('[sheets] 공개 악보를 못 불러왔어요', e); }
-        const fromLive = s => ({ id: s.id, c: s.fullscore_code, t: s.title, a: s.artist, s: s.style, g: s.genre, lv: s.difficulty, p: s.price, yt: s.youtube_id, o: s.fullscore_orders || 0, on: true, up: s.updated_at });
+        const fromLive = s => ({ id: s.id, c: s.fullscore_code, t: s.title, a: s.artist, s: s.style, g: s.genre, lv: s.difficulty, p: s.price, yt: s.youtube_id, o: s.fullscore_orders || 0, on: true, up: s.updated_at, pv: s.preview_path });
         const byCode = new Map(live.filter(s => s.fullscore_code).map(s => [s.fullscore_code, s]));
         const all = base.map(x => byCode.has(x.c) ? fromLive(byCode.get(x.c)) : { ...x, on: false });
         // 풀스코어에 없던 새 악보(사이트에서 처음 만든 곡)도 넣는다
@@ -766,7 +777,7 @@
             list = [...list].sort(SORT[st.o]);
             $('allCount').textContent = list.length + '곡';
             $('allList').innerHTML = list.slice(0, st.n).map(x => `<tr data-href="${esc(href(x))}" data-ext="${x.on ? '' : '1'}">
-                <td>${thumb(x.s, x.lv, 'sm')}</td><td class="nm">${href(x) ? `<a ${linkAttrs(x)}>${esc(x.t)}</a>` : esc(x.t)} ${chip(x)}<small>${esc(x.a)}</small></td>
+                <td>${thumb(x, 'sm')}</td><td class="nm">${href(x) ? `<a ${linkAttrs(x)}>${esc(x.t)}</a>` : esc(x.t)} ${chip(x)}<small>${esc(x.a)}</small></td>
                 <td class="c-art" style="color:#666;font-size:13px;">${esc(x.g)}</td>
                 <td class="c-lv"><span class="lv">${LV(x.lv)}</span></td><td class="yt">${x.yt ? '<i class="fab fa-youtube"></i>' : ''}</td>
                 <td class="pr">${price(x)}</td></tr>`).join('') || `<tr><td colspan="6" class="tbl-empty">${st.q || st.g ? '찾는 악보가 없어요. 다른 제목이나 가수 이름으로 찾아보세요.' : '이 종류의 악보를 준비하고 있어요. 곧 올라와요!'}</td></tr>`;
