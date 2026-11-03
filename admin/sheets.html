@@ -154,6 +154,37 @@
     .toggle { display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; }
     .toggle input { width: 18px; height: 18px; accent-color: var(--green); }
 
+    /* 뭐부터 올리지? — 풀스코어 판매 순위 팝업 */
+    .btn.rank-btn { color: #8a5a00; border-color: #f1d99a; background: #fff8e6; }
+    .btn.rank-btn:hover { border-color: #e6c46a; }
+    .rank { position: fixed; top: 40px; bottom: 40px; left: max(20px, calc(50% - 600px)); right: max(20px, calc(50% - 600px)); background: #fff; border-radius: 14px; z-index: 52; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+    .rk-hd { display: flex; align-items: center; gap: 10px; padding: 16px 22px; border-bottom: 1px solid var(--line); }
+    .rk-hd h3 { font-size: 17px; font-weight: 900; }
+    .rk-hd h3 i { color: var(--gold); margin-right: 4px; }
+    .rk-hd small { color: var(--sub); font-size: 12.5px; }
+    .rk-hd .x { margin-left: auto; border: 0; background: none; font-size: 20px; cursor: pointer; color: #888; }
+    .rk-body { flex: 1; overflow-y: auto; padding: 16px 22px 24px; }
+    .rk-msg { text-align: center; color: var(--sub); padding: 40px 0; }
+    .rk-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+    .rk-col h4 { font-size: 15px; font-weight: 900; padding-bottom: 8px; border-bottom: 2px solid var(--ink); }
+    .rk-col h4 small { display: block; font-size: 12px; font-weight: 500; color: var(--sub); }
+    .rk-col.next h4 { border-color: var(--gold); }
+    .rk-row { display: flex; align-items: center; gap: 8px; padding: 7px 6px; border-bottom: 1px dashed #ececec; cursor: pointer; border-radius: 6px; }
+    .rk-row:hover { background: var(--green-bg); }
+    .rk-row .no { width: 22px; flex: none; text-align: right; font-weight: 700; color: #aaa; }
+    .rk-row:nth-child(-n+4) .no { color: var(--green); }
+    .rk-row .ck { width: 18px; flex: none; color: var(--green-2); }
+    .rk-row .nm { flex: 1; min-width: 0; }
+    .rk-row .nm b { display: block; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rk-row .nm small { display: block; font-size: 11.5px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rk-row .n { flex: none; font-weight: 700; font-size: 13px; }
+    .rk-row.done .nm b { color: #9a9a9a; }
+    .rk-row .go { flex: none; font-size: 12px; color: var(--gold); font-weight: 700; }
+
+    @media (max-width: 900px) {
+        .rank { inset: 0; border-radius: 0; }
+        .rk-cols { grid-template-columns: 1fr; }
+    }
     @media (max-width: 760px) {
         .toolbar { flex-wrap: wrap; }
         .toolbar .search { margin-left: 0; flex-basis: 100%; }
@@ -182,6 +213,7 @@
             <button class="on" data-f="all">전체</button><button data-f="pub">공개</button><button data-f="draft">비공개</button>
         </div>
         <div class="search"><i class="fas fa-search"></i><input id="q" placeholder="곡명·가수 검색"></div>
+        <button class="btn rank-btn" id="rankBtn" title="풀스코어 판매 순위로 다음에 올릴 악보 고르기"><i class="fas fa-ranking-star"></i> 뭐부터 올리지?</button>
         <button class="btn primary" id="newBtn"><i class="fas fa-plus"></i> 새 악보</button>
     </div>
     <div class="progress" id="progress" hidden></div>
@@ -248,6 +280,11 @@
         <span class="msg" id="edMsg"></span>
     </div>
 </aside>
+
+<div class="rank" id="rank" role="dialog" aria-label="뭐부터 올리지?" hidden>
+    <div class="rk-hd"><h3><i class="fas fa-ranking-star"></i>뭐부터 올리지?</h3><small id="rkNote"></small><button class="x" id="rkClose" aria-label="닫기"><i class="fas fa-xmark"></i></button></div>
+    <div class="rk-body" id="rkBody"></div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
@@ -463,17 +500,79 @@
         $('dim').classList.add('open'); $('editor').classList.add('open');
         setTimeout(() => form.elements.title.focus(), 200);
     }
-    function closeEditor() { $('dim').classList.remove('open'); $('editor').classList.remove('open'); }
+    function closeEditor() {
+        $('dim').classList.remove('open'); $('editor').classList.remove('open');
+        if (fromRank) { fromRank = false; showRank(); }
+    }
     const formState = () => [...form.elements].map(el => el.type === 'checkbox' ? el.checked : el.value).join('\u0001') + '|' + difficulty;
     const isDirty = () => !!newPdf || !!newPreview || formState() !== openedState;
     $('newBtn').onclick = () => openEditor(null);
     $('edClose').onclick = closeEditor;
     // 바깥(어두운 부분)을 누르면 바뀐 게 있을 때 저장하고 닫는다 — 저장 못 하면 창을 그대로 두고 이유를 보여 준다
     $('dim').onclick = () => {
+        if (!$('rank').hidden && !$('editor').classList.contains('open')) { closeRank(); return; }
         if (pdfReading || $('saveBtn').disabled) return;
         if (isDirty()) save(); else closeEditor();
     };
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEditor(); });
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        if ($('editor').classList.contains('open')) closeEditor(); else if (!$('rank').hidden) closeRank();
+    });
+
+    // ---------- 뭐부터 올리지? (풀스코어 판매 순위 → 다음에 올릴 악보) ----------
+    // 순위 = sheet_sales 표 (db/sheet_sales.sql, 운영 계정만 읽음). 체크 = 사이트에 PDF 를 올린 곡.
+    let sales = null;          // 처음 열 때 한 번 읽는다
+    let fromRank = false;      // 순위에서 곡을 눌러 편집 창을 열었으면 닫을 때 순위로 돌아간다
+    const RANK_N = 30;
+    const fmtDay = d => d ? String(d).replace(/-/g, '.') : '';
+    function showRank() { $('rank').hidden = false; $('dim').classList.add('open'); renderRank(); }
+    function closeRank() { $('rank').hidden = true; if (!$('editor').classList.contains('open')) $('dim').classList.remove('open'); }
+    $('rankBtn').onclick = async () => {
+        $('rank').hidden = false; $('dim').classList.add('open');
+        if (!sales) {
+            $('rkBody').innerHTML = '<p class="rk-msg"><i class="fas fa-spinner fa-spin"></i> 판매 순위를 불러오고 있어요…</p>';
+            const { data, error } = await sb.from('sheet_sales').select('*');
+            if (error) {
+                $('rkBody').innerHTML = `<p class="rk-msg">판매 순위를 불러오지 못했어요.<br><small>${esc(error.message)} — <code>db/sheet_sales.sql</code> 을 Supabase 에 적용했는지 확인해 주세요.</small></p>`;
+                return;
+            }
+            sales = data || [];
+        }
+        renderRank();
+    };
+    $('rkClose').onclick = closeRank;
+    $('rkBody').addEventListener('click', e => {
+        const r = e.target.closest('.rk-row'); if (!r) return;
+        const s = sheets.find(x => x.id === r.dataset.id); if (!s) return;
+        closeRank(); fromRank = true; openEditor(s);
+    });
+    function renderRank() {
+        if (!sales) return;
+        const byCode = {};
+        sheets.forEach(s => { if (s.fullscore_code) byCode[s.fullscore_code] = s; });
+        const items = sales.map(r => ({ ...r, s: byCode[r.fullscore_code] })).filter(x => x.s);
+        const done = x => !!filesById[x.s.id];
+        const all = [...items].sort((a, b) => b.sold_total - a.sold_total || b.sold_6m - a.sold_6m);
+        const six = items.filter(x => x.sold_6m > 0).sort((a, b) => b.sold_6m - a.sold_6m || b.sold_total - a.sold_total);
+        // 추천: 아직 PDF 없는 곡 중 요즘 팔리는 곡에 무게 (최근 6개월 ×4 + 누적 ×0.5)
+        const score = x => x.sold_6m * 4 + x.sold_total / 2;
+        const next = items.filter(x => !done(x)).sort((a, b) => score(b) - score(a));
+        const label = s => [s.artist, STYLE[s.style] && STYLE[s.style][0]].filter(Boolean).join(' · ');
+        const row = (x, i, right, sub) => `<div class="rk-row ${done(x) ? 'done' : ''}" data-id="${x.s.id}" title="눌러서 이 악보 열기">
+            <span class="no">${i + 1}</span><span class="ck">${done(x) ? '<i class="fas fa-circle-check" title="사이트에 올림"></i>' : ''}</span>
+            <span class="nm"><b>${esc(x.s.title)}</b><small>${esc(label(x.s))}${sub ? ' · ' + sub : ''}</small></span>${right}</div>`;
+        const upIn = list => list.slice(0, RANK_N).filter(done).length;
+        const meta = sales[0] || {};
+        $('rkNote').textContent = `풀스코어 정산(결제된 판매) 기준 · ${fmtDay(meta.as_of)}까지`;
+        $('rkBody').innerHTML = `<div class="rk-cols">
+            <section class="rk-col next"><h4>다음에 올릴 곡<small>아직 PDF 없는 곡 · 요즘 팔리는 곡 먼저</small></h4>
+                ${next.slice(0, RANK_N).map((x, i) => row(x, i, '<span class="go">올리기 ›</span>', `6개월 ${x.sold_6m} · 누적 ${x.sold_total}`)).join('') || '<p class="rk-msg">다 올렸어요 🎉</p>'}</section>
+            <section class="rk-col"><h4>누적 판매<small>${RANK_N}위 안에서 ${upIn(all)}곡 올림</small></h4>
+                ${all.slice(0, RANK_N).map((x, i) => row(x, i, `<span class="n">${x.sold_total}</span>`, `6개월 ${x.sold_6m}`)).join('')}</section>
+            <section class="rk-col"><h4>최근 6개월<small>${fmtDay(meta.six_from)}부터 · ${RANK_N}위 안에서 ${upIn(six)}곡 올림</small></h4>
+                ${six.slice(0, RANK_N).map((x, i) => row(x, i, `<span class="n">${x.sold_6m}</span>`, `누적 ${x.sold_total}`)).join('')}</section>
+        </div>`;
+    }
 
     function updateThumb() {
         const v = k => form.elements[k].value;
@@ -630,6 +729,7 @@
             }
             closeEditor();
             await load();
+            if (!$('rank').hidden) renderRank();
         } catch (err) {
             console.error(err);
             $('edMsg').textContent = '저장하지 못했어요: ' + (err.message || err);
