@@ -5076,6 +5076,8 @@
         :root[data-theme="dark"] .et-prog-key-select { background: #1d2a24; color: #e8f0ec; border-color: rgba(180, 230, 200, 0.28); }
         .et-prog-slot.playable { cursor: pointer; }
         .et-prog-break { flex-basis: 100%; height: 0; }
+        /* 밴드 반주 페이더 — 반주 화면 믹서 모양 그대로, 정답 버튼 아래 */
+        .et-prog-mix { margin: 0.2rem 0 1rem; }
         /* 진행 듣기 · 연속 듣기 — 둘이 합쳐 정답확인 버튼과 반반 */
         .et-prog-listen { flex: 1; display: flex; gap: 0.4rem; min-width: 0; }
         .et-prog-listen .et-play-btn { flex: 1; min-width: 0; flex-direction: column; gap: 0.25rem; padding: 0.6rem 0.3rem; font-size: 0.86rem; }
@@ -10146,6 +10148,13 @@
                             </div>
                         </div>
                         <div class="et-setting-row">
+                            <span class="et-setting-label">반주</span>
+                            <div class="et-setting-btns">
+                                <button class="et-diff-btn et-prog-acc-btn active" data-acc="guitar" data-action="setETProgAccomp" data-args="guitar">통기타</button>
+                                <button class="et-diff-btn et-prog-acc-btn" data-acc="band" data-action="setETProgAccomp" data-args="band" title="반주 메뉴의 드럼·베이스·피아노로 들려줘요">밴드</button>
+                            </div>
+                        </div>
+                        <div class="et-setting-row">
                             <span class="et-setting-label">옵션</span>
                             <div class="et-setting-btns et-prog-options">
                                 <label class="fb-switch" id="etProgStartTonicWrap">
@@ -10203,6 +10212,30 @@
                     </div>
                     <div class="et-prog-slots" id="etProgSlots"></div>
                     <div class="et-choices" id="etProgChoices"></div>
+                    <!-- 밴드 반주 페이더 — 반주 메뉴 믹서와 같은 볼륨(어느 쪽을 움직여도 둘 다 바뀜) -->
+                    <div class="loop-mix-row et-prog-mix" id="etProgMixRow">
+                        <div class="loop-mix-cell" data-kind="drum">
+                            <button type="button" class="loop-mix-mute" data-action="toggleLoopMute" data-args="drum" aria-label="드럼 음소거">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                            <span class="loop-mix-label"><i class="fas fa-drum"></i> 드럼</span>
+                            <input type="range" min="0" max="100" value="53" class="loop-mix-slider" data-mix-sync="drum" data-input="setLoopMix" data-args="drum,$value" aria-label="드럼 볼륨">
+                        </div>
+                        <div class="loop-mix-cell" data-kind="bass">
+                            <button type="button" class="loop-mix-mute" data-action="toggleLoopMute" data-args="bass" aria-label="베이스 음소거">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                            <span class="loop-mix-label"><span class="loop-mix-bass-icon">𝄢</span> 베이스</span>
+                            <input type="range" min="0" max="100" value="35" class="loop-mix-slider" data-mix-sync="bass" data-input="setLoopMix" data-args="bass,$value" aria-label="베이스 볼륨">
+                        </div>
+                        <div class="loop-mix-cell" data-kind="piano">
+                            <button type="button" class="loop-mix-mute" data-action="toggleLoopMute" data-args="piano" aria-label="피아노 음소거">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                            <span class="loop-mix-label"><i class="fas fa-music"></i> 피아노</span>
+                            <input type="range" min="0" max="100" value="100" class="loop-mix-slider" data-mix-sync="piano" data-input="setLoopMix" data-args="piano,$value" aria-label="피아노 볼륨">
+                        </div>
+                    </div>
                     <div class="et-history-drawer-toggle" id="etProgHistoryToggle" style="display:none;" data-action="toggleETHistoryDrawer" data-args="prog">
                         <i class="fas fa-history"></i> <span>히스토리</span>
                         <i class="fas fa-chevron-up et-hist-chev"></i>
@@ -11411,7 +11444,7 @@
             eartraining: '두 음 간격이나 코드, 코드 진행을 듣고 맞히는 훈련. 정답이 누적되면 랭킹에 반영돼요. 절대음감보다 상대음감 훈련에 효과적이에요.',
             eartraining_pitch:    '음정을 듣고 무슨 음정인지 맞추는 연습이에요. 어려움 난이도부터는 샵(♯) 음계까지 함께 출제됩니다.',
             eartraining_interval: '낮은 음과 높은 음 사이 간격을 맞추는 연습이에요. 절대음감 없이도 음악을 분석할 수 있게 해주는 상대음감 트레이닝의 핵심 방식.',
-            eartraining_prog:     '고른 키의 다이아토닉 코드(1도~7도)로 된 진행을 듣고 순서대로 맞추는 연습이에요.\n\n• 단계 1~8 = 코드 개수. 코드마다 70BPM 으로 두 번씩 쳐줍니다.\n• 실전: 가요·팝에서 실제로 많이 쓰는 8마디 진행이 나와요 (캐논, 로열 로드, 6-4-1-5 …). 5문제가 한 세트이고, "키 계속 바꾸기"를 켜면 문제마다 키가 바뀌며 키는 정답 확인 후에 알려줘요.\n• 연속 듣기: 정지를 누를 때까지 진행을 계속 반복해요.\n• 지옥: 문제마다 키가 바뀌고, 코드 개수도 5~8개가 섞여 나와요.\n• 1도로 시작을 켜면 첫 코드는 항상 1도로 고정돼요.\n• 10문제가 한 라운드예요. 첫 문제를 들을 때 타이머가 시작되고, 10문제를 끝내면 걸린 시간을 알려줘요.\n• 아래 칸을 누르면 고른 코드를 뺄 수 있어요.\n\n점수는 랭킹(종합)에 반영돼요. 단계가 높을수록 계수가 커져요 (1단계 ×1.0 ~ 8단계 ×3.0, 실전 ×3.25, 지옥 ×3.5).',
+            eartraining_prog:     '고른 키의 다이아토닉 코드(1도~7도)로 된 진행을 듣고 순서대로 맞추는 연습이에요.\n\n• 단계 1~8 = 코드 개수. 코드마다 70BPM 으로 두 번씩 쳐줍니다.\n• 실전: 가요·팝에서 실제로 많이 쓰는 8마디 진행이 나와요 (캐논, 로열 로드, 6-4-1-5 …). 5문제가 한 세트이고, "키 계속 바꾸기"를 켜면 문제마다 키가 바뀌며 키는 정답 확인 후에 알려줘요.\n• 연속 듣기: 정지를 누를 때까지 진행을 계속 반복해요.\n• 반주: 통기타 스트럼 또는 밴드(드럼·베이스·피아노). 밴드의 악기별 볼륨은 반주 메뉴 믹서와 같이 움직여요.\n• 지옥: 문제마다 키가 바뀌고, 코드 개수도 5~8개가 섞여 나와요.\n• 1도로 시작을 켜면 첫 코드는 항상 1도로 고정돼요.\n• 10문제가 한 라운드예요. 첫 문제를 들을 때 타이머가 시작되고, 10문제를 끝내면 걸린 시간을 알려줘요.\n• 아래 칸을 누르면 고른 코드를 뺄 수 있어요.\n\n점수는 랭킹(종합)에 반영돼요. 단계가 높을수록 계수가 커져요 (1단계 ×1.0 ~ 8단계 ×3.0, 실전 ×3.25, 지옥 ×3.5).',
             eartraining_chord:    '구성음을 듣고 어떤 코드인지 맞추는 연습이에요. 코드 사운드 자체에 익숙해지면 실전 연주에서 코드 진행을 빠르게 캐치할 수 있어 큰 도움이 됩니다.',
             chords: '기본·텐션·세븐스 코드까지 운지법과 사운드를 한 번에 검색·재생. 코드를 클릭하면 바로 그 코드 사운드가 들려요.',
             fretboard: '지판 위 모든 음의 위치를 시각화. 트레이닝 모드로 음 이름 맞추기 연습도 가능합니다.',
@@ -21364,17 +21397,20 @@
                     loopVolPiano = v;
                     if (pianoBusNode) pianoBusNode.gain.value = ceiling * v;
                 }
-                if (slider) {
-                    slider.classList.toggle('muted', v < 0.001);
-                    slider.value = Math.round(v * 100);
-                }
-                var cell = document.querySelector('.loop-mix-cell[data-kind="' + kind + '"]');
-                if (cell) {
+                // 같은 볼륨을 쓰는 페이더가 여러 곳(반주 화면 · 이어 트레이닝 밴드 반주)에 있어 모두 맞춘다
+                var sliders = [];
+                if (slider) sliders.push(slider);
+                document.querySelectorAll('[data-mix-sync="' + kind + '"]').forEach(function(el) { sliders.push(el); });
+                sliders.forEach(function(sl) {
+                    sl.classList.toggle('muted', v < 0.001);
+                    sl.value = Math.round(v * 100);
+                });
+                document.querySelectorAll('.loop-mix-cell[data-kind="' + kind + '"]').forEach(function(cell) {
                     var muteBtn = cell.querySelector('.loop-mix-mute');
                     var icon = muteBtn && muteBtn.querySelector('i');
                     if (muteBtn) muteBtn.classList.toggle('muted', v < 0.001);
                     if (icon) icon.className = (v < 0.001) ? 'fas fa-volume-mute' : 'fas fa-volume-up';
-                }
+                });
             }
 
             // 스피커 아이콘 토글 — 음소거 시 직전 볼륨을 기억해두고, 재클릭하면 복원.
@@ -21390,6 +21426,104 @@
                     _applyLoopVolume(kind, restore);
                 }
             };
+
+            // ── 이어 트레이닝 > 코드 진행 '밴드 반주' 용 훅 ──
+            //   반주 메뉴의 드럼·베이스·피아노 음원과 믹서 버스(drumMaster·bassMaster·pianoBus)를
+            //   그대로 쓰므로 반주 화면의 페이더 값이 똑같이 적용된다.
+            //   반주 화면의 코드·리듬 설정은 건드리지 않고, 코드 하나 = 2박의 단순 8비트로 친다.
+            //   (lookahead 스케줄 — 정지하면 바로 멈출 수 있게 미리 다 예약하지 않는다)
+            window.__etBand = (function() {
+                var timer = null, st = null;
+                function ensure() {
+                    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    if (audioCtx.state === 'suspended') audioCtx.resume();
+                    loadDrumSamples();
+                    return Promise.all([samplesLoadPromise, _pianoLoadPromise]).catch(function() {});
+                }
+                function pump() {
+                    if (!st) return;
+                    var ahead = audioCtx.currentTime + 0.2;
+                    var ticksPerChord = st.beatsPerChord * 2;      // 8분음표 단위
+                    var total = st.chords.length * ticksPerChord;
+                    while (st && st.nextTime < ahead) {
+                        if (!st.loop && st.tick >= total) { clearInterval(timer); timer = null; st = null; return; }
+                        var k = st.tick % total;
+                        var chord = st.chords[Math.floor(k / ticksPerChord)];
+                        var sub = k % ticksPerChord;
+                        var time = st.nextTime;
+                        // 드럼 — 8분 하이햇, 코드 첫 박 킥, 둘째 박 스네어
+                        playHiHat(time, sub % 2 === 0 ? 2 : 1, 0.8);
+                        if (sub === 0) playKick(time, 1.0);
+                        if (sub % 4 === 2) playSnare(time, 0.85);
+                        // 베이스 — 박마다 근음
+                        if (sub % 2 === 0) {
+                            var bn = chordBassNote(chord);
+                            if (bn) playBass(bn, time, sub === 0 ? 0 : 1);
+                        }
+                        // 피아노 — 코드 첫 박에 새로 (이전 코드는 끊고), 둘째 박에 한 번 더 약하게
+                        if (sub === 0) {
+                            chokePiano(time);
+                            playPianoChord(chord, time, 1.0);
+                        } else if (sub % 2 === 0) {
+                            playPianoChord(chord, time, 0.55);
+                        }
+                        st.tick++;
+                        st.nextTime += st.tickDur;
+                    }
+                }
+                function stop() {
+                    if (timer) { clearInterval(timer); timer = null; }
+                    var was = !!st;
+                    st = null;
+                    if (was && audioCtx) {
+                        var now = audioCtx.currentTime;
+                        try { chokePiano(now); } catch (e) {}
+                        try { chokeBass(now); } catch (e) {}
+                        try { chokeOpenHihat(now); } catch (e) {}
+                    }
+                }
+                return {
+                    ensure: ensure,
+                    now: function() { return audioCtx ? audioCtx.currentTime : 0; },
+                    // chords: 코드 이름 배열. 반환값 = 첫 박의 audioCtx 시각
+                    start: function(chords, opts) {
+                        opts = opts || {};
+                        stop();
+                        // 반주 메뉴가 재생 중이면 겹치지 않게 멈춘다
+                        if (window._metroRunning && typeof window.toggleMetronome === 'function') {
+                            try { window.toggleMetronome(); } catch (e) {}
+                        }
+                        _prevPianoVoicing = null;
+                        var bpmNow = opts.bpm || 70;
+                        st = {
+                            chords: chords.slice(), loop: !!opts.loop,
+                            beatsPerChord: opts.beatsPerChord || 2,
+                            tickDur: 60 / bpmNow / 2,
+                            tick: 0, nextTime: audioCtx.currentTime + 0.1
+                        };
+                        var t0 = st.nextTime;
+                        pump();
+                        timer = setInterval(pump, 25);
+                        return t0;
+                    },
+                    // 코드 하나만 — 피아노 + 베이스 (채점 후 칸 눌렀을 때)
+                    chord: function(name) {
+                        stop();
+                        var t = audioCtx.currentTime + 0.03;
+                        chokePiano(t);
+                        playPianoChord(name, t, 1.0);
+                        var bn = chordBassNote(name);
+                        if (bn) playBass(bn, t, 0);
+                    },
+                    stop: stop,
+                    // 페이더 표시를 지금 볼륨에 맞춘다
+                    syncMix: function() {
+                        _applyLoopVolume('drum', loopVolDrum);
+                        _applyLoopVolume('bass', loopVolBass);
+                        _applyLoopVolume('piano', loopVolPiano);
+                    }
+                };
+            })();
 
             // 입력한 코드 진행 전부 지우기 (내부 헬퍼)
             window.clearAllLoopChords = function() {
@@ -25785,6 +25919,11 @@
                 el.classList.add('ringing');
             }
 
+            // 반주: 'guitar'(통기타 스트럼 샘플) / 'band'(반주 메뉴의 드럼·베이스·피아노)
+            var _etProgAccomp = 'guitar';
+            var _etProgBandOn = false;            // 밴드 반주를 이 화면이 틀어 둔 상태
+            function progBandMode() { return _etProgAccomp === 'band' && !!window.__etBand; }
+
             // 진행 듣기('once') / 연속 듣기('loop') — 버튼이 '정지' 로 바뀌는 상태
             var _etProgPlayMode = null;
             var _etProgPlayTimers = [];
@@ -25804,6 +25943,7 @@
 
             function etProgStopVoices() {
                 progClearPulses();
+                if (_etProgBandOn) { _etProgBandOn = false; try { window.__etBand.stop(); } catch (e) {} }
                 _etProgPlayToken++;                    // 예약된 다음 반복·종료 처리 무효화
                 _etProgPlayTimers.forEach(clearTimeout);
                 _etProgPlayTimers = [];
@@ -25845,6 +25985,7 @@
             // mode  = 'once'(진행 듣기) / 'loop'(연속 듣기) — 그 버튼을 '정지' 로 바꾼다.
             //         없으면 버튼과 상관없는 재생 (히스토리 다시 듣기 등)
             function playProgression(seq, keyId, pulse, mode) {
+                if (progBandMode()) return playProgressionBand(seq, keyId, pulse, mode);
                 if (_etCtx.state === 'suspended') _etCtx.resume();
                 return progLoadKey(keyId).then(function(bufs) {
                     etProgStopVoices();
@@ -25898,8 +26039,67 @@
                 });
             }
 
+            // 밴드 반주로 진행 재생 — 반주 메뉴 엔진(__etBand)이 소리를 내고,
+            // 여기서는 칸 울림·버튼 상태·끝 처리만 맞춘다. (시각은 반주 엔진의 audioCtx 기준)
+            function playProgressionBand(seq, keyId, pulse, mode) {
+                var band = window.__etBand;
+                var names = seq.map(function(d) { return progChordName(keyId, d); });
+                return band.ensure().then(function() {
+                    etProgStopVoices();
+                    var token = _etProgPlayToken;
+                    var loop = mode === 'loop';
+                    _etProgPlayMode = mode || null;
+                    progSetPlayButtons();
+                    _etProgBandOn = true;
+                    var t0 = band.start(names, { bpm: PROG_BPM, loop: loop, beatsPerChord: PROG_STRUMS_PER_CHORD });
+                    var beat = 60 / PROG_BPM;
+                    var total = seq.length * PROG_STRUMS_PER_CHORD;
+                    // 칸 울림 — 박마다 (통기타의 스트럼 자리와 같음). 반복이면 바퀴마다 다시 예약.
+                    function pulses(c0) {
+                        if (!pulse) return;
+                        for (var n = 0; n < total; n++) {
+                            var delay = Math.max(0, (c0 + n * beat - band.now()) * 1000);
+                            _etProgPulseTimers.push(setTimeout(progPulseSlot.bind(null, Math.floor(n / PROG_STRUMS_PER_CHORD)), delay));
+                        }
+                    }
+                    pulses(t0);
+                    if (loop) {
+                        (function scheduleNext(at) {
+                            var wait = Math.max(0, (at - band.now() - 0.3) * 1000);
+                            _etProgPlayTimers.push(setTimeout(function() {
+                                if (token !== _etProgPlayToken) return;
+                                _etProgPulseTimers = [];
+                                pulses(at);
+                                scheduleNext(at + total * beat);
+                            }, wait));
+                        })(t0 + total * beat);
+                    } else if (mode) {
+                        var endAt = t0 + total * beat + 1.2;
+                        _etProgPlayTimers.push(setTimeout(function() {
+                            if (token !== _etProgPlayToken) return;
+                            _etProgPlayMode = null;
+                            _etProgBandOn = false;
+                            progSetPlayButtons();
+                        }, Math.max(0, (endAt - band.now()) * 1000)));
+                    }
+                }).catch(function() {
+                    var fb = document.getElementById('etProgFeedback');
+                    if (fb) { fb.textContent = '반주 음원을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'; fb.className = 'et-feedback wrong'; }
+                });
+            }
+
             // 코드 하나만 한 번 스트럼 (채점 후 칸·히스토리 칩을 눌렀을 때)
             window.etProgPlayChord = function(deg, keyId) {
+                if (progBandMode()) {
+                    var band = window.__etBand;
+                    var name = progChordName(keyId || _etProgAnswerKey, deg);
+                    band.ensure().then(function() {
+                        etProgStopVoices();
+                        _etProgBandOn = true;
+                        band.chord(name);
+                    });
+                    return;
+                }
                 if (_etCtx.state === 'suspended') _etCtx.resume();
                 progLoadKey(keyId || _etProgAnswerKey).then(function(bufs) {
                     etProgStopVoices();
@@ -26409,13 +26609,28 @@
 
             window.setETProgLevel = function(level) {
                 _etProgLevel = (level === 'hell' || level === 'real') ? level : parseInt(level, 10);
-                document.querySelectorAll('#etProgMode .et-diff-btn').forEach(function(b) {
+                document.querySelectorAll('#etProgMode .et-diff-btn[data-plevel]').forEach(function(b) {
                     b.classList.toggle('active', b.dataset.plevel === String(_etProgLevel));
                 });
                 progShowKeyToggle();
                 updateProgTonicToggle();
                 etProgReset();               // 키 선택 칸 잠금·표시도 여기서 맞춘다
                 if (progIsHell() || progRealRandom()) etProgEnsureSamples();
+            };
+
+            window.setETProgAccomp = function(acc) {
+                _etProgAccomp = acc === 'band' ? 'band' : 'guitar';
+                etProgStopVoices();
+                document.querySelectorAll('#etProgMode .et-prog-acc-btn').forEach(function(b) {
+                    b.classList.toggle('active', b.dataset.acc === _etProgAccomp);
+                });
+                var mix = document.getElementById('etProgMixRow');
+                if (mix) mix.classList.toggle('visible', _etProgAccomp === 'band');
+                if (_etProgAccomp === 'band' && window.__etBand) {
+                    window.__etBand.syncMix();        // 반주 화면에서 바꿔 둔 볼륨 그대로 표시
+                    window.__etBand.ensure();         // 음원 미리 받기
+                }
+                try { localStorage.setItem('et_prog_accomp', _etProgAccomp); } catch (e) {}
             };
 
             window.setETProgRealRandomKey = function(on) {
@@ -26449,6 +26664,12 @@
             renderProgChoices();
             renderProgSlots();
             renderProgRound();
+            // 지난번 반주 선택 복원 — 반주 엔진(__etBand)은 다른 스크립트 블록이라 로드 뒤에 맞춘다
+            window.addEventListener('load', function() {
+                var saved = null;
+                try { saved = localStorage.getItem('et_prog_accomp'); } catch (e) {}
+                if (saved === 'band') setETProgAccomp('band');
+            });
 
             // --- Pitch Identification mode ---
             const PITCH_NOTES_EASY = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
