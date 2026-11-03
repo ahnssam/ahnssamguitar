@@ -1158,21 +1158,26 @@ nav.scrolled .auth-btn:hover {
             }));
         } catch (e) {}
 
-        sb.auth.onAuthStateChange(async (event, session) => {
+        sb.auth.onAuthStateChange((event, session) => {
             debugLog('state change: ' + event + ' / ' + (session ? session.user.email : 'no session'));
             currentSession = session || null;
-            if (currentSession) {
-                await fetchProfile(currentSession.user.id);
-            } else {
-                currentProfile = null;
-            }
-            renderSlot();
-            if (event === 'SIGNED_IN') closeModal();
-            try {
-                window.dispatchEvent(new CustomEvent('ahnssam-auth-settled', {
-                    detail: { user: currentSession ? currentSession.user : null, event: event }
-                }));
-            } catch (e) {}
+            // 이 콜백은 SDK 의 auth 잠금 안에서 불린다. 여기서 Supabase 요청을 기다리면
+            // 잠금이 영영 안 풀려 이후 모든 요청이 멈춘다(창을 숨겼다 다시 볼 때 잘 터짐).
+            // 그래서 프로필 조회·알림은 잠금이 풀린 다음 틱으로 미룬다.
+            setTimeout(async () => {
+                if (session) {
+                    await fetchProfile(session.user.id);
+                } else {
+                    currentProfile = null;
+                }
+                renderSlot();
+                if (event === 'SIGNED_IN') closeModal();
+                try {
+                    window.dispatchEvent(new CustomEvent('ahnssam-auth-settled', {
+                        detail: { user: session ? session.user : null, event: event }
+                    }));
+                } catch (e) {}
+            }, 0);
         });
     }
 
