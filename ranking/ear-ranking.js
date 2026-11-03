@@ -416,6 +416,7 @@
 /* 코드 진행 단계(lv1~lv8) — 한 가지 보라 톤 */
 .rank-diff-lv1, .rank-diff-lv2, .rank-diff-lv3, .rank-diff-lv4,
 .rank-diff-lv5, .rank-diff-lv6, .rank-diff-lv7, .rank-diff-lv8 { background: #7a5bb5; }
+.rank-diff-real { background: #b5793a; }
 .rank-period-curwrap { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
 .rank-period-sub { font-size: 0.62rem; color: rgba(26,36,33,0.45); font-weight: 500; }
 .rank-mode-pills { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0 0 0.9rem; flex: 1 1 auto; justify-content: flex-end; }
@@ -1425,12 +1426,12 @@
         ear_chord: '코드 맞추기',
         ear_prog: '코드 진행'
     };
-    // 코드 진행은 난이도 대신 단계(lv1~lv8) + 지옥(hell, 코드 진행만 계수 3.5 — 서버에서 모드별로 처리).
+    // 코드 진행은 난이도 대신 단계(lv1~lv8) + 실전(real) + 지옥(hell, 코드 진행만 계수 3.5 — 서버에서 모드별로 처리).
     // 계수는 서버 submit_ear_session 과 동일하게 유지할 것.
     const DIFF_LABELS = { easy: '쉬움', medium: '보통', hard: '어려움', hell: '지옥',
-        lv1: '1단계', lv2: '2단계', lv3: '3단계', lv4: '4단계', lv5: '5단계', lv6: '6단계', lv7: '7단계', lv8: '8단계' };
+        lv1: '1단계', lv2: '2단계', lv3: '3단계', lv4: '4단계', lv5: '5단계', lv6: '6단계', lv7: '7단계', lv8: '8단계', real: '실전' };
     const DIFF_COEF = { easy: 1.0, medium: 1.5, hard: 2.0, hell: 3.0,
-        lv1: 1.0, lv2: 1.25, lv3: 1.5, lv4: 1.75, lv5: 2.0, lv6: 2.25, lv7: 2.5, lv8: 3.0 };
+        lv1: 1.0, lv2: 1.25, lv3: 1.5, lv4: 1.75, lv5: 2.0, lv6: 2.25, lv7: 2.5, lv8: 3.0, real: 3.25 };
     const SESSION_SIZE = 10;
 
     // ------------------------------------------------------------
@@ -2089,7 +2090,7 @@
         </div>
         <p class="rank-help-line">
             <b>코드 진행</b>은 단계별 계수예요 — 1단계 × 1.0 · 2단계 × 1.25 · 3단계 × 1.5 · 4단계 × 1.75 ·
-            5단계 × 2.0 · 6단계 × 2.25 · 7단계 × 2.5 · 8단계 × 3.0 · 지옥 × 3.5. (종합 랭킹에만 반영돼요.)
+            5단계 × 2.0 · 6단계 × 2.25 · 7단계 × 2.5 · 8단계 × 3.0 · 실전 × 3.25 · 지옥 × 3.5. (종합 랭킹에만 반영돼요.)
         </p>
         <p class="rank-help-line">
             <b>연속</b>은 틀리지 않고 연속으로 맞힌 <b>최고 기록</b>으로 순위를 매겨요.
@@ -2479,7 +2480,7 @@
     function rankDiffChips(by) {
         if (!by) return '';
         const names = DIFF_LABELS;
-        const order = ['easy', 'medium', 'hard', 'hell', 'lv1', 'lv2', 'lv3', 'lv4', 'lv5', 'lv6', 'lv7', 'lv8'];
+        const order = ['easy', 'medium', 'hard', 'hell', 'lv1', 'lv2', 'lv3', 'lv4', 'lv5', 'lv6', 'lv7', 'lv8', 'real'];
         const parts = order.filter(function(k) { return by[k]; }).map(function(k) {
             return `<span class="rank-diff-chip rank-diff-${k}">${names[k]} ${Number(by[k]).toLocaleString()}</span>`;
         });

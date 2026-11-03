@@ -10129,6 +10129,7 @@
                                 <button class="et-diff-btn" data-plevel="6" data-action="setETProgLevel" data-args="6">6</button>
                                 <button class="et-diff-btn" data-plevel="7" data-action="setETProgLevel" data-args="7">7</button>
                                 <button class="et-diff-btn" data-plevel="8" data-action="setETProgLevel" data-args="8">8</button>
+                                <button class="et-diff-btn" data-plevel="real" data-action="setETProgLevel" data-args="real" title="가요·팝에서 실제로 많이 쓰는 8마디 코드 진행">실전</button>
                                 <button class="et-diff-btn" data-plevel="hell" data-cdiff="hell" data-action="setETProgLevel" data-args="hell" title="문제마다 키가 바뀌고 코드 5~8개가 섞여 나와요">지옥</button>
                             </div>
                         </div>
@@ -11386,7 +11387,7 @@
             eartraining: '두 음 간격이나 코드, 코드 진행을 듣고 맞히는 훈련. 정답이 누적되면 랭킹에 반영돼요. 절대음감보다 상대음감 훈련에 효과적이에요.',
             eartraining_pitch:    '음정을 듣고 무슨 음정인지 맞추는 연습이에요. 어려움 난이도부터는 샵(♯) 음계까지 함께 출제됩니다.',
             eartraining_interval: '낮은 음과 높은 음 사이 간격을 맞추는 연습이에요. 절대음감 없이도 음악을 분석할 수 있게 해주는 상대음감 트레이닝의 핵심 방식.',
-            eartraining_prog:     '고른 키의 다이아토닉 코드(1도~7도)로 된 진행을 듣고 순서대로 맞추는 연습이에요.\n\n• 단계 1~8 = 코드 개수. 코드마다 70BPM 으로 두 번씩 쳐줍니다.\n• 지옥: 문제마다 키가 바뀌고, 코드 개수도 5~8개가 섞여 나와요.\n• 1도로 시작을 켜면 첫 코드는 항상 1도로 고정돼요.\n• 10문제가 한 라운드예요. 첫 문제를 들을 때 타이머가 시작되고, 10문제를 끝내면 걸린 시간을 알려줘요.\n• 아래 칸을 누르면 고른 코드를 뺄 수 있어요.\n\n점수는 랭킹(종합)에 반영돼요. 단계가 높을수록 계수가 커져요 (1단계 ×1.0 ~ 8단계 ×3.0, 지옥 ×3.5).',
+            eartraining_prog:     '고른 키의 다이아토닉 코드(1도~7도)로 된 진행을 듣고 순서대로 맞추는 연습이에요.\n\n• 단계 1~8 = 코드 개수. 코드마다 70BPM 으로 두 번씩 쳐줍니다.\n• 실전: 가요·팝에서 실제로 많이 쓰는 8마디 진행이 나와요 (캐논, 로열 로드, 6-4-1-5 …).\n• 지옥: 문제마다 키가 바뀌고, 코드 개수도 5~8개가 섞여 나와요.\n• 1도로 시작을 켜면 첫 코드는 항상 1도로 고정돼요.\n• 10문제가 한 라운드예요. 첫 문제를 들을 때 타이머가 시작되고, 10문제를 끝내면 걸린 시간을 알려줘요.\n• 아래 칸을 누르면 고른 코드를 뺄 수 있어요.\n\n점수는 랭킹(종합)에 반영돼요. 단계가 높을수록 계수가 커져요 (1단계 ×1.0 ~ 8단계 ×3.0, 실전 ×3.25, 지옥 ×3.5).',
             eartraining_chord:    '구성음을 듣고 어떤 코드인지 맞추는 연습이에요. 코드 사운드 자체에 익숙해지면 실전 연주에서 코드 진행을 빠르게 캐치할 수 있어 큰 도움이 됩니다.',
             chords: '기본·텐션·세븐스 코드까지 운지법과 사운드를 한 번에 검색·재생. 코드를 클릭하면 바로 그 코드 사운드가 들려요.',
             fretboard: '지판 위 모든 음의 위치를 시각화. 트레이닝 모드로 음 이름 맞추기 연습도 가능합니다.',
@@ -25564,7 +25565,30 @@
             const PROG_BPM = 70;
             const PROG_STRUMS_PER_CHORD = 2;
             // 정답 1개당 10 × 단계 계수 — 랭킹(submit_ear_session) 계수와 동일하게 유지할 것
-            const PROG_LEVEL_COEF = { 1: 1.0, 2: 1.25, 3: 1.5, 4: 1.75, 5: 2.0, 6: 2.25, 7: 2.5, 8: 3.0, hell: 3.5 };
+            const PROG_LEVEL_COEF = { 1: 1.0, 2: 1.25, 3: 1.5, 4: 1.75, 5: 2.0, 6: 2.25, 7: 2.5, 8: 3.0, real: 3.25, hell: 3.5 };
+            // 실전: 가요·팝에서 실제로 많이 쓰는 8마디 진행 (한 마디 = 코드 하나).
+            //   출처: 에버그린 잼트랙 '오늘의 추천' 코드 진행 라이브러리(PROG_LIB) 중
+            //   8마디이고 다이아토닉 3화음(I ii iii IV V vi vii°)으로만 줄일 수 있는 것.
+            //   7th·9th 같은 확장음은 3화음으로 줄였고, 같은 진행은 하나로 합쳤다.
+            //   d = PROG_DEGREES 인덱스 (0=I … 6=vii°). 새 진행은 여기 한 줄 추가.
+            const PROG_REAL = [
+                { n: '네오소울 2-5 루프', g: '네오소울', d: [1, 4, 0, 0, 1, 4, 2, 5] },   // ii V I I ii V iii vi
+                { n: '떠 있는 IV', g: '네오소울·스무스', d: [0, 3, 0, 3, 2, 5, 1, 4] },   // I IV I IV iii vi ii V
+                { n: '로열 로드 (4-5-3-6)', g: '발라드·팝·시티팝', d: [3, 4, 2, 5, 3, 4, 0, 0] },   // IV V iii vi IV V I I
+                { n: '스무스 뱀프', g: '스무스', d: [0, 1, 0, 1, 3, 2, 1, 4] },   // I ii I ii IV iii ii V
+                { n: '따뜻한 IV-I', g: '스무스·발라드', d: [3, 0, 3, 0, 1, 4, 0, 0] },   // IV I IV I ii V I I
+                { n: '로파이 4코드', g: '로파이', d: [0, 2, 5, 3, 0, 2, 1, 4] },   // I iii vi IV I iii ii V
+                { n: '비 오는 창가', g: '로파이·발라드', d: [3, 2, 5, 0, 3, 4, 0, 0] },   // IV iii vi I IV V I I
+                { n: '리듬 체인지 A', g: '재즈', d: [0, 5, 1, 4, 0, 5, 1, 4] },   // I vi ii V I vi ii V
+                { n: '클래식 발라드', g: '발라드·팝', d: [0, 5, 3, 4, 0, 5, 1, 4] },   // I vi IV V I vi ii V
+                { n: '캐논 진행', g: '발라드·팝', d: [0, 4, 5, 2, 3, 0, 3, 4] },   // I V vi iii IV I IV V
+                { n: '올라가는 발라드', g: '발라드·스무스', d: [0, 1, 2, 3, 4, 5, 1, 4] },   // I ii iii IV V vi ii V
+                { n: '마이너 록 리프', g: '록', d: [5, 3, 4, 5, 5, 3, 0, 4] },   // vi IV V vi vi IV I V
+                { n: '팝 6-4-1-5', g: '록·팝', d: [5, 3, 0, 4, 5, 3, 0, 4] },   // vi IV I V vi IV I V
+                { n: '팝 4코드', g: '팝', d: [0, 4, 5, 3, 0, 4, 5, 3] },   // I V vi IV I V vi IV
+                { n: '밝은 팝 루프', g: '팝·시티팝', d: [0, 1, 2, 3, 0, 1, 4, 0] },   // I ii iii IV I ii V I
+                { n: 'R&B 슬로우 잼', g: 'R&B·네오소울', d: [0, 2, 5, 1, 3, 2, 1, 4] },   // I iii vi ii IV iii ii V
+            ];
             // 지옥: 문제마다 키를 무작위로 바꾸고, 코드 개수도 5~8개 중 무작위
             const PROG_HELL_MIN = 5, PROG_HELL_MAX = 8;
             const PROG_ROUND_SIZE = 10;
@@ -25587,10 +25611,32 @@
             let _etProgRoundHistory = [];         // 이번 라운드 10문제 — 결과 팝업용
 
             function progIsHell() { return _etProgLevel === 'hell'; }
+            function progIsReal() { return _etProgLevel === 'real'; }
             // 이번 문제의 코드 개수 / 키 / 랭킹 난이도 값
-            function progCount() { return progIsHell() ? _etProgHellCount : _etProgLevel; }
+            function progCount() { return progIsHell() ? _etProgHellCount : progIsReal() ? 8 : _etProgLevel; }
             function progActiveKey() { return progIsHell() ? _etProgHellKey : _etProgKey; }
-            function progDiffKey() { return progIsHell() ? 'hell' : 'lv' + _etProgLevel; }
+            function progDiffKey() { return progIsHell() || progIsReal() ? _etProgLevel : 'lv' + _etProgLevel; }
+            function progLevelLabel() { return progIsHell() ? '지옥' : progIsReal() ? '실전' : String(_etProgLevel); }
+
+            // 실전 진행은 섞은 뒤 하나씩 꺼낸다 — 다 쓰기 전엔 같은 진행이 다시 안 나오게
+            var _etProgRealBag = [];
+            var _etProgRealLast = -1;
+            function progNextReal() {
+                if (!_etProgRealBag.length) {
+                    _etProgRealBag = PROG_REAL.map(function(_, i) { return i; });
+                    for (var i = _etProgRealBag.length - 1; i > 0; i--) {
+                        var j = Math.floor(Math.random() * (i + 1));
+                        var t = _etProgRealBag[i]; _etProgRealBag[i] = _etProgRealBag[j]; _etProgRealBag[j] = t;
+                    }
+                    // 새로 섞은 첫 진행이 방금 나온 것과 같으면 뒤로 보낸다
+                    if (_etProgRealBag.length > 1 && _etProgRealBag[_etProgRealBag.length - 1] === _etProgRealLast) {
+                        _etProgRealBag.unshift(_etProgRealBag.pop());
+                    }
+                }
+                _etProgRealLast = _etProgRealBag.pop();
+                return PROG_REAL[_etProgRealLast];
+            }
+            var _etProgRealName = '';             // 이번 문제 진행 이름 (채점 후 보여줌)
 
             function progRollHell() {
                 _etProgHellCount = PROG_HELL_MIN + Math.floor(Math.random() * (PROG_HELL_MAX - PROG_HELL_MIN + 1));
@@ -25602,13 +25648,14 @@
             }
 
             function progTonicOn() {
-                return _etProgStartTonic && (progIsHell() || _etProgLevel > 1);
+                // 실전은 실제 진행 그대로라 '1도로 시작'을 적용하지 않는다
+                return _etProgStartTonic && !progIsReal() && (progIsHell() || _etProgLevel > 1);
             }
 
             function updateProgTonicToggle() {
                 var input = document.getElementById('etProgStartTonic');
                 var wrap = document.getElementById('etProgStartTonicWrap');
-                var off = !progIsHell() && _etProgLevel <= 1;
+                var off = progIsReal() || (!progIsHell() && _etProgLevel <= 1);
                 if (input) input.disabled = off;
                 if (wrap) wrap.classList.toggle('disabled', off);
             }
@@ -25830,6 +25877,12 @@
             }
 
             function etProgRandomSeq() {
+                if (progIsReal()) {
+                    var real = progNextReal();
+                    _etProgRealName = real.n + ' · ' + real.g;
+                    return real.d.slice();
+                }
+                _etProgRealName = '';
                 var seq = [];
                 for (var i = 0; i < progCount(); i++) {
                     if (i === 0 && progTonicOn()) { seq.push(0); continue; }
@@ -25946,7 +25999,8 @@
                 var r = _etProgRound;
                 // [번호 위 / ✓·✗ 아래] [코드들 — 항상 한 줄, 틀린 칸 아래에 정답] [🔊]
                 var items = _etProgRoundHistory.map(function(h, i) {
-                    return '<div class="pr-item ' + (h.correct ? 'correct' : 'wrong') + '">' +
+                    return '<div class="pr-item ' + (h.correct ? 'correct' : 'wrong') + '"' +
+                        (h.name ? ' title="' + h.name + '"' : '') + '>' +
                         '<span class="pr-lead"><span class="pr-num">' + (i + 1) + '</span>' +
                         '<span class="pr-mark"><i class="fas ' + (h.correct ? 'fa-check' : 'fa-times') + '"></i></span></span>' +
                         '<span class="pr-chips">' + progCellsHtml(h) + '</span>' +
@@ -25960,7 +26014,7 @@
                         '<div class="pr-stats">' +
                             '<div class="pr-stat"><span class="pr-stat-val">' + r.correct + '<small>/' + PROG_ROUND_SIZE + '</small></span><span class="pr-stat-lbl">정답</span></div>' +
                             '<div class="pr-stat"><span class="pr-stat-val">' + progFormatTime(r.elapsed) + '</span><span class="pr-stat-lbl">걸린 시간</span></div>' +
-                            '<div class="pr-stat"><span class="pr-stat-val">' + (progIsHell() ? '지옥' : _etProgLevel) + '</span><span class="pr-stat-lbl">단계</span></div>' +
+                            '<div class="pr-stat"><span class="pr-stat-val">' + progLevelLabel() + '</span><span class="pr-stat-lbl">단계</span></div>' +
                             '<div class="pr-stat"><span class="pr-stat-val">' + (progIsHell() ? '랜덤' : _etProgKey) + '</span><span class="pr-stat-lbl">키</span></div>' +
                         '</div>' +
                         '<div class="pr-grid">' + items + '</div>' +
@@ -26111,11 +26165,11 @@
                     etTrackStreak(_etProgStats.streak, 'ear_prog', progDiffKey());
                     var pts = Math.floor(10 * (PROG_LEVEL_COEF[_etProgLevel] || 1));
                     _etProgStats.score += pts;
-                    fb.textContent = '정답! +' + pts + '점 · ' + answerStr;
+                    fb.textContent = '정답! +' + pts + '점 · ' + answerStr + (_etProgRealName ? '  (' + _etProgRealName + ')' : '');
                     fb.className = 'et-feedback correct';
                 } else {
                     _etProgStats.streak = 0;
-                    fb.textContent = hits + '/' + count + ' 정답 — 정답: ' + answerStr;
+                    fb.textContent = hits + '/' + count + ' 정답 — 정답: ' + answerStr + (_etProgRealName ? '  (' + _etProgRealName + ')' : '');
                     fb.className = 'et-feedback wrong';
                 }
                 try { if (window.earSession) window.earSession.recordAnswer(allCorrect); } catch (e) {}
@@ -26125,7 +26179,8 @@
                     correct: allCorrect,
                     seq: _etProgAnswer.slice(),
                     picked: _etProgPicks.slice(),
-                    key: _etProgAnswerKey
+                    key: _etProgAnswerKey,
+                    name: _etProgRealName
                 });
                 progRoundAnswered(allCorrect);
                 renderProgSlots();
@@ -26140,7 +26195,8 @@
                     correct: allCorrect,
                     seq: _etProgAnswer.slice(),
                     picked: _etProgPicks.slice(),
-                    key: _etProgAnswerKey
+                    key: _etProgAnswerKey,
+                    name: _etProgRealName
                 });
                 renderETProgHistory();
                 setEtBtnState('etProgNextBtn', 'next-active');
@@ -26171,6 +26227,7 @@
                     var text = h.correct
                         ? '<span class="et-h-answer">' + progSeqName(h.seq, h.key) + '</span>'
                         : '<span class="et-h-wrong-pick">' + progSeqName(h.picked, h.key) + '</span> → <span class="et-h-answer">' + progSeqName(h.seq, h.key) + '</span>';
+                    if (h.name) text += ' <span style="opacity:0.55;font-size:0.85em;">(' + h.name + ')</span>';
                     return '<div class="et-history-item">' + icon +
                         '<span class="et-history-text">' + text + '</span>' +
                         '<button class="et-history-replay" data-action="etReplayProgHistory" data-args="' + i + '" title="다시듣기"><i class="fas fa-volume-up"></i></button>' +
@@ -26221,7 +26278,7 @@
             };
 
             window.setETProgLevel = function(level) {
-                _etProgLevel = level === 'hell' ? 'hell' : parseInt(level, 10);
+                _etProgLevel = (level === 'hell' || level === 'real') ? level : parseInt(level, 10);
                 document.querySelectorAll('#etProgMode .et-diff-btn').forEach(function(b) {
                     b.classList.toggle('active', b.dataset.plevel === String(_etProgLevel));
                 });
