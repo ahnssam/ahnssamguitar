@@ -79,6 +79,8 @@
     .pub.on { color: #1f8a52; font-weight: 700; }
     .nopdf { color: var(--red); font-size: 12px; }
     .haspdf { color: #1f8a52; font-size: 12px; font-weight: 700; }
+    .miss { color: #9a6700; font-size: 12px; }
+    .miss i { color: #f0b400; }
     .list .rk { width: 64px; text-align: center; }
     .list .rk b { display: block; font-size: 15px; font-weight: 900; color: var(--green); }
     .list .rk small { color: var(--sub); font-size: 11px; white-space: nowrap; }
@@ -360,6 +362,22 @@
         const url = sb.storage.from(PREVIEW_BUCKET).getPublicUrl(s.preview_path).data.publicUrl;
         return url + '?v=' + encodeURIComponent(s.updated_at || '');
     }
+    // 스토어에 내려면 채워야 하는데 비어 있는 칸 (PDF는 따로 표시). 자작곡은 원곡 가수, 코드악보는 영상이 없어도 되고,
+    // 미리보기·페이지 수는 PDF를 올릴 때 같이 채워지니 PDF가 있는 곡만 본다
+    function missingOf(s) {
+        const m = [];
+        if (!s.artist && s.kind !== 'original') m.push('원곡 가수');
+        if (!s.style) m.push('종류');
+        if (!s.genre) m.push('장르');
+        if (!s.difficulty) m.push('난이도');
+        if (!(s.price > 0)) m.push('가격');
+        if (!s.youtube_id && s.style !== 'chord') m.push('유튜브');
+        if (filesById[s.id]) {
+            if (!s.preview_path) m.push('미리보기');
+            if (!s.pages) m.push('페이지 수');
+        }
+        return m;
+    }
     // 풀스코어 주문수 순위 (주문 1건 이상만). 같은 수면 같은 순위.
     function orderRanks() {
         const ranked = sheets.filter(s => (s.fullscore_orders || 0) > 0).sort((a, b) => b.fullscore_orders - a.fullscore_orders);
@@ -403,7 +421,8 @@
             rows.map(s => `<tr data-id="${s.id}" class="${filesById[s.id] ? 'done' : ''}">
                 <td class="rk">${rank[s.id] ? `<b>${rank[s.id]}</b><small>주문 ${s.fullscore_orders}</small>` : `<small>${hasOrders ? '주문 0' : '-'}</small>`}</td>
                 <td><div class="pv" style="background-image:url('${previewUrl(s)}')"></div></td>
-                <td class="nm"><b>${esc(s.title)}</b><small>${esc(s.artist || '')}</small>${filesById[s.id] ? '<div class="haspdf"><i class="fas fa-circle-check"></i> PDF 있음</div>' : '<div class="nopdf"><i class="fas fa-triangle-exclamation"></i> PDF 없음</div>'}</td>
+                <td class="nm"><b>${esc(s.title)}</b><small>${esc(s.artist || '')}</small>${filesById[s.id] ? '<div class="haspdf"><i class="fas fa-circle-check"></i> PDF 있음</div>' : '<div class="nopdf"><i class="fas fa-triangle-exclamation"></i> PDF 없음</div>'}${
+                    (m => m.length ? `<div class="miss"><i class="fas fa-triangle-exclamation"></i> 빈 칸: ${m.join(' · ')}</div>` : '')(missingOf(s))}</td>
                 <td class="c-st"><span class="chip ${s.kind}">${KIND[s.kind] || ''}</span>${s.style ? `<span class="chip">${STYLE[s.style][0]}</span>` : ''}</td>
                 <td class="c-lv"><span class="lv pick" title="눌러서 난이도 바꾸기">${[1, 2, 3, 4, 5].map(i => `<button type="button" data-lv-set="${i}" class="${i <= (s.difficulty || 0) ? '' : 'off'}">●</button>`).join('')}</span></td>
                 <td class="c-pr">${won(s.price)}</td>
