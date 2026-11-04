@@ -395,29 +395,13 @@
             .cart-drawer { width: 100%; }
         }
 
-        /* ===== BREADCRUMB ===== */
-        .breadcrumb {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 1.2rem 2rem 0;
-            font-size: 0.8rem;
-            color: var(--text-light);
-        }
-        .breadcrumb a {
-            color: var(--green-dark);
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-        .breadcrumb a:hover { color: var(--green-deep); text-decoration: underline; }
-        .breadcrumb span { margin: 0 0.4rem; }
-
         /* ===== PRODUCT LAYOUT ===== */
         .product-container {
-            max-width: 1100px;
+            max-width: 1240px;
             margin: 2rem auto 3rem;
             padding: 0 2rem;
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);   /* 악보 미리보기·영상을 크게 */
             gap: 3rem;
             align-items: start;
         }
@@ -486,7 +470,7 @@
         }
         .product-title {
             font-family: 'Playfair Display', serif;
-            font-size: 2.4rem;
+            font-size: 1.8rem;
             font-weight: 900;
             color: var(--text-dark);
             line-height: 1.2;
@@ -506,6 +490,7 @@
             color: var(--green-dark);
             font-weight: 600;
         }
+        .product-artist .by-sep { display: inline-block; width: 1px; height: 0.8em; background: var(--green-pale); margin: 0 0.8em; vertical-align: -0.05em; }
         .product-divider {
             width: 100%;
             height: 1px;
@@ -520,14 +505,16 @@
         /* 같은 곡의 여러 악보(통기타 · 일렉기타 반주 · 기타솔로) 고르기 */
         .parts { display: flex; flex-direction: column; gap: 0.5rem; }
         .parts-title { font-size: 0.85rem; font-weight: 700; color: var(--text-mid); }
-        .part { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 1rem; border: 1.5px solid var(--green-pale); border-radius: 12px; background: var(--white); cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+        .parts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.6rem; }   /* 구성은 옆으로 나란히 */
+        .part { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.85rem 0.95rem; border: 1.5px solid var(--green-pale); border-radius: 12px; background: var(--white); cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+        .part .top { display: flex; align-items: center; gap: 0.55rem; }
         .part:has(input:checked) { border-color: var(--green-mid); background: var(--green-faint); }
         .part input { width: 18px; height: 18px; accent-color: var(--green-dark); flex: none; cursor: pointer; }
-        .part .pn { flex: 1; font-size: 0.95rem; font-weight: 600; }
-        .part .pn small { display: block; font-size: 0.78rem; font-weight: 400; color: var(--text-light); margin-top: 2px; }
-        .part .pp { font-weight: 700; color: var(--green-deep); white-space: nowrap; }
+        .part .pn { font-size: 0.93rem; font-weight: 600; line-height: 1.35; }
+        .part .pg { font-size: 0.78rem; color: var(--text-light); padding-left: calc(18px + 0.55rem); }
+        .part .pp { font-weight: 800; font-size: 1.02rem; color: var(--green-deep); white-space: nowrap; padding-left: calc(18px + 0.55rem); }
         .part.owned { cursor: default; background: #f7f7f7; }
-        .part .own { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 700; color: var(--green-dark); background: none; border: 1.5px solid var(--green-pale); border-radius: 8px; padding: 5px 10px; cursor: pointer; white-space: nowrap; }
+        .part .own { align-self: flex-start; margin-left: calc(18px + 0.55rem); display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 700; color: var(--green-dark); background: none; border: 1.5px solid var(--green-pale); border-radius: 8px; padding: 5px 10px; cursor: pointer; white-space: nowrap; }
         .set-deal { display: flex; gap: 0.7rem; align-items: center; padding: 0.85rem 1rem; border-radius: 12px; background: #fff6dc; color: #6b4a00; font-size: 0.9rem; line-height: 1.55; border: 1.5px solid #f2c94c; }
         .set-deal > i { color: #e8a200; font-size: 1.25rem; flex: none; }
         .set-deal b { color: #d64545; }
@@ -809,11 +796,10 @@
                 gap: 2rem;
                 padding: 0 1.2rem;
             }
-            .product-title { font-size: 1.8rem; }
+            .product-title { font-size: 1.5rem; }
             .product-price { font-size: 1.6rem; }
             .product-actions { flex-direction: column; }
             .btn-cart { padding: 1rem; }
-            .breadcrumb { padding: 1rem 1.2rem 0; }
         }
     </style>
     <!-- Supabase auth (shared) -->
@@ -862,19 +848,6 @@
         <i class="fas fa-leaf header-leaf" style="bottom: 15%; right: 8%; font-size: 1.8rem; animation-delay: 7s;"></i>
     </header>
 
-    <!-- Breadcrumb -->
-    <div class="breadcrumb">
-        <a href="/">홈</a>
-        <span>/</span>
-        <a href="/#shop">Shop</a>
-        <span>/</span>
-        <a href="/#shop">TAB악보</a>
-        <span>/</span>
-        <a id="crumbType" href="/#browse" hidden></a>
-        <span id="crumbTypeSep" hidden>/</span>
-        <span id="crumbTitle"></span>
-    </div>
-
     <!-- Product Detail -->
     <div class="product-container" id="productContainer" style="visibility: hidden;">
         <div>
@@ -893,8 +866,8 @@
             <h1 class="product-title" id="productTitle"></h1>
             <div class="product-artist" id="productArtist"></div>
             <div class="product-divider"></div>
-            <div class="product-price" id="productPrice"></div>
             <div class="parts" id="parts" hidden></div>
+            <div class="product-price" id="productPrice"></div>
             <div class="product-details">
                 <div class="product-detail-row">
                     <i class="fas fa-file-alt"></i>
@@ -919,9 +892,6 @@
                 <button type="button" id="productBuyBtn" class="btn-purchase" disabled>
                     <i class="fas fa-spinner fa-spin"></i> 확인 중
                 </button>
-                <a id="productYoutubeLink" href="#" target="_blank" class="btn-youtube" style="display:none;">
-                    <i class="fab fa-youtube"></i> 유튜브 보기
-                </a>
             </div>
             <p class="trial-note" id="trialNote" hidden></p>
             <div class="product-notice">
@@ -1001,26 +971,16 @@
                     '<p>새로운 결제 방식으로 TAB악보 판매를 준비하고 있어요.<br>조금만 기다려 주세요!</p>' +
                     '<a href="/#shop" class="product-paused-link">Shop 으로 돌아가기</a>' +
                 '</div>';
-            document.getElementById('crumbTitle').textContent = '';
             document.title = 'TAB악보 | 안쌤의 기타나무숲';
         }
         function showSheet(p) {
+            const SEP = '<span class="by-sep"></span>';   // 원곡 · 채보를 한 줄에
             const by = p.kind === 'original'
-                ? '작곡 · ' + ME + '<br>편곡 · ' + ME
-                : '원곡 · <strong>' + escHtml(p.artist || '') + '</strong><br>' + (p.kind === 'arrangement' ? '편곡' : '채보') + ' · ' + ME;
+                ? '작곡 · ' + ME + SEP + '편곡 · ' + ME
+                : '원곡 · <strong>' + escHtml(p.artist || '') + '</strong>' + SEP + (p.kind === 'arrangement' ? '편곡' : '채보') + ' · ' + ME;
             document.getElementById('productArtist').innerHTML =
                 (p.title_original ? escHtml(p.title_original) + '<br>' : '') + by;
             document.getElementById('productTitle').textContent = p.title;
-            document.getElementById('crumbTitle').textContent = p.title;
-            // 위치 표시에 종류(기타솔로 등) — 누르면 메인 목록이 그 종류로 걸러진다
-            const typeLabel = STYLE_LABEL[p.style];
-            if (typeLabel) {
-                const ct = document.getElementById('crumbType');
-                ct.textContent = typeLabel;
-                ct.href = '/?type=' + (p.style === 'fingerstyle' ? 'finger' : p.style) + '#browse';
-                ct.hidden = false;
-                document.getElementById('crumbTypeSep').hidden = false;
-            }
             const img = document.getElementById('productImg');
             img.src = p.preview_path
                 ? SB_URL + '/storage/v1/object/public/sheet-previews/' + encodeURIComponent(p.preview_path) + '?v=' + encodeURIComponent(p.updated_at)
@@ -1046,9 +1006,6 @@
             if (p.youtube_id) {
                 document.getElementById('ytFrame').src = 'https://www.youtube.com/embed/' + encodeURIComponent(p.youtube_id);
                 document.getElementById('productYoutube').style.display = 'block';
-                const ytLink = document.getElementById('productYoutubeLink');
-                ytLink.href = 'https://www.youtube.com/watch?v=' + encodeURIComponent(p.youtube_id);
-                ytLink.style.display = 'inline-flex';
             }
         }
 
@@ -1073,12 +1030,12 @@
                     ? `<div class="set-deal on"><i class="fas fa-gift"></i><span>반주 + 기타솔로를 <b>함께 사서 ${won(SET_DISCOUNT)} 할인</b>됐어요<br>따로 사면 ${won(sep)} → 함께 사면 <b>${won(sep - SET_DISCOUNT)}</b></span></div>`
                     : `<div class="set-deal"><i class="fas fa-gift"></i><span>반주와 기타솔로를 <b>함께 사면 ${won(SET_DISCOUNT)} 할인!</b><br>따로 사면 ${won(sep)} → 함께 사면 ${won(sep - SET_DISCOUNT)}</span></div>`;
             }
-            box.innerHTML = '<div class="parts-title">구성 고르기</div>' + PARTS.map(x => {
+            box.innerHTML = '<div class="parts-title">구성 고르기</div><div class="parts-row">' + PARTS.map(x => {
                 const own = OWNED.has(x.id);
-                return `<label class="part${own ? ' owned' : ''}"><input type="checkbox" data-part="${x.id}"${SEL.has(x.id) && !own ? ' checked' : ''}${own ? ' disabled' : ''}>
-                    <span class="pn">${PART_NAME[x.style] || '악보'}<small>${x.pages ? x.pages + '페이지 PDF' : 'PDF'}</small></span>
+                return `<label class="part${own ? ' owned' : ''}"><span class="top"><input type="checkbox" data-part="${x.id}"${SEL.has(x.id) && !own ? ' checked' : ''}${own ? ' disabled' : ''}>
+                    <span class="pn">${PART_NAME[x.style] || '악보'}</span></span><span class="pg">${x.pages ? x.pages + '페이지 PDF' : 'PDF'}</span>
                     ${own ? `<button type="button" class="own" data-dl="${x.id}"><i class="fas fa-download"></i> 구매함 · 내려받기</button>` : `<span class="pp">${won(x.price)}</span>`}</label>`;
-            }).join('') + deal;
+            }).join('') + '</div>' + deal;
             box.hidden = false;
             document.getElementById('productPrice').innerHTML = !t.list.length
                 ? '<span style="font-size:1rem;font-weight:600;color:var(--text-light)">구성을 골라 주세요</span>'
