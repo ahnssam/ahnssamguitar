@@ -189,6 +189,35 @@
     .kw { max-width: 680px; margin: 12px auto 0; display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; font-size: 13px; color: #999; }
     .kw a { color: #555; }
     .kw a:hover { color: var(--green-deep); }
+    /* 검색창 오른쪽: 유튜브 채널 바로가기 2개.
+       버튼 그림은 images/btn-ch-forest.webp · images/btn-ch-tab.webp (가로 380 × 세로 112 쯤, 2배 크기) 를 넣으면 그 그림이 버튼이 된다.
+       그림이 없으면 아래 임시 글자 버튼이 보인다. */
+    .search-row { display: flex; justify-content: center; align-items: flex-start; gap: 28px; }
+    .search-col { flex: 0 1 680px; min-width: 0; }
+    .search-col .search-box, .search-col .kw { max-width: none; }
+    .ch-links { flex: none; display: flex; gap: 12px; }
+    .chbtn { position: relative; display: block; width: 190px; height: 56px; border-radius: 18px; overflow: hidden; isolation: isolate;
+        box-shadow: 0 6px 16px rgba(42,107,74,0.16); transition: transform .28s cubic-bezier(.2,.8,.2,1), box-shadow .28s ease, filter .28s ease; }
+    .chbtn img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .chbtn .txt, .chbtn > i { display: none; }   /* 그림 버튼일 때는 그림만 */
+    .chbtn.noimg { display: flex; align-items: center; gap: 11px; padding: 0 16px; color: #fff; background: linear-gradient(135deg, var(--c1), var(--c2)); }
+    .chbtn.noimg .txt { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+    .chbtn.noimg .txt b { font-size: 15px; font-weight: 800; letter-spacing: -0.01em; }
+    .chbtn.noimg .txt small { font-size: 11px; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chbtn.noimg > i { display: block; font-size: 20px; flex: none; }
+    .chbtn.noimg .go { margin-left: auto; font-size: 13px; opacity: 0.8; transition: transform .28s ease; }
+    .chbtn.forest { --c1: #5cab6c; --c2: #2f7a4e; }
+    .chbtn.tab { --c1: #3d8f7c; --c2: #24594a; }
+    /* 호버: 살짝 떠오르며 커지고, 그림자가 진해지고, 빛이 한 번 쓱 지나간다. 누르면 살짝 눌린다 */
+    .chbtn::after { content: ''; position: absolute; top: 0; left: -70%; width: 45%; height: 100%; z-index: 1; pointer-events: none;
+        background: linear-gradient(110deg, transparent, rgba(255,255,255,0.5), transparent); transform: skewX(-18deg); transition: left .7s ease; }
+    .chbtn:hover { transform: translateY(-4px) scale(1.03); box-shadow: 0 14px 28px rgba(42,107,74,0.28); filter: brightness(1.05) saturate(1.05); }
+    .chbtn:hover::after { left: 135%; }
+    .chbtn:hover .go { transform: translateX(3px); }
+    .chbtn:active { transform: translateY(-1px) scale(0.98); box-shadow: 0 6px 14px rgba(42,107,74,0.22); transition-duration: .1s; }
+    .chbtn:focus-visible { outline: 3px solid var(--green-mid); outline-offset: 3px; }
+    @media (hover: none) { .chbtn:hover { transform: none; filter: none; } .chbtn:hover::after { left: -70%; } }   /* 휴대폰은 누를 때만 */
+    @media (prefers-reduced-motion: reduce) { .chbtn, .chbtn::after, .chbtn .go { transition: none; } .chbtn:hover { transform: none; } }
 
     /* ===== 공통 섹션 ===== */
     .sec { padding: 64px 0; }
@@ -420,6 +449,12 @@
         .search-box { padding-left: 16px; }
         .search-box input { font-size: 14px; }
         .search-box button { padding: 10px 16px; }
+        .search-row { flex-direction: column; align-items: stretch; gap: 14px; }
+        .search-col { flex: none; }
+        .ch-links { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .chbtn { width: auto; height: 52px; }
+        .chbtn.noimg { padding: 0 12px; gap: 9px; }
+        .chbtn.noimg .go { display: none; }
         .sec { padding: 44px 0; }
         .three-col { grid-template-columns: minmax(0, 1fr); gap: 40px; }
         .type-col { order: 0; }
@@ -538,8 +573,16 @@
 <!-- 검색 (배너 아래) -->
 <section class="search-sec">
     <div class="wrap">
+        <div class="search-row">
+        <div class="search-col">
         <form class="search-box" id="searchForm" role="search"><i class="fas fa-search"></i><input id="q" type="search" placeholder="곡 제목, 가수 이름으로 악보 검색" aria-label="악보 검색" autocomplete="off"><button type="submit">검색</button></form>
         <div class="kw" id="kw">많이 찾는 곡 <a href="#browse" data-q="Pretender">Pretender</a><a href="#browse" data-q="APT.">APT.</a><a href="#browse" data-q="봄날, 벚꽃 그리고 너">봄날, 벚꽃 그리고 너</a><a href="#browse" data-q="인생의 회전목마">인생의 회전목마</a><a href="#browse" data-q="홍련화">홍련화</a></div>
+        </div>
+        <div class="ch-links">
+            <a class="chbtn forest" href="https://www.youtube.com/@%EC%95%88%EC%8C%A4%EC%9D%98%EA%B8%B0%ED%83%80%EB%82%98%EB%AC%B4%EC%88%B2" target="_blank" rel="noopener" aria-label="기타나무숲 유튜브 채널 바로가기"><img src="images/btn-ch-forest.webp" alt="" onerror="this.parentNode.classList.add('noimg');this.remove()"><i class="fas fa-tree"></i><span class="txt"><b>기타나무숲</b><small>유튜브 채널 바로가기</small></span><i class="fas fa-arrow-right go"></i></a>
+            <a class="chbtn tab" href="https://www.youtube.com/@ahnssamguitartab" target="_blank" rel="noopener" aria-label="악보나무숲 유튜브 채널 바로가기"><img src="images/btn-ch-tab.webp" alt="" onerror="this.parentNode.classList.add('noimg');this.remove()"><i class="fas fa-music"></i><span class="txt"><b>악보나무숲</b><small>유튜브 채널 바로가기</small></span><i class="fas fa-arrow-right go"></i></a>
+        </div>
+        </div>
     </div>
 </section>
 
