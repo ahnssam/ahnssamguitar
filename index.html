@@ -211,12 +211,12 @@
     .th .paper { position: absolute; left: 8%; top: 8%; width: 58%; height: 64%; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.12); padding: 6% 7%; }
     .th .paper::before { content: ''; display: block; height: 6%; width: 50%; margin: 0 auto 8%; background: #3a3a3a; border-radius: 2px; }
     .th .paper::after { content: ''; display: block; height: 76%; background: repeating-linear-gradient(to bottom, #bbb 0 1px, transparent 1px 3.5px); }
-    /* PDF 를 올린 곡: 가짜 줄 대신 실제 악보 윗부분(상세 페이지 미리보기와 같은 그림) */
+    /* PDF 를 올린 곡: 가짜 줄 대신 실제 악보 윗부분(상세 페이지 미리보기와 같은 그림)을 1.7배 당겨서 제목·첫 줄이 보이게 */
     .th .paper.real { padding: 0; overflow: hidden; }
     .th .paper.real::before, .th .paper.real::after { display: none; }
-    .th .paper.real img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+    .th .paper.real img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center top; transform: scale(1.7); transform-origin: 50% 3%; }
     /* 왼쪽 아래 → 오른쪽 위로 완만한 대각선(약 35도)으로 색 면을 나눈다 */
-    .th .band { position: absolute; inset: 0; z-index: 1; background: transparent; padding: 0 7% 8%; color: var(--ink, #fff); text-shadow: 0 1px 2px rgb(0 0 0 / var(--shade, 0.18)); text-align: right; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; }
+    .th .band { position: absolute; inset: 0; z-index: 1; background: transparent; padding: 0 7% 8%; color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / var(--shade, 0.18)); text-align: right; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; }
     .th .band::before, .th .band::after { content: ''; position: absolute; inset: 0; z-index: -1; }
     .th .band::before { background: linear-gradient(160deg, var(--c), var(--c2)); clip-path: polygon(0 90%, 100% 12%, 100% 100%, 0 100%); }
     .th .band::after { background: var(--c); opacity: 0.35; clip-path: polygon(0 82%, 100% 4%, 100% 0, 0 78%); }
@@ -229,10 +229,10 @@
     .th.sm { width: 76px; flex: none; }
     .th.sm .t { font-size: 10.5px; max-width: none; white-space: nowrap; }
     .th.sm .a, .th.sm .d, .th.sm .fa-guitar { display: none; }
-    /* 종류별 색 — 밝은 톤 (통기타 캐러멜·일렉 초록·핑스 노랑·솔로 연한 파랑·코드 코랄·베이스 라벤더). 노랑은 흰 글자가 안 보여서 진한 글자 */
+    /* 종류별 색 — 밝은 톤 (통기타 캐러멜·일렉 초록·핑스 머스터드 노랑·솔로 연한 파랑·코드 코랄·베이스 라벤더). 글자는 모두 흰색 */
     .s-acoustic { --c: #cf9a68; --c2: #b37b4b; background: var(--c); }
     .s-electric { --c: #63c46f; --c2: #42a854; background: var(--c); }
-    .s-finger { --c: #ffd84a; --c2: #f7bd2b; --ink: #5b4200; --shade: 0; background: var(--c); }
+    .s-finger { --c: #f2b81c; --c2: #d99c06; --shade: 0.3; background: var(--c); }
     .s-solo { --c: #7cc3ff; --c2: #52a6f2; background: var(--c); }
     .s-chord { --c: #ff8a8a; --c2: #f06a6e; background: var(--c); }
     .s-bass { --c: #c8adff; --c2: #a98cf2; background: var(--c); }
@@ -690,7 +690,7 @@
     const SB_URL = 'https://qpcbrqgqylxkgdwoflku.supabase.co';
     const SB_KEY = 'sb_publishable_5rr-OZ7Sqjk1nXn59R7XnQ_HInATuSV';
     const STYLE = { acoustic: ['s-acoustic', '통기타', 'ACOUSTIC'], electric: ['s-electric', '일렉기타', 'ELECTRIC'], finger: ['s-finger', '핑거스타일', 'FINGERSTYLE'], solo: ['s-solo', '기타솔로', 'GUITAR SOLO'], chord: ['s-chord', '코드악보', 'CHORD'], bass: ['s-bass', '베이스', 'BASS'] };
-    const COLOR = { acoustic: '#b37b4b', electric: '#42a854', finger: '#f5b81f', solo: '#52a6f2', chord: '#f06a6e', bass: '#a98cf2' };   // 종류별 칸의 점·밑줄 (썸네일 색과 같은 계열)
+    const COLOR = { acoustic: '#b37b4b', electric: '#42a854', finger: '#d99c06', solo: '#52a6f2', chord: '#f06a6e', bass: '#a98cf2' };   // 종류별 칸의 점·밑줄 (썸네일 색과 같은 계열)
     const LV = n => n ? [1, 2, 3, 4, 5].map(i => i <= n ? '●' : '<span class="off">●</span>').join('') : '';
     const esc = v => String(v ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     // DB 제목 중 맥 파일 이름에서 온 것은 한글 자모가 풀려 있어(NFD) 검색이 안 맞는다 — 모두 NFC 로 맞춰 비교
