@@ -397,11 +397,11 @@
 
         /* ===== PRODUCT LAYOUT ===== */
         .product-container {
-            max-width: 1240px;
+            max-width: 1160px;
             margin: 2rem auto 3rem;
             padding: 0 2rem;
             display: grid;
-            grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);   /* 악보 미리보기·영상을 크게 */
+            grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);   /* 악보 미리보기·영상을 조금 크게 */
             gap: 3rem;
             align-items: start;
         }
@@ -421,13 +421,16 @@
             object-fit: cover;
             object-position: top;
         }
-        .product-youtube {
-            margin-top: 1rem;
+        /* 영상: 들어온 구성(통기타·기타솔로 …)의 영상이 위, 같은 곡 다른 구성의 영상이 그 아래 */
+        .product-youtube { margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem; }
+        .yt-item {
             background: var(--white);
             border-radius: 16px;
             overflow: hidden;
             box-shadow: 0 4px 30px rgba(0,0,0,0.08);
         }
+        .yt-label { display: flex; align-items: center; gap: 0.45rem; padding: 0.65rem 1rem; font-size: 0.82rem; font-weight: 700; color: var(--green-dark); }
+        .yt-label i { color: #e62117; }
         .product-youtube .yt-wrapper {
             position: relative;
             padding-bottom: 56.25%;
@@ -855,11 +858,7 @@
                 <span class="product-badge">TAB악보</span>
                 <img id="productImg" src="" alt="">
             </div>
-            <div class="product-youtube" id="productYoutube" style="display:none;">
-                <div class="yt-wrapper">
-                    <iframe id="ytFrame" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-                </div>
-            </div>
+            <div class="product-youtube" id="productYoutube" hidden></div>
         </div>
         <div class="product-info">
             <div class="product-category">Guitar TAB Sheet Music</div>
@@ -1002,11 +1001,12 @@
             renderParts(p);
             setupBuy(p);
 
-            // 유튜브 영상이 있으면 표시
-            if (p.youtube_id) {
-                document.getElementById('ytFrame').src = 'https://www.youtube.com/embed/' + encodeURIComponent(p.youtube_id);
-                document.getElementById('productYoutube').style.display = 'block';
-            }
+            // 유튜브 영상: 들어온 악보의 영상이 맨 위, 같은 곡 다른 구성(기타솔로·통기타 …)의 영상이 그 아래 (같은 영상은 한 번만)
+            const seen = new Set(), vids = [p, ...PARTS.filter(x => x.id !== p.id)].filter(x => x.youtube_id && !seen.has(x.youtube_id) && seen.add(x.youtube_id));
+            const yt = document.getElementById('productYoutube');
+            yt.innerHTML = vids.map((x, i) => `<div class="yt-item">${vids.length > 1 ? `<div class="yt-label"><i class="fab fa-youtube"></i>${escHtml((PART_NAME[x.style] || '악보').replace(' 악보', ''))} 영상</div>` : ''}<div class="yt-wrapper">
+                <iframe src="https://www.youtube.com/embed/${encodeURIComponent(x.youtube_id)}" title="${escHtml(x.title)} ${escHtml(PART_NAME[x.style] || '')} 영상"${i ? ' loading="lazy"' : ''} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div></div>`).join('');
+            yt.hidden = !vids.length;
         }
 
         // 고른 구성의 금액: 가격 합 − (기타솔로와 반주를 함께 고르면 500원)
