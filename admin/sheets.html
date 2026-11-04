@@ -57,7 +57,7 @@
     .list th { text-align: left; font-size: 12.5px; color: var(--sub); font-weight: 500; padding: 10px 12px; border-bottom: 1px solid var(--line); background: #fafafa; }
     .list td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
     .list tr:last-child td { border-bottom: 0; }
-    .list .pv { width: 56px; height: 48px; border-radius: 4px; background: #f1f1f1 center top / cover no-repeat; border: 1px solid var(--line); }
+    .list .th { width: 60px; box-shadow: 0 0 0 1px var(--line); }
     .list .nm b { display: block; }
     .list .nm small { color: var(--sub); }
     .chip { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: var(--green-bg); color: var(--green); margin-right: 3px; }
@@ -116,18 +116,62 @@
     .pdfinfo { margin-top: 8px; font-size: 12.5px; color: #555; }
     .pdfinfo.err { color: var(--red); }
 
-    /* 스토어 썸네일 미리보기: 악보 윗부분 + 완만한 대각선 색 면 + 종류 */
-    .th { position: relative; aspect-ratio: 1 / 0.9; border-radius: 4px; overflow: hidden; background: #f2f2f2; margin-top: 14px; border: 1px solid var(--line); }
-    .th .paper { position: absolute; left: 8%; top: 8%; width: 58%; height: 64%; background: #fff 50% 3% / 170% auto no-repeat; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }   /* 메인처럼 1.7배 당겨서 */
-    .th .band { position: absolute; inset: 0; z-index: 1; padding: 0 7% 8%; color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / var(--shade, 0.18)); text-align: right; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; }
-    .th .band::before, .th .band::after { content: ''; position: absolute; inset: 0; z-index: -1; }
-    .th .band::before { background: linear-gradient(160deg, var(--c), var(--c2)); clip-path: polygon(0 90%, 100% 12%, 100% 100%, 0 100%); }
-    .th .band::after { background: var(--c); opacity: 0.35; clip-path: polygon(0 82%, 100% 4%, 100% 0, 0 78%); }
-    .th .a { font-size: 9.5px; font-weight: 700; letter-spacing: 0.12em; opacity: 0.75; }
-    .th .t { font-weight: 900; font-size: 18px; line-height: 1.15; letter-spacing: -0.03em; }
-    .th .d { font-size: 9px; letter-spacing: 1.5px; margin-top: 3px; }
-    .th .d .off { opacity: 0.3; }
-    .th .plus { font-size: 11px; font-weight: 800; margin-top: 1px; white-space: nowrap; }   /* 일렉기타 아래 '+ 기타솔로' */
+    /* ===== 악보 썸네일 (정사각형) =====
+       위: 왼쪽 앨범 커버(조금 크게) + 오른쪽에 살짝 겹친 악보 종이(실제 악보 윗부분)
+       아래: 종류 색의 부드러운 곡선 면 — [편곡] | 종류 이름 / 영문 이름 · 난이도 동그라미
+       크기는 썸네일 폭(cqw) 기준이라 어느 크기든 비율이 같고, 130px 이하 작은 썸네일은 영문을 빼고 종류·난이도를 키운다.
+       메인(index.html)과 같은 모양 — 한쪽을 고치면 다른 쪽도 같이 */
+    .th { --c: #9a9a9a; --c2: #7d7d7d; --fg: #fff; position: relative; flex: none; aspect-ratio: 1; container-type: inline-size; overflow: hidden; border-radius: 6px; background: color-mix(in srgb, var(--c) 10%, #fbfaf7); }
+    .th .cv, .th .pp { position: absolute; overflow: hidden; }
+    .th .cv img, .th .pp img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
+    /* 앨범 커버 — 없으면(또는 못 불러오면) 종류 색 바탕에 레코드 그림 */
+    .th .cv { left: 6cqw; top: 6cqw; width: 50cqw; height: 50cqw; z-index: 2; border-radius: 2.4cqw; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 30%, #fff); box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), 0 1px 3px rgb(0 0 0 / 0.1); }
+    .th .cv i { font-size: 18cqw; color: #fff; opacity: 0.85; }
+    /* 악보 종이 — 실제 악보 윗부분(제목·첫 줄)을 위 가운데 기준으로. 없으면 곡 제목 + TAB 줄 그림 */
+    .th .pp { left: 50cqw; top: 10cqw; width: 44cqw; height: 50cqw; z-index: 1; border-radius: 1.2cqw; background: #fff; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08); padding: 6cqw 4cqw 0 8cqw; }
+    .th .pp img { object-position: 50% 0; }
+    .th .pp b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 3.6cqw; font-weight: 900; line-height: 1.25; text-align: center; color: #333; word-break: keep-all; }
+    .th .pp::after { content: ''; position: absolute; left: 8cqw; right: 4cqw; top: 18cqw; bottom: 0; background: repeating-linear-gradient(#c9c9c9 0 1px, transparent 1px 1.7cqw);
+        -webkit-mask: repeating-linear-gradient(#000 0 9.4cqw, transparent 9.4cqw 14cqw); mask: repeating-linear-gradient(#000 0 9.4cqw, transparent 9.4cqw 14cqw); }
+    .th .band { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; height: 42cqw; padding: 0 6cqw 6.5cqw; color: var(--fg); text-shadow: 0 1px 2px rgb(0 0 0 / var(--shade, 0.16));
+        display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "kd nm" "r2 r2"; align-content: end; align-items: center; row-gap: 1.8cqw; }
+    /* 곡선 색 면: 진한 물결 + 오른쪽 위로 살짝 비치는 연한 언덕 (한 장의 마스크) */
+    .th .band::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(160deg, var(--c), var(--c2));
+        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 42' preserveAspectRatio='none'%3E%3Cpath d='M0 9C30 9 60-1 100 0V42H0Z' fill-opacity='.35'/%3E%3Cpath d='M0 4C20 1 40 10 62 8S90 1 100 3V42H0Z'/%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 42' preserveAspectRatio='none'%3E%3Cpath d='M0 9C30 9 60-1 100 0V42H0Z' fill-opacity='.35'/%3E%3Cpath d='M0 4C20 1 40 10 62 8S90 1 100 3V42H0Z'/%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat; }
+    .th .kd { grid-area: kd; margin-right: 3cqw; padding: 1.5cqw 3cqw; border-radius: 99px; background: rgb(255 255 255 / 0.92); color: color-mix(in srgb, var(--c2) 40%, #262626); font-size: 5.2cqw; font-weight: 900; line-height: 1.1; letter-spacing: -0.02em; white-space: nowrap; text-shadow: none; }
+    .th .kd + .nm { padding-left: 3cqw; border-left: 1px solid color-mix(in srgb, var(--fg) 50%, transparent); }
+    .th .nm { grid-area: nm; font-size: 12.5cqw; font-weight: 900; line-height: 1.08; letter-spacing: -0.04em; white-space: nowrap; overflow: hidden; }
+    .th .r2 { grid-area: r2; display: flex; align-items: center; gap: 2.6cqw; min-width: 0; white-space: nowrap; }
+    .th .en { font-size: 4.3cqw; font-weight: 700; letter-spacing: 0.24em; opacity: 0.92; }
+    .th .plus { font-size: 4.6cqw; font-weight: 800; letter-spacing: -0.02em; }   /* 일렉기타 반주 + 기타솔로 묶음 */
+    .th .dots { display: inline-flex; gap: 1.4cqw; }
+    .th .dots i { width: 3.2cqw; height: 3.2cqw; border-radius: 50%; background: currentColor; }
+    .th .dots i.off { opacity: 0.35; }
+    @container (max-width: 130px) {
+        .th .cv { width: 42cqw; height: 42cqw; }
+        .th .pp { left: 42cqw; top: 9cqw; width: 52cqw; height: 40cqw; padding: 0; }
+        .th .pp b { display: none; }
+        .th .pp::before { content: ''; position: absolute; left: 34%; right: 18%; top: 12%; height: 6%; background: #555; border-radius: 1px; }   /* 제목 자리 */
+        .th .pp::after { left: 20%; right: 6%; top: 30%; background: repeating-linear-gradient(#c4c4c4 0 1px, transparent 1px 2.2px);
+            -webkit-mask: repeating-linear-gradient(#000 0 12px, transparent 12px 17px); mask: repeating-linear-gradient(#000 0 12px, transparent 12px 17px); }
+        .th .band { height: max(50cqw, 30px); padding-bottom: max(3.5px, 6.5cqw); grid-template-areas: "nm nm" "kd r2"; row-gap: max(2px, 3cqw); }
+        .th .band::before {   /* 작은 썸네일은 물결을 더 완만하게 — 글자가 곡선 위로 넘치지 않게 */
+            -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 42' preserveAspectRatio='none'%3E%3Cpath d='M0 6C30 6 60 0 100 0V42H0Z' fill-opacity='.35'/%3E%3Cpath d='M0 3C22 1 42 6 63 5S90 1 100 2V42H0Z'/%3E%3C/svg%3E");
+            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 42' preserveAspectRatio='none'%3E%3Cpath d='M0 6C30 6 60 0 100 0V42H0Z' fill-opacity='.35'/%3E%3Cpath d='M0 3C22 1 42 6 63 5S90 1 100 2V42H0Z'/%3E%3C/svg%3E"); }
+        .th .kd { margin-right: max(2.5px, 3.5cqw); padding: 0.5px 3px; font-size: max(7px, 9cqw); }
+        .th .kd + .nm { padding-left: 0; border-left: 0; }
+        .th .band:has(.plus) .kd { display: none; }   /* 작은 칸에 편곡 + 솔로 + 난이도가 다 안 들어가면 편곡 배지는 뺀다 */
+        .th .nm { font-size: max(10px, 15.5cqw); line-height: 1.05; }
+        .th .en { display: none; }
+        .th .plus { font-size: max(7px, 9cqw); }
+        .th .plus .lg { display: none; }   /* 작으면 '+ 솔로' */
+        .th .dots { gap: max(1.2px, 2cqw); }
+        .th .dots i { width: max(3.5px, 5.4cqw); height: max(3.5px, 5.4cqw); }
+    }
+    #thumb { margin-top: 14px; }
+    #thumb .th { box-shadow: 0 0 0 1px var(--line); }
+    #thumb.over .th { box-shadow: 0 0 0 2px var(--green); }   /* 커버 그림을 끌어다 놓는 중 */
     /* 같은 곡 악보 묶기 */
     .links { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
     .links:empty { display: none; }
@@ -146,17 +190,18 @@
     .tsug button small { color: var(--sub); margin-left: 4px; }
     .tsug .tag { margin-left: auto; font-size: 12px; font-weight: 700; color: #2a5f9e; white-space: nowrap; }
     .sugrow { font-size: 12px; color: #2a5f9e; margin-top: 2px; }
-    .th .fa-guitar { position: absolute; right: 9%; top: 34%; font-size: 22px; opacity: 0.25; transform: rotate(-20deg); }
-    .th .tag { position: absolute; left: 7px; top: 7px; z-index: 2; font-size: 9px; font-weight: 900; letter-spacing: 0.06em; color: #fff; padding: 2px 7px; border-radius: 9px; background: #b8913f; }
-    /* 메인과 같은 밝은 색, 글자는 흰색 */
+    /* 메인과 같은 밝은 색 — 핑거스타일만 진한 글자, 나머지는 흰색 */
     .s-acoustic { --c: #cf9a68; --c2: #b37b4b; }
     .s-electric { --c: #63c46f; --c2: #42a854; }
-    .s-fingerstyle { --c: #f8c630; --c2: #eaac14; --shade: 0.3; }
+    .s-fingerstyle { --c: #f8c630; --c2: #eaac14; --fg: #4a3300; --shade: 0; }
     .s-solo { --c: #7cc3ff; --c2: #52a6f2; }
     .s-chord { --c: #ff8a8a; --c2: #f06a6e; }
     .s-bass { --c: #c8adff; --c2: #a98cf2; }
     .s-other { --c: #8a8a8a; --c2: #6f6f6f; }
     .cap { font-size: 11.5px; color: var(--sub); margin-top: 6px; text-align: center; }
+    .cap:empty { display: none; }
+    .cv-tools { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
+    .cv-tools .btn { white-space: nowrap; }
 
     .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; align-content: start; }
     .f { display: flex; flex-direction: column; gap: 4px; }
@@ -259,12 +304,14 @@
                 <input type="file" id="pdfInput" accept="application/pdf" hidden>
             </div>
             <div class="pdfinfo" id="pdfInfo"></div>
-            <div class="th" id="thumb">
-                <span class="tag" id="thTag" hidden></span>
-                <div class="paper" id="thPaper"></div>
-                <div class="band s-acoustic" id="thBand"><i class="fas fa-guitar"></i><div class="a" id="thA">ACOUSTIC</div><div class="t" id="thT">통기타</div><div class="plus" id="thPlus" hidden>+ 기타솔로</div><div class="d" id="thD"></div></div>
-            </div>
+            <div id="thumb" title="앨범 커버 그림을 여기에 끌어다 놓아도 돼요"></div>
             <div class="cap">스토어에 보이는 썸네일 · 악보 윗부분은 PDF 첫 장에서 자동으로 만들어요</div>
+            <div class="cv-tools">
+                <button class="btn" id="cvBtn" type="button"><i class="fas fa-compact-disc"></i> <span id="cvBtnTxt">앨범 커버 올리기</span></button>
+                <button class="btn" id="cvDel" type="button" hidden title="이 악보의 앨범 커버 빼기"><i class="fas fa-xmark"></i> 빼기</button>
+                <input type="file" id="cvInput" accept="image/*" hidden>
+            </div>
+            <div class="cap" id="cvNote"></div>
             <div style="text-align:center;margin-top:8px;"><button class="btn" id="pvBtn" type="button"><i class="far fa-image"></i> 미리보기 이미지 직접 고르기</button><input type="file" id="pvInput" accept="image/*" hidden></div>
         </div>
         <form class="fields" id="form" autocomplete="off">
@@ -316,6 +363,7 @@
     'use strict';
     const ADMIN_EMAIL = 'steveq2568@gmail.com';
     const PREVIEW_BUCKET = 'sheet-previews';
+    const COVER_BUCKET = 'sheet-covers';     // 앨범 커버 (공개, <악보 id>.webp 정사각형 600px) — db/sheet_covers.sql
     const PDF_BUCKET = 'sheet-pdfs';
     const KIND = { cover: '커버', arrangement: '편곡', original: '자작곡' };
     const STYLE = { acoustic: ['통기타', 'ACOUSTIC'], electric: ['일렉기타', 'ELECTRIC'], fingerstyle: ['핑거스타일', 'FINGERSTYLE'], solo: ['기타솔로', 'GUITAR SOLO'], chord: ['코드악보', 'CHORD'], bass: ['베이스', 'BASS'], other: ['기타', 'GUITAR'] };
@@ -324,7 +372,15 @@
     const $ = id => document.getElementById(id);
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const won = n => (Number(n) || 0).toLocaleString() + '원';
-    const lvDots = n => [1, 2, 3, 4, 5].map(i => i <= (n || 0) ? '●' : '<span class="off">●</span>').join('');
+    // 스토어 썸네일 (메인 index.html 의 thumb() 와 같은 모양): 앨범 커버 + 악보 윗부분 + 종류 색 곡선 면에 [편곡] 종류·영문·난이도
+    const KIND_TAG = { arrangement: '편곡', original: '자작곡' };
+    const dots = n => n ? `<span class="dots" title="난이도 ${n}/5">${[1, 2, 3, 4, 5].map(i => `<i${i <= n ? '' : ' class="off"'}></i>`).join('')}</span>` : '';
+    function thumbHtml(d) {   // d = { style, kind, lv, plus, cover, paper, title }
+        const st = STYLE[d.style] ? d.style : 'other';
+        const img = src => src ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : '';
+        return `<div class="th s-${st}"><div class="cv"><i class="fas fa-compact-disc"></i>${img(d.cover)}</div><div class="pp"><b>${esc(d.title)}</b>${img(d.paper)}</div>`
+            + `<div class="band">${KIND_TAG[d.kind] ? `<span class="kd">${KIND_TAG[d.kind]}</span>` : ''}<b class="nm">${STYLE[st][0]}</b><span class="r2"><span class="en">${STYLE[st][1]}</span>${d.plus ? '<span class="plus">+ <span class="lg">기타</span>솔로</span>' : ''}${dots(d.lv)}</span></div></div>`;
+    }
 
     let sb = null;
     let sheets = [];
@@ -337,6 +393,10 @@
     let linkIds = new Set();   // 편집 중인 악보와 같은 곡으로 묶을 다른 악보들 (sheets.song_key)
     let newPdf = null;         // 새로 고른 PDF 파일
     let newPreview = null;     // 새로 만든/고른 미리보기 Blob
+    let paperSrc = '';         // 편집창 썸네일의 악보 윗부분 (저장된 그림 주소 또는 새로 만든 Blob 주소)
+    let newCover = null;       // 새로 고른 앨범 커버 (정사각형으로 자른 Blob)
+    let newCoverUrl = '';
+    let dropCover = false;     // 저장할 때 이 악보의 앨범 커버를 뺀다
     let difficulty = 3;
     let openedState = '';      // 편집창을 열었을 때 값 — 바깥을 눌렀을 때 바뀐 게 있으면 저장
     let pdfReading = false;    // PDF 읽는 중에는 바깥을 눌러도 닫지 않는다
@@ -385,6 +445,11 @@
         const url = sb.storage.from(PREVIEW_BUCKET).getPublicUrl(s.preview_path).data.publicUrl;
         return url + '?v=' + encodeURIComponent(s.updated_at || '');
     }
+    const coverUrl = s => s && s.cover_path ? sb.storage.from(COVER_BUCKET).getPublicUrl(s.cover_path).data.publicUrl + '?v=' + encodeURIComponent(s.updated_at || '') : '';
+    // 앨범 커버는 같은 곡으로 묶인 악보 하나에만 올려도 같이 쓴다 (메인도 같음)
+    const coverOwner = s => s.cover_path ? s : (s.song_key && sheets.find(x => x.song_key === s.song_key && x.cover_path)) || null;
+    const listThumb = s => thumbHtml({ style: s.style, kind: s.kind, lv: s.difficulty, title: s.title, cover: coverUrl(coverOwner(s)), paper: previewUrl(s),
+        plus: s.style === 'electric' && !!s.song_key && sheets.some(x => x.song_key === s.song_key && x.style === 'solo') });
     // 스토어에 내려면 채워야 하는데 비어 있는 칸 (PDF는 따로 표시). 자작곡은 원곡 가수, 코드악보는 영상이 없어도 되고,
     // 미리보기·페이지 수는 PDF를 올릴 때 같이 채워지니 PDF가 있는 곡만 본다
     function missingOf(s) {
@@ -443,7 +508,7 @@
         $('listWrap').innerHTML = `<table class="list"><thead><tr><th class="rk" title="풀스코어 주문수 순위">주문순</th><th></th><th>곡명</th><th class="c-st">종류·스타일</th><th class="c-lv">난이도</th><th>가격</th><th>상태</th><th class="c-up">수정일</th></tr></thead><tbody>${
             rows.map(s => `<tr data-id="${s.id}" class="${filesById[s.id] ? 'done' : ''}">
                 <td class="rk">${rank[s.id] ? `<b>${rank[s.id]}</b><small>주문 ${s.fullscore_orders}</small>` : `<small>${hasOrders ? '주문 0' : '-'}</small>`}</td>
-                <td><div class="pv" style="background-image:url('${previewUrl(s)}')"></div></td>
+                <td>${listThumb(s)}</td>
                 <td class="nm"><b>${esc(s.title)}</b><small>${esc(s.artist || '')}</small>${filesById[s.id] ? '<div class="haspdf"><i class="fas fa-circle-check"></i> PDF 있음</div>' : '<div class="nopdf"><i class="fas fa-triangle-exclamation"></i> PDF 없음</div>'}${
                     (m => m.length ? `<div class="miss"><i class="fas fa-triangle-exclamation"></i> 빈 칸: ${m.join(' · ')}</div>` : '')(missingOf(s))}${
                     (u => u.length ? `<div class="sugrow"><i class="fas fa-link"></i> 같은 곡 ${u.map(x => (STYLE[x.style] || ['악보'])[0]).join(' · ')} 악보가 따로 있어요 — 묶기 안 됨</div>` : '')(unlinkedSameSong(s))}</td>
@@ -514,6 +579,8 @@
     function openEditor(s) {
         editing = s || null;
         newPdf = null; newPreview = null;
+        newCover = null; dropCover = false;
+        if (newCoverUrl) { URL.revokeObjectURL(newCoverUrl); newCoverUrl = ''; }
         form.reset();
         $('edTitle').textContent = s ? '악보 수정' : '새 악보';
         $('delBtn').hidden = !s;
@@ -534,10 +601,10 @@
             form.elements.published.checked = !!s.published;
             const f = filesById[s.id];
             if (f) { $('dropName').textContent = '현재: ' + (f.file_name || 'PDF'); $('pdfInfo').textContent = '새 PDF를 올리면 바뀌어요.'; }
-            $('thPaper').style.backgroundImage = s.preview_path ? `url('${previewUrl(s)}')` : '';
+            paperSrc = previewUrl(s);
         } else {
             form.elements.price.value = 3000;
-            $('thPaper').style.backgroundImage = '';
+            paperSrc = '';
         }
         linkIds = new Set(s && s.song_key ? sheets.filter(x => x.song_key === s.song_key && x.id !== s.id).map(x => x.id) : []);
         renderLinks();
@@ -551,7 +618,7 @@
         if (fromRank) { fromRank = false; showRank(); }
     }
     const formState = () => [...form.elements].filter(el => el.id !== 'linkQ').map(el => el.type === 'checkbox' ? el.checked : el.value).join('\u0001') + '|' + difficulty + '|' + [...linkIds].sort().join();
-    const isDirty = () => !!newPdf || !!newPreview || formState() !== openedState;
+    const isDirty = () => !!newPdf || !!newPreview || !!newCover || dropCover || formState() !== openedState;
     $('newBtn').onclick = () => openEditor(null);
     $('edClose').onclick = closeEditor;
     // 바깥(어두운 부분)을 누르면 바뀐 게 있을 때 저장하고 닫는다 — 저장 못 하면 창을 그대로 두고 이유를 보여 준다
@@ -620,17 +687,21 @@
         </div>`;
     }
 
+    let lastThumb = '';
     function updateThumb() {
         const v = k => form.elements[k].value;
-        const style = STYLE[v('style')] ? v('style') : 'acoustic';
-        // 썸네일에는 곡명 대신 종류를 적는다 (곡명은 악보 미리보기와 목록 글자에 이미 보임)
-        $('thBand').className = 'band s-' + style;
-        $('thTag').textContent = { original: '자작곡', arrangement: '편곡' }[v('kind')] || '';
-        $('thTag').hidden = v('kind') === 'cover';
-        $('thT').textContent = STYLE[style][0];
-        $('thA').textContent = STYLE[style][1];
-        $('thD').innerHTML = lvDots(difficulty);
-        $('thPlus').hidden = !(style === 'electric' && [...linkIds].some(id => (sheets.find(x => x.id === id) || {}).style === 'solo'));
+        const linked = [...linkIds].map(id => sheets.find(x => x.id === id)).filter(Boolean);
+        // 앨범 커버: 새로 고른 그림 > 이 악보의 커버 > 같은 곡으로 묶은 악보의 커버
+        const own = newCover ? newCoverUrl : (!dropCover && editing && editing.cover_path) ? coverUrl(editing) : '';
+        const sib = own ? null : linked.find(x => x.cover_path);
+        // 썸네일에는 곡명 대신 종류를 크게 적는다 (곡명은 악보 미리보기와 목록 글자에 이미 보임)
+        const html = thumbHtml({ style: v('style'), kind: v('kind'), lv: difficulty, title: v('title'), cover: own || coverUrl(sib), paper: paperSrc,
+            plus: v('style') === 'electric' && linked.some(x => x.style === 'solo') });
+        if (html !== lastThumb) $('thumb').innerHTML = lastThumb = html;
+        $('cvBtnTxt').textContent = own ? '커버 바꾸기' : '앨범 커버 올리기';
+        $('cvDel').hidden = !own;
+        $('cvNote').textContent = newCover ? '저장하면 올라가요' : dropCover ? '저장하면 커버가 빠져요'
+            : sib ? `같은 곡 ‘${sib.title}’ (${(STYLE[sib.style] || ['악보'])[0]}) 악보의 커버를 같이 써요` : own ? '' : '커버 그림을 끌어다 놓거나 붙여넣어도 돼요 (없으면 레코드 그림)';
     }
     form.addEventListener('input', updateThumb);
 
@@ -714,7 +785,8 @@
             const doc = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
             form.elements.pages.value = doc.numPages;
             newPreview = await renderPreview(await doc.getPage(1));
-            $('thPaper').style.backgroundImage = `url('${URL.createObjectURL(newPreview)}')`;
+            paperSrc = URL.createObjectURL(newPreview);
+            updateThumb();
             pdfMsg(`${doc.numPages}페이지 · ${(file.size / 1024 / 1024).toFixed(1)}MB · 첫 장으로 미리보기를 만들었어요`);
             if (!form.elements.title.value) {
                 form.elements.title.value = file.name.replace(/\.pdf$/i, '').replace(/[_]+/g, ' ').trim();
@@ -757,8 +829,54 @@
         if (!f) return;
         if (f.size > 5 * 1024 * 1024) { alert('미리보기 이미지는 5MB 이하만 올릴 수 있어요.'); return; }
         newPreview = f;
-        $('thPaper').style.backgroundImage = `url('${URL.createObjectURL(f)}')`;
+        paperSrc = URL.createObjectURL(f);
+        updateThumb();
     };
+
+    // ---------- 앨범 커버 (버튼 · 썸네일에 끌어다 놓기 · 붙여넣기) → 가운데를 정사각형으로 잘라 600px ----------
+    async function squareCover(file) {
+        const bmp = await createImageBitmap(file);
+        const side = Math.min(bmp.width, bmp.height), size = Math.min(600, side);
+        const c = document.createElement('canvas');
+        c.width = c.height = size;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, size, size);
+        ctx.drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, size, size);
+        bmp.close && bmp.close();
+        return toBlob(c);
+    }
+    async function useCover(file) {
+        if (!file || !/^image\//.test(file.type)) { $('edMsg').textContent = '그림 파일만 앨범 커버로 올릴 수 있어요.'; return; }
+        if (file.size > 20 * 1024 * 1024) { $('edMsg').textContent = '20MB 이하 그림만 올릴 수 있어요.'; return; }
+        try {
+            newCover = await squareCover(file);
+        } catch (err) {
+            console.error(err);
+            $('edMsg').textContent = '그림을 읽지 못했어요. JPG·PNG·WEBP 그림인지 확인해 주세요.';
+            return;
+        }
+        if (newCoverUrl) URL.revokeObjectURL(newCoverUrl);
+        newCoverUrl = URL.createObjectURL(newCover);
+        dropCover = false;
+        $('edMsg').textContent = '';
+        updateThumb();
+    }
+    $('cvBtn').onclick = () => $('cvInput').click();
+    $('cvInput').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) useCover(f); };
+    $('cvDel').onclick = () => {
+        if (newCover) { newCover = null; URL.revokeObjectURL(newCoverUrl); newCoverUrl = ''; }
+        if (editing && editing.cover_path) dropCover = true;
+        updateThumb();
+    };
+    const thumbBox = $('thumb');
+    thumbBox.addEventListener('dragover', e => { e.preventDefault(); thumbBox.classList.add('over'); });
+    thumbBox.addEventListener('dragleave', () => thumbBox.classList.remove('over'));
+    thumbBox.addEventListener('drop', e => { e.preventDefault(); thumbBox.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) useCover(f); });
+    document.addEventListener('paste', e => {
+        if (!$('editor').classList.contains('open')) return;
+        const f = [...(e.clipboardData ? e.clipboardData.files : [])].find(x => /^image\//.test(x.type));
+        if (f) { e.preventDefault(); useCover(f); }
+    });
 
     // ---------- 저장 · 삭제 ----------
     function youtubeId(v) {
@@ -834,6 +952,19 @@
                 const { error } = await sb.from('sheets').update({ preview_path: path }).eq('id', id);
                 if (error) throw error;
             }
+            if (newCover) {
+                $('edMsg').textContent = '앨범 커버를 올리고 있어요…';
+                const path = `${id}.${extOf(newCover)}`;
+                const up = await sb.storage.from(COVER_BUCKET).upload(path, newCover, { upsert: true, contentType: newCover.type || 'image/jpeg', cacheControl: '3600' });
+                if (up.error) throw up.error;
+                if (editing && editing.cover_path && editing.cover_path !== path) await sb.storage.from(COVER_BUCKET).remove([editing.cover_path]);
+                const { error } = await sb.from('sheets').update({ cover_path: path }).eq('id', id);
+                if (error) throw error;
+            } else if (dropCover && editing && editing.cover_path) {
+                const { error } = await sb.from('sheets').update({ cover_path: null }).eq('id', id);
+                if (error) throw error;
+                await sb.storage.from(COVER_BUCKET).remove([editing.cover_path]);
+            }
             if (newPdf) {
                 $('edMsg').textContent = 'PDF를 올리고 있어요…';
                 const path = `${id}.pdf`;
@@ -859,12 +990,13 @@
 
     $('delBtn').onclick = async () => {
         if (!editing) return;
-        if (!confirm(`'${editing.title}' 악보를 삭제할까요? PDF와 미리보기도 함께 지워지고 되돌릴 수 없어요.`)) return;
+        if (!confirm(`'${editing.title}' 악보를 삭제할까요? PDF·미리보기·앨범 커버도 함께 지워지고 되돌릴 수 없어요.`)) return;
         const id = editing.id;
         $('edMsg').textContent = '삭제하고 있어요…';
         const f = filesById[id];
         if (f) await sb.storage.from(PDF_BUCKET).remove([`${id}.pdf`]);
         if (editing.preview_path) await sb.storage.from(PREVIEW_BUCKET).remove([editing.preview_path]);
+        if (editing.cover_path) await sb.storage.from(COVER_BUCKET).remove([editing.cover_path]);
         const { error } = await sb.from('sheets').delete().eq('id', id);
         if (error) { $('edMsg').textContent = '삭제하지 못했어요: ' + error.message; return; }
         closeEditor();
