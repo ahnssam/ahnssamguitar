@@ -137,6 +137,15 @@
     .linkadd { display: flex; gap: 6px; }
     .linkadd input { flex: 1; }
     .chip.bundle { background: #e8f3ff; color: #2a5f9e; }
+    /* 곡명을 치면 이미 있는 악보가 아래로 뜨고, 누르면 같은 곡으로 묶인다 */
+    .f.has-sug { position: relative; }
+    .tsug { position: absolute; left: 0; right: 0; top: 100%; z-index: 5; margin-top: 4px; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 26px rgba(0,0,0,0.13); max-height: 280px; overflow-y: auto; }
+    .tsug .hd { font-size: 11.5px; color: var(--sub); padding: 8px 12px 4px; }
+    .tsug button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 9px 12px; border: 0; background: none; cursor: pointer; font: inherit; font-size: 13.5px; }
+    .tsug button:hover { background: #f2f8f4; }
+    .tsug button small { color: var(--sub); margin-left: 4px; }
+    .tsug .tag { margin-left: auto; font-size: 12px; font-weight: 700; color: #2a5f9e; white-space: nowrap; }
+    .sugrow { font-size: 12px; color: #2a5f9e; margin-top: 2px; }
     .th .fa-guitar { position: absolute; right: 9%; top: 34%; font-size: 22px; opacity: 0.25; transform: rotate(-20deg); }
     .th .tag { position: absolute; left: 7px; top: 7px; z-index: 2; font-size: 9px; font-weight: 900; letter-spacing: 0.06em; color: #fff; padding: 2px 7px; border-radius: 9px; background: #b8913f; }
     /* 메인과 같은 밝은 색, 글자는 흰색 */
@@ -259,7 +268,7 @@
             <div style="text-align:center;margin-top:8px;"><button class="btn" id="pvBtn" type="button"><i class="far fa-image"></i> 미리보기 이미지 직접 고르기</button><input type="file" id="pvInput" accept="image/*" hidden></div>
         </div>
         <form class="fields" id="form" autocomplete="off">
-            <div class="f full"><label>곡명 <em>*</em></label><input name="title" required placeholder="예: 홍련화"></div>
+            <div class="f full has-sug"><label>곡명 <em>*</em></label><input name="title" required placeholder="예: 홍련화"><div class="tsug" id="titleSug" hidden></div></div>
             <div class="f"><label>원제 <small>일본어·영어 원제 (선택)</small></label><input name="title_original" placeholder="예: 紅蓮華"></div>
             <div class="f"><label>원곡 가수·출처</label><input name="artist" placeholder="예: LiSA · 귀멸의 칼날 OP"></div>
             <div class="f"><label>종류 <em>*</em></label>
@@ -436,7 +445,8 @@
                 <td class="rk">${rank[s.id] ? `<b>${rank[s.id]}</b><small>주문 ${s.fullscore_orders}</small>` : `<small>${hasOrders ? '주문 0' : '-'}</small>`}</td>
                 <td><div class="pv" style="background-image:url('${previewUrl(s)}')"></div></td>
                 <td class="nm"><b>${esc(s.title)}</b><small>${esc(s.artist || '')}</small>${filesById[s.id] ? '<div class="haspdf"><i class="fas fa-circle-check"></i> PDF 있음</div>' : '<div class="nopdf"><i class="fas fa-triangle-exclamation"></i> PDF 없음</div>'}${
-                    (m => m.length ? `<div class="miss"><i class="fas fa-triangle-exclamation"></i> 빈 칸: ${m.join(' · ')}</div>` : '')(missingOf(s))}</td>
+                    (m => m.length ? `<div class="miss"><i class="fas fa-triangle-exclamation"></i> 빈 칸: ${m.join(' · ')}</div>` : '')(missingOf(s))}${
+                    (u => u.length ? `<div class="sugrow"><i class="fas fa-link"></i> 같은 곡 ${u.map(x => (STYLE[x.style] || ['악보'])[0]).join(' · ')} 악보가 따로 있어요 — 묶기 안 됨</div>` : '')(unlinkedSameSong(s))}</td>
                 <td class="c-st"><span class="chip ${s.kind}">${KIND[s.kind] || ''}</span>${s.style ? `<span class="chip">${STYLE[s.style][0]}</span>` : ''}${
                     s.song_key ? `<span class="chip bundle" title="같은 곡으로 묶인 악보"><i class="fas fa-link"></i> ${sheets.filter(x => x.song_key === s.song_key).map(x => (STYLE[x.style] || ['악보'])[0]).join(' + ')}</span>` : ''}</td>
                 <td class="c-lv"><span class="lv pick" title="눌러서 난이도 바꾸기">${[1, 2, 3, 4, 5].map(i => `<button type="button" data-lv-set="${i}" class="${i <= (s.difficulty || 0) ? '' : 'off'}">●</button>`).join('')}</span></td>
@@ -633,14 +643,53 @@
         updateThumb();
     }
     $('links').addEventListener('click', e => { const b = e.target.closest('[data-unlink]'); if (b) { linkIds.delete(b.dataset.unlink); renderLinks(); } });
+    function linkWith(x) {
+        linkIds.add(x.id);
+        if (x.song_key) sheets.filter(y => y.song_key === x.song_key && y.id !== (editing && editing.id)).forEach(y => linkIds.add(y.id));
+        renderLinks();
+    }
     $('linkAdd').onclick = () => {
         const v = $('linkQ').value.trim(), x = sheets.find(y => linkLabel(y) === v);
         if (!x) { $('edMsg').textContent = '목록에서 곡을 골라 주세요.'; return; }
-        linkIds.add(x.id);
-        if (x.song_key) sheets.filter(y => y.song_key === x.song_key && y.id !== (editing && editing.id)).forEach(y => linkIds.add(y.id));
+        linkWith(x);
         $('linkQ').value = ''; $('edMsg').textContent = '';
-        renderLinks();
     };
+    // 같은 곡 찾기: 제목에서 괄호 속 말(OST 이름, [FULL], (+기타솔로) …)과 띄어쓰기를 빼고 비교
+    const songName = t => String(t || '').normalize('NFC').replace(/\s*[\[(][^\])]*[\])]/g, '').replace(/\s+/g, '').toLowerCase();
+    // 곡명 칸 드롭다운: 치는 글자가 들어간 이미 있는 악보 (자기 자신·이미 묶은 악보 빼고), 누르면 같은 곡으로 묶는다
+    function renderTitleSug() {
+        const q = songName(form.elements.title.value), self = editing && editing.id;
+        const list = q.length < 2 ? [] : sheets.filter(x => x.id !== self && !linkIds.has(x.id) && songName(x.title).includes(q)).slice(0, 8);
+        $('titleSug').hidden = !list.length;
+        $('titleSug').innerHTML = list.length ? '<div class="hd">이미 있는 악보 — 누르면 같은 곡으로 묶여요 (상세 페이지 하나로, 반주 + 기타솔로는 500원 할인)</div>' + list.map(x =>
+            `<button type="button" data-tsug="${x.id}"><span>${esc(x.title)}<small>${(STYLE[x.style] || ['악보'])[0]}${x.artist ? ' · ' + esc(x.artist) : ''}${x.published ? '' : ' · 비공개'}</small></span><span class="tag"><i class="fas fa-link"></i> 묶기</span></button>`).join('') : '';
+    }
+    form.elements.title.addEventListener('input', renderTitleSug);
+    form.elements.title.addEventListener('focus', renderTitleSug);
+    form.elements.title.addEventListener('blur', () => setTimeout(() => { $('titleSug').hidden = true; }, 150));
+    $('titleSug').addEventListener('mousedown', e => {
+        const b = e.target.closest('[data-tsug]'); if (!b) return;
+        e.preventDefault();
+        const x = sheets.find(y => y.id === b.dataset.tsug); if (!x) return;
+        linkWith(x);
+        // 같은 곡이니 곡명·가수가 비었거나 덜 쳤으면 그 악보 것으로 (버전·(+기타솔로) 표시는 빼고)
+        const t = form.elements.title;
+        if (songName(t.value) !== songName(x.title)) t.value = x.title.replace(/\s*\((?:\+기타솔로|\d{4} 버전)\)/g, '');
+        if (!form.elements.artist.value.trim() && x.artist) form.elements.artist.value = x.artist;
+        $('titleSug').hidden = true;
+        $('edMsg').textContent = `'${x.title}' (${(STYLE[x.style] || ['악보'])[0]})와 같은 곡으로 묶었어요. 저장하면 반영돼요.`;
+        updateThumb();
+    });
+    // 목록 표시용: 통기타·일렉기타·기타솔로 중 제목·가수가 같은데 아직 안 묶인 악보 (핑거스타일·베이스는 편곡이 달라 직접 묶기)
+    const PAIR_STYLES = ['acoustic', 'electric', 'solo'];
+    const artistName = a => String(a || '').normalize('NFC').toLowerCase().replace(/[^0-9a-z가-힣]/g, '');
+    const sameArtist = (a, b) => { a = artistName(a); b = artistName(b); return !a || !b || a.includes(b) || b.includes(a); };
+    function unlinkedSameSong(s) {
+        if (!PAIR_STYLES.includes(s.style) || /버전/.test(s.title)) return [];
+        const t = songName(s.title);
+        return sheets.filter(x => x.id !== s.id && PAIR_STYLES.includes(x.style) && x.style !== s.style && !/버전/.test(x.title)
+            && songName(x.title) === t && sameArtist(x.artist, s.artist) && !(s.song_key && x.song_key === s.song_key));
+    }
     $('linkQ').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('linkAdd').click(); } });
     // 코드악보(한 장짜리 코드 진행표)와 기타솔로는 1,500원이 기본
     const STYLE_PRICE = { chord: 1500, solo: 1500 };
