@@ -521,9 +521,43 @@
         footer span { display: block; }
         footer span + span::before { content: none; }
     }
+
+    /* ===== 첫 화면 로딩: 초록 바탕 가운데 나무 로고 → 페이지가 다 뜨면 서서히 사라짐 (새 메인 전의 메인과 같게).
+       연습도구에서 로고를 눌러 돌아올 때 나오는 초록 화면과 이어져서 한 번에 부드럽게 넘어간다 ===== */
+    #loader { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; overflow: hidden;
+        background: linear-gradient(135deg, #3a8a5c 0%, #2f7a50 50%, #52a872 100%); transition: opacity 0.8s ease, visibility 0.8s ease; }
+    #loader::before { content: ''; position: absolute; inset: 0; z-index: 0;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.07'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
+    #loader.hidden { opacity: 0; visibility: hidden; }
+    .loader-leaf { position: absolute; z-index: 0; opacity: 0.28; color: var(--green-pale); animation: bnLeaf 15s ease-in-out infinite; }
+    .loader-logo { position: relative; z-index: 1; height: 140px; animation: loaderPulse 1.5s ease-in-out infinite; }
+    @keyframes loaderPulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .loader-logo, .loader-leaf { animation: none; } }
 </style>
 </head>
 <body>
+<!-- 로딩 화면: 첫 방문·새로고침·다른 페이지 로고에서 올 때 보이고, 뒤로가기나 '돌아가기'(skipLoader)일 때는 바로 숨긴다 -->
+<div id="loader">
+    <i class="fas fa-leaf loader-leaf" style="top: 12%; left: 8%; font-size: 3rem; animation-delay: 0s;"></i>
+    <i class="fas fa-leaf loader-leaf" style="top: 55%; left: 5%; font-size: 2rem; animation-delay: 3s;"></i>
+    <i class="fas fa-seedling loader-leaf" style="top: 25%; right: 10%; font-size: 2.5rem; animation-delay: 6s;"></i>
+    <i class="fas fa-leaf loader-leaf" style="bottom: 18%; right: 12%; font-size: 1.8rem; animation-delay: 9s;"></i>
+    <img class="loader-logo" src="images/apple-touch-icon.png" alt="안쌤의 기타나무숲">
+</div>
+<script>
+    (function () {
+        var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+        var back = nav && nav.type === 'back_forward', skip = null;
+        try { skip = sessionStorage.getItem('skipLoader'); sessionStorage.removeItem('skipLoader'); } catch (e) {}
+        var loader = document.getElementById('loader');
+        if (back || (skip && skip !== 'showLoader')) { loader.style.display = 'none'; return; }
+        var done = false;
+        var hide = function () { if (!done) { done = true; loader.classList.add('hidden'); } };
+        // 페이지가 다 뜨면 0.8초 보여 준 뒤 서서히 사라진다 (느린 연결에서도 4초 넘게 가리지는 않게)
+        window.addEventListener('load', function () { setTimeout(hide, 800); });
+        setTimeout(hide, 4000);
+    })();
+</script>
 <!-- 메뉴: 로고 · 가운데 메뉴 · 연습도구/로그인 알약 버튼 · SNS (로그인 버튼은 auth.js 가 .auth-slot 에 넣는다) -->
 <header>
     <div class="hd">
