@@ -56,6 +56,7 @@
         sheet_no_pdf: '악보 파일을 준비하고 있어요. 조금만 기다려 주세요.',
         sheet_no_price: '가격이 정해지지 않은 악보예요.',
         already_purchased: '이미 구매한 악보예요. 구매한 악보에서 내려받을 수 있어요.',
+        not_same_song: '같은 곡의 악보만 함께 살 수 있어요.',
     };
     const errText = e => {
         const m = String((e && e.message) || e || '');
@@ -63,19 +64,21 @@
         return key ? ERR[key] : (m || '문제가 생겼어요. 잠시 뒤 다시 시도해 주세요.');
     };
 
-    // 구매하기 — 성공하면 토스 결제창으로 넘어가고, 결제가 끝나면 purchases.html 로 돌아온다
+    // 구매하기 — 성공하면 토스 결제창으로 넘어가고, 결제가 끝나면 purchases.html 로 돌아온다.
+    // sheetId 는 악보 하나, 또는 같은 곡의 악보 여러 개(반주 + 기타솔로 — 함께 사면 서버가 500원 깎는다)
     async function buy(sheetId) {
+        const ids = [].concat(sheetId);
         await ready();
         if (!session()) { auth() && auth().openLogin(); return { status: 'login' }; }
         if (!canPay()) { alert('지금은 결제를 준비하고 있어요. 조금만 기다려 주세요!'); return { status: 'closed' }; }
 
-        const { data, error } = await auth().supabase.rpc('create_sheet_order', { p_sheet_id: sheetId });
+        const { data, error } = await auth().supabase.rpc('create_sheet_order', { p_sheet_ids: ids });   // db/sheet_bundles.sql
         if (error) {
             if (String(error.message).includes('already_purchased')) return { status: 'owned' };
             alert(errText(error));
             return { status: 'error' };
         }
-        try { sessionStorage.setItem(RETURN_KEY, sheetId); } catch (e) {}
+        try { sessionStorage.setItem(RETURN_KEY, ids[0]); } catch (e) {}
 
         try {
             await loadSdk();

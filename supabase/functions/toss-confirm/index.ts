@@ -100,8 +100,10 @@ Deno.serve(async (req) => {
     approved_at: pay.approvedAt ?? new Date().toISOString(),
     receipt_url: pay.receipt?.url ?? null,
   }).eq('order_id', orderId);
+  // 한 주문에 악보 여러 개(반주 + 기타솔로 등)면 sheet_ids 전부, 예전 주문은 sheet_id 하나
+  const ids: string[] = Array.isArray(order.sheet_ids) && order.sheet_ids.length ? order.sheet_ids : [order.sheet_id];
   const { error: purErr } = await db.from('sheet_purchases')
-    .upsert({ user_id: user.id, sheet_id: order.sheet_id, order_id: orderId }, { onConflict: 'user_id,sheet_id', ignoreDuplicates: true });
+    .upsert(ids.map((id) => ({ user_id: user.id, sheet_id: id, order_id: orderId })), { onConflict: 'user_id,sheet_id', ignoreDuplicates: true });
   if (upErr || purErr) {
     // 돈은 빠졌는데 기록이 안 된 경우 — 로그를 남기고 사용자에게 문의 안내
     console.error('record failed', orderId, upErr?.message, purErr?.message);

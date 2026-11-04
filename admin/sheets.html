@@ -127,6 +127,16 @@
     .th .t { font-weight: 900; font-size: 18px; line-height: 1.15; letter-spacing: -0.03em; }
     .th .d { font-size: 9px; letter-spacing: 1.5px; margin-top: 3px; }
     .th .d .off { opacity: 0.3; }
+    .th .plus { font-size: 11px; font-weight: 800; margin-top: 1px; white-space: nowrap; }   /* 일렉기타 아래 '+ 기타솔로' */
+    /* 같은 곡 악보 묶기 */
+    .links { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+    .links:empty { display: none; }
+    .links .lk { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 12.5px; background: #f7faf8; }
+    .links .lk small { color: var(--sub); }
+    .links .lk button { border: 0; background: none; cursor: pointer; color: var(--sub); padding: 2px 4px; }
+    .linkadd { display: flex; gap: 6px; }
+    .linkadd input { flex: 1; }
+    .chip.bundle { background: #e8f3ff; color: #2a5f9e; }
     .th .fa-guitar { position: absolute; right: 9%; top: 34%; font-size: 22px; opacity: 0.25; transform: rotate(-20deg); }
     .th .tag { position: absolute; left: 7px; top: 7px; z-index: 2; font-size: 9px; font-weight: 900; letter-spacing: 0.06em; color: #fff; padding: 2px 7px; border-radius: 9px; background: #b8913f; }
     /* 메인과 같은 밝은 색, 글자는 흰색 */
@@ -243,7 +253,7 @@
             <div class="th" id="thumb">
                 <span class="tag" id="thTag" hidden></span>
                 <div class="paper" id="thPaper"></div>
-                <div class="band s-acoustic" id="thBand"><i class="fas fa-guitar"></i><div class="a" id="thA">ACOUSTIC</div><div class="t" id="thT">통기타</div><div class="d" id="thD"></div></div>
+                <div class="band s-acoustic" id="thBand"><i class="fas fa-guitar"></i><div class="a" id="thA">ACOUSTIC</div><div class="t" id="thT">통기타</div><div class="plus" id="thPlus" hidden>+ 기타솔로</div><div class="d" id="thD"></div></div>
             </div>
             <div class="cap">스토어에 보이는 썸네일 · 악보 윗부분은 PDF 첫 장에서 자동으로 만들어요</div>
             <div style="text-align:center;margin-top:8px;"><button class="btn" id="pvBtn" type="button"><i class="far fa-image"></i> 미리보기 이미지 직접 고르기</button><input type="file" id="pvInput" accept="image/*" hidden></div>
@@ -263,6 +273,9 @@
             <div class="f"><label>페이지 수 <small>PDF에서 자동</small></label><input name="pages" type="number" min="1"></div>
             <div class="f full"><label>유튜브 영상 <small>주소를 붙여넣으면 돼요</small></label><input name="youtube" placeholder="https://youtu.be/..."></div>
             <div class="f full"><label>설명 <small>상세 페이지에 보여요 (선택)</small></label><textarea name="description" placeholder="예: 원곡 키 그대로, 카포 2프렛. 인트로부터 아웃트로까지 전곡."></textarea></div>
+            <div class="f full"><label>같은 곡 악보 묶기 <small>통기타·일렉기타 반주·기타솔로를 한 곡으로 — 상세 페이지에서 골라 사고, 반주 + 기타솔로를 함께 사면 500원 할인</small></label>
+                <div class="links" id="links"></div>
+                <div class="linkadd"><input id="linkQ" list="linkList" placeholder="같은 곡의 다른 악보를 곡명으로 찾아 고르기"><datalist id="linkList"></datalist><button type="button" class="btn" id="linkAdd"><i class="fas fa-link"></i> 묶기</button></div></div>
 
             <div class="group">저작권 정보<small>음저협 정산·저작물 리스트용 (자작곡은 비워도 돼요)</small></div>
             <div class="f"><label>작사</label><input name="lyricist"></div>
@@ -312,6 +325,7 @@
     let pdfFilter = 'all';     // 'all' | 'none' | 'has'
     const MAIN_GOAL = 20;      // PDF 이만큼 채우면 새 메인(mockup-store) 반영을 검토
     let editing = null;        // 편집 중인 행 (새 악보면 null)
+    let linkIds = new Set();   // 편집 중인 악보와 같은 곡으로 묶을 다른 악보들 (sheets.song_key)
     let newPdf = null;         // 새로 고른 PDF 파일
     let newPreview = null;     // 새로 만든/고른 미리보기 Blob
     let difficulty = 3;
@@ -423,7 +437,8 @@
                 <td><div class="pv" style="background-image:url('${previewUrl(s)}')"></div></td>
                 <td class="nm"><b>${esc(s.title)}</b><small>${esc(s.artist || '')}</small>${filesById[s.id] ? '<div class="haspdf"><i class="fas fa-circle-check"></i> PDF 있음</div>' : '<div class="nopdf"><i class="fas fa-triangle-exclamation"></i> PDF 없음</div>'}${
                     (m => m.length ? `<div class="miss"><i class="fas fa-triangle-exclamation"></i> 빈 칸: ${m.join(' · ')}</div>` : '')(missingOf(s))}</td>
-                <td class="c-st"><span class="chip ${s.kind}">${KIND[s.kind] || ''}</span>${s.style ? `<span class="chip">${STYLE[s.style][0]}</span>` : ''}</td>
+                <td class="c-st"><span class="chip ${s.kind}">${KIND[s.kind] || ''}</span>${s.style ? `<span class="chip">${STYLE[s.style][0]}</span>` : ''}${
+                    s.song_key ? `<span class="chip bundle" title="같은 곡으로 묶인 악보"><i class="fas fa-link"></i> ${sheets.filter(x => x.song_key === s.song_key).map(x => (STYLE[x.style] || ['악보'])[0]).join(' + ')}</span>` : ''}</td>
                 <td class="c-lv"><span class="lv pick" title="눌러서 난이도 바꾸기">${[1, 2, 3, 4, 5].map(i => `<button type="button" data-lv-set="${i}" class="${i <= (s.difficulty || 0) ? '' : 'off'}">●</button>`).join('')}</span></td>
                 <td class="c-pr">${won(s.price)}</td>
                 <td><span class="pub ${s.published ? 'on' : ''}" data-toggle="${s.id}"><span class="dot"></span>${s.published ? '공개' : '비공개'}</span></td>
@@ -514,6 +529,8 @@
             form.elements.price.value = 3000;
             $('thPaper').style.backgroundImage = '';
         }
+        linkIds = new Set(s && s.song_key ? sheets.filter(x => x.song_key === s.song_key && x.id !== s.id).map(x => x.id) : []);
+        renderLinks();
         setDifficulty(s && s.difficulty ? s.difficulty : 3);
         openedState = formState();
         $('dim').classList.add('open'); $('editor').classList.add('open');
@@ -523,7 +540,7 @@
         $('dim').classList.remove('open'); $('editor').classList.remove('open');
         if (fromRank) { fromRank = false; showRank(); }
     }
-    const formState = () => [...form.elements].map(el => el.type === 'checkbox' ? el.checked : el.value).join('\u0001') + '|' + difficulty;
+    const formState = () => [...form.elements].filter(el => el.id !== 'linkQ').map(el => el.type === 'checkbox' ? el.checked : el.value).join('\u0001') + '|' + difficulty + '|' + [...linkIds].sort().join();
     const isDirty = () => !!newPdf || !!newPreview || formState() !== openedState;
     $('newBtn').onclick = () => openEditor(null);
     $('edClose').onclick = closeEditor;
@@ -603,8 +620,28 @@
         $('thT').textContent = STYLE[style][0];
         $('thA').textContent = STYLE[style][1];
         $('thD').innerHTML = lvDots(difficulty);
+        $('thPlus').hidden = !(style === 'electric' && [...linkIds].some(id => (sheets.find(x => x.id === id) || {}).style === 'solo'));
     }
     form.addEventListener('input', updateThumb);
+
+    // 같은 곡 묶기: 묶인 악보 목록(✕로 풀기) + 곡명으로 찾아 더하기 (그 악보가 이미 다른 악보와 묶여 있으면 그 묶음째)
+    const linkLabel = x => `${x.title} — ${(STYLE[x.style] || ['악보'])[0]}${x.artist ? ' · ' + x.artist : ''}`;
+    function renderLinks() {
+        $('links').innerHTML = [...linkIds].map(id => sheets.find(x => x.id === id)).filter(Boolean)
+            .map(x => `<span class="lk">${esc(x.title)} <small>${(STYLE[x.style] || ['악보'])[0]} · ${won(x.price)}${x.published ? '' : ' · 비공개'}</small><button type="button" data-unlink="${x.id}" title="묶음에서 빼기"><i class="fas fa-xmark"></i></button></span>`).join('');
+        $('linkList').innerHTML = sheets.filter(x => x.id !== (editing && editing.id) && !linkIds.has(x.id)).map(x => `<option value="${esc(linkLabel(x))}">`).join('');
+        updateThumb();
+    }
+    $('links').addEventListener('click', e => { const b = e.target.closest('[data-unlink]'); if (b) { linkIds.delete(b.dataset.unlink); renderLinks(); } });
+    $('linkAdd').onclick = () => {
+        const v = $('linkQ').value.trim(), x = sheets.find(y => linkLabel(y) === v);
+        if (!x) { $('edMsg').textContent = '목록에서 곡을 골라 주세요.'; return; }
+        linkIds.add(x.id);
+        if (x.song_key) sheets.filter(y => y.song_key === x.song_key && y.id !== (editing && editing.id)).forEach(y => linkIds.add(y.id));
+        $('linkQ').value = ''; $('edMsg').textContent = '';
+        renderLinks();
+    };
+    $('linkQ').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('linkAdd').click(); } });
     // 코드악보(한 장짜리 코드 진행표)와 기타솔로는 1,500원이 기본
     const STYLE_PRICE = { chord: 1500, solo: 1500 };
     form.elements.style.addEventListener('change', e => { if (STYLE_PRICE[e.target.value]) form.elements.price.value = STYLE_PRICE[e.target.value]; });
@@ -726,6 +763,19 @@
                 const { data, error } = await sb.from('sheets').insert({ ...row, published: false }).select('id').single();
                 if (error) throw error;
                 id = data.id;
+            }
+            // 같은 곡 묶기 — 묶음 전체에 같은 song_key, 빠진 악보는 풀고, 혼자 남으면 묶음 없음
+            const keyOf = i => (sheets.find(x => x.id === i) || {}).song_key || null;
+            const before = editing && editing.song_key ? sheets.filter(x => x.song_key === editing.song_key).map(x => x.id) : [];
+            const members = [id, ...linkIds];
+            const setKey = async (ids, key) => { ids = ids.filter(i => keyOf(i) !== key || (i === id && (editing ? editing.song_key : null) !== key)); if (!ids.length) return; const { error } = await sb.from('sheets').update({ song_key: key }).in('id', ids); if (error) throw error; };
+            if (members.length > 1) {
+                const key = (editing && editing.song_key) || [...linkIds].map(keyOf).find(Boolean) || crypto.randomUUID();
+                await setKey(members, key);
+                await setKey(before.filter(i => !members.includes(i)), null);
+            } else if (before.length) {
+                const rest = before.filter(i => i !== id);
+                await setKey(rest.length === 1 ? [id, ...rest] : [id], null);
             }
             if (newPreview) {
                 $('edMsg').textContent = '미리보기 이미지를 올리고 있어요…';

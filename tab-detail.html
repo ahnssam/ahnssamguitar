@@ -517,6 +517,38 @@
             color: var(--green-deep);
         }
 
+        /* 같은 곡의 여러 악보(통기타 · 일렉기타 반주 · 기타솔로) 고르기 */
+        .parts { display: flex; flex-direction: column; gap: 0.5rem; }
+        .parts-title { font-size: 0.85rem; font-weight: 700; color: var(--text-mid); }
+        .part { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 1rem; border: 1.5px solid var(--green-pale); border-radius: 12px; background: var(--white); cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+        .part:has(input:checked) { border-color: var(--green-mid); background: var(--green-faint); }
+        .part input { width: 18px; height: 18px; accent-color: var(--green-dark); flex: none; cursor: pointer; }
+        .part .pn { flex: 1; font-size: 0.95rem; font-weight: 600; }
+        .part .pn small { display: block; font-size: 0.78rem; font-weight: 400; color: var(--text-light); margin-top: 2px; }
+        .part .pp { font-weight: 700; color: var(--green-deep); white-space: nowrap; }
+        .part.owned { cursor: default; background: #f7f7f7; }
+        .part .own { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 700; color: var(--green-dark); background: none; border: 1.5px solid var(--green-pale); border-radius: 8px; padding: 5px 10px; cursor: pointer; white-space: nowrap; }
+        .set-deal { display: flex; gap: 0.7rem; align-items: center; padding: 0.85rem 1rem; border-radius: 12px; background: #fff6dc; color: #6b4a00; font-size: 0.9rem; line-height: 1.55; border: 1.5px solid #f2c94c; }
+        .set-deal > i { color: #e8a200; font-size: 1.25rem; flex: none; }
+        .set-deal b { color: #d64545; }
+        .set-deal.on { background: #ffeaa6; border-color: #e8a200; }
+        .price-was { font-size: 1.1rem; font-weight: 500; color: var(--text-light); text-decoration: line-through; margin-right: 0.5rem; }
+        .price-off { display: inline-block; vertical-align: middle; margin-left: 0.6rem; font-size: 0.8rem; font-weight: 800; color: #fff; background: #e05252; border-radius: 999px; padding: 3px 10px; }
+        /* 결제로 넘어가기 전 확인 */
+        .buy-confirm-back { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .buy-confirm { background: var(--white); border-radius: 16px; max-width: 440px; width: 100%; padding: 1.6rem; box-shadow: 0 10px 40px rgba(0,0,0,0.25); }
+        .buy-confirm h3 { font-size: 1.15rem; margin-bottom: 0.8rem; color: var(--text-dark); }
+        .buy-confirm p { font-size: 0.95rem; line-height: 1.7; color: var(--text-mid); }
+        .buy-confirm p b { color: var(--green-deep); }
+        .buy-confirm .no-inc { color: #b5651d; font-size: 0.88rem; margin-top: 0.3rem; }
+        .buy-confirm .what { margin: 0.9rem 0 0; padding: 0.8rem 1rem; background: var(--green-faint); border-radius: 10px; font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.3rem; }
+        .buy-confirm .what div { display: flex; justify-content: space-between; gap: 1rem; }
+        .buy-confirm .what .sum { border-top: 1px solid var(--green-pale); padding-top: 0.4rem; margin-top: 0.2rem; font-weight: 800; color: var(--green-deep); }
+        .buy-confirm .what .off { color: #d64545; font-weight: 700; }
+        .buy-confirm .acts { display: flex; gap: 0.6rem; margin-top: 1.2rem; }
+        .buy-confirm .acts button { flex: 1; padding: 0.85rem; border-radius: 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; border: 1.5px solid var(--green-pale); background: var(--white); color: var(--text-mid); font-family: inherit; }
+        .buy-confirm .acts .go { background: linear-gradient(135deg, var(--green-deep), var(--green-dark)); color: #fff; border: none; }
+
         /* Details list */
         .product-details {
             display: flex;
@@ -862,6 +894,7 @@
             <div class="product-artist" id="productArtist"></div>
             <div class="product-divider"></div>
             <div class="product-price" id="productPrice"></div>
+            <div class="parts" id="parts" hidden></div>
             <div class="product-details">
                 <div class="product-detail-row">
                     <i class="fas fa-file-alt"></i>
@@ -948,6 +981,13 @@
         const LEGACY_IDS = { '1': '6ab3b7d2-9096-4223-a127-2007009ff8f2' };
         const STYLE_LABEL = { acoustic: '통기타', electric: '일렉기타', fingerstyle: '핑거스타일', solo: '기타솔로', chord: '코드악보', bass: '베이스', other: '' };
         const ME = '<strong>안쌤 (안규호)</strong>';
+        // 같은 곡의 악보 여러 개(sheets.song_key 가 같은 공개 악보) — 통기타 · 일렉기타 반주 · 기타솔로 중에서 사는 구성을 고른다.
+        // 들어온 목록에 따라 미리 체크: 일렉기타 → 일렉 반주 + 기타솔로, 통기타 → 통기타 악보만, 기타솔로 → 기타솔로만
+        const PART_NAME = { acoustic: '통기타 악보', electric: '일렉기타 반주 악보', solo: '기타솔로 악보', fingerstyle: '핑거스타일 악보', bass: '베이스 악보', chord: '코드악보', other: '악보' };
+        const PART_ORDER = { acoustic: 0, electric: 1, fingerstyle: 2, bass: 3, chord: 4, other: 5, solo: 9 };
+        const SET_DISCOUNT = 500;   // 반주 + 기타솔로를 함께 사면 깎는 금액 (서버 create_sheet_order 와 같은 값)
+        const won = n => Number(n || 0).toLocaleString() + '원';
+        let PARTS = [], SEL = new Set(), OWNED = new Set(), buyOpen = false;
 
         function escHtml(s) {
             return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -999,6 +1039,7 @@
             }
             document.title = p.title + ' - TAB악보 | 안쌤의 기타나무숲';
 
+            renderParts(p);
             setupBuy(p);
 
             // 유튜브 영상이 있으면 표시
@@ -1011,6 +1052,78 @@
             }
         }
 
+        // 고른 구성의 금액: 가격 합 − (기타솔로와 반주를 함께 고르면 500원)
+        function partsTotal() {
+            const list = PARTS.filter(x => SEL.has(x.id) && !OWNED.has(x.id));
+            const sum = list.reduce((n, x) => n + (x.price || 0), 0);
+            const off = list.some(x => x.style === 'solo') && list.some(x => x.style !== 'solo') ? SET_DISCOUNT : 0;
+            return { list, sum, off, total: sum - off };
+        }
+        // 구성 고르기 칸과 위의 가격·종류·페이지 (악보가 하나뿐인 곡은 그대로)
+        function renderParts(p) {
+            const box = document.getElementById('parts');
+            if (PARTS.length < 2) { box.hidden = true; return; }
+            const t = partsTotal();
+            const solo = PARTS.find(x => x.style === 'solo' && !OWNED.has(x.id));
+            const main = PARTS.find(x => x.style !== 'solo' && !OWNED.has(x.id) && SEL.has(x.id)) || PARTS.find(x => x.style !== 'solo' && !OWNED.has(x.id));
+            let deal = '';
+            if (solo && main) {
+                const sep = (main.price || 0) + (solo.price || 0);
+                deal = t.off
+                    ? `<div class="set-deal on"><i class="fas fa-gift"></i><span>반주 + 기타솔로를 <b>함께 사서 ${won(SET_DISCOUNT)} 할인</b>됐어요<br>따로 사면 ${won(sep)} → 함께 사면 <b>${won(sep - SET_DISCOUNT)}</b></span></div>`
+                    : `<div class="set-deal"><i class="fas fa-gift"></i><span>반주와 기타솔로를 <b>함께 사면 ${won(SET_DISCOUNT)} 할인!</b><br>따로 사면 ${won(sep)} → 함께 사면 ${won(sep - SET_DISCOUNT)}</span></div>`;
+            }
+            box.innerHTML = '<div class="parts-title">구성 고르기</div>' + PARTS.map(x => {
+                const own = OWNED.has(x.id);
+                return `<label class="part${own ? ' owned' : ''}"><input type="checkbox" data-part="${x.id}"${SEL.has(x.id) && !own ? ' checked' : ''}${own ? ' disabled' : ''}>
+                    <span class="pn">${PART_NAME[x.style] || '악보'}<small>${x.pages ? x.pages + '페이지 PDF' : 'PDF'}</small></span>
+                    ${own ? `<button type="button" class="own" data-dl="${x.id}"><i class="fas fa-download"></i> 구매함 · 내려받기</button>` : `<span class="pp">${won(x.price)}</span>`}</label>`;
+            }).join('') + deal;
+            box.hidden = false;
+            document.getElementById('productPrice').innerHTML = !t.list.length
+                ? '<span style="font-size:1rem;font-weight:600;color:var(--text-light)">구성을 골라 주세요</span>'
+                : t.off ? `<span class="price-was">₩${t.sum.toLocaleString()}</span>₩${t.total.toLocaleString()}<span class="price-off">${won(t.off)} 할인</span>`
+                : '₩' + t.total.toLocaleString();
+            document.getElementById('productStyle').textContent = '기타 TAB · ' + (t.list.map(x => PART_NAME[x.style] || '악보').join(' + ') || '고른 악보 없음');
+            const pg = t.list.filter(x => x.pages);
+            document.getElementById('pagesRow').style.display = pg.length ? '' : 'none';
+            document.getElementById('productPages').textContent = pg.length === 1 ? pg[0].pages + '페이지' : pg.map(x => (PART_NAME[x.style] || '악보').replace(' 악보', '') + ' ' + x.pages + '페이지').join(' · ');
+            if (buyOpen) document.getElementById('productBuyBtn').disabled = !t.list.length;
+        }
+        document.addEventListener('change', e => {
+            const c = e.target.closest('[data-part]'); if (!c) return;
+            if (c.checked) SEL.add(c.dataset.part); else SEL.delete(c.dataset.part);
+            renderParts(PARTS[0]);
+        });
+        document.addEventListener('click', e => {
+            const b = e.target.closest('.part [data-dl]'); if (!b) return;
+            e.preventDefault();
+            const x = PARTS.find(y => y.id === b.dataset.dl), C = window.ahnssamCheckout;
+            if (x && C) C.download(x.id, x.title + (PARTS.length > 1 ? ' [' + (PART_NAME[x.style] || '악보').replace(' 악보', '') + ']' : ''));
+        });
+        // 결제로 넘어가기 전에 무엇을 사는지 분명히 알린다 (악보가 여러 개인 곡)
+        function confirmBuy() {
+            const t = partsTotal(), names = t.list.map(x => PART_NAME[x.style] || '악보');
+            const left = PARTS.filter(x => !SEL.has(x.id) && !OWNED.has(x.id)).map(x => PART_NAME[x.style] || '악보');
+            const what = t.list.length === 1 ? `이 노래의 <b>${escHtml(names[0])}만</b> 구매해요.` : `이 노래의 <b>${escHtml(names.join(' + '))}</b>를 함께 구매해요. PDF ${t.list.length}개를 받아요.`;
+            return new Promise(res => {
+                const back = document.createElement('div');
+                back.className = 'buy-confirm-back';
+                back.innerHTML = `<div class="buy-confirm" role="alertdialog" aria-modal="true"><h3>구매하기 전에 확인해 주세요</h3>
+                    <p>${what}</p>${left.length ? `<p class="no-inc"><i class="fas fa-circle-info"></i> ${escHtml(left.join(', '))}는 포함되지 않아요.</p>` : ''}
+                    <div class="what">${t.list.map(x => `<div><span>${escHtml(PART_NAME[x.style] || '악보')}</span><span>${won(x.price)}</span></div>`).join('')}
+                        ${t.off ? `<div class="off"><span>함께 사서 할인</span><span>−${won(t.off)}</span></div>` : ''}
+                        <div class="sum"><span>결제 금액</span><span>${won(t.total)}</span></div></div>
+                    <div class="acts"><button type="button" data-n>다시 고를게요</button><button type="button" class="go" data-y>결제하기</button></div></div>`;
+                const done = v => { back.remove(); document.removeEventListener('keydown', esc); res(v); };
+                const esc = e => { if (e.key === 'Escape') done(false); };
+                back.addEventListener('click', e => { if (e.target === back || e.target.closest('[data-n]')) done(false); else if (e.target.closest('[data-y]')) done(true); });
+                document.addEventListener('keydown', esc);
+                document.body.appendChild(back);
+                back.querySelector('[data-y]').focus();
+            });
+        }
+
         // 구매 버튼 — 결제를 받을 수 없으면 '결제 준비 중', 이미 산 악보면 'PDF 내려받기'
         async function setupBuy(p) {
             const btn = document.getElementById('productBuyBtn');
@@ -1018,6 +1131,7 @@
                 btn.innerHTML = '<i class="fas ' + icon + '"></i> ' + text;
                 btn.disabled = !onClick;
                 btn.onclick = onClick || null;
+                buyOpen = false;
             };
             if (document.readyState === 'loading') await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
             const C = window.ahnssamCheckout;
@@ -1025,9 +1139,12 @@
             await C.ready();
             if (!C.canPay()) { set('fa-hourglass-half', '결제 준비 중'); return; }
             const showDownload = () => set('fa-download', 'PDF 내려받기', () => C.download(p.id, p.title));
-            let owned = false;
-            try { owned = (await C.myPurchases()).some(x => x.sheet_id === p.id); } catch (e) {}
-            if (owned) { showDownload(); return; }
+            try { const mine = new Set((await C.myPurchases()).map(x => x.sheet_id)); OWNED = new Set(PARTS.filter(x => mine.has(x.id)).map(x => x.id)); } catch (e) {}
+            renderParts(p);
+            if (PARTS.every(x => OWNED.has(x.id))) {
+                if (PARTS.length > 1) set('fa-circle-check', '모두 구매한 악보예요'); else showDownload();
+                return;
+            }
             // 실결제 전(테스트 키): 결제창은 열리지만 살 수는 없다고 알리고, 지금 살 수 있는 풀스코어로 안내
             const note = document.getElementById('trialNote');
             if (C.trialOnly()) {
@@ -1036,11 +1153,16 @@
                 note.hidden = false;
             } else note.hidden = true;
             set('fa-credit-card', '구매하기', async () => {
+                const ids = partsTotal().list.map(x => x.id).sort((a, b) => (b === p.id) - (a === p.id));   // 돌아올 때 이 페이지로
+                if (!ids.length) return;
+                if (PARTS.length > 1 && !(await confirmBuy())) return;
                 set('fa-spinner fa-spin', '결제창 여는 중');
-                const r = await C.buy(p.id);
-                if (r.status === 'owned') showDownload();
+                const r = await C.buy(ids.length > 1 ? ids : ids[0]);
+                if (r.status === 'owned') setupBuy(p);
                 else if (r.status !== 'redirect') setupBuy(p);
             });
+            buyOpen = true;
+            btn.disabled = !partsTotal().list.length;
         }
         // 운영 계정은 비공개 악보도 열어 볼 수 있다 (공개 전 확인·테스트 결제용)
         async function loadPrivateForAdmin(id) {
@@ -1063,6 +1185,16 @@
                 const rows = await res.json();
                 const p = rows[0] || await loadPrivateForAdmin(id);
                 if (p) {
+                    PARTS = [p];
+                    if (p.song_key && /^[0-9a-f-]{36}$/i.test(p.song_key)) {
+                        try {
+                            const r2 = await fetch(SB_URL + '/rest/v1/sheets?select=*&published=eq.true&song_key=eq.' + p.song_key, { headers: { apikey: SB_KEY } });
+                            if (r2.ok) for (const x of await r2.json()) if (x.id !== p.id) PARTS.push(x);
+                        } catch (e) {}
+                    }
+                    PARTS.sort((a, b) => (PART_ORDER[a.style] ?? 5) - (PART_ORDER[b.style] ?? 5));
+                    SEL = new Set([p.id]);
+                    if (p.style === 'electric') PARTS.filter(x => x.style === 'solo').forEach(x => SEL.add(x.id));   // 일렉기타로 들어오면 반주 + 기타솔로
                     showSheet(p);
                     if (!p.published) {
                         const note = document.createElement('div');

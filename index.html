@@ -225,6 +225,8 @@
     .th .a { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; opacity: 0.75; }
     .th .d { font-size: 8.5px; letter-spacing: 1.5px; margin-top: 3px; }
     .th .d .off, .lv .off { opacity: 0.3; }
+    .th .plus { font-size: 9px; font-weight: 800; letter-spacing: -0.01em; opacity: 0.95; margin-top: 1px; white-space: nowrap; }   /* 일렉기타 아래 '+ 기타솔로' */
+    .th.sm .plus { font-size: 7.5px; }
     .th .fa-guitar { position: absolute; right: 9%; top: 34%; font-size: 22px; opacity: 0.25; transform: rotate(-20deg); }
     .th.sm { width: 76px; flex: none; }
     .th.sm .t { font-size: 10.5px; max-width: none; white-space: nowrap; }
@@ -708,7 +710,7 @@
     // 썸네일에는 곡명 대신 종류만 (곡명은 옆 글자에 이미 보임)
     const pvUrl = x => SB_URL + '/storage/v1/object/public/sheet-previews/' + encodeURIComponent(x.pv) + '?v=' + encodeURIComponent(x.up || '');
     const paper = x => x.pv ? `<div class="paper real"><img src="${esc(pvUrl(x))}" alt="" loading="lazy" decoding="async"></div>` : '<div class="paper"></div>';
-    const thumb = (x, cls = '') => `<div class="th ${cls}">${paper(x)}<div class="band ${STYLE[x.s][0]}"><i class="fas fa-guitar"></i><div class="a">${STYLE[x.s][2]}</div><div class="t">${STYLE[x.s][1]}</div><div class="d">${LV(x.lv)}</div></div></div>`;
+    const thumb = (x, cls = '') => `<div class="th ${cls}">${paper(x)}<div class="band ${STYLE[x.s][0]}"><i class="fas fa-guitar"></i><div class="a">${STYLE[x.s][2]}</div><div class="t">${STYLE[x.s][1]}</div>${x.plus ? '<div class="plus">+ 기타솔로</div>' : ''}<div class="d">${LV(x.lv)}</div></div></div>`;
     const row = (lead, x) => `<a class="row" ${linkAttrs(x)}>${lead}${thumb(x, 'sm')}
         <span class="body"><div class="tt">${esc(x.t)}</div><div class="sub">${esc(x.a)}</div><div class="meta">${chip(x)}<span class="lv">${LV(x.lv)}</span>${x.yt ? '<i class="fab fa-youtube"></i>' : ''}</div></span>
         <span class="pr">${price(x)}</span></a>`;
@@ -723,8 +725,25 @@
         fresh: (a, b) => (b.on - a.on) || (a.on ? String(b.up).localeCompare(String(a.up)) : String(b.c).localeCompare(String(a.c))),
     };
 
-    const tidy = list => list.filter(x => STYLE[x.s === 'fingerstyle' ? 'finger' : x.s])
-        .map(x => ({ ...x, t: String(x.t || '').normalize('NFC'), s: x.s === 'fingerstyle' ? 'finger' : x.s, k: norm(x.t + ' ' + (x.a || '') + ' ' + STYLE[x.s === 'fingerstyle' ? 'finger' : x.s][1]) }));   // 종류 이름(기타솔로·코드악보…)으로도 검색
+    const tidy = list => bundle(list.filter(x => STYLE[x.s === 'fingerstyle' ? 'finger' : x.s])
+        .map(x => ({ ...x, t: String(x.t || '').normalize('NFC'), s: x.s === 'fingerstyle' ? 'finger' : x.s, k: norm(x.t + ' ' + (x.a || '') + ' ' + STYLE[x.s === 'fingerstyle' ? 'finger' : x.s][1]) })));   // 종류 이름(기타솔로·코드악보…)으로도 검색
+    // 같은 곡(sk = song_key)의 일렉기타 반주 + 기타솔로: 일렉기타 칸에 '+ 기타솔로'로 하나만, 가격은 함께 산 값(500원 할인).
+    // 통기타 악보는 통기타 칸에 따로(2,500원). 같은 곡 일렉기타가 없는 기타솔로는 기타솔로 칸에 그대로.
+    const SET_DISCOUNT = 500;
+    function bundle(list) {
+        const by = new Map();
+        for (const x of list) if (x.sk) (by.get(x.sk) || by.set(x.sk, []).get(x.sk)).push(x);
+        for (const x of list) {
+            const g = x.sk && by.get(x.sk); if (!g) continue;
+            const solo = g.find(y => y.s === 'solo'), elec = g.find(y => y.s === 'electric');
+            if (x.s === 'electric' && solo && (solo.on || !x.on)) {
+                x.plus = true; x.k += ' 기타솔로';
+                if (x.on && solo.on) x.p = (x.p || 0) + (solo.p || 0) - SET_DISCOUNT;
+            }
+            if (x.s === 'solo' && elec && (elec.on || !x.on)) x.hide = true;
+        }
+        return list.filter(x => !x.hide);
+    }
 
     async function loadSheets() {
         try {
@@ -736,7 +755,7 @@
             if (!r.ok) throw new Error('HTTP ' + r.status);
             const rows = await r.json();
             const pv = new Map(pr && pr.ok ? (await pr.json()).map(s => [s.id, s.preview_path]) : []);
-            if (rows.length) return tidy(rows.map(s => ({ id: s.id, c: s.fullscore_code, t: s.title, a: s.artist, s: s.style, g: s.genre, lv: s.difficulty, p: s.price, yt: s.youtube_id, o: s.fullscore_orders || 0, on: !!s.on_sale, up: s.updated_at, pv: pv.get(s.id) })));
+            if (rows.length) return tidy(rows.map(s => ({ id: s.id, c: s.fullscore_code, t: s.title, a: s.artist, s: s.style, g: s.genre, lv: s.difficulty, p: s.price, yt: s.youtube_id, o: s.fullscore_orders || 0, on: !!s.on_sale, up: s.updated_at, pv: pv.get(s.id), sk: s.song_key })));
         } catch (e) { console.warn('[sheets] 목록 함수를 못 불러와서 저장본으로 보여요', e); }
         return loadSheetsFallback();
     }
@@ -745,10 +764,10 @@
         let base = [], live = [];
         try { base = await (await fetch('data/sheet-catalog.json')).json(); } catch (e) { console.warn('[sheets] 목록 파일을 못 읽었어요', e); }
         try {
-            const r = await fetch(SB_URL + '/rest/v1/sheets?select=id,title,artist,style,genre,difficulty,price,youtube_id,fullscore_code,fullscore_orders,updated_at,preview_path&published=eq.true', { headers: { apikey: SB_KEY } });
+            const r = await fetch(SB_URL + '/rest/v1/sheets?select=id,title,artist,style,genre,difficulty,price,youtube_id,fullscore_code,fullscore_orders,updated_at,preview_path,song_key&published=eq.true', { headers: { apikey: SB_KEY } });
             if (r.ok) live = await r.json();
         } catch (e) { console.warn('[sheets] 공개 악보를 못 불러왔어요', e); }
-        const fromLive = s => ({ id: s.id, c: s.fullscore_code, t: s.title, a: s.artist, s: s.style, g: s.genre, lv: s.difficulty, p: s.price, yt: s.youtube_id, o: s.fullscore_orders || 0, on: true, up: s.updated_at, pv: s.preview_path });
+        const fromLive = s => ({ id: s.id, c: s.fullscore_code, t: s.title, a: s.artist, s: s.style, g: s.genre, lv: s.difficulty, p: s.price, yt: s.youtube_id, o: s.fullscore_orders || 0, on: true, up: s.updated_at, pv: s.preview_path, sk: s.song_key });
         const byCode = new Map(live.filter(s => s.fullscore_code).map(s => [s.fullscore_code, s]));
         const all = base.map(x => byCode.has(x.c) ? fromLive(byCode.get(x.c)) : { ...x, on: false });
         // 풀스코어에 없던 새 악보(사이트에서 처음 만든 곡)도 넣는다
