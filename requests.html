@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<!-- OAuth hash 즉시 청소 — index.html 과 같다 (로그인하고 이 페이지로 돌아올 때) -->
+<script>
+(function() {
+    try {
+        var h = window.location.hash || '';
+        if (h.indexOf('access_token=') !== -1) {
+            window.__pendingOAuthHash = h;
+            var clean = window.location.origin + window.location.pathname + (window.location.search || '');
+            window.history.replaceState(null, '', clean);
+        }
+    } catch (e) {}
+})();
+</script>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-B1HS5NH4L1"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-B1HS5NH4L1');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2a6b4a">
+<title>악보요청 | 안쌤의 기타나무숲</title>
+<meta name="description" content="연주하고 싶은 곡의 기타 악보를 안쌤에게 요청해 보세요. 곡명·원곡 가수·원하는 편성과 유튜브 링크를 남기면 안쌤이 직접 확인해요.">
+<meta property="og:title" content="악보요청 | 안쌤의 기타나무숲">
+<meta property="og:description" content="연주하고 싶은 곡의 기타 악보를 안쌤에게 요청해 보세요.">
+<meta property="og:url" content="https://ahnssamguitar.com/requests.html">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://ahnssamguitar.com/og-image.jpg">
+<link rel="canonical" href="https://ahnssamguitar.com/requests.html">
+<link rel="icon" href="images/favicon.ico" type="image/x-icon">
+<link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+<link rel="manifest" href="/manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+    :root {
+        /* index.html 과 같은 색 */
+        --green-deep: #2a6b4a;
+        --green-dark: #3a8a5c;
+        --green-mid: #52a872;
+        --green-light: #72c492;
+        --green-pale: #b5e6c8;
+        --green-faint: #e2f5ea;
+        --cream: #f5fbf7;
+        --gold: #b8913f;
+        --ink: #151515;
+        --sub: #7a7a7a;
+        --line: #e6ece8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans KR', sans-serif; color: var(--ink); background: var(--cream); font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button, input, textarea, select { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+
+    /* ===== 메뉴: index.html 과 같다 ===== */
+    header { position: sticky; top: 0; z-index: 30; background: rgba(255,255,255,0.97); backdrop-filter: blur(8px); box-shadow: 0 1px 0 #eef2ef; }
+    .hd { max-width: 1440px; margin: 0 auto; padding: 0 32px; height: 84px; display: flex; align-items: center; gap: 24px; }
+    .hd .logo img { height: 60px; display: block; }
+    .nav { display: flex; gap: 38px; margin: 0 auto; font-size: 13.5px; font-weight: 600; letter-spacing: 0.15em; color: #333; }
+    .nav a.on { color: var(--green-deep); }
+    .hd-right { display: flex; align-items: center; gap: 10px; }
+    .pill-btn { display: inline-flex; align-items: center; gap: 7px; border: 1.5px solid var(--green-mid); color: var(--green-deep); background: #fff; border-radius: 999px; padding: 7px 16px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .sns-mini { display: flex; gap: 13px; margin-left: 8px; color: #444; font-size: 14px; align-items: center; }
+    .sns-mini b { font-size: 10px; background: #222; color: #7fd18e; border-radius: 3px; padding: 0 3px; }
+    .sns-mini a { color: inherit; transition: color .2s; }
+    .sns-mini a:hover { color: var(--green-deep); }
+    .burger { display: none; font-size: 22px; color: var(--green-deep); background: none; border: 0; cursor: pointer; padding: 6px; }
+    .hd-mobile { display: none; align-items: center; gap: 6px; margin-left: auto; }
+    .mnav { display: none; border-top: 1px solid #eef2ef; background: #fff; padding: 8px 16px 18px; }
+    .mnav.open { display: block; }
+    .mnav a { display: block; padding: 12px 4px; font-size: 15px; font-weight: 700; color: #333; border-bottom: 1px solid #f1f4f2; }
+    .mnav a.on { color: var(--green-deep); }
+    .mnav a i { width: 22px; color: var(--green-mid); }
+    .mnav .mnav-sns { display: flex; gap: 18px; padding: 14px 4px 0; font-size: 18px; color: #444; }
+    .mnav .mnav-sns a { border: 0; padding: 0; font-size: 18px; }
+
+    footer { background: linear-gradient(135deg, #3a8a5c 0%, #2f7a50 50%, #52a872 100%); color: rgba(255,255,255,0.6); text-align: center; padding: 40px 20px; font-size: 12.5px; line-height: 1.9; margin-top: 60px; }
+    footer .fl { font-family: 'Playfair Display', serif; font-size: 22px; color: #fff; font-weight: 700; margin-bottom: 10px; }
+    footer .links { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 22px; margin-bottom: 14px; font-size: 13px; }
+    footer span + span::before { content: '|'; margin: 0 9px; opacity: 0.4; }
+
+    /* ===== 게시판 ===== */
+    main { max-width: 980px; margin: 0 auto; padding: 34px 20px 0; min-height: 60vh; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 0; border-radius: 8px; padding: 10px 18px; font-size: 14px; font-weight: 700; background: var(--green-deep); color: #fff; white-space: nowrap; transition: background-color .15s; }
+    .btn:hover { background: var(--green-dark); }
+    .btn:disabled { opacity: .5; cursor: default; }
+    .btn.line { background: #fff; color: var(--green-deep); box-shadow: inset 0 0 0 1.5px var(--green-mid); }
+    .btn.line:hover { background: var(--green-faint); }
+    .btn.sm { padding: 7px 13px; font-size: 13px; }
+    .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; }
+
+    .bd-hd { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+    .bd-hd small { font-family: 'Playfair Display', serif; font-weight: 700; letter-spacing: .2em; color: var(--green-mid); font-size: 12px; }
+    .bd-hd h1 { font-size: 26px; font-weight: 900; color: var(--green-deep); line-height: 1.3; }
+    .bd-hd p { color: var(--sub); font-size: 13.5px; margin-top: 2px; }
+
+    .bd-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 2px solid var(--green-deep); padding-bottom: 10px; }
+    .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+    .tabs button { border: 0; background: none; padding: 7px 12px; border-radius: 999px; font-size: 13.5px; font-weight: 600; color: #666; }
+    .tabs button.on { background: var(--green-deep); color: #fff; }
+    .search { display: flex; align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 0 6px 0 14px; width: min(100%, 260px); }
+    .search input { border: 0; outline: 0; background: none; padding: 8px 0; flex: 1; min-width: 0; font-size: 13.5px; }
+    .search button { border: 0; background: none; color: var(--green-deep); padding: 6px 8px; }
+
+    /* 목록: 넓을 땐 표, 좁을 땐 두 줄 */
+    .rows { background: #fff; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 12px 12px; overflow: hidden; }
+    .row, .row-hd { display: grid; grid-template-columns: 78px minmax(0, 1fr) 150px 74px 52px 60px; align-items: center; gap: 10px; padding: 0 16px; }
+    .row-hd { height: 40px; font-size: 12px; color: #999; background: #fafcfb; border-bottom: 1px solid var(--line); }
+    .row-hd span:not(:nth-child(2)), .row .c { text-align: center; }
+    .row { min-height: 52px; border-bottom: 1px solid #f0f3f1; transition: background-color .15s; }
+    .row:last-child { border-bottom: 0; }
+    .row:hover { background: #f6faf8; }
+    .row.notice { background: var(--green-faint); }
+    .row.notice:hover { background: #d7efe0; }
+    .row .t { min-width: 0; padding: 14px 0; display: flex; align-items: center; gap: 6px; }
+    .row .t b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row.notice .t b { font-weight: 800; color: var(--green-deep); }
+    .row .t .art { color: #888; font-weight: 400; }
+    .row .t .cc { color: var(--green-mid); font-weight: 800; font-style: normal; font-size: 12.5px; flex: none; }
+    .row .t .fa-youtube { color: #e0453a; font-size: 12px; flex: none; }
+    .row .t .kd { flex: none; font-size: 11.5px; color: #8a9a90; }
+    .row .au { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row .au i { font-size: 11px; color: #aaa; margin-right: 4px; }
+    .row .c { font-size: 12.5px; color: #888; }
+    .row .m { display: none; }
+    .tag { display: inline-flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; line-height: 1; padding: 5px 8px; border-radius: 5px; white-space: nowrap; }
+    .tag.notice { background: var(--green-deep); color: #fff; }
+    .tag.st-requested { background: #f1f3f2; color: #777; }
+    .tag.st-working { background: #fff4dc; color: #a77712; }
+    .tag.st-done { background: var(--green-faint); color: var(--green-deep); }
+    .tag.kind { background: #fff; color: var(--green-deep); box-shadow: inset 0 0 0 1px var(--green-pale); }
+    .admin-name { color: var(--green-deep); font-weight: 800; }
+    .admin-name .fa-leaf { color: var(--green-mid) !important; }
+    .empty { text-align: center; color: #999; padding: 50px 16px; }
+    .empty i { font-size: 28px; color: var(--green-pale); display: block; margin-bottom: 10px; }
+    .pager { display: flex; justify-content: center; gap: 4px; margin-top: 18px; flex-wrap: wrap; }
+    .pager button { min-width: 34px; height: 34px; border: 1px solid var(--line); background: #fff; border-radius: 8px; font-size: 13px; color: #555; }
+    .pager button.on { background: var(--green-deep); border-color: var(--green-deep); color: #fff; font-weight: 700; }
+
+    /* 글 보기 (참고: 카드 안에 작성자 · 제목 · 영상 · 본문 · 좋아요/댓글/공유 · 댓글) */
+    .back { display: inline-flex; align-items: center; gap: 6px; color: #777; font-size: 13.5px; margin-bottom: 14px; }
+    .back:hover { color: var(--green-deep); }
+    .post { max-width: 760px; margin: 0 auto; overflow: hidden; }
+    .post-hd { display: flex; align-items: center; gap: 11px; padding: 18px 20px 0; }
+    .av { width: 40px; height: 40px; border-radius: 50%; flex: none; background: var(--green-faint) center / cover; color: var(--green-deep); display: grid; place-items: center; font-weight: 800; font-size: 15px; }
+    .av.admin { background-image: url('images/hero-photo-02.webp'); box-shadow: 0 0 0 2px var(--green-mid); }
+    .av.sm { width: 34px; height: 34px; font-size: 13px; }
+    .who { min-width: 0; flex: 1; }
+    .who b { display: block; font-size: 14px; }
+    .who small { color: #999; font-size: 12px; }
+    .more { position: relative; }
+    .more > button { border: 0; background: none; width: 34px; height: 34px; border-radius: 50%; color: #777; font-size: 16px; }
+    .more > button:hover { background: #f2f5f3; }
+    .more-menu { display: none; position: absolute; right: 0; top: 36px; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.08); min-width: 110px; padding: 5px; z-index: 5; }
+    .more-menu.open { display: block; }
+    .more-menu button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 9px 12px; border-radius: 7px; font-size: 13.5px; }
+    .more-menu button:hover { background: var(--green-faint); }
+    .more-menu button.del { color: #d0453a; }
+    .post-title { font-size: 20px; font-weight: 800; padding: 16px 20px 0; line-height: 1.45; word-break: keep-all; overflow-wrap: anywhere; }
+    .post-title .art { color: #888; font-weight: 500; }
+    .post-tags { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 20px 0; }
+    .admin-bar { margin: 14px 20px 0; padding: 10px 12px; background: #fbf8ef; border: 1px dashed #e4d4a8; border-radius: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: #8a7340; }
+    .admin-bar .seg { display: inline-flex; background: #fff; border: 1px solid #e8dcc0; border-radius: 8px; overflow: hidden; }
+    .admin-bar .seg button { border: 0; background: none; padding: 6px 11px; font-size: 12.5px; font-weight: 600; color: #777; }
+    .admin-bar .seg button.on { background: var(--green-deep); color: #fff; }
+    .admin-bar label { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; cursor: pointer; }
+    .yt { position: relative; aspect-ratio: 16 / 9; background: #000; margin-top: 16px; }
+    .yt iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .yt-link { margin: 14px 20px 0; font-size: 13px; }
+    .yt-link a { color: var(--green-deep); text-decoration: underline; word-break: break-all; }
+    .post-body { padding: 16px 20px 4px; font-size: 14.5px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .post-body a, .cmt-body a { color: var(--green-deep); text-decoration: underline; word-break: break-all; }
+    .post-body strong { font-weight: 800; }
+    .post-stat { display: flex; justify-content: space-between; padding: 12px 20px; font-size: 12.5px; color: #888; }
+    .post-stat .fa-heart { color: #e0453a; }
+    .post-act { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .post-act button { border: 0; background: none; padding: 12px 6px; font-size: 13.5px; color: #555; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+    .post-act button:hover { background: #f6faf8; color: var(--green-deep); }
+    .post-act button.liked { color: #e0453a; font-weight: 700; }
+
+    .cmt-form { display: flex; gap: 10px; padding: 16px 20px; align-items: flex-start; }
+    .cmt-box { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 10px; display: flex; align-items: flex-end; gap: 8px; padding: 8px 8px 8px 12px; background: #fff; transition: border-color .15s; }
+    .cmt-box:focus-within { border-color: var(--green-mid); }
+    .cmt-box textarea { flex: 1; min-width: 0; border: 0; outline: 0; resize: none; min-height: 40px; max-height: 240px; font-size: 13.5px; line-height: 1.6; background: none; }
+    .cmts { list-style: none; padding: 0 20px 10px; }
+    .cmt { display: flex; gap: 10px; padding: 14px 0; border-top: 1px solid #f0f3f1; }
+    .cmt.admin { background: var(--green-faint); margin: 0 -20px; padding: 14px 20px; border-top-color: transparent; border-left: 3px solid var(--green-mid); }
+    .cmt-main { flex: 1; min-width: 0; }
+    .cmt-hd { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .cmt-hd b { font-size: 13.5px; }
+    .cmt-hd small { color: #999; font-size: 11.5px; }
+    .badge { display: inline-block; font-size: 10.5px; font-weight: 800; background: var(--green-deep); color: #fff; border-radius: 4px; padding: 2px 6px; vertical-align: 1px; margin-left: 2px; }
+    .cmt-body { font-size: 13.5px; line-height: 1.7; margin-top: 3px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .cmt .yt { margin-top: 8px; max-width: 420px; border-radius: 8px; overflow: hidden; }
+    .cmt-acts { display: flex; gap: 12px; margin-top: 5px; }
+    .cmt-acts button { border: 0; background: none; font-size: 12px; color: #999; padding: 0; }
+    .cmt-acts button:hover { color: var(--green-deep); }
+    .cmt-acts button.del:hover { color: #d0453a; }
+    .cmt-edit textarea { width: 100%; border: 1px solid var(--green-mid); border-radius: 8px; padding: 8px 10px; min-height: 70px; resize: vertical; font-size: 13.5px; outline: 0; margin-top: 4px; }
+    .cmt-edit div { display: flex; gap: 6px; justify-content: flex-end; margin-top: 6px; }
+    .no-cmt { color: #aaa; font-size: 13px; text-align: center; padding: 22px 0 18px; }
+
+    /* 글쓰기 */
+    .wform { max-width: 760px; margin: 0 auto; padding: 24px 24px 22px; }
+    .wform h2 { font-size: 20px; font-weight: 900; color: var(--green-deep); }
+    .wform .hint { color: var(--sub); font-size: 13px; margin-top: 4px; }
+    .fld { margin-top: 18px; }
+    .fld > label, .fld > .lb { display: block; font-size: 13.5px; font-weight: 700; margin-bottom: 7px; }
+    .fld > label em, .fld > .lb em { color: var(--green-mid); font-style: normal; }
+    .fld > label small, .fld > .lb small { color: #999; font-weight: 400; margin-left: 4px; }
+    .inp { width: 100%; border: 1px solid #d8e2dc; border-radius: 9px; padding: 11px 13px; font-size: 14px; outline: 0; background: #fff; transition: border-color .15s, box-shadow .15s; }
+    .inp:focus { border-color: var(--green-mid); box-shadow: 0 0 0 3px rgba(82,168,114,.15); }
+    textarea.inp { min-height: 160px; resize: vertical; line-height: 1.7; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .two .fld { margin-top: 18px; }
+    .kinds { display: flex; flex-wrap: wrap; gap: 7px; }
+    .kinds label { cursor: pointer; }
+    .kinds input { position: absolute; opacity: 0; pointer-events: none; }
+    .kinds span { display: inline-block; padding: 8px 14px; border-radius: 999px; border: 1.5px solid #d8e2dc; font-size: 13.5px; font-weight: 600; color: #555; background: #fff; transition: all .15s; }
+    .kinds input:checked + span { border-color: var(--green-deep); background: var(--green-deep); color: #fff; }
+    .kinds input:focus-visible + span { box-shadow: 0 0 0 3px rgba(82,168,114,.3); }
+    .yt-prev { margin-top: 8px; font-size: 12.5px; color: #999; }
+    .yt-prev.ok { display: flex; align-items: center; gap: 10px; color: var(--green-deep); }
+    .yt-prev.bad { color: #d0453a; }
+    .yt-prev img { width: 120px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; background: #000; }
+    .notice-chk { display: flex; align-items: center; gap: 8px; margin-top: 16px; padding: 10px 12px; background: #fbf8ef; border: 1px dashed #e4d4a8; border-radius: 10px; font-size: 13.5px; color: #7a6435; cursor: pointer; }
+    .wbtns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; }
+    .err { color: #d0453a; font-size: 13px; margin-top: 12px; }
+
+    .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px); background: rgba(21,21,21,.9); color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 13.5px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 2000; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .loading { text-align: center; color: #aaa; padding: 60px 0; }
+
+    /* ===== 휴대폰 ===== */
+    @media (max-width: 1100px) {
+        .sns-mini { display: none; }
+        .nav { gap: 24px; }
+    }
+    @media (max-width: 900px) {
+        .hd { height: 64px; padding: 0 16px; }
+        .hd .logo img { height: 44px; }
+        .nav, .hd-right { display: none; }
+        .hd-mobile, .burger { display: flex; }
+    }
+    @media (max-width: 720px) {
+        main { padding: 22px 16px 0; }
+        .bd-hd h1 { font-size: 22px; }
+        .bd-hd p { font-size: 12.5px; }
+        .bd-tools { flex-direction: column; align-items: stretch; }
+        .search { width: 100%; }
+        .row-hd { display: none; }
+        .rows { border-top: 0; }
+        .row { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 12px 14px; }
+        .row > .tg, .row > .au, .row > .c { display: none; }
+        .row .t { padding: 0; }
+        .row .m { display: flex; align-items: center; gap: 8px; margin-top: 5px; font-size: 12px; color: #999; min-width: 0; }
+        .row .m .au2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 45%; }
+        .row .m .tag { padding: 3px 6px; font-size: 10.5px; }
+        .post { border-radius: 12px; }
+        .post-hd, .post-title, .post-tags, .post-body, .post-stat { padding-left: 16px; padding-right: 16px; }
+        .post-title { font-size: 18px; }
+        .admin-bar { margin-left: 16px; margin-right: 16px; }
+        .admin-bar label { margin-left: 0; }
+        .cmt-form { padding: 14px 16px; }
+        .cmt-form > .av { display: none; }
+        .cmts { padding: 0 16px 8px; }
+        .cmt.admin { margin: 0 -16px; padding: 14px 16px; }
+        .wform { padding: 20px 16px 18px; }
+        .two { grid-template-columns: 1fr; gap: 0; }
+        footer span { display: block; }
+        footer span + span::before { content: none; }
+    }
+</style>
+</head>
+<body>
+<!-- 메뉴: index.html 과 같다 (로그인 버튼은 auth.js 가 .auth-slot 에 넣는다) -->
+<header>
+    <div class="hd">
+        <a class="logo" href="/"><img src="images/logo-vertical.webp" alt="안쌤의 기타나무숲"></a>
+        <nav class="nav">
+            <a href="/#sheets">TAB악보</a>
+            <a class="on" href="requests.html">악보요청</a>
+            <a href="/#books">교본</a>
+            <a href="/#contents">콘텐츠</a>
+            <a href="/#contact">CONTACT</a>
+        </nav>
+        <div class="hd-right">
+            <a class="pill-btn" href="tools.html"><i class="fas fa-guitar"></i> 연습도구</a>
+            <div class="auth-slot" style="display:inline-flex;align-items:center;"></div>
+            <span class="sns-mini">
+                <a href="https://www.youtube.com/channel/UC0TC0fLj3ZahhlKcC9ebVrg" target="_blank" rel="noopener" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                <a href="https://www.instagram.com/ahnssamguitar/" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.tiktok.com/@ahnssamguitar" target="_blank" rel="noopener" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                <a href="https://blog.naver.com/ynlee2568" target="_blank" rel="noopener" aria-label="네이버 블로그"><b>bl</b></a>
+                <a href="https://cafe.naver.com/ahnsguitarforest" target="_blank" rel="noopener" aria-label="네이버 카페"><i class="fas fa-mug-hot" style="color:#5cc06b"></i></a>
+            </span>
+        </div>
+        <div class="hd-mobile">
+            <div class="auth-slot" style="display:inline-flex;align-items:center;"></div>
+            <button type="button" class="burger" id="burger" aria-label="메뉴 열기" aria-expanded="false"><i class="fas fa-bars"></i></button>
+        </div>
+    </div>
+    <nav class="mnav" id="mnav">
+        <a href="/#sheets"><i class="fas fa-music"></i>TAB악보</a>
+        <a class="on" href="requests.html"><i class="fas fa-comment-dots"></i>악보요청</a>
+        <a href="/#books"><i class="fas fa-book"></i>교본</a>
+        <a href="/#contents"><i class="fab fa-youtube"></i>콘텐츠</a>
+        <a href="/#contact"><i class="fas fa-envelope"></i>CONTACT</a>
+        <a href="tools.html"><i class="fas fa-guitar"></i>무료 연습도구</a>
+        <div class="mnav-sns">
+            <a href="https://www.youtube.com/channel/UC0TC0fLj3ZahhlKcC9ebVrg" target="_blank" rel="noopener" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+            <a href="https://www.instagram.com/ahnssamguitar/" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+            <a href="https://www.tiktok.com/@ahnssamguitar" target="_blank" rel="noopener" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            <a href="https://blog.naver.com/ynlee2568" target="_blank" rel="noopener" aria-label="네이버 블로그"><i class="fas fa-blog"></i></a>
+            <a href="https://cafe.naver.com/ahnsguitarforest" target="_blank" rel="noopener" aria-label="네이버 카페"><i class="fas fa-mug-hot"></i></a>
+        </div>
+    </nav>
+</header>
+
+<main id="app"><div class="loading"><i class="fas fa-spinner fa-spin"></i></div></main>
+<div class="toast" id="toast"></div>
+
+<footer>
+    <div class="fl">안쌤의 기타나무숲</div>
+    <div class="links"><a href="/#sheets">TAB악보</a><a href="requests.html">악보요청</a><a href="/#books">교본</a><a href="tools.html">연습도구</a><a href="legal/terms.html">이용약관</a><a href="legal/terms.html#refund">환불 정책</a><a href="legal/privacy.html">개인정보 처리방침</a></div>
+    <span>상호: 안쌤의 기타나무숲</span><span>대표: 안규호</span><span>사업자등록번호: 453-22-00905</span><br>
+    <span>주소: 서울특별시 강남구 영동대로 210 쌍용종합상가 지하1층 3호</span><span>고객센터: <a href="tel:050713349804">0507-1334-9804</a></span><span>이메일: <a href="mailto:ahnssamguitar@gmail.com">ahnssamguitar@gmail.com</a></span><span>호스팅: GitHub</span>
+    <div style="margin-top:8px;">© 2026 안쌤의 기타나무숲. All rights reserved.</div>
+</footer>
+
+<script>
+    // 로그인 상태가 정해졌는지 — auth.js 가 SDK 를 늦게 불러와서 그 전엔 supabase 가 없다
+    window.__reqAuthSettled = false;
+    window.addEventListener('ahnssam-auth-settled', function () { window.__reqAuthSettled = true; });
+</script>
+<script src="auth.js" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    'use strict';
+    const KIND = { acoustic: '통기타', electric: '일렉기타', fingerstyle: '핑거스타일', solo: '기타솔로', bass: '베이스', other: '그 외' };
+    const STATUS = { requested: '요청됨', working: '작업 중', done: '올림' };
+    const ADMIN_EMAIL = 'steveq2568@gmail.com';   // auth.js 의 운영 계정과 같다 (화면 표시용, 권한은 DB 가 막는다)
+    const ADMIN_NAME = '안쌤 (관리자)';
+    const PAGE = 20;
+    const AUTHOR = 'author:profiles!user_id(nickname,profile_image_url,is_deleted)';   // 글↔프로필은 댓글·좋아요로도 이어져서 user_id 로 콕 집는다
+    const $ = id => document.getElementById(id);
+    const app = $('app');
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    const auth = () => window.ahnssamAuth;
+    const sb = () => auth() && auth().supabase;
+    const me = () => { const s = auth() && auth().getSession(); return s ? s.user : null; };
+    const isAdmin = () => { const u = me(); return !!u && String(u.email || '').toLowerCase() === ADMIN_EMAIL; };
+
+    function ready() {
+        if (window.__reqAuthSettled && sb()) return Promise.resolve();
+        return new Promise(resolve => {
+            const done = () => { clearTimeout(t); resolve(); };
+            const t = setTimeout(done, 9000);
+            window.addEventListener('ahnssam-auth-settled', done, { once: true });
+        });
+    }
+
+    let toastT;
+    function toast(msg) {
+        const t = $('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(toastT);
+        toastT = setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    function ago(iso) {
+        const s = (Date.now() - new Date(iso)) / 1000;
+        if (s < 60) return '방금 전';
+        if (s < 3600) return Math.floor(s / 60) + '분 전';
+        if (s < 86400) return Math.floor(s / 3600) + '시간 전';
+        const d = Math.floor(s / 86400);
+        if (d < 7) return d + '일 전';
+        if (d < 30) return Math.floor(d / 7) + '주 전';
+        if (d < 365) return Math.floor(d / 30) + '달 전';
+        return Math.floor(d / 365) + '년 전';
+    }
+    const fullDate = iso => { const d = new Date(iso); return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+
+    function authorName(x) {
+        if (x.by_admin) return ADMIN_NAME;
+        const a = x.author;
+        if (!a || a.is_deleted) return '탈퇴한 회원';
+        return a.nickname || '회원';
+    }
+    function avatar(x, sm) {
+        const cls = 'av' + (sm ? ' sm' : '');
+        if (x.by_admin) return `<span class="${cls} admin" aria-hidden="true"></span>`;
+        const a = x.author || {};
+        const img = !a.is_deleted && a.profile_image_url && /^https:\/\//.test(a.profile_image_url) ? a.profile_image_url : '';
+        if (img) return `<span class="${cls}" style="background-image:url('${esc(img).replace(/'/g, '%27')}')" aria-hidden="true"></span>`;
+        return `<span class="${cls}" aria-hidden="true">${esc(authorName(x).trim().charAt(0).toUpperCase())}</span>`;
+    }
+    function nameHtml(x) {
+        return x.by_admin
+            ? `<span class="admin-name"><i class="fas fa-leaf"></i> ${ADMIN_NAME}</span>`
+            : esc(authorName(x));
+    }
+
+    // 유튜브 주소 → 영상 id (+ 시작 초)
+    function ytInfo(u) {
+        try {
+            const x = new URL(String(u || '').trim());
+            if (!/^https?:$/.test(x.protocol)) return null;
+            const h = x.hostname.replace(/^(www|m|music)\./, '');
+            let id = '';
+            if (h === 'youtu.be') id = x.pathname.slice(1).split('/')[0];
+            else if (h === 'youtube.com' || h === 'youtube-nocookie.com') {
+                if (x.pathname === '/watch') id = x.searchParams.get('v') || '';
+                else { const m = x.pathname.match(/^\/(shorts|embed|live|v)\/([^/?#]+)/); if (m) id = m[2]; }
+            }
+            if (!/^[\w-]{11}$/.test(id)) return null;
+            const t = x.searchParams.get('t') || x.searchParams.get('start') || '';
+            let start = 0;
+            if (/^\d+s?$/.test(t)) start = parseInt(t, 10);
+            else { const m = t.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/); if (m) start = (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0); }
+            return { id, start };
+        } catch (e) { return null; }
+    }
+    const ytEmbed = (v, title) => `<div class="yt"><iframe src="https://www.youtube.com/embed/${v.id}?rel=0${v.start ? '&start=' + v.start : ''}" title="${esc(title || '유튜브 영상')}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>`;
+
+    // 본문: 글자는 그대로, 주소는 링크로, **굵게**
+    function richText(s) {
+        return esc(s)
+            .replace(/https?:\/\/[^\s<]+[^\s<.,!?)\]}'"]/g, m => `<a href="${m}" target="_blank" rel="noopener nofollow ugc">${m}</a>`)
+            .replace(/\*\*([^*\n][^*]*?)\*\*/g, '<strong>$1</strong>');
+    }
+    const firstYt = s => { const m = String(s || '').match(/https?:\/\/[^\s<]+/g) || []; for (const u of m) { const v = ytInfo(u); if (v) return v; } return null; };
+
+    function needLogin(after) {
+        if (me()) return false;
+        if (after) sessionStorage.setItem('reqAfterLogin', after + '@' + Date.now());   // 로그인 창을 그냥 닫았으면 10분 뒤 잊는다
+        auth() && auth().openLogin();
+        return true;
+    }
+
+    // ---------- 주소로 화면 고르기 (?id= 글 보기, ?write 글쓰기, ?edit= 고치기, 그 밖엔 목록) ----------
+    function go(url, replace) {
+        history[replace ? 'replaceState' : 'pushState'](null, '', url);
+        route();
+        window.scrollTo(0, 0);
+    }
+    window.addEventListener('popstate', route);
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.more')) document.querySelectorAll('.more-menu.open').forEach(m => m.classList.remove('open'));
+        const a = e.target.closest('a[data-nav]');
+        if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+        e.preventDefault();
+        go(a.getAttribute('href'));
+    });
+
+    let routeSeq = 0;
+    async function route() {
+        const seq = ++routeSeq;
+        await ready();
+        if (seq !== routeSeq) return;
+        if (!sb()) {
+            app.innerHTML = `<div class="empty"><i class="fas fa-triangle-exclamation"></i>게시판을 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.</div>`;
+            return;
+        }
+        const q = new URLSearchParams(location.search);
+        if (q.has('write')) return showForm(null);
+        if (q.get('edit')) return showForm(+q.get('edit'));
+        if (q.get('id')) return showPost(+q.get('id'), seq);
+        return showList(q, seq);
+    }
+
+    // ---------- 목록 ----------
+    async function showList(q, seq) {
+        const page = Math.max(1, parseInt(q.get('page'), 10) || 1);
+        const status = STATUS[q.get('status')] ? q.get('status') : '';
+        const word = (q.get('q') || '').trim();
+        document.title = '악보요청 | 안쌤의 기타나무숲';
+        const listUrl = p => '?' + new URLSearchParams(Object.entries({ status, q: word, page: p > 1 ? p : '' }).filter(([, v]) => v)).toString();
+
+        app.innerHTML = `
+            <div class="bd-hd">
+                <div><small>REQUEST</small><h1>악보요청</h1><p>연주하고 싶은 곡이 있나요? 곡명과 유튜브 링크를 남겨 주세요.</p></div>
+                <button class="btn" id="writeBtn"><i class="fas fa-pen"></i> 글쓰기</button>
+            </div>
+            <div class="bd-tools">
+                <div class="tabs" id="tabs">${[['', '전체'], ...Object.entries(STATUS)].map(([k, v]) => `<button type="button" data-st="${k}" class="${k === status ? 'on' : ''}">${v}</button>`).join('')}</div>
+                <form class="search" id="searchForm" role="search"><input id="searchInp" type="search" placeholder="곡명·가수 찾기" value="${esc(word)}" maxlength="40"><button type="submit" aria-label="찾기"><i class="fas fa-magnifying-glass"></i></button></form>
+            </div>
+            <div class="rows" id="rows">
+                <div class="row-hd"><span>구분</span><span>제목</span><span>작성자</span><span>날짜</span><span><i class="far fa-heart"></i></span><span><i class="far fa-eye"></i></span></div>
+                <div class="loading"><i class="fas fa-spinner fa-spin"></i></div>
+            </div>
+            <div class="pager" id="pager"></div>`;
+
+        $('writeBtn').onclick = () => { if (!needLogin('write')) go('?write'); };
+        $('tabs').onclick = e => { const b = e.target.closest('[data-st]'); if (b) go('?' + new URLSearchParams(Object.entries({ status: b.dataset.st, q: word }).filter(([, v]) => v)).toString()); };
+        $('searchForm').onsubmit = e => { e.preventDefault(); const v = $('searchInp').value.trim(); go('?' + new URLSearchParams(Object.entries({ status, q: v }).filter(([, x]) => x)).toString()); };
+
+        const cols = `id,title,artist,kind,status,is_notice,by_admin,view_count,created_at,youtube_url,${AUTHOR},sheet_request_comments(count),sheet_request_likes(count)`;
+        let lq = sb().from('sheet_requests').select(cols, { count: 'exact' }).eq('is_notice', false);
+        if (status) lq = lq.eq('status', status);
+        const safe = word.replace(/[,()*%\\.:"']/g, ' ').trim();
+        if (safe) lq = lq.or(`title.ilike.*${safe}*,artist.ilike.*${safe}*`);
+        lq = lq.order('created_at', { ascending: false }).range((page - 1) * PAGE, page * PAGE - 1);
+        const nq = word ? Promise.resolve({ data: [] }) : sb().from('sheet_requests').select(cols).eq('is_notice', true).order('created_at', { ascending: false });
+
+        const [lr, nr] = await Promise.all([lq, nq]);
+        if (seq !== routeSeq) return;
+        if (lr.error || nr.error) {
+            $('rows').innerHTML = `<div class="empty"><i class="fas fa-triangle-exclamation"></i>목록을 불러오지 못했어요.<br><small>${esc((lr.error || nr.error).message)}</small></div>`;
+            return;
+        }
+        const rows = [...(nr.data || []), ...(lr.data || [])];
+        const cnt = (x, k) => (x[k] && x[k][0] && x[k][0].count) || 0;
+        const rowHtml = x => {
+            const tag = x.is_notice ? '<span class="tag notice">공지</span>' : `<span class="tag st-${x.status}">${STATUS[x.status]}</span>`;
+            const cc = cnt(x, 'sheet_request_comments');
+            return `<a class="row${x.is_notice ? ' notice' : ''}" href="?id=${x.id}" data-nav>
+                <span class="tg c">${tag}</span>
+                <span class="t-wrap" style="min-width:0">
+                    <span class="t"><b>${esc(x.title)}${x.artist && !x.is_notice ? ` <span class="art">- ${esc(x.artist)}</span>` : ''}</b>${cc ? `<em class="cc">[${cc}]</em>` : ''}${x.youtube_url ? '<i class="fab fa-youtube" title="유튜브 링크 있음"></i>' : ''}${x.is_notice ? '' : `<span class="kd">${KIND[x.kind] || ''}</span>`}</span>
+                    <span class="m">${tag}<span class="au2">${x.by_admin ? `<span class="admin-name">${ADMIN_NAME}</span>` : esc(authorName(x))}</span><span>${ago(x.created_at)}</span><span><i class="far fa-heart"></i> ${cnt(x, 'sheet_request_likes')}</span><span><i class="far fa-eye"></i> ${x.view_count}</span></span>
+                </span>
+                <span class="au">${x.by_admin ? nameHtml(x) : `<i class="fas fa-user"></i>${esc(authorName(x))}`}</span>
+                <span class="c" title="${fullDate(x.created_at)}">${ago(x.created_at)}</span>
+                <span class="c">${cnt(x, 'sheet_request_likes')}</span>
+                <span class="c">${x.view_count}</span>
+            </a>`;
+        };
+        const empty = `<div class="empty"><i class="fas fa-music"></i>${word || status ? '찾는 요청 글이 없어요.' : '아직 요청 글이 없어요. 첫 요청을 남겨 주세요!'}</div>`;
+        $('rows').innerHTML = $('rows').querySelector('.row-hd').outerHTML + rows.map(rowHtml).join('') + (lr.data.length ? '' : empty);
+
+        const pages = Math.max(1, Math.ceil((lr.count || 0) / PAGE));
+        if (pages > 1) {
+            const from = Math.max(1, Math.min(page - 4, pages - 9)), to = Math.min(pages, from + 9);
+            let h = page > 1 ? `<button data-p="${page - 1}" aria-label="이전"><i class="fas fa-chevron-left"></i></button>` : '';
+            for (let p = from; p <= to; p++) h += `<button data-p="${p}" class="${p === page ? 'on' : ''}">${p}</button>`;
+            if (page < pages) h += `<button data-p="${page + 1}" aria-label="다음"><i class="fas fa-chevron-right"></i></button>`;
+            $('pager').innerHTML = h;
+            $('pager').onclick = e => { const b = e.target.closest('[data-p]'); if (b) go(listUrl(+b.dataset.p)); };
+        }
+    }
+
+    // ---------- 글 보기 ----------
+    let post = null, comments = [], liked = false, likeCount = 0;
+
+    async function showPost(id, seq) {
+        app.innerHTML = `<div class="loading"><i class="fas fa-spinner fa-spin"></i></div>`;
+        // 조회수는 이 창에서 처음 볼 때만 +1
+        const seen = 'reqSeen' + id;
+        let viewP = Promise.resolve(null);
+        try { if (!sessionStorage.getItem(seen)) { sessionStorage.setItem(seen, '1'); viewP = sb().rpc('sheet_request_view', { p_id: id }); } } catch (e) {}
+        await viewP;
+        const u = me();
+        const [pr, cr, lr] = await Promise.all([
+            sb().from('sheet_requests').select(`*,${AUTHOR},sheet_request_likes(count)`).eq('id', id).maybeSingle(),
+            sb().from('sheet_request_comments').select(`id,user_id,body,by_admin,created_at,updated_at,${AUTHOR}`).eq('request_id', id).order('created_at'),
+            u ? sb().from('sheet_request_likes').select('request_id').eq('request_id', id).eq('user_id', u.id).maybeSingle() : Promise.resolve({ data: null }),
+        ]);
+        if (seq !== routeSeq) return;
+        if (pr.error || !pr.data) {
+            app.innerHTML = `<a class="back" href="requests.html" data-nav><i class="fas fa-arrow-left"></i> 목록으로</a><div class="empty"><i class="fas fa-circle-question"></i>${pr.error ? '글을 불러오지 못했어요.' : '지워졌거나 없는 글이에요.'}</div>`;
+            return;
+        }
+        post = pr.data;
+        comments = cr.data || [];
+        liked = !!lr.data;
+        likeCount = (post.sheet_request_likes && post.sheet_request_likes[0] && post.sheet_request_likes[0].count) || 0;
+        document.title = `${post.title}${post.artist && !post.is_notice ? ' - ' + post.artist : ''} | 악보요청 | 안쌤의 기타나무숲`;
+        drawPost();
+    }
+
+    function drawPost() {
+        const p = post, u = me(), mine = !!u && u.id === p.user_id, admin = isAdmin();
+        const yt = ytInfo(p.youtube_url);
+        const menu = (mine || admin) ? `<div class="more"><button type="button" id="moreBtn" aria-label="글 메뉴"><i class="fas fa-ellipsis"></i></button>
+            <div class="more-menu" id="moreMenu">${mine ? '<button type="button" data-act="edit">고치기</button>' : ''}<button type="button" class="del" data-act="del">지우기</button></div></div>` : '';
+        const adminBar = admin ? `<div class="admin-bar"><i class="fas fa-user-shield"></i> 운영자
+            ${p.is_notice ? '' : `<span class="seg" id="stSeg">${Object.entries(STATUS).map(([k, v]) => `<button type="button" data-st="${k}" class="${k === p.status ? 'on' : ''}">${v}</button>`).join('')}</span>`}
+            <label><input type="checkbox" id="noticeChk" ${p.is_notice ? 'checked' : ''}> 공지로 맨 위에 고정</label></div>` : '';
+        app.innerHTML = `
+            <a class="back" href="requests.html" data-nav><i class="fas fa-arrow-left"></i> 목록으로</a>
+            <article class="post card">
+                <div class="post-hd">${avatar(p)}<div class="who"><b>${nameHtml(p)}</b><small title="${fullDate(p.created_at)}">${ago(p.created_at)}${p.updated_at ? ' (고침)' : ''} · 조회수 ${p.view_count}</small></div>${menu}</div>
+                <h1 class="post-title">${esc(p.title)}${p.artist && !p.is_notice ? ` <span class="art">- ${esc(p.artist)}</span>` : ''}</h1>
+                ${p.is_notice ? '<div class="post-tags"><span class="tag notice">공지</span></div>' : `<div class="post-tags"><span class="tag kind">${KIND[p.kind] || ''}</span><span class="tag st-${p.status}">${STATUS[p.status]}</span></div>`}
+                ${adminBar}
+                ${yt ? ytEmbed(yt, p.title) : (p.youtube_url ? `<div class="yt-link"><i class="fab fa-youtube"></i> <a href="${esc(p.youtube_url)}" target="_blank" rel="noopener nofollow ugc">${esc(p.youtube_url)}</a></div>` : '')}
+                ${p.body ? `<div class="post-body">${richText(p.body)}</div>` : ''}
+                <div class="post-stat"><span><i class="fas fa-heart"></i> ${likeCount}</span><span>댓글 ${comments.length}</span></div>
+                <div class="post-act">
+                    <button type="button" id="likeBtn" class="${liked ? 'liked' : ''}"><i class="${liked ? 'fas' : 'far'} fa-heart"></i> 좋아요</button>
+                    <button type="button" id="cmtFocus"><i class="far fa-comment"></i> 댓글 달기</button>
+                    <button type="button" id="shareBtn"><i class="fas fa-share-nodes"></i> 공유하기</button>
+                </div>
+                <form class="cmt-form" id="cmtForm">
+                    ${u ? avatar({ by_admin: admin, author: { nickname: (auth().getProfile() || {}).nickname || (u.email || '').split('@')[0] } }, true) : '<span class="av sm"><i class="fas fa-user"></i></span>'}
+                    <div class="cmt-box"><textarea id="cmtInp" rows="1" maxlength="2000" placeholder="${u ? '댓글을 남겨 주세요.' : '로그인하면 댓글을 쓸 수 있어요.'}"></textarea><button class="btn sm" type="submit" id="cmtSend">작성</button></div>
+                </form>
+                <ul class="cmts" id="cmts">${drawComments()}</ul>
+            </article>`;
+        wirePost();
+    }
+
+    function drawComments() {
+        if (!comments.length) return '<li class="no-cmt">아직 댓글이 없어요.</li>';
+        const u = me(), admin = isAdmin();
+        return comments.map(c => {
+            const mine = !!u && u.id === c.user_id;
+            const yt = firstYt(c.body);
+            return `<li class="cmt${c.by_admin ? ' admin' : ''}" data-cid="${c.id}">
+                ${avatar(c, true)}
+                <div class="cmt-main">
+                    <div class="cmt-hd"><b>${nameHtml(c)}</b><small title="${fullDate(c.created_at)}">${ago(c.created_at)}${c.updated_at ? ' (고침)' : ''}</small></div>
+                    <div class="cmt-body">${richText(c.body)}</div>
+                    ${yt ? ytEmbed(yt) : ''}
+                    ${mine || admin ? `<div class="cmt-acts">${mine ? '<button type="button" data-cact="edit">고치기</button>' : ''}<button type="button" class="del" data-cact="del">지우기</button></div>` : ''}
+                </div>
+            </li>`;
+        }).join('');
+    }
+    function redrawComments() {
+        $('cmts').innerHTML = drawComments();
+        app.querySelector('.post-stat span:last-child').textContent = '댓글 ' + comments.length;
+    }
+
+    function wirePost() {
+        const p = post;
+        const mb = $('moreBtn');
+        if (mb) {
+            const mm = $('moreMenu');
+            mb.onclick = e => { e.stopPropagation(); mm.classList.toggle('open'); };
+            mm.onclick = async e => {
+                const b = e.target.closest('[data-act]');
+                if (!b) return;
+                if (b.dataset.act === 'edit') return go('?edit=' + p.id);
+                if (!confirm('이 글을 지울까요? 댓글도 함께 지워져요.')) return;
+                const { error } = await sb().from('sheet_requests').delete().eq('id', p.id);
+                if (error) return toast('지우지 못했어요: ' + error.message);
+                toast('글을 지웠어요');
+                go('requests.html');
+            };
+        }
+        const seg = $('stSeg');
+        if (seg) seg.onclick = async e => {
+            const b = e.target.closest('[data-st]');
+            if (!b || b.dataset.st === p.status) return;
+            const { error } = await sb().from('sheet_requests').update({ status: b.dataset.st }).eq('id', p.id);
+            if (error) return toast('바꾸지 못했어요: ' + error.message);
+            p.status = b.dataset.st;
+            toast(`'${STATUS[p.status]}'(으)로 바꿨어요`);
+            drawPost();
+        };
+        const nc = $('noticeChk');
+        if (nc) nc.onchange = async () => {
+            const { error } = await sb().from('sheet_requests').update({ is_notice: nc.checked }).eq('id', p.id);
+            if (error) { nc.checked = !nc.checked; return toast('바꾸지 못했어요: ' + error.message); }
+            p.is_notice = nc.checked;
+            toast(nc.checked ? '공지로 고정했어요' : '공지에서 뺐어요');
+            drawPost();
+        };
+
+        $('likeBtn').onclick = async () => {
+            if (needLogin()) return;
+            const b = $('likeBtn');
+            b.disabled = true;
+            const r = liked
+                ? await sb().from('sheet_request_likes').delete().eq('request_id', p.id).eq('user_id', me().id)
+                : await sb().from('sheet_request_likes').insert({ request_id: p.id, user_id: me().id });
+            b.disabled = false;
+            if (r.error && r.error.code !== '23505') return toast('좋아요를 하지 못했어요');
+            liked = !liked;
+            likeCount = Math.max(0, likeCount + (liked ? 1 : -1));
+            b.className = liked ? 'liked' : '';
+            b.innerHTML = `<i class="${liked ? 'fas' : 'far'} fa-heart"></i> 좋아요`;
+            app.querySelector('.post-stat span').innerHTML = `<i class="fas fa-heart"></i> ${likeCount}`;
+        };
+        $('shareBtn').onclick = async () => {
+            const url = location.origin + location.pathname + '?id=' + p.id;
+            const title = p.title + (p.artist && !p.is_notice ? ' - ' + p.artist : '') + ' | 악보요청';
+            if (navigator.share) { try { await navigator.share({ title, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+            try { await navigator.clipboard.writeText(url); toast('주소를 복사했어요'); }
+            catch (e) { prompt('이 주소를 복사해 주세요', url); }
+        };
+
+        const inp = $('cmtInp');
+        const grow = () => { inp.style.height = 'auto'; inp.style.height = Math.min(240, inp.scrollHeight) + 'px'; };
+        inp.addEventListener('input', grow);
+        inp.addEventListener('focus', () => { if (!me()) { inp.blur(); needLogin(); } });
+        $('cmtFocus').onclick = () => { if (!needLogin()) inp.focus(); };
+        $('cmtForm').onsubmit = async e => {
+            e.preventDefault();
+            if (needLogin()) return;
+            const body = inp.value.trim();
+            if (!body) return inp.focus();
+            $('cmtSend').disabled = true;
+            const { data, error } = await sb().from('sheet_request_comments')
+                .insert({ request_id: p.id, user_id: me().id, body })
+                .select(`id,user_id,body,by_admin,created_at,updated_at,${AUTHOR}`).single();
+            $('cmtSend').disabled = false;
+            if (error) return toast('댓글을 올리지 못했어요: ' + error.message);
+            comments.push(data);
+            inp.value = '';
+            grow();
+            redrawComments();
+        };
+
+        $('cmts').onclick = async e => {
+            const b = e.target.closest('[data-cact]');
+            if (!b) return;
+            const li = b.closest('[data-cid]'), id = +li.dataset.cid, c = comments.find(x => x.id === id);
+            if (!c) return;
+            if (b.dataset.cact === 'del') {
+                if (!confirm('이 댓글을 지울까요?')) return;
+                const { error } = await sb().from('sheet_request_comments').delete().eq('id', id);
+                if (error) return toast('지우지 못했어요: ' + error.message);
+                comments = comments.filter(x => x.id !== id);
+                return redrawComments();
+            }
+            // 고치기: 그 자리에서 글상자로
+            const main = li.querySelector('.cmt-main');
+            main.querySelector('.cmt-body').outerHTML = `<div class="cmt-edit"><textarea maxlength="2000">${esc(c.body)}</textarea><div><button type="button" class="btn sm line" data-e="cancel">취소</button><button type="button" class="btn sm" data-e="save">저장</button></div></div>`;
+            main.querySelectorAll('.yt, .cmt-acts').forEach(el => el.remove());
+            const ta = main.querySelector('textarea');
+            ta.focus();
+            main.querySelector('.cmt-edit').onclick = async ev => {
+                const eb = ev.target.closest('[data-e]');
+                if (!eb) return;
+                if (eb.dataset.e === 'cancel') return redrawComments();
+                const body = ta.value.trim();
+                if (!body) return ta.focus();
+                eb.disabled = true;
+                const { data, error } = await sb().from('sheet_request_comments').update({ body }).eq('id', id)
+                    .select(`id,user_id,body,by_admin,created_at,updated_at,${AUTHOR}`).single();
+                if (error) { eb.disabled = false; return toast('고치지 못했어요: ' + error.message); }
+                Object.assign(c, data);
+                redrawComments();
+            };
+        };
+    }
+
+    // ---------- 글쓰기 / 고치기 ----------
+    async function showForm(editId) {
+        if (!me()) {
+            go('requests.html', true);
+            needLogin(editId ? '' : 'write');
+            return;
+        }
+        let p = { title: '', artist: '', kind: '', body: '', youtube_url: '', is_notice: false };
+        if (editId) {
+            const { data } = await sb().from('sheet_requests').select('*').eq('id', editId).maybeSingle();
+            if (!data || data.user_id !== me().id) return go('?id=' + editId, true);
+            p = data;
+        }
+        const admin = isAdmin();
+        document.title = (editId ? '글 고치기' : '악보 요청하기') + ' | 악보요청 | 안쌤의 기타나무숲';
+        app.innerHTML = `
+            <a class="back" href="${editId ? '?id=' + editId : 'requests.html'}" data-nav><i class="fas fa-arrow-left"></i> ${editId ? '글로 돌아가기' : '목록으로'}</a>
+            <form class="wform card" id="wform" novalidate>
+                <h2>${editId ? '글 고치기' : '악보 요청하기'}</h2>
+                <p class="hint">곡명과 원곡 가수, 원하는 종류를 적어 주세요. 참고할 유튜브 영상이 있으면 링크를 넣어 주세요.</p>
+                ${admin ? `<label class="notice-chk"><input type="checkbox" id="fNotice" ${p.is_notice ? 'checked' : ''}> 공지로 올리기 (목록 맨 위에 고정)</label>` : ''}
+                <div class="two">
+                    <div class="fld"><label for="fTitle">곡명 <em>*</em></label><input class="inp" id="fTitle" maxlength="100" value="${esc(p.title)}" placeholder="예) 너의 의미"></div>
+                    <div class="fld" data-req-only><label for="fArtist">가수(원곡) <em>*</em></label><input class="inp" id="fArtist" maxlength="100" value="${esc(p.artist)}" placeholder="예) 아이유"></div>
+                </div>
+                <div class="fld" data-req-only><span class="lb">원하는 종류 <em>*</em></span>
+                    <div class="kinds" role="radiogroup">${Object.entries(KIND).map(([k, v]) => `<label><input type="radio" name="kind" value="${k}" ${p.kind === k ? 'checked' : ''}><span>${v}</span></label>`).join('')}</div>
+                </div>
+                <div class="fld"><label for="fYt">유튜브 링크 <small>선택</small></label><input class="inp" id="fYt" type="url" inputmode="url" maxlength="300" value="${esc(p.youtube_url || '')}" placeholder="https://youtu.be/..."><div class="yt-prev" id="ytPrev"></div></div>
+                <div class="fld"><label for="fBody">내용</label><textarea class="inp" id="fBody" maxlength="3000" placeholder="원하는 부분(전주·간주·솔로 등), 키, 난이도처럼 바라는 점을 적어 주세요.">${esc(p.body)}</textarea></div>
+                <div class="err" id="fErr" hidden></div>
+                <div class="wbtns"><a class="btn line" href="${editId ? '?id=' + editId : 'requests.html'}" data-nav>취소</a><button class="btn" type="submit" id="fSend"><i class="fas fa-check"></i> ${editId ? '고친 내용 저장' : '올리기'}</button></div>
+            </form>`;
+
+        const notice = () => !!($('fNotice') && $('fNotice').checked);
+        const syncNotice = () => app.querySelectorAll('[data-req-only]').forEach(el => { el.hidden = notice(); });
+        if ($('fNotice')) $('fNotice').onchange = syncNotice;
+        syncNotice();
+
+        const prev = () => {
+            const v = $('fYt').value.trim(), el = $('ytPrev'), info = ytInfo(v);
+            if (!v) { el.className = 'yt-prev'; el.textContent = ''; return; }
+            if (info) { el.className = 'yt-prev ok'; el.innerHTML = `<img src="https://i.ytimg.com/vi/${info.id}/mqdefault.jpg" alt=""><span><i class="fas fa-circle-check"></i> 영상이 글에 보여요</span>`; }
+            else { el.className = 'yt-prev bad'; el.textContent = '유튜브 영상 주소가 아니에요 (예: https://youtu.be/... 또는 https://www.youtube.com/watch?v=...)'; }
+        };
+        $('fYt').addEventListener('input', prev);
+        prev();
+
+        $('wform').onsubmit = async e => {
+            e.preventDefault();
+            const err = msg => { $('fErr').textContent = msg; $('fErr').hidden = false; };
+            $('fErr').hidden = true;
+            const isNotice = notice();
+            const kindEl = app.querySelector('input[name="kind"]:checked');
+            const row = {
+                title: $('fTitle').value.trim(),
+                artist: isNotice ? '' : $('fArtist').value.trim(),
+                kind: isNotice ? 'other' : (kindEl ? kindEl.value : ''),
+                body: $('fBody').value.trim(),
+                youtube_url: $('fYt').value.trim() || null,
+            };
+            if (!row.title) { $('fTitle').focus(); return err(isNotice ? '제목을 적어 주세요.' : '곡명을 적어 주세요.'); }
+            if (!isNotice && !row.artist) { $('fArtist').focus(); return err('가수(원곡)를 적어 주세요.'); }
+            if (!row.kind) return err('원하는 종류를 골라 주세요.');
+            if (row.youtube_url && !ytInfo(row.youtube_url)) { $('fYt').focus(); return err('유튜브 링크를 확인해 주세요.'); }
+            if (admin) row.is_notice = isNotice;
+            $('fSend').disabled = true;
+            const r = editId
+                ? await sb().from('sheet_requests').update(row).eq('id', editId).select('id').single()
+                : await sb().from('sheet_requests').insert(Object.assign({ user_id: me().id }, row)).select('id').single();
+            $('fSend').disabled = false;
+            if (r.error) return err('올리지 못했어요: ' + r.error.message);
+            toast(editId ? '고친 내용을 저장했어요' : '요청 글을 올렸어요');
+            go('?id=' + r.data.id, true);
+        };
+    }
+
+    // 로그인하고 돌아오면 하려던 일(글쓰기) 이어서. 로그인·로그아웃하면 댓글창·내 글 메뉴를 다시 그린다
+    let lastUid;   // 처음 로그인 상태가 정해지기 전엔 undefined
+    window.addEventListener('ahnssam-auth-settled', ev => {
+        const uid = ev.detail && ev.detail.user ? ev.detail.user.id : null;
+        const changed = lastUid !== undefined && uid !== lastUid;
+        lastUid = uid;
+        const [after, at] = (sessionStorage.getItem('reqAfterLogin') || '').split('@');
+        if (uid && after) {
+            sessionStorage.removeItem('reqAfterLogin');
+            if (after === 'write' && Date.now() - at < 600000) return go('?write');
+        }
+        if (changed) route();
+    });
+
+    // ---------- 모바일 메뉴 ----------
+    (function () {
+        const b = $('burger'), m = $('mnav');
+        const set = open => { m.classList.toggle('open', open); b.setAttribute('aria-expanded', open); b.innerHTML = open ? '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>'; };
+        b.addEventListener('click', () => set(!m.classList.contains('open')));
+        m.addEventListener('click', e => { if (e.target.closest('a')) set(false); });
+    })();
+
+    route();
+});
+</script>
+</body>
+</html>
