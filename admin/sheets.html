@@ -355,7 +355,7 @@
                 <select name="style"><option value="acoustic">통기타</option><option value="electric">일렉기타</option><option value="fingerstyle">핑거스타일</option><option value="solo">기타솔로</option><option value="chord">코드악보</option><option value="bass">베이스</option><option value="other">그 밖</option></select></div>
             <div class="f"><label>장르</label>
                 <select name="genre"><option value="">선택 안 함</option><option>가요</option><option>팝</option><option>J-POP</option><option>OST</option><option>록</option><option>연주곡</option><option>클래식</option><option>재즈</option><option>기타</option><option>자작곡</option></select></div>
-            <div class="f"><label>가격 (원) <em>*</em></label><input name="price" type="number" min="0" step="500" value="3000" required></div>
+            <div class="f"><label>가격 (원) <em>*</em> <small id="priceHint"></small></label><input name="price" type="number" min="0" step="500" value="3000" required></div>
             <div class="f"><label>난이도</label><div class="stars" id="stars"></div></div>
             <div class="f"><label>페이지 수 <small>PDF에서 자동</small></label><input name="pages" type="number" min="1"></div>
             <div class="f full"><label>유튜브 영상 <small>주소를 붙여넣으면 돼요</small></label><input name="youtube" placeholder="https://youtu.be/..."></div>
@@ -708,6 +708,7 @@
         renderLinks();
         setDifficulty(s && s.difficulty ? s.difficulty : 3);
         updateYt();
+        priceHint();
         openedState = formState();
         $('dim').classList.add('open'); $('editor').classList.add('open');
         setTimeout(() => form.elements.title.focus(), 200);
@@ -861,9 +862,12 @@
             && songName(x.title) === t && sameArtist(x.artist, s.artist) && !(s.song_key && x.song_key === s.song_key));
     }
     $('linkQ').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('linkAdd').click(); } });
-    // 코드악보(한 장짜리 코드 진행표)와 기타솔로는 1,500원이 기본
+    // 코드악보(한 장짜리 코드 진행표)와 기타솔로는 1,500원이 기본.
+    // 기타솔로는 길이로 나눈다 (2026-11-05 사용자 결정): 10마디까지 1,000원, 11마디부터 1,500원.
+    // 반주와 함께 사면 500원 할인이라 반주 2,500원 + 솔로 → 3,000원 / 3,500원.
     const STYLE_PRICE = { chord: 1500, solo: 1500 };
-    form.elements.style.addEventListener('change', e => { if (STYLE_PRICE[e.target.value]) form.elements.price.value = STYLE_PRICE[e.target.value]; });
+    const priceHint = () => { $('priceHint').textContent = form.elements.style.value === 'solo' ? '10마디까지 1,000 · 11마디부터 1,500' : ''; };
+    form.elements.style.addEventListener('change', e => { if (STYLE_PRICE[e.target.value]) form.elements.price.value = STYLE_PRICE[e.target.value]; priceHint(); });
 
     // ---------- PDF → 페이지 수 + 미리보기 이미지 ----------
     const drop = $('drop');
