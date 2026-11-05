@@ -475,6 +475,12 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 25px rgba(42,107,74,0.4);
         }
+        /* 운영 계정에게만: 비공개 표시 + 악보관리 편집 창으로 바로 가는 버튼 */
+        .admin-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: -0.9rem; }
+        .admin-row[hidden] { display: none; }
+        .admin-row .private-note { margin-bottom: 0; }
+        .admin-edit { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 700; color: var(--green-dark); background: #fff; border: 1.5px solid var(--green-pale); border-radius: 8px; padding: 4px 10px; text-decoration: none; }
+        .admin-edit:hover { background: var(--green-dark); border-color: var(--green-dark); color: #fff; }
         .private-note { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 700; color: #a06a00; background: #fff3d6; border-radius: 8px; padding: 4px 10px; margin-bottom: 0.6rem; }
         /* 판매를 잠시 쉬는 상품 안내 */
         .product-paused {
@@ -747,6 +753,7 @@
             <div class="product-youtube" id="productYoutube" hidden></div>
         </div>
         <div class="product-info">
+            <div class="admin-row" id="adminRow" hidden><a class="admin-edit" id="adminEdit" href="admin/sheets.html" title="악보관리에서 이 악보 편집 창 열기"><i class="fas fa-pen"></i> 악보 편집</a></div>
             <h1 class="product-title" id="productTitle"></h1>
             <div class="product-artist" id="productArtist"></div>
             <div class="product-divider"></div>
@@ -1116,13 +1123,29 @@
                         const note = document.createElement('div');
                         note.className = 'private-note';
                         note.innerHTML = '<i class="fas fa-eye-slash"></i> 비공개 악보예요 — 운영 계정에게만 보여요';
-                        document.getElementById('productTitle').before(note);
+                        document.getElementById('adminRow').prepend(note);
+                        document.getElementById('adminRow').hidden = false;
                     }
                 } else showPaused();
             } catch (e) {
                 showPaused();
             }
             document.getElementById('productContainer').style.visibility = '';
+        })();
+
+        // 운영 계정에게만 '악보 편집' 버튼: 악보관리를 열면서 지금 보고 있는 악보의 편집 창을 바로 연다 (admin/sheets.html?edit=<id>).
+        // 편곡 버튼으로 바꾸면 주소의 id 도 바뀌니 누르는 순간의 id 를 쓴다
+        (async function adminEdit() {
+            if (document.readyState === 'loading') await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
+            const C = window.ahnssamCheckout;
+            if (!C) return;
+            await C.ready();
+            if (!C.isAdmin()) return;
+            const a = document.getElementById('adminEdit');
+            const sync = () => { const raw = new URLSearchParams(location.search).get('id') || ''; a.href = 'admin/sheets.html?edit=' + encodeURIComponent(LEGACY_IDS[raw] || raw); };
+            ['pointerenter', 'focus', 'click'].forEach(ev => a.addEventListener(ev, sync));
+            sync();
+            document.getElementById('adminRow').hidden = false;
         })();
 
         // 모바일 메뉴 (index.html 과 같다)

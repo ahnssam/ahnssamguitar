@@ -536,9 +536,18 @@
         sb = window.ahnssamAuth.supabase;
         $('gate').hidden = true;
         $('app').hidden = false;
-        load();
+        load().then(openFromLink);
     }
     window.addEventListener('ahnssam-auth-settled', e => onAuth(e.detail && e.detail.user));
+    // 판매 페이지의 '악보 편집' 버튼으로 오면(?edit=<악보 id>) 그 악보 편집 창을 바로 연다. 새로고침해도 다시 열리지 않게 주소에서 뺀다
+    function openFromLink() {
+        const u = new URL(location.href), id = u.searchParams.get('edit');
+        if (!id) return;
+        u.searchParams.delete('edit');
+        history.replaceState(null, '', u.pathname + u.search + u.hash);
+        const s = sheets.find(x => x.id === id);
+        if (s) openEditor(s);
+    }
 
     // ---------- 목록 ----------
     async function load() {
