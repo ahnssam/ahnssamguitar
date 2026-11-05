@@ -194,6 +194,8 @@
     /* 같은 곡 악보 묶기 */
     .links { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
     .links:empty { display: none; }
+    .vernote { font-size: 12.5px; color: #6b4aa8; background: #f6f1ff; border-radius: 8px; padding: 7px 10px; margin-bottom: 6px; line-height: 1.5; }   /* 다른 편곡(제목으로 자동 묶음) */
+    .vernote[hidden] { display: none; }
     .links .lk { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 12.5px; background: #f7faf8; }
     .links .lk small { color: var(--sub); }
     .links .lk button { border: 0; background: none; cursor: pointer; color: var(--sub); padding: 2px 4px; }
@@ -363,6 +365,7 @@
             <div class="f full"><label>설명 <small>상세 페이지에 보여요 (선택)</small></label><textarea name="description" placeholder="예: 원곡 키 그대로, 카포 2프렛. 인트로부터 아웃트로까지 전곡."></textarea></div>
             <div class="f full"><label>같은 곡 악보 묶기 <small>통기타·일렉기타 반주·기타솔로를 한 곡으로 — 상세 페이지에서 골라 사고, 반주 + 기타솔로를 함께 사면 500원 할인</small></label>
                 <div class="links" id="links"></div>
+                <div class="vernote" id="verNote" hidden></div>
                 <div class="linkadd"><input id="linkQ" list="linkList" placeholder="같은 곡의 다른 악보를 곡명으로 찾아 고르기"><datalist id="linkList"></datalist><button type="button" class="btn" id="linkAdd"><i class="fas fa-link"></i> 묶기</button></div></div>
 
             <div class="group">저작권 정보<small>음저협 정산·저작물 리스트용 (자작곡은 비워도 돼요)</small></div>
@@ -815,10 +818,22 @@
 
     // 같은 곡 묶기: 묶인 악보 목록(✕로 풀기) + 곡명으로 찾아 더하기 (그 악보가 이미 다른 악보와 묶여 있으면 그 묶음째)
     const linkLabel = x => `${x.title} — ${(STYLE[x.style] || ['악보'])[0]}${x.artist ? ' · ' + x.artist : ''}`;
+    // 편집 중인 악보의 다른 편곡 — 곡명·가수·종류 칸 값으로 (제목 끝 "(… 편곡)"만 다르면 자동으로 묶임, song_key 묶기와 따로)
+    function editingVersions() {
+        const cur = { title: form.elements.title.value, artist: form.elements.artist.value, style: form.elements.style.value };
+        return versionsOf(cur).filter(x => x.id !== (editing && editing.id));
+    }
+    function renderVerNote() {
+        const v = editingVersions(), box = $('verNote');
+        box.hidden = !v.length;
+        box.innerHTML = v.length ? `<i class="fas fa-layer-group"></i> <b>다른 편곡과 이미 묶여 있어요</b> (제목 끝 '(… 편곡)'으로 자동): ${v.map(x => esc(x.title) + (x.published ? '' : ' · 비공개')).join(', ')}<br><small>편곡끼리는 따로 파는 악보라 여기 '묶기'를 쓰지 않아요 — 묶기는 반주 + 기타솔로처럼 함께 사는 구성만</small>` : '';
+    }
     function renderLinks() {
+        renderVerNote();
         $('links').innerHTML = [...linkIds].map(id => sheets.find(x => x.id === id)).filter(Boolean)
             .map(x => `<span class="lk">${esc(x.title)} <small>${(STYLE[x.style] || ['악보'])[0]} · ${won(x.price)}${x.published ? '' : ' · 비공개'}</small><button type="button" data-unlink="${x.id}" title="묶음에서 빼기"><i class="fas fa-xmark"></i></button></span>`).join('');
-        $('linkList').innerHTML = sheets.filter(x => x.id !== (editing && editing.id) && !linkIds.has(x.id)).map(x => `<option value="${esc(linkLabel(x))}">`).join('');
+        const ver = new Set(editingVersions().map(x => x.id));
+        $('linkList').innerHTML = sheets.filter(x => x.id !== (editing && editing.id) && !linkIds.has(x.id) && !ver.has(x.id)).map(x => `<option value="${esc(linkLabel(x))}">`).join('');
         updateThumb();
     }
     $('links').addEventListener('click', e => { const b = e.target.closest('[data-unlink]'); if (b) { linkIds.delete(b.dataset.unlink); renderLinks(); } });
@@ -838,13 +853,17 @@
     // 곡명 칸 드롭다운: 치는 글자가 들어간 이미 있는 악보 (자기 자신·이미 묶은 악보 빼고), 누르면 같은 곡으로 묶는다
     function renderTitleSug() {
         const q = songName(form.elements.title.value), self = editing && editing.id;
-        const list = q.length < 2 ? [] : sheets.filter(x => x.id !== self && !linkIds.has(x.id) && songName(x.title).includes(q)).slice(0, 8);
+        const ver = new Set(editingVersions().map(x => x.id));   // 다른 편곡은 이미 자동으로 묶여 있어서 빼고
+        const list = q.length < 2 ? [] : sheets.filter(x => x.id !== self && !linkIds.has(x.id) && !ver.has(x.id) && songName(x.title).includes(q)).slice(0, 8);
         $('titleSug').hidden = !list.length;
         $('titleSug').innerHTML = list.length ? '<div class="hd">이미 있는 악보 — 누르면 같은 곡으로 묶여요 (상세 페이지 하나로, 반주 + 기타솔로는 500원 할인)</div>' + list.map(x =>
             `<button type="button" data-tsug="${x.id}"><span>${esc(x.title)}<small>${(STYLE[x.style] || ['악보'])[0]}${x.artist ? ' · ' + esc(x.artist) : ''}${x.published ? '' : ' · 비공개'}</small></span><span class="tag"><i class="fas fa-link"></i> 묶기</span></button>`).join('') : '';
     }
-    form.elements.title.addEventListener('input', renderTitleSug);
-    form.elements.title.addEventListener('focus', renderTitleSug);
+    form.elements.title.addEventListener('input', () => { renderTitleSug(); renderVerNote(); });
+    // 있는 악보를 열 때는 곡명 칸에 자동으로 포커스가 가서, 그때 드롭다운이 저절로 열리지 않게 (새 악보일 때만)
+    form.elements.title.addEventListener('focus', () => { if (!editing) renderTitleSug(); });
+    form.elements.artist.addEventListener('input', renderVerNote);
+    form.elements.style.addEventListener('change', renderVerNote);
     form.elements.title.addEventListener('blur', () => setTimeout(() => { $('titleSug').hidden = true; }, 150));
     $('titleSug').addEventListener('mousedown', e => {
         const b = e.target.closest('[data-tsug]'); if (!b) return;
