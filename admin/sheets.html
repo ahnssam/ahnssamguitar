@@ -114,6 +114,27 @@
     .seg.chk button.zero small { background: #eef6f1; color: #1f8a52; }
     .seg.chk button.on small { background: rgba(255, 255, 255, .2); color: #fff; }
     .empty { text-align: center; padding: 50px; color: var(--sub); background: #fff; border: 1px dashed #d8d8d8; border-radius: 12px; }
+    /* 안쌤의 픽: 목록 '상태' 칸의 별을 눌러 1~5위를 고른다 (메인 맨 위 왼쪽 칸, db/sheet_picks.sql) */
+    .pk { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; border: 1px solid var(--line); border-radius: 99px; background: #fff; padding: 2px 9px; font-size: 12px; color: #aaa; cursor: pointer; white-space: nowrap; }
+    .pk:hover { border-color: var(--gold); color: var(--gold); }
+    .pk.on { border-color: var(--gold); background: #fbf5e6; color: #8a6a1f; font-weight: 700; }
+    .pick-pop { position: absolute; z-index: 40; width: 240px; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.14); padding: 8px; }
+    .pick-pop h4 { font-size: 12.5px; color: var(--sub); font-weight: 500; padding: 2px 6px 6px; }
+    .pick-pop button { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: none; border-radius: 8px; padding: 7px 8px; font-size: 13px; text-align: left; cursor: pointer; }
+    .pick-pop button:hover { background: #fbf5e6; }
+    .pick-pop button b { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: #f1ebdc; color: #8a6a1f; font-size: 12px; }
+    .pick-pop button.cur b { background: var(--gold); color: #fff; }
+    .pick-pop button span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #555; }
+    .pick-pop button span.free { color: #bbb; }
+    .pick-pop .rm { margin-top: 4px; border-top: 1px solid #f0f0f0; border-radius: 0 0 8px 8px; color: var(--red); justify-content: center; }
+    .pick-pop .warn { font-size: 11.5px; color: #9a6700; padding: 4px 6px 2px; }
+    .pick-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .pick-bar span { display: inline-flex; align-items: center; gap: 5px; max-width: 170px; border: 1px solid var(--line); border-radius: 99px; background: #fff; padding: 3px 10px 3px 4px; font-size: 12px; }
+    .pick-bar span b { flex: none; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--gold); color: #fff; font-size: 11px; }
+    .pick-bar span i { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pick-bar span.free { color: #bbb; }
+    .pick-bar span.free b { background: #e8e2d2; }
+    .pick-bar span.hid { color: #9a6700; }
 
     /* 편집 창 */
     .dim { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: none; z-index: 50; }
@@ -362,6 +383,7 @@
         <span class="lbl" style="margin-left:8px;">확인용</span>
         <div class="seg chk" id="chkSeg"></div>
     </div>
+    <div class="toolbar2"><span class="lbl"><i class="fas fa-star" style="color:var(--gold)"></i> 안쌤의 픽</span><div class="pick-bar" id="pickBar"></div></div>
     <div id="listWrap"></div>
 </main>
 
@@ -602,6 +624,7 @@
         }
         if (checkFilter === 'dup') rows = rows.slice().sort((a, b) => dupKey(a).localeCompare(dupKey(b), 'ko'));   // 같은 곡끼리 붙여서
         renderChecks(dups);
+        renderPickBar();
         $('count').textContent = `${sheets.length}곡 · PDF ${sheets.filter(s => filesById[s.id]).length} · 공개 ${sheets.filter(s => s.published).length}`;
         renderProgress();
         if (!sheets.length) {
@@ -624,13 +647,64 @@
                     (v => v.length > 1 ? `<span class="chip vers" title="같은 곡 다른 편곡 — 메인에서 한 줄로, 상세 페이지에서 편곡 버튼으로 고른다 (따로 파는 악보, 할인 없음)&#10;${esc(v.map(x => x.title + (x.published ? '' : ' (비공개)')).join(' / '))}"><i class="fas fa-layer-group"></i> 편곡 ${v.length}가지: ${v.map(x => esc(verTag(x.title))).join(' · ')}</span>` : '')(versionsOf(s))}</td>
                 <td class="c-lv"><span class="lv pick" title="눌러서 난이도 바꾸기">${[1, 2, 3, 4, 5].map(i => `<button type="button" data-lv-set="${i}" class="${i <= (s.difficulty || 0) ? '' : 'off'}">●</button>`).join('')}</span></td>
                 <td class="c-pr"><span class="prc" title="숫자를 고치고 확인을 누르면 가격이 바뀌어요"><input type="number" min="0" step="500" value="${s.price || 0}" data-price="${s.id}" aria-label="가격">원<button type="button" class="ok" data-price-ok="${s.id}" hidden>확인</button></span></td>
-                <td><span class="pub ${s.published ? 'on' : ''}" data-toggle="${s.id}"><span class="dot"></span>${s.published ? '공개' : '비공개'}</span></td>
+                <td><span class="pub ${s.published ? 'on' : ''}" data-toggle="${s.id}"><span class="dot"></span>${s.published ? '공개' : '비공개'}</span><br><button type="button" class="pk ${s.pick_rank ? 'on' : ''}" data-pick="${s.id}" title="안쌤의 픽 순위 고르기 (메인 맨 위 왼쪽)"><i class="${s.pick_rank ? 'fas' : 'far'} fa-star"></i>${s.pick_rank ? '픽 ' + s.pick_rank + '위' : '픽'}</button></td>
                 <td class="c-up" style="color:var(--sub);font-size:12.5px;">${ymd(s.updated_at)}</td>
                 <td class="c-go"><a class="salego" href="/tab-detail.html?id=${s.id}" target="_blank" rel="noopener" title="손님에게 보이는 판매 페이지를 새 탭으로 열기${s.published ? '' : ' (비공개 악보는 운영 계정에게만 보여요)'}"><span>판매페이지 보기</span><i class="fas fa-arrow-up-right-from-square"></i></a></td>
             </tr>`).join('')
         }</tbody></table>`;
     }
     const ymd = t => { const d = new Date(t); return isNaN(d) ? '' : `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`; };
+
+    // ---------- 안쌤의 픽: 별표 1~5위 (2026-11-06 사용자 요청) ----------
+    // 메인 맨 위 왼쪽 칸에 순위대로 보인다(공개한 곡만). 한 순위엔 한 곡 — 이미 그 순위인 곡이 있으면 그 곡은 픽에서 빠진다.
+    // 순위만 바꾸면 수정 시각이 그대로라 '새로 나온 악보' 순서는 안 바뀐다 (db/sheet_picks.sql)
+    const pickOf = n => sheets.find(x => x.pick_rank === n);
+    function renderPickBar() {
+        $('pickBar').innerHTML = [1, 2, 3, 4, 5].map(n => {
+            const s = pickOf(n);
+            if (!s) return `<span class="free"><b>${n}</b><i>비어 있음</i></span>`;
+            return `<span class="${s.published ? '' : 'hid'}" title="${esc(s.title)}${s.published ? '' : ' — 비공개라 메인에 안 보여요'}"><b>${n}</b><i>${esc(s.title)}${s.published ? '' : ' (비공개)'}</i></span>`;
+        }).join('');
+    }
+    let pickPop = null;
+    const closePickPop = () => { if (pickPop) { pickPop.remove(); pickPop = null; } };
+    function openPickPop(btn) {
+        const id = btn.dataset.pick, s = sheets.find(x => x.id === id);
+        if (pickPop && pickPop.dataset.id === id) { closePickPop(); return; }
+        closePickPop();
+        pickPop = document.createElement('div');
+        pickPop.className = 'pick-pop'; pickPop.dataset.id = id;
+        pickPop.innerHTML = `<h4>${esc(s.title)} — 픽 순위</h4>${[1, 2, 3, 4, 5].map(n => {
+            const h = pickOf(n);
+            return `<button type="button" data-rank="${n}" class="${h && h.id === id ? 'cur' : ''}"><b>${n}</b>${h ? `<span>${h.id === id ? '지금 이 곡' : esc(h.title) + ' 대신'}</span>` : '<span class="free">비어 있음</span>'}</button>`;
+        }).join('')}${s.pick_rank ? '<button type="button" class="rm" data-rank="0">픽에서 빼기</button>' : ''}${s.published ? '' : '<div class="warn"><i class="fas fa-triangle-exclamation"></i> 비공개 악보는 공개해야 메인에 보여요</div>'}`;
+        document.body.appendChild(pickPop);
+        const r = btn.getBoundingClientRect();
+        pickPop.style.top = (r.bottom + scrollY + 6) + 'px';
+        pickPop.style.left = Math.max(10, Math.min(r.left + scrollX, scrollX + document.documentElement.clientWidth - pickPop.offsetWidth - 10)) + 'px';
+        pickPop.addEventListener('click', e => {
+            const b = e.target.closest('[data-rank]'); if (!b) return;
+            closePickPop();
+            savePick(id, +b.dataset.rank);
+        });
+    }
+    document.addEventListener('click', e => { if (pickPop && !e.target.closest('.pick-pop, [data-pick]')) closePickPop(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closePickPop(); });
+    async function savePick(id, n) {   // n = 1~5, 0 = 픽에서 빼기
+        const s = sheets.find(x => x.id === id);
+        if ((s.pick_rank || 0) === n) return;
+        const fail = err => alert(/pick_rank/.test(err.message) ? 'DB에 픽 칸이 아직 없어요. db/sheet_picks.sql 을 먼저 적용해야 해요.' : '픽을 바꾸지 못했어요: ' + err.message);
+        const holder = n ? sheets.find(x => x.pick_rank === n && x.id !== id) : null;
+        if (holder) {   // 같은 순위는 한 곡만 (DB 유일 색인) — 먼저 비운다
+            const r = await sb.from('sheets').update({ pick_rank: null }).eq('id', holder.id);
+            if (r.error) { fail(r.error); return; }
+            holder.pick_rank = null;
+        }
+        const { data, error } = await sb.from('sheets').update({ pick_rank: n || null }).eq('id', id).select().single();
+        if (error) { fail(error); render(); return; }
+        Object.assign(s, data);
+        render();
+    }
     // 가격: 고치면 확인 버튼이 나오고(Enter 도 같음, Esc 는 되돌리기), 저장하면 그 줄만 바꾼다 — 다른 줄에 고치던 값이 지워지지 않게
     async function savePrice(id) {
         const s = sheets.find(x => x.id === id), inp = $('listWrap').querySelector(`[data-price="${id}"]`), ok = inp.parentNode.querySelector('.ok');
@@ -678,6 +752,8 @@
             Object.assign(s, data); render();
             return;
         }
+        const pk = e.target.closest('[data-pick]');
+        if (pk) { e.stopPropagation(); openPickPop(pk); return; }
         const t = e.target.closest('[data-toggle]');
         if (t) {
             e.stopPropagation();
