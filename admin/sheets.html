@@ -305,6 +305,15 @@
     .rk-row .n { flex: none; font-weight: 700; font-size: 13px; }
     .rk-row.done .nm b { color: #9a9a9a; }
     .rk-row .go { flex: none; font-size: 12px; color: var(--gold); font-weight: 700; }
+    .rk-row .why { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
+    .rk-row .why i { font-style: normal; font-size: 10.5px; padding: 0 6px; border-radius: 8px; background: #f1f4f2; color: #555; white-space: nowrap; }
+    .rk-row .why i.up { background: #e6f4ea; color: var(--green); font-weight: 700; }
+    .rk-row .why i.dn { background: #fbeeee; color: #b04a4a; }
+    .rk-row .dt { flex: none; font-size: 11.5px; color: var(--sub); }
+    .rk-how { font-size: 11.5px; color: var(--sub); line-height: 1.6; margin: 8px 0 4px; }
+    .rk-tg { display: inline-flex; gap: 4px; margin-top: 6px; }
+    .rk-tg button { font: inherit; font-size: 11.5px; font-weight: 700; border: 1px solid var(--line); background: #fff; border-radius: 12px; padding: 1px 10px; cursor: pointer; color: #666; }
+    .rk-tg button.on { background: var(--ink); border-color: var(--ink); color: #fff; }
 
     @media (max-width: 900px) {
         .rank { inset: 0; border-radius: 0; }
@@ -341,7 +350,7 @@
             <button class="on" data-f="all">전체</button><button data-f="pub">공개</button><button data-f="draft">비공개</button>
         </div>
         <div class="search"><i class="fas fa-search"></i><input id="q" placeholder="곡명·가수 검색"></div>
-        <button class="btn rank-btn" id="rankBtn" title="풀스코어 판매 순위로 다음에 올릴 악보 고르기"><i class="fas fa-ranking-star"></i> 뭐부터 올리지?</button>
+        <button class="btn rank-btn" id="rankBtn" title="다음에 올릴 악보 순위 · 최근 올린 악보 · 판매 TOP"><i class="fas fa-ranking-star"></i> 뭐부터 올리지?</button>
         <button class="btn primary" id="newBtn"><i class="fas fa-plus"></i> 새 악보</button>
     </div>
     <div class="progress" id="progress" hidden></div>
@@ -519,7 +528,7 @@
             return;
         }
         sheets = data || [];
-        const files = await sb.from('sheet_files').select('sheet_id, file_name, file_size');
+        const files = await sb.from('sheet_files').select('sheet_id, file_name, file_size, updated_at');
         filesById = {};
         (files.data || []).forEach(f => { filesById[f.sheet_id] = f; });
         render();
@@ -805,6 +814,7 @@
     // 순위 = sheet_sales 표 (db/sheet_sales.sql, 운영 계정만 읽음). 체크 = 사이트에 PDF 를 올린 곡.
     let sales = null;          // 처음 열 때 한 번 읽는다
     let fromRank = false;      // 순위에서 곡을 눌러 편집 창을 열었으면 닫을 때 순위로 돌아간다
+    let topBy = 'six';         // 판매 TOP 칸: 'six' = 최근 6개월 · 'all' = 누적
     const RANK_N = 30;
     const fmtDay = d => d ? String(d).replace(/-/g, '.') : '';
     function showRank() { $('rank').hidden = false; $('dim').classList.add('open'); renderRank(); }
@@ -824,35 +834,96 @@
     };
     $('rkClose').onclick = closeRank;
     $('rkBody').addEventListener('click', e => {
+        const t = e.target.closest('[data-top]');
+        if (t) { topBy = t.dataset.top; renderRank(); return; }
         const r = e.target.closest('.rk-row'); if (!r) return;
         const s = sheets.find(x => x.id === r.dataset.id); if (!s) return;
         closeRank(); fromRank = true; openEditor(s);
     });
+
+    // 다음에 올릴 곡 점수 (2026-11-06) — 이유를 칩으로 같이 보여 준다
+    //   최근 6개월 판매 ×4 (지금 찾는 곡) + 누적 판매 ÷2 (꾸준히 찾는 곡)
+    //   풀스코어에 나온 지 6개월이 안 된 곡은 6개월 판매를 6개월치로 늘려서 본다 (새 악보는 처음 몇 달에 가장 많이 팔림)
+    //   같은 곡 다른 편곡이 이미 사이트에 있으면 ×0.5 (손님이 이미 살 수 있음) · 유튜브 영상이 없으면 ×0.7 (손님은 거의 유튜브에서 옴)
+    //   같은 곡 반주·솔로(song_key) 짝이 이미 올라가 있으면 +10 (올리면 바로 묶음 할인 세트)
+    //   짝 둘 다 아직이면 한 줄로 합쳐 점수도 더한다 (같이 올려야 묶음)
+    const regOf = c => /^\d{6}/.test(c || '') ? new Date(2000 + +c.slice(0, 2), +c.slice(2, 4) - 1, +c.slice(4, 6)) : null;
+    const baseTitle = t => String(t || '').normalize('NFC').replace(/\s*[\(\[][^)\]]*[\)\]]/g, '').replace(/\s+/g, '').toLowerCase();
+    function nextList(items, done) {
+        const asOf = new Date((sales[0] || {}).as_of || Date.now());
+        const upTitles = new Set(sheets.filter(s => filesById[s.id]).map(s => baseTitle(s.title)));
+        const one = x => {
+            const s = x.s, why = [], reg = regOf(s.fullscore_code);
+            const months = reg ? (asOf - reg) / 2.63e9 : 99;
+            let six = x.sold_6m;
+            if (months < 6) { six = x.sold_6m * 6 / Math.max(1, months); why.push(['up', `나온 지 ${Math.max(1, Math.round(months))}개월`]); }
+            let sc = six * 4 + x.sold_total / 2;
+            if (x.sold_6m >= 5) why.unshift(['up', `요즘 잘 팔림 (6개월 ${x.sold_6m})`]);
+            else why.unshift(['', `6개월 ${x.sold_6m}`]);
+            why.splice(1, 0, ['', `누적 ${x.sold_total}`]);
+            const mates = s.song_key ? sheets.filter(y => y.song_key === s.song_key && y.id !== s.id) : [];
+            const mateUp = mates.find(y => filesById[y.id]);
+            if (mateUp) { sc += 10; why.push(['up', `${STYLE[mateUp.style] ? STYLE[mateUp.style][0] : '짝'} 올라가 있음 → 바로 묶음`]); }
+            if (!mateUp && upTitles.has(baseTitle(s.title))) { sc *= 0.5; why.push(['dn', '다른 편곡이 이미 있음']); }
+            if (!s.youtube_id) { sc *= 0.7; why.push(['dn', '영상 없음']); }
+            return { ...x, sc, why };
+        };
+        const list = items.filter(x => !done(x)).map(one);
+        // 반주·솔로 짝이 둘 다 아직이면 한 줄로
+        const out = [], seen = new Set();
+        for (const x of list) {
+            if (seen.has(x.s.id)) continue;
+            const pair = x.s.song_key ? list.filter(y => y !== x && y.s.song_key === x.s.song_key) : [];
+            if (!pair.length) { out.push(x); continue; }
+            const g = [x, ...pair].sort((a, b) => (PART_ORDER[a.s.style] ?? 5) - (PART_ORDER[b.s.style] ?? 5));
+            g.forEach(y => seen.add(y.s.id));
+            const sum = k => g.reduce((n, y) => n + y[k], 0), s6 = sum('sold_6m');
+            out.push({ ...g[0], pair: g, sc: sum('sc'), sold_6m: s6, sold_total: sum('sold_total'),
+                why: [[s6 >= 5 ? 'up' : '', s6 >= 5 ? `요즘 잘 팔림 (6개월 ${s6})` : `6개월 ${s6}`], ['', `누적 ${sum('sold_total')}`],
+                    ['up', g.map(y => STYLE[y.s.style] ? STYLE[y.s.style][0] : '악보').join(' + ') + ' 같이 → 묶음'], ...(g[0].s.youtube_id ? [] : [['dn', '영상 없음']])] });
+        }
+        return out.sort((a, b) => b.sc - a.sc);
+    }
+
     function renderRank() {
         if (!sales) return;
         const byCode = {};
         sheets.forEach(s => { if (s.fullscore_code) byCode[s.fullscore_code] = s; });
         const items = sales.map(r => ({ ...r, s: byCode[r.fullscore_code] })).filter(x => x.s);
         const done = x => !!filesById[x.s.id];
-        const all = [...items].sort((a, b) => b.sold_total - a.sold_total || b.sold_6m - a.sold_6m);
-        const six = items.filter(x => x.sold_6m > 0).sort((a, b) => b.sold_6m - a.sold_6m || b.sold_total - a.sold_total);
-        // 추천: 아직 PDF 없는 곡 중 요즘 팔리는 곡에 무게 (최근 6개월 ×4 + 누적 ×0.5)
-        const score = x => x.sold_6m * 4 + x.sold_total / 2;
-        const next = items.filter(x => !done(x)).sort((a, b) => score(b) - score(a));
         const label = s => [s.artist, STYLE[s.style] && STYLE[s.style][0]].filter(Boolean).join(' · ');
-        const row = (x, i, right, sub) => `<div class="rk-row ${done(x) ? 'done' : ''}" data-id="${x.s.id}" title="눌러서 이 악보 열기">
-            <span class="no">${i + 1}</span><span class="ck">${done(x) ? '<i class="fas fa-circle-check" title="사이트에 올림"></i>' : ''}</span>
-            <span class="nm"><b>${esc(x.s.title)}</b><small>${esc(label(x.s))}${sub ? ' · ' + sub : ''}</small></span>${right}</div>`;
-        const upIn = list => list.slice(0, RANK_N).filter(done).length;
+        const chips = why => `<span class="why">${why.map(([c, t]) => `<i class="${c}">${esc(t)}</i>`).join('')}</span>`;
+        const row = (s, i, right, sub, ok) => `<div class="rk-row ${ok ? 'done' : ''}" data-id="${s.id}" title="눌러서 이 악보 열기">
+            <span class="no">${i + 1}</span><span class="ck">${ok ? '<i class="fas fa-circle-check" title="사이트에 올림"></i>' : ''}</span>
+            <span class="nm"><b>${esc(s.title)}</b><small>${esc(label(s))}</small>${sub || ''}</span>${right}</div>`;
         const meta = sales[0] || {};
+        // 1) 다음에 올릴 곡
+        const next = nextList(items, done);
+        const nextHtml = next.slice(0, RANK_N).map((x, i) => {
+            const s = x.pair ? { ...x.s, style: '', artist: [x.s.artist, x.pair.map(y => STYLE[y.s.style] ? STYLE[y.s.style][0] : '').join(' + ')].filter(Boolean).join(' · ') } : x.s;
+            return row(s, i, '<span class="go">올리기 ›</span>', chips(x.why), false);
+        }).join('') || '<p class="rk-msg">다 올렸어요 🎉</p>';
+        // 2) 최근 올린 악보 (사이트에 PDF 를 올린 날 순)
+        const ups = sheets.filter(s => filesById[s.id]).sort((a, b) => String(filesById[b.id].updated_at || '').localeCompare(String(filesById[a.id].updated_at || '')));
+        const md = d => d ? String(d).slice(5, 10).replace('-', '.') : '';
+        const upHtml = ups.map((s, i) => row(s, i, `<span class="dt">${md(filesById[s.id].updated_at)}</span>`, s.published ? '' : chips([['dn', '비공개']]), true)).join('');
+        // 3) 판매 TOP 30 (누적 / 최근 6개월)
+        const top = topBy === 'all'
+            ? [...items].sort((a, b) => b.sold_total - a.sold_total || b.sold_6m - a.sold_6m)
+            : items.filter(x => x.sold_6m > 0).sort((a, b) => b.sold_6m - a.sold_6m || b.sold_total - a.sold_total);
+        const topN = top.slice(0, RANK_N);
+        const topHtml = topN.map((x, i) => row(x.s, i, `<span class="n">${topBy === 'all' ? x.sold_total : x.sold_6m}</span>`,
+            `<small>${topBy === 'all' ? '6개월 ' + x.sold_6m : '누적 ' + x.sold_total}</small>`, done(x))).join('');
         $('rkNote').textContent = `풀스코어 정산(결제된 판매) 기준 · ${fmtDay(meta.as_of)}까지`;
         $('rkBody').innerHTML = `<div class="rk-cols">
-            <section class="rk-col next"><h4>다음에 올릴 곡<small>아직 PDF 없는 곡 · 요즘 팔리는 곡 먼저</small></h4>
-                ${next.slice(0, RANK_N).map((x, i) => row(x, i, '<span class="go">올리기 ›</span>', `6개월 ${x.sold_6m} · 누적 ${x.sold_total}`)).join('') || '<p class="rk-msg">다 올렸어요 🎉</p>'}</section>
-            <section class="rk-col"><h4>누적 판매<small>${RANK_N}위 안에서 ${upIn(all)}곡 올림</small></h4>
-                ${all.slice(0, RANK_N).map((x, i) => row(x, i, `<span class="n">${x.sold_total}</span>`, `6개월 ${x.sold_6m}`)).join('')}</section>
-            <section class="rk-col"><h4>최근 6개월<small>${fmtDay(meta.six_from)}부터 · ${RANK_N}위 안에서 ${upIn(six)}곡 올림</small></h4>
-                ${six.slice(0, RANK_N).map((x, i) => row(x, i, `<span class="n">${x.sold_6m}</span>`, `누적 ${x.sold_total}`)).join('')}</section>
+            <section class="rk-col next"><h4>다음에 올릴 곡<small>아직 안 올린 곡 · ${next.length}곡 중 위 ${Math.min(RANK_N, next.length)}곡</small></h4>
+                <p class="rk-how">점수 = 최근 6개월 판매 ×4 + 누적 ÷2 · 나온 지 6개월 안 된 곡은 6개월치로 늘려 봄 · 반주·솔로 짝은 같이 올리면 묶음이라 한 줄로 · 짝이 이미 있으면 +10 · 다른 편곡이 이미 있으면 ×0.5 · 영상 없으면 ×0.7</p>
+                ${nextHtml}</section>
+            <section class="rk-col"><h4>최근 올린 악보<small>사이트에 PDF를 올린 날 순 · ${ups.length}곡 (공개 ${ups.filter(s => s.published).length})</small></h4>
+                ${upHtml || '<p class="rk-msg">아직 없어요</p>'}</section>
+            <section class="rk-col"><h4>판매 TOP ${RANK_N}<small>${topBy === 'all' ? '누적' : fmtDay(meta.six_from) + '부터 6개월'} · ${topN.filter(done).length}곡 올림</small>
+                <span class="rk-tg"><button type="button" data-top="six" class="${topBy === 'six' ? 'on' : ''}">최근 6개월</button><button type="button" data-top="all" class="${topBy === 'all' ? 'on' : ''}">누적</button></span></h4>
+                ${topHtml}</section>
         </div>`;
     }
 

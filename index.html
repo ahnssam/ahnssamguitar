@@ -868,11 +868,15 @@
         low: (a, b) => (b.on - a.on) || (a.p - b.p),                                   // 낮은 가격: 가격이 보이는 올린 곡 먼저
         w: (a, b) => (b.w - a.w) || SORT.rec(a, b),                                    // 이번 주 인기: 최근 7일 사이트 판매, 같으면 추천순
         m: (a, b) => (b.m - a.m) || SORT.rec(a, b),                                    // 이번 달 인기: 최근 30일 사이트 판매, 같으면 추천순
-        fresh: (a, b) => (b.on - a.on) || (a.on ? String(b.up).localeCompare(String(a.up)) : String(b.c).localeCompare(String(a.c))),
+        fresh: (a, b) => (b.on - a.on) || String(b.rel).localeCompare(String(a.rel)),   // 올린 곡 먼저, 그다음 악보가 나온 날(rel) 최신순
     };
 
+    // 악보가 나온 날 = 풀스코어 등록 순서 (2026-11-06 사용자 요청: '새로 나온 악보'는 풀스코어 내 악보 목록 최신순대로).
+    //   풀스코어 코드(2511210007)의 앞 6자리가 등록 날짜라 코드 순서 = 풀스코어 목록 최신순.
+    //   풀스코어에 없는 사이트 전용 악보(코드악보 등)는 사이트에 올린 날로 같은 꼴(YYMMDD + 9999)을 만들어 그 날짜 자리에 끼운다
+    const relKey = x => x.c ? String(x.c) : x.up ? String(x.up).slice(2, 10).replace(/-/g, '') + '9999' : '';
     const tidy = list => mergeVersions(bundle(list.filter(x => STYLE[x.s === 'fingerstyle' ? 'finger' : x.s])
-        .map(x => ({ ...x, t: String(x.t || '').normalize('NFC'), s: x.s === 'fingerstyle' ? 'finger' : x.s, k: norm(x.t + ' ' + (x.a || '') + ' ' + STYLE[x.s === 'fingerstyle' ? 'finger' : x.s][1]) }))));   // 종류 이름(기타솔로·코드악보…)으로도 검색
+        .map(x => ({ ...x, rel: relKey(x), t: String(x.t || '').normalize('NFC'), s: x.s === 'fingerstyle' ? 'finger' : x.s, k: norm(x.t + ' ' + (x.a || '') + ' ' + STYLE[x.s === 'fingerstyle' ? 'finger' : x.s][1]) }))));   // 종류 이름(기타솔로·코드악보…)으로도 검색
     // 같은 곡(sk = song_key)의 일렉기타 반주 + 기타솔로: 일렉기타 칸에 '+ 기타솔로'로 하나만, 가격은 함께 산 값(500원 할인).
     // 통기타 악보는 통기타 칸에 따로(2,500원). 같은 곡 일렉기타가 없는 기타솔로는 기타솔로 칸에 그대로.
     const SET_DISCOUNT = 500;
@@ -912,7 +916,7 @@
             Object.assign(r, {
                 t: r.t.replace(VER_RE, ''), a: (r.a ? r.a + ' · ' : '') + `편곡 ${g.length}가지`,
                 members: g.map(x => x.id), pmin: Math.min(...ps), pmax: Math.max(...ps),
-                o: g.reduce((n, x) => n + (x.o || 0), 0), up: g.map(x => String(x.up)).sort().pop(),
+                o: g.reduce((n, x) => n + (x.o || 0), 0), up: g.map(x => String(x.up)).sort().pop(), rel: g.map(x => x.rel).sort().pop(),
                 yt: g.some(x => x.yt) ? (r.yt || g.find(x => x.yt).yt) : r.yt, cv: r.cv || (g.find(x => x.cv) || {}).cv,
                 k: g.map(x => x.k).join(' ') + ' 편곡',
             });
