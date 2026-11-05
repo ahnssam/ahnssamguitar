@@ -222,8 +222,17 @@
     .col-hd { display: flex; align-items: baseline; gap: 10px; padding-bottom: 12px; border-bottom: 2px solid var(--green-deep); }
     .col-hd small { font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 700; color: var(--green-mid); letter-spacing: 0.15em; }
     .col-hd h2 { font-size: 19px; font-weight: 900; letter-spacing: -0.02em; }
-    .col-hd .tabs { display: flex; gap: 12px; font-size: 13px; color: #999; margin-left: 8px; }
-    .col-hd .tabs a.on { color: var(--green-deep); font-weight: 700; }
+    /* 인기 악보 주별·월별·전체: 제목 옆 작은 알약 버튼 묶음 */
+    .col-hd .tabs { display: flex; gap: 2px; align-self: center; margin-left: 2px; padding: 2px; border-radius: 99px; background: var(--green-faint); }
+    .col-hd .tabs button { font: inherit; font-size: 12.5px; line-height: 1.5; color: #5d7568; background: none; border: 0; border-radius: 99px; padding: 2px 10px; cursor: pointer; white-space: nowrap; transition: background-color .2s, color .2s, box-shadow .2s; }
+    .col-hd .tabs button:hover { color: var(--green-deep); }
+    .col-hd .tabs button[aria-pressed="true"] { background: #fff; color: var(--green-deep); font-weight: 700; box-shadow: 0 1px 3px rgba(42,107,74,0.2); }
+    .col-hd .tabs button:focus-visible { outline: 2px solid var(--green-mid); outline-offset: 1px; }
+    .best-col { container: best / inline-size; }
+    .best-note { display: flex; gap: 6px; align-items: baseline; margin-top: 10px; font-size: 12px; color: var(--sub); line-height: 1.5; }
+    .best-note i { color: var(--green-mid); }
+    @container best (max-width: 340px) { .best-col .col-hd .more { font-size: 0; } .best-col .col-hd .more i { font-size: 12px; } }   /* 좁으면 '더보기'는 화살표만 */
+    @container best (max-width: 300px) { .best-col .col-hd small { display: none; } }
     .more { margin-left: auto; font-size: 13px; color: #888; white-space: nowrap; }
     .big-hd { text-align: center; margin-bottom: 44px; }
     .big-hd .label { font-size: 0.8rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--green-mid); font-weight: 600; margin-bottom: 0.6rem; }
@@ -666,10 +675,12 @@
             <div class="col-hd"><small>TYPE</small><h2>종류별 악보</h2><a class="more" href="#browse" data-sort="rec">전체 보기 <i class="fas fa-chevron-right"></i></a></div>
             <div class="type-grid" id="typeGrid"></div>
         </div>
-        <div>
+        <div class="best-col">
             <div class="col-hd"><small>BEST</small><h2>인기 악보</h2>
-                <a class="more" href="#browse" data-sort="pop">더보기 <i class="fas fa-chevron-right"></i></a></div>
-            <div id="bestList"></div>
+                <div class="tabs" id="bestTabs" role="group" aria-label="인기 악보 기간"><button type="button" data-p="w" aria-pressed="false" aria-controls="bestList">주별</button><button type="button" data-p="m" aria-pressed="false" aria-controls="bestList">월별</button><button type="button" data-p="all" aria-pressed="true" aria-controls="bestList">전체</button></div>
+                <a class="more" href="#browse" data-sort="pop" aria-label="인기 악보 더보기">더보기 <i class="fas fa-chevron-right"></i></a></div>
+            <p class="best-note" id="bestNote" hidden></p>
+            <div id="bestList" aria-live="polite"></div>
         </div>
     </div>
 </section>
@@ -895,12 +906,42 @@
         return tidy(all);
     }
 
+    // 사이트에서 실제로 팔린 수 = DB 함수 sheet_popularity() (테스트 결제 빼고, 악보 id 와 판매 수만, db/sheet_popularity.sql).
+    // 같은 곡의 기타솔로 판매는 함수가 이미 일렉기타 반주 줄로 합쳐 준다. 못 받아도 목록은 그대로(전체 순위로)
+    async function loadPopularity() {
+        try {
+            const r = await fetch(SB_URL + '/rest/v1/rpc/sheet_popularity', { method: 'POST', headers: { apikey: SB_KEY, 'Content-Type': 'application/json' }, body: '{}' });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return new Map((await r.json()).map(p => [p.sheet_id, p]));
+        } catch (e) { console.warn('[sheets] 판매 순위를 못 불러왔어요', e); return new Map(); }
+    }
+
     const domReady = new Promise(r => document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', r, { once: true }) : r());
-    Promise.all([loadSheets(), domReady]).then(([ALL]) => {
+    Promise.all([loadSheets(), loadPopularity(), domReady]).then(([ALL, POP]) => {
         PAY_OPEN = !!(window.ahnssamCheckout && !window.ahnssamCheckout.isTest());
         const $ = id => document.getElementById(id);
+        // w = 최근 7일, m = 최근 30일 사이트 판매. 많이 팔린 순(o)은 풀스코어 누적 주문수 + 사이트 판매
+        for (const x of ALL) { const p = POP.get(x.id); x.w = p ? p.sold_7d : 0; x.m = p ? p.sold_30d : 0; if (p) x.o += p.sold_total; }
         $('newList').innerHTML = [...ALL].sort(SORT.fresh).slice(0, 6).map(x => row('<span class="new">NEW</span>', x)).join('');
-        $('bestList').innerHTML = [...ALL].sort(SORT.rec).slice(0, 6).map((x, i) => row(`<span class="no">${i + 1}</span>`, x)).join('');
+        // 인기 악보 주별·월별·전체 — 전체 = 추천 순(올린 곡 먼저, 많이 팔린 순).
+        // 주별·월별 = 그 기간 사이트 판매 순, 6곡이 안 되면 남은 자리는 전체 순으로 채우고 위에 안내 한 줄
+        const PERIOD = { w: '최근 7일', m: '최근 30일' };
+        const drawBest = p => {
+            const all = [...ALL].sort(SORT.rec);
+            let list = all, sold = 0;
+            if (PERIOD[p]) {
+                const hot = ALL.filter(x => x[p] > 0).sort((a, b) => (b[p] - a[p]) || SORT.rec(a, b));
+                sold = hot.length;
+                list = [...hot, ...all.filter(x => !(x[p] > 0))];
+            }
+            $('bestList').innerHTML = list.slice(0, 6).map((x, i) => row(`<span class="no">${i + 1}</span>`, x)).join('');
+            const note = $('bestNote');
+            note.hidden = !PERIOD[p] || sold >= 6;
+            if (!note.hidden) note.innerHTML = '<i class="fas fa-circle-info"></i><span>' + (sold ? `${PERIOD[p]} 동안 팔린 ${sold}곡 다음은 전체 인기순이에요` : `${PERIOD[p]} 판매가 아직 없어 전체 인기순으로 보여 드려요`) + '</span>';
+            $('bestTabs').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === p));
+        };
+        $('bestTabs').addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if (b) drawBest(b.dataset.p); });
+        drawBest('all');
         $('typeGrid').innerHTML = Object.keys(STYLE).map(k => {
             const list = ALL.filter(x => x.s === k).sort(SORT.rec);
             return `<div class="tbox" style="--c:${COLOR[k]}"><div class="tbox-hd"><i class="dot"></i><b>${STYLE[k][1]}</b><span>${list.length}곡</span><a href="#browse" data-type="${k}">더보기 <i class="fas fa-chevron-right"></i></a></div>
