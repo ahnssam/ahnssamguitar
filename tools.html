@@ -1703,6 +1703,8 @@
             line-height: 1.5;
             flex-shrink: 0;
         }
+        /* 설치한 앱(Google Play)에서는 메인 홈페이지(악보 판매)로 가는 링크를 숨긴다 */
+        @media (display-mode: standalone) { .sidebar-foot { display: none !important; } }
         .sidebar-foot a {
             color: rgba(26, 36, 33, 0.55);
             display: block;
@@ -31290,6 +31292,32 @@
                 setTimeout(function() { loader.classList.add('hidden'); }, 800);
             }
         });
+    </script>
+
+    <!-- 왼쪽 위 로고: 넓은 화면(데스크톱)에서는 메인 홈페이지로, 좁은 화면·모바일·설치한 앱에서는 오른쪽 '연습도구 홈' 버튼과 똑같이.
+         앱 안에서 로고를 눌러 악보 판매(메인)로 넘어가지 않게 (Google Play 결제 정책). 아래 홈 전환 효과보다 먼저(capture) 가로챈다. -->
+    <script>
+    (function () {
+        var logo = document.querySelector('.topbar-logo-link');
+        if (!logo || !window.matchMedia) return;
+        var narrow = matchMedia('(max-width: 900px), (orientation: portrait)');   // 연습도구의 모바일 화면 기준과 같다
+        var app = matchMedia('(display-mode: standalone)');
+        function asHome() { return narrow.matches || app.matches; }
+        function sync() {
+            var h = asHome();
+            logo.setAttribute('aria-label', h ? '연습도구 홈' : '메인 홈페이지로');
+            logo.title = h ? '연습도구 홈' : '';
+        }
+        sync();
+        if (narrow.addEventListener) narrow.addEventListener('change', sync);
+        document.addEventListener('click', function (e) {
+            if (!asHome() || !e.target.closest || !e.target.closest('.topbar-logo-link')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            var home = document.getElementById('topbarHomeBtn');
+            if (home) home.click();
+        }, true);
+    })();
     </script>
 
     <!-- Home transition: intercept logo click, fade in green overlay, then navigate -->

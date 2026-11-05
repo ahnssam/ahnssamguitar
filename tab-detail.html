@@ -1017,8 +1017,14 @@
                 if (PARTS.length > 1) set('fa-circle-check', '모두 구매한 악보예요'); else showDownload();
                 return;
             }
-            // 실결제 전(테스트 키): 결제창은 열리지만 살 수는 없다고 알리고, 지금 살 수 있는 풀스코어로 안내
+            // 설치한 앱(Google Play)에서는 디지털 상품을 팔지 않는다 — 구매 버튼·풀스코어 링크 없이 안내만 (Play 결제 정책)
             const note = document.getElementById('trialNote');
+            if (window.matchMedia && matchMedia('(display-mode: standalone)').matches) {
+                note.hidden = true;
+                set('fa-mobile-screen', '앱에서는 구매할 수 없어요');
+                return;
+            }
+            // 실결제 전(테스트 키): 결제창은 열리지만 살 수는 없다고 알리고, 지금 살 수 있는 풀스코어로 안내
             if (C.trialOnly()) {
                 note.innerHTML = '<i class="fas fa-circle-info"></i> 지금은 결제 연동을 점검하고 있어요. 열리는 결제창은 <b>테스트용</b>이라 돈이 빠지지 않고, 악보도 받을 수 없어요.' +
                     (p.fullscore_code ? ' <a href="https://www.fullscore.co.kr/shop/prd_view.php?prdcode=' + encodeURIComponent(p.fullscore_code) + '" target="_blank" rel="noopener">지금 이 악보는 풀스코어에서 구매할 수 있어요 <i class="fas fa-arrow-up-right-from-square"></i></a>' : '');
