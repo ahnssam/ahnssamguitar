@@ -403,6 +403,7 @@
         .set-deal { display: flex; gap: 0.7rem; align-items: center; padding: 0.85rem 1rem; border-radius: 12px; background: #fff6dc; color: #6b4a00; font-size: 0.9rem; line-height: 1.55; border: 1.5px solid #f2c94c; }
         .set-deal > i { color: #e8a200; font-size: 1.25rem; flex: none; }
         .set-deal b { color: #d64545; }
+        .set-deal .sum { color: #3d2a00; font-weight: 900; white-space: nowrap; }   /* '→ 3,500원' 은 줄이 바뀌어도 함께 */
         .set-deal.on { background: #ffeaa6; border-color: #e8a200; }
         .price-was { font-size: 1.1rem; font-weight: 500; color: var(--text-light); text-decoration: line-through; margin-right: 0.5rem; }
         .price-off { display: inline-block; vertical-align: middle; margin-left: 0.6rem; font-size: 0.8rem; font-weight: 800; color: #fff; background: #e05252; border-radius: 999px; padding: 3px 10px; }
@@ -960,9 +961,11 @@
                 const sep = (main.price || 0) + (solo.price || 0);
                 // 합본: 반주 안에 솔로까지 들어간 악보 — 둘 다 산 사람에게 덤 (db/sheet_bundle_full.sql)
                 const gift = main.bundle_pdf ? '<br>함께 사면 <b>반주 + 기타솔로 합본 PDF</b>도 같이 드려요' : '';
+                // 한 줄로: '… 500원 할인!' 바로 오른쪽에 화살표와 함께 산 값 (2026-11-06 사용자 요청 — '따로 사면 … → 함께 사면 …' 줄은 뺐다)
+                const sum = `<span class="sum">→ ${won(sep - SET_DISCOUNT)}</span>`;
                 deal = t.off
-                    ? `<div class="set-deal on"><i class="fas fa-gift"></i><span>반주 + 기타솔로를 <b>함께 사서 ${won(SET_DISCOUNT)} 할인</b>됐어요<br>따로 사면 ${won(sep)} → 함께 사면 <b>${won(sep - SET_DISCOUNT)}</b>${gift}</span></div>`
-                    : `<div class="set-deal"><i class="fas fa-gift"></i><span>반주와 기타솔로를 <b>함께 사면 ${won(SET_DISCOUNT)} 할인!</b><br>따로 사면 ${won(sep)} → 함께 사면 ${won(sep - SET_DISCOUNT)}${gift}</span></div>`;
+                    ? `<div class="set-deal on"><i class="fas fa-gift"></i><span>반주 + 기타솔로를 <b>함께 사서 ${won(SET_DISCOUNT)} 할인</b>됐어요 ${sum}${gift}</span></div>`
+                    : `<div class="set-deal"><i class="fas fa-gift"></i><span>반주와 기타솔로를 <b>함께 사면 ${won(SET_DISCOUNT)} 할인!</b> ${sum}${gift}</span></div>`;
             }
             // 반주와 솔로를 둘 다 가졌고 합본이 있으면 합본 내려받기
             const fullOf = PARTS.find(x => x.style !== 'solo' && x.bundle_pdf && OWNED.has(x.id));
