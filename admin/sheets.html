@@ -482,7 +482,8 @@
     const coverOwner = s => s.cover_path ? s : (s.song_key && sheets.find(x => x.song_key === s.song_key && x.cover_path)) || null;
     const listThumb = s => thumbHtml({ style: s.style, kind: s.kind, lv: s.difficulty, title: s.title, cover: coverUrl(coverOwner(s)), paper: previewUrl(s),
         plus: s.style === 'electric' && !!s.song_key && sheets.some(x => x.song_key === s.song_key && x.style === 'solo') });
-    // 스토어에 내려면 채워야 하는데 비어 있는 칸 (PDF는 따로 표시). 자작곡은 원곡 가수, 코드악보는 영상이 없어도 되고,
+    // 스토어에 내려면 채워야 하는데 비어 있는 칸 (PDF는 따로 표시). 자작곡은 원곡 가수가 없어도 되고,
+    // 영상은 악보를 먼저 올리고 나중에 올릴 수 있어서 빈 칸 경고에서 뺐다(2026-11-05) — 위 '유튜브 없음' 버튼으로 찾는다.
     // 미리보기·페이지 수는 PDF를 올릴 때 같이 채워지니 PDF가 있는 곡만 본다
     function missingOf(s) {
         const m = [];
@@ -491,7 +492,6 @@
         if (!s.genre) m.push('장르');
         if (!s.difficulty) m.push('난이도');
         if (!(s.price > 0)) m.push('가격');
-        if (!s.youtube_id && s.style !== 'chord') m.push('유튜브');
         if (filesById[s.id]) {
             if (!s.preview_path) m.push('미리보기');
             if (!s.pages) m.push('페이지 수');
