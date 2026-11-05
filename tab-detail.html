@@ -285,6 +285,11 @@
             object-fit: cover;
             object-position: top;
         }
+        /* 악보 미리보기: 가운데보다 조금 위부터 아래로 서서히 흐려지게 (로고 대체 그림에는 안 씀) */
+        .product-image img.fade {
+            -webkit-mask-image: linear-gradient(to bottom, #000 40%, rgba(0,0,0,0.15) 100%);
+                    mask-image: linear-gradient(to bottom, #000 40%, rgba(0,0,0,0.15) 100%);
+        }
         /* 영상: 들어온 구성(통기타·기타솔로 …)의 영상이 위, 같은 곡 다른 구성의 영상이 그 아래 */
         .product-youtube { margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem; }
         .yt-item {
@@ -310,6 +315,7 @@
 
         .product-badge {
             position: absolute;
+            z-index: 1;   /* 흐려지는 미리보기 그림 위에 보이게 */
             top: 1rem;
             left: 1rem;
             background: var(--green-deep);
@@ -893,6 +899,7 @@
             img.src = p.preview_path
                 ? SB_URL + '/storage/v1/object/public/sheet-previews/' + encodeURIComponent(p.preview_path) + '?v=' + encodeURIComponent(p.updated_at)
                 : 'images/logo-vertical.webp';
+            img.classList.toggle('fade', !!p.preview_path);
             img.alt = p.title + ' 악보 미리보기';
             document.getElementById('productPrice').textContent = '₩' + Number(p.price || 0).toLocaleString();
             document.getElementById('productStyle').textContent = p.style === 'bass' ? '베이스 TAB' : p.style === 'chord' ? '코드악보 · 코드 진행 한 장' : ['기타 TAB', STYLE_LABEL[p.style]].filter(Boolean).join(' · ');
