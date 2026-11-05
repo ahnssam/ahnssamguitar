@@ -964,7 +964,9 @@
         const ME = '<strong>안쌤 (안규호)</strong>';
         // 같은 곡의 악보 여러 개(sheets.song_key 가 같은 공개 악보) — 통기타 · 일렉기타 반주 · 기타솔로 중에서 사는 구성을 고른다.
         // 들어온 목록에 따라 미리 체크: 일렉기타 → 일렉 반주 + 기타솔로, 통기타 → 통기타 악보만, 기타솔로 → 기타솔로만
-        const PART_NAME = { acoustic: '통기타 악보', electric: '일렉기타 반주 악보', solo: '기타솔로 악보', fingerstyle: '핑거스타일 악보', bass: '베이스 악보', chord: '코드악보', other: '악보' };
+        // 일렉기타는 같은 곡 기타솔로가 따로 있을 때만 구성 이름이 보이므로 솔로가 빠진 반주임을 분명히 [반주만] (2026-11-05 사용자 요청)
+        const PART_NAME = { acoustic: '통기타 악보', electric: '일렉기타 악보 [반주만]', solo: '기타솔로 악보', fingerstyle: '핑거스타일 악보', bass: '베이스 악보', chord: '코드악보', other: '악보' };
+        const partShort = x => x.style === 'electric' ? '일렉기타 반주만' : (PART_NAME[x.style] || '악보').replace(' 악보', '');   // 쪽 수·파일 이름용
         const PART_ORDER = { acoustic: 0, electric: 1, fingerstyle: 2, bass: 3, chord: 4, other: 5, solo: 9 };
         const SET_DISCOUNT = 500;   // 반주 + 기타솔로를 함께 사면 깎는 금액 (서버 create_sheet_order 와 같은 값)
         const won = n => Number(n || 0).toLocaleString() + '원';
@@ -1044,7 +1046,7 @@
             //   다른 편곡이 있으면 그 영상들도 아래에 (들어온 편곡이 맨 위)
             renderVersions(p);
             const seen = new Set(), vids = [p, ...PARTS.filter(x => x.id !== p.id), ...VERSIONS].filter(x => x.youtube_id && !seen.has(x.youtube_id) && seen.add(x.youtube_id));
-            const vlabel = x => VERSIONS.length && (x === p || VERSIONS.includes(x)) ? verTag(x.title) : (PART_NAME[x.style] || '악보').replace(' 악보', '');
+            const vlabel = x => VERSIONS.length && (x === p || VERSIONS.includes(x)) ? verTag(x.title) : (STYLE_LABEL[x.style] || '악보');
             const yt = document.getElementById('productYoutube');
             yt.innerHTML = vids.map((x, i) => `<div class="yt-item">${vids.length > 1 ? `<div class="yt-label"><i class="fab fa-youtube"></i>${escHtml(vlabel(x))} 영상</div>` : ''}<div class="yt-wrapper">
                 <iframe src="https://www.youtube.com/embed/${encodeURIComponent(x.youtube_id)}" title="${escHtml(x.title)} ${escHtml(PART_NAME[x.style] || '')} 영상"${i ? ' loading="lazy"' : ''} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div></div>`).join('');
@@ -1092,7 +1094,7 @@
             document.getElementById('productStyle').textContent = '기타 TAB · ' + (t.list.map(x => PART_NAME[x.style] || '악보').join(' + ') || '고른 악보 없음');
             const pg = t.list.filter(x => x.pages);
             document.getElementById('pagesRow').style.display = pg.length ? '' : 'none';
-            document.getElementById('productPages').textContent = pg.length === 1 ? pg[0].pages + '페이지' : pg.map(x => (PART_NAME[x.style] || '악보').replace(' 악보', '') + ' ' + x.pages + '페이지').join(' · ');
+            document.getElementById('productPages').textContent = pg.length === 1 ? pg[0].pages + '페이지' : pg.map(x => partShort(x) + ' ' + x.pages + '페이지').join(' · ');
             if (buyOpen) document.getElementById('productBuyBtn').disabled = !t.list.length;
         }
         document.addEventListener('change', e => {
@@ -1106,7 +1108,7 @@
             const b = e.target.closest('.part [data-dl]'); if (!b) return;
             e.preventDefault();
             const x = PARTS.find(y => y.id === b.dataset.dl), C = window.ahnssamCheckout;
-            if (x && C) C.download(x.id, x.title, x.artist, PARTS.length > 1 ? (PART_NAME[x.style] || '악보').replace(' 악보', '') : '');
+            if (x && C) C.download(x.id, x.title, x.artist, PARTS.length > 1 ? partShort(x) : '');
         });
         // 결제로 넘어가기 전에 무엇을 사는지 분명히 알린다 (악보가 여러 개인 곡)
         function confirmBuy() {

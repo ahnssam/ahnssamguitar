@@ -111,6 +111,8 @@
         let newSheet = null;   // 방금 결제한 악보
         // 같은 곡을 반주 + 기타솔로처럼 여러 개 사면 제목이 같아서, 어떤 악보인지 종류를 붙여 보여 준다
         const PART = { acoustic: '통기타', electric: '일렉기타', fingerstyle: '핑거스타일', solo: '기타솔로', chord: '코드악보', bass: '베이스' };
+        // 같은 곡 기타솔로도 산 일렉기타 악보는 솔로가 빠진 반주라 [반주만]
+        const partOf = s => s.style === 'electric' && items.some(x => x.sheet_id !== s.sheet_id && x.title === s.title && x.style === 'solo') ? '일렉기타 [반주만]' : PART[s.style];
         const isNew = s => { const n = items.find(x => x.sheet_id === newSheet); return !!n && s.purchased_at === n.purchased_at; };   // 한 번에 산 악보는 구매 시각이 같다
 
         function showPay(kind, icon, title, text, acts) {
@@ -130,7 +132,7 @@
                 return `<div class="row${isNew(s) ? ' new' : ''}">
                     <div class="thumb" style="${img ? `background-image:url('${img}')` : ''}"></div>
                     <div class="info"><b>${esc(s.title)}${s.is_test ? '<span class="tag-test">테스트 결제</span>' : ''}</b>
-                        <small>${[PART[s.style], s.artist, s.pages ? s.pages + '페이지' : ''].filter(Boolean).map(esc).join(' · ')}</small>
+                        <small>${[partOf(s), s.artist, s.pages ? s.pages + '페이지' : ''].filter(Boolean).map(esc).join(' · ')}</small>
                         <small>${day(s.purchased_at)} 구매 · ${won(s.amount)}</small></div>
                     <button class="btn" data-dl="${s.sheet_id}"><i class="fas fa-download"></i> PDF 내려받기</button>
                 </div>` + (s.bundle_pdf ? `<div class="row${isNew(s) ? ' new' : ''}">
@@ -154,7 +156,7 @@
             b.disabled = true;
             // 같은 곡을 여러 악보(반주·솔로)로 샀으면 파일 이름에 종류를 붙여 구분
             const twin = s && items.some(x => x.sheet_id !== s.sheet_id && x.title === s.title);
-            await C.download(b.dataset.dl, s && s.title, s && s.artist, twin ? (PART[s.style] || '') : '', !!b.dataset.full);
+            await C.download(b.dataset.dl, s && s.title, s && s.artist, twin ? (s.style === 'electric' ? '일렉기타 반주만' : PART[s.style] || '') : '', !!b.dataset.full);
             setTimeout(() => { b.disabled = false; }, 1500);
         });
 
@@ -197,7 +199,7 @@
             const got = newSheet ? items.filter(isNew) : [];
             if (got.length > 1) {
                 const acts = $('pay').querySelector('.acts');
-                if (acts) acts.innerHTML = got.map(s => `<button class="btn" data-dl="${esc(s.sheet_id)}"><i class="fas fa-download"></i> ${esc(PART[s.style] || '악보')} PDF</button>` +
+                if (acts) acts.innerHTML = got.map(s => `<button class="btn" data-dl="${esc(s.sheet_id)}"><i class="fas fa-download"></i> ${esc(partOf(s) || '악보')} PDF</button>` +
                     (s.bundle_pdf ? `<button class="btn" data-dl="${esc(s.sheet_id)}" data-full="1"><i class="fas fa-download"></i> 반주 + 기타솔로 합본 PDF</button>` : '')).join('');
             }
         })();
