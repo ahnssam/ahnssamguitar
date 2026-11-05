@@ -309,30 +309,46 @@
     /* ===== 안쌤의 픽 | 새로 나온 악보 | 인기 악보 (세로 세 열) — 2026-11-06 사용자 요청으로 종류별 악보는 아래 한 줄로 ===== */
     .three-col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; }
     .three-col.no-pick { grid-template-columns: repeat(2, minmax(0, 1fr)); }   /* 고른 곡이 없으면 픽 칸을 빼고 두 열 */
-    /* 안쌤의 픽: 악보관리에서 별표 1~5로 고른 곡. 보통 목록보다 썸네일·글자가 큰 카드로.
-       마우스를 올리면 살짝 커지고, 5초마다 위에서부터 하나씩 돌아가며 같은 모양으로 눈에 띄게(.spot) —
-       마우스를 올려 둔 동안·다른 탭을 보는 동안·움직임 줄이기 설정이면 돌지 않는다 */
+    /* 안쌤의 픽: 악보관리에서 별표 1~5로 고른 곡 (2026-11-06 사용자 결정 — 위에 큰 썸네일 자리, 아래는 목록 하이라이트).
+       목록에 마우스를 올린 곡(없으면 5초마다 위에서부터 차례로)의 썸네일·정보가 위 자리에 크로스페이드로 바뀐다.
+       마우스를 올려 둔 동안·다른 탭을 보는 동안·움직임 줄이기 설정이면 저절로는 넘어가지 않는다 */
     .pick-col .col-hd h2 i { color: var(--gold); font-size: 16px; margin-right: 5px; }
     .pick-col .col-hd span { font-size: 12.5px; color: #999; }
-    .pick-list { display: flex; flex-direction: column; gap: 12px; padding: 16px 4px 4px; }
-    .pick { position: relative; display: flex; align-items: center; gap: 16px; padding: 12px 16px 12px 12px; border-radius: 16px; background: #fff; border: 1px solid var(--line);
-        box-shadow: 0 2px 8px rgba(42,107,74,0.06); transform-origin: 50% 50%;
-        transition: transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .5s ease, border-color .5s ease, background-color .5s ease; }
-    .pick .th { width: 100px; }
-    .pick .pk-no { position: absolute; top: -7px; left: -7px; z-index: 4; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
-        background: var(--green-deep); color: #fff; font-size: 13px; font-weight: 900; box-shadow: 0 2px 6px rgba(0,0,0,0.18); }
-    .pick:first-child .pk-no { background: var(--gold); }
-    .pick .body { min-width: 0; flex: 1; }
-    .pick .tt { font-size: 16.5px; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color .3s; }
-    .pick .sub { font-size: 13px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .pick .meta { font-size: 12px; color: #9a9a9a; margin-top: 5px; display: flex; gap: 8px; align-items: center; }
-    .pick .meta .fa-youtube { color: #e33; }
-    .pick .pr { font-size: 15px; font-weight: 800; white-space: nowrap; }
-    .pick:hover, .pick:focus-visible, .pick.spot { z-index: 1; transform: scale(1.03); border-color: color-mix(in srgb, var(--green-mid) 40%, transparent); box-shadow: 0 14px 30px rgba(42,107,74,0.16); }
-    .pick.spot { background: linear-gradient(120deg, #fff 40%, var(--cream)); }
-    .pick:hover .tt, .pick.spot .tt { color: var(--green-deep); }
-    .pick:focus-visible { outline: 3px solid var(--green-mid); outline-offset: 2px; }
-    @media (prefers-reduced-motion: reduce) { .pick { transition: none; } .pick:hover, .pick.spot { transform: none; } }
+    .pick-box { margin-top: 16px; }
+    .pick-stage { position: relative; height: 252px; border-radius: 18px; overflow: hidden; border: 1px solid var(--line);
+        background: linear-gradient(135deg, var(--cream), #fff 70%); box-shadow: 0 6px 20px rgba(42,107,74,0.08); }
+    .pslide { position: absolute; inset: 0; display: grid; grid-template-columns: 218px minmax(0, 1fr); gap: 20px; align-items: center; padding: 16px 20px 16px 16px;
+        opacity: 0; visibility: hidden; transition: opacity .6s ease, visibility 0s linear .6s; }
+    .pslide.on { opacity: 1; visibility: visible; transition: opacity .6s ease, visibility 0s; }
+    .pslide .th { width: 218px; box-shadow: 0 8px 22px rgba(0,0,0,0.12); }
+    .pslide .pin { display: flex; flex-direction: column; min-width: 0; }
+    .pslide .pin small { font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700; letter-spacing: 0.15em; color: var(--gold); }
+    .pslide .tt { margin-top: 4px; font-size: 21px; font-weight: 900; line-height: 1.3; letter-spacing: -0.03em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: keep-all; }
+    .pslide .sub { margin-top: 3px; font-size: 13px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pslide .meta { margin-top: 8px; font-size: 12px; color: #9a9a9a; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .pslide .meta .fa-youtube { color: #e33; }
+    .pslide .pr { margin-top: 10px; font-size: 19px; font-weight: 900; }
+    .pslide .go { margin-top: 8px; font-size: 12.5px; font-weight: 700; color: var(--green-deep); }
+    .pslide .go i { font-size: 11px; margin-left: 3px; transition: transform .25s; }
+    .pslide:hover .go i { transform: translateX(3px); }
+    .pslide:focus-visible { outline: 3px solid var(--green-mid); outline-offset: -3px; border-radius: 18px; }
+    .pick-list { list-style: none; margin-top: 10px; }
+    .pitem { position: relative; display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 14px; border-radius: 12px; transition: background-color .3s ease; }
+    .pick-list li + li .pitem { margin-top: 2px; }
+    .pitem::before { content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px; border-radius: 2px; background: var(--green-mid); opacity: 0; transition: opacity .3s ease; }
+    .pitem .no { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 900; background: var(--green-faint); color: var(--green-deep); transition: background-color .3s, color .3s; }
+    .pick-list li:first-child .no { background: #f4ead2; color: #8a6a1f; }
+    .pitem .mt { flex: 1; min-width: 0; }
+    .pitem .mt b { display: block; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color .3s; }
+    .pitem .mt small { display: block; font-size: 12px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pitem .pr { font-size: 13.5px; font-weight: 700; white-space: nowrap; }
+    .pitem.on { background: linear-gradient(90deg, var(--green-faint), rgba(226, 245, 234, 0.25)); }
+    .pitem.on::before { opacity: 1; }
+    .pitem.on .no { background: var(--green-deep); color: #fff; }
+    .pick-list li:first-child .pitem.on .no { background: var(--gold); }
+    .pitem.on .mt b { color: var(--green-deep); }
+    .pitem:focus-visible { outline: 2px solid var(--green-mid); outline-offset: 1px; }
+    @media (prefers-reduced-motion: reduce) { .pslide, .pslide.on, .pitem, .pitem::before { transition: none; } }
     /* 종류별 악보: 위 세 열 아래에 종류마다 한 칸씩 왼쪽부터 오른쪽으로. 칸마다 최신순·인기순 */
     .types-row { margin-top: 56px; }
     .type-cols { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 24px; margin-top: 16px; }
@@ -501,8 +517,8 @@
         /* 픽은 위에 한 줄 전체로 — 카드를 옆으로 넘겨 본다. 새 악보·인기 악보는 그 아래 두 열 */
         .three-col, .three-col.no-pick { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
         .pick-col { grid-column: 1 / -1; }
-        .pick-list { flex-direction: row; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 14px; padding: 16px 14px 18px; margin: 0 -14px; scrollbar-width: thin; }
-        .pick { flex: 0 0 min(340px, 80%); scroll-snap-align: start; }
+        .pick-box { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 24px; align-items: center; }   /* 넓으니 썸네일 자리 | 목록 나란히 */
+        .pick-list { margin-top: 0; }
         .type-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 30px; }
         .book { grid-template-columns: 150px minmax(0, 1fr); gap: 20px; }
         .ch-al { grid-template-columns: minmax(0, 1fr); }
@@ -538,11 +554,15 @@
         .chbtn .yt { width: 22px; height: 16px; }
         .sec { padding: 44px 0; }
         .three-col, .three-col.no-pick { grid-template-columns: minmax(0, 1fr); gap: 40px; }
-        /* 휴대폰: 픽은 맨 위에 세로로 (옆으로 넘기는 건 아래 종류별 칸만) */
-        .pick-list { flex-direction: column; overflow: visible; padding: 14px 4px 4px; margin: 0; }
-        .pick { flex: none; gap: 12px; padding: 10px 12px 10px 10px; }
-        .pick .th { width: 84px; }
-        .pick .tt { font-size: 15.5px; }
+        /* 휴대폰: 썸네일 자리 아래에 목록 */
+        .pick-box { display: block; }
+        .pick-list { margin-top: 8px; }
+        .pick-stage { height: 186px; }
+        .pslide { grid-template-columns: 150px minmax(0, 1fr); gap: 14px; padding: 14px; }
+        .pslide .th { width: 150px; }
+        .pslide .tt { font-size: 17.5px; }
+        .pslide .pr { margin-top: 6px; font-size: 16px; }
+        .pslide .go { display: none; }
         .types-row { margin-top: 44px; }
         .type-cols { display: flex; gap: 18px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px; scrollbar-width: none; }
         .type-cols::-webkit-scrollbar { display: none; }
@@ -716,7 +736,7 @@
     <div class="wrap three-col no-pick" id="topCols">
         <div class="pick-col" id="pickCol" hidden>
             <div class="col-hd"><small>PICK</small><h2><i class="fas fa-star"></i>안쌤의 픽</h2><span>안쌤이 직접 고른 악보</span></div>
-            <div class="pick-list" id="pickList"></div>
+            <div class="pick-box" id="pickBox"><div class="pick-stage" id="pickStage"></div><ol class="pick-list" id="pickList"></ol></div>
         </div>
         <div>
             <div class="col-hd"><small>NEW</small><h2>새로 나온 악보</h2><a class="more" href="#browse" data-sort="new">더보기 <i class="fas fa-chevron-right"></i></a></div>
@@ -888,29 +908,37 @@
     const cvUrl = (path, v) => path ? SB_URL + '/storage/v1/object/public/sheet-covers/' + encodeURIComponent(path) + '?v=' + encodeURIComponent(v || '') : null;
     const KIND = { arrangement: '편곡', original: '자작곡' };
     const DOTS = n => n ? `<span class="dots" role="img" aria-label="난이도 ${n}/5">${[1, 2, 3, 4, 5].map(i => `<i${i <= n ? '' : ' class="off"'}></i>`).join('')}</span>` : '';
-    const img = src => `<img src="${esc(src)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`;
-    const thumb = (x, cls = '') => `<div class="th ${STYLE[x.s][0]} ${cls}"><div class="cv"><i class="fas fa-compact-disc"></i>${x.cv ? img(x.cv) : ''}</div><div class="pp"><b>${esc(x.t)}</b>${x.pv ? img(pvUrl(x)) : ''}</div>`
+    const img = (src, eager) => `<img src="${esc(src)}" alt="" loading="${eager ? 'eager' : 'lazy'}" decoding="async" onerror="this.remove()">`;
+    const thumb = (x, cls = '', eager = false) => `<div class="th ${STYLE[x.s][0]} ${cls}"><div class="cv"><i class="fas fa-compact-disc"></i>${x.cv ? img(x.cv, eager) : ''}</div><div class="pp"><b>${esc(x.t)}</b>${x.pv ? img(pvUrl(x), eager) : ''}</div>`
         + `<div class="band">${KIND[x.kd] ? `<span class="kd">${KIND[x.kd]}</span>` : ''}<b class="nm">${STYLE[x.s][1]}</b><span class="r2"><span class="en">${STYLE[x.s][2]}</span>${x.plus ? '<span class="plus">+ <span class="lg">기타</span>솔로</span>' : ''}${DOTS(x.lv)}</span></div></div>`;
     const row = (lead, x) => `<a class="row" ${linkAttrs(x)}>${lead}${thumb(x, 'sm')}
         <span class="body"><div class="tt">${esc(x.t)}</div><div class="sub">${esc(x.a)}</div><div class="meta">${chip(x)}<span class="lv">${LV(x.lv)}</span>${x.yt ? '<i class="fab fa-youtube"></i>' : ''}</div></span>
         <span class="pr">${price(x)}</span></a>`;
     const mini = x => `<a class="mini" ${linkAttrs(x)}><span class="mt"><b>${esc(x.t)}</b><small>${esc(x.a)}</small></span><span class="pr">${price(x)}</span></a>`;
-    const pickCard = (x, i) => `<a class="pick" ${linkAttrs(x)}><span class="pk-no" aria-label="${i + 1}위">${i + 1}</span>${thumb(x)}
-        <span class="body"><div class="tt">${esc(x.t)}</div><div class="sub">${esc(x.a)}</div><div class="meta">${chip(x)}<span class="lv">${LV(x.lv)}</span>${x.yt ? '<i class="fab fa-youtube"></i>' : ''}</div></span>
-        <span class="pr">${price(x)}</span></a>`;
+    // 안쌤의 픽: 위 썸네일 자리(곡마다 한 장씩 겹쳐 두고 보이는 것만 바꿔 크로스페이드) + 아래 순위 목록
+    const pickSlide = (x, i) => `<a class="pslide" ${linkAttrs(x)} data-i="${i}">${thumb(x, '', true)}
+        <span class="pin"><small>PICK ${String(i + 1).padStart(2, '0')}</small><b class="tt">${esc(x.t)}</b><span class="sub">${esc(x.a)}</span>
+        <span class="meta">${chip(x)}<span class="lv">${LV(x.lv)}</span>${x.yt ? '<i class="fab fa-youtube"></i>' : ''}</span><span class="pr">${price(x)}</span><span class="go">악보 보기<i class="fas fa-arrow-right"></i></span></span></a>`;
+    const pickItem = (x, i) => `<li><a class="pitem" ${linkAttrs(x)} data-i="${i}"><span class="no">${i + 1}</span><span class="mt"><b>${esc(x.t)}</b><small>${esc(x.a)}${x.a ? ' · ' : ''}${STYLE[x.s][1]}</small></span><span class="pr">${price(x)}</span></a></li>`;
 
-    // 안쌤의 픽: 5초마다 위에서부터 하나씩 돌아가며 .spot (마우스를 올려 둔 동안·다른 탭을 보는 동안·움직임 줄이기 설정이면 멈춤)
-    function spotlight(list) {
-        const cards = [...list.children];
-        if (cards.length < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // 목록에 마우스를 올리거나(키보드로 가면) 그 곡이 위에 보이고, 아니면 5초마다 위에서부터 차례로.
+    // 목록·썸네일 위에 마우스가 있는 동안, 다른 탭을 보는 동안, 움직임 줄이기 설정이면 저절로는 안 넘어간다
+    function pickShow(box) {
+        const slides = [...box.querySelectorAll('.pslide')], items = [...box.querySelectorAll('.pitem')];
         let i = 0, held = false;
-        const show = () => cards.forEach((c, n) => c.classList.toggle('spot', n === i && !held));
-        list.addEventListener('mouseenter', () => { held = true; show(); });
-        list.addEventListener('mouseleave', () => { held = false; show(); });
-        list.addEventListener('focusin', () => { held = true; show(); });
-        list.addEventListener('focusout', () => { held = false; show(); });
-        show();
-        setInterval(() => { if (held || document.hidden) return; i = (i + 1) % cards.length; show(); }, 5000);
+        const set = n => {
+            i = n;
+            slides.forEach((s, k) => { s.classList.toggle('on', k === n); s.tabIndex = k === n ? 0 : -1; s.setAttribute('aria-hidden', k !== n); });
+            items.forEach((s, k) => s.classList.toggle('on', k === n));
+        };
+        items.forEach((it, n) => { it.addEventListener('mouseenter', () => set(n)); it.addEventListener('focus', () => set(n)); });
+        box.addEventListener('mouseenter', () => { held = true; });
+        box.addEventListener('mouseleave', () => { held = false; });
+        box.addEventListener('focusin', () => { held = true; });
+        box.addEventListener('focusout', () => { held = false; });
+        set(0);
+        if (items.length > 1 && !matchMedia('(prefers-reduced-motion: reduce)').matches)
+            setInterval(() => { if (!held && !document.hidden) set((i + 1) % items.length); }, 5000);
     }
 
     // 정렬: 위쪽 목록은 사이트에 올린 곡(바로 구매) 먼저
@@ -1055,7 +1083,7 @@
         const picks = ALL.filter(x => x.on && x.pk).sort((a, b) => a.pk - b.pk).slice(0, 5);
         $('pickCol').hidden = !picks.length;
         $('topCols').classList.toggle('no-pick', !picks.length);
-        if (picks.length) { $('pickList').innerHTML = picks.map(pickCard).join(''); spotlight($('pickList')); }
+        if (picks.length) { $('pickStage').innerHTML = picks.map(pickSlide).join(''); $('pickList').innerHTML = picks.map(pickItem).join(''); pickShow($('pickBox')); }
 
         // 종류별 악보: 종류마다 한 칸, 칸마다 최신순(새로 나온 악보와 같은 순서)·인기순(추천순: 올린 곡 먼저, 많이 팔린 순)
         const TSORT = { new: SORT.fresh, rec: SORT.rec };
