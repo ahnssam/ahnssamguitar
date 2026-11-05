@@ -189,6 +189,24 @@
     .search-box i { color: var(--green-dark); font-size: 16px; }
     .search-box input { flex: 1; border: 0; outline: none; font: inherit; font-size: 15px; padding: 0 12px; min-width: 0; }
     .search-box button { border: 0; background: var(--green-deep); color: #fff; font: inherit; font-weight: 700; border-radius: 24px; padding: 11px 26px; cursor: pointer; }
+    /* 검색 결과 드롭다운 (검색창 바로 아래) — 위에 붙은 메뉴(z-index 30)보다는 아래 */
+    .sbox-wrap { position: relative; }
+    .sdrop { position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 25; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 18px 44px rgba(0,0,0,0.14); padding: 6px; max-height: min(68vh, 600px); overflow-y: auto; }
+    .sdrop[hidden] { display: none; }
+    .sd-row { display: flex; align-items: center; gap: 12px; padding: 7px 10px; border-radius: 10px; }
+    .sd-row:hover, .sd-row.on { background: var(--green-faint); }
+    .sd-row .th.sm { width: 60px; flex: none; }
+    .sd-row .mt { flex: 1; min-width: 0; }
+    .sd-row .mt b { display: block; font-size: 14.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sd-row .mt b mark { background: none; color: var(--green-deep); }
+    .sd-row .mt small { display: block; font-size: 12px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sd-row .pr { flex: none; font-size: 13.5px; font-weight: 700; white-space: nowrap; }
+    .sd-more { display: block; text-align: center; padding: 11px 10px 8px; margin-top: 4px; border-top: 1px solid var(--line); font-size: 13px; font-weight: 700; color: var(--green-deep); }
+    .sd-more i { font-size: 11px; margin-left: 4px; }
+    .sd-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 24px 16px 20px; text-align: center; font-size: 13.5px; color: #777; }
+    .sd-empty b { font-size: 15px; color: var(--ink); }
+    .sd-empty a { margin-top: 6px; font-weight: 700; color: var(--green-deep); }
+    .sd-empty a i { font-size: 11px; margin-left: 3px; }
     .kw { max-width: 680px; margin: 12px auto 0; display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; font-size: 13px; color: #999; }
     .kw a { color: #555; }
     .kw a:hover { color: var(--green-deep); }
@@ -726,7 +744,10 @@
     <div class="wrap">
         <div class="search-row">
         <div class="search-col">
-        <form class="search-box" id="searchForm" role="search"><i class="fas fa-search"></i><input id="q" type="search" placeholder="곡 제목, 가수 이름으로 악보 검색" aria-label="악보 검색" autocomplete="off"><button type="submit">검색</button></form>
+        <div class="sbox-wrap">
+        <form class="search-box" id="searchForm" role="search"><i class="fas fa-search"></i><input id="q" type="search" placeholder="곡 제목, 가수 이름으로 악보 검색" aria-label="악보 검색" autocomplete="off" aria-controls="sDrop" aria-expanded="false"><button type="submit">검색</button></form>
+        <div class="sdrop" id="sDrop" aria-label="검색 결과" hidden></div>
+        </div>
         <div class="kw" id="kw">많이 찾는 곡 <a href="#browse" data-q="Pretender">Pretender</a><a href="#browse" data-q="APT.">APT.</a><a href="#browse" data-q="봄날, 벚꽃 그리고 너">봄날, 벚꽃 그리고 너</a><a href="#browse" data-q="인생의 회전목마">인생의 회전목마</a><a href="#browse" data-q="홍련화">홍련화</a></div>
         </div>
         <div class="ch-links">
@@ -1176,7 +1197,7 @@
             const tr = e.target.closest('tr[data-href]'); if (!tr || !tr.dataset.href) return;
             if (tr.dataset.ext) window.open(tr.dataset.href, '_blank', 'noopener'); else location.href = tr.dataset.href;
         });
-        // 검색: 장르·종류는 '전체'로 돌리고 표에서 보여 준다
+        // 검색 결과 전체를 아래 표에서 보기 (드롭다운의 '모두 보기'·'검색 지우기'): 장르·종류는 '전체'로 돌린다
         const search = q => {
             $('q').value = q;
             st.q = norm(q).trim(); st.g = ''; st.s = ''; st.page = 1;
@@ -1184,8 +1205,54 @@
             draw();
             $('browse').scrollIntoView({ behavior: 'smooth' });
         };
-        $('searchForm').addEventListener('submit', e => { e.preventDefault(); search($('q').value); });
-        $('kw').addEventListener('click', e => { const a = e.target.closest('a[data-q]'); if (!a) return; e.preventDefault(); search(a.dataset.q); });
+        // 검색: 검색창 바로 아래 드롭다운으로 (2026-11-06 사용자 요청 — 예전엔 아래 표로 내려갔다). 결과가 없으면 없다고 + 악보요청 길.
+        //   글자를 칠 때마다 제목·가수·종류에서 찾는다. 제목이 그 말로 시작 → 제목에 들어 있음 → 가수·종류 순, 같으면 사이트에서 바로 사는 곡·많이 팔린 곡 먼저.
+        //   띄어쓰기·문장부호는 빼고도 맞춰 본다(봄날벚꽃 → 봄날, 벚꽃 그리고 너). 8곡까지 보이고, 더 있으면 '모두 보기'로 아래 표에
+        const SD_N = 8, drop = $('sDrop'), qIn = $('q');
+        const bare = v => norm(v).replace(/[\s\p{P}\p{S}]+/gu, '');
+        for (const x of ALL) { x.bt = bare(x.t); x.bk = bare(x.k); }
+        const find = q => {
+            const n = norm(q).trim(), b = bare(q);
+            if (!n) return [];
+            const rank = x => {
+                const t = norm(x.t);
+                if (t.startsWith(n) || (b && x.bt.startsWith(b))) return 0;
+                if (t.includes(n) || (b && x.bt.includes(b))) return 1;
+                return x.k.includes(n) || (b && x.bk.includes(b)) ? 2 : -1;
+            };
+            return ALL.map(x => [rank(x), x]).filter(([r]) => r >= 0)
+                .sort((a, c) => a[0] - c[0] || (c[1].on - a[1].on) || (c[1].o - a[1].o)).map(([, x]) => x);
+        };
+        const hl = (t, n) => { const i = n ? norm(t).indexOf(n) : -1; return i < 0 ? esc(t) : esc(t.slice(0, i)) + '<mark>' + esc(t.slice(i, i + n.length)) + '</mark>' + esc(t.slice(i + n.length)); };
+        let sdSel = -1;
+        const sdRows = () => [...drop.querySelectorAll('.sd-row')];
+        const sdMark = n => { sdSel = n; sdRows().forEach((r, k) => r.classList.toggle('on', k === n)); if (n >= 0) sdRows()[n].scrollIntoView({ block: 'nearest' }); };
+        const closeDrop = () => { drop.hidden = true; qIn.setAttribute('aria-expanded', 'false'); sdSel = -1; };
+        const openDrop = () => {
+            const q = qIn.value.trim(), n = norm(q);
+            if (!n) { closeDrop(); return; }
+            const list = find(q);
+            drop.innerHTML = list.length
+                ? list.slice(0, SD_N).map(x => `<a class="sd-row" ${linkAttrs(x)}>${thumb(x, 'sm')}<span class="mt"><b>${hl(x.t, n)}</b><small>${esc(x.a)}${x.a ? ' · ' : ''}${STYLE[x.s][1]}</small></span><span class="pr">${price(x)}</span></a>`).join('')
+                    + (list.length > SD_N ? `<a class="sd-more" href="#browse" data-all="1">‘${esc(q)}’ 검색 결과 ${list.length}곡 모두 보기<i class="fas fa-arrow-down"></i></a>` : '')
+                : `<div class="sd-empty"><b>‘${esc(q)}’ 악보가 없어요</b><span>다른 제목이나 가수 이름으로 찾아보세요.</span><a href="requests.html">찾는 곡을 악보요청에 남기기<i class="fas fa-arrow-right"></i></a></div>`;
+            drop.hidden = false; qIn.setAttribute('aria-expanded', 'true'); sdSel = -1;
+        };
+        qIn.addEventListener('input', openDrop);
+        qIn.addEventListener('focus', () => { if (qIn.value.trim()) openDrop(); });
+        qIn.addEventListener('keydown', e => {
+            if (e.key === 'Escape') { closeDrop(); return; }
+            if (drop.hidden || e.isComposing) return;   // 한글 조합 중 Enter·화살표는 그대로
+            const rows = sdRows();
+            if (e.key === 'ArrowDown' && rows.length) { e.preventDefault(); sdMark((sdSel + 1) % rows.length); }
+            else if (e.key === 'ArrowUp' && rows.length) { e.preventDefault(); sdMark(sdSel <= 0 ? rows.length - 1 : sdSel - 1); }
+            else if (e.key === 'Enter' && sdSel >= 0) { e.preventDefault(); rows[sdSel].click(); }
+        });
+        $('searchForm').addEventListener('submit', e => { e.preventDefault(); openDrop(); qIn.focus(); });
+        drop.addEventListener('click', e => { if (e.target.closest('[data-all]')) { e.preventDefault(); closeDrop(); search(qIn.value); } });
+        document.addEventListener('click', e => { if (!e.target.closest('.sbox-wrap') && !e.target.closest('#kw')) closeDrop(); });
+        // 많이 찾는 곡: 검색창에 넣고 드롭다운으로
+        $('kw').addEventListener('click', e => { const a = e.target.closest('a[data-q]'); if (!a) return; e.preventDefault(); qIn.value = a.dataset.q; openDrop(); qIn.focus(); });
         document.addEventListener('click', e => {
             if (e.target.closest('#qClear')) { e.preventDefault(); search(''); return; }
             // 위쪽 '더보기' — 정렬이나 종류를 맞춰서 표로
