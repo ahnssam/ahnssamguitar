@@ -335,7 +335,6 @@
                 <input type="file" id="cvInput" accept="image/*" hidden>
             </div>
             <div class="cap" id="cvNote"></div>
-            <div style="text-align:center;margin-top:8px;"><button class="btn" id="pvBtn" type="button"><i class="far fa-image"></i> 미리보기 이미지 직접 고르기</button><input type="file" id="pvInput" accept="image/*" hidden></div>
             <div class="ytp" id="ytPrev" hidden></div>
         </div>
         <form class="fields" id="form" autocomplete="off">
@@ -387,7 +386,7 @@
     'use strict';
     const ADMIN_EMAIL = 'steveq2568@gmail.com';
     const PREVIEW_BUCKET = 'sheet-previews';
-    const COVER_BUCKET = 'sheet-covers';     // 앨범 커버 (공개, <악보 id>.webp 정사각형 600px) — db/sheet_covers.sql
+    const COVER_BUCKET = 'sheet-covers';     // 앨범 커버 (공개, <악보 id>-<올린 때>.webp 정사각형 600px) — db/sheet_covers.sql
     const PDF_BUCKET = 'sheet-pdfs';
     const KIND = { cover: '커버', arrangement: '편곡', original: '자작곡' };
     const STYLE = { acoustic: ['통기타', 'ACOUSTIC'], electric: ['일렉기타', 'ELECTRIC'], fingerstyle: ['핑거스타일', 'FINGERSTYLE'], solo: ['기타솔로', 'GUITAR SOLO'], chord: ['코드악보', 'CHORD'], bass: ['베이스', 'BASS'], other: ['기타', 'GUITAR'] };
@@ -884,15 +883,6 @@
             else canvas.toBlob(res, 'image/jpeg', 0.88);   // webp 인코딩이 안 되는 브라우저
         }, 'image/webp', 0.85));
     }
-    $('pvBtn').onclick = () => $('pvInput').click();
-    $('pvInput').onchange = e => {
-        const f = e.target.files[0]; e.target.value = '';
-        if (!f) return;
-        if (f.size > 5 * 1024 * 1024) { alert('미리보기 이미지는 5MB 이하만 올릴 수 있어요.'); return; }
-        newPreview = f;
-        paperSrc = URL.createObjectURL(f);
-        updateThumb();
-    };
 
     // ---------- 앨범 커버 (버튼 · 썸네일에 끌어다 놓기 · 붙여넣기) → 가운데를 정사각형으로 잘라 600px ----------
     async function squareCover(file) {
@@ -975,6 +965,8 @@
             .then(d => { if (d.author) ytInfo[id] = d; show(d); });
     }
     form.elements.youtube.addEventListener('input', updateYt);
+    // 그림은 올릴 때마다 새 이름(<악보 id>-<올린 때>) — 주소가 바뀌어야 브라우저·CDN 에 남은 예전 그림 대신 새 그림이 보인다
+    const freshPath = (id, blob) => `${id}-${Date.now().toString(36)}.${extOf(blob)}`;
     const extOf = blob => blob.type === 'image/webp' ? 'webp' : blob.type === 'image/png' ? 'png' : 'jpg';
 
     $('saveBtn').onclick = () => save();
@@ -1035,20 +1027,21 @@
             }
             if (newPreview) {
                 $('edMsg').textContent = '미리보기 이미지를 올리고 있어요…';
-                const path = `${id}.${extOf(newPreview)}`;
+                const path = freshPath(id, newPreview);
                 const up = await sb.storage.from(PREVIEW_BUCKET).upload(path, newPreview, { upsert: true, contentType: newPreview.type || 'image/jpeg', cacheControl: '3600' });
                 if (up.error) throw up.error;
                 const { error } = await sb.from('sheets').update({ preview_path: path }).eq('id', id);
                 if (error) throw error;
+                if (editing && editing.preview_path && editing.preview_path !== path) await sb.storage.from(PREVIEW_BUCKET).remove([editing.preview_path]);
             }
             if (newCover) {
                 $('edMsg').textContent = '앨범 커버를 올리고 있어요…';
-                const path = `${id}.${extOf(newCover)}`;
+                const path = freshPath(id, newCover);
                 const up = await sb.storage.from(COVER_BUCKET).upload(path, newCover, { upsert: true, contentType: newCover.type || 'image/jpeg', cacheControl: '3600' });
                 if (up.error) throw up.error;
-                if (editing && editing.cover_path && editing.cover_path !== path) await sb.storage.from(COVER_BUCKET).remove([editing.cover_path]);
                 const { error } = await sb.from('sheets').update({ cover_path: path }).eq('id', id);
                 if (error) throw error;
+                if (editing && editing.cover_path && editing.cover_path !== path) await sb.storage.from(COVER_BUCKET).remove([editing.cover_path]);
             } else if (dropCover && editing && editing.cover_path) {
                 const { error } = await sb.from('sheets').update({ cover_path: null }).eq('id', id);
                 if (error) throw error;
