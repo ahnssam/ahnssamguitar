@@ -855,13 +855,13 @@
         function renderVersions(p) {
             const box = document.getElementById('versions');
             if (!VERSIONS.length) { box.hidden = true; return; }
-            // 구성 고르기 칸처럼 옆으로 놓은 버튼. 지금 보는 편곡은 체크, 다른 편곡을 누르면 그 악보 페이지로
+            // 구성 고르기 칸처럼 옆으로 놓은 버튼. 지금 보는 편곡은 체크, 다른 편곡을 누르면 이 페이지 안에서 바뀐다
             const all = [p, ...VERSIONS].sort((a, b) => String(a.title).localeCompare(String(b.title), 'ko'));
             const card = x => {
                 const cur = x.id === p.id;
                 const body = `<span class="vn"><i class="fas ${cur ? 'fa-circle-check' : 'fa-circle'}"></i>${escHtml(verTag(x.title))}</span>`
                     + `<span class="vi">${escHtml([x.difficulty ? '난이도 ' + x.difficulty : '', x.pages ? x.pages + '페이지' : ''].filter(Boolean).join(' · '))}</span><span class="vp">${won(x.price)}</span>`;
-                return cur ? `<div class="ver cur" aria-current="page">${body}</div>` : `<a class="ver" href="tab-detail.html?id=${encodeURIComponent(x.id)}">${body}</a>`;
+                return cur ? `<div class="ver cur" data-ver="${x.id}" aria-current="true">${body}</div>` : `<a class="ver" data-ver="${x.id}" href="tab-detail.html?id=${encodeURIComponent(x.id)}">${body}</a>`;
             };
             box.innerHTML = `<div class="parts-title">편곡 고르기 · 편곡마다 따로 파는 악보예요</div><div class="ver-row">${all.map(card).join('')}</div>`;
             box.hidden = false;
@@ -896,15 +896,14 @@
             img.alt = p.title + ' 악보 미리보기';
             document.getElementById('productPrice').textContent = '₩' + Number(p.price || 0).toLocaleString();
             document.getElementById('productStyle').textContent = p.style === 'bass' ? '베이스 TAB' : p.style === 'chord' ? '코드악보 · 코드 진행 한 장' : ['기타 TAB', STYLE_LABEL[p.style]].filter(Boolean).join(' · ');
+            // 편곡 버튼으로 다른 악보로 바꿔 그릴 때도 맞게 — 숨겼던 줄은 다시 보이게
+            document.getElementById('pagesRow').style.display = p.pages ? '' : 'none';
             if (p.pages) document.getElementById('productPages').textContent = p.pages + '페이지';
-            else document.getElementById('pagesRow').style.display = 'none';
+            document.getElementById('levelRow').style.display = p.difficulty ? '' : 'none';
             if (p.difficulty) document.getElementById('difficultyClover').innerHTML = renderClover(p.difficulty);
-            else document.getElementById('levelRow').style.display = 'none';
-            if (p.description) {
-                const desc = document.getElementById('productDesc');
-                desc.textContent = p.description;
-                desc.hidden = false;
-            }
+            const desc = document.getElementById('productDesc');
+            desc.textContent = p.description || '';
+            desc.hidden = !p.description;
             document.title = p.title + ' - TAB악보 | 안쌤의 기타나무숲';
 
             renderParts(p);
@@ -1059,6 +1058,35 @@
             return data || null;
         }
 
+        // 악보 하나를 화면에 — 같은 곡 다른 구성(PARTS)과 다른 편곡(VERSIONS)까지. versions 를 주면 다시 찾지 않는다(편곡 버튼)
+        async function openSheet(p, versions) {
+            PARTS = [p];
+            if (p.song_key && /^[0-9a-f-]{36}$/i.test(p.song_key)) {
+                try {
+                    const r2 = await fetch(SB_URL + '/rest/v1/sheets?select=*&published=eq.true&song_key=eq.' + p.song_key, { headers: { apikey: SB_KEY } });
+                    if (r2.ok) for (const x of await r2.json()) if (x.id !== p.id) PARTS.push(x);
+                } catch (e) {}
+            }
+            PARTS.sort((a, b) => (PART_ORDER[a.style] ?? 5) - (PART_ORDER[b.style] ?? 5));
+            SEL = new Set([p.id]);
+            if (p.style === 'electric') PARTS.filter(x => x.style === 'solo').forEach(x => SEL.add(x.id));   // 일렉기타로 들어오면 반주 + 기타솔로
+            VERSIONS = (versions || await loadVersions(p)).sort((a, b) => String(a.title).localeCompare(String(b.title), 'ko'));   // 아래 영상 순서가 바꿀 때마다 섞이지 않게
+            showSheet(p);
+        }
+        // 편곡 버튼: 페이지를 옮기지 않고 이 페이지 안에서 그 편곡으로 바꾼다 (주소의 id 도 바꿔서 새로고침·공유해도 그 편곡)
+        document.addEventListener('click', async e => {
+            const a = e.target.closest('a.ver[data-ver]');
+            if (!a || e.ctrlKey || e.metaKey || e.shiftKey || e.button) return;
+            const cur = document.querySelector('.ver.cur');
+            const x = VERSIONS.find(v => v.id === a.dataset.ver);
+            if (!x || !cur) return;
+            e.preventDefault();
+            const prev = PARTS.find(v => v.id === cur.dataset.ver) || PARTS[0];
+            const rest = [prev, ...VERSIONS.filter(v => v.id !== x.id)];
+            history.replaceState(null, '', 'tab-detail.html?id=' + encodeURIComponent(x.id));
+            await openSheet(x, rest);
+        });
+
         (async function loadSheet() {
             const raw = new URLSearchParams(window.location.search).get('id') || '';
             const id = LEGACY_IDS[raw] || raw;
@@ -1069,18 +1097,7 @@
                 const rows = await res.json();
                 const p = rows[0] || await loadPrivateForAdmin(id);
                 if (p) {
-                    PARTS = [p];
-                    if (p.song_key && /^[0-9a-f-]{36}$/i.test(p.song_key)) {
-                        try {
-                            const r2 = await fetch(SB_URL + '/rest/v1/sheets?select=*&published=eq.true&song_key=eq.' + p.song_key, { headers: { apikey: SB_KEY } });
-                            if (r2.ok) for (const x of await r2.json()) if (x.id !== p.id) PARTS.push(x);
-                        } catch (e) {}
-                    }
-                    PARTS.sort((a, b) => (PART_ORDER[a.style] ?? 5) - (PART_ORDER[b.style] ?? 5));
-                    SEL = new Set([p.id]);
-                    if (p.style === 'electric') PARTS.filter(x => x.style === 'solo').forEach(x => SEL.add(x.id));   // 일렉기타로 들어오면 반주 + 기타솔로
-                    VERSIONS = await loadVersions(p);
-                    showSheet(p);
+                    await openSheet(p, null);
                     if (!p.published) {
                         const note = document.createElement('div');
                         note.className = 'private-note';
