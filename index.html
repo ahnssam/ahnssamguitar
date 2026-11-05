@@ -395,7 +395,13 @@
     .mini .pr { font-size: 13px; font-weight: 700; white-space: nowrap; }
     .mini:hover .mt b { color: color-mix(in srgb, var(--c) 70%, #000); }
     .tcol-empty { font-size: 12px; color: #aaa; padding: 10px 0; }
-    .row { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .row { display: flex; align-items: center; gap: 14px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+    .row .th.sm { width: 70px; }
+    /* 새로 나온 악보·인기 악보는 7곡씩, 맨 아래 줄이 왼쪽 '안쌤의 픽' 맨 아래와 맞게 (2026-11-06 사용자 요청):
+       세 칸은 가장 긴 칸(픽) 높이로 늘어나고, 목록의 남는 높이를 7줄이 똑같이 나눠 가진다 */
+    .new-col:not([hidden]), .best-col { display: flex; flex-direction: column; }
+    #newList, #bestList { flex: 1; display: flex; flex-direction: column; }
+    #newList .row, #bestList .row { flex: 1 0 auto; }
     .row .no { width: 18px; font-size: 15px; font-weight: 700; color: #a8a8a8; text-align: center; flex: none; }
     .row:nth-child(-n+3) .no { color: var(--green-dark); }
     .row .new { flex: none; font-size: 10px; font-weight: 900; color: #fff; background: #e85a4f; border-radius: 4px; padding: 1px 6px; }
@@ -766,7 +772,7 @@
             <div class="col-hd"><small>PICK</small><h2><i class="fas fa-star"></i>안쌤의 픽</h2><span>안쌤이 직접 고른 악보</span></div>
             <div class="pick-box" id="pickBox"><div class="pick-stage" id="pickStage"></div><ol class="pick-list" id="pickList"></ol></div>
         </div>
-        <div>
+        <div class="new-col">
             <div class="col-hd"><small>NEW</small><h2>새로 나온 악보</h2><a class="more" href="#browse" data-sort="new">더보기 <i class="fas fa-chevron-right"></i></a></div>
             <div id="newList"></div>
         </div>
@@ -1096,9 +1102,9 @@
             x.w = 0; x.m = 0;
             for (const id of x.members || [x.id]) { const p = POP.get(id); if (p) { x.w += p.sold_7d; x.m += p.sold_30d; x.o += p.sold_total; } }   // 한 줄로 합친 편곡들은 판매도 합쳐서
         }
-        $('newList').innerHTML = [...ALL].sort(SORT.fresh).slice(0, 6).map(x => row('<span class="new">NEW</span>', x)).join('');
+        $('newList').innerHTML = [...ALL].sort(SORT.fresh).slice(0, 7).map(x => row('<span class="new">NEW</span>', x)).join('');
         // 인기 악보 주별·월별·전체 — 전체 = 추천 순(올린 곡 먼저, 많이 팔린 순).
-        // 주별·월별 = 그 기간 사이트 판매 순, 6곡이 안 되면 남은 자리는 전체 순으로 채우고 위에 안내 한 줄
+        // 주별·월별 = 그 기간 사이트 판매 순, 7곡이 안 되면 남은 자리는 전체 순으로 채우고 위에 안내 한 줄
         const PERIOD = { w: '최근 7일', m: '최근 30일' };
         let bestP = 'all';
         const drawBest = p => {
@@ -1110,9 +1116,9 @@
                 sold = hot.length;
                 list = [...hot, ...all.filter(x => !(x[p] > 0))];
             }
-            $('bestList').innerHTML = list.slice(0, 6).map((x, i) => row(`<span class="no">${i + 1}</span>`, x)).join('');
+            $('bestList').innerHTML = list.slice(0, 7).map((x, i) => row(`<span class="no">${i + 1}</span>`, x)).join('');
             const note = $('bestNote');
-            note.hidden = !PERIOD[p] || sold >= 6;
+            note.hidden = !PERIOD[p] || sold >= 7;
             if (!note.hidden) note.innerHTML = '<i class="fas fa-circle-info"></i><span>' + (sold ? `${PERIOD[p]} 동안 팔린 ${sold}곡 다음은 전체 인기순이에요` : `${PERIOD[p]} 판매가 아직 없어 전체 인기순으로 보여 드려요`) + '</span>';
             $('bestTabs').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === p));
         };
