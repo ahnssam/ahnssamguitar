@@ -842,7 +842,7 @@
     const href = x => x.on ? 'tab-detail.html?id=' + encodeURIComponent(x.id) : (IS_APP ? '' : fsUrl(x.c));
     const linkAttrs = x => !href(x) ? '' : x.on ? `href="${esc(href(x))}"` : `href="${esc(href(x))}" target="_blank" rel="noopener"`;
     // 풀스코어 가격은 사이트 새 가격과 다를 수 있어서, 아직 안 올린 곡은 가격 대신 '풀스코어'로
-    const price = x => x.on ? `${Number(x.p || 0).toLocaleString()}원` : `<span class="fs-link">${IS_APP ? '준비 중' : '풀스코어<i class="fas fa-arrow-up-right-from-square"></i>'}</span>`;
+    const price = x => x.on ? `${Number(x.pmin ?? x.p ?? 0).toLocaleString()}원${x.pmin != null && x.pmin !== x.pmax ? '~' : ''}` : `<span class="fs-link">${IS_APP ? '준비 중' : '풀스코어<i class="fas fa-arrow-up-right-from-square"></i>'}</span>`;
     // 실결제 전(checkout.js 가 테스트 키)에는 올린 곡도 아직 살 수 없어서 '곧 사이트 구매'로
     let PAY_OPEN = false;
     const chip = x => x.on ? `<span class="chip buy">${PAY_OPEN ? '바로 구매' : '곧 사이트 구매'}</span>` : '<span class="chip fs">풀스코어</span>';
@@ -871,8 +871,8 @@
         fresh: (a, b) => (b.on - a.on) || (a.on ? String(b.up).localeCompare(String(a.up)) : String(b.c).localeCompare(String(a.c))),
     };
 
-    const tidy = list => bundle(list.filter(x => STYLE[x.s === 'fingerstyle' ? 'finger' : x.s])
-        .map(x => ({ ...x, t: String(x.t || '').normalize('NFC'), s: x.s === 'fingerstyle' ? 'finger' : x.s, k: norm(x.t + ' ' + (x.a || '') + ' ' + STYLE[x.s === 'fingerstyle' ? 'finger' : x.s][1]) })));   // 종류 이름(기타솔로·코드악보…)으로도 검색
+    const tidy = list => mergeVersions(bundle(list.filter(x => STYLE[x.s === 'fingerstyle' ? 'finger' : x.s])
+        .map(x => ({ ...x, t: String(x.t || '').normalize('NFC'), s: x.s === 'fingerstyle' ? 'finger' : x.s, k: norm(x.t + ' ' + (x.a || '') + ' ' + STYLE[x.s === 'fingerstyle' ? 'finger' : x.s][1]) }))));   // 종류 이름(기타솔로·코드악보…)으로도 검색
     // 같은 곡(sk = song_key)의 일렉기타 반주 + 기타솔로: 일렉기타 칸에 '+ 기타솔로'로 하나만, 가격은 함께 산 값(500원 할인).
     // 통기타 악보는 통기타 칸에 따로(2,500원). 같은 곡 일렉기타가 없는 기타솔로는 기타솔로 칸에 그대로.
     const SET_DISCOUNT = 500;
@@ -890,6 +890,35 @@
             if (x.s === 'solo' && elec && (elec.on || !x.on)) x.hide = true;
         }
         return list.filter(x => !x.hide);
+    }
+
+    // 같은 곡·같은 종류의 다른 편곡(제목 끝 "(2021 편곡)"·"(쉬운 편곡)")은 목록에 한 줄로 (2026-11-05 사용자 요청).
+    // 누르면 대표 편곡(연도가 가장 최근인 편곡) 상세 페이지로 가고, 거기서 다른 편곡·영상도 함께 보인다(tab-detail.html).
+    // 가격이 다르면 가장 싼 값에 '~', 판매 수는 모두 더한다. 앨범 커버는 대표 편곡 것.
+    const VER_RE = /\s*\(([^()]*편곡)\)\s*$/;
+    function mergeVersions(list) {
+        const groups = new Map();
+        for (const x of list) {
+            if (!x.on) continue;
+            const key = norm(x.t.replace(VER_RE, '')) + '|' + norm(x.a) + '|' + x.s;
+            (groups.get(key) || groups.set(key, []).get(key)).push(x);
+        }
+        const drop = new Set();
+        for (const g of groups.values()) {
+            if (g.length < 2 || !g.some(x => VER_RE.test(x.t))) continue;
+            const year = x => +((x.t.match(VER_RE) || [])[1] || '').replace(/\D/g, '') || 0;
+            const r = [...g].sort((a, b) => (year(b) - year(a)) || String(b.up).localeCompare(String(a.up)))[0];
+            const ps = g.map(x => x.p || 0);
+            Object.assign(r, {
+                t: r.t.replace(VER_RE, ''), a: (r.a ? r.a + ' · ' : '') + `편곡 ${g.length}가지`,
+                members: g.map(x => x.id), pmin: Math.min(...ps), pmax: Math.max(...ps),
+                o: g.reduce((n, x) => n + (x.o || 0), 0), up: g.map(x => String(x.up)).sort().pop(),
+                yt: g.some(x => x.yt) ? (r.yt || g.find(x => x.yt).yt) : r.yt, cv: r.cv || (g.find(x => x.cv) || {}).cv,
+                k: g.map(x => x.k).join(' ') + ' 편곡',
+            });
+            g.forEach(x => { if (x !== r) drop.add(x); });
+        }
+        return list.filter(x => !drop.has(x));
     }
 
     async function loadSheets() {
@@ -938,7 +967,10 @@
         PAY_OPEN = !!(window.ahnssamCheckout && !window.ahnssamCheckout.isTest());
         const $ = id => document.getElementById(id);
         // w = 최근 7일, m = 최근 30일 사이트 판매. 많이 팔린 순(o)은 풀스코어 누적 주문수 + 사이트 판매
-        for (const x of ALL) { const p = POP.get(x.id); x.w = p ? p.sold_7d : 0; x.m = p ? p.sold_30d : 0; if (p) x.o += p.sold_total; }
+        for (const x of ALL) {
+            x.w = 0; x.m = 0;
+            for (const id of x.members || [x.id]) { const p = POP.get(id); if (p) { x.w += p.sold_7d; x.m += p.sold_30d; x.o += p.sold_total; } }   // 한 줄로 합친 편곡들은 판매도 합쳐서
+        }
         $('newList').innerHTML = [...ALL].sort(SORT.fresh).slice(0, 6).map(x => row('<span class="new">NEW</span>', x)).join('');
         // 인기 악보 주별·월별·전체 — 전체 = 추천 순(올린 곡 먼저, 많이 팔린 순).
         // 주별·월별 = 그 기간 사이트 판매 순, 6곡이 안 되면 남은 자리는 전체 순으로 채우고 위에 안내 한 줄

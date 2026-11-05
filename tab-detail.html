@@ -369,12 +369,15 @@
         .parts[hidden], .versions[hidden] { display: none; }   /* display:flex 가 hidden 을 이기지 않게 */
         /* 같은 곡의 다른 편곡 (예: Way Back Home (쉬운 편곡) / (2025 편곡)) — 따로 파는 악보, 눌러서 옮겨 간다 */
         .versions { display: flex; flex-direction: column; gap: 0.5rem; }
-        .ver { display: flex; flex-direction: column; gap: 0.2rem; padding: 0.75rem 0.95rem; border: 1.5px solid var(--green-pale); border-radius: 12px; background: var(--white); color: inherit; text-decoration: none; transition: border-color 0.2s, background 0.2s; }
-        a.ver:hover { border-color: var(--green-mid); }
+        .ver-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.6rem; }   /* 편곡 고르기: 구성 고르기처럼 옆으로 */
+        .ver { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.8rem 0.9rem; border: 1.5px solid var(--green-pale); border-radius: 12px; background: var(--white); color: inherit; text-decoration: none; transition: border-color 0.2s, background 0.2s; }
+        a.ver:hover { border-color: var(--green-mid); background: #f7fcf9; }
         .ver.cur { border-color: var(--green-dark); background: #f3fbf6; cursor: default; }
-        .ver .vn { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-size: 0.93rem; font-weight: 700; }
-        .ver .vn small { font-size: 0.75rem; font-weight: 700; color: var(--green-dark); white-space: nowrap; }
-        .ver .vi { font-size: 0.78rem; color: var(--text-light); }
+        .ver .vn { display: flex; align-items: center; gap: 0.45rem; font-size: 0.93rem; font-weight: 700; line-height: 1.35; }
+        .ver .vn i { font-size: 1rem; color: var(--green-pale); flex: none; }
+        .ver.cur .vn i { color: var(--green-dark); }
+        .ver .vi { font-size: 0.78rem; color: var(--text-light); padding-left: calc(1rem + 0.45rem); }
+        .ver .vp { font-weight: 800; font-size: 1rem; color: var(--green-deep); padding-left: calc(1rem + 0.45rem); }
         .parts-title { font-size: 0.85rem; font-weight: 700; color: var(--text-mid); }
         .parts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.6rem; }   /* 구성은 옆으로 나란히 */
         .part { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.85rem 0.95rem; border: 1.5px solid var(--green-pale); border-radius: 12px; background: var(--white); cursor: pointer; transition: border-color 0.2s, background 0.2s; }
@@ -852,12 +855,15 @@
         function renderVersions(p) {
             const box = document.getElementById('versions');
             if (!VERSIONS.length) { box.hidden = true; return; }
-            const card = (x, cur) => {
-                const info = [x.difficulty ? '난이도 ' + x.difficulty : '', x.pages ? x.pages + '페이지' : '', won(x.price)].filter(Boolean).join(' · ');
-                const name = `<span class="vn">${escHtml(verTag(x.title))}<small>${cur ? '보고 있는 악보' : '이 악보 보기 <i class="fas fa-arrow-right"></i>'}</small></span><span class="vi">${escHtml(info)}</span>`;
-                return cur ? `<div class="ver cur">${name}</div>` : `<a class="ver" href="tab-detail.html?id=${encodeURIComponent(x.id)}">${name}</a>`;
+            // 구성 고르기 칸처럼 옆으로 놓은 버튼. 지금 보는 편곡은 체크, 다른 편곡을 누르면 그 악보 페이지로
+            const all = [p, ...VERSIONS].sort((a, b) => String(a.title).localeCompare(String(b.title), 'ko'));
+            const card = x => {
+                const cur = x.id === p.id;
+                const body = `<span class="vn"><i class="fas ${cur ? 'fa-circle-check' : 'fa-circle'}"></i>${escHtml(verTag(x.title))}</span>`
+                    + `<span class="vi">${escHtml([x.difficulty ? '난이도 ' + x.difficulty : '', x.pages ? x.pages + '페이지' : ''].filter(Boolean).join(' · '))}</span><span class="vp">${won(x.price)}</span>`;
+                return cur ? `<div class="ver cur" aria-current="page">${body}</div>` : `<a class="ver" href="tab-detail.html?id=${encodeURIComponent(x.id)}">${body}</a>`;
             };
-            box.innerHTML = `<div class="parts-title">다른 편곡도 있어요 · 따로 파는 악보예요</div>` + [card(p, true), ...VERSIONS.map(x => card(x, false))].join('');
+            box.innerHTML = `<div class="parts-title">편곡 고르기 · 편곡마다 따로 파는 악보예요</div><div class="ver-row">${all.map(card).join('')}</div>`;
             box.hidden = false;
         }
 

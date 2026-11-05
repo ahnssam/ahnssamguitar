@@ -477,6 +477,12 @@
         const url = sb.storage.from(PREVIEW_BUCKET).getPublicUrl(s.preview_path).data.publicUrl;
         return url + '?v=' + encodeURIComponent(s.updated_at || '');
     }
+    // 커버 그림은 여러 악보가 같이 쓸 수 있다(예: 인생의 회전목마 세 편곡). 다른 악보가 아직 쓰면 파일은 지우지 않는다
+    async function removeCover(path, exceptId) {
+        const { count, error } = await sb.from('sheets').select('id', { count: 'exact', head: true }).eq('cover_path', path).neq('id', exceptId);
+        if (error || count) return;
+        await sb.storage.from(COVER_BUCKET).remove([path]);
+    }
     const coverUrl = s => s && s.cover_path ? sb.storage.from(COVER_BUCKET).getPublicUrl(s.cover_path).data.publicUrl + '?v=' + encodeURIComponent(s.updated_at || '') : '';
     // 앨범 커버는 같은 곡으로 묶인 악보 하나에만 올려도 같이 쓴다 (메인도 같음)
     const coverOwner = s => s.cover_path ? s : (s.song_key && sheets.find(x => x.song_key === s.song_key && x.cover_path)) || null;
@@ -1085,11 +1091,11 @@
                 if (up.error) throw up.error;
                 const { error } = await sb.from('sheets').update({ cover_path: path }).eq('id', id);
                 if (error) throw error;
-                if (editing && editing.cover_path && editing.cover_path !== path) await sb.storage.from(COVER_BUCKET).remove([editing.cover_path]);
+                if (editing && editing.cover_path && editing.cover_path !== path) await removeCover(editing.cover_path, id);
             } else if (dropCover && editing && editing.cover_path) {
                 const { error } = await sb.from('sheets').update({ cover_path: null }).eq('id', id);
                 if (error) throw error;
-                await sb.storage.from(COVER_BUCKET).remove([editing.cover_path]);
+                await removeCover(editing.cover_path, id);
             }
             if (newPdf) {
                 $('edMsg').textContent = 'PDF를 올리고 있어요…';
@@ -1122,7 +1128,7 @@
         const f = filesById[id];
         if (f) await sb.storage.from(PDF_BUCKET).remove([`${id}.pdf`]);
         if (editing.preview_path) await sb.storage.from(PREVIEW_BUCKET).remove([editing.preview_path]);
-        if (editing.cover_path) await sb.storage.from(COVER_BUCKET).remove([editing.cover_path]);
+        if (editing.cover_path) await removeCover(editing.cover_path, id);
         const { error } = await sb.from('sheets').delete().eq('id', id);
         if (error) { $('edMsg').textContent = '삭제하지 못했어요: ' + error.message; return; }
         closeEditor();
