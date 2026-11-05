@@ -593,6 +593,8 @@ nav.scrolled .auth-btn:hover {
                 const isOwner = OWNER_EMAILS.indexOf(
                     String((currentSession.user && currentSession.user.email) || '').toLowerCase()
                 ) !== -1;
+                // 설치한 앱(Google Play)에서는 '구매한 악보'(악보 판매 사이트로 이어짐)를 메뉴에서 뺀다
+                const isApp = !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
                 const container = document.createElement('div');
                 container.style.position = 'relative';
                 container.style.display = 'inline-flex';
@@ -602,7 +604,7 @@ nav.scrolled .auth-btn:hover {
                         <span class="auth-user-name">${escapeHtml(nick)}</span>
                     </button>
                     <div class="auth-user-menu" role="menu">
-                        <button type="button" data-auth-action="purchases">구매한 악보</button>
+                        ${isApp ? '' : '<button type="button" data-auth-action="purchases">구매한 악보</button>'}
                         ${isOwner
                             ? '<button type="button" data-auth-action="sheets">악보관리</button><button type="button" data-auth-action="builder">프리셋 빌더</button>'
                             : '<button type="button" data-auth-action="mypage">마이페이지</button>'}

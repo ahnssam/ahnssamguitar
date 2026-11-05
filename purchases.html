@@ -28,6 +28,8 @@
         .pay.bad { border: 2px solid #f0c4be; }
         .pay.bad > i { color: var(--red); }
         .pay.wait > i { color: var(--green-dark); }
+        .pay.info { border: 2px solid #f1d58a; }
+        .pay.info > i { color: #c99a1e; }
         .pay h2 { font-size: 19px; font-weight: 900; margin-bottom: 4px; }
         .pay p { font-size: 14px; color: var(--text-mid); line-height: 1.6; }
         .pay .acts { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
@@ -148,12 +150,12 @@
 
     <footer class="ft">
         <div class="ft-links"><a href="legal/terms.html">이용약관</a><a href="legal/terms.html#refund">환불 정책</a><a href="legal/privacy.html">개인정보 처리방침</a></div>
-        <span>상호: 안쌤의 기타나무숲</span><span>대표: 안규호</span><span>사업자등록번호: 453-22-00905</span><br>
+        <span>상호: 안쌤의 기타나무숲</span><span>대표: 안규호</span><span>사업자등록번호: 453-22-00905</span><span>통신판매업 신고번호: 제2026-서울강남-06306호</span><br>
         <span>주소: 서울특별시 강남구 영동대로 210 쌍용종합상가 지하1층 3호</span><span>고객센터: <a href="tel:050713349804">0507-1334-9804</a></span><span>이메일: <a href="mailto:ahnssamguitar@gmail.com">ahnssamguitar@gmail.com</a></span>
     </footer>
 
     <script src="auth.js" defer></script>
-    <script src="checkout.js" defer></script>
+    <script src="checkout.js?v=20261105" defer></script>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         'use strict';
@@ -219,6 +221,19 @@
         (async function start() {
             await C.ready();
             const auth = window.ahnssamAuth;
+            const q = new URLSearchParams(location.search);
+            const back = C.returnSheet();
+            const backBtn = back ? `<a class="btn line" href="/tab-detail.html?id=${encodeURIComponent(back)}"><i class="fas fa-arrow-left"></i> 악보로 돌아가기</a>` : '';
+            // 실결제 전 체험 결제창(주문번호 TRIAL-…)에서 돌아옴 — 승인하지 않고 안내만. 로그인 안 한 손님도 본다.
+            const trial = String(q.get('orderId') || '').startsWith('TRIAL-');
+            if (trial) {
+                history.replaceState(null, '', location.pathname);
+                const paid = !!q.get('paymentKey');
+                const canceled = q.get('code') === 'PAY_PROCESS_CANCELED' || q.get('code') === 'USER_CANCEL';
+                showPay('info', 'fa-circle-info', paid ? '테스트 결제라 구매되지 않았어요' : canceled ? '결제를 취소했어요' : '결제가 되지 않았어요',
+                    (paid ? '방금 결제창은 테스트용이라 돈이 빠지지 않았고, 악보도 구매되지 않았어요. ' : '돈은 빠지지 않았어요. ') +
+                    '지금은 결제 연동을 점검하고 있어요. 이 악보는 지금 풀스코어에서 구매할 수 있어요(악보 페이지에 링크가 있어요).', backBtn);
+            }
             if (!auth || !auth.getSession()) {
                 $('list').innerHTML = `<div class="empty"><i class="fas fa-lock"></i><p>로그인하면 구매한 악보를 볼 수 있어요.</p><button class="btn" id="loginBtn">로그인</button></div>`;
                 $('loginBtn').onclick = () => auth && auth.openLogin();
@@ -226,10 +241,9 @@
                 return;
             }
 
-            const q = new URLSearchParams(location.search);
-            const back = C.returnSheet();
-            const backBtn = back ? `<a class="btn line" href="/tab-detail.html?id=${encodeURIComponent(back)}"><i class="fas fa-arrow-left"></i> 악보로 돌아가기</a>` : '';
-            if (q.get('paymentKey') && q.get('orderId')) {
+            if (trial) {
+                // 위에서 안내함
+            } else if (q.get('paymentKey') && q.get('orderId')) {
                 // 토스 결제창에서 성공으로 돌아옴 → 서버에 승인 요청
                 showPay('wait', 'fa-spinner fa-spin', '결제를 확인하고 있어요…', '창을 닫지 말고 잠시만 기다려 주세요.');
                 const r = await C.confirm(q.get('paymentKey'), q.get('orderId'), q.get('amount'));

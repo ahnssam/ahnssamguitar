@@ -64,13 +64,69 @@
         return key ? ERR[key] : (m || '문제가 생겼어요. 잠시 뒤 다시 시도해 주세요.');
     };
 
+    // 결제창 띄우기 (실제 구매·체험 공통)
+    async function openPayment({ amount, orderId, orderName, customerKey, email, name }) {
+        await loadSdk();
+        const payment = window.TossPayments(TOSS_CLIENT_KEY).payment({ customerKey });
+        const back = window.location.origin + '/purchases.html';
+        await payment.requestPayment({
+            method: 'CARD',   // 카드 + 간편결제(토스페이·카카오페이 등 계약된 것) 통합 결제창
+            amount: { currency: 'KRW', value: amount },
+            orderId,
+            orderName,
+            successUrl: back,
+            failUrl: back,
+            customerEmail: email || undefined,
+            customerName: name || undefined,
+            card: { useEscrow: false, flowMode: 'DEFAULT', useCardPoint: false, useAppCardOnly: false },
+        });
+    }
+
+    // 실결제 전(테스트 키) 손님용 체험 결제창 — 토스 심사 담당자처럼 로그인하지 않은 사람도 언제든 결제창까지 볼 수 있게.
+    // 주문을 DB 에 만들지 않고(주문번호 TRIAL-…), 돌아오면 purchases.html 이 승인 없이 '테스트라 구매되지 않았어요'를 보여 준다.
+    // 테스트 키라 돈이 빠지지 않고, 승인하지 않은 테스트 결제는 토스에서 저절로 사라진다.
+    const PART = { acoustic: '통기타', electric: '일렉기타', solo: '기타솔로', fingerstyle: '핑거스타일', bass: '베이스', chord: '코드악보' };
+    async function trialBuy(ids) {
+        const sb = auth() && auth().supabase;
+        if (!sb) { alert('결제창을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.'); return { status: 'error' }; }
+        const { data: rows, error } = await sb.from('sheets').select('id, title, price, style').in('id', ids);
+        if (error || !rows || rows.length !== ids.length || rows.some(r => !(r.price > 0))) {
+            alert('지금은 판매하지 않는 악보예요.');
+            return { status: 'error' };
+        }
+        // 금액·주문 이름은 서버(create_sheet_order)와 같은 규칙: 반주 + 기타솔로를 함께 사면 500원 할인
+        rows.sort((a, b) => (a.style === 'solo') - (b.style === 'solo') || String(a.style).localeCompare(String(b.style)));
+        const solo = rows.some(r => r.style === 'solo'), main = rows.some(r => r.style !== 'solo');
+        const amount = rows.reduce((s, r) => s + r.price, 0) - (solo && main ? 500 : 0);
+        const parts = rows.map(r => PART[r.style] || '악보').join(' + ');
+        const orderName = String(rows[0].title).slice(0, 60) + ' TAB악보' + (rows.length > 1 || solo ? ' (' + parts + ')' : '');
+        const orderId = 'TRIAL-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+        try { sessionStorage.setItem(RETURN_KEY, ids[0]); } catch (e) {}
+        try {
+            await loadSdk();
+            const s = session();
+            await openPayment({
+                amount, orderId, orderName,
+                customerKey: s ? s.user.id : window.TossPayments.ANONYMOUS,
+                email: s && s.user.email,
+            });
+            return { status: 'redirect' };
+        } catch (e) {
+            if (e && (e.code === 'USER_CANCEL' || e.code === 'PAY_PROCESS_CANCELED')) return { status: 'cancel' };
+            alert(errText(e));
+            return { status: 'error' };
+        }
+    }
+
     // 구매하기 — 성공하면 토스 결제창으로 넘어가고, 결제가 끝나면 purchases.html 로 돌아온다.
     // sheetId 는 악보 하나, 또는 같은 곡의 악보 여러 개(반주 + 기타솔로 — 함께 사면 서버가 500원 깎는다)
     async function buy(sheetId) {
         const ids = [].concat(sheetId);
         await ready();
-        if (!session()) { auth() && auth().openLogin(); return { status: 'login' }; }
         if (!canPay()) { alert('지금은 결제를 준비하고 있어요. 조금만 기다려 주세요!'); return { status: 'closed' }; }
+        // 실결제 전에는 운영 계정이 아니면 로그인 없이 체험 결제창 (실제 구매는 안 됨)
+        if (trialOnly()) return trialBuy(ids);
+        if (!session()) { auth() && auth().openLogin(); return { status: 'login' }; }
 
         const { data, error } = await auth().supabase.rpc('create_sheet_order', { p_sheet_ids: ids });   // db/sheet_bundles.sql
         if (error) {
@@ -81,21 +137,11 @@
         try { sessionStorage.setItem(RETURN_KEY, ids[0]); } catch (e) {}
 
         try {
-            await loadSdk();
             const user = session().user;
             const profile = auth().getProfile && auth().getProfile();
-            const payment = window.TossPayments(TOSS_CLIENT_KEY).payment({ customerKey: user.id });
-            const back = window.location.origin + '/purchases.html';
-            await payment.requestPayment({
-                method: 'CARD',   // 카드 + 간편결제(토스페이·카카오페이 등 계약된 것) 통합 결제창
-                amount: { currency: 'KRW', value: data.amount },
-                orderId: data.order_id,
-                orderName: data.order_name,
-                successUrl: back,
-                failUrl: back,
-                customerEmail: user.email || undefined,
-                customerName: (profile && profile.nickname) || undefined,
-                card: { useEscrow: false, flowMode: 'DEFAULT', useCardPoint: false, useAppCardOnly: false },
+            await openPayment({
+                amount: data.amount, orderId: data.order_id, orderName: data.order_name,
+                customerKey: user.id, email: user.email, name: profile && profile.nickname,
             });
             return { status: 'redirect' };
         } catch (e) {

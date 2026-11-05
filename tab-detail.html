@@ -679,7 +679,7 @@
     </style>
     <!-- Supabase auth (shared) -->
     <script src="auth.js" defer></script>
-    <script src="checkout.js" defer></script>
+    <script src="checkout.js?v=20261105" defer></script>
 </head>
 <body>
 
@@ -799,7 +799,7 @@
             <li><a href="legal/terms.html">이용약관</a></li>
         </ul>
         <div class="footer-biz">
-            <p><span>상호: 안쌤의 기타나무숲</span><span>대표: 안규호</span><span>사업자등록번호: 453-22-00905</span></p>
+            <p><span>상호: 안쌤의 기타나무숲</span><span>대표: 안규호</span><span>사업자등록번호: 453-22-00905</span><span>통신판매업 신고번호: 제2026-서울강남-06306호</span></p>
             <p><span>주소: 서울특별시 강남구 영동대로 210 쌍용종합상가 지하1층 3호</span><span>고객센터: <a href="tel:050713349804">0507-1334-9804</a></span><span>이메일: <a href="mailto:ahnssamguitar@gmail.com">ahnssamguitar@gmail.com</a></span><span>호스팅: GitHub</span></p>
         </div>
         <p class="footer-copy">&copy; 2026 안쌤의 기타나무숲. All rights reserved.</p>
@@ -1023,8 +1023,14 @@
                 if (PARTS.length > 1) set('fa-circle-check', '모두 구매한 악보예요'); else showDownload();
                 return;
             }
-            // 실결제 전(테스트 키): 결제창은 열리지만 살 수는 없다고 알리고, 지금 살 수 있는 풀스코어로 안내
+            // 설치한 앱(Google Play)에서는 디지털 상품을 팔지 않는다 — 구매 버튼·풀스코어 링크 없이 안내만 (Play 결제 정책)
             const note = document.getElementById('trialNote');
+            if (window.matchMedia && matchMedia('(display-mode: standalone)').matches) {
+                note.hidden = true;
+                set('fa-mobile-screen', '앱에서는 구매할 수 없어요');
+                return;
+            }
+            // 실결제 전(테스트 키): 결제창은 열리지만 살 수는 없다고 알리고, 지금 살 수 있는 풀스코어로 안내
             if (C.trialOnly()) {
                 note.innerHTML = '<i class="fas fa-circle-info"></i> 지금은 결제 연동을 점검하고 있어요. 열리는 결제창은 <b>테스트용</b>이라 돈이 빠지지 않고, 악보도 받을 수 없어요.' +
                     (p.fullscore_code ? ' <a href="https://www.fullscore.co.kr/shop/prd_view.php?prdcode=' + encodeURIComponent(p.fullscore_code) + '" target="_blank" rel="noopener">지금 이 악보는 풀스코어에서 구매할 수 있어요 <i class="fas fa-arrow-up-right-from-square"></i></a>' : '');
