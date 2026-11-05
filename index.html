@@ -310,7 +310,7 @@
     .three-col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; }
     .three-col.no-pick { grid-template-columns: repeat(2, minmax(0, 1fr)); }   /* 고른 곡이 없으면 픽 칸을 빼고 두 열 */
     /* 안쌤의 픽: 악보관리에서 별표 1~5로 고른 곡 (2026-11-06 사용자 결정 — 위에 큰 썸네일 자리, 아래는 목록 하이라이트).
-       목록에 마우스를 올린 곡(없으면 5초마다 위에서부터 차례로)의 썸네일·정보가 위 자리에 크로스페이드로 바뀐다.
+       목록에 마우스를 올린 곡(없으면 4초마다 위에서부터 차례로)의 썸네일·정보가 위 자리에 크로스페이드로 바뀐다.
        마우스를 올려 둔 동안·다른 탭을 보는 동안·움직임 줄이기 설정이면 저절로는 넘어가지 않는다 */
     .pick-col .col-hd h2 i { color: var(--gold); font-size: 16px; margin-right: 5px; }
     .pick-col .col-hd span { font-size: 12.5px; color: #999; }
@@ -332,23 +332,29 @@
     .pslide .go i { font-size: 11px; margin-left: 3px; transition: transform .25s; }
     .pslide:hover .go i { transform: translateX(3px); }
     .pslide:focus-visible { outline: 3px solid var(--green-mid); outline-offset: -3px; border-radius: 18px; }
-    .pick-list { list-style: none; margin-top: 10px; }
-    .pitem { position: relative; display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 14px; border-radius: 12px; transition: background-color .3s ease; }
+    /* 하이라이트는 목록에 하나만 두고(::before 바탕 + ::after 막대), 보고 있는 곡 자리로 미끄러져 움직인다 (2026-11-06 사용자 요청).
+       자리·높이는 스크립트가 --hl-y·--hl-h 로 준다. 처음 자리 잡을 때는 움직이지 않게 .ready 가 붙은 뒤부터 움직임 */
+    .pick-list { position: relative; list-style: none; margin-top: 10px; }
+    .pick-list::before, .pick-list::after { content: ''; position: absolute; top: 0; left: 0; pointer-events: none; opacity: 0;
+        transform: translateY(var(--hl-y, 0px)); transition: opacity .3s ease; }
+    .pick-list::before { right: 0; height: var(--hl-h, 0px); border-radius: 12px; background: linear-gradient(90deg, var(--green-faint), rgba(226, 245, 234, 0.25)); }
+    .pick-list::after { width: 3px; height: calc(var(--hl-h, 0px) - 18px); margin-top: 9px; border-radius: 2px; background: var(--green-mid); }
+    .pick-list.lit::before, .pick-list.lit::after { opacity: 1; }
+    .pick-list.ready::before, .pick-list.ready::after { transition: transform .5s cubic-bezier(.3, 1.3, .5, 1), height .5s cubic-bezier(.3, 1.3, .5, 1), opacity .3s ease; }
+    .pick-list li { position: relative; z-index: 1; }
+    .pitem { position: relative; display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 14px; border-radius: 12px; }
     .pick-list li + li .pitem { margin-top: 2px; }
-    .pitem::before { content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px; border-radius: 2px; background: var(--green-mid); opacity: 0; transition: opacity .3s ease; }
     .pitem .no { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 900; background: var(--green-faint); color: var(--green-deep); transition: background-color .3s, color .3s; }
     .pick-list li:first-child .no { background: #f4ead2; color: #8a6a1f; }
     .pitem .mt { flex: 1; min-width: 0; }
     .pitem .mt b { display: block; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color .3s; }
     .pitem .mt small { display: block; font-size: 12px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .pitem .pr { font-size: 13.5px; font-weight: 700; white-space: nowrap; }
-    .pitem.on { background: linear-gradient(90deg, var(--green-faint), rgba(226, 245, 234, 0.25)); }
-    .pitem.on::before { opacity: 1; }
     .pitem.on .no { background: var(--green-deep); color: #fff; }
     .pick-list li:first-child .pitem.on .no { background: var(--gold); }
     .pitem.on .mt b { color: var(--green-deep); }
     .pitem:focus-visible { outline: 2px solid var(--green-mid); outline-offset: 1px; }
-    @media (prefers-reduced-motion: reduce) { .pslide, .pslide.on, .pitem, .pitem::before { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { .pslide, .pslide.on, .pick-list.ready::before, .pick-list.ready::after { transition: none; } }
     /* 종류별 악보: 위 세 열 아래에 종류마다 한 칸씩 왼쪽부터 오른쪽으로. 칸마다 최신순·인기순 */
     .types-row { margin-top: 56px; }
     .type-cols { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 24px; margin-top: 16px; }
@@ -921,15 +927,23 @@
         <span class="meta">${chip(x)}<span class="lv">${LV(x.lv)}</span>${x.yt ? '<i class="fab fa-youtube"></i>' : ''}</span><span class="pr">${price(x)}</span><span class="go">악보 보기<i class="fas fa-arrow-right"></i></span></span></a>`;
     const pickItem = (x, i) => `<li><a class="pitem" ${linkAttrs(x)} data-i="${i}"><span class="no">${i + 1}</span><span class="mt"><b>${esc(x.t)}</b><small>${esc(x.a)}${x.a ? ' · ' : ''}${STYLE[x.s][1]}</small></span><span class="pr">${price(x)}</span></a></li>`;
 
-    // 목록에 마우스를 올리거나(키보드로 가면) 그 곡이 위에 보이고, 아니면 5초마다 위에서부터 차례로.
+    // 목록에 마우스를 올리거나(키보드로 가면) 그 곡이 위에 보이고, 아니면 4초마다 위에서부터 차례로 (2026-11-06 사용자: 5초 → 4초).
+    // 목록의 하이라이트 막대는 그 곡 자리로 미끄러져 내려간다(--hl-y·--hl-h). 화면 폭이 바뀌면 자리를 다시 잰다.
     // 목록·썸네일 위에 마우스가 있는 동안, 다른 탭을 보는 동안, 움직임 줄이기 설정이면 저절로는 안 넘어간다
     function pickShow(box) {
-        const slides = [...box.querySelectorAll('.pslide')], items = [...box.querySelectorAll('.pitem')];
+        const slides = [...box.querySelectorAll('.pslide')], items = [...box.querySelectorAll('.pitem')], list = box.querySelector('.pick-list');
         let i = 0, held = false;
+        const place = () => {
+            const li = items[i].parentNode;
+            list.style.setProperty('--hl-y', li.offsetTop + 'px');
+            list.style.setProperty('--hl-h', li.offsetHeight + 'px');
+            list.classList.add('lit');
+        };
         const set = n => {
             i = n;
             slides.forEach((s, k) => { s.classList.toggle('on', k === n); s.tabIndex = k === n ? 0 : -1; s.setAttribute('aria-hidden', k !== n); });
             items.forEach((s, k) => s.classList.toggle('on', k === n));
+            place();
         };
         items.forEach((it, n) => { it.addEventListener('mouseenter', () => set(n)); it.addEventListener('focus', () => set(n)); });
         box.addEventListener('mouseenter', () => { held = true; });
@@ -937,8 +951,11 @@
         box.addEventListener('focusin', () => { held = true; });
         box.addEventListener('focusout', () => { held = false; });
         set(0);
+        setTimeout(() => list.classList.add('ready'), 60);   // 첫 자리는 그냥 놓고, 그다음부터 움직인다
+        if (window.ResizeObserver) new ResizeObserver(place).observe(list); else addEventListener('resize', place);
+        document.fonts && document.fonts.ready.then(place);   // 글꼴이 늦게 와서 줄 높이가 바뀌어도 맞게
         if (items.length > 1 && !matchMedia('(prefers-reduced-motion: reduce)').matches)
-            setInterval(() => { if (!held && !document.hidden) set((i + 1) % items.length); }, 5000);
+            setInterval(() => { if (!held && !document.hidden) set((i + 1) % items.length); }, 4000);
     }
 
     // 정렬: 위쪽 목록은 사이트에 올린 곡(바로 구매) 먼저
