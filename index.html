@@ -1011,8 +1011,9 @@
     const relKey = x => x.c ? String(x.c) : x.up ? String(x.up).slice(2, 10).replace(/-/g, '') + '9999' : '';
     const tidy = list => mergeVersions(bundle(list.filter(x => STYLE[x.s === 'fingerstyle' ? 'finger' : x.s])
         .map(x => ({ ...x, rel: relKey(x), t: String(x.t || '').normalize('NFC'), s: x.s === 'fingerstyle' ? 'finger' : x.s, k: norm(x.t + ' ' + (x.a || '') + ' ' + STYLE[x.s === 'fingerstyle' ? 'finger' : x.s][1]) }))));   // 종류 이름(기타솔로·코드악보…)으로도 검색
-    // 같은 곡(sk = song_key)의 일렉기타 반주 + 기타솔로: 일렉기타 칸에 '+ 기타솔로'로 하나만, 가격은 함께 산 값(500원 할인).
-    // 통기타 악보는 통기타 칸에 따로(2,500원). 같은 곡 일렉기타가 없는 기타솔로는 기타솔로 칸에 그대로.
+    // 같은 곡(sk = song_key)의 반주 + 기타솔로: 반주 칸에 '+ 솔로'로 하나만, 가격은 함께 산 값(500원 할인).
+    //   반주 = 일렉기타, 일렉기타가 없으면 통기타 (2026-11-06 사용자: 너에게 난 나에게 넌은 통기타 + 솔로로).
+    //   같은 곡 반주가 없는 기타솔로는 기타솔로 칸에 그대로.
     const SET_DISCOUNT = 500;
     function bundle(list) {
         const by = new Map();
@@ -1020,12 +1021,12 @@
         for (const x of list) {
             const g = x.sk && by.get(x.sk); if (!g) continue;
             if (!x.cv) x.cv = (g.find(y => y.cv) || {}).cv;   // 앨범 커버는 같은 곡 악보 하나에만 올려도 같이 쓴다
-            const solo = g.find(y => y.s === 'solo'), elec = g.find(y => y.s === 'electric');
-            if (x.s === 'electric' && solo && (solo.on || !x.on)) {
+            const solo = g.find(y => y.s === 'solo'), back = g.find(y => y.s === 'electric') || g.find(y => y.s === 'acoustic');
+            if (x === back && solo && (solo.on || !x.on)) {
                 x.plus = true; x.k += ' 기타솔로';
                 if (x.on && solo.on) x.p = (x.p || 0) + (solo.p || 0) - SET_DISCOUNT;
             }
-            if (x.s === 'solo' && elec && (elec.on || !x.on)) { x.hide = true; if (x.pk && !elec.pk) elec.pk = x.pk; }   // 픽으로 고른 솔로가 숨으면 일렉 줄이 그 자리를
+            if (x.s === 'solo' && back && (back.on || !x.on)) { x.hide = true; if (x.pk && !back.pk) back.pk = x.pk; }   // 픽으로 고른 솔로가 숨으면 반주 줄이 그 자리를
         }
         return list.filter(x => !x.hide);
     }

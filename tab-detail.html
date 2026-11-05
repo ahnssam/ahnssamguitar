@@ -1093,7 +1093,9 @@
             }
             PARTS.sort((a, b) => (PART_ORDER[a.style] ?? 5) - (PART_ORDER[b.style] ?? 5));
             SEL = new Set([p.id]);
-            if (p.style === 'electric') PARTS.filter(x => x.style === 'solo').forEach(x => SEL.add(x.id));   // 일렉기타로 들어오면 반주 + 기타솔로
+            // 반주로 들어오면 반주 + 기타솔로 (메인에서 '반주 + 솔로' 한 줄·함께 산 값으로 보여서). 반주 = 일렉기타, 없으면 통기타
+            const back = PARTS.find(x => x.style === 'electric') || PARTS.find(x => x.style === 'acoustic');
+            if (back && p.id === back.id) PARTS.filter(x => x.style === 'solo').forEach(x => SEL.add(x.id));
             VERSIONS = (versions || await loadVersions(p)).sort((a, b) => String(a.title).localeCompare(String(b.title), 'ko'));   // 아래 영상 순서가 바꿀 때마다 섞이지 않게
             showSheet(p);
         }

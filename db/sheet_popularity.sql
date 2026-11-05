@@ -4,8 +4,9 @@
 --   · 사이트 판매만 센다 (sheet_purchases 중 결제 완료, 테스트 결제 is_test 는 뺀다).
 --     풀스코어 누적 주문수(sheets.fullscore_orders)는 날짜가 없어서 '전체' 탭에만 더한다 (index.html).
 --   · 주별 = 지금부터 거꾸로 최근 7일, 월별 = 최근 30일.
---   · 판매 수 = 그 악보가 들어 있는 주문 수. 같은 곡의 기타솔로는 메인 목록에서 '일렉기타 + 기타솔로' 한 줄이라
---     일렉기타 반주 쪽으로 합쳐 세고, 반주 + 솔로를 함께 산 주문은 한 번으로 센다 (index.html bundle() 과 같은 규칙).
+--   · 판매 수 = 그 악보가 들어 있는 주문 수. 같은 곡의 기타솔로는 메인 목록에서 '반주 + 기타솔로' 한 줄이라
+--     반주 쪽으로 합쳐 세고, 반주 + 솔로를 함께 산 주문은 한 번으로 센다 (index.html bundle() 과 같은 규칙).
+--   · 2026-11-06: 반주 = 일렉기타, 일렉기타가 없으면 통기타 (너에게 난 나에게 넌 = 통기타 + 솔로).
 create or replace function public.sheet_popularity()
 returns table (sheet_id uuid, sold_7d integer, sold_30d integer, sold_total integer)
 language sql
@@ -20,9 +21,9 @@ as $$
         join public.sheets s on s.id = p.sheet_id
         left join lateral (
             select e.id from public.sheets e
-            where s.style = 'solo' and s.song_key is not null and e.song_key = s.song_key and e.style = 'electric'
+            where s.style = 'solo' and s.song_key is not null and e.song_key = s.song_key and e.style in ('electric', 'acoustic')
               and (e.published or not s.published)
-            order by e.published desc, e.id
+            order by e.published desc, (e.style = 'electric') desc, e.id
             limit 1
         ) el on true
     )

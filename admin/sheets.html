@@ -579,8 +579,10 @@
     const coverUrl = s => s && s.cover_path ? sb.storage.from(COVER_BUCKET).getPublicUrl(s.cover_path).data.publicUrl + '?v=' + encodeURIComponent(s.updated_at || '') : '';
     // 앨범 커버는 같은 곡으로 묶인 악보 하나에만 올려도 같이 쓴다 (메인도 같음)
     const coverOwner = s => s.cover_path ? s : (s.song_key && sheets.find(x => x.song_key === s.song_key && x.cover_path)) || null;
+    // 같은 곡 반주 + 기타솔로면 반주 썸네일에 '+ 솔로' (반주 = 일렉기타, 없으면 통기타 — 메인 bundle() 과 같은 규칙)
+    const plusSolo = (style, group) => group.some(x => x.style === 'solo') && (style === 'electric' || (style === 'acoustic' && !group.some(x => x.style === 'electric')));
     const listThumb = s => thumbHtml({ style: s.style, kind: s.kind, lv: s.difficulty, title: s.title, cover: coverUrl(coverOwner(s)), paper: previewUrl(s),
-        plus: s.style === 'electric' && !!s.song_key && sheets.some(x => x.song_key === s.song_key && x.style === 'solo') });
+        plus: !!s.song_key && plusSolo(s.style, sheets.filter(x => x.song_key === s.song_key && x.id !== s.id)) });
     // 스토어에 내려면 채워야 하는데 비어 있는 칸 (PDF는 따로 표시). 자작곡은 원곡 가수가 없어도 되고,
     // 영상은 악보를 먼저 올리고 나중에 올릴 수 있어서 빈 칸 경고에서 뺐다(2026-11-05) — 위 '유튜브 없음' 버튼으로 찾는다.
     // 미리보기·페이지 수는 PDF를 올릴 때 같이 채워지니 PDF가 있는 곡만 본다
@@ -1072,7 +1074,7 @@
         const sib = own ? null : linked.find(x => x.cover_path);
         // 썸네일에는 곡명 대신 종류를 크게 적는다 (곡명은 악보 미리보기와 목록 글자에 이미 보임)
         const html = thumbHtml({ style: v('style'), kind: v('kind'), lv: difficulty, title: v('title'), cover: own || coverUrl(sib), paper: paperSrc,
-            plus: v('style') === 'electric' && linked.some(x => x.style === 'solo') });
+            plus: grpKind !== 'versions' && plusSolo(v('style'), linked) });
         if (html !== lastThumb) $('thumb').innerHTML = lastThumb = html;
         $('cvBtnTxt').textContent = own ? '커버 바꾸기' : '앨범 커버 올리기';
         $('cvDel').hidden = !own;
