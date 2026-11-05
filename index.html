@@ -91,6 +91,9 @@
     html { scroll-behavior: smooth; }
     [id] { scroll-margin-top: 96px; }   /* 위에 붙은 메뉴에 가리지 않게 */
     @media (max-width: 900px) { [id] { scroll-margin-top: 72px; } }
+    /* 장르별 악보로 내려갈 땐 섹션 위 여백(.sec padding)을 빼서 'BROWSE 장르별 악보' 줄이 메뉴 바로 아래에 오게 */
+    #browse { scroll-margin-top: 40px; }
+    @media (max-width: 900px) { #browse { scroll-margin-top: 34px; } }
 
     /* ===== 메뉴: 지금 사이트와 같은 느낌 (로고 · 가운데 메뉴 · 연습도구/로그인 알약 버튼 · SNS) ===== */
     header { position: sticky; top: 0; z-index: 30; background: #fff; box-shadow: 0 1px 0 #eef2ef; }   /* 흐림(backdrop-filter) 없이: 아래 배너 나뭇잎이 움직일 때 크롬에서 메뉴가 깜빡여서 */
@@ -375,6 +378,14 @@
     .tbl .pr { font-weight: 700; text-align: right; white-space: nowrap; }
     .tbl .yt { color: #e33; text-align: center; }
     .center { text-align: center; padding-top: 26px; }
+    /* 장르별 악보 페이지 번호 */
+    .pager { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; padding-top: 26px; }
+    .pager[hidden] { display: none; }
+    .pager button { min-width: 36px; height: 36px; padding: 0 8px; border-radius: 18px; border: 1px solid #dfe8e3; background: #fff; color: #555; font: inherit; font-size: 13.5px; cursor: pointer; }
+    .pager button:hover:not([disabled]):not(.on) { border-color: var(--green-deep); color: var(--green-deep); }
+    .pager button.on { background: var(--green-deep); border-color: var(--green-deep); color: #fff; font-weight: 700; cursor: default; }
+    .pager button[disabled] { opacity: 0.35; cursor: default; }
+    .pager .gap { color: #aaa; padding: 0 2px; }
     .pill { display: inline-block; border: 1.5px solid var(--green-deep); color: var(--green-deep); font-size: 13px; font-weight: 700; padding: 10px 30px; border-radius: 22px; background: #fff; }
 
     /* ===== 지금 사이트 섹션들 ===== */
@@ -514,7 +525,11 @@
         .book h3 { font-size: 19px; }
         .book ul { display: none; }
         .genres { overflow-x: auto; flex-wrap: nowrap; white-space: nowrap; }
-        .sub-filter .sort { display: none; }
+        .sub-filter { flex-wrap: wrap; row-gap: 6px; }
+        #typeFilter { flex: 1 1 100%; }
+        .sub-filter .sort { margin-left: 0; flex: 1 1 100%; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+        .sub-filter .sort::-webkit-scrollbar { display: none; }
+        .sub-filter .sort a { flex: none; }
         .tbl thead, .tbl .c-art, .tbl .c-st, .tbl .c-lv, .tbl .yt { display: none; }
         .big-hd h2 { font-size: 32px; }
         .cont-hd { flex-direction: column; align-items: flex-start; }
@@ -734,13 +749,13 @@
         </div>
         <div class="sub-filter">
             <span id="typeFilter"><a href="#" data-s="" class="on">전체</a><a href="#" data-s="acoustic">통기타</a><a href="#" data-s="electric">일렉기타</a><a href="#" data-s="finger">핑거스타일</a><a href="#" data-s="solo">기타솔로</a><a href="#" data-s="chord">코드악보</a><a href="#" data-s="bass">베이스</a></span>
-            <span class="sort" id="sortBy"><a href="#" data-o="rec" class="on">추천순</a><a href="#" data-o="new">최신순</a><a href="#" data-o="pop">인기순</a><a href="#" data-o="low">낮은 가격순</a></span>
+            <span class="sort" id="sortBy"><a href="#" data-o="rec" class="on">추천순</a><a href="#" data-o="new">최신순</a><a href="#" data-o="pop">인기순</a><a href="#" data-o="w">이번 주 인기</a><a href="#" data-o="m">이번 달 인기</a><a href="#" data-o="low">낮은 가격순</a></span>
         </div>
         <table class="tbl">
             <thead><tr><th style="width:76px;"></th><th>곡명</th><th class="c-art">장르</th><th class="c-lv">난이도</th><th style="text-align:center;" class="yt">영상</th><th style="text-align:right;">가격</th></tr></thead>
             <tbody id="allList"></tbody>
         </table>
-        <div class="center"><a class="pill" href="#" id="moreBtn">악보 더 보기 <i class="fas fa-chevron-down"></i></a></div>
+        <nav class="pager" id="pager" aria-label="장르별 악보 페이지" hidden></nav>
     </div>
 </section>
 
@@ -848,9 +863,11 @@
     // 정렬: 위쪽 목록은 사이트에 올린 곡(바로 구매) 먼저
     const SORT = {
         rec: (a, b) => (b.on - a.on) || (b.o - a.o),                                   // 추천: 올린 곡 먼저, 그다음 많이 팔린 순
-        new: (a, b) => String(b.c || '9').localeCompare(String(a.c || '9')),          // 최신: 풀스코어 등록일(코드 앞 6자리) 순
+        new: (a, b) => SORT.fresh(a, b),                                               // 최신: 위 '새로 나온 악보'와 같은 순서
         pop: (a, b) => b.o - a.o,                                                      // 인기: 풀스코어 주문 수
         low: (a, b) => (b.on - a.on) || (a.p - b.p),                                   // 낮은 가격: 가격이 보이는 올린 곡 먼저
+        w: (a, b) => (b.w - a.w) || SORT.rec(a, b),                                    // 이번 주 인기: 최근 7일 사이트 판매, 같으면 추천순
+        m: (a, b) => (b.m - a.m) || SORT.rec(a, b),                                    // 이번 달 인기: 최근 30일 사이트 판매, 같으면 추천순
         fresh: (a, b) => (b.on - a.on) || (a.on ? String(b.up).localeCompare(String(a.up)) : String(b.c).localeCompare(String(a.c))),
     };
 
@@ -926,7 +943,9 @@
         // 인기 악보 주별·월별·전체 — 전체 = 추천 순(올린 곡 먼저, 많이 팔린 순).
         // 주별·월별 = 그 기간 사이트 판매 순, 6곡이 안 되면 남은 자리는 전체 순으로 채우고 위에 안내 한 줄
         const PERIOD = { w: '최근 7일', m: '최근 30일' };
+        let bestP = 'all';
         const drawBest = p => {
+            bestP = p;
             const all = [...ALL].sort(SORT.rec);
             let list = all, sold = 0;
             if (PERIOD[p]) {
@@ -949,31 +968,53 @@
         }).join('');
 
         // 장르별 표: 장르·종류 거르기, 검색, 정렬, 더 보기
-        const st = { g: '', s: '', o: 'rec', n: 10, q: '' };
+        const PAGE = 10;   // 한 페이지 곡 수
+        const st = { g: '', s: '', o: 'rec', page: 1, q: '' };
         const setOn = (box, attr, val) => box.querySelectorAll('a').forEach(b => b.classList.toggle('on', b.dataset[attr] === val));
         const draw = () => {
             let list = ALL.filter(x => (!st.g || x.g === st.g || (st.g === '연주곡' && x.g === '클래식')) && (!st.s || x.s === st.s) && (!st.q || x.k.includes(st.q)));
             list = [...list].sort(SORT[st.o]);
             $('allCount').textContent = list.length + '곡';
-            $('allList').innerHTML = list.slice(0, st.n).map(x => `<tr data-href="${esc(href(x))}" data-ext="${x.on ? '' : '1'}">
+            const pages = Math.max(1, Math.ceil(list.length / PAGE));
+            if (st.page > pages) st.page = pages;
+            $('allList').innerHTML = list.slice((st.page - 1) * PAGE, st.page * PAGE).map(x => `<tr data-href="${esc(href(x))}" data-ext="${x.on ? '' : '1'}">
                 <td>${thumb(x, 'sm')}</td><td class="nm">${href(x) ? `<a ${linkAttrs(x)}>${esc(x.t)}</a>` : esc(x.t)} ${chip(x)}<small>${esc(x.a)}</small></td>
                 <td class="c-art" style="color:#666;font-size:13px;">${esc(x.g)}</td>
                 <td class="c-lv"><span class="lv">${LV(x.lv)}</span></td><td class="yt">${x.yt ? '<i class="fab fa-youtube"></i>' : ''}</td>
                 <td class="pr">${price(x)}</td></tr>`).join('') || `<tr><td colspan="6" class="tbl-empty">${st.q || st.g ? '찾는 악보가 없어요. 다른 제목이나 가수 이름으로 찾아보세요.' : '이 종류의 악보를 준비하고 있어요. 곧 올라와요!'}</td></tr>`;
-            $('moreBtn').style.display = list.length > st.n ? '' : 'none';
+            drawPager(pages);
             const qn = $('qNote');
             qn.hidden = !st.q;
             if (st.q) qn.innerHTML = `‘${esc($('q').value.trim())}’ 검색 결과<a href="#browse" id="qClear">검색 지우기</a>`;
         };
+        // 페이지 번호: 처음·끝은 늘, 지금 페이지 앞뒤 2개씩, 사이는 …
+        const drawPager = pages => {
+            const pg = $('pager');
+            pg.hidden = pages <= 1;
+            if (pages <= 1) { pg.innerHTML = ''; return; }
+            const cur = st.page, nums = [];
+            for (let i = 1; i <= pages; i++) if (i === 1 || i === pages || Math.abs(i - cur) <= 2) nums.push(i);
+            let html = `<button type="button" data-pg="${cur - 1}" aria-label="이전 페이지" ${cur === 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
+            nums.forEach((n, i) => {
+                if (i && n - nums[i - 1] > 1) html += '<span class="gap">…</span>';
+                html += `<button type="button" data-pg="${n}" ${n === cur ? 'class="on" aria-current="page"' : ''}>${n}</button>`;
+            });
+            html += `<button type="button" data-pg="${cur + 1}" aria-label="다음 페이지" ${cur === pages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
+            pg.innerHTML = html;
+        };
         const pick = (box, attr, key) => box.addEventListener('click', e => {
             const a = e.target.closest('a'); if (!a) return; e.preventDefault();
-            st[key] = a.dataset[attr]; st.n = 10; setOn(box, attr, st[key]); draw();
+            st[key] = a.dataset[attr]; st.page = 1; setOn(box, attr, st[key]); draw();
         });
         const genres = document.querySelector('.genres'), types = $('typeFilter'), sorts = $('sortBy');
         pick(genres, 'g', 'g');
         pick(types, 's', 's');
         pick(sorts, 'o', 'o');
-        $('moreBtn').addEventListener('click', e => { e.preventDefault(); st.n += 10; draw(); });
+        $('pager').addEventListener('click', e => {
+            const b = e.target.closest('button[data-pg]'); if (!b || b.disabled || b.classList.contains('on')) return;
+            st.page = +b.dataset.pg; draw();
+            $('browse').scrollIntoView({ behavior: 'smooth' });   // 새 페이지는 표 맨 위부터
+        });
         // 표의 줄 아무 곳이나 눌러도 그 악보로 (제목 글자는 원래 링크)
         $('allList').addEventListener('click', e => {
             if (e.target.closest('a')) return;
@@ -983,7 +1024,7 @@
         // 검색: 장르·종류는 '전체'로 돌리고 표에서 보여 준다
         const search = q => {
             $('q').value = q;
-            st.q = norm(q).trim(); st.g = ''; st.s = ''; st.n = 10;
+            st.q = norm(q).trim(); st.g = ''; st.s = ''; st.page = 1;
             setOn(genres, 'g', ''); setOn(types, 's', '');
             draw();
             $('browse').scrollIntoView({ behavior: 'smooth' });
@@ -994,9 +1035,16 @@
             if (e.target.closest('#qClear')) { e.preventDefault(); search(''); return; }
             // 위쪽 '더보기' — 정렬이나 종류를 맞춰서 표로
             const m = e.target.closest('a[data-sort], a[data-type]'); if (!m) return;
-            if (m.dataset.sort) { st.o = m.dataset.sort; setOn(sorts, 'o', st.o); }
+            if (m.dataset.sort) {
+                // 인기 악보 '더보기'는 지금 고른 탭(주별·월별·전체) 기준 그대로
+                st.o = (m.dataset.sort === 'pop' && PERIOD[bestP]) ? bestP : m.dataset.sort;
+                setOn(sorts, 'o', st.o);
+                // 위쪽 목록은 전체 곡 기준이라 장르·종류·검색 거르기는 풀어서 같은 목록이 이어지게
+                st.g = ''; st.s = ''; st.q = ''; $('q').value = ''; $('qNote').hidden = true;
+                setOn(genres, 'g', ''); setOn(types, 's', '');
+            }
             if (m.dataset.type) { st.s = m.dataset.type; st.g = ''; setOn(types, 's', st.s); setOn(genres, 'g', ''); }
-            st.n = 10; draw();
+            st.page = 1; draw();
         });
         // 상세 페이지 위치 표시의 종류 링크(/?type=solo#browse)로 들어오면 그 종류만
         const qType = new URLSearchParams(location.search).get('type');
