@@ -73,7 +73,20 @@
     .lv.pick:hover button { color: var(--green-2); }
     .lv.pick button:hover ~ button { color: #ddd; }
     .pub { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
-    .list .c-pr { white-space: nowrap; }
+    .list .c-pr, .list .c-up { white-space: nowrap; }
+    /* 목록에서 바로 가격 바꾸기 — 값을 바꾸면 확인 버튼이 나오고, 눌러야 저장 */
+    .prc { display: inline-flex; align-items: center; gap: 2px; }
+    .prc input { width: 60px; border: 1px solid transparent; border-radius: 6px; padding: 4px 3px 4px 6px; font: inherit; font-size: 13.5px; text-align: right; background: transparent; -moz-appearance: textfield; appearance: textfield; }
+    .prc input::-webkit-outer-spin-button, .prc input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .prc input:hover { border-color: var(--line); background: #fff; }
+    .prc input:focus { outline: none; border-color: var(--green-2); background: #fff; }
+    .prc .ok { margin-left: 4px; border: 0; border-radius: 6px; background: var(--green); color: #fff; font-size: 12px; font-weight: 700; padding: 5px 9px; cursor: pointer; }
+    .prc .ok:disabled { opacity: .6; cursor: default; }
+    .prc.saved input { background: var(--green-bg); transition: background .6s; }
+    .list .c-go { text-align: right; white-space: nowrap; }
+    .salego { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 12.5px; font-weight: 700; color: var(--green); background: #fff; text-decoration: none; }
+    .salego:hover { border-color: var(--green-2); background: var(--green-bg); }
+    .salego i { font-size: 11px; }
     .pub .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
     .pub.on .dot { background: #2fb36d; }
     .pub.on { color: #1f8a52; font-weight: 700; }
@@ -265,6 +278,7 @@
         .toolbar .search { margin-left: 0; flex-basis: 100%; }
         .toolbar .search input { width: 100%; }
         .list .c-st, .list .c-lv, .list .c-up { display: none; }
+        .salego span { display: none; }   /* 좁은 화면에선 아이콘만 */
         .ed-body { grid-template-columns: 1fr; }
         .fields { grid-template-columns: 1fr; }
     }
@@ -515,7 +529,7 @@
             $('listWrap').innerHTML = '<div class="empty"><i class="fas fa-music" style="font-size:24px;color:var(--green);display:block;margin-bottom:10px;"></i>아직 등록한 악보가 없어요. 오른쪽 위 <b>새 악보</b>로 첫 악보를 올려 보세요.</div>';
             return;
         }
-        $('listWrap').innerHTML = `<table class="list"><thead><tr><th class="rk" title="풀스코어 주문수 순위">주문순</th><th></th><th>곡명</th><th class="c-st">종류·스타일</th><th class="c-lv">난이도</th><th>가격</th><th>상태</th><th class="c-up">수정일</th></tr></thead><tbody>${
+        $('listWrap').innerHTML = `<table class="list"><thead><tr><th class="rk" title="풀스코어 주문수 순위">주문순</th><th></th><th>곡명</th><th class="c-st">종류·스타일</th><th class="c-lv">난이도</th><th>가격</th><th>상태</th><th class="c-up">수정일</th><th class="c-go"></th></tr></thead><tbody>${
             rows.map(s => `<tr data-id="${s.id}" class="${filesById[s.id] ? 'done' : ''}">
                 <td class="rk">${rank[s.id] ? `<b>${rank[s.id]}</b><small>주문 ${s.fullscore_orders}</small>` : `<small>${hasOrders ? '주문 0' : '-'}</small>`}</td>
                 <td>${listThumb(s)}</td>
@@ -525,13 +539,49 @@
                 <td class="c-st"><span class="chip ${s.kind}">${KIND[s.kind] || ''}</span>${s.style ? `<span class="chip">${STYLE[s.style][0]}</span>` : ''}${
                     s.song_key ? `<span class="chip bundle" title="같은 곡으로 묶인 악보"><i class="fas fa-link"></i> ${sheets.filter(x => x.song_key === s.song_key).map(x => (STYLE[x.style] || ['악보'])[0]).join(' + ')}</span>` : ''}</td>
                 <td class="c-lv"><span class="lv pick" title="눌러서 난이도 바꾸기">${[1, 2, 3, 4, 5].map(i => `<button type="button" data-lv-set="${i}" class="${i <= (s.difficulty || 0) ? '' : 'off'}">●</button>`).join('')}</span></td>
-                <td class="c-pr">${won(s.price)}</td>
+                <td class="c-pr"><span class="prc" title="숫자를 고치고 확인을 누르면 가격이 바뀌어요"><input type="number" min="0" step="500" value="${s.price || 0}" data-price="${s.id}" aria-label="가격">원<button type="button" class="ok" data-price-ok="${s.id}" hidden>확인</button></span></td>
                 <td><span class="pub ${s.published ? 'on' : ''}" data-toggle="${s.id}"><span class="dot"></span>${s.published ? '공개' : '비공개'}</span></td>
-                <td class="c-up" style="color:var(--sub);font-size:12.5px;">${new Date(s.updated_at).toLocaleDateString('ko-KR')}</td>
+                <td class="c-up" style="color:var(--sub);font-size:12.5px;">${ymd(s.updated_at)}</td>
+                <td class="c-go"><a class="salego" href="/tab-detail.html?id=${s.id}" target="_blank" rel="noopener" title="손님에게 보이는 판매 페이지를 새 탭으로 열기${s.published ? '' : ' (비공개 악보는 운영 계정에게만 보여요)'}"><span>판매페이지 보기</span><i class="fas fa-arrow-up-right-from-square"></i></a></td>
             </tr>`).join('')
         }</tbody></table>`;
     }
+    const ymd = t => { const d = new Date(t); return isNaN(d) ? '' : `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`; };
+    // 가격: 고치면 확인 버튼이 나오고(Enter 도 같음, Esc 는 되돌리기), 저장하면 그 줄만 바꾼다 — 다른 줄에 고치던 값이 지워지지 않게
+    async function savePrice(id) {
+        const s = sheets.find(x => x.id === id), inp = $('listWrap').querySelector(`[data-price="${id}"]`), ok = inp.parentNode.querySelector('.ok');
+        const n = Number(inp.value);
+        if (inp.value.trim() === '' || !Number.isInteger(n) || n < 0) { alert('가격은 0 이상의 숫자로 넣어 주세요.'); inp.focus(); return; }
+        if (n === s.price) { ok.hidden = true; return; }
+        ok.disabled = true; ok.textContent = '저장 중';
+        const { data, error } = await sb.from('sheets').update({ price: n }).eq('id', id).select().single();
+        ok.disabled = false; ok.textContent = '확인';
+        if (error) { alert('가격을 바꾸지 못했어요: ' + error.message); return; }
+        Object.assign(s, data);
+        inp.value = inp.defaultValue = s.price; ok.hidden = true;
+        inp.closest('tr').querySelector('.c-up').textContent = ymd(s.updated_at);
+        const box = inp.parentNode; box.classList.add('saved'); setTimeout(() => box.classList.remove('saved'), 1200);
+    }
+    $('listWrap').addEventListener('input', e => {
+        const inp = e.target.closest('[data-price]');
+        if (!inp) return;
+        const s = sheets.find(x => x.id === inp.dataset.price);
+        inp.parentNode.querySelector('.ok').hidden = inp.value === String(s.price || 0);
+    });
+    $('listWrap').addEventListener('keydown', e => {
+        const inp = e.target.closest('[data-price]');
+        if (!inp) return;
+        if (e.key === 'Enter') { e.preventDefault(); savePrice(inp.dataset.price); }
+        if (e.key === 'Escape') { inp.value = inp.defaultValue; inp.parentNode.querySelector('.ok').hidden = true; inp.blur(); }
+    });
     $('listWrap').addEventListener('click', async e => {
+        if (e.target.closest('.salego')) { e.stopPropagation(); return; }   // 판매 페이지는 새 탭으로만 열고 편집 창은 열지 않는다
+        if (e.target.closest('.c-pr')) {   // 가격 칸을 눌러도 편집 창은 열지 않는다
+            e.stopPropagation();
+            const ok = e.target.closest('[data-price-ok]');
+            if (ok) savePrice(ok.dataset.priceOk);
+            return;
+        }
         const lv = e.target.closest('[data-lv-set]');
         if (lv) {
             e.stopPropagation();
