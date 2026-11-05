@@ -892,20 +892,20 @@
         return list.filter(x => !x.hide);
     }
 
-    // 같은 곡·같은 종류의 다른 편곡(제목 끝 "(2021 편곡)"·"(쉬운 편곡)")은 목록에 한 줄로 (2026-11-05 사용자 요청).
+    // 같은 곡의 다른 편곡(악보관리에서 '편곡별'로 묶은 것 = 같은 version_key)은 목록에 한 줄로 (2026-11-05 사용자 요청).
     // 누르면 대표 편곡(연도가 가장 최근인 편곡) 상세 페이지로 가고, 거기서 다른 편곡·영상도 함께 보인다(tab-detail.html).
     // 가격이 다르면 가장 싼 값에 '~', 판매 수는 모두 더한다. 앨범 커버는 대표 편곡 것.
     const VER_RE = /\s*\(([^()]*편곡)\)\s*$/;
     function mergeVersions(list) {
         const groups = new Map();
         for (const x of list) {
-            if (!x.on) continue;
-            const key = norm(x.t.replace(VER_RE, '')) + '|' + norm(x.a) + '|' + x.s;
+            if (!x.on || !x.vk) continue;
+            const key = x.vk;
             (groups.get(key) || groups.set(key, []).get(key)).push(x);
         }
         const drop = new Set();
         for (const g of groups.values()) {
-            if (g.length < 2 || !g.some(x => VER_RE.test(x.t))) continue;
+            if (g.length < 2) continue;
             const year = x => +((x.t.match(VER_RE) || [])[1] || '').replace(/\D/g, '') || 0;
             const r = [...g].sort((a, b) => (year(b) - year(a)) || String(b.up).localeCompare(String(a.up)))[0];
             const ps = g.map(x => x.p || 0);
@@ -931,7 +931,7 @@
             if (!r.ok) throw new Error('HTTP ' + r.status);
             const rows = await r.json();
             const pv = new Map(pr && pr.ok ? (await pr.json()).map(s => [s.id, s.preview_path]) : []);
-            if (rows.length) return tidy(rows.map(s => ({ id: s.id, c: s.fullscore_code, t: s.title, a: s.artist, s: s.style, g: s.genre, lv: s.difficulty, p: s.price, yt: s.youtube_id, o: s.fullscore_orders || 0, on: !!s.on_sale, up: s.updated_at, pv: pv.get(s.id), sk: s.song_key, kd: s.kind, cv: cvUrl(s.cover_path, s.updated_at) })));
+            if (rows.length) return tidy(rows.map(s => ({ id: s.id, c: s.fullscore_code, t: s.title, a: s.artist, s: s.style, g: s.genre, lv: s.difficulty, p: s.price, yt: s.youtube_id, o: s.fullscore_orders || 0, on: !!s.on_sale, up: s.updated_at, pv: pv.get(s.id), sk: s.song_key, vk: s.version_key, kd: s.kind, cv: cvUrl(s.cover_path, s.updated_at) })));
         } catch (e) { console.warn('[sheets] 목록 함수를 못 불러와서 저장본으로 보여요', e); }
         return loadSheetsFallback();
     }
@@ -943,7 +943,7 @@
             const r = await fetch(SB_URL + '/rest/v1/sheets?select=*&published=eq.true', { headers: { apikey: SB_KEY } });
             if (r.ok) live = await r.json();
         } catch (e) { console.warn('[sheets] 공개 악보를 못 불러왔어요', e); }
-        const fromLive = s => ({ id: s.id, c: s.fullscore_code, t: s.title, a: s.artist, s: s.style, g: s.genre, lv: s.difficulty, p: s.price, yt: s.youtube_id, o: s.fullscore_orders || 0, on: true, up: s.updated_at, pv: s.preview_path, sk: s.song_key, kd: s.kind, cv: cvUrl(s.cover_path, s.updated_at) });
+        const fromLive = s => ({ id: s.id, c: s.fullscore_code, t: s.title, a: s.artist, s: s.style, g: s.genre, lv: s.difficulty, p: s.price, yt: s.youtube_id, o: s.fullscore_orders || 0, on: true, up: s.updated_at, pv: s.preview_path, sk: s.song_key, vk: s.version_key, kd: s.kind, cv: cvUrl(s.cover_path, s.updated_at) });
         const byCode = new Map(live.filter(s => s.fullscore_code).map(s => [s.fullscore_code, s]));
         const all = base.map(x => byCode.has(x.c) ? fromLive(byCode.get(x.c)) : { ...x, on: false });
         // 풀스코어에 없던 새 악보(사이트에서 처음 만든 곡)도 넣는다

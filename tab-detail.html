@@ -766,6 +766,10 @@
                     <i class="fas fa-signal"></i>
                     <strong>난이도</strong> <span id="difficultyClover"></span>
                 </div>
+                <div class="product-detail-row" id="capoRow" style="display:none">
+                    <i class="fas fa-grip-lines-vertical"></i>
+                    <strong>카포</strong> <span id="productCapo"></span>
+                </div>
             </div>
             <p class="product-desc" id="productDesc" hidden></p>
             <div class="product-actions">
@@ -846,15 +850,13 @@
         const VER_RE = /\s*\(([^()]*편곡)\)\s*$/;
         const baseTitle = t => String(t || '').normalize('NFC').replace(VER_RE, '').trim().toLowerCase();
         const verTag = t => { const m = String(t || '').match(VER_RE); return m ? m[1] : '이 편곡'; };
+        // 다른 편곡 = 같은 version_key 의 공개 악보 (악보관리에서 '편곡별'로 묶은 것, db/sheet_versions.sql)
         async function loadVersions(p) {
-            const base = String(p.title || '').normalize('NFC').replace(VER_RE, '').trim();
-            if (!base || /[*,()]/.test(base)) return [];
+            if (!p.version_key || !/^[0-9a-f-]{36}$/i.test(p.version_key)) return [];
             try {
-                const r = await fetch(SB_URL + '/rest/v1/sheets?select=*&published=eq.true&style=eq.' + encodeURIComponent(p.style) + '&title=ilike.' + encodeURIComponent(base + '*'), { headers: { apikey: SB_KEY } });
+                const r = await fetch(SB_URL + '/rest/v1/sheets?select=*&published=eq.true&version_key=eq.' + p.version_key, { headers: { apikey: SB_KEY } });
                 if (!r.ok) return [];
-                const art = String(p.artist || '').normalize('NFC');
-                return (await r.json()).filter(x => x.id !== p.id && baseTitle(x.title) === baseTitle(p.title) && String(x.artist || '').normalize('NFC') === art)
-                    .sort((a, b) => String(a.title).localeCompare(String(b.title), 'ko'));
+                return (await r.json()).filter(x => x.id !== p.id).sort((a, b) => String(a.title).localeCompare(String(b.title), 'ko'));
             } catch (e) { return []; }
         }
         function renderVersions(p) {
@@ -905,6 +907,8 @@
             document.getElementById('pagesRow').style.display = p.pages ? '' : 'none';
             if (p.pages) document.getElementById('productPages').textContent = p.pages + '페이지';
             document.getElementById('levelRow').style.display = p.difficulty ? '' : 'none';
+            document.getElementById('capoRow').style.display = p.capo ? '' : 'none';   // 카포 (악보관리에서 고름)
+            if (p.capo) document.getElementById('productCapo').textContent = p.capo + '프렛';
             if (p.difficulty) document.getElementById('difficultyClover').innerHTML = renderClover(p.difficulty);
             const desc = document.getElementById('productDesc');
             desc.textContent = p.description || '';

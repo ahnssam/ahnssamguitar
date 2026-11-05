@@ -194,6 +194,31 @@
     /* 같은 곡 악보 묶기 */
     .links { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
     .links:empty { display: none; }
+    /* 묶음 탭 1·2·3 */
+    .grp { display: flex; flex-direction: column; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+    .grp-tabs { display: flex; flex-wrap: wrap; gap: 6px; align-items: stretch; }
+    .grp-tabs .tb { display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--line); background: #fff; border-radius: 10px; padding: 6px 8px 6px 10px; cursor: pointer; font: inherit; font-size: 13px; color: #444; }
+    .grp-tabs .tb b { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #eef3f0; font-size: 11.5px; }
+    .grp-tabs .tb small { color: var(--sub); }
+    .grp-tabs .tb.on { border-color: var(--green); background: var(--green-bg); color: var(--green); cursor: default; padding-right: 12px; }
+    .grp-tabs .tb.on b { background: var(--green); color: #fff; }
+    .grp-tabs .tb .x { border: 0; background: none; color: #aaa; padding: 0 2px; cursor: pointer; font-size: 12px; }
+    .grp-tabs .tb .x:hover { color: var(--red); }
+    .grp-tabs .add { border: 1.5px dashed #c9d6cf; background: #fff; border-radius: 10px; padding: 6px 12px; cursor: pointer; font: inherit; font-size: 13px; color: var(--green); }
+    .grp-kind { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 13px; }
+    .grp-kind label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+    .grp-kind small { color: var(--sub); }
+    .grp-note { font-size: 12px; color: var(--sub); }
+    .grp-kind[hidden], .grp-note[hidden], .linkadd[hidden] { display: none; }
+    .row5 { display: grid; grid-template-columns: 1fr 1fr 1fr auto 58px; gap: 8px; }
+    .row5 .stars { gap: 2px; }
+    .row5 .stars button { width: 24px; height: 36px; font-size: 11px; border-radius: 6px; }
+    .row5 select { padding-left: 6px; padding-right: 2px; }
+    .fold { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+    .fold summary { cursor: pointer; font-size: 13px; font-weight: 800; color: var(--green); }
+    .fold summary small { font-weight: 400; color: var(--sub); margin-left: 6px; }
+    .fold-in { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-top: 10px; }
+    #verTagRow[hidden] { display: none; }
     .vernote { font-size: 12.5px; color: #6b4aa8; background: #f6f1ff; border-radius: 8px; padding: 7px 10px; margin-bottom: 6px; line-height: 1.5; }   /* 다른 편곡(제목으로 자동 묶음) */
     .vernote[hidden] { display: none; }
     .links .lk { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 12.5px; background: #f7faf8; }
@@ -237,6 +262,7 @@
     .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; align-content: start; }
     .f { display: flex; flex-direction: column; gap: 4px; }
     .f.full { grid-column: 1 / -1; }
+    .fields > .full { grid-column: 1 / -1; }   /* 묶음 탭·한 줄 칸·접은 저작권 정보도 가로 전체 */
     .f label { font-size: 12.5px; font-weight: 700; color: #444; }
     .f label em { font-style: normal; color: var(--red); }
     .f label small { font-weight: 400; color: var(--sub); margin-left: 4px; }
@@ -290,6 +316,8 @@
         .salego span { display: none; }   /* 좁은 화면에선 아이콘만 */
         .ed-body { grid-template-columns: 1fr; }
         .fields { grid-template-columns: 1fr; }
+        .row5 { grid-template-columns: 1fr 1fr 1fr; }
+        .fold-in { grid-template-columns: 1fr; }
     }
 </style>
 </head>
@@ -349,32 +377,48 @@
             <div class="ytp" id="ytPrev" hidden></div>
         </div>
         <form class="fields" id="form" autocomplete="off">
+            <!-- 묶음: 같은 곡의 악보들이 탭 1·2·3 으로. 파트별(반주만·기타솔로, 함께 사면 할인) 또는 편곡별(따로 팜) -->
+            <div class="grp full" id="grp">
+                <div class="grp-tabs" id="grpTabs"></div>
+                <div class="grp-kind" id="grpKind" hidden>
+                    <b>묶음 종류</b>
+                    <label><input type="radio" name="gkind" value="parts"> 파트별 <small>반주만·기타솔로처럼 — 함께 사면 500원 할인</small></label>
+                    <label><input type="radio" name="gkind" value="versions"> 편곡별 <small>2021·2025·쉬운 편곡처럼 — 따로 팜</small></label>
+                </div>
+                <div class="linkadd" id="linkAddRow" hidden><input id="linkQ" list="linkList" placeholder="묶을 악보를 곡명으로 찾아 고르기"><datalist id="linkList"></datalist><button type="button" class="btn" id="linkAdd"><i class="fas fa-link"></i> 묶기</button></div>
+                <div class="grp-note" id="grpNote" hidden>곡명·원제·원곡 가수·종류·장르·저작권 정보는 묶인 악보 모두 같이 바뀌어요. 나머지는 탭마다 따로예요.</div>
+            </div>
             <div class="f full has-sug"><label>곡명 <em>*</em></label><input name="title" required placeholder="예: 홍련화"><div class="tsug" id="titleSug" hidden></div></div>
             <div class="f"><label>원제 <small>일본어·영어 원제 (선택)</small></label><input name="title_original" placeholder="예: 紅蓮華"></div>
             <div class="f"><label>원곡 가수·출처</label><input name="artist" placeholder="예: LiSA · 귀멸의 칼날 OP"></div>
-            <div class="f"><label>종류 <em>*</em></label>
-                <select name="kind"><option value="cover">커버 (원곡 채보)</option><option value="arrangement">편곡</option><option value="original">자작곡</option></select></div>
-            <div class="f"><label>스타일</label>
-                <select name="style"><option value="acoustic">통기타</option><option value="electric">일렉기타</option><option value="fingerstyle">핑거스타일</option><option value="solo">기타솔로</option><option value="chord">코드악보</option><option value="bass">베이스</option><option value="other">그 밖</option></select></div>
-            <div class="f"><label>장르</label>
-                <select name="genre"><option value="">선택 안 함</option><option>가요</option><option>팝</option><option>J-POP</option><option>OST</option><option>록</option><option>연주곡</option><option>클래식</option><option>재즈</option><option>기타</option><option>자작곡</option></select></div>
+            <div class="f full" id="verTagRow" hidden><label>편곡 이름 <small>제목 끝에 붙어요 — 예: 2025 편곡, 쉬운 편곡</small></label><input name="ver_tag" placeholder="예: 2025 편곡"></div>
+            <!-- 종류·스타일·장르·난이도·쪽 수를 한 줄로 -->
+            <div class="row5 full">
+                <div class="f"><label>종류 <em>*</em></label>
+                    <select name="kind"><option value="cover">커버</option><option value="arrangement">편곡</option><option value="original">자작곡</option></select></div>
+                <div class="f"><label>스타일</label>
+                    <select name="style"><option value="acoustic">통기타</option><option value="electric">일렉기타</option><option value="fingerstyle">핑거스타일</option><option value="solo">기타솔로</option><option value="chord">코드악보</option><option value="bass">베이스</option><option value="other">그 밖</option></select></div>
+                <div class="f"><label>장르</label>
+                    <select name="genre"><option value="">선택 안 함</option><option>가요</option><option>팝</option><option>J-POP</option><option>OST</option><option>록</option><option>연주곡</option><option>클래식</option><option>재즈</option><option>기타</option><option>자작곡</option></select></div>
+                <div class="f"><label>난이도</label><div class="stars" id="stars"></div></div>
+                <div class="f"><label>쪽 수</label><input name="pages" type="number" min="1" title="PDF에서 자동"></div>
+            </div>
             <div class="f"><label>가격 (원) <em>*</em> <small id="priceHint"></small></label><input name="price" type="number" min="0" step="500" value="3000" required></div>
-            <div class="f"><label>난이도</label><div class="stars" id="stars"></div></div>
-            <div class="f"><label>페이지 수 <small>PDF에서 자동</small></label><input name="pages" type="number" min="1"></div>
+            <div class="f"><label>카포</label>
+                <select name="capo"><option value="">없음</option><option value="1">1프렛</option><option value="2">2프렛</option><option value="3">3프렛</option><option value="4">4프렛</option><option value="5">5프렛</option><option value="6">6프렛</option><option value="7">7프렛</option><option value="8">8프렛</option><option value="9">9프렛</option><option value="10">10프렛</option><option value="11">11프렛</option><option value="12">12프렛</option></select></div>
             <div class="f full"><label>유튜브 영상 <small>주소를 붙여넣으면 돼요</small></label><input name="youtube" placeholder="https://youtu.be/..."></div>
-            <div class="f full"><label>설명 <small>상세 페이지에 보여요 (선택)</small></label><textarea name="description" placeholder="예: 원곡 키 그대로, 카포 2프렛. 인트로부터 아웃트로까지 전곡."></textarea></div>
-            <div class="f full"><label>같은 곡 악보 묶기 <small>통기타·일렉기타 반주·기타솔로를 한 곡으로 — 상세 페이지에서 골라 사고, 반주 + 기타솔로를 함께 사면 500원 할인</small></label>
-                <div class="links" id="links"></div>
-                <div class="vernote" id="verNote" hidden></div>
-                <div class="linkadd"><input id="linkQ" list="linkList" placeholder="같은 곡의 다른 악보를 곡명으로 찾아 고르기"><datalist id="linkList"></datalist><button type="button" class="btn" id="linkAdd"><i class="fas fa-link"></i> 묶기</button></div></div>
 
-            <div class="group">저작권 정보<small>음저협 정산·저작물 리스트용 (자작곡은 비워도 돼요)</small></div>
-            <div class="f"><label>작사</label><input name="lyricist"></div>
-            <div class="f"><label>작곡</label><input name="composer"></div>
-            <div class="f"><label>앨범</label><input name="album"></div>
-            <div class="f"><label>제작사·레이블</label><input name="label"></div>
-            <div class="f"><label>발매일</label><input name="release_date" placeholder="예: 2019-07-03"></div>
-            <div class="f"><label>음저협 저작물 코드</label><input name="komca_code"></div>
+            <!-- 저작권 정보는 나중에 한꺼번에 넣을 거라 접어 둔다 -->
+            <details class="fold full" id="copyFold"><summary>저작권 정보 <small>음저협 정산·저작물 리스트용 — 나중에 한꺼번에</small></summary>
+                <div class="fold-in">
+                    <div class="f"><label>작사</label><input name="lyricist"></div>
+                    <div class="f"><label>작곡</label><input name="composer"></div>
+                    <div class="f"><label>앨범</label><input name="album"></div>
+                    <div class="f"><label>제작사·레이블</label><input name="label"></div>
+                    <div class="f"><label>발매일</label><input name="release_date" placeholder="예: 2019-07-03"></div>
+                    <div class="f"><label>음저협 저작물 코드</label><input name="komca_code"></div>
+                </div>
+            </details>
 
             <div class="group">공개</div>
             <label class="toggle f full"><input type="checkbox" name="published"> 스토어에 공개하기 <small style="font-weight:400;color:var(--sub);">PDF가 있어야 공개할 수 있어요</small></label>
@@ -426,7 +470,8 @@
     let checkFilter = '';      // 확인용: '' | 'cover' | 'pdf' | 'yt' | 'lv' | 'dup'
     const MAIN_GOAL = 20;      // PDF 이만큼 채우면 새 메인(mockup-store) 반영을 검토
     let editing = null;        // 편집 중인 행 (새 악보면 null)
-    let linkIds = new Set();   // 편집 중인 악보와 같은 곡으로 묶을 다른 악보들 (sheets.song_key)
+    let linkIds = new Set();   // 편집 중인 악보와 묶인 다른 악보들 (탭 1·2·3)
+    let grpKind = '', openedKind = '';   // 묶음 종류: 'parts' = song_key(파트별, 함께 사면 할인) · 'versions' = version_key(편곡별, 따로 팜)
     let newPdf = null;         // 새로 고른 PDF 파일
     let newPreview = null;     // 새로 만든/고른 미리보기 Blob
     let paperSrc = '';         // 편집창 썸네일의 악보 윗부분 (저장된 그림 주소 또는 새로 만든 Blob 주소)
@@ -697,7 +742,7 @@
         $('pdfInfo').textContent = ''; $('pdfInfo').className = 'pdfinfo';
         $('dropName').textContent = '클릭하거나 끌어다 놓기';
         if (s) {
-            ['title', 'title_original', 'artist', 'kind', 'style', 'genre', 'price', 'pages', 'description', 'lyricist', 'composer', 'album', 'label', 'release_date', 'komca_code']
+            ['title', 'title_original', 'artist', 'kind', 'style', 'genre', 'price', 'pages', 'capo', 'lyricist', 'composer', 'album', 'label', 'release_date', 'komca_code']
                 .forEach(k => {
                     const el = form.elements[k];
                     if (!el) return;
@@ -715,20 +760,31 @@
             form.elements.price.value = 3000;
             paperSrc = '';
         }
-        linkIds = new Set(s && s.song_key ? sheets.filter(x => x.song_key === s.song_key && x.id !== s.id).map(x => x.id) : []);
+        // 묶음: 편곡 묶음(version_key)이 있으면 그것, 아니면 파트 묶음(song_key)
+        const g = groupOf(s);
+        grpKind = openedKind = g.kind;
+        linkIds = new Set(g.ids.filter(i => !s || i !== s.id));
+        form.elements.ver_tag.value = '';
+        if (s && grpKind === 'versions') {
+            // 편곡별: 곡명 칸에는 공통 제목만, 끝의 "(2025 편곡)"은 편곡 이름 칸으로
+            const m = String(s.title || '').match(VER_RE);
+            if (m) { form.elements.title.value = s.title.replace(VER_RE, ''); form.elements.ver_tag.value = m[1]; }
+        }
+        $('copyFold').open = false;
+        $('linkAddRow').hidden = true;
         renderLinks();
         setDifficulty(s && s.difficulty ? s.difficulty : 3);
         updateYt();
         priceHint();
         openedState = formState();
         $('dim').classList.add('open'); $('editor').classList.add('open');
-        setTimeout(() => form.elements.title.focus(), 200);
+        if (!s) setTimeout(() => form.elements.title.focus(), 200);   // 있는 악보는 곡명 칸에 자동으로 들어가지 않게
     }
     function closeEditor() {
         $('dim').classList.remove('open'); $('editor').classList.remove('open');
         if (fromRank) { fromRank = false; showRank(); }
     }
-    const formState = () => [...form.elements].filter(el => el.id !== 'linkQ').map(el => el.type === 'checkbox' ? el.checked : el.value).join('\u0001') + '|' + difficulty + '|' + [...linkIds].sort().join();
+    const formState = () => [...form.elements].filter(el => el.id !== 'linkQ' && el.name !== 'gkind').map(el => el.type === 'checkbox' ? el.checked : el.value).join('\u0001') + '|' + difficulty + '|' + [...linkIds].sort().join() + '|' + grpKind;
     const isDirty = () => !!newPdf || !!newPreview || !!newCover || dropCover || formState() !== openedState;
     $('newBtn').onclick = () => openEditor(null);
     $('edClose').onclick = closeEditor;
@@ -818,52 +874,86 @@
 
     // 같은 곡 묶기: 묶인 악보 목록(✕로 풀기) + 곡명으로 찾아 더하기 (그 악보가 이미 다른 악보와 묶여 있으면 그 묶음째)
     const linkLabel = x => `${x.title} — ${(STYLE[x.style] || ['악보'])[0]}${x.artist ? ' · ' + x.artist : ''}`;
-    // 편집 중인 악보의 다른 편곡 — 곡명·가수·종류 칸 값으로 (제목 끝 "(… 편곡)"만 다르면 자동으로 묶임, song_key 묶기와 따로)
-    function editingVersions() {
-        const cur = { title: form.elements.title.value, artist: form.elements.artist.value, style: form.elements.style.value };
-        return versionsOf(cur).filter(x => x.id !== (editing && editing.id));
+    // 묶음 찾기: 편곡 묶음(version_key) 먼저, 없으면 파트 묶음(song_key)
+    function groupOf(s) {
+        if (s && s.version_key) return { kind: 'versions', ids: sheets.filter(x => x.version_key === s.version_key).map(x => x.id) };
+        if (s && s.song_key) return { kind: 'parts', ids: sheets.filter(x => x.song_key === s.song_key).map(x => x.id) };
+        return { kind: '', ids: [] };
     }
-    function renderVerNote() {
-        const v = editingVersions(), box = $('verNote');
-        box.hidden = !v.length;
-        box.innerHTML = v.length ? `<i class="fas fa-layer-group"></i> <b>다른 편곡과 이미 묶여 있어요</b> (제목 끝 '(… 편곡)'으로 자동): ${v.map(x => esc(x.title) + (x.published ? '' : ' · 비공개')).join(', ')}<br><small>편곡끼리는 따로 파는 악보라 여기 '묶기'를 쓰지 않아요 — 묶기는 반주 + 기타솔로처럼 함께 사는 구성만</small>` : '';
-    }
+    const PART_ORDER = { acoustic: 0, electric: 1, fingerstyle: 2, bass: 3, chord: 4, other: 5, solo: 9 };
+    // 탭 1·2·3: 지금 편집 중인 악보 + 묶인 악보. 편곡별은 제목 순, 파트별은 반주 → 솔로 순
     function renderLinks() {
-        renderVerNote();
-        $('links').innerHTML = [...linkIds].map(id => sheets.find(x => x.id === id)).filter(Boolean)
-            .map(x => `<span class="lk">${esc(x.title)} <small>${(STYLE[x.style] || ['악보'])[0]} · ${won(x.price)}${x.published ? '' : ' · 비공개'}</small><button type="button" data-unlink="${x.id}" title="묶음에서 빼기"><i class="fas fa-xmark"></i></button></span>`).join('');
-        const ver = new Set(editingVersions().map(x => x.id));
-        $('linkList').innerHTML = sheets.filter(x => x.id !== (editing && editing.id) && !linkIds.has(x.id) && !ver.has(x.id)).map(x => `<option value="${esc(linkLabel(x))}">`).join('');
+        const cur = editing || { id: '', title: form.elements.title.value, style: form.elements.style.value };
+        const all = [cur, ...[...linkIds].map(id => sheets.find(x => x.id === id)).filter(Boolean)];
+        if (grpKind === 'versions') all.sort((a, b) => String(a.title).localeCompare(String(b.title), 'ko'));
+        else all.sort((a, b) => (PART_ORDER[a.style] ?? 5) - (PART_ORDER[b.style] ?? 5));
+        const lbl = x => grpKind === 'versions' ? ((String(x.title || '').match(VER_RE) || [, '기본'])[1]) : (STYLE[x.style] || ['악보'])[0];
+        const grouped = all.length > 1;
+        $('grpTabs').innerHTML = all.map((x, i) => x === cur
+            ? `<span class="tb on" title="지금 편집 중"><b>${i + 1}</b>${esc(lbl(x))}${x.id ? '' : ' <small>새 악보</small>'}</span>`
+            : `<span class="tb" data-tab="${x.id}" title="${esc(x.title)}${x.published ? '' : ' (비공개)'} — 눌러서 이 악보 편집"><b>${i + 1}</b>${esc(lbl(x))}${x.published ? '' : ' <small>비공개</small>'}<button type="button" class="x" data-unlink="${x.id}" title="묶음에서 빼기"><i class="fas fa-xmark"></i></button></span>`).join('')
+            + `<button type="button" class="add" id="grpAdd"><i class="fas fa-plus"></i> ${grouped ? '묶기' : '같은 곡 악보 묶기'}</button>`;
+        $('grpKind').hidden = !grouped;
+        $('grpNote').hidden = !grouped;
+        [...form.elements.gkind].forEach(r => { r.checked = r.value === grpKind; });
+        $('verTagRow').hidden = grpKind !== 'versions' || !grouped;
+        const members = new Set(all.map(x => x.id));
+        $('linkList').innerHTML = sheets.filter(x => !members.has(x.id)).map(x => `<option value="${esc(linkLabel(x))}">`).join('');
         updateThumb();
     }
-    $('links').addEventListener('click', e => { const b = e.target.closest('[data-unlink]'); if (b) { linkIds.delete(b.dataset.unlink); renderLinks(); } });
+    $('grpTabs').addEventListener('click', e => {
+        const u = e.target.closest('[data-unlink]');
+        if (u) { e.stopPropagation(); linkIds.delete(u.dataset.unlink); if (!linkIds.size) grpKind = ''; renderLinks(); return; }
+        if (e.target.closest('#grpAdd')) { $('linkAddRow').hidden = !$('linkAddRow').hidden; if (!$('linkAddRow').hidden) $('linkQ').focus(); return; }
+        const t = e.target.closest('[data-tab]'); if (!t) return;
+        const x = sheets.find(y => y.id === t.dataset.tab); if (!x) return;
+        if (isDirty() && !confirm('저장하지 않은 내용이 있어요. 버리고 이 악보로 넘어갈까요?')) return;
+        openEditor(x);
+    });
+    $('grpKind').addEventListener('change', e => {
+        if (e.target.name !== 'gkind') return;
+        grpKind = e.target.value;
+        // 편곡별로 바꾸면 곡명 끝 "(… 편곡)"을 편곡 이름 칸으로 옮긴다
+        if (grpKind === 'versions' && !form.elements.ver_tag.value) {
+            const m = form.elements.title.value.match(VER_RE);
+            if (m) { form.elements.ver_tag.value = m[1]; form.elements.title.value = form.elements.title.value.replace(VER_RE, ''); }
+        }
+        renderLinks();
+    });
     function linkWith(x) {
         linkIds.add(x.id);
-        if (x.song_key) sheets.filter(y => y.song_key === x.song_key && y.id !== (editing && editing.id)).forEach(y => linkIds.add(y.id));
+        const g = groupOf(x);   // 그 악보가 이미 묶여 있으면 그 묶음째
+        g.ids.forEach(i => { if (i !== (editing && editing.id)) linkIds.add(i); });
+        // 새 악보면 비어 있는 공통 칸(가수·종류·장르·저작권 정보)을 묶은 악보에서 받아 온다
+        if (!editing) {
+            ['title_original', 'artist', 'genre', 'lyricist', 'composer', 'album', 'label', 'release_date', 'komca_code']
+                .forEach(k => { const el = form.elements[k]; if (el && !el.value && x[k]) { if (el.tagName === 'SELECT' && ![...el.options].some(o => o.value === x[k])) el.add(new Option(x[k], x[k])); el.value = x[k]; } });
+            if (x.kind) form.elements.kind.value = x.kind;
+        }
+        // 묶음 종류가 아직 없으면: 스타일이 같으면 편곡별, 다르면 파트별 (위에서 바꿀 수 있다)
+        if (!grpKind) grpKind = g.kind || (x.style === form.elements.style.value ? 'versions' : 'parts');
         renderLinks();
     }
     $('linkAdd').onclick = () => {
         const v = $('linkQ').value.trim(), x = sheets.find(y => linkLabel(y) === v);
         if (!x) { $('edMsg').textContent = '목록에서 곡을 골라 주세요.'; return; }
         linkWith(x);
-        $('linkQ').value = ''; $('edMsg').textContent = '';
+        $('linkQ').value = ''; $('edMsg').textContent = ''; $('linkAddRow').hidden = true;
     };
     // 같은 곡 찾기: 제목에서 괄호 속 말(OST 이름, [FULL], (+기타솔로) …)과 띄어쓰기를 빼고 비교
     const songName = t => String(t || '').normalize('NFC').replace(/\s*[\[(][^\])]*[\])]/g, '').replace(/\s+/g, '').toLowerCase();
     // 곡명 칸 드롭다운: 치는 글자가 들어간 이미 있는 악보 (자기 자신·이미 묶은 악보 빼고), 누르면 같은 곡으로 묶는다
     function renderTitleSug() {
         const q = songName(form.elements.title.value), self = editing && editing.id;
-        const ver = new Set(editingVersions().map(x => x.id));   // 다른 편곡은 이미 자동으로 묶여 있어서 빼고
-        const list = q.length < 2 ? [] : sheets.filter(x => x.id !== self && !linkIds.has(x.id) && !ver.has(x.id) && songName(x.title).includes(q)).slice(0, 8);
+        const list = q.length < 2 ? [] : sheets.filter(x => x.id !== self && !linkIds.has(x.id) && songName(x.title).includes(q)).slice(0, 8);
         $('titleSug').hidden = !list.length;
         $('titleSug').innerHTML = list.length ? '<div class="hd">이미 있는 악보 — 누르면 같은 곡으로 묶여요 (상세 페이지 하나로, 반주 + 기타솔로는 500원 할인)</div>' + list.map(x =>
             `<button type="button" data-tsug="${x.id}"><span>${esc(x.title)}<small>${(STYLE[x.style] || ['악보'])[0]}${x.artist ? ' · ' + esc(x.artist) : ''}${x.published ? '' : ' · 비공개'}</small></span><span class="tag"><i class="fas fa-link"></i> 묶기</span></button>`).join('') : '';
     }
-    form.elements.title.addEventListener('input', () => { renderTitleSug(); renderVerNote(); });
+    form.elements.title.addEventListener('input', renderTitleSug);
     // 있는 악보를 열 때는 곡명 칸에 자동으로 포커스가 가서, 그때 드롭다운이 저절로 열리지 않게 (새 악보일 때만)
     form.elements.title.addEventListener('focus', () => { if (!editing) renderTitleSug(); });
-    form.elements.artist.addEventListener('input', renderVerNote);
-    form.elements.style.addEventListener('change', renderVerNote);
+    form.elements.style.addEventListener('change', () => { if (!editing) renderLinks(); });
     form.elements.title.addEventListener('blur', () => setTimeout(() => { $('titleSug').hidden = true; }, 150));
     $('titleSug').addEventListener('mousedown', e => {
         const b = e.target.closest('[data-tsug]'); if (!b) return;
@@ -882,11 +972,9 @@
     //   (메인 index.html 은 한 줄로, 상세 tab-detail.html 은 편곡 고르기 버튼. song_key 묶음과 달리 할인 없음)
     const VER_RE = /\s*\(([^()]*편곡)\)\s*$/;
     const verTag = t => (String(t || '').match(VER_RE) || [, '기본'])[1];
-    function versionsOf(s) {
-        const base = t => String(t || '').normalize('NFC').replace(VER_RE, '').trim().toLowerCase();
-        const b = base(s.title), a = String(s.artist || '').normalize('NFC');
-        const g = sheets.filter(x => x.style === s.style && base(x.title) === b && String(x.artist || '').normalize('NFC') === a);
-        return g.some(x => VER_RE.test(x.title)) ? g.sort((x, y) => String(x.title).localeCompare(String(y.title), 'ko')) : [];
+    function versionsOf(s) {   // 편곡 묶음 = 같은 version_key (db/sheet_versions.sql)
+        if (!s || !s.version_key) return [];
+        return sheets.filter(x => x.version_key === s.version_key).sort((x, y) => String(x.title).localeCompare(String(y.title), 'ko'));
     }
     // 목록 표시용: 통기타·일렉기타·기타솔로 중 제목·가수가 같은데 아직 안 묶인 악보 (핑거스타일·베이스는 편곡이 달라 직접 묶기)
     const PAIR_STYLES = ['acoustic', 'electric', 'solo'];
@@ -1053,8 +1141,12 @@
     $('saveBtn').onclick = () => save();
     async function save() {
         const el = form.elements;
-        const title = el.title.value.trim();
-        if (!title) { el.title.focus(); $('edMsg').textContent = '곡명을 넣어 주세요.'; return; }
+        const base = el.title.value.trim();
+        if (!base) { el.title.focus(); $('edMsg').textContent = '곡명을 넣어 주세요.'; return; }
+        // 편곡별 묶음: 제목 = 공통 곡명 + " (편곡 이름)". 편곡 이름은 '편곡'으로 끝나게 (메인·상세가 그걸로 이름을 보여 준다)
+        const isVer = grpKind === 'versions' && linkIds.size > 0;
+        const tagNorm = t => { t = String(t || '').trim(); return !t ? '' : /편곡$/.test(t) ? t : t + ' 편곡'; };
+        const title = isVer && tagNorm(el.ver_tag.value) ? `${base} (${tagNorm(el.ver_tag.value)})` : base;
         const yt = youtubeId(el.youtube.value);
         if (yt === undefined) { el.youtube.focus(); $('edMsg').textContent = '유튜브 주소를 알아볼 수 없어요.'; return; }
         const hasPdf = !!newPdf || !!(editing && filesById[editing.id]);
@@ -1071,7 +1163,7 @@
             price: Math.max(0, parseInt(el.price.value, 10) || 0),
             pages: parseInt(el.pages.value, 10) || null,
             youtube_id: yt,
-            description: nul(el.description.value),
+            capo: parseInt(el.capo.value, 10) || null,
             lyricist: nul(el.lyricist.value),
             composer: nul(el.composer.value),
             album: nul(el.album.value),
@@ -1093,18 +1185,40 @@
                 if (error) throw error;
                 id = data.id;
             }
-            // 같은 곡 묶기 — 묶음 전체에 같은 song_key, 빠진 악보는 풀고, 혼자 남으면 묶음 없음
-            const keyOf = i => (sheets.find(x => x.id === i) || {}).song_key || null;
-            const before = editing && editing.song_key ? sheets.filter(x => x.song_key === editing.song_key).map(x => x.id) : [];
+            // 묶기 — 묶음 전체에 같은 키(파트별 song_key / 편곡별 version_key), 빠진 악보는 풀고, 혼자 남으면 묶음 없음.
+            //   묶음 종류를 바꿨으면 예전 종류의 키는 지운다.
+            const col = isVer ? 'version_key' : 'song_key';
+            const keyOf = (i, c) => (sheets.find(x => x.id === i) || {})[c] || null;
             const members = [id, ...linkIds];
-            const setKey = async (ids, key) => { ids = ids.filter(i => keyOf(i) !== key || (i === id && (editing ? editing.song_key : null) !== key)); if (!ids.length) return; const { error } = await sb.from('sheets').update({ song_key: key }).in('id', ids); if (error) throw error; };
+            const setKey = async (c, ids, key) => { ids = ids.filter(i => keyOf(i, c) !== key || (i === id && (editing ? editing[c] : null) !== key)); if (!ids.length) return; const { error } = await sb.from('sheets').update({ [c]: key }).in('id', ids); if (error) throw error; };
+            const openedCol = openedKind === 'versions' ? 'version_key' : openedKind === 'parts' ? 'song_key' : null;
+            const before = editing && openedCol && editing[openedCol] ? sheets.filter(x => x[openedCol] === editing[openedCol]).map(x => x.id) : [];
             if (members.length > 1) {
-                const key = (editing && editing.song_key) || [...linkIds].map(keyOf).find(Boolean) || crypto.randomUUID();
-                await setKey(members, key);
-                await setKey(before.filter(i => !members.includes(i)), null);
+                const key = (editing && editing[col]) || [...linkIds].map(i => keyOf(i, col)).find(Boolean) || crypto.randomUUID();
+                await setKey(col, members, key);
+                if (openedCol && openedCol !== col) await setKey(openedCol, before, null);           // 종류를 바꿈 → 예전 묶음 키 지우기
+                else await setKey(col, before.filter(i => !members.includes(i)), null);              // 빠진 악보 풀기
             } else if (before.length) {
                 const rest = before.filter(i => i !== id);
-                await setKey(rest.length === 1 ? [id, ...rest] : [id], null);
+                await setKey(openedCol, rest.length === 1 ? [id, ...rest] : [id], null);
+            }
+            // 공통 칸은 묶인 악보 모두에 — 바뀐 칸만 (같은 값을 다시 쓰면 '새로 나온 악보' 순서가 바뀌어서)
+            if (members.length > 1) {
+                const COMMON = ['title_original', 'artist', 'kind', 'genre', 'lyricist', 'composer', 'album', 'label', 'release_date', 'komca_code'];
+                for (const mid of linkIds) {
+                    const m = sheets.find(x => x.id === mid); if (!m) continue;
+                    const patch = {};
+                    // 이번에 고친 공통 칸만 (원래 악보마다 다르던 값은 그대로)
+                    COMMON.forEach(k => { if (editing && (editing[k] ?? null) !== (row[k] ?? null)) { if ((m[k] ?? null) !== (row[k] ?? null)) patch[k] = row[k]; } });
+                    // 곡명: 공통 곡명을 고쳤거나 묶음 종류를 바꿨을 때만 맞춘다 (새로 묶기만 한 악보의 제목은 그대로)
+                    const openedBase = editing ? (openedKind === 'versions' ? String(editing.title || '').replace(VER_RE, '') : editing.title) : null;
+                    if (editing && (openedBase !== base || (openedKind && openedKind !== grpKind))) {
+                        const mt = isVer ? (String(m.title || '').match(VER_RE) || [])[1] : null;
+                        const wantTitle = mt ? `${base} (${mt})` : base;
+                        if (m.title !== wantTitle) patch.title = wantTitle;
+                    }
+                    if (Object.keys(patch).length) { const { error } = await sb.from('sheets').update(patch).eq('id', mid); if (error) throw error; }
+                }
             }
             if (newPreview) {
                 $('edMsg').textContent = '미리보기 이미지를 올리고 있어요…';
