@@ -200,6 +200,7 @@
     .linkadd { display: flex; gap: 6px; }
     .linkadd input { flex: 1; }
     .chip.bundle { background: #e8f3ff; color: #2a5f9e; }
+    .chip.vers { background: #f3ecff; color: #6b4aa8; }   /* 같은 곡 다른 편곡 */
     /* 곡명을 치면 이미 있는 악보가 아래로 뜨고, 누르면 같은 곡으로 묶인다 */
     .f.has-sug { position: relative; }
     .tsug { position: absolute; left: 0; right: 0; top: 100%; z-index: 5; margin-top: 4px; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 26px rgba(0,0,0,0.13); max-height: 280px; overflow-y: auto; }
@@ -559,7 +560,8 @@
                     (m => m.length ? `<div class="miss"><i class="fas fa-triangle-exclamation"></i> 빈 칸: ${m.join(' · ')}</div>` : '')(missingOf(s))}${
                     (u => u.length ? `<div class="sugrow"><i class="fas fa-link"></i> 같은 곡 ${u.map(x => (STYLE[x.style] || ['악보'])[0]).join(' · ')} 악보가 따로 있어요 — 묶기 안 됨</div>` : '')(unlinkedSameSong(s))}</td>
                 <td class="c-st"><span class="chip ${s.kind}">${KIND[s.kind] || ''}</span>${s.style ? `<span class="chip">${STYLE[s.style][0]}</span>` : ''}${
-                    s.song_key ? `<span class="chip bundle" title="같은 곡으로 묶인 악보"><i class="fas fa-link"></i> ${sheets.filter(x => x.song_key === s.song_key).map(x => (STYLE[x.style] || ['악보'])[0]).join(' + ')}</span>` : ''}</td>
+                    s.song_key ? `<span class="chip bundle" title="같은 곡으로 묶인 악보"><i class="fas fa-link"></i> ${sheets.filter(x => x.song_key === s.song_key).map(x => (STYLE[x.style] || ['악보'])[0]).join(' + ')}</span>` : ''}${
+                    (v => v.length > 1 ? `<span class="chip vers" title="같은 곡 다른 편곡 — 메인에서 한 줄로, 상세 페이지에서 편곡 버튼으로 고른다 (따로 파는 악보, 할인 없음)&#10;${esc(v.map(x => x.title + (x.published ? '' : ' (비공개)')).join(' / '))}"><i class="fas fa-layer-group"></i> 편곡 ${v.length}가지: ${v.map(x => esc(verTag(x.title))).join(' · ')}</span>` : '')(versionsOf(s))}</td>
                 <td class="c-lv"><span class="lv pick" title="눌러서 난이도 바꾸기">${[1, 2, 3, 4, 5].map(i => `<button type="button" data-lv-set="${i}" class="${i <= (s.difficulty || 0) ? '' : 'off'}">●</button>`).join('')}</span></td>
                 <td class="c-pr"><span class="prc" title="숫자를 고치고 확인을 누르면 가격이 바뀌어요"><input type="number" min="0" step="500" value="${s.price || 0}" data-price="${s.id}" aria-label="가격">원<button type="button" class="ok" data-price-ok="${s.id}" hidden>확인</button></span></td>
                 <td><span class="pub ${s.published ? 'on' : ''}" data-toggle="${s.id}"><span class="dot"></span>${s.published ? '공개' : '비공개'}</span></td>
@@ -857,6 +859,16 @@
         $('edMsg').textContent = `'${x.title}' (${(STYLE[x.style] || ['악보'])[0]})와 같은 곡으로 묶었어요. 저장하면 반영돼요.`;
         updateThumb();
     });
+    // 같은 곡·같은 종류의 다른 편곡 — 제목 끝 "(2021 편곡)"·"(쉬운 편곡)"만 다르고 가수가 같으면 자동으로 묶인다
+    //   (메인 index.html 은 한 줄로, 상세 tab-detail.html 은 편곡 고르기 버튼. song_key 묶음과 달리 할인 없음)
+    const VER_RE = /\s*\(([^()]*편곡)\)\s*$/;
+    const verTag = t => (String(t || '').match(VER_RE) || [, '기본'])[1];
+    function versionsOf(s) {
+        const base = t => String(t || '').normalize('NFC').replace(VER_RE, '').trim().toLowerCase();
+        const b = base(s.title), a = String(s.artist || '').normalize('NFC');
+        const g = sheets.filter(x => x.style === s.style && base(x.title) === b && String(x.artist || '').normalize('NFC') === a);
+        return g.some(x => VER_RE.test(x.title)) ? g.sort((x, y) => String(x.title).localeCompare(String(y.title), 'ko')) : [];
+    }
     // 목록 표시용: 통기타·일렉기타·기타솔로 중 제목·가수가 같은데 아직 안 묶인 악보 (핑거스타일·베이스는 편곡이 달라 직접 묶기)
     const PAIR_STYLES = ['acoustic', 'electric', 'solo'];
     const artistName = a => String(a || '').normalize('NFC').toLowerCase().replace(/[^0-9a-z가-힣]/g, '');
