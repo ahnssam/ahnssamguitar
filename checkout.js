@@ -107,14 +107,14 @@
     }
 
     // 산 악보 PDF 내려받기 — 1분짜리 링크를 만들어 바로 받는다.
-    // 파일 이름: 곡제목_아티스트_악보나무숲.pdf (아티스트가 없으면 곡제목_악보나무숲.pdf).
+    // 파일 이름: 곡제목_아티스트_악보나무숲.pdf. 아티스트 칸이 빈 곡은 자작곡(안쌤 곡)이라 '안큐'.
     //   같은 곡의 여러 악보(반주·솔로)는 part 를 곡제목 뒤에 [기타솔로]처럼 붙여 이름이 겹치지 않게.
     //   제목·아티스트 속 _ 는 구분자와 헷갈리지 않게 빈칸으로.
     async function download(sheetId, title, artist, part) {
         await ready();
         if (!session()) { auth() && auth().openLogin(); return false; }
         const clean = v => String(v || '').replace(/[\\/:*?"<>|_]+/g, ' ').replace(/\s+/g, ' ').trim();
-        const t = clean(title) || '악보', a = clean(artist), pt = clean(part);
+        const t = clean(title) || '악보', a = clean(artist) || '안큐', pt = clean(part);
         const name = [t + (pt ? ' [' + pt + ']' : ''), a, '악보나무숲'].filter(Boolean).join('_') + '.pdf';
         const { data, error } = await auth().supabase.storage.from('sheet-pdfs')
             .createSignedUrl(sheetId + '.pdf', 60, { download: name });
