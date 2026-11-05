@@ -132,6 +132,8 @@
     .drop i { font-size: 24px; color: var(--green); display: block; margin-bottom: 6px; }
     .drop b { display: block; font-size: 13px; }
     .drop small { font-size: 12px; color: var(--sub); word-break: break-all; }
+    .drop.done { border-style: solid; border-color: var(--green-2); background: var(--green-bg); }
+    .pdfinfo .dl { margin-top: 3px; color: var(--green); font-weight: 700; word-break: break-all; }
     .pdfinfo { margin-top: 8px; font-size: 12.5px; color: #555; }
     .pdfinfo.err { color: var(--red); }
 
@@ -360,8 +362,8 @@
     <div class="ed-body">
         <div>
             <div class="drop" id="drop">
-                <i class="fas fa-file-pdf"></i>
-                <b>PDF 올리기</b>
+                <i class="fas fa-file-pdf" id="dropIcon"></i>
+                <b id="dropTitle">PDF 올리기</b>
                 <small id="dropName">클릭하거나 끌어다 놓기</small>
                 <input type="file" id="pdfInput" accept="application/pdf" hidden>
             </div>
@@ -473,6 +475,7 @@
     let linkIds = new Set();   // 편집 중인 악보와 묶인 다른 악보들 (탭 1·2·3)
     let grpKind = '', openedKind = '';   // 묶음 종류: 'parts' = song_key(파트별, 함께 사면 할인) · 'versions' = version_key(편곡별, 따로 팜)
     let newPdf = null;         // 새로 고른 PDF 파일
+    let pdfMeta = null;        // 올린(또는 이미 있는) PDF의 쪽 수·크기 — 안내 줄과 '받을 때 파일 이름'에 쓴다
     let newPreview = null;     // 새로 만든/고른 미리보기 Blob
     let paperSrc = '';         // 편집창 썸네일의 악보 윗부분 (저장된 그림 주소 또는 새로 만든 Blob 주소)
     let newCover = null;       // 새로 고른 앨범 커버 (정사각형으로 자른 Blob)
@@ -739,8 +742,7 @@
         $('edTitle').textContent = s ? '악보 수정' : '새 악보';
         $('delBtn').hidden = !s;
         $('edMsg').textContent = '';
-        $('pdfInfo').textContent = ''; $('pdfInfo').className = 'pdfinfo';
-        $('dropName').textContent = '클릭하거나 끌어다 놓기';
+        pdfMeta = null; setDrop('');
         if (s) {
             ['title', 'title_original', 'artist', 'kind', 'style', 'genre', 'price', 'pages', 'capo', 'lyricist', 'composer', 'album', 'label', 'release_date', 'komca_code']
                 .forEach(k => {
@@ -754,7 +756,7 @@
             form.elements.youtube.value = s.youtube_id ? 'https://youtu.be/' + s.youtube_id : '';
             form.elements.published.checked = !!s.published;
             const f = filesById[s.id];
-            if (f) { $('dropName').textContent = '현재: ' + (f.file_name || 'PDF'); $('pdfInfo').textContent = '새 PDF를 올리면 바뀌어요.'; }
+            if (f) { pdfMeta = { pages: s.pages, size: f.file_size }; setDrop(f.file_name || 'PDF'); }
             paperSrc = previewUrl(s);
         } else {
             form.elements.price.value = 3000;
@@ -869,6 +871,7 @@
         $('cvDel').hidden = !own;
         $('cvNote').textContent = newCover ? '저장하면 올라가요' : dropCover ? '저장하면 커버가 빠져요'
             : sib ? `같은 곡 ‘${sib.title}’ (${(STYLE[sib.style] || ['악보'])[0]}) 악보의 커버를 같이 써요` : own ? '' : '커버 그림을 끌어다 놓거나 붙여넣어도 돼요 (없으면 레코드 그림)';
+        updatePdfInfo();
     }
     form.addEventListener('input', updateThumb);
 
@@ -1007,8 +1010,8 @@
         if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) { pdfMsg('PDF 파일만 올릴 수 있어요.', true); return; }
         if (file.size > 50 * 1024 * 1024) { pdfMsg('50MB 이하 파일만 올릴 수 있어요.', true); return; }
         newPdf = file;
-        $('dropName').textContent = file.name;
-        pdfMsg('PDF를 읽고 있어요…');
+        setDrop(file.name);
+        pdfMeta = null; pdfMsg('PDF를 읽고 있어요…');
         pdfReading = true;
         try {
             const doc = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
@@ -1016,20 +1019,41 @@
             newPreview = await renderPreview(await doc.getPage(1));
             paperSrc = URL.createObjectURL(newPreview);
             updateThumb();
-            pdfMsg(`${doc.numPages}페이지 · ${(file.size / 1024 / 1024).toFixed(1)}MB · 첫 장으로 미리보기를 만들었어요`);
-            if (!form.elements.title.value) {
-                form.elements.title.value = file.name.replace(/\.pdf$/i, '').replace(/[_]+/g, ' ').trim();
-                updateThumb();
-            }
+            pdfMeta = { pages: doc.numPages, size: file.size };
+            if (!form.elements.title.value) form.elements.title.value = file.name.replace(/\.pdf$/i, '').replace(/[_]+/g, ' ').trim();
+            updateThumb();
         } catch (err) {
             console.error(err);
-            pdfMsg('PDF를 읽지 못했어요. 파일이 손상되지 않았는지 확인해 주세요.', true);
             newPdf = null;
+            const f = editing && filesById[editing.id];
+            setDrop(f ? f.file_name || 'PDF' : '');
+            pdfMsg('PDF를 읽지 못했어요. 파일이 손상되지 않았는지 확인해 주세요.', true);
         } finally {
             pdfReading = false;
         }
     }
     function pdfMsg(text, isErr) { $('pdfInfo').textContent = text; $('pdfInfo').className = 'pdfinfo' + (isErr ? ' err' : ''); }
+    // PDF 칸: 올렸으면 '업로드 완료' + 파일 이름 (눌러서 다른 PDF로 바꿀 수 있다)
+    function setDrop(name) {
+        $('drop').classList.toggle('done', !!name);
+        $('dropIcon').className = 'fas ' + (name ? 'fa-circle-check' : 'fa-file-pdf');
+        $('dropTitle').textContent = name ? 'PDF 업로드 완료' : 'PDF 올리기';
+        $('dropName').textContent = name ? name + ' · 눌러서 다른 PDF로 바꾸기' : '클릭하거나 끌어다 놓기';
+    }
+    // 손님이 내려받을 때 파일 이름 — checkout.js download() 와 같은 규칙: 곡제목[ 구성]_아티스트_악보나무숲.pdf
+    //   아티스트가 비면 자작곡이라 '안큐', 파트별로 묶인 곡은 [일렉기타 반주만]·[기타솔로]처럼 구성이 붙는다
+    function dlName() {
+        const clean = v => String(v || '').replace(/[\\/:*?"<>|_]+/g, ' ').replace(/\s+/g, ' ').trim();
+        const st = form.elements.style.value;
+        const pt = grpKind === 'parts' && linkIds.size ? (st === 'electric' ? '일렉기타 반주만' : st === 'other' ? '악보' : (STYLE[st] || ['악보'])[0]) : '';
+        return [(clean(form.elements.title.value) || '악보') + (pt ? ' [' + pt + ']' : ''), clean(form.elements.artist.value) || '안큐', '악보나무숲'].join('_') + '.pdf';
+    }
+    function updatePdfInfo() {
+        if (!pdfMeta) return;
+        const mb = pdfMeta.size ? ' · ' + (pdfMeta.size / 1024 / 1024).toFixed(1) + 'MB' : '';
+        $('pdfInfo').className = 'pdfinfo';
+        $('pdfInfo').innerHTML = `${pdfMeta.pages ? esc(pdfMeta.pages) + '페이지' : 'PDF'}${mb}<div class="dl" title="손님이 내려받을 때 파일 이름">→ ${esc(dlName())}</div>`;
+    }
 
     // 첫 장 윗부분(제목 + 첫 줄들)만 잘라 미리보기로 쓴다 — 전체 악보는 공개하지 않는다
     async function renderPreview(page) {
