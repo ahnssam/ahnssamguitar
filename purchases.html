@@ -133,7 +133,12 @@
                         <small>${[PART[s.style], s.artist, s.pages ? s.pages + '페이지' : ''].filter(Boolean).map(esc).join(' · ')}</small>
                         <small>${day(s.purchased_at)} 구매 · ${won(s.amount)}</small></div>
                     <button class="btn" data-dl="${s.sheet_id}"><i class="fas fa-download"></i> PDF 내려받기</button>
-                </div>`;
+                </div>` + (s.bundle_pdf ? `<div class="row${isNew(s) ? ' new' : ''}">
+                    <div class="thumb" style="${img ? `background-image:url('${img}')` : ''}"></div>
+                    <div class="info"><b>${esc(s.title)}</b>
+                        <small>반주 + 기타솔로 합본 · 함께 사서 받는 덤 악보</small></div>
+                    <button class="btn" data-dl="${s.sheet_id}" data-full="1"><i class="fas fa-download"></i> 합본 PDF</button>
+                </div>` : '');
             }).join('');
         }
 
@@ -149,7 +154,7 @@
             b.disabled = true;
             // 같은 곡을 여러 악보(반주·솔로)로 샀으면 파일 이름에 종류를 붙여 구분
             const twin = s && items.some(x => x.sheet_id !== s.sheet_id && x.title === s.title);
-            await C.download(b.dataset.dl, s && s.title, s && s.artist, twin ? (PART[s.style] || '') : '');
+            await C.download(b.dataset.dl, s && s.title, s && s.artist, twin ? (PART[s.style] || '') : '', !!b.dataset.full);
             setTimeout(() => { b.disabled = false; }, 1500);
         });
 
@@ -192,7 +197,8 @@
             const got = newSheet ? items.filter(isNew) : [];
             if (got.length > 1) {
                 const acts = $('pay').querySelector('.acts');
-                if (acts) acts.innerHTML = got.map(s => `<button class="btn" data-dl="${esc(s.sheet_id)}"><i class="fas fa-download"></i> ${esc(PART[s.style] || '악보')} PDF</button>`).join('');
+                if (acts) acts.innerHTML = got.map(s => `<button class="btn" data-dl="${esc(s.sheet_id)}"><i class="fas fa-download"></i> ${esc(PART[s.style] || '악보')} PDF</button>` +
+                    (s.bundle_pdf ? `<button class="btn" data-dl="${esc(s.sheet_id)}" data-full="1"><i class="fas fa-download"></i> 반주 + 기타솔로 합본 PDF</button>` : '')).join('');
             }
         })();
     });

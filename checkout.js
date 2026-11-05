@@ -110,14 +110,15 @@
     // 파일 이름: 곡제목_아티스트_악보나무숲.pdf. 아티스트 칸이 빈 곡은 자작곡(안쌤 곡)이라 '안큐'.
     //   같은 곡의 여러 악보(반주·솔로)는 part 를 곡제목 뒤에 [기타솔로]처럼 붙여 이름이 겹치지 않게.
     //   제목·아티스트 속 _ 는 구분자와 헷갈리지 않게 빈칸으로.
-    async function download(sheetId, title, artist, part) {
+    //   full 이 참이면 반주 + 기타솔로를 함께 산 사람이 덤으로 받는 합본(<반주 id>-full.pdf, db/sheet_bundle_full.sql)
+    async function download(sheetId, title, artist, part, full) {
         await ready();
         if (!session()) { auth() && auth().openLogin(); return false; }
         const clean = v => String(v || '').replace(/[\\/:*?"<>|_]+/g, ' ').replace(/\s+/g, ' ').trim();
-        const t = clean(title) || '악보', a = clean(artist) || '안큐', pt = clean(part);
+        const t = clean(title) || '악보', a = clean(artist) || '안큐', pt = clean(full ? '반주+기타솔로' : part);
         const name = [t + (pt ? ' [' + pt + ']' : ''), a, '악보나무숲'].filter(Boolean).join('_') + '.pdf';
         const { data, error } = await auth().supabase.storage.from('sheet-pdfs')
-            .createSignedUrl(sheetId + '.pdf', 60, { download: name });
+            .createSignedUrl(sheetId + (full ? '-full' : '') + '.pdf', 60, { download: name });
         if (error || !data) { alert('파일을 내려받지 못했어요. 구매한 계정으로 로그인했는지 확인해 주세요.'); return false; }
         window.location.href = data.signedUrl;
         return true;

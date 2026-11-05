@@ -518,6 +518,7 @@
         .part .pp { font-weight: 800; font-size: 1.02rem; color: var(--green-deep); white-space: nowrap; padding-left: calc(18px + 0.55rem); }
         .part.owned { cursor: default; background: #f7f7f7; }
         .part .own { align-self: flex-start; margin-left: calc(18px + 0.55rem); display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 700; color: var(--green-dark); background: none; border: 1.5px solid var(--green-pale); border-radius: 8px; padding: 5px 10px; cursor: pointer; white-space: nowrap; }
+        .own-full { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; font: inherit; font-size: 0.85rem; font-weight: 700; color: var(--green-dark); background: #fff; border: 1.5px solid var(--green-pale); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
         .set-deal { display: flex; gap: 0.7rem; align-items: center; padding: 0.85rem 1rem; border-radius: 12px; background: #fff6dc; color: #6b4a00; font-size: 0.9rem; line-height: 1.55; border: 1.5px solid #f2c94c; }
         .set-deal > i { color: #e8a200; font-size: 1.25rem; flex: none; }
         .set-deal b { color: #d64545; }
@@ -1028,10 +1029,16 @@
             let deal = '';
             if (solo && main) {
                 const sep = (main.price || 0) + (solo.price || 0);
+                // 합본: 반주 안에 솔로까지 들어간 악보 — 둘 다 산 사람에게 덤 (db/sheet_bundle_full.sql)
+                const gift = main.bundle_pdf ? '<br>함께 사면 <b>반주 + 기타솔로 합본 PDF</b>도 같이 드려요' : '';
                 deal = t.off
-                    ? `<div class="set-deal on"><i class="fas fa-gift"></i><span>반주 + 기타솔로를 <b>함께 사서 ${won(SET_DISCOUNT)} 할인</b>됐어요<br>따로 사면 ${won(sep)} → 함께 사면 <b>${won(sep - SET_DISCOUNT)}</b></span></div>`
-                    : `<div class="set-deal"><i class="fas fa-gift"></i><span>반주와 기타솔로를 <b>함께 사면 ${won(SET_DISCOUNT)} 할인!</b><br>따로 사면 ${won(sep)} → 함께 사면 ${won(sep - SET_DISCOUNT)}</span></div>`;
+                    ? `<div class="set-deal on"><i class="fas fa-gift"></i><span>반주 + 기타솔로를 <b>함께 사서 ${won(SET_DISCOUNT)} 할인</b>됐어요<br>따로 사면 ${won(sep)} → 함께 사면 <b>${won(sep - SET_DISCOUNT)}</b>${gift}</span></div>`
+                    : `<div class="set-deal"><i class="fas fa-gift"></i><span>반주와 기타솔로를 <b>함께 사면 ${won(SET_DISCOUNT)} 할인!</b><br>따로 사면 ${won(sep)} → 함께 사면 ${won(sep - SET_DISCOUNT)}${gift}</span></div>`;
             }
+            // 반주와 솔로를 둘 다 가졌고 합본이 있으면 합본 내려받기
+            const fullOf = PARTS.find(x => x.style !== 'solo' && x.bundle_pdf && OWNED.has(x.id));
+            if (fullOf && PARTS.some(x => x.style === 'solo' && OWNED.has(x.id)))
+                deal += `<button type="button" class="own own-full" data-full-dl="${fullOf.id}"><i class="fas fa-download"></i> 반주 + 기타솔로 합본 내려받기</button>`;
             box.innerHTML = '<div class="parts-title">구성 고르기</div><div class="parts-row">' + PARTS.map(x => {
                 const own = OWNED.has(x.id);
                 return `<label class="part${own ? ' owned' : ''}"><span class="top"><input type="checkbox" data-part="${x.id}"${SEL.has(x.id) && !own ? ' checked' : ''}${own ? ' disabled' : ''}>
@@ -1055,6 +1062,8 @@
             renderParts(PARTS[0]);
         });
         document.addEventListener('click', e => {
+            const f = e.target.closest('[data-full-dl]');
+            if (f) { const x = PARTS.find(y => y.id === f.dataset.fullDl), C = window.ahnssamCheckout; if (x && C) C.download(x.id, x.title, x.artist, '', true); return; }
             const b = e.target.closest('.part [data-dl]'); if (!b) return;
             e.preventDefault();
             const x = PARTS.find(y => y.id === b.dataset.dl), C = window.ahnssamCheckout;
@@ -1064,7 +1073,8 @@
         function confirmBuy() {
             const t = partsTotal(), names = t.list.map(x => PART_NAME[x.style] || '악보');
             const left = PARTS.filter(x => !SEL.has(x.id) && !OWNED.has(x.id)).map(x => PART_NAME[x.style] || '악보');
-            const what = t.list.length === 1 ? `이 노래의 <b>${escHtml(names[0])}만</b> 구매해요.` : `이 노래의 <b>${escHtml(names.join(' + '))}</b>를 함께 구매해요. PDF ${t.list.length}개를 받아요.`;
+            const full = t.list.length > 1 && t.list.some(x => x.style === 'solo') && t.list.some(x => x.style !== 'solo' && x.bundle_pdf);
+            const what = t.list.length === 1 ? `이 노래의 <b>${escHtml(names[0])}만</b> 구매해요.` : `이 노래의 <b>${escHtml(names.join(' + '))}</b>를 함께 구매해요. PDF ${t.list.length}개를 받아요.` + (full ? ' 덤으로 <b>반주 + 기타솔로 합본 PDF</b>도 받아요.' : '');
             return new Promise(res => {
                 const back = document.createElement('div');
                 back.className = 'buy-confirm-back';
