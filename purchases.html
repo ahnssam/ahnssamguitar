@@ -147,7 +147,9 @@
             if (!b) return;
             const s = items.find(x => x.sheet_id === b.dataset.dl);
             b.disabled = true;
-            await C.download(b.dataset.dl, s && s.title);
+            // 같은 곡을 여러 악보(반주·솔로)로 샀으면 파일 이름에 종류를 붙여 구분
+            const twin = s && items.some(x => x.sheet_id !== s.sheet_id && x.title === s.title);
+            await C.download(b.dataset.dl, s && s.title, s && s.artist, twin ? (PART[s.style] || '') : '');
             setTimeout(() => { b.disabled = false; }, 1500);
         });
 

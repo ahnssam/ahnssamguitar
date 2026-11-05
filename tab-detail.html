@@ -1058,7 +1058,7 @@
             const b = e.target.closest('.part [data-dl]'); if (!b) return;
             e.preventDefault();
             const x = PARTS.find(y => y.id === b.dataset.dl), C = window.ahnssamCheckout;
-            if (x && C) C.download(x.id, x.title + (PARTS.length > 1 ? ' [' + (PART_NAME[x.style] || '악보').replace(' 악보', '') + ']' : ''));
+            if (x && C) C.download(x.id, x.title, x.artist, PARTS.length > 1 ? (PART_NAME[x.style] || '악보').replace(' 악보', '') : '');
         });
         // 결제로 넘어가기 전에 무엇을 사는지 분명히 알린다 (악보가 여러 개인 곡)
         function confirmBuy() {
@@ -1097,7 +1097,7 @@
             if (!C) { set('fa-hourglass-half', '결제 준비 중'); return; }
             await C.ready();
             if (!C.canPay()) { set('fa-hourglass-half', '결제 준비 중'); return; }
-            const showDownload = () => set('fa-download', 'PDF 내려받기', () => C.download(p.id, p.title));
+            const showDownload = () => set('fa-download', 'PDF 내려받기', () => C.download(p.id, p.title, p.artist));
             try { const mine = new Set((await C.myPurchases()).map(x => x.sheet_id)); OWNED = new Set(PARTS.filter(x => mine.has(x.id)).map(x => x.id)); } catch (e) {}
             renderParts(p);
             if (PARTS.every(x => OWNED.has(x.id))) {
