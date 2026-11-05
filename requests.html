@@ -26,7 +26,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#2a6b4a">
 <title>악보요청 | 안쌤의 기타나무숲</title>
-<meta name="description" content="연주하고 싶은 곡의 기타 악보를 안쌤에게 요청해 보세요. 곡명·원곡 가수·원하는 편성과 유튜브 링크를 남기면 안쌤이 직접 확인해요.">
+<meta name="description" content="연주하고 싶은 곡의 기타 악보를 안쌤에게 요청해 보세요. 곡명·원곡 아티스트·원하는 버전과 편성, 유튜브 링크를 남기면 안쌤이 직접 확인해요.">
 <meta property="og:title" content="악보요청 | 안쌤의 기타나무숲">
 <meta property="og:description" content="연주하고 싶은 곡의 기타 악보를 안쌤에게 요청해 보세요.">
 <meta property="og:url" content="https://ahnssamguitar.com/requests.html">
@@ -137,6 +137,7 @@
     .tag.st-working { background: #fff4dc; color: #a77712; }
     .tag.st-done { background: var(--green-faint); color: var(--green-deep); }
     .tag.kind { background: #fff; color: var(--green-deep); box-shadow: inset 0 0 0 1px var(--green-pale); }
+    .tag.wish { background: #f3f0fb; color: #5b4a96; gap: 5px; }
     .admin-name { color: var(--green-deep); font-weight: 800; }
     .admin-name .fa-leaf { color: var(--green-mid) !important; }
     .empty { text-align: center; color: #999; padding: 50px 16px; }
@@ -494,7 +495,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
             <div class="bd-tools">
                 <div class="tabs" id="tabs">${[['', '전체'], ...Object.entries(STATUS)].map(([k, v]) => `<button type="button" data-st="${k}" class="${k === status ? 'on' : ''}">${v}</button>`).join('')}</div>
-                <form class="search" id="searchForm" role="search"><input id="searchInp" type="search" placeholder="곡명·가수 찾기" value="${esc(word)}" maxlength="40"><button type="submit" aria-label="찾기"><i class="fas fa-magnifying-glass"></i></button></form>
+                <form class="search" id="searchForm" role="search"><input id="searchInp" type="search" placeholder="곡명·아티스트 찾기" value="${esc(word)}" maxlength="40"><button type="submit" aria-label="찾기"><i class="fas fa-magnifying-glass"></i></button></form>
             </div>
             <div class="rows" id="rows">
                 <div class="row-hd"><span>구분</span><span>제목</span><span>작성자</span><span>날짜</span><span><i class="far fa-heart"></i></span><span><i class="far fa-eye"></i></span></div>
@@ -506,11 +507,11 @@ document.addEventListener('DOMContentLoaded', function () {
         $('tabs').onclick = e => { const b = e.target.closest('[data-st]'); if (b) go('?' + new URLSearchParams(Object.entries({ status: b.dataset.st, q: word }).filter(([, v]) => v)).toString()); };
         $('searchForm').onsubmit = e => { e.preventDefault(); const v = $('searchInp').value.trim(); go('?' + new URLSearchParams(Object.entries({ status, q: v }).filter(([, x]) => x)).toString()); };
 
-        const cols = `id,title,artist,kind,status,is_notice,by_admin,view_count,created_at,youtube_url,${AUTHOR},sheet_request_comments(count),sheet_request_likes(count)`;
+        const cols = `id,title,artist,wish_artist,kind,status,is_notice,by_admin,view_count,created_at,youtube_url,${AUTHOR},sheet_request_comments(count),sheet_request_likes(count)`;
         let lq = sb().from('sheet_requests').select(cols, { count: 'exact' }).eq('is_notice', false);
         if (status) lq = lq.eq('status', status);
         const safe = word.replace(/[,()*%\\.:"']/g, ' ').trim();
-        if (safe) lq = lq.or(`title.ilike.*${safe}*,artist.ilike.*${safe}*`);
+        if (safe) lq = lq.or(`title.ilike.*${safe}*,artist.ilike.*${safe}*,wish_artist.ilike.*${safe}*`);
         lq = lq.order('created_at', { ascending: false }).range((page - 1) * PAGE, page * PAGE - 1);
         const nq = word ? Promise.resolve({ data: [] }) : sb().from('sheet_requests').select(cols).eq('is_notice', true).order('created_at', { ascending: false });
 
@@ -528,7 +529,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return `<a class="row${x.is_notice ? ' notice' : ''}" href="?id=${x.id}" data-nav>
                 <span class="tg c">${tag}</span>
                 <span class="t-wrap" style="min-width:0">
-                    <span class="t"><b>${esc(x.title)}${x.artist && !x.is_notice ? ` <span class="art">- ${esc(x.artist)}</span>` : ''}</b>${cc ? `<em class="cc">[${cc}]</em>` : ''}${x.youtube_url ? '<i class="fab fa-youtube" title="유튜브 링크 있음"></i>' : ''}${x.is_notice ? '' : `<span class="kd">${KIND[x.kind] || ''}</span>`}</span>
+                    <span class="t"><b>${esc(x.title)}${x.artist && !x.is_notice ? ` <span class="art">- ${esc(x.artist)}</span>` : ''}${x.wish_artist && !x.is_notice ? ` <span class="art">(${esc(x.wish_artist)} 버전)</span>` : ''}</b>${cc ? `<em class="cc">[${cc}]</em>` : ''}${x.youtube_url ? '<i class="fab fa-youtube" title="유튜브 링크 있음"></i>' : ''}${x.is_notice ? '' : `<span class="kd">${KIND[x.kind] || ''}</span>`}</span>
                     <span class="m">${tag}<span class="au2">${x.by_admin ? `<span class="admin-name">${ADMIN_NAME}</span>` : esc(authorName(x))}</span><span>${ago(x.created_at)}</span><span><i class="far fa-heart"></i> ${cnt(x, 'sheet_request_likes')}</span><span><i class="far fa-eye"></i> ${x.view_count}</span></span>
                 </span>
                 <span class="au">${x.by_admin ? nameHtml(x) : `<i class="fas fa-user"></i>${esc(authorName(x))}`}</span>
@@ -593,7 +594,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <article class="post card">
                 <div class="post-hd">${avatar(p)}<div class="who"><b>${nameHtml(p)}</b><small title="${fullDate(p.created_at)}">${ago(p.created_at)}${p.updated_at ? ' (고침)' : ''} · 조회수 ${p.view_count}</small></div>${menu}</div>
                 <h1 class="post-title">${esc(p.title)}${p.artist && !p.is_notice ? ` <span class="art">- ${esc(p.artist)}</span>` : ''}</h1>
-                ${p.is_notice ? '<div class="post-tags"><span class="tag notice">공지</span></div>' : `<div class="post-tags"><span class="tag kind">${KIND[p.kind] || ''}</span><span class="tag st-${p.status}">${STATUS[p.status]}</span></div>`}
+                ${p.is_notice ? '<div class="post-tags"><span class="tag notice">공지</span></div>' : `<div class="post-tags"><span class="tag kind">${KIND[p.kind] || ''}</span>${p.wish_artist ? `<span class="tag wish"><i class="fas fa-microphone"></i>희망 버전: ${esc(p.wish_artist)}</span>` : ''}<span class="tag st-${p.status}">${STATUS[p.status]}</span></div>`}
                 ${adminBar}
                 ${yt ? ytEmbed(yt, p.title) : (p.youtube_url ? `<div class="yt-link"><i class="fab fa-youtube"></i> <a href="${esc(p.youtube_url)}" target="_blank" rel="noopener nofollow ugc">${esc(p.youtube_url)}</a></div>` : '')}
                 ${p.body ? `<div class="post-body">${richText(p.body)}</div>` : ''}
@@ -756,7 +757,7 @@ document.addEventListener('DOMContentLoaded', function () {
             needLogin(editId ? '' : 'write');
             return;
         }
-        let p = { title: '', artist: '', kind: '', body: '', youtube_url: '', is_notice: false };
+        let p = { title: '', artist: '', wish_artist: '', kind: '', body: '', youtube_url: '', is_notice: false };
         if (editId) {
             const { data } = await sb().from('sheet_requests').select('*').eq('id', editId).maybeSingle();
             if (!data || data.user_id !== me().id) return go('?id=' + editId, true);
@@ -768,11 +769,12 @@ document.addEventListener('DOMContentLoaded', function () {
             <a class="back" href="${editId ? '?id=' + editId : 'requests.html'}" data-nav><i class="fas fa-arrow-left"></i> ${editId ? '글로 돌아가기' : '목록으로'}</a>
             <form class="wform card" id="wform" novalidate>
                 <h2>${editId ? '글 고치기' : '악보 요청하기'}</h2>
-                <p class="hint">곡명과 원곡 가수, 원하는 종류를 적어 주세요. 참고할 유튜브 영상이 있으면 링크를 넣어 주세요.</p>
+                <p class="hint">곡명과 원곡 아티스트, 원하는 종류를 적어 주세요. 원곡이 아닌 다른 가수의 버전을 원하면 희망 버전 아티스트에 적어 주세요. 참고할 유튜브 영상이 있으면 링크를 넣어 주세요.</p>
                 ${admin ? `<label class="notice-chk"><input type="checkbox" id="fNotice" ${p.is_notice ? 'checked' : ''}> 공지로 올리기 (목록 맨 위에 고정)</label>` : ''}
-                <div class="two">
-                    <div class="fld"><label for="fTitle">곡명 <em>*</em></label><input class="inp" id="fTitle" maxlength="100" value="${esc(p.title)}" placeholder="예) 너의 의미"></div>
-                    <div class="fld" data-req-only><label for="fArtist">가수(원곡) <em>*</em></label><input class="inp" id="fArtist" maxlength="100" value="${esc(p.artist)}" placeholder="예) 아이유"></div>
+                <div class="fld"><label for="fTitle">곡명 <em>*</em></label><input class="inp" id="fTitle" maxlength="100" value="${esc(p.title)}" placeholder="예) 너의 의미"></div>
+                <div class="two" data-req-only>
+                    <div class="fld"><label for="fArtist">아티스트 (원곡) <em>*</em></label><input class="inp" id="fArtist" maxlength="100" value="${esc(p.artist)}" placeholder="예) 산울림"></div>
+                    <div class="fld"><label for="fWish">희망 버전 아티스트 <small>선택</small></label><input class="inp" id="fWish" maxlength="100" value="${esc(p.wish_artist || '')}" placeholder="예) 아이유 (다른 가수 버전을 원하면)"></div>
                 </div>
                 <div class="fld" data-req-only><span class="lb">원하는 종류 <em>*</em></span>
                     <div class="kinds" role="radiogroup">${Object.entries(KIND).map(([k, v]) => `<label><input type="radio" name="kind" value="${k}" ${p.kind === k ? 'checked' : ''}><span>${v}</span></label>`).join('')}</div>
@@ -806,12 +808,13 @@ document.addEventListener('DOMContentLoaded', function () {
             const row = {
                 title: $('fTitle').value.trim(),
                 artist: isNotice ? '' : $('fArtist').value.trim(),
+                wish_artist: isNotice ? '' : $('fWish').value.trim(),
                 kind: isNotice ? 'other' : (kindEl ? kindEl.value : ''),
                 body: $('fBody').value.trim(),
                 youtube_url: $('fYt').value.trim() || null,
             };
             if (!row.title) { $('fTitle').focus(); return err(isNotice ? '제목을 적어 주세요.' : '곡명을 적어 주세요.'); }
-            if (!isNotice && !row.artist) { $('fArtist').focus(); return err('가수(원곡)를 적어 주세요.'); }
+            if (!isNotice && !row.artist) { $('fArtist').focus(); return err('아티스트 (원곡)를 적어 주세요.'); }
             if (!row.kind) return err('원하는 종류를 골라 주세요.');
             if (row.youtube_url && !ytInfo(row.youtube_url)) { $('fYt').focus(); return err('유튜브 링크를 확인해 주세요.'); }
             if (admin) row.is_notice = isNotice;
