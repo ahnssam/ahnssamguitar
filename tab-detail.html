@@ -507,6 +507,14 @@
 
         /* 같은 곡의 여러 악보(통기타 · 일렉기타 반주 · 기타솔로) 고르기 */
         .parts { display: flex; flex-direction: column; gap: 0.5rem; }
+        /* 같은 곡의 다른 편곡 (예: Way Back Home (쉬운 편곡) / (2025 편곡)) — 따로 파는 악보, 눌러서 옮겨 간다 */
+        .versions { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+        .ver { display: flex; flex-direction: column; gap: 0.2rem; padding: 0.75rem 0.95rem; border: 1.5px solid var(--green-pale); border-radius: 12px; background: var(--white); color: inherit; text-decoration: none; transition: border-color 0.2s, background 0.2s; }
+        a.ver:hover { border-color: var(--green-mid); }
+        .ver.cur { border-color: var(--green-dark); background: #f3fbf6; cursor: default; }
+        .ver .vn { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-size: 0.93rem; font-weight: 700; }
+        .ver .vn small { font-size: 0.75rem; font-weight: 700; color: var(--green-dark); white-space: nowrap; }
+        .ver .vi { font-size: 0.78rem; color: var(--text-light); }
         .parts-title { font-size: 0.85rem; font-weight: 700; color: var(--text-mid); }
         .parts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.6rem; }   /* 구성은 옆으로 나란히 */
         .part { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.85rem 0.95rem; border: 1.5px solid var(--green-pale); border-radius: 12px; background: var(--white); cursor: pointer; transition: border-color 0.2s, background 0.2s; }
@@ -868,6 +876,7 @@
             <h1 class="product-title" id="productTitle"></h1>
             <div class="product-artist" id="productArtist"></div>
             <div class="product-divider"></div>
+            <div class="versions" id="versions" hidden></div>
             <div class="parts" id="parts" hidden></div>
             <div class="product-price" id="productPrice"></div>
             <div class="product-details">
@@ -960,6 +969,33 @@
         const SET_DISCOUNT = 500;   // 반주 + 기타솔로를 함께 사면 깎는 금액 (서버 create_sheet_order 와 같은 값)
         const won = n => Number(n || 0).toLocaleString() + '원';
         let PARTS = [], SEL = new Set(), OWNED = new Set(), buyOpen = false;
+        // 같은 곡·같은 종류의 다른 편곡 — 제목 끝 "(2021 편곡)"·"(쉬운 편곡)" 만 다르고 원곡 가수가 같은 공개 악보 (CLAUDE.md '같은 곡의 여러 판')
+        let VERSIONS = [];
+        const VER_RE = /\s*\(([^()]*편곡)\)\s*$/;
+        const baseTitle = t => String(t || '').normalize('NFC').replace(VER_RE, '').trim().toLowerCase();
+        const verTag = t => { const m = String(t || '').match(VER_RE); return m ? m[1] : '이 편곡'; };
+        async function loadVersions(p) {
+            const base = String(p.title || '').normalize('NFC').replace(VER_RE, '').trim();
+            if (!base || /[*,()]/.test(base)) return [];
+            try {
+                const r = await fetch(SB_URL + '/rest/v1/sheets?select=*&published=eq.true&style=eq.' + encodeURIComponent(p.style) + '&title=ilike.' + encodeURIComponent(base + '*'), { headers: { apikey: SB_KEY } });
+                if (!r.ok) return [];
+                const art = String(p.artist || '').normalize('NFC');
+                return (await r.json()).filter(x => x.id !== p.id && baseTitle(x.title) === baseTitle(p.title) && String(x.artist || '').normalize('NFC') === art)
+                    .sort((a, b) => String(a.title).localeCompare(String(b.title), 'ko'));
+            } catch (e) { return []; }
+        }
+        function renderVersions(p) {
+            const box = document.getElementById('versions');
+            if (!VERSIONS.length) { box.hidden = true; return; }
+            const card = (x, cur) => {
+                const info = [x.difficulty ? '난이도 ' + x.difficulty : '', x.pages ? x.pages + '페이지' : '', won(x.price)].filter(Boolean).join(' · ');
+                const name = `<span class="vn">${escHtml(verTag(x.title))}<small>${cur ? '보고 있는 악보' : '이 악보 보기 <i class="fas fa-arrow-right"></i>'}</small></span><span class="vi">${escHtml(info)}</span>`;
+                return cur ? `<div class="ver cur">${name}</div>` : `<a class="ver" href="tab-detail.html?id=${encodeURIComponent(x.id)}">${name}</a>`;
+            };
+            box.innerHTML = `<div class="parts-title">다른 편곡도 있어요 · 따로 파는 악보예요</div>` + [card(p, true), ...VERSIONS.map(x => card(x, false))].join('');
+            box.hidden = false;
+        }
 
         function escHtml(s) {
             return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1005,9 +1041,12 @@
             setupBuy(p);
 
             // 유튜브 영상: 들어온 악보의 영상이 맨 위, 같은 곡 다른 구성(기타솔로·통기타 …)의 영상이 그 아래 (같은 영상은 한 번만)
-            const seen = new Set(), vids = [p, ...PARTS.filter(x => x.id !== p.id)].filter(x => x.youtube_id && !seen.has(x.youtube_id) && seen.add(x.youtube_id));
+            //   다른 편곡이 있으면 그 영상들도 아래에 (들어온 편곡이 맨 위)
+            renderVersions(p);
+            const seen = new Set(), vids = [p, ...PARTS.filter(x => x.id !== p.id), ...VERSIONS].filter(x => x.youtube_id && !seen.has(x.youtube_id) && seen.add(x.youtube_id));
+            const vlabel = x => VERSIONS.length && (x === p || VERSIONS.includes(x)) ? verTag(x.title) : (PART_NAME[x.style] || '악보').replace(' 악보', '');
             const yt = document.getElementById('productYoutube');
-            yt.innerHTML = vids.map((x, i) => `<div class="yt-item">${vids.length > 1 ? `<div class="yt-label"><i class="fab fa-youtube"></i>${escHtml((PART_NAME[x.style] || '악보').replace(' 악보', ''))} 영상</div>` : ''}<div class="yt-wrapper">
+            yt.innerHTML = vids.map((x, i) => `<div class="yt-item">${vids.length > 1 ? `<div class="yt-label"><i class="fab fa-youtube"></i>${escHtml(vlabel(x))} 영상</div>` : ''}<div class="yt-wrapper">
                 <iframe src="https://www.youtube.com/embed/${encodeURIComponent(x.youtube_id)}" title="${escHtml(x.title)} ${escHtml(PART_NAME[x.style] || '')} 영상"${i ? ' loading="lazy"' : ''} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div></div>`).join('');
             yt.hidden = !vids.length;
         }
@@ -1164,6 +1203,7 @@
                     PARTS.sort((a, b) => (PART_ORDER[a.style] ?? 5) - (PART_ORDER[b.style] ?? 5));
                     SEL = new Set([p.id]);
                     if (p.style === 'electric') PARTS.filter(x => x.style === 'solo').forEach(x => SEL.add(x.id));   // 일렉기타로 들어오면 반주 + 기타솔로
+                    VERSIONS = await loadVersions(p);
                     showSheet(p);
                     if (!p.published) {
                         const note = document.createElement('div');
