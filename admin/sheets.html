@@ -107,6 +107,12 @@
     .progress small { color: var(--sub); white-space: nowrap; }
     .toolbar2 { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; align-items: center; }
     .toolbar2 .lbl { font-size: 12.5px; color: var(--sub); }
+    /* 확인용: 빈 칸 있는 악보만 쭉 보기 — 누르면 그것만, 한 번 더 누르면 전체 */
+    .seg.chk { flex-wrap: wrap; }
+    .seg.chk button { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .seg.chk button small { font-size: 11px; font-weight: 700; background: #fdecea; color: #c0392b; border-radius: 9px; padding: 1px 6px; }
+    .seg.chk button.zero small { background: #eef6f1; color: #1f8a52; }
+    .seg.chk button.on small { background: rgba(255, 255, 255, .2); color: #fff; }
     .empty { text-align: center; padding: 50px; color: var(--sub); background: #fff; border: 1px dashed #d8d8d8; border-radius: 12px; }
 
     /* 편집 창 */
@@ -311,6 +317,8 @@
         <div class="seg" id="sortSeg"><button class="on" data-s="orders">풀스코어 주문순</button><button data-s="new">최신순</button></div>
         <span class="lbl" style="margin-left:8px;">PDF</span>
         <div class="seg" id="pdfSeg"><button class="on" data-p="all">전체</button><button data-p="none">없음</button><button data-p="has">있음</button></div>
+        <span class="lbl" style="margin-left:8px;">확인용</span>
+        <div class="seg chk" id="chkSeg"></div>
     </div>
     <div id="listWrap"></div>
 </main>
@@ -411,6 +419,7 @@
     let filter = 'all';
     let sortBy = 'orders';     // 'orders' = 풀스코어 주문수 많은 순 / 'new' = 최신순
     let pdfFilter = 'all';     // 'all' | 'none' | 'has'
+    let checkFilter = '';      // 확인용: '' | 'cover' | 'pdf' | 'yt' | 'lv' | 'dup'
     const MAIN_GOAL = 20;      // PDF 이만큼 채우면 새 메인(mockup-store) 반영을 검토
     let editing = null;        // 편집 중인 행 (새 악보면 null)
     let linkIds = new Set();   // 편집 중인 악보와 같은 곡으로 묶을 다른 악보들 (sheets.song_key)
@@ -514,18 +523,26 @@
         const q = $('q').value.trim().toLowerCase();
         const rank = orderRanks();
         const hasOrders = Object.keys(rank).length > 0;
+        const dups = dupCounts(), chk = CHECKS[checkFilter];
         let rows = sheets.filter(s =>
             (filter === 'all' || (filter === 'pub' ? s.published : !s.published)) &&
             (pdfFilter === 'all' || (pdfFilter === 'has' ? !!filesById[s.id] : !filesById[s.id])) &&
+            (!chk || chk.test(s, dups)) &&
             (!q || [s.title, s.title_original, s.artist].join(' ').toLowerCase().includes(q)));
         if (sortBy === 'orders') {
             rows = rows.slice().sort((a, b) => ((b.fullscore_orders || 0) - (a.fullscore_orders || 0)) ||
                 (new Date(b.created_at) - new Date(a.created_at)));
         }
+        if (checkFilter === 'dup') rows = rows.slice().sort((a, b) => dupKey(a).localeCompare(dupKey(b), 'ko'));   // 같은 곡끼리 붙여서
+        renderChecks(dups);
         $('count').textContent = `${sheets.length}곡 · PDF ${sheets.filter(s => filesById[s.id]).length} · 공개 ${sheets.filter(s => s.published).length}`;
         renderProgress();
         if (!sheets.length) {
             $('listWrap').innerHTML = '<div class="empty"><i class="fas fa-music" style="font-size:24px;color:var(--green);display:block;margin-bottom:10px;"></i>아직 등록한 악보가 없어요. 오른쪽 위 <b>새 악보</b>로 첫 악보를 올려 보세요.</div>';
+            return;
+        }
+        if (!rows.length && chk) {
+            $('listWrap').innerHTML = `<div class="empty"><i class="fas fa-circle-check" style="font-size:24px;color:var(--green);display:block;margin-bottom:10px;"></i>${chk.done}${filter !== 'all' || pdfFilter !== 'all' || q ? '<br><small>(위의 공개·PDF·검색 조건도 함께 걸려 있어요)</small>' : ''}</div>`;
             return;
         }
         $('listWrap').innerHTML = `<table class="list"><thead><tr><th class="rk" title="풀스코어 주문수 순위">주문순</th><th></th><th>곡명</th><th class="c-st">종류·스타일</th><th class="c-lv">난이도</th><th>가격</th><th>상태</th><th class="c-up">수정일</th><th class="c-go"></th></tr></thead><tbody>${
@@ -617,6 +634,28 @@
         const b = e.target.closest('button'); if (!b) return;
         sortBy = b.dataset.s;
         [...$('sortSeg').children].forEach(x => x.classList.toggle('on', x === b));
+        render();
+    });
+    // ---------- 확인용: 아직 안 채운 칸이 있는 악보만 보기 ----------
+    // 중복곡: 곡명(괄호 속 말·띄어쓰기 빼고)과 종류가 같은 악보가 둘 이상. 'OOOO 버전' 은 다른 악보로 본다
+    const dupKey = s => songName(s.title) + '|' + ((String(s.title).match(/(\d{4})\s*버전/) || [])[1] || '') + '|' + (s.style || '');
+    function dupCounts() { const n = {}; sheets.forEach(s => { const k = dupKey(s); n[k] = (n[k] || 0) + 1; }); return n; }
+    const CHECKS = {
+        cover: { label: '커버 없음', tip: '썸네일에 앨범 커버가 없는 악보 (같은 곡으로 묶인 악보의 커버를 쓰는 건 빼고)', done: '모든 악보에 커버가 있어요 — 다 채웠어요!', test: s => !coverOwner(s) },
+        pdf: { label: 'PDF 없음', tip: '판매할 PDF를 아직 안 올린 악보', done: '모든 악보에 PDF가 있어요 — 다 채웠어요!', test: s => !filesById[s.id] },
+        yt: { label: '유튜브 없음', tip: '유튜브 영상 주소가 없는 악보 (코드악보는 영상이 없어도 돼서 빼고)', done: '모든 악보에 유튜브 영상이 있어요 — 다 채웠어요!', test: s => !s.youtube_id && s.style !== 'chord' },
+        lv: { label: '난이도 없음', tip: '난이도를 아직 안 고른 악보', done: '모든 악보에 난이도가 있어요 — 다 채웠어요!', test: s => !s.difficulty },
+        dup: { label: '중복곡', tip: '곡명과 종류가 같은 악보가 둘 이상 — 같은 곡끼리 붙여서 보여요 (2023 버전처럼 버전이 다르면 빼고)', done: '중복된 악보가 없어요', test: (s, dups) => dups[dupKey(s)] > 1 },
+    };
+    function renderChecks(dups) {
+        $('chkSeg').innerHTML = Object.entries(CHECKS).map(([k, c]) => {
+            const n = sheets.filter(s => c.test(s, dups)).length;
+            return `<button type="button" data-c="${k}" class="${k === checkFilter ? 'on' : ''}${n ? '' : ' zero'}" title="${c.tip}">${c.label} <small>${n}</small></button>`;
+        }).join('');
+    }
+    $('chkSeg').addEventListener('click', e => {
+        const b = e.target.closest('[data-c]'); if (!b) return;
+        checkFilter = checkFilter === b.dataset.c ? '' : b.dataset.c;   // 한 번 더 누르면 전체
         render();
     });
     $('pdfSeg').addEventListener('click', e => {
