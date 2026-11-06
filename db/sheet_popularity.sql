@@ -7,6 +7,7 @@
 --   · 판매 수 = 그 악보가 들어 있는 주문 수. 같은 곡의 기타솔로는 메인 목록에서 '반주 + 기타솔로' 한 줄이라
 --     반주 쪽으로 합쳐 세고, 반주 + 솔로를 함께 산 주문은 한 번으로 센다 (index.html bundle() 과 같은 규칙).
 --   · 2026-11-06: 반주 = 일렉기타, 일렉기타가 없으면 통기타 (너에게 난 나에게 넌 = 통기타 + 솔로).
+--     같은 날 적용 (migration: sheet_popularity_acoustic_backing)
 create or replace function public.sheet_popularity()
 returns table (sheet_id uuid, sold_7d integer, sold_30d integer, sold_total integer)
 language sql
