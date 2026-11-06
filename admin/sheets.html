@@ -330,6 +330,12 @@
     .rk-row .why i { font-style: normal; font-size: 10.5px; padding: 0 6px; border-radius: 8px; background: #f1f4f2; color: #555; white-space: nowrap; }
     .rk-row .why i.up { background: #e6f4ea; color: var(--green); font-weight: 700; }
     .rk-row .why i.dn { background: #fbeeee; color: #b04a4a; }
+    .rk-row .why i.kd { background: var(--ink); color: #fff; font-weight: 700; }
+    /* 올릴 악보 | 새로 만들 곡 */
+    .rk-mode { display: inline-flex; gap: 4px; padding: 3px; border-radius: 10px; background: #f1f3f2; }
+    .rk-mode button { font: inherit; font-size: 12.5px; font-weight: 700; border: 0; background: none; border-radius: 8px; padding: 5px 12px; cursor: pointer; color: #666; }
+    .rk-mode button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+    .rk-col.play h4 { border-color: #7a5cd6; }
     .rk-row .dt { flex: none; font-size: 11.5px; color: var(--sub); }
     .rk-how { font-size: 11.5px; color: var(--sub); line-height: 1.6; margin: 8px 0 4px; }
     .rk-sub { font-size: 12.5px; font-weight: 900; margin: 14px 0 2px; color: #444; }
@@ -466,7 +472,7 @@
 </aside>
 
 <div class="rank" id="rank" role="dialog" aria-label="뭐부터 올리지?" hidden>
-    <div class="rk-hd"><h3><i class="fas fa-ranking-star"></i>뭐부터 올리지?</h3><small id="rkNote"></small><button class="x" id="rkClose" aria-label="닫기"><i class="fas fa-xmark"></i></button></div>
+    <div class="rk-hd"><h3><i class="fas fa-ranking-star"></i>뭐부터 올리지?</h3><span class="rk-mode" id="rkMode"><button type="button" data-mode="up" class="on">올릴 악보</button><button type="button" data-mode="new">새로 만들 곡</button></span><small id="rkNote"></small><button class="x" id="rkClose" aria-label="닫기"><i class="fas fa-xmark"></i></button></div>
     <div class="rk-body" id="rkBody"></div>
 </div>
 
@@ -921,6 +927,18 @@
         if (!ytData) { try { ytData = await (await fetch('../data/sheet-yt.json?v=' + Date.now())).json(); } catch (e) { ytData = { v: {} }; } }
         renderRank();
     };
+    // 위 단추: 올릴 악보(이미 만든 악보 중 다음에 올릴 것) | 새로 만들 곡(조사한 곡, data/next-songs.json)
+    let rkMode = 'up', nextSongs = null;
+    $('rkMode').addEventListener('click', async e => {
+        const b = e.target.closest('[data-mode]'); if (!b || b.dataset.mode === rkMode) return;
+        rkMode = b.dataset.mode;
+        $('rkMode').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+        if (rkMode === 'new' && !nextSongs) {
+            $('rkBody').innerHTML = '<p class="rk-msg"><i class="fas fa-spinner fa-spin"></i> 조사한 곡을 불러오고 있어요…</p>';
+            try { nextSongs = await (await fetch('../data/next-songs.json?v=' + Date.now())).json(); } catch (e) { nextSongs = {}; }
+        }
+        renderRank();
+    });
     $('rkClose').onclick = closeRank;
     $('rkBody').addEventListener('click', e => {
         const r = e.target.closest('.rk-row'); if (!r) return;
@@ -979,7 +997,29 @@
         { m: [5, 6, 7], icon: '🌊', name: '여름', re: /여름|summer/i },
         { m: [8, 9, 10], icon: '🍂', name: '가을', re: /가을|autumn/i },
     ];
+    // 새로 만들 곡: Claude 가 공개 자료(기타 채널 조회수·멜론 차트·풀스코어 전체 인기 악보)로 조사한 목록.
+    // 이미 악보가 있는 곡(제목이 같고 가수도 겹침)은 뺀다 — 같은 제목 다른 곡(혁오 TOMBOY ≠ 여자아이들 TOMBOY)은 남긴다.
+    // 누르면 유튜브에서 그 곡 기타 영상을 찾아본다
+    function renderNew() {
+        const bare = v => String(v || '').normalize('NFC').toLowerCase().replace(/\([^)]*\)|\[[^\]]*\]/g, '').replace(/[\s\p{P}\p{S}]+/gu, '');
+        const words = v => String(v || '').normalize('NFC').toLowerCase().split(/[\s()\[\],.&/·-]+/).filter(w => w.length >= 2);
+        const have = x => sheets.some(s => bare(s.title) === bare(x.t) && words(x.a).some(w => bare(s.artist + ' ' + s.title).includes(bare(w))));
+        const chips = why => `<span class="why">${why.map(([c, t]) => `<i class="${c}">${esc(t)}</i>`).join('')}</span>`;
+        const col = (key, cls, title, sub) => {
+            const list = (nextSongs[key] || []).filter(x => !have(x));
+            const rows = list.map((x, i) => `<a class="rk-row" href="https://www.youtube.com/results?search_query=${encodeURIComponent(x.t + ' ' + x.a + ' 기타')}" target="_blank" rel="noopener" title="유튜브에서 이 곡 기타 영상 찾아보기">
+                <span class="no">${i + 1}</span><span class="nm"><b>${esc(x.t)}</b><small>${esc(x.a)}</small>${chips([['kd', x.k + ' 추천'], ...x.why.map(w => w[0] === '+' ? ['up', w.slice(1)] : ['', w])])}</span><span class="go">영상 ›</span></a>`).join('');
+            return `<section class="rk-col ${cls}"><h4>${title}<small>${sub}</small></h4><p class="rk-how">${esc((nextSongs.src || {})[key] || '')}</p>${rows || '<p class="rk-msg">다 만들었어요 🎉</p>'}</section>`;
+        };
+        $('rkNote').textContent = `조사: ${fmtDay(nextSongs.at)} · 이미 악보가 있는 곡은 빠져요 · 누르면 유튜브에서 찾아봐요`;
+        $('rkBody').innerHTML = `<div class="rk-cols">
+            ${col('yt', 'yt', '① 기타 채널에서 반응 좋은 곡', '하루한곡·그랩더기타 등 커버 조회수')}
+            ${col('chart', 'next', '② 음원 차트에서 뜨는 곡', '멜론 TOP 100 중 기타로 치기 좋은 곡')}
+            ${col('play', 'play', '③ 악기로 많이 치는 곡', '풀스코어 전체 인기 악보 · 밴드 합주곡')}
+        </div>`;
+    }
     function renderRank() {
+        if (rkMode === 'new' && nextSongs) { renderNew(); return; }
         if (!sales) return;
         const byCode = {};
         sheets.forEach(s => { if (s.fullscore_code) byCode[s.fullscore_code] = s; });
