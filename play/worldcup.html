@@ -51,9 +51,10 @@
     .round .undo { font-size: 13px; color: #666; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: #fff; }
     .round .undo[disabled] { opacity: .4; cursor: default; }
     .q { text-align: center; color: var(--sub); font-size: 13.5px; margin-bottom: 12px; }
+    #app { overflow-x: clip; }   /* 안 고른 기타가 바깥으로 빠질 때 가로 스크롤이 생기지 않게 */
     .vs { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .vs .mark { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); z-index: 2; width: 56px; height: 56px; border-radius: 50%; background: var(--ink); color: #fff; font-weight: 900; font-size: 18px; display: grid; place-items: center; box-shadow: 0 0 0 5px var(--cream); font-family: 'Arial Black', sans-serif; pointer-events: none; }
-    .pick { text-align: left; padding: 10px; transition: transform .25s, opacity .25s, box-shadow .25s; display: flex; flex-direction: column; }
+    .pick { position: relative; text-align: left; padding: 10px; transition: transform .25s, opacity .25s, box-shadow .25s; display: flex; flex-direction: column; }
     .pick:hover { transform: translateY(-3px); box-shadow: 0 2px 0 var(--green-pale), 0 14px 34px rgba(42, 107, 74, 0.16); }
     .pick .ph-img { height: min(54vh, 470px); border-radius: 12px; background: #f1f4f2; display: block; overflow: hidden; }
     .pick .ph-img img { width: 100%; height: 100%; object-fit: contain; display: block; }
@@ -61,8 +62,14 @@
     .pick .nm b { display: block; font-size: 17px; font-weight: 900; line-height: 1.3; }
     .pick .nm small { display: block; color: var(--sub); font-size: 12.5px; }
     .pick .nm span { display: block; color: #444; font-size: 13px; margin-top: 4px; }
-    .pick.won { transform: scale(1.03); box-shadow: 0 0 0 3px var(--green-mid), 0 14px 34px rgba(42, 107, 74, 0.2); }
-    .pick.lost { opacity: .25; transform: scale(.96); }
+    /* 고르면 (2026-11-08 사용자 요청): 고른 쪽은 가운데로 와서 1초쯤 보이고, 안 고른 쪽은 제 쪽 바깥으로 빠지며 사라진다 */
+    .vs.decided .mark { opacity: 0; transform: translate(-50%, -50%) scale(.4); transition: opacity .25s, transform .25s; }
+    .vs.decided .pick { pointer-events: none; transition: transform .6s cubic-bezier(.2, .9, .25, 1), opacity .5s ease-in, box-shadow .3s; }
+    .pick.won { z-index: 3; transform: translateX(var(--dx, 0)) scale(1.06); box-shadow: 0 0 0 4px var(--green-mid), 0 20px 44px rgba(42, 107, 74, 0.28); }
+    .pick.won::after { content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; top: -14px; right: -14px; width: 44px; height: 44px; border-radius: 50%; background: var(--green-mid); color: #fff; font-size: 20px; display: grid; place-items: center; box-shadow: 0 4px 12px rgba(42, 107, 74, .35); animation: wcCheck .45s .3s cubic-bezier(.3, 1.6, .5, 1) both; }
+    @keyframes wcCheck { from { transform: scale(0) rotate(-30deg); } to { transform: scale(1) rotate(0); } }
+    .pick.lost { opacity: 0; transform: translateX(var(--out, 0)) rotate(var(--rot, 0)) scale(.9); }
+    @media (prefers-reduced-motion: reduce) { .pick.won { transform: none; } .pick.lost { transform: none; } .pick.won::after { animation: none; } }
     .keys { text-align: center; color: #aaa; font-size: 12px; margin-top: 10px; }
     .listen { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 8px; }
     .listen a { text-align: center; font-size: 13px; font-weight: 700; color: #c4302b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 4px; }
@@ -122,6 +129,38 @@
     .theme .rk-link:hover { color: var(--green-deep); }
     .stat-soon { max-width: 560px; margin: 16px auto 0; padding: 12px 14px; font-size: 13px; color: #666; text-align: left; border: 1px dashed #c9d6ce; border-radius: 12px; background: #fbfdfc; }
     .stat-soon b { color: var(--green-deep); }
+    /* 한마디 남기기 */
+    .cmts { max-width: 760px; margin: 30px auto 0; text-align: left; }
+    .cmts h3 { font-size: 17px; font-weight: 900; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .cmts h3 small { color: var(--sub); font-weight: 700; font-size: 13px; }
+    .cm-form { padding: 14px; display: grid; grid-template-columns: 88px 1fr; gap: 8px 12px; }
+    .cm-me { grid-row: span 3; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+    .cm-me img { width: 76px; height: 76px; object-fit: contain; background: #f1f4f2; border-radius: 10px; }
+    .cm-me small { display: block; font-size: 11px; color: var(--sub); }
+    .cm-me b { display: block; font-size: 12px; line-height: 1.3; }
+    .cm-form input, .cm-form textarea { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; font: inherit; font-size: 14px; background: #fff; resize: vertical; }
+    .cm-form input:focus, .cm-form textarea:focus { outline: 2px solid var(--green-pale); border-color: var(--green-mid); }
+    .cm-row { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+    .cm-row .btn { padding: 9px 18px; }
+    .cm-cnt { font-size: 12px; color: #999; }
+    .cm-list { list-style: none; margin-top: 10px; }
+    .cm-list li { display: flex; gap: 10px; padding: 12px 6px; border-bottom: 1px solid var(--line); }
+    .cm-list li.mine { background: #f6fbf8; border-radius: 10px; }
+    .cm-list .pk { width: 42px; height: 42px; border-radius: 8px; object-fit: contain; background: #f1f4f2; flex: none; }
+    .cm-list .bd { flex: 1; min-width: 0; }
+    .cm-list .hd { font-size: 12.5px; color: var(--sub); display: flex; flex-wrap: wrap; gap: 2px 6px; align-items: baseline; }
+    .cm-list .hd b { color: var(--ink); font-size: 13.5px; }
+    .cm-list .hd .pn { color: var(--green-deep); font-weight: 700; }
+    .cm-list p { font-size: 14px; margin-top: 3px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .cm-act { margin-left: auto; font-size: 12px; color: #999; background: none; border: 0; padding: 0 2px; text-decoration: underline; cursor: pointer; }
+    .cm-act.arm { color: var(--red, #d64545); font-weight: 700; }
+    .cm-list .cm-empty { color: #888; justify-content: center; font-size: 13px; border-bottom: 0; }
+    .cm-more { display: block; margin: 12px auto 0; }
+    @media (max-width: 560px) {
+        .cm-form { grid-template-columns: 1fr; }
+        .cm-me { grid-row: auto; flex-direction: row; text-align: left; gap: 10px; }
+        .cm-me img { width: 44px; height: 44px; }
+    }
     .credits { max-width: 860px; margin: 24px auto 0; font-size: 11.5px; color: #999; text-align: left; }
     .credits summary { cursor: pointer; }
     .credits ul { list-style: none; margin-top: 6px; columns: 2 260px; }
@@ -146,7 +185,7 @@
     <div>© 2026 안쌤의 기타나무숲</div>
 </footer>
 
-<script src="play.js?v=2026110803"></script>
+<script src="play.js?v=2026110804"></script>
 <script src="riffs.js?v=2026110801"></script>
 <script>
 // ---------- 주제와 기타 (사진: Wikimedia Commons, 사진마다 작가·라이선스 표시) ----------
@@ -521,7 +560,7 @@ for (const k of Object.keys(THEMES)) if (THEMES[k].items.length < 8) delete THEM
 // 다음에 만들 주제 (준비 중으로만 보임)
 const SOON = ['입문 일렉 (100만원 아래)', '기타 앰프', '통기타 브랜드'];
 
-const { esc, shuffle, adSlot, interstitial, share, catalog, recRow, rpc } = PLAY;
+const { esc, shuffle, adSlot, interstitial, share, catalog, recRow, rpc, mem } = PLAY;
 const app = document.getElementById('app');
 const imgSrc = it => it.art || `../images/play/wc/${it.k}.jpg`;
 // 곡 카드 그림 (리프 월드컵 — 사진 대신 SVG). 리프 악보는 그리지 않는다(저작권)
@@ -655,11 +694,18 @@ function match() {
     [S.cur[S.i + 2], S.cur[S.i + 3]].forEach(it => { if (it) new Image().src = imgSrc(it); });
 }
 let busy = false;
+const PICK_MS = 1500;   // 고른 기타를 보여 주는 시간 (2026-11-08 사용자 요청: 예전 0.4초 → 1초 더 길게)
 function choose(side) {
     if (busy || !S || S.i + 1 >= S.cur.length) return;   // 결승까지 다 고른 뒤(광고 뜬 사이) 키를 또 눌러도 무시
     busy = true;
-    const picks = app.querySelectorAll('.pick');
-    picks[side].classList.add('won'); picks[1 - side].classList.add('lost');
+    const picks = app.querySelectorAll('.pick'), vs = app.querySelector('.vs');
+    const won = picks[side], lost = picks[1 - side];
+    const r = won.getBoundingClientRect(), v = vs.getBoundingClientRect();
+    won.style.setProperty('--dx', `${v.left + v.width / 2 - (r.left + r.width / 2)}px`);   // 가운데로
+    lost.style.setProperty('--out', side ? '-75%' : '75%');                                    // 제 쪽 바깥으로
+    lost.style.setProperty('--rot', side ? '-6deg' : '6deg');
+    vs.classList.add('decided');
+    won.classList.add('won'); lost.classList.add('lost');
     S.hist.push({ cur: S.cur, next: S.next.slice(), i: S.i, out: S.out.slice(), log: S.log.slice() });
     const w = S.cur[S.i + side], l = S.cur[S.i + 1 - side];
     S.out.push({ it: l, at: S.cur.length });
@@ -675,7 +721,7 @@ function choose(side) {
         }
         saveNow();
         match();
-    }, 420);
+    }, PICK_MS);
 }
 function undo() {
     const h = S.hist.pop();
@@ -707,6 +753,7 @@ async function winner(w) {
         ${adSlot('r300')}
         <div id="rk"><p class="stat-soon" style="text-align:center">📊 다른 사람들의 순위를 불러오는 중…</p></div>
         <div class="rec" id="rec"></div>
+        <div class="cmts" id="cm"></div>
         ${t.song ? '' : `<details class="credits"><summary>사진 출처 (Wikimedia Commons)</summary><ul>${t.items.map(it => `<li>${esc(it.n)} — ${esc(it.by)}, ${esc(it.lic)} · <a href="${esc(it.src)}" target="_blank" rel="noopener">원본</a></li>`).join('')}</ul></details>`}
     </section>`;
     scrollTo(0, 0);
@@ -722,6 +769,7 @@ async function winner(w) {
             .then(d => { if (S === s) document.getElementById('rk').innerHTML = rankHtml(s.key, d, w.k); })
             .catch(() => { if (S === s) document.getElementById('rk').innerHTML = SOON_BOX; });
     }
+    comments(s, w);
     // 일렉 악보 추천 — 공개한 일렉기타·기타솔로 악보 중 풀스코어 주문이 많은 곡
     try {
         const all = await catalog();
@@ -736,6 +784,110 @@ async function winner(w) {
         const seen = new Set(), top = rows.filter(s => { const k = PLAY.baseTitle(s.title).toLowerCase(); return !seen.has(k) && seen.add(k); }).slice(0, 6);   // 같은 곡 일렉·솔로는 하나만
         if (top.length) document.getElementById('rec').innerHTML = `<h3><i class="fas fa-music" style="color:var(--green-mid)"></i>${esc(t.rec || '이 기타로 쳐 볼 일렉 악보')} <small>안쌤 TAB악보</small></h3><div class="list">${top.map(recRow).join('')}</div>`;
     } catch (e) {}
+}
+
+// ---------- 한마디 남기기 (db/play_comments.sql 적용 뒤부터. 그 전엔 '곧 열려요') ----------
+// 2026-11-08 사용자 요청: 다른 이상형 월드컵 사이트처럼 결과 화면에서 누구나(로그인 없이) 한마디. 쓴 사람이 고른 우승이 같이 보인다.
+// 이 브라우저의 무작위 열쇠로 내 댓글은 지울 수 있고, 신고가 3번 쌓이면 숨겨진다. 운영 계정으로 로그인해 있으면 아무 댓글이나 지운다.
+const ckey = () => {
+    let k = mem.get('wc.ckey', '');
+    if (!/^[A-Za-z0-9_-]{16,64}$/.test(k)) {
+        const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+        k = [...crypto.getRandomValues(new Uint8Array(24))].map(b => A[b & 63]).join('');
+        mem.set('wc.ckey', k);
+    }
+    return k;
+};
+const C_ERR = {
+    empty: '한마디를 적어 주세요.', link: '링크는 남길 수 없어요.', fast: '조금만 천천히! 15초 뒤에 다시 남겨 주세요.',
+    dup: '같은 글을 이미 남겼어요.', busy: '지금 글이 너무 많아요. 잠시 뒤에 다시 남겨 주세요.', bad: '남기지 못했어요. 새로고침한 뒤 다시 해 주세요.',
+};
+const when = iso => {
+    const d = new Date(iso), sec = (Date.now() - d) / 1000, p = n => String(n).padStart(2, '0');
+    if (sec < 60) return '방금';
+    if (sec < 3600) return `${Math.floor(sec / 60)}분 전`;
+    if (sec < 86400) return `${Math.floor(sec / 3600)}시간 전`;
+    return `${d.getFullYear() !== new Date().getFullYear() ? d.getFullYear() + '-' : ''}${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+function comments(s, w) {
+    const box = document.getElementById('cm');
+    if (!box) return;
+    const key = s.key, items = new Map(THEMES[key].items.map(it => [it.k, it]));
+    const st = { rows: [], total: 0, more: false, admin: false };
+    const soon = () => { if (S === s) box.innerHTML = `<div class="stat-soon"><b>💬 한마디 남기기</b><br>곧 열려요. 내가 고른 우승과 함께 한마디 남길 수 있어요.</div>`; };
+    const row = c => {
+        const it = items.get(c.pick);
+        const act = c.mine || st.admin ? `<button type="button" class="cm-act" data-del="${c.id}">지우기</button>` : `<button type="button" class="cm-act" data-rep="${c.id}">신고</button>`;
+        return `<li class="${c.mine ? 'mine' : ''}">${it ? `<img class="pk" src="${imgSrc(it)}" alt="">` : '<span class="pk"></span>'}
+            <div class="bd"><div class="hd"><b>${esc(c.nick)}</b><span class="pn">· 우승 ${esc(it ? it.ko || it.n : '?')}</span><span class="tm">${when(c.created_at)}</span>${act}</div>
+            <p>${esc(c.body)}</p></div></li>`;
+    };
+    const paint = () => {
+        if (S !== s) return;
+        document.getElementById('cm-n').textContent = st.total ? `(${st.total.toLocaleString()})` : '';
+        document.getElementById('cm-list').innerHTML = st.rows.length ? st.rows.map(row).join('') : '<li class="cm-empty">아직 한마디가 없어요. 첫 번째로 남겨 보세요!</li>';
+        document.getElementById('cm-more').hidden = !st.more;
+    };
+    const load = async (reset) => {
+        const before = reset || !st.rows.length ? null : st.rows[st.rows.length - 1].id;
+        const r = await rpc('play_wc_comments', { p_theme: key, p_key: ckey(), p_before: before, p_limit: 20 });
+        if (!Array.isArray(r)) throw new Error('comments');
+        st.rows = reset ? r : st.rows.concat(r);
+        st.total = r.length ? r[0].total : (reset ? 0 : st.total);
+        st.more = r.length === 20;
+        paint();
+    };
+    box.innerHTML = `<h3><i class="fas fa-comment-dots" style="color:var(--green-mid)"></i>한마디 남기기 <small id="cm-n"></small></h3>
+        <form class="cm-form card" id="cm-form">
+            <div class="cm-me"><img src="${imgSrc(w)}" alt=""><span><small>내 우승</small><b>${esc(w.ko || w.n)}</b></span></div>
+            <input id="cm-nick" maxlength="12" placeholder="닉네임 (비우면 익명)" autocomplete="nickname" value="${esc(mem.get('wc.nick', ''))}">
+            <textarea id="cm-body" maxlength="200" rows="2" placeholder="이걸 고른 이유, 아깝게 떨어진 후보… 한마디 남겨 주세요"></textarea>
+            <div class="cm-row"><span class="cm-cnt" id="cm-cnt">0 / 200</span><button class="btn" id="cm-send"><i class="fas fa-pen"></i>남기기</button></div>
+        </form>
+        <ul class="cm-list" id="cm-list"><li class="cm-empty">불러오는 중…</li></ul>
+        <button type="button" class="btn ghost cm-more" id="cm-more" hidden>더 보기</button>`;
+    const body = document.getElementById('cm-body');
+    body.addEventListener('input', () => { document.getElementById('cm-cnt').textContent = `${body.value.length} / 200`; });
+    document.getElementById('cm-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const nick = document.getElementById('cm-nick').value.trim(), text = body.value.trim(), btn = document.getElementById('cm-send');
+        if (!text) return PLAY.toast(C_ERR.empty);
+        btn.disabled = true;
+        try {
+            await rpc('play_wc_comment_add', { p_theme: key, p_pick: w.k, p_nick: nick, p_body: text, p_key: ckey() });
+            mem.set('wc.nick', nick);
+            body.value = ''; document.getElementById('cm-cnt').textContent = '0 / 200';
+            await load(true);
+            PLAY.toast('한마디를 남겼어요');
+        } catch (err) { PLAY.toast(C_ERR[err.code] || '남기지 못했어요. 잠시 뒤에 다시 해 주세요.'); }
+        btn.disabled = false;
+    });
+    document.getElementById('cm-more').addEventListener('click', () => load(false).catch(() => PLAY.toast('더 불러오지 못했어요')));
+    // 신고·지우기는 실수로 누르지 않게 두 번 눌러야 한다 (확인 창은 띄우지 않음)
+    document.getElementById('cm-list').addEventListener('click', async e => {
+        const b = e.target.closest('[data-del],[data-rep]');
+        if (!b) return;
+        if (!b.classList.contains('arm')) {
+            b.classList.add('arm'); b.dataset.t = b.textContent;
+            b.textContent = b.dataset.del ? '정말 지울까요?' : '신고할까요?';
+            setTimeout(() => { if (b.isConnected) { b.classList.remove('arm'); b.textContent = b.dataset.t; } }, 3000);
+            return;
+        }
+        b.disabled = true;
+        try {
+            if (b.dataset.del) {
+                const ok = await rpc('play_wc_comment_delete', { p_id: +b.dataset.del, p_key: ckey() }, { auth: true });
+                PLAY.toast(ok ? '지웠어요' : '지우지 못했어요');
+            } else {
+                const ok = await rpc('play_wc_comment_report', { p_id: +b.dataset.rep, p_key: ckey() });
+                PLAY.toast(ok ? '신고했어요. 신고가 3번 쌓이면 숨겨져요.' : '이미 신고한 글이에요');
+            }
+            await load(true);
+        } catch (err) { PLAY.toast('잠시 뒤에 다시 해 주세요'); b.disabled = false; }
+    });
+    load(true).then(() => {
+        if (PLAY.hasLogin()) rpc('is_site_admin', {}, { auth: true }).then(v => { st.admin = v === true; paint(); }).catch(() => {});
+    }).catch(soon);
 }
 
 // ---------- 순위 (우승 비율 = 우승 ÷ 나온 판, 1:1 승률 = 대결에서 이긴 비율) ----------

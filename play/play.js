@@ -61,9 +61,25 @@
         return r.json();
     }
     // 놀이터 기록 함수(db/play_stats.sql). 아직 적용 전이거나 실패하면 throw — 부르는 쪽에서 조용히 숨긴다
-    async function rpc(name, body) {
-        const r = await fetch(SB_URL + '/rest/v1/rpc/' + name, { method: 'POST', headers: { apikey: SB_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
-        if (!r.ok) throw new Error(name + ' ' + r.status);
+    // 사이트에 로그인해 있으면 그 열쇠(운영 계정의 댓글 지우기용). 놀이터는 로그인 없이 쓰므로 없으면 그냥 빈 값
+    function userToken() {
+        try {
+            const s = JSON.parse(localStorage.getItem('sb-qpcbrqgqylxkgdwoflku-auth-token') || 'null');
+            return s && s.access_token && (s.expires_at || 0) * 1000 > Date.now() + 10000 ? s.access_token : '';
+        } catch (e) { return ''; }
+    }
+    // 실패하면 err.code 에 서버가 보낸 짧은 코드(예: 'fast', 'link')
+    async function rpc(name, body, opt = {}) {
+        const headers = { apikey: SB_KEY, 'Content-Type': 'application/json' };
+        const tok = opt.auth && userToken();
+        if (tok) headers.Authorization = 'Bearer ' + tok;
+        const r = await fetch(SB_URL + '/rest/v1/rpc/' + name, { method: 'POST', headers, body: JSON.stringify(body || {}) });
+        if (!r.ok) {
+            const err = new Error(name + ' ' + r.status);
+            err.status = r.status;
+            try { err.code = (await r.json()).message || ''; } catch (e) { err.code = ''; }
+            throw err;
+        }
         const t = await r.text();
         return t ? JSON.parse(t) : null;
     }
@@ -117,5 +133,5 @@
             <span class="bulb"><i class="fas fa-lightbulb"></i></span>${opt.count ? `<span class="cnt">${opt.count}문제</span>` : ''}</div>`;
     }
 
-    window.PLAY = { thumb, esc, shuffle, adSlot, interstitial, toast, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow, IS_APP };
+    window.PLAY = { hasLogin: () => !!userToken(), thumb, esc, shuffle, adSlot, interstitial, toast, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow, IS_APP };
 })();

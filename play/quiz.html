@@ -71,6 +71,68 @@
     .fb .btn { padding: 10px 18px; }
     .cover { width: 54px; height: 54px; border-radius: 8px; object-fit: cover; }
 
+    /* 기타 상식 난이도 고르기 */
+    .lvs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 22px; }
+    .lv { position: relative; padding: 22px 18px 18px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; border-top: 6px solid var(--c); transition: transform .2s, box-shadow .2s; }
+    .lv:hover { transform: translateY(-4px); box-shadow: 0 2px 0 var(--green-pale), 0 14px 34px rgba(42, 107, 74, 0.14); }
+    .lv .em { font-size: 46px; line-height: 1; }
+    .lv .stars { color: var(--c); font-size: 15px; letter-spacing: 2px; }
+    .lv .stars i { font-style: normal; color: #dfe4e1; }
+    .lv b { font-size: 24px; font-weight: 900; color: var(--c); }
+    .lv small { font-size: 14px; font-weight: 700; color: #333; }
+    .lv .ex { font-size: 12.5px; color: var(--sub); line-height: 1.5; }
+    .lv .go { margin-top: 6px; font-size: 13px; font-weight: 700; color: var(--green-deep); }
+    .lv-back { text-align: center; margin-top: 18px; }
+    .lvtag { font-size: 12px; font-weight: 800; color: #fff; background: var(--c); padding: 2px 8px; border-radius: 999px; margin-left: 4px; vertical-align: 1px; }
+    @media (max-width: 640px) {
+        .lvs { grid-template-columns: 1fr; gap: 10px; }
+        .lv { display: grid; grid-template-columns: 44px 1fr auto; grid-template-areas: "em b st" "em sm sm" "em ex ex" "em go go"; text-align: left; align-items: center; padding: 14px 16px; border-top: 0; border-left: 6px solid var(--c); gap: 2px 12px; }
+        .lv .em { grid-area: em; font-size: 34px; align-self: start; }
+        .lv b { grid-area: b; font-size: 20px; }
+        .lv .stars { grid-area: st; }
+        .lv small { grid-area: sm; } .lv .ex { grid-area: ex; } .lv .go { grid-area: go; margin-top: 2px; }
+    }
+    .snd { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: #fff; color: #667; font-size: 13px; display: grid; place-items: center; }
+
+    /* 정답·오답 연출 (연습도구 '코드 진행 청음'과 같은 느낌) — 정답: 팡! 튀어오르며 초록 빛 / 오답: 부들부들 흔들리고 축 처짐 */
+    .qbox { position: relative; }
+    .choices button { position: relative; }
+    @keyframes qHit {
+        0% { transform: scale(1); filter: none; }
+        30% { transform: scale(1.1); filter: drop-shadow(0 0 16px rgba(114, 196, 146, 0.95)); }
+        55% { transform: scale(0.96); }
+        75% { transform: scale(1.03); }
+        100% { transform: scale(1); filter: none; }
+    }
+    @keyframes qMiss {
+        0%, 100% { transform: translateX(0); }
+        10% { transform: translateX(-10px) rotate(-1deg); }
+        20% { transform: translateX(10px) rotate(1deg); }
+        30% { transform: translateX(-8px); }
+        40% { transform: translateX(8px); }
+        50% { transform: translateX(-5px); }
+        60% { transform: translateX(4px); }
+        75% { transform: translateY(6px) rotate(0.6deg); filter: grayscale(0.4) brightness(0.92); }
+        90% { transform: translateY(4px); }
+    }
+    @keyframes qReveal { 0%, 100% { box-shadow: 0 0 0 0 rgba(66, 168, 84, 0); } 35%, 65% { box-shadow: 0 0 0 6px rgba(66, 168, 84, 0.4); } }
+    .choices button.fx-hit, .fb.fx-hit { animation: qHit .6s cubic-bezier(.3, 1.6, .5, 1); }
+    .choices button.fx-miss, .fb.fx-miss { animation: qMiss .9s ease-out; }
+    .choices button.fx-reveal { animation: qReveal 1.1s ease-in-out .5s both; }
+    .choices button.ok { z-index: 1; }
+    .plus { position: absolute; right: 14px; top: 50%; font-size: 18px; font-weight: 900; color: var(--green-deep); pointer-events: none; animation: plusUp 1.2s ease-out forwards; }
+    @keyframes plusUp { 0% { transform: translateY(-50%) scale(.6); opacity: 0; } 20% { transform: translateY(-90%) scale(1.2); opacity: 1; } 100% { transform: translateY(-230%) scale(1); opacity: 0; } }
+    /* 큰 ⭕ / ❌ 도장 */
+    .stamp { position: absolute; left: 50%; top: 50%; width: var(--s); height: var(--s); margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2); pointer-events: none; z-index: 5; animation: stamp 1.3s ease-out forwards; --s: clamp(110px, 22vw, 170px); }
+    .stamp.o { border: calc(var(--s) * 0.12) solid rgba(66, 168, 84, 0.88); border-radius: 50%; box-shadow: 0 0 30px rgba(66, 168, 84, 0.35); }
+    .stamp.x::before, .stamp.x::after { content: ''; position: absolute; left: -8%; top: 50%; width: 116%; height: calc(var(--s) * 0.13); margin-top: calc(var(--s) * -0.065); background: rgba(224, 64, 64, 0.88); border-radius: 99px; transform: rotate(45deg); }
+    .stamp.x::after { transform: rotate(-45deg); }
+    @keyframes stamp { 0% { transform: scale(2.3); opacity: 0; } 16% { transform: scale(.9); opacity: 1; } 28% { transform: scale(1.05); } 38% { transform: scale(1); } 72% { opacity: 1; } 100% { transform: scale(1.06); opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+        .choices button.fx-hit, .fb.fx-hit, .choices button.fx-miss, .fb.fx-miss, .choices button.fx-reveal, .plus { animation: none; }
+        .stamp { animation: none; opacity: .9; }
+    }
+
     /* 결과 */
     .res { text-align: center; padding: 26px 0 0; }
     .res .md { font-weight: 700; color: var(--sub); }
@@ -111,8 +173,8 @@
     <div>© 2026 안쌤의 기타나무숲</div>
 </footer>
 
-<script src="play.js?v=2026110803"></script>
-<script src="trivia.js?v=2026110701"></script>
+<script src="play.js?v=2026110804"></script>
+<script src="trivia.js?v=2026110801"></script>
 <script src="songs.js?v=2026110801"></script>
 <script>
 const { esc, shuffle, adSlot, interstitial, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow } = PLAY;
@@ -126,8 +188,16 @@ const TRIVIA = window.TRIVIA || [];
 const MODES = {
     tab: { name: '악보 보고 노래 맞히기', icon: 'fa-guitar', color: '#42a854', sec: 30, desc: '안쌤 악보의 한 줄만 보여 줘요. 코드와 TAB만 보고 무슨 곡인지 맞혀 보세요. 막히면 한 줄 더 보기 · 가수 힌트!', meta: '10문제 · 30초 · 힌트 2개' },
     artist: { name: '이 노래 누구 노래?', icon: 'fa-microphone', color: '#52a6f2', sec: 12, desc: '곡 제목을 보고 부른 가수(연주자)를 골라요. 안쌤 악보와 요즘 기타 유튜브 인기곡에서 나와요.', meta: '10문제 · 12초' },
-    trivia: { name: '기타 상식 퀴즈', icon: 'fa-lightbulb', color: '#eaac14', sec: 15, desc: '튜닝, 코드, 주법, 장비, 전설의 기타리스트까지. 기타 좀 쳐 본 사람이라면 맞힐 수 있는 문제들!', meta: `10문제 · 15초 · ${TRIVIA.length}문제 중 랜덤` },
+    trivia: { name: '기타 상식 퀴즈', icon: 'fa-lightbulb', color: '#eaac14', sec: 15, desc: '튜닝, 코드, 주법, 장비, 전설의 기타리스트까지. 초보 · 중수 · 고수 중 내 실력에 맞게 골라요!', meta: '10문제 · 15초 · 난이도 3단계' },
 };
+// 기타 상식 난이도 (2026-11-08 사용자 요청: 초보 · 중수 · 고수) — trivia.js 의 lv
+const LV = {
+    1: { name: '초보', em: '🌱', c: '#42a854', who: '기타를 막 시작했어요', ex: '줄 이름 · 기본 코드 · TAB 읽기 · 누구나 아는 곡' },
+    2: { name: '중수', em: '🎸', c: '#e39b12', who: '코드 잡고 곡 좀 쳐 봤어요', ex: '주법 · 이펙터 · 박자 · 유명 기타리스트' },
+    3: { name: '고수', em: '🔥', c: '#e0553a', who: '이론·장비·역사까지 빠삭해요', ex: '모드 · 텐션 코드 · 픽업 · 전설의 뒷이야기' },
+};
+const lvCount = l => TRIVIA.filter(t => t.lv === l).length;
+const modeName = g => g.m.name + (g.lv ? ` · ${LV[g.lv].name}` : '');
 // 점수: 맞히면 100점 + 빨리 맞힐수록 최대 50점, 힌트 하나에 30점 빼기(맞히면 최소 30점)
 const HINT_COST = 30;
 const points = (left, hints) => Math.max(30, 100 + Math.round(50 * left) - HINT_COST * hints);
@@ -148,7 +218,21 @@ function start() {
             <h2>${esc(m.name)}</h2><p>${esc(m.desc)}</p>
             <span class="meta"><span>${esc(m.meta)}</span><span class="sp" style="flex:1"></span><span class="go">시작 →</span></span></button>`).join('')}</div>
         ${adSlot('wide')}`;
-    app.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => begin(b.dataset.m)));
+    app.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => (b.dataset.m === 'trivia' ? pickLevel() : begin(b.dataset.m))));
+    scrollTo(0, 0);
+}
+// 기타 상식: 난이도 고르기
+function pickLevel() {
+    G = null;
+    history.replaceState(null, '', '?m=trivia');
+    app.innerHTML = `<section class="hero"><h1>기타 상식 <em>퀴즈</em></h1><p>내 실력에 맞는 난이도를 골라요. 10문제 · 15초</p></section>
+        <div class="lvs">${[1, 2, 3].map(l => `<button class="lv card" data-lv="${l}" style="--c:${LV[l].c}">
+            <span class="em">${LV[l].em}</span><span class="stars">${'★'.repeat(l)}<i>${'★'.repeat(3 - l)}</i></span>
+            <b>${LV[l].name}</b><small>${esc(LV[l].who)}</small><span class="ex">${esc(LV[l].ex)}</span>
+            <span class="go">${lvCount(l)}문제 중 10문제 · 시작 →</span></button>`).join('')}</div>
+        <p class="lv-back"><button class="btn ghost" id="back"><i class="fas fa-arrow-left"></i>다른 퀴즈</button></p>`;
+    app.querySelectorAll('[data-lv]').forEach(b => b.addEventListener('click', () => begin('trivia', +b.dataset.lv)));
+    document.getElementById('back').onclick = start;
     scrollTo(0, 0);
 }
 
@@ -276,9 +360,9 @@ function loadSheet(s) {
     });
 }
 
-async function build(mode) {
+async function build(mode, lv) {
     if (mode === 'trivia') {
-        const list = fresh(shuffle(TRIVIA), t => t.q, mode).slice(0, N);
+        const list = fresh(shuffle(TRIVIA.filter(t => !lv || t.lv === lv)), t => t.q, mode).slice(0, N);
         return list.map(t => ({ id: t.q, ask: t.q, a: t.a, opts: shuffle([t.a, ...t.w]), x: t.x }));
     }
     if (mode === 'tab') {
@@ -331,15 +415,16 @@ async function build(mode) {
 
 // ---------- 진행 ----------
 let G = null, timer = null;
-async function begin(mode) {
-    history.replaceState(null, '', `?m=${mode}`);
+async function begin(mode, lv = 0) {
+    if (mode !== 'trivia') lv = 0;
+    history.replaceState(null, '', `?m=${mode}${lv ? `&lv=${lv}` : ''}`);
     G = null;
     app.innerHTML = `<p style="text-align:center;padding:60px 0;color:#888"><i class="fas fa-spinner fa-spin"></i> 문제를 고르는 중…</p>`;
     let qs;
-    try { qs = await build(mode); if (qs.length < 4) throw new Error('few'); }
+    try { qs = await build(mode, lv); if (qs.length < 4) throw new Error('few'); }
     catch (e) { app.innerHTML = `<p style="text-align:center;padding:60px 0">문제를 불러오지 못했어요. <a href="" style="text-decoration:underline">다시 시도</a></p>`; return; }
     remember(mode, qs.map(q => q.id));
-    G = { mode, m: MODES[mode], qs, i: 0, score: 0, pts: 0, streak: 0, log: [] };
+    G = { mode, lv, m: MODES[mode], qs, i: 0, score: 0, pts: 0, streak: 0, log: [] };
     ask();
 }
 // 악보 자르기: 그림에서 [t, b] 구간만 같은 비율로 (그림 폭 = 상자 폭). 한 줄 더 보면 다음 줄(없으면 앞 줄)을 따로 붙인다
@@ -369,12 +454,18 @@ function ask() {
             <button class="hint" id="hint"><i class="fas fa-user"></i> 가수 힌트 <small>−${HINT_COST}점</small></button></div>`;
     } else if (G.mode === 'artist') body = `<span class="chip">${esc(q.chip)}</span><div class="song">「${esc(q.title)}」</div><div class="ask" style="font-size:17px;color:#555;font-weight:700">누구 노래일까?</div>`;
     else body = `<div class="ask">${esc(q.ask)}</div>`;
-    app.innerHTML = `<div class="qhd"><span class="md"><i class="fas ${G.m.icon}"></i> ${esc(G.m.name)}</span><span class="no">${G.i + 1} / ${G.qs.length}</span>
-            <span class="sp"></span>${G.streak >= 2 ? `<span class="streak">🔥 ${G.streak}연속</span>` : ''}<span class="ok">맞힘 ${G.score}</span><span class="sc"><b>${G.pts.toLocaleString()}</b>점</span></div>
+    app.innerHTML = `<div class="qhd"><span class="md"><i class="fas ${G.m.icon}"></i> ${esc(G.m.name)}${G.lv ? ` <span class="lvtag" style="--c:${LV[G.lv].c}">${LV[G.lv].em} ${LV[G.lv].name}</span>` : ''}</span><span class="no">${G.i + 1} / ${G.qs.length}</span>
+            <span class="sp"></span>${G.streak >= 2 ? `<span class="streak">🔥 ${G.streak}연속</span>` : ''}<span class="ok">맞힘 ${G.score}</span><span class="sc"><b>${G.pts.toLocaleString()}</b>점</span>
+            <button class="snd" id="snd" aria-label="효과음 켜고 끄기" title="효과음 켜고 끄기"><i class="fas ${soundOn() ? 'fa-volume-high' : 'fa-volume-xmark'}"></i></button></div>
         <div class="timer" id="tm"><i></i></div>
         <div class="qbox card">${body}<div class="choices">${q.opts.map((o, k) => `<button data-o="${esc(o)}"><span class="k">${L[k]}</span>${esc(o)}</button>`).join('')}</div></div>
         <div id="fb"></div>`;
     app.querySelectorAll('.choices button').forEach(b => b.addEventListener('click', () => answer(b.dataset.o)));
+    document.getElementById('snd').addEventListener('click', e => {
+        mem.set('quiz.sound', !soundOn());
+        e.currentTarget.innerHTML = `<i class="fas ${soundOn() ? 'fa-volume-high' : 'fa-volume-xmark'}"></i>`;
+        if (soundOn()) fxSound(true);
+    });
     q.hints = 0;
     if (G.mode === 'tab') {
         const more = document.getElementById('more'), hint = document.getElementById('hint');
@@ -430,6 +521,79 @@ function answer(o) {
         <button class="btn" id="next">${last ? '결과 보기' : '다음 문제'} <i class="fas fa-arrow-right"></i></button></div>`;
     document.getElementById('next').addEventListener('click', next);
     document.getElementById('next').focus({ preventScroll: true });
+    fxShow(ok, o, got);
+}
+
+// ---------- 정답·오답 연출 ----------
+// 연습도구 '코드 진행 청음'과 같은 느낌 (2026-11-08 사용자 요청):
+//   정답 — 팡! 튀어오르며 초록 빛 + 큰 ⭕ 도장 + "띠-링" / 오답 — 부들부들 흔들리고 축 처짐 + 큰 ❌ 도장 + "뿌-뿌-뿌-뿌우~"
+const soundOn = () => mem.get('quiz.sound', true);
+let actx = null;
+function fxTone(freq, start, dur, type, vol, freqEnd) {
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, start);
+    if (freqEnd) o.frequency.linearRampToValueAtTime(freqEnd, start + dur);
+    g.gain.setValueAtTime(0.0001, start);
+    g.gain.exponentialRampToValueAtTime(vol, start + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    o.connect(g);
+    return { o, g };
+}
+function fxSound(ok) {
+    if (!soundOn()) return;
+    try {
+        actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+        if (actx.state === 'suspended') actx.resume();
+        const t = actx.currentTime + 0.02, out = actx.createGain();
+        out.gain.value = 0.5;
+        out.connect(actx.destination);
+        if (ok) {            // 띠-링! — 밝게 올라가는 3음 + 반짝이
+            [[1318.5, 0], [1568, 0.07], [2093, 0.14]].forEach(([f, d]) => {
+                const v = fxTone(f, t + d, 0.45, 'triangle', 0.32);
+                v.g.connect(out); v.o.start(t + d); v.o.stop(t + d + 0.5);
+            });
+            const sp = fxTone(4186, t + 0.2, 0.35, 'sine', 0.08);
+            sp.g.connect(out); sp.o.start(t + 0.2); sp.o.stop(t + 0.6);
+        } else {             // 뿌-뿌-뿌-뿌우~ — 축 처지는 트롬본
+            const lp = actx.createBiquadFilter();
+            lp.type = 'lowpass'; lp.frequency.value = 1100; lp.connect(out);
+            const notes = [[392, 0, 0.26], [370, 0.3, 0.26], [349, 0.6, 0.26], [330, 0.9, 0.95]];
+            notes.forEach(([f, d, len], i) => {
+                const last = i === notes.length - 1;
+                const v = fxTone(f, t + d, len, 'sawtooth', 0.22, last ? f * 0.94 : null);
+                if (last) {
+                    const lfo = actx.createOscillator(), lg = actx.createGain();
+                    lfo.frequency.value = 6; lg.gain.value = 7;
+                    lfo.connect(lg); lg.connect(v.o.frequency);
+                    lfo.start(t + d); lfo.stop(t + d + len);
+                }
+                v.g.connect(lp); v.o.start(t + d); v.o.stop(t + d + len + 0.05);
+            });
+        }
+    } catch (e) {}
+}
+function replay(el, cls) {
+    if (!el) return;
+    el.classList.remove('fx-hit', 'fx-miss', 'fx-reveal');
+    void el.offsetWidth;   // 애니메이션 다시 시작
+    el.classList.add(cls);
+}
+function fxShow(ok, o, got) {
+    const box = app.querySelector('.qbox');
+    const btns = [...app.querySelectorAll('.choices button')];
+    const mine = o == null ? null : btns.find(b => b.dataset.o === o);
+    replay(mine, ok ? 'fx-hit' : 'fx-miss');
+    if (!ok) replay(btns.find(b => b.dataset.o === G.qs[G.i].a), 'fx-reveal');   // 정답 칸은 초록 테두리로 깜빡여 알려 주기
+    replay(document.querySelector('#fb .fb'), ok ? 'fx-hit' : 'fx-miss');
+    if (ok && mine) mine.insertAdjacentHTML('beforeend', `<span class="plus">+${got}</span>`);
+    if (box) {
+        box.querySelector('.stamp')?.remove();
+        box.insertAdjacentHTML('beforeend', `<span class="stamp ${ok ? 'o' : 'x'}" aria-hidden="true"></span>`);
+        const st = box.querySelector('.stamp');
+        setTimeout(() => st.remove(), 1400);
+    }
+    fxSound(ok);
 }
 function next() {
     G.i++;
@@ -442,12 +606,13 @@ function result() {
     const [, rank, cm] = RANK.find(([min]) => G.score * (10 / G.qs.length) >= min);
     const songs = G.log.map(l => l.q.song).filter(s => s && (G.mode === 'tab' || s.on_sale));
     app.innerHTML = `<section class="res">
-        <div class="md"><i class="fas ${G.m.icon}"></i> ${esc(G.m.name)}</div>
+        <div class="md"><i class="fas ${G.m.icon}"></i> ${esc(modeName(G))}</div>
         <div class="score">${G.score}<small> / ${G.qs.length}</small></div>
         <div class="pts">${G.pts.toLocaleString()}점</div>
         <div class="rank">${rank}</div><div class="cm">${esc(cm)}</div>
         <div class="board" id="board"></div>
         <div class="btns"><button class="btn" id="again"><i class="fas fa-rotate-right"></i>다시 하기</button>
+            ${G.lv ? `<button class="btn ghost" id="lvb"><i class="fas fa-signal"></i>다른 난이도</button>` : ''}
             <button class="btn ghost" id="other"><i class="fas fa-shuffle"></i>다른 퀴즈</button>
             <button class="btn ghost" id="share"><i class="fas fa-share-nodes"></i>점수 자랑하기</button></div>
         ${adSlot('r300')}
@@ -459,13 +624,14 @@ function result() {
     </section>`;
     scrollTo(0, 0);
     const g = G;
-    document.getElementById('again').onclick = () => begin(g.mode);
+    document.getElementById('again').onclick = () => begin(g.mode, g.lv);
     document.getElementById('other').onclick = start;
-    document.getElementById('share').onclick = () => share('안쌤의 기타 퀴즈쇼', `${g.m.name} ${g.score}/${g.qs.length} (${g.pts.toLocaleString()}점) — ${rank.replace(/^\S+\s/, '')} 🎸 너는 몇 점?`);
+    if (g.lv) document.getElementById('lvb').onclick = pickLevel;
+    document.getElementById('share').onclick = () => share('안쌤의 기타 퀴즈쇼', `${modeName(g)} ${g.score}/${g.qs.length} (${g.pts.toLocaleString()}점) — ${rank.replace(/^\S+\s/, '')} 🎸 너는 몇 점?`);
     // 다른 사람들과 비교 (db/play_stats.sql 적용 뒤부터 보임)
     if (!g.saved) {
         g.saved = true;
-        rpc('play_quiz_save', { p_mode: g.mode, p_correct: g.score, p_total: g.qs.length, p_score: g.pts }).then(r => {
+        rpc('play_quiz_save', { p_mode: g.lv ? `${g.mode}${g.lv}` : g.mode, p_correct: g.score, p_total: g.qs.length, p_score: g.pts }).then(r => {
             const x = Array.isArray(r) ? r[0] : r;
             if (!x || !x.plays) return;
             const pct = Math.max(1, Math.ceil(x.rank / x.plays * 100));
@@ -482,7 +648,8 @@ addEventListener('keydown', e => {
 });
 
 const P = new URLSearchParams(location.search);
-if (MODES[P.get('m')]) begin(P.get('m')); else start();
+if (P.get('m') === 'trivia' && !LV[P.get('lv')]) pickLevel();   // 상식은 난이도부터 (순위도 난이도마다 따로: trivia1·2·3)
+else if (MODES[P.get('m')]) begin(P.get('m'), +P.get('lv') || 0); else start();
 </script>
 </body>
 </html>
