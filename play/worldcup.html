@@ -59,6 +59,9 @@
     .pick.won { transform: scale(1.03); box-shadow: 0 0 0 3px var(--green-mid), 0 14px 34px rgba(42, 107, 74, 0.2); }
     .pick.lost { opacity: .25; transform: scale(.96); }
     .keys { text-align: center; color: #aaa; font-size: 12px; margin-top: 10px; }
+    .listen { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 8px; }
+    .listen a { text-align: center; font-size: 13px; font-weight: 700; color: #c4302b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 4px; }
+    .listen a:hover { text-decoration: underline; }
     @media (max-width: 640px) {
         .vs { gap: 8px; }
         .pick { padding: 6px; }
@@ -139,6 +142,7 @@
 </footer>
 
 <script src="play.js?v=2026110803"></script>
+<script src="riffs.js?v=2026110801"></script>
 <script>
 // ---------- 주제와 기타 (사진: Wikimedia Commons, 사진마다 작가·라이선스 표시) ----------
 // 실제로 열 때는 안쌤이 찍은 사진이나 쓸 수 있는 사진으로 바꾸는 걸 권함
@@ -248,6 +252,12 @@ const THEMES = {
             //@@GUITARIST@@
         ],
     },
+    riff: {
+        title: '최강 리프곡 월드컵', tag: '리프 64', icon: 'fa-bolt', song: true,
+        desc: 'Smoke on the Water부터 고민중독까지. 기타 치는 사람 심장을 뛰게 한 리프, 최강은?',
+        q: '더 끝내주는 리프는?', rec: '이 리프 쳐 보기 — 안쌤 악보',
+        items: (window.RIFFS || []).map(r => ({ ...r, ko: r.a })),
+    },
     pedal: {
         title: '최애 이펙터 월드컵', tag: '이펙터 @@PEDAL_N@@', icon: 'fa-sliders',
         desc: '오버드라이브냐 퍼즈냐, 와우냐 딜레이냐. 페달보드에 딱 하나만 넣을 수 있다면?',
@@ -272,7 +282,46 @@ const SOON = ['입문 일렉 (100만원 아래)', '기타 앰프', '통기타 �
 
 const { esc, shuffle, adSlot, interstitial, share, catalog, recRow, rpc } = PLAY;
 const app = document.getElementById('app');
-const imgSrc = it => `../images/play/wc/${it.k}.jpg`;
+const imgSrc = it => it.art || `../images/play/wc/${it.k}.jpg`;
+// 곡 카드 그림 (리프 월드컵 — 사진 대신 SVG). 리프 악보는 그리지 않는다(저작권)
+const PAL = [['#ff5a4e', '#6d1430'], ['#4a97ff', '#16296e'], ['#ffb21e', '#9a3a07'], ['#38c172', '#0c4436'], ['#a46bff', '#34156b'], ['#ff7aa8', '#5b1847'], ['#22c1d6', '#0f3a63'], ['#5b6470', '#16191d']];
+function songArt(it, idx) {
+    const [c1, c2] = PAL[idx % PAL.length];
+    const X = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
+    const cw = ch => (/[ㄱ-힝぀-ヿ一-鿿]/.test(ch) ? 1 : ch === ' ' ? 0.3 : /[A-Z0-9]/.test(ch) ? 0.66 : 0.55);
+    const width = t => [...t].reduce((a, ch) => a + cw(ch), 0);
+    const wrap = (text, size, maxW) => {            // 단어 단위로 줄 나누기, 너무 긴 단어는 글자 단위로
+        const lines = []; let cur = '';
+        for (const word of text.split(' ')) {
+            const t = cur ? cur + ' ' + word : word;
+            if (width(t) * size <= maxW) { cur = t; continue; }
+            if (cur) lines.push(cur);
+            cur = '';
+            for (const ch of word) { if (width(cur + ch) * size > maxW) { lines.push(cur); cur = ''; } cur += ch; }
+        }
+        if (cur) lines.push(cur);
+        return lines;
+    };
+    let size = 84, lines;
+    for (size of [84, 74, 64, 56, 48, 42]) { lines = wrap(it.n, size, 520); if (lines.length <= 3) break; }
+    const lh = Math.round(size * 1.12), top = 650 - lh * (lines.length - 1);
+    let h = 0; for (const ch of it.k) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    const bars = Array.from({ length: 14 }, (_, i) => { h = (h * 1103515245 + 12345) >>> 0; const bh = 14 + (h % 46); return `<rect x="${40 + i * 15}" y="${770 - bh}" width="9" height="${bh}" rx="3"/>`; }).join('');
+    const strings = Array.from({ length: 6 }, (_, i) => `<line x1="-40" y1="${470 + i * 26}" x2="640" y2="${330 + i * 26}" stroke-width="${1.5 + i * 0.6}"/>`).join('');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>
+<rect width="600" height="800" fill="url(#g)"/>
+<g opacity=".9"><circle cx="470" cy="190" r="200" fill="#111"/><g fill="none" stroke="#2c2c2c" stroke-width="2"><circle cx="470" cy="190" r="180"/><circle cx="470" cy="190" r="160"/><circle cx="470" cy="190" r="140"/><circle cx="470" cy="190" r="120"/><circle cx="470" cy="190" r="100"/></g><circle cx="470" cy="190" r="62" fill="${c1}"/><circle cx="470" cy="190" r="9" fill="#eee"/></g>
+<g stroke="#fff" opacity=".16">${strings}</g>
+<rect x="40" y="44" width="132" height="52" rx="26" fill="#fff"/><text x="106" y="80" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="28" fill="${c2}">RIFF</text>
+<text x="188" y="80" font-family="Arial,sans-serif" font-weight="700" font-size="28" fill="#fff" opacity=".9">${X(it.y)}</text>
+<g font-family="'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif" fill="#fff">
+${lines.map((l, i) => `<text x="40" y="${top + i * lh}" font-size="${size}" font-weight="900" letter-spacing="-1">${X(l)}</text>`).join('')}
+<text x="42" y="712" font-size="32" font-weight="700" opacity=".88">${X(it.a)}</text></g>
+<g fill="#fff" opacity=".45">${bars}</g></svg>`;
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg).replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29');
+}
+Object.values(THEMES).forEach(t => { if (t.song) t.items.forEach((it, i) => { it.art = songArt(it, i); }); });
+const ytSearch = it => 'https://www.youtube.com/results?search_query=' + encodeURIComponent(`${it.a} ${it.n}`);
 const roundName = n => n === 2 ? '결승' : n === 4 ? '4강' : `${n}강`;
 // 그 주제로 할 수 있는 판 크기 (기타 수만큼, 큰 것부터): 명기 64 → 64·32·16·8강, 기타리스트 128 → 128강부터
 const sizesOf = key => [128, 64, 32, 16, 8].filter(n => n <= THEMES[key].items.length);
@@ -354,6 +403,7 @@ function match() {
             <button class="undo" ${S.hist.length ? '' : 'disabled'}><i class="fas fa-rotate-left"></i> 되돌리기</button></div>
         <p class="q">${esc(S.theme.q)}</p>
         <div class="vs">${card(a, 0)}<span class="mark">VS</span>${card(b, 1)}</div>
+        ${S.theme.song ? `<div class="listen">${[a, b].map(it => `<a href="${esc(ytSearch(it))}" target="_blank" rel="noopener"><i class="fab fa-youtube"></i> ${esc(it.n)} 들어보기</a>`).join('')}</div>` : ''}
         <p class="keys">키보드 ← → 로도 고를 수 있어요</p>`;
     app.querySelectorAll('.pick').forEach(p => p.addEventListener('click', () => choose(+p.dataset.side)));
     scrollTo(0, 0);
@@ -405,7 +455,7 @@ async function winner(w) {
         <div class="crown">🏆 WINNER · ${esc(t.title)} ${S.size}강</div>
         <h1>${esc(w.n)}</h1><div class="ko">${esc(w.ko)} · ${esc(w.y)}</div>
         <div class="big card"><div class="ph-img"><img src="${imgSrc(w)}" alt="${esc(w.n)}"></div>
-            <div class="facts"><div><i class="fas fa-circle-info"></i>${esc(w.d)}</div>${w.p ? `<div><i class="fas fa-user"></i>${esc(w.p)}</div>` : ''}</div></div>
+            <div class="facts"><div><i class="fas fa-circle-info"></i>${esc(w.d)}</div>${w.p ? `<div><i class="fas fa-user"></i>${esc(w.p)}</div>` : ''}${t.song ? `<div><i class="fab fa-youtube" style="color:#e62117"></i><a href="${esc(ytSearch(w))}" target="_blank" rel="noopener" style="text-decoration:underline">유튜브에서 들어보기</a></div>` : ''}</div></div>
         <div class="podium">${second ? `<div><img src="${imgSrc(second.it)}" alt=""><span><small>준우승</small><b>${esc(second.it.n)}</b></span></div>` : ''}
             ${semis.map(o => `<div><img src="${imgSrc(o.it)}" alt=""><span><small>4강</small><b>${esc(o.it.n)}</b></span></div>`).join('')}</div>
         <div class="btns"><button class="btn" id="again"><i class="fas fa-rotate-right"></i>다시 하기</button>
@@ -414,7 +464,7 @@ async function winner(w) {
         ${adSlot('r300')}
         <div id="rk"><p class="stat-soon" style="text-align:center">📊 다른 사람들의 순위를 불러오는 중…</p></div>
         <div class="rec" id="rec"></div>
-        <details class="credits"><summary>사진 출처 (Wikimedia Commons)</summary><ul>${t.items.map(it => `<li>${esc(it.n)} — ${esc(it.by)}, ${esc(it.lic)} · <a href="${esc(it.src)}" target="_blank" rel="noopener">원본</a></li>`).join('')}</ul></details>
+        ${t.song ? '' : `<details class="credits"><summary>사진 출처 (Wikimedia Commons)</summary><ul>${t.items.map(it => `<li>${esc(it.n)} — ${esc(it.by)}, ${esc(it.lic)} · <a href="${esc(it.src)}" target="_blank" rel="noopener">원본</a></li>`).join('')}</ul></details>`}
     </section>`;
     scrollTo(0, 0);
     document.getElementById('again').onclick = () => play(S.key, S.size);
@@ -431,8 +481,15 @@ async function winner(w) {
     }
     // 일렉 악보 추천 — 공개한 일렉기타·기타솔로 악보 중 풀스코어 주문이 많은 곡
     try {
-        const rows = (await catalog()).filter(s => s.on_sale && (s.style === 'electric' || s.style === 'solo'));
+        const all = await catalog();
+        const rows = all.filter(s => s.on_sale && (s.style === 'electric' || s.style === 'solo'));
         rows.sort((a, b) => (b.fullscore_orders || 0) - (a.fullscore_orders || 0));
+        if (t.song) {        // 리프 월드컵: 우승·준우승·4강 곡 중 안쌤 악보가 있으면 그 악보부터
+            const kk = v => PLAY.baseTitle(v).toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+            const want = [w, second && second.it, ...semis.map(o => o.it)].filter(Boolean).map(x => kk(x.n.replace(/\s*\(.*?\)\s*/g, ' ')));
+            const mine = all.filter(s => s.on_sale && want.some(k => k && kk(s.title).startsWith(k)));
+            rows.unshift(...mine.sort((a, b) => want.findIndex(k => kk(a.title).startsWith(k)) - want.findIndex(k => kk(b.title).startsWith(k))));
+        }
         const seen = new Set(), top = rows.filter(s => { const k = PLAY.baseTitle(s.title).toLowerCase(); return !seen.has(k) && seen.add(k); }).slice(0, 6);   // 같은 곡 일렉·솔로는 하나만
         if (top.length) document.getElementById('rec').innerHTML = `<h3><i class="fas fa-music" style="color:var(--green-mid)"></i>${esc(t.rec || '이 기타로 쳐 볼 일렉 악보')} <small>안쌤 TAB악보</small></h3><div class="list">${top.map(recRow).join('')}</div>`;
     } catch (e) {}
