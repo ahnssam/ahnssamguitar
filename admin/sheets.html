@@ -169,6 +169,12 @@
     .pdfinfo .pi-hd { font-weight: 700; color: #333; margin-bottom: 1px; }
     .pdfinfo { margin-top: 8px; font-size: 12.5px; color: #555; }
     .pdfinfo.err { color: var(--red); }
+    .full-box { margin: 12px 0 4px; }
+    .drop.sm { padding: 11px 12px; }
+    .drop.sm i { font-size: 19px; margin-bottom: 4px; }
+    .drop.off { cursor: not-allowed; background: #f5f5f4; border-color: #dcdcdc; color: #999; }
+    .drop.off i { color: #b5b5b5; }
+    .full-box .linkbtn { border: 0; background: none; padding: 0; font: inherit; font-size: 12px; color: var(--sub); text-decoration: underline; cursor: pointer; }
 
     /* ===== 악보 썸네일 (정사각형) =====
        위: 왼쪽 앨범 커버(조금 크게) + 오른쪽에 살짝 겹친 악보 종이(실제 악보 윗부분)
@@ -431,6 +437,16 @@
                 <input type="file" id="pdfInput" accept="application/pdf" hidden>
             </div>
             <div class="pdfinfo" id="pdfInfo"></div>
+            <!-- 합본 PDF (2026-11-08): 파트별로 묶인 곡의 반주 탭에만 보이고, 묶인 파트 PDF가 모두 올라가 있을 때만 열린다 -->
+            <div class="full-box" id="fullBox" hidden>
+                <div class="drop sm" id="fullDrop">
+                    <i class="fas fa-layer-group" id="fullIcon"></i>
+                    <b id="fullTitle">합본 PDF 올리기</b>
+                    <small id="fullName"></small>
+                    <input type="file" id="fullInput" accept="application/pdf" hidden>
+                </div>
+                <div class="pdfinfo" id="fullInfo"></div>
+            </div>
             <div id="thumb" title="앨범 커버 그림을 여기에 끌어다 놓아도 돼요"></div>
             <div class="cap">스토어에 보이는 썸네일 · 악보 윗부분은 PDF 첫 장에서 자동으로 만들어요</div>
             <div class="cv-tools">
@@ -541,6 +557,7 @@
     let linkIds = new Set();   // 편집 중인 악보와 묶인 다른 악보들 (탭 1·2·3)
     let grpKind = '', openedKind = '';   // 묶음 종류: 'parts' = song_key(파트별, 함께 사면 할인) · 'versions' = version_key(편곡별, 따로 팜)
     let newPdf = null;         // 새로 고른 PDF 파일
+    let newFull = null, fullMeta = null, dropFull = false;   // 합본 PDF(반주 + 기타솔로, sheet-pdfs/<반주 id>-full.pdf) — 새로 고른 파일 / 쪽 수·크기 / 저장하면 빼기
     let pdfMeta = null;        // 올린(또는 이미 있는) PDF의 쪽 수·크기 — 안내 줄과 '받을 때 파일 이름'에 쓴다
     let newPreview = null;     // 새로 만든/고른 미리보기 Blob
     let paperSrc = '';         // 편집창 썸네일의 악보 윗부분 (저장된 그림 주소 또는 새로 만든 Blob 주소)
@@ -714,7 +731,7 @@
                     (m => m.length ? `<div class="miss"><i class="fas fa-triangle-exclamation"></i> 빈 칸: ${m.join(' · ')}</div>` : '')(missingOf(s))}${
                     (u => u.length ? `<div class="sugrow"><i class="fas fa-link"></i> 같은 곡 ${u.map(x => (STYLE[x.style] || ['악보'])[0]).join(' · ')} 악보가 따로 있어요 — 묶기 안 됨</div>` : '')(unlinkedSameSong(s))}</td>
                 <td class="c-st"><span class="chip ${s.kind}">${KIND[s.kind] || ''}</span>${s.style ? `<span class="chip">${STYLE[s.style][0]}</span>` : ''}${
-                    s.song_key ? `<span class="chip bundle" title="같은 곡으로 묶인 악보"><i class="fas fa-link"></i> ${sheets.filter(x => x.song_key === s.song_key).map(x => (STYLE[x.style] || ['악보'])[0]).join(' + ')}</span>` : ''}${
+                    s.song_key ? `<span class="chip bundle" title="같은 곡으로 묶인 악보"><i class="fas fa-link"></i> ${sheets.filter(x => x.song_key === s.song_key).map(x => (STYLE[x.style] || ['악보'])[0]).join(' + ')}${sheets.some(x => x.song_key === s.song_key && x.bundle_pdf) ? ' · 합본' : ''}</span>` : ''}${
                     (v => v.length > 1 ? `<span class="chip vers" title="같은 곡 다른 편곡 — 메인에서 한 줄로, 상세 페이지에서 편곡 버튼으로 고른다 (따로 파는 악보, 할인 없음)&#10;${esc(v.map(x => x.title + (x.published ? '' : ' (비공개)')).join(' / '))}"><i class="fas fa-layer-group"></i> 편곡 ${v.length}가지: ${v.map(x => esc(verTag(x.title))).join(' · ')}</span>` : '')(versionsOf(s))}</td>
                 <td class="c-lv"><span class="lv pick" title="눌러서 난이도 바꾸기">${[1, 2, 3, 4, 5].map(i => `<button type="button" data-lv-set="${i}" class="${i <= (s.difficulty || 0) ? '' : 'off'}">●</button>`).join('')}</span></td>
                 <td class="c-pr"><span class="prc" title="숫자를 고치고 확인을 누르면 가격이 바뀌어요"><input type="number" min="0" step="500" value="${s.price || 0}" data-price="${s.id}" aria-label="가격">원<button type="button" class="ok" data-price-ok="${s.id}" hidden>확인</button></span></td>
@@ -914,6 +931,7 @@
     function openEditor(s) {
         editing = s || null;
         newPdf = null; newPreview = null;
+        newFull = null; fullMeta = null; dropFull = false;
         newCover = null; dropCover = false;
         if (newCoverUrl) { URL.revokeObjectURL(newCoverUrl); newCoverUrl = ''; }
         form.reset();
@@ -953,6 +971,7 @@
         $('copyFold').open = false;
         $('linkAddRow').hidden = true;
         renderLinks();
+        renderFull();
         setDifficulty(s && s.difficulty ? s.difficulty : 3);
         updateYt();
         priceHint();
@@ -967,7 +986,7 @@
         if (fromRank) { fromRank = false; showRank(); }
     }
     const formState = () => [...form.elements].filter(el => el.id !== 'linkQ' && el.name !== 'gkind').map(el => el.type === 'checkbox' ? el.checked : el.value).join('\u0001') + '|' + difficulty + '|' + [...linkIds].sort().join() + '|' + grpKind;
-    const isDirty = () => !!newPdf || !!newPreview || !!newCover || dropCover || formState() !== openedState;
+    const isDirty = () => !!newPdf || !!newPreview || !!newCover || dropCover || !!newFull || dropFull || formState() !== openedState;
     // 저장 버튼은 꺼 둔 채로 열리고, 무엇이든 바꾸면 켜진다. 저장하면 다시 꺼진다 (2026-11-08 사용자)
     //   칸 입력·난이도·묶기·PDF·커버가 모두 updateThumb() 를 거쳐서 여기로 온다
     function updateSaveBtn() {
@@ -1396,6 +1415,53 @@
             updateSaveBtn();
         }
     }
+    // ---------- 합본 PDF (2026-11-08 사용자 요청) ----------
+    // 반주 + 기타솔로를 함께 산 사람이 덤으로 받는 합본. 파트별로 묶인 곡(같은 song_key 에 기타솔로가 있음)의 반주 탭에만 보인다.
+    // 묶인 파트(반주·솔로 …)의 PDF가 모두 올라가(저장돼) 있을 때만 열린다 — 하나라도 없으면 잠겨 있고 무엇이 없는지 보여 준다
+    function fullState() {
+        const s = editing;
+        if (!s || !s.song_key || s.style === 'solo') return null;
+        const group = sheets.filter(x => x.song_key === s.song_key);
+        if (!group.some(x => x.style === 'solo')) return null;
+        return { missing: group.filter(x => !filesById[x.id]).sort((a, b) => (PART_ORDER[a.style] ?? 5) - (PART_ORDER[b.style] ?? 5)) };   // 반주 → 솔로 순
+    }
+    function renderFull() {
+        const st = fullState();
+        $('fullBox').hidden = !st;
+        if (!st) return;
+        const off = st.missing.length > 0, had = !!(editing.bundle_pdf && !dropFull), has = !!newFull || had;
+        $('fullDrop').classList.toggle('off', off);
+        $('fullDrop').classList.toggle('done', !off && has);
+        $('fullIcon').className = 'fas ' + (off ? 'fa-lock' : has ? 'fa-circle-check' : 'fa-layer-group');
+        $('fullTitle').textContent = off ? '합본 PDF (아직 잠김)' : newFull ? '새 합본 PDF — 저장하면 올라가요' : had ? '합본 PDF 올림' : dropFull ? '합본 PDF — 저장하면 빠져요' : '합본 PDF 올리기';
+        $('fullName').textContent = off
+            ? `${st.missing.map(x => (STYLE[x.style] || ['악보'])[0]).join(' · ')} PDF를 올리고 저장하면 열려요`
+            : newFull ? newFull.name + ' · 눌러서 다른 파일로' : had ? '눌러서 다른 파일로 바꾸기' : '반주 + 기타솔로를 함께 산 사람에게 덤으로 줘요';
+        $('fullInfo').className = 'pdfinfo';
+        $('fullInfo').innerHTML = off ? '' : (fullMeta ? `${fullMeta.pages}페이지 · ${(fullMeta.size / 1024 / 1024).toFixed(1)}MB` : '')
+            + (has ? `${fullMeta ? ' · ' : ''}<button type="button" class="linkbtn" id="fullDel">합본 빼기</button>` : dropFull ? '<button type="button" class="linkbtn" id="fullUndo">빼지 않기</button>' : '');
+    }
+    const fullDrop = $('fullDrop');
+    fullDrop.onclick = () => { if (!fullDrop.classList.contains('off')) $('fullInput').click(); };
+    fullDrop.addEventListener('dragover', e => { e.preventDefault(); if (!fullDrop.classList.contains('off')) fullDrop.classList.add('over'); });
+    fullDrop.addEventListener('dragleave', () => fullDrop.classList.remove('over'));
+    fullDrop.addEventListener('drop', e => { e.preventDefault(); fullDrop.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f && !fullDrop.classList.contains('off')) useFull(f); });
+    $('fullInput').onchange = e => { const f = e.target.files[0]; if (f) useFull(f); e.target.value = ''; };
+    $('fullInfo').addEventListener('click', e => {
+        if (e.target.closest('#fullDel')) { newFull = null; fullMeta = null; dropFull = !!editing.bundle_pdf; renderFull(); updateSaveBtn(); }
+        if (e.target.closest('#fullUndo')) { dropFull = false; renderFull(); updateSaveBtn(); }
+    });
+    async function useFull(file) {
+        const bad = msg => { $('fullInfo').className = 'pdfinfo err'; $('fullInfo').textContent = msg; };
+        if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) { bad('PDF 파일만 올릴 수 있어요.'); return; }
+        if (file.size > 50 * 1024 * 1024) { bad('50MB 이하 파일만 올릴 수 있어요.'); return; }
+        $('fullInfo').className = 'pdfinfo'; $('fullInfo').textContent = '합본 PDF를 읽고 있어요…';
+        try {
+            const doc = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+            newFull = file; dropFull = false; fullMeta = { pages: doc.numPages, size: file.size };
+        } catch (err) { console.error(err); bad('PDF를 읽지 못했어요. 파일이 손상되지 않았는지 확인해 주세요.'); return; }
+        renderFull(); updateSaveBtn();
+    }
     function pdfMsg(text, isErr) { $('pdfInfo').textContent = text; $('pdfInfo').className = 'pdfinfo' + (isErr ? ' err' : ''); }
     // PDF 칸: 올렸으면 '업로드 완료' + 파일 이름 (눌러서 다른 PDF로 바꿀 수 있다)
     function setDrop(name) {
@@ -1644,6 +1710,22 @@
                 if (up.error) throw up.error;
                 const { error } = await sb.from('sheet_files').upsert({ sheet_id: id, pdf_path: path, file_name: newPdf.name, file_size: newPdf.size });
                 if (error) throw error;
+            }
+            // 합본 PDF: 반주 행에 붙는다(<반주 id>-full.pdf + bundle_pdf). bundle_pdf 만 바꾸면 수정 시각은 그대로라 '새로 나온 악보' 순서가 안 바뀐다
+            if (editing && (newFull || dropFull)) {
+                const st = fullState();
+                if (newFull) {
+                    if (!st || st.missing.length) throw new Error('묶인 파트 PDF를 모두 올린 뒤에 합본을 올릴 수 있어요');
+                    $('edMsg').textContent = '합본 PDF를 올리고 있어요…';
+                    const up = await sb.storage.from(PDF_BUCKET).upload(`${id}-full.pdf`, newFull, { upsert: true, contentType: 'application/pdf' });
+                    if (up.error) throw up.error;
+                    const { error } = await sb.from('sheets').update({ bundle_pdf: true }).eq('id', id);
+                    if (error) throw error;
+                } else if (editing.bundle_pdf) {
+                    const { error } = await sb.from('sheets').update({ bundle_pdf: false }).eq('id', id);
+                    if (error) throw error;
+                    await sb.storage.from(PDF_BUCKET).remove([`${id}-full.pdf`]);
+                }
             }
             if (!editing && row.published) {
                 const { error } = await sb.from('sheets').update({ published: true }).eq('id', id);
