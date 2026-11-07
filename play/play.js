@@ -52,10 +52,22 @@
         return r.json();
     }
     async function previews() {
-        const r = await fetch(SB_URL + '/rest/v1/sheets?select=id,title,artist,style,preview_path,updated_at,cover_path&published=eq.true&preview_path=not.is.null', { headers: { apikey: SB_KEY } });
+        const r = await fetch(SB_URL + '/rest/v1/sheets?select=id,title,artist,style,kind,preview_path,updated_at,cover_path&published=eq.true&preview_path=not.is.null', { headers: { apikey: SB_KEY } });
         if (!r.ok) throw new Error('previews ' + r.status);
         return r.json();
     }
+    // 놀이터 기록 함수(db/play_stats.sql). 아직 적용 전이거나 실패하면 throw — 부르는 쪽에서 조용히 숨긴다
+    async function rpc(name, body) {
+        const r = await fetch(SB_URL + '/rest/v1/rpc/' + name, { method: 'POST', headers: { apikey: SB_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+        if (!r.ok) throw new Error(name + ' ' + r.status);
+        const t = await r.text();
+        return t ? JSON.parse(t) : null;
+    }
+    // 브라우저에 남기는 작은 기억(최근에 낸 문제 등). 막혀 있어도 게임은 그대로
+    const mem = {
+        get(k, d) { try { const v = localStorage.getItem('play.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+        set(k, v) { try { localStorage.setItem('play.' + k, JSON.stringify(v)); } catch (e) {} },
+    };
     const pvUrl = s => SB_URL + '/storage/v1/object/public/sheet-previews/' + encodeURIComponent(s.preview_path) + '?v=' + encodeURIComponent(s.updated_at || '');
     const cvUrl = s => s.cover_path ? SB_URL + '/storage/v1/object/public/sheet-covers/' + encodeURIComponent(s.cover_path) + '?v=' + encodeURIComponent(s.updated_at || '') : '';
     const STYLE = { acoustic: '통기타', electric: '일렉기타', fingerstyle: '핑거스타일', solo: '기타솔로', chord: '코드악보', bass: '베이스' };
@@ -67,5 +79,5 @@
     const recRow = s => `<a href="../tab-detail.html?id=${encodeURIComponent(s.id)}"><span class="cv"${cvUrl(s) ? ` style="background-image:url('${esc(cvUrl(s))}')"` : ''}>${cvUrl(s) ? '' : '<i class="fas fa-music"></i>'}</span>`
         + `<span class="mt"><b>${esc(s.title)}</b><small>${esc(s.artist || '')} · ${STYLE[s.style] || ''}</small></span>${IS_APP ? '' : `<span class="pr">${s.price ? Number(s.price).toLocaleString() + '원' : '악보 보기'}</span>`}</a>`;
 
-    window.PLAY = { esc, shuffle, adSlot, interstitial, toast, share, catalog, previews, pvUrl, cvUrl, STYLE, baseTitle, recRow, IS_APP };
+    window.PLAY = { esc, shuffle, adSlot, interstitial, toast, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow, IS_APP };
 })();

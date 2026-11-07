@@ -10,7 +10,7 @@
 <link rel="icon" href="../images/favicon.ico" type="image/x-icon">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="play.css?v=2026110702">
+<link rel="stylesheet" href="play.css?v=2026110703">
 <style>
     /* 시작: 주제 고르기 */
     .hero { text-align: center; padding: 34px 0 6px; }
@@ -79,6 +79,32 @@
     .podium small { display: block; font-size: 11.5px; color: var(--gold); font-weight: 700; }
     .podium b { font-size: 13px; }
     .win .btns { margin-top: 18px; }
+    /* 우승 비율 순위 */
+    .rank { max-width: 640px; margin: 18px auto 0; padding: 14px 16px 8px; text-align: left; }
+    .rank h3 { font-size: 16px; font-weight: 900; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .rank h3 small { font-size: 12px; color: var(--sub); font-weight: 500; }
+    .rank ol { list-style: none; margin-top: 8px; }
+    .rank li { display: grid; grid-template-columns: 26px 36px minmax(0, 1fr) 120px 58px; align-items: center; gap: 8px; padding: 6px 4px; border-top: 1px solid var(--line); font-size: 13px; }
+    .rank li.hd { font-size: 11.5px; color: var(--sub); border-top: 0; padding-bottom: 2px; }
+    .rank li.me { background: var(--green-faint); border-radius: 8px; }
+    .rank .no { font-weight: 900; color: var(--gold); text-align: center; }
+    .rank li:not(.hd):nth-child(n+5) .no { color: #999; }
+    .rank img { width: 36px; height: 44px; object-fit: contain; background: #f1f4f2; border-radius: 6px; display: block; }
+    .rank .nm { min-width: 0; }
+    .rank .nm b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rank .nm small { display: block; color: var(--sub); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rank .wr { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; }
+    .rank .wr .bar { flex: 1; height: 8px; background: #e8eeea; border-radius: 99px; overflow: hidden; }
+    .rank .wr .bar i { display: block; height: 100%; background: var(--green-mid); }
+    .rank .mr { font-size: 12px; color: #555; text-align: right; }
+    .rank .more { display: block; margin: 6px auto 4px; font-size: 13px; color: var(--green-deep); font-weight: 700; }
+    .rank .note { font-size: 11.5px; color: var(--sub); padding: 6px 4px 4px; }
+    @media (max-width: 560px) { .rank { padding: 12px 10px 6px; } .rank li { grid-template-columns: 22px 32px minmax(0, 1fr) 92px; gap: 6px; } .rank .mr { display: none; } .rank img { width: 32px; height: 40px; } }
+    .theme .rkline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: -2px; font-size: 12.5px; }
+    .theme .lead { color: var(--green-deep); font-weight: 700; }
+    .theme .lead:empty { display: none; }
+    .theme .rk-link { color: #666; font-size: 12.5px; text-decoration: underline; text-underline-offset: 3px; }
+    .theme .rk-link:hover { color: var(--green-deep); }
     .stat-soon { max-width: 560px; margin: 16px auto 0; padding: 12px 14px; font-size: 13px; color: #666; text-align: left; border: 1px dashed #c9d6ce; border-radius: 12px; background: #fbfdfc; }
     .stat-soon b { color: var(--green-deep); }
     .credits { max-width: 860px; margin: 24px auto 0; font-size: 11.5px; color: #999; text-align: left; }
@@ -106,7 +132,7 @@
     <div>© 2026 안쌤의 기타나무숲</div>
 </footer>
 
-<script src="play.js?v=2026110702"></script>
+<script src="play.js?v=2026110703"></script>
 <script>
 // ---------- 주제와 기타 (사진: Wikimedia Commons, 사진마다 작가·라이선스 표시) ----------
 // 실제로 열 때는 안쌤이 찍은 사진이나 쓸 수 있는 사진으로 바꾸는 걸 권함
@@ -161,7 +187,7 @@ const THEMES = {
 // 다음에 만들 주제 (준비 중으로만 보임)
 const SOON = ['입문 일렉 (100만원 아래)', '통기타 브랜드', '이펙터 페달', '기타 앰프', '전설의 기타리스트 기타'];
 
-const { esc, shuffle, adSlot, interstitial, share, catalog, recRow } = PLAY;
+const { esc, shuffle, adSlot, interstitial, share, catalog, recRow, rpc } = PLAY;
 const app = document.getElementById('app');
 const imgSrc = it => `../images/play/wc/${it.k}.jpg`;
 const roundName = n => n === 2 ? '결승' : n === 4 ? '4강' : `${n}강`;
@@ -174,6 +200,7 @@ function start() {
         <h2><i class="fas ${t.icon}" style="color:var(--green-mid)"></i>${esc(t.title)} <small>${t.tag}</small></h2>
         <p>${esc(t.desc)}</p>
         <div class="btns"><button class="btn" data-go="${key}" data-n="16"><i class="fas fa-play"></i>16강 시작</button><button class="btn ghost" data-go="${key}" data-n="8">8강 빠르게</button></div>
+        <div class="rkline"><span class="lead" data-lead="${key}"></span><button class="rk-link" data-rank="${key}"><i class="fas fa-ranking-star"></i> 순위 보기</button></div>
     </div>`;
     app.innerHTML = `<section class="hero"><h1>기타 <em>이상형 월드컵</em></h1><p>둘 중 하나만 고르세요. 끝까지 남는 게 당신의 운명의 기타!</p></section>
         <div class="themes">${Object.entries(THEMES).map(([k, t]) => card(k, t)).join('')}
@@ -182,16 +209,22 @@ function start() {
         </div>
         ${adSlot('wide')}`;
     app.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => play(b.dataset.go, +b.dataset.n)));
+    app.querySelectorAll('[data-rank]').forEach(b => b.addEventListener('click', () => rankPage(b.dataset.rank)));
     scrollTo(0, 0);
+    // 지금 1위 (기록이 쌓인 뒤에만 보임)
+    app.querySelectorAll('[data-lead]').forEach(el => loadRank(el.dataset.lead).then(d => {
+        const top = d.list[0];
+        if (d.plays && top && top.wins) el.textContent = `📊 지금 1위: ${top.it.ko} (우승 ${pct(top.wr)}) · ${d.plays.toLocaleString()}판`;
+    }).catch(() => {}));
 }
 
 // ---------- 대결 ----------
-let S = null;   // { key, theme, size, cur: [...], next: [...], i, hist: [], lost: {k: 강} }
+let S = null;   // { key, theme, size, cur: [...], next: [...], i, hist: [], out: [{it, at: 몇 강에서 졌나}], log: [[이긴 k, 진 k], ...] }
 function play(key, size) {
     const theme = THEMES[key];
     history.replaceState(null, '', `?t=${key}&n=${size}`);
     const pool = shuffle(theme.items).slice(0, size);
-    S = { key, theme, size, cur: pool, next: [], i: 0, hist: [], out: [] };
+    S = { key, theme, size, cur: pool, next: [], i: 0, hist: [], out: [], log: [] };
     match();
 }
 function match() {
@@ -218,9 +251,10 @@ function choose(side) {
     busy = true;
     const picks = app.querySelectorAll('.pick');
     picks[side].classList.add('won'); picks[1 - side].classList.add('lost');
-    S.hist.push({ cur: S.cur, next: S.next.slice(), i: S.i, out: S.out.slice() });
+    S.hist.push({ cur: S.cur, next: S.next.slice(), i: S.i, out: S.out.slice(), log: S.log.slice() });
     const w = S.cur[S.i + side], l = S.cur[S.i + 1 - side];
     S.out.push({ it: l, at: S.cur.length });
+    S.log.push([w.k, l.k]);              // [이긴 기타, 진 기타] — 순위 집계용
     S.next.push(w); S.i += 2;
     setTimeout(() => {
         busy = false;
@@ -258,7 +292,7 @@ async function winner(w) {
             <button class="btn ghost" id="other"><i class="fas fa-shuffle"></i>다른 월드컵</button>
             <button class="btn ghost" id="share"><i class="fas fa-share-nodes"></i>결과 공유</button></div>
         ${adSlot('r300')}
-        <div class="stat-soon"><b>📊 다른 사람들은 뭘 골랐을까? (준비 중)</b><br>실제로 만들면 우승·대결 결과를 모아 '우승 비율 순위'와 '이 대결에서 몇 %가 골랐는지'를 보여 줄 수 있어요.</div>
+        <div id="rk"><p class="stat-soon" style="text-align:center">📊 다른 사람들의 순위를 불러오는 중…</p></div>
         <div class="rec" id="rec"></div>
         <details class="credits"><summary>사진 출처 (Wikimedia Commons)</summary><ul>${t.items.map(it => `<li>${esc(it.n)} — ${esc(it.by)}, ${esc(it.lic)} · <a href="${esc(it.src)}" target="_blank" rel="noopener">원본</a></li>`).join('')}</ul></details>
     </section>`;
@@ -266,6 +300,15 @@ async function winner(w) {
     document.getElementById('again').onclick = () => play(S.key, S.size);
     document.getElementById('other').onclick = start;
     document.getElementById('share').onclick = () => share('기타 이상형 월드컵', `내 ${t.title} 우승은 「${w.n}」 🎸 너는 뭐 고를래?`);
+    // 결과 저장 → 다른 사람들 순위 (db/play_stats.sql 적용 뒤부터. 그 전엔 '곧 열려요')
+    const s = S;
+    if (!s.saved) {
+        s.saved = true;
+        rpc('play_wc_save', { p_theme: s.key, p_size: s.size, p_matches: s.log }).catch(() => {})
+            .then(() => loadRank(s.key))
+            .then(d => { if (S === s) document.getElementById('rk').innerHTML = rankHtml(s.key, d, w.k); })
+            .catch(() => { if (S === s) document.getElementById('rk').innerHTML = SOON_BOX; });
+    }
     // 일렉 악보 추천 — 공개한 일렉기타·기타솔로 악보 중 풀스코어 주문이 많은 곡
     try {
         const rows = (await catalog()).filter(s => s.on_sale && (s.style === 'electric' || s.style === 'solo'));
@@ -275,9 +318,54 @@ async function winner(w) {
     } catch (e) {}
 }
 
-// 주소로 바로 들어오면(?t=classic&n=16) 그 월드컵부터
+// ---------- 순위 (우승 비율 = 우승 ÷ 나온 판, 1:1 승률 = 대결에서 이긴 비율) ----------
+const SOON_BOX = `<div class="stat-soon"><b>📊 다른 사람들은 뭘 골랐을까?</b><br>순위는 곧 열려요. 우승 비율과 1:1 승률을 모아서 보여 줄게요.</div>`;
+const pct = v => (v * 100 < 10 && v > 0 ? (v * 100).toFixed(1) : Math.round(v * 100)) + '%';
+async function loadRank(key) {
+    const rows = await rpc('play_wc_stats', { p_theme: key });
+    if (!Array.isArray(rows)) throw new Error('stats');
+    const by = new Map(rows.map(r => [r.item, r]));
+    const plays = rows.length ? rows[0].plays : 0;
+    const list = THEMES[key].items.map(it => {
+        const r = by.get(it.k) || {};
+        const games = r.games || 0, wins = r.wins || 0, mw = r.match_wins || 0, mt = r.match_total || 0;
+        return { it, games, wins, mw, mt, wr: games ? wins / games : 0, mr: mt ? mw / mt : 0 };
+    }).sort((a, b) => b.wr - a.wr || b.mr - a.mr || b.games - a.games);
+    return { plays, list };
+}
+function rankHtml(key, d, mine, all) {
+    if (!d.plays) return `<div class="stat-soon"><b>📊 아직 기록이 없어요</b><br>첫 번째 기록의 주인공이 되어 보세요!</div>`;
+    const max = Math.max(...d.list.map(x => x.wr), 0.01);
+    const rows = all ? d.list : d.list.slice(0, 8);
+    const mineRow = !all && mine && !rows.some(x => x.it.k === mine) ? d.list.find(x => x.it.k === mine) : null;
+    const li = x => `<li class="${x.it.k === mine ? 'me' : ''}"><span class="no">${d.list.indexOf(x) + 1}</span><img src="${imgSrc(x.it)}" alt="" loading="lazy">
+        <span class="nm"><b>${esc(x.it.n)}</b><small>${esc(x.it.ko)}${x.it.k === mine ? ' · 내 우승' : ''}</small></span>
+        <span class="wr"><span class="bar"><i style="width:${(x.wr / max * 100).toFixed(1)}%"></i></span>${pct(x.wr)}</span><span class="mr">${x.mt ? pct(x.mr) : '-'}</span></li>`;
+    return `<div class="rank card"><h3>📊 다른 사람들의 우승 비율 <small>${esc(THEMES[key].title)} · 지금까지 ${d.plays.toLocaleString()}판</small></h3>
+        <ol><li class="hd"><span>순위</span><span></span><span>기타</span><span>우승 비율</span><span class="mr">1:1 승률</span></li>${rows.map(li).join('')}${mineRow ? `<li class="hd"><span></span><span></span><span>…</span></li>${li(mineRow)}` : ''}</ol>
+        ${all ? '' : `<button class="more" data-allrank="${key}">전체 순위 보기 →</button>`}
+        <p class="note">우승 비율 = 그 기타가 나온 판 중 우승한 비율 · 1:1 승률 = 둘 중 하나 고를 때 뽑힌 비율</p></div>`;
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-allrank]'); if (b) rankPage(b.dataset.allrank); });
+async function rankPage(key) {
+    const t = THEMES[key];
+    S = null;
+    history.replaceState(null, '', `?t=${key}&rank=1`);
+    app.innerHTML = `<section class="win"><div class="crown">📊 RANKING</div><h1>${esc(t.title)}</h1><div class="ko">다른 사람들이 가장 많이 우승시킨 기타</div>
+        <div id="rk"><p class="stat-soon" style="text-align:center">불러오는 중…</p></div>
+        <div class="btns"><button class="btn" data-go="${key}" data-n="16"><i class="fas fa-play"></i>나도 16강 하기</button><button class="btn ghost" data-go="${key}" data-n="8">8강 빠르게</button><button class="btn ghost" id="other"><i class="fas fa-shuffle"></i>다른 월드컵</button></div>
+        ${adSlot('r300')}</section>`;
+    app.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => play(b.dataset.go, +b.dataset.n)));
+    document.getElementById('other').onclick = start;
+    scrollTo(0, 0);
+    try { const d = await loadRank(key); document.getElementById('rk').innerHTML = rankHtml(key, d, null, true); }
+    catch (e) { document.getElementById('rk').innerHTML = SOON_BOX; }
+}
+
+// 주소로 바로 들어오면(?t=classic&n=16) 그 월드컵부터, ?t=classic&rank=1 이면 순위
 const P = new URLSearchParams(location.search);
-if (THEMES[P.get('t')]) play(P.get('t'), [8, 16].includes(+P.get('n')) ? +P.get('n') : 16);
+if (THEMES[P.get('t')] && P.get('rank')) rankPage(P.get('t'));
+else if (THEMES[P.get('t')]) play(P.get('t'), [8, 16].includes(+P.get('n')) ? +P.get('n') : 16);
 else start();
 </script>
 </body>

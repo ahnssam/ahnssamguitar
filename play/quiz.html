@@ -6,11 +6,11 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#2a6b4a">
 <title>기타 퀴즈쇼 | 안쌤의 기타나무숲</title>
-<meta name="description" content="TAB 악보 보고 노래 맞히기, 이 노래 누구 노래?, 기타 상식까지. 10문제로 내 기타 레벨을 알아보세요.">
+<meta name="description" content="악보 한 줄 보고 노래 맞히기, 이 노래 누구 노래?, 기타 상식까지. 10문제로 내 기타 레벨을 알아보세요.">
 <link rel="icon" href="../images/favicon.ico" type="image/x-icon">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="play.css?v=2026110702">
+<link rel="stylesheet" href="play.css?v=2026110703">
 <style>
     .hero { text-align: center; padding: 34px 0 6px; }
     .hero h1 { font-size: clamp(24px, 4.4vw, 36px); font-weight: 900; letter-spacing: -0.02em; }
@@ -31,6 +31,8 @@
     .qhd .no { font-weight: 700; }
     .qhd .sp { flex: 1; }
     .qhd .sc { font-weight: 700; }
+    .qhd .sc b { color: var(--green-deep); font-size: 16px; }
+    .qhd .ok { font-size: 13px; color: var(--sub); }
     .qhd .streak { font-size: 13px; color: #e06a2a; font-weight: 700; }
     .timer { height: 8px; background: #dfe7e2; border-radius: 99px; overflow: hidden; }
     .timer i { display: block; height: 100%; width: 100%; background: var(--green-mid); transform-origin: left; }
@@ -39,10 +41,14 @@
     .qbox .ask { font-size: clamp(18px, 3vw, 23px); font-weight: 900; line-height: 1.45; }
     .qbox .chip { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--green-faint); color: var(--green-deep); margin-bottom: 10px; }
     .song { font-size: clamp(22px, 4vw, 32px); font-weight: 900; margin: 6px 0 4px; }
-    .tabcrop { margin: 14px auto 0; max-width: 760px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: #fff; aspect-ratio: 1000 / 300; position: relative; }
-    .tabcrop img { width: 100%; display: block; margin-top: -12.6%; transition: margin .35s; }
-    .tabcrop.open img { margin-top: 0; }   /* 정답 공개: 같은 높이에서 위로 올려 제목·가수 줄이 보이게 */
-    .hint { margin-top: 10px; font-size: 13px; color: var(--green-deep); font-weight: 700; padding: 6px 12px; border-radius: 999px; border: 1px dashed var(--green-mid); background: #fff; }
+    .tabcrop { margin: 14px auto 0; max-width: 820px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: #fff; position: relative; }
+    .tabcrop .strip { overflow: hidden; }
+    .tabcrop .strip + .strip { border-top: 1px dashed var(--line); }
+    .tabcrop img { width: 100%; max-width: none; display: block; transition: margin .35s, width .35s; }
+    .tabcrop .lbl { position: absolute; right: 8px; bottom: 6px; font-size: 11px; color: #9aa59f; background: rgba(255,255,255,.85); padding: 1px 6px; border-radius: 6px; }
+    .hints { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; }
+    .hint { font-size: 13px; color: var(--green-deep); font-weight: 700; padding: 6px 12px; border-radius: 999px; border: 1px dashed var(--green-mid); background: #fff; }
+    .hint small { font-weight: 500; color: var(--sub); margin-left: 2px; }
     .hint[disabled] { color: #666; border-style: solid; border-color: var(--line); cursor: default; }
     .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
     .choices button { background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 14px 14px; font-size: 15.5px; font-weight: 700; text-align: left; display: flex; align-items: center; gap: 10px; transition: border-color .15s, background .15s; }
@@ -58,6 +64,7 @@
     .fb.ok { background: var(--green-faint); }
     .fb.no { background: #fdeeee; }
     .fb .t { font-weight: 900; font-size: 16px; }
+    .fb .t em { font-style: normal; font-size: 13px; color: var(--green-deep); margin-left: 4px; }
     .fb .x { flex: 1 1 260px; font-size: 13.5px; color: #333; }
     .fb .x a { color: var(--green-deep); font-weight: 700; text-decoration: underline; }
     .fb .btn { padding: 10px 18px; }
@@ -68,7 +75,11 @@
     .res .md { font-weight: 700; color: var(--sub); }
     .res .score { font-size: clamp(54px, 10vw, 84px); font-weight: 900; line-height: 1.1; color: var(--green-deep); font-family: 'Arial Black', 'Noto Sans KR', sans-serif; }
     .res .score small { font-size: .4em; color: #aaa; }
-    .res .rank { font-size: clamp(22px, 4vw, 30px); font-weight: 900; margin-top: 2px; }
+    .res .pts { font-size: 17px; font-weight: 900; color: #333; }
+    .res .rank { font-size: clamp(22px, 4vw, 30px); font-weight: 900; margin-top: 6px; }
+    .board { max-width: 520px; margin: 12px auto 0; padding: 10px 14px; border-radius: 12px; background: #fff; border: 1px solid var(--line); font-size: 14px; }
+    .board b { color: var(--green-deep); }
+    .board:empty { display: none; }
     .res .cm { color: #555; margin-top: 4px; }
     .res .btns { margin-top: 18px; }
     .review { max-width: 760px; margin: 8px auto 0; text-align: left; padding: 8px 16px; }
@@ -100,49 +111,98 @@
     <div>© 2026 안쌤의 기타나무숲</div>
 </footer>
 
-<script src="play.js?v=2026110702"></script>
+<script src="play.js?v=2026110703"></script>
 <script>
-const { esc, shuffle, adSlot, interstitial, share, catalog, previews, pvUrl, cvUrl, STYLE, baseTitle, recRow, IS_APP } = PLAY;
+const { esc, shuffle, adSlot, interstitial, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow } = PLAY;
 const app = document.getElementById('app');
 const N = 10;   // 한 판 문제 수
 
 // ---------- 기타 상식 문제 (a = 정답, w = 오답 3개, x = 해설) ----------
 const TRIVIA = [
+    // 튜닝·지판
     { q: '기타 표준 튜닝에서 6번줄(가장 굵은 줄)의 음은?', a: 'E (미)', w: ['A (라)', 'D (레)', 'G (솔)'], x: '굵은 줄부터 E-A-D-G-B-E. 6번줄과 1번줄이 둘 다 E예요.' },
     { q: '표준 튜닝을 굵은 줄(6번)부터 차례로 적으면?', a: 'E A D G B E', w: ['E A D G C E', 'D A D G A D', 'E A C G B E'], x: 'D A D G A D는 "대드개드"라고 부르는 다른 튜닝이에요.' },
+    { q: '표준 튜닝에서 3번줄의 음은?', a: 'G (솔)', w: ['B (시)', 'D (레)', 'A (라)'], x: '6번줄부터 E A D G B E — 3번줄은 G예요.' },
+    { q: '6번줄 5프렛을 누르면 어느 줄 개방현과 같은 음이 날까?', a: '5번줄 (A)', w: ['4번줄 (D)', '1번줄 (E)', '3번줄 (G)'], x: '이웃한 줄끼리 5프렛으로 맞추는 튜닝법이에요.' },
+    { q: '5프렛 튜닝법에서 혼자만 4프렛으로 맞추는 곳은?', a: '3번줄 4프렛 = 2번줄', w: ['5번줄 4프렛 = 4번줄', '4번줄 4프렛 = 3번줄', '2번줄 4프렛 = 1번줄'], x: 'G와 B 사이만 4프렛(장3도) 간격이라서 그래요.' },
+    { q: '드롭 D 튜닝은 무엇을 바꿀까?', a: '6번줄을 E에서 D로 온음 내린다', w: ['1번줄을 E에서 D로 내린다', '모든 줄을 반음 내린다', '6번줄을 F로 올린다'], x: '6번줄만 낮추면 손가락 하나로 파워코드를 잡을 수 있어 록에서 많이 써요.' },
     { q: '12프렛을 누르면 개방현보다 얼마나 높은 소리가 날까?', a: '1옥타브', w: ['반음', '5도', '2옥타브'], x: '12프렛은 줄 길이의 딱 절반 — 그래서 정확히 1옥타브 위예요.' },
     { q: '프렛 한 칸을 올라가면 음이 얼마나 올라갈까?', a: '반음', w: ['온음', '3도', '1옥타브'], x: '프렛 한 칸 = 반음, 두 칸 = 온음.' },
     { q: '카포(capo)는 무엇을 하는 도구일까?', a: '줄을 한꺼번에 눌러 키를 올린다', w: ['줄을 갈 때 쓴다', '소리를 크게 키운다', '박자를 맞춰 준다'], x: '카포 2프렛이면 같은 코드 모양으로 키가 온음 올라가요.' },
+    // 기타 생김새
     { q: '펜더 스트라토캐스터에 기본으로 달린 픽업은 몇 개?', a: '3개', w: ['1개', '2개', '4개'], x: '싱글코일 픽업 3개 — 넥·가운데·브리지.' },
     { q: '험버커(humbucker) 픽업이 이름처럼 줄여 주는 것은?', a: '"웅—" 하는 잡음(험)', w: ['줄의 떨림', '음량', '튜닝이 틀어지는 것'], x: '코일 두 개를 반대로 감아 험 잡음을 없애요 (hum + buck).' },
-    { q: '레스폴(Les Paul)은 어느 회사의 기타일까?', a: '깁슨 (Gibson)', w: ['펜더 (Fender)', '아이바네즈 (Ibanez)', '야마하 (Yamaha)'], x: '기타리스트 레스 폴과 깁슨이 함께 만든 모델이에요 (1952년).' },
-    { q: 'TAB 악보에서 맨 위 줄은 몇 번 줄일까?', a: '1번줄 (가장 얇은 줄)', w: ['6번줄 (가장 굵은 줄)', '3번줄', '악보마다 다르다'], x: 'TAB은 기타를 내려다본 모습 — 맨 위가 가장 얇은 1번줄이에요.' },
+    { q: '헤드 쪽에서 줄을 받쳐 주는 작은 부품(줄이 지나가는 홈)은?', a: '너트 (nut)', w: ['새들 (saddle)', '프렛 (fret)', '픽가드 (pickguard)'], x: '새들은 반대쪽 브리지에서 줄을 받쳐 줘요.' },
+    { q: '어쿠스틱 기타 앞판의 동그란 구멍 이름은?', a: '사운드홀', w: ['에프홀', '넥 포켓', '브리지 홀'], x: 'f자 모양 구멍(에프홀)은 바이올린이나 할로우 바디 기타에 있어요.' },
+    { q: '넥 속에 들어 있어 넥이 휘지 않게 잡아 주는 쇠막대는?', a: '트러스 로드', w: ['새들', '폴 피스', '트레몰로 암'], x: '육각 렌치로 조금씩 돌려 넥 휨을 조절해요.' },
+    { q: '줄을 감아서 음 높이를 맞추는 헤드의 손잡이는?', a: '줄감개 (튜닝 페그)', w: ['너트', '스트랩 핀', '볼륨 노브'], x: '머신헤드라고도 불러요.' },
+    { q: '기타 몸통에 붙어 픽 긁힘을 막아 주는 판은?', a: '픽가드', w: ['핑거보드', '헤드스톡', '백플레이트'], x: '스트랫의 흰 판, 레스폴의 작은 판이 픽가드예요.' },
+    { q: '일렉기타의 트레몰로 암(웨미 바)으로 하는 것은?', a: '음을 출렁이게 올렸다 내렸다', w: ['볼륨을 줄인다', '픽업을 바꾼다', '줄을 뮤트한다'], x: '살짝 흔들면 비브라토, 크게 누르면 "우우웅" 다이브!' },
+    { q: '클래식 기타 줄은 보통 무엇으로 만들까?', a: '나일론', w: ['스틸(쇠)', '구리', '고무'], x: '통기타·일렉은 쇠줄, 클래식 기타는 나일론 줄이에요.' },
+    { q: '기타 줄 세트에 적힌 "10-46"의 10은?', a: '1번줄 굵기 (0.010인치)', w: ['줄 길이 10인치', '10번 쓸 수 있다', '10프렛까지 쓰는 줄'], x: '숫자가 클수록 굵고, 굵을수록 소리는 단단하지만 누르기 힘들어요.' },
+    { q: '보통 베이스 기타의 줄은 몇 개?', a: '4개', w: ['5개', '6개', '3개'], x: '기타 아래 네 줄(E A D G)과 같은 음을 한 옥타브 낮게 내요.' },
+    { q: '우쿨렐레의 줄은 몇 개?', a: '4개', w: ['5개', '6개', '3개'], x: '보통 G C E A로 맞춰요.' },
+    // 코드·악보
     { q: 'C 코드를 이루는 세 음은?', a: '도 · 미 · 솔', w: ['도 · 파 · 라', '레 · 파 · 라', '솔 · 시 · 레'], x: '도 파 라는 F, 레 파 라는 Dm, 솔 시 레는 G 코드예요.' },
+    { q: 'D 코드를 이루는 세 음은?', a: '레 · 파# · 라', w: ['레 · 파 · 라', '레 · 솔 · 시', '도 · 미 · 솔'], x: '레 · 파 · 라는 Dm 코드예요. 가운데 음이 반음 다르면 메이저↔마이너!' },
+    { q: 'Am 코드를 이루는 세 음은?', a: '라 · 도 · 미', w: ['라 · 도# · 미', '라 · 레 · 파', '미 · 솔 · 시'], x: '라 · 도# · 미는 A(메이저) 코드예요.' },
     { q: '코드 이름 Am의 m은 무슨 뜻?', a: '마이너 (minor)', w: ['메이저 (major)', '뮤트 (mute)', '미디엄 (medium)'], x: '마이너 코드는 조금 어둡고 슬픈 느낌이에요.' },
+    { q: 'G7처럼 코드 이름 뒤의 "7"은 무슨 뜻일까?', a: '7번째 음(단7도)을 더한 코드', w: ['7프렛을 누르라는 뜻', '7번 치라는 뜻', '7번줄까지 치라는 뜻'], x: 'G7 = 솔 · 시 · 레 + 파.' },
+    { q: '코드 이름 G/B에서 슬래시 뒤의 B는 무엇일까?', a: '가장 낮게 칠 음 (베이스)', w: ['같이 칠 멜로디 음', '카포 위치', '다음에 칠 코드'], x: '분수 코드 — 슬래시 뒤 음을 베이스로 쳐요.' },
+    { q: '검지 하나로 여러 줄을 한꺼번에 눌러 잡는 코드는?', a: '바레 코드 (barre)', w: ['오픈 코드', '파워코드', '분수 코드'], x: 'F 코드가 어려운 이유 — 대표적인 바레 코드예요.' },
+    { q: '기본 오픈 Em 코드는 손가락 몇 개로 잡을까?', a: '2개', w: ['1개', '3개', '4개'], x: '5번줄·4번줄 2프렛만 누르면 끝. 가장 쉬운 코드 중 하나예요.' },
+    { q: 'E 코드 모양을 그대로 1프렛 올려 검지로 바레하면 무슨 코드?', a: 'F', w: ['F#', 'G', 'Fm'], x: 'E에서 반음 위가 F — 그래서 F 바레 코드가 E 모양이에요.' },
+    { q: '파워코드(power chord)는 보통 어떤 음으로 만들까?', a: '근음 + 5도', w: ['근음 + 3도 + 5도', '근음 + 7도', '3도 + 7도'], x: '3도가 없어서 메이저도 마이너도 아니에요. 그래서 E5처럼 "5"를 붙여요.' },
+    { q: 'TAB 악보에서 맨 위 줄은 몇 번 줄일까?', a: '1번줄 (가장 얇은 줄)', w: ['6번줄 (가장 굵은 줄)', '3번줄', '악보마다 다르다'], x: 'TAB은 기타를 내려다본 모습 — 맨 위가 가장 얇은 1번줄이에요.' },
+    { q: 'TAB 악보에서 숫자 0은 무슨 뜻?', a: '아무것도 누르지 않고 친다 (개방현)', w: ['치지 않는다', '0번줄을 친다', '쉬어 간다'], x: '0 = 개방현, 다른 숫자 = 누를 프렛 번호예요.' },
+    { q: 'TAB 악보에서 숫자 대신 적힌 x는?', a: '소리 없이 "칙" 하고 막아서 친다 (뮤트)', w: ['두 번 친다', '하모닉스로 친다', '틀린 음 표시'], x: '왼손을 살짝 대고 쳐서 퍼커시브한 소리를 내요.' },
+    { q: '음 이름 뒤의 #(샵)은 무슨 뜻?', a: '반음 올린다', w: ['반음 내린다', '온음 올린다', '세게 친다'], x: '♭(플랫)은 반음 내려요. C# = D♭.' },
+    // 박자
+    { q: '3/4박자는 한 마디에 4분음표가 몇 개?', a: '3개', w: ['4개', '2개', '6개'], x: '쿵짝짝 — 왈츠 박자예요.' },
+    { q: '4/4박자 한 마디에 8분음표는 몇 개 들어갈까?', a: '8개', w: ['4개', '6개', '16개'], x: '4분음표 하나 = 8분음표 둘. 4박 × 2 = 8개.' },
+    { q: '점4분음표(♩.)는 몇 박일까?', a: '1박 반', w: ['1박', '2박', '반 박'], x: '점은 원래 길이의 절반을 더해요. 1 + 0.5 = 1.5박.' },
+    { q: '메트로놈의 BPM은 무엇을 뜻할까?', a: '1분에 몇 박인지', w: ['1초에 몇 박인지', '한 마디에 몇 박인지', '음의 높이'], x: 'Beats Per Minute — 60이면 1초에 한 박이에요.' },
+    // 주법
     { q: '줄을 튕기지 않고 왼손 손가락으로 때려서 소리를 내는 주법은?', a: '해머링 온 (hammer-on)', w: ['풀링 오프 (pull-off)', '벤딩 (bending)', '팜 뮤트 (palm mute)'], x: '풀링 오프는 반대로 손가락을 뜯듯이 떼면서 소리를 내요.' },
     { q: '줄을 밀어 올려 음을 높이는 주법은?', a: '벤딩 (bending)', w: ['슬라이드 (slide)', '하모닉스 (harmonics)', '스트로크 (stroke)'], x: '록 기타 솔로에서 "우~왕" 하고 우는 그 소리!' },
+    { q: '누른 채로 다른 프렛까지 미끄러지듯 옮기는 주법은?', a: '슬라이드', w: ['벤딩', '비브라토', '해머링 온'], x: 'TAB에는 / 나 \\ 로 적어요.' },
+    { q: '음을 잘게 떨어서 노래하듯 울리게 하는 왼손 주법은?', a: '비브라토', w: ['스타카토', '글리산도', '레가토'], x: '줄을 살짝 밀었다 놓았다를 빠르게 되풀이해요.' },
     { q: '팜 뮤트(palm mute)는 어디로 줄을 막을까?', a: '오른손 손날을 브리지 쪽 줄에 살짝', w: ['왼손 엄지로 6번줄을', '카포로 1프렛을', '왼손 손바닥 전체로'], x: '"둥둥둥" 하는 묵직한 소리 — 록·메탈 리프의 기본이에요.' },
-    { q: '파워코드(power chord)는 보통 어떤 음으로 만들까?', a: '근음 + 5도', w: ['근음 + 3도 + 5도', '근음 + 7도', '3도 + 7도'], x: '3도가 없어서 메이저도 마이너도 아니에요. 그래서 E5처럼 "5"를 붙여요.' },
-    { q: '클래식 기타 줄은 보통 무엇으로 만들까?', a: '나일론', w: ['스틸(쇠)', '구리', '고무'], x: '통기타·일렉은 쇠줄, 클래식 기타는 나일론 줄이에요.' },
-    { q: '헤드 쪽에서 줄을 받쳐 주는 작은 부품(줄이 지나가는 홈)은?', a: '너트 (nut)', w: ['새들 (saddle)', '프렛 (fret)', '픽가드 (pickguard)'], x: '새들은 반대쪽 브리지에서 줄을 받쳐 줘요.' },
-    { q: '코드 이름 G/B에서 슬래시 뒤의 B는 무엇일까?', a: '가장 낮게 칠 음 (베이스)', w: ['같이 칠 멜로디 음', '카포 위치', '다음에 칠 코드'], x: '분수 코드 — 슬래시 뒤 음을 베이스로 쳐요.' },
-    { q: '3/4박자는 한 마디에 4분음표가 몇 개?', a: '3개', w: ['4개', '2개', '6개'], x: '쿵짝짝 — 왈츠 박자예요.' },
-    { q: '메트로놈의 BPM은 무엇을 뜻할까?', a: '1분에 몇 박인지', w: ['1초에 몇 박인지', '한 마디에 몇 박인지', '음의 높이'], x: 'Beats Per Minute — 60이면 1초에 한 박이에요.' },
+    { q: '줄에 손가락을 살짝 대기만 하고 쳐서 "띵~" 맑은 소리를 내는 주법은?', a: '하모닉스 (harmonics)', w: ['슬라이드 (slide)', '스트로크 (stroke)', '아르페지오 (arpeggio)'], x: '12·7·5프렛 바로 위에서 잘 나요.' },
+    { q: '코드를 한 음씩 차례로 뜯어 치는 방법은?', a: '아르페지오', w: ['스트로크', '커팅', '트레몰로'], x: '발라드 반주나 핑거스타일에서 많이 써요.' },
+    // 소리·장비
+    { q: '앰프의 게인(Gain)을 올리면 소리가 어떻게 될까?', a: '더 찌그러진다 (드라이브)', w: ['음이 높아진다', '템포가 빨라진다', '메아리가 생긴다'], x: '볼륨은 크기, 게인은 찌그러짐의 양이라고 생각하면 쉬워요.' },
+    { q: '소리를 메아리처럼 몇 번 되풀이해 주는 이펙터는?', a: '딜레이 (delay)', w: ['디스토션 (distortion)', '컴프레서 (compressor)', '튜너 (tuner)'], x: '리버브는 방 울림, 딜레이는 "야호~ 야호~" 메아리!' },
+    { q: '발로 밟았다 뗐다 하며 "와우와우" 소리를 내는 페달은?', a: '와우 페달', w: ['서스테인 페달', '볼륨 페달', '루퍼'], x: '지미 헨드릭스 "Voodoo Child (Slight Return)" 첫 소리가 바로 이거예요.' },
+    // 브랜드·역사
+    { q: '레스폴(Les Paul)은 어느 회사의 기타일까?', a: '깁슨 (Gibson)', w: ['펜더 (Fender)', '아이바네즈 (Ibanez)', '야마하 (Yamaha)'], x: '기타리스트 레스 폴과 깁슨이 함께 만든 모델이에요 (1952년).' },
+    { q: '펜더(Fender)를 세운 사람은?', a: '레오 펜더', w: ['레스 폴', '오빌 깁슨', '폴 리드 스미스'], x: '정작 레오 펜더는 기타를 칠 줄 몰랐다고 해요.' },
+    { q: '드레드넛(dreadnought) 모양 통기타를 처음 내놓은 회사는?', a: '마틴 (Martin)', w: ['펜더 (Fender)', '아이바네즈 (Ibanez)', '리켄배커 (Rickenbacker)'], x: '영국 전함 드레드노트호에서 따온 이름 — 그만큼 크고 소리가 커요.' },
     { q: '세계 최초의 상업용 전기기타는 무엇처럼 생겨서 별명이 붙었을까?', a: '프라이팬', w: ['국자', '테니스 라켓', '바이올린'], x: '1932년 리켄배커 "프라이팬" — 이상형 월드컵에도 나와요!' },
+    // 기타리스트·명곡
     { q: '지미 헨드릭스는 오른손잡이용 기타를 어떻게 쳤을까?', a: '뒤집어서 왼손잡이처럼', w: ['오른손으로 그대로', '왼손잡이용만 주문해서', '줄을 4개만 걸고'], x: '오른손잡이용 스트랫을 뒤집고 줄을 거꾸로 걸어서 쳤어요.' },
     { q: '"Smoke on the Water" 기타 리프로 유명한 밴드는?', a: '딥 퍼플 (Deep Purple)', w: ['레드 제플린 (Led Zeppelin)', '퀸 (Queen)', '너바나 (Nirvana)'], x: '1972년 앨범 《Machine Head》에 실린 곡이에요.' },
     { q: '퀸 브라이언 메이의 기타 "Red Special"은 어디서 났을까?', a: '아버지와 함께 직접 만들었다', w: ['펜더가 선물했다', '깁슨 매장에서 샀다', '경매에서 샀다'], x: '10대 때 아버지와 함께, 낡은 벽난로 나무로 넥을 깎아 만들었어요.' },
     { q: '"Hotel California"의 트윈 기타 솔로로 유명한 밴드는?', a: '이글스 (Eagles)', w: ['비틀즈 (The Beatles)', '오아시스 (Oasis)', '롤링 스톤스 (The Rolling Stones)'], x: '돈 펠더와 조 월시가 주고받는 솔로가 명장면이에요.' },
-    { q: '줄에 손가락을 살짝 대기만 하고 쳐서 "띵~" 맑은 소리를 내는 주법은?', a: '하모닉스 (harmonics)', w: ['슬라이드 (slide)', '스트로크 (stroke)', '아르페지오 (arpeggio)'], x: '12·7·5프렛 바로 위에서 잘 나요.' },
-    { q: 'G7처럼 코드 이름 뒤의 "7"은 무슨 뜻일까?', a: '7번째 음(단7도)을 더한 코드', w: ['7프렛을 누르라는 뜻', '7번 치라는 뜻', '7번줄까지 치라는 뜻'], x: 'G7 = 솔 · 시 · 레 + 파.' },
+    { q: '"Sweet Child O\' Mine" 인트로 리프를 친 건즈 앤 로지스 기타리스트는?', a: '슬래시', w: ['에디 반 헤일런', '잉베이 맘스틴', '커크 해밋'], x: '손 풀기로 장난삼아 치던 리프가 곡이 됐대요.' },
+    { q: '오른손 손가락으로 지판을 두드리는 "태핑"을 유명하게 만든 기타리스트는?', a: '에디 반 헤일런', w: ['에릭 클랩튼', '키스 리처즈', '조지 해리슨'], x: '1978년 연주곡 "Eruption"이 기타 세상을 뒤집었어요.' },
+    { q: 'B.B. 킹이 자기 기타들에 붙인 이름은?', a: '루실 (Lucille)', w: ['블래키 (Blackie)', '트리거 (Trigger)', '프랑켄스트랫 (Frankenstrat)'], x: '공연장 불 속에 기타를 구하러 들어갔던 일에서 붙은 이름이에요.' },
+    { q: '에릭 클랩튼의 별명은?', a: '슬로우핸드 (Slowhand)', w: ['기타 히어로', '블루스 킹', '스피드 킹'], x: '줄이 끊어지면 관객이 천천히 박수 치며 기다린 데서 나온 별명이에요.' },
+    { q: '야드버즈(The Yardbirds)를 거쳐 간 "3대 기타리스트"가 아닌 사람은?', a: '지미 헨드릭스', w: ['에릭 클랩튼', '제프 벡', '지미 페이지'], x: '클랩튼·벡·페이지가 모두 야드버즈 출신이에요.' },
+    { q: '"Smells Like Teen Spirit"을 부른 밴드는?', a: '너바나 (Nirvana)', w: ['펄 잼 (Pearl Jam)', '그린 데이 (Green Day)', '오아시스 (Oasis)'], x: '커트 코베인의 파워코드 4개짜리 리프로 시작해요.' },
+    { q: '"Wonderwall"을 부른 밴드는?', a: '오아시스 (Oasis)', w: ['블러 (Blur)', '라디오헤드 (Radiohead)', '콜드플레이 (Coldplay)'], x: '통기타 입문곡으로도 유명해요 (카포 2프렛).' },
+    { q: '"Stairway to Heaven"을 만든 밴드는?', a: '레드 제플린 (Led Zeppelin)', w: ['딥 퍼플 (Deep Purple)', '블랙 사바스 (Black Sabbath)', '이글스 (Eagles)'], x: '지미 페이지가 라이브에서 더블넥 기타로 연주했어요.' },
 ];
 
 // ---------- 퀴즈 종류 ----------
 const MODES = {
-    tab: { name: 'TAB 보고 노래 맞히기', icon: 'fa-guitar', color: '#42a854', sec: 25, desc: '안쌤 악보의 첫 줄만 보여 줘요. 코드와 TAB만 보고 무슨 곡인지 맞혀 보세요.', meta: '10문제 · 25초 · 힌트 있음' },
+    tab: { name: '악보 보고 노래 맞히기', icon: 'fa-guitar', color: '#42a854', sec: 30, desc: '안쌤 악보의 한 줄만 보여 줘요. 코드와 TAB만 보고 무슨 곡인지 맞혀 보세요. 막히면 한 줄 더 보기 · 가수 힌트!', meta: '10문제 · 30초 · 힌트 2개' },
     artist: { name: '이 노래 누구 노래?', icon: 'fa-microphone', color: '#52a6f2', sec: 12, desc: '곡 제목을 보고 부른 가수(연주자)를 골라요. 안쌤 악보 목록에서 나와요.', meta: '10문제 · 12초' },
-    trivia: { name: '기타 상식 퀴즈', icon: 'fa-lightbulb', color: '#eaac14', sec: 15, desc: '튜닝, 코드, 주법, 전설의 기타까지. 기타 좀 쳐 본 사람이라면 맞힐 수 있는 문제들!', meta: '10문제 · 15초 · 해설 있음' },
+    trivia: { name: '기타 상식 퀴즈', icon: 'fa-lightbulb', color: '#eaac14', sec: 15, desc: '튜닝, 코드, 주법, 장비, 전설의 기타리스트까지. 기타 좀 쳐 본 사람이라면 맞힐 수 있는 문제들!', meta: `10문제 · 15초 · ${TRIVIA.length}문제 중 랜덤` },
 };
+// 점수: 맞히면 100점 + 빨리 맞힐수록 최대 50점, 힌트 하나에 30점 빼기(맞히면 최소 30점)
+const HINT_COST = 30;
+const points = (left, hints) => Math.max(30, 100 + Math.round(50 * left) - HINT_COST * hints);
 const RANK = [
     [10, '🏆 기타 신(神)', '더 가르칠 게 없네요. 안쌤 자리를 노리는 중?'],
     [8, '🔥 무대 체질', '이 정도면 버스킹 나가도 되겠어요!'],
@@ -152,6 +212,7 @@ const RANK = [
 ];
 
 function start() {
+    G = null;
     history.replaceState(null, '', location.pathname);
     app.innerHTML = `<section class="hero"><h1>안쌤의 <em>기타 퀴즈쇼</em></h1><p>10문제로 알아보는 내 기타 레벨. 친구랑 점수 내기 해 보세요!</p></section>
         <div class="modes">${Object.entries(MODES).map(([k, m]) => `<button class="mode card" data-m="${k}">
@@ -166,32 +227,144 @@ function start() {
 // ---------- 문제 만들기 ----------
 const nfc = s => String(s || '').normalize('NFC').trim();
 const key = s => nfc(s).toLowerCase().replace(/[\s.,'’!?&()-]/g, '');
-// 같은 곡(편곡·파트가 달라도)은 하나로
-function uniqSongs(rows, title) {
-    const m = new Map();
-    shuffle(rows).forEach(r => { const k = key(baseTitle(title(r))); if (k && !m.has(k)) m.set(k, r); });
-    return [...m.values()];
+// 보기에 쓰는 곡 이름: "(2025 편곡)", "(안쌤ver)", "쉽게", "매운맛 …" 같은 판 표시와
+// 끝에 붙은 설명 괄호("(귀멸의 칼날 OST)", "(봇치 더 락!)")는 뺀다 — 답이 보기에 드러나지 않게. "(Itte)" 같은 원제는 둔다
+const qTitle = t => baseTitle(nfc(t)).replace(/\s*\(안쌤\s*ver\.?\)\s*/i, ' ').replace(/\s+(매운맛|순한맛).*$/, '').replace(/\s+쉽게$/, '').trim()
+    .replace(/\s*\(([^)]*)\)$/, (m, x) => (/[^\x00-\x7f]|OST|vs/i.test(x) ? '' : m)).trim();
+// 악보 보고 맞히기에서 뺄 곡: 곡이 아니라 연습용 진행
+const NOT_SONG = /^neo soul progression$/i;
+
+// 최근에 낸 문제는 뒤로 미룬다 (이 브라우저에서 최근 30개)
+function fresh(list, id, mode) {
+    const seen = new Set(mem.get('quiz.seen.' + mode, []));
+    return [...list.filter(x => !seen.has(id(x))), ...list.filter(x => seen.has(id(x)))];
 }
+function remember(mode, ids) {
+    const old = mem.get('quiz.seen.' + mode, []).filter(x => !ids.includes(x));
+    mem.set('quiz.seen.' + mode, [...old, ...ids].slice(-30));
+}
+
+// 미리보기 그림에서 TAB 줄(보표) 찾기 — 연한 회색 가로줄 6개(베이스는 4개)가 모이면 한 줄.
+// 줄 아래 음표 기둥 수와 줄 안 숫자 잉크를 세서, 쉼표만 있는 줄(인트로 쉼 등)은 건너뛴다.
+function analyze(img) {
+    const W = img.naturalWidth, H = img.naturalHeight;
+    if (!W || !H) return null;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const cx = cv.getContext('2d', { willReadFrequently: true });
+    cx.fillStyle = '#fff'; cx.fillRect(0, 0, W, H); cx.drawImage(img, 0, 0);
+    const px = cx.getImageData(0, 0, W, H).data, g = new Uint8Array(W * H);
+    for (let i = 0, j = 0; i < g.length; i++, j += 4) g[i] = (px[j] + px[j + 1] + px[j + 2]) / 3;
+    const x0 = 30, x1 = W - 30, span = x1 - x0;
+    const ys = [];
+    for (let y = 0; y < H; y++) {
+        let l = 0, b = 0;
+        for (let o = y * W + x0, e = y * W + x1; o < e; o++) { const v = g[o]; if (v < 235) l++; if (v < 120) b++; }
+        if (l > span * 0.6 && b < span * 0.3) ys.push(y);   // 회색 보표 줄(검은 빔은 빼기)
+    }
+    const lines = [];
+    ys.forEach(y => { const L = lines[lines.length - 1]; if (L && y - L.b <= 2) L.b = y; else lines.push({ a: y, b: y }); });
+    let groups = [];
+    lines.map(L => (L.a + L.b) / 2).forEach(y => { const G = groups[groups.length - 1]; if (G && y - G[G.length - 1] <= 18) G.push(y); else groups.push([y]); });
+    groups = groups.filter(G => G.length >= 4);
+    if (!groups.length) return null;
+    const cnt = {}; groups.forEach(G => { cnt[G.length] = (cnt[G.length] || 0) + 1; });
+    const n = Math.min(6, +Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a] || b - a)[0]);
+    const staves = [];
+    groups.forEach(G => {
+        if (G.length < n) return;                 // 아래가 잘린 줄
+        let best = 0, bestSpread = Infinity;       // 줄이 더 잡혔으면(괄호선 등) 간격이 가장 고른 n개
+        for (let i = 0; i + n <= G.length; i++) {
+            const gaps = G.slice(i + 1, i + n).map((y, k) => y - G[i + k]);
+            const spread = Math.max(...gaps) - Math.min(...gaps);
+            if (spread < bestSpread) { bestSpread = spread; best = i; }
+        }
+        staves.push({ top: Math.round(G[best]), bot: Math.round(G[best + n - 1]) });
+    });
+    if (!staves.length) return null;
+    const xa = 80, xb = W - 20;
+    staves.forEach(s => {
+        let stems = 0, prev = false;               // 줄 바로 아래 음표 기둥 수
+        for (let x = xa; x < xb; x++) {
+            let d = false;
+            for (let y = s.bot + 4; y < Math.min(H, s.bot + 12) && !d; y++) d = g[y * W + x] < 170;
+            if (d && !prev) stems++;
+            prev = d;
+        }
+        let ink = 0;                               // 줄 안 숫자(마디줄 빼고)가 차지한 칸 수
+        const ya = Math.max(0, s.top - 3), yb = Math.min(H, s.bot + 4), hh = yb - ya;
+        for (let x = xa; x < xb; x++) {
+            let c = 0;
+            for (let y = ya; y < yb; y++) if (g[y * W + x] < 120) c++;
+            if (c && c < hh * 0.8) ink++;
+        }
+        s.stems = stems; s.ink = ink;
+    });
+    // 아래 끝: 음표 기둥·빔이 끝나고 빈 줄이 두 번 나오는 곳 — 그 아래 가사가 있어도(답이 보이니) 자른다
+    const empty = y => { for (let o = y * W + xa, e = y * W + xb; o < e; o++) if (g[o] < 150) return false; return true; };
+    staves.forEach(s => {
+        let y = s.bot + 8;
+        while (y < Math.min(H - 1, s.bot + 46) && !(empty(y) && empty(y + 1))) y++;
+        s.end = y + 2;
+    });
+    staves.forEach((s, i) => {
+        const p = staves[i - 1], q = staves[i + 1];
+        s.t = Math.max(s.top - 58, p ? p.bot + 46 : 102);   // 위: 코드 이름·구간 표시까지 (맨 위 줄은 제목·가수 아래부터)
+        s.b = Math.min(s.end, s.bot + 46, q ? q.top - 30 : H);
+    });
+    let pick = staves.findIndex(s => s.stems >= 8 && s.ink >= 100);
+    if (pick < 0) pick = staves.reduce((m, s, i) => (s.stems * 10 + s.ink > staves[m].stems * 10 + staves[m].ink ? i : m), 0);
+    return { W, H, staves, pick };
+}
+function loadSheet(s) {
+    return new Promise((res, rej) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => { try { const a = analyze(img); a ? res({ s, a }) : rej(new Error('no staff')); } catch (e) { rej(e); } };
+        img.onerror = () => rej(new Error('load'));
+        img.src = pvUrl(s);
+    });
+}
+
 async function build(mode) {
-    if (mode === 'trivia') return shuffle(TRIVIA).slice(0, N).map(t => ({ ask: t.q, a: t.a, opts: shuffle([t.a, ...t.w]), x: t.x }));
+    if (mode === 'trivia') {
+        const list = fresh(shuffle(TRIVIA), t => t.q, mode).slice(0, N);
+        return list.map(t => ({ id: t.q, ask: t.q, a: t.a, opts: shuffle([t.a, ...t.w]), x: t.x }));
+    }
     if (mode === 'tab') {
-        const songs = uniqSongs(await previews(), r => r.title);
-        return songs.slice(0, N).map(s => {
-            const a = baseTitle(nfc(s.title));
-            const others = shuffle(songs.filter(o => o !== s)).map(o => baseTitle(nfc(o.title))).filter(t => key(t) !== key(a)).slice(0, 3);
-            return { ask: '이 악보, 무슨 곡일까?', img: pvUrl(s), hint: nfc(s.artist), a, opts: shuffle([a, ...others]), song: s };
+        // 같은 곡은 하나만 — 반주·핑거 악보를 먼저(솔로·베이스는 곡 처음이 아니라 알아보기 어려움). 코드악보·자작곡은 뺌
+        const rows = (await previews()).filter(s => s.kind !== 'original' && s.style !== 'chord' && !NOT_SONG.test(nfc(s.title)));
+        const pref = s => ({ electric: 0, fingerstyle: 0, acoustic: 1, solo: 2, bass: 3 }[s.style] ?? 4);
+        const uniq = new Map();
+        shuffle(rows).sort((a, b) => pref(a) - pref(b)).forEach(s => { const k = key(qTitle(s.title)); if (k && !uniq.has(k)) uniq.set(k, s); });
+        const songs = [...uniq.values()];
+        const order = fresh(shuffle(songs), s => key(qTitle(s.title)), mode);
+        const got = [];
+        for (let i = 0; i < order.length && got.length < N; ) {      // 그림을 읽어 보표를 못 찾으면 다음 곡
+            const part = order.slice(i, i + (N - got.length) + 2);
+            i += part.length;
+            (await Promise.all(part.map(s => loadSheet(s).catch(() => null)))).forEach(x => { if (x && got.length < N) got.push(x); });
+        }
+        const grp = s => (s.style === 'fingerstyle' ? 'f' : 'b');      // 오답은 같은 느낌(핑거 ↔ 밴드) 곡에서 먼저
+        return got.map(({ s, a: an }) => {
+            const a = qTitle(s.title);
+            const near = shuffle(songs.filter(o => o !== s && grp(o) === grp(s))), far = shuffle(songs.filter(o => o !== s && grp(o) !== grp(s)));
+            const others = [...near, ...far].map(o => qTitle(o.title)).slice(0, 3);
+            return { id: key(a), ask: '이 악보, 무슨 곡일까?', a, opts: shuffle([a, ...others]), song: s, an, hint: nfc(s.artist) };
         });
     }
     // artist: 가수 칸에 괄호(OST·원곡 설명)가 없고 진짜 가수·연주자인 곡만 — 'OO OST', '안쌤의 기타나무숲', 영화사 이름은 빼서 정답이 헷갈리지 않게
-    const rows = (await catalog()).filter(s => s.artist && !/[()]/.test(s.artist) && !/OST|안쌤|기타나무숲|폭스|fox/i.test(s.artist) && s.kind !== 'original');
-    const songs = uniqSongs(rows, r => r.title);
+    const rows = (await catalog()).filter(s => s.artist && !/[()]/.test(s.artist) && !/OST|안쌤|기타나무숲|폭스|fox/i.test(s.artist) && s.kind !== 'original'
+        && !key(s.title).includes(key(s.artist)));      // "뽀로로 - 노는게 제일 좋아"처럼 제목에 답이 든 곡은 빼기
+    const uniq = new Map();
+    shuffle(rows).forEach(r => { const k = key(qTitle(r.title)); if (k && !uniq.has(k)) uniq.set(k, r); });
+    const songs = fresh([...uniq.values()], s => key(qTitle(s.title)), mode);
     const artists = [...new Map(rows.map(r => [key(r.artist), { name: nfc(r.artist), genre: r.genre }])).values()];
     return songs.slice(0, N).map(s => {
         const a = nfc(s.artist);
         const same = shuffle(artists.filter(x => x.genre === s.genre && key(x.name) !== key(a)));
         const any = shuffle(artists.filter(x => key(x.name) !== key(a) && !same.includes(x)));
         const others = [...same, ...any].slice(0, 3).map(x => x.name);
-        return { ask: '', title: baseTitle(nfc(s.title)), chip: `${s.genre || ''}${s.genre ? ' · ' : ''}${STYLE[s.style] || ''} 악보`, a, opts: shuffle([a, ...others]), song: s };
+        return { id: key(qTitle(s.title)), ask: '', title: qTitle(s.title), chip: `${s.genre || ''}${s.genre ? ' · ' : ''}${STYLE[s.style] || ''} 악보`, a, opts: shuffle([a, ...others]), song: s };
     });
 }
 
@@ -199,34 +372,61 @@ async function build(mode) {
 let G = null, timer = null;
 async function begin(mode) {
     history.replaceState(null, '', `?m=${mode}`);
+    G = null;
     app.innerHTML = `<p style="text-align:center;padding:60px 0;color:#888"><i class="fas fa-spinner fa-spin"></i> 문제를 고르는 중…</p>`;
     let qs;
-    try { qs = await build(mode); }
+    try { qs = await build(mode); if (qs.length < 4) throw new Error('few'); }
     catch (e) { app.innerHTML = `<p style="text-align:center;padding:60px 0">문제를 불러오지 못했어요. <a href="" style="text-decoration:underline">다시 시도</a></p>`; return; }
-    G = { mode, m: MODES[mode], qs, i: 0, score: 0, streak: 0, log: [] };
+    remember(mode, qs.map(q => q.id));
+    G = { mode, m: MODES[mode], qs, i: 0, score: 0, pts: 0, streak: 0, log: [] };
     ask();
+}
+// 악보 자르기: 그림에서 [t, b] 구간만 같은 비율로 (그림 폭 = 상자 폭). 한 줄 더 보면 다음 줄(없으면 앞 줄)을 따로 붙인다
+// 휴대폰(좁은 화면)에서는 한 줄을 왼쪽·오른쪽 반으로 나눠 위아래로 — 숫자가 두 배 크게 보이게
+const NARROW = () => matchMedia('(max-width: 640px)').matches;
+function strip(q, st) {
+    const W = q.an.W, h = Math.max(30, st.b - st.t);
+    return (NARROW() ? [[0, 0.53], [0.47, 1]] : [[0, 1]]).map(([a, b]) => {
+        const x0 = a * W, w = (b - a) * W;
+        return `<div class="strip" style="aspect-ratio:${Math.round(w)} / ${h}"><img src="${esc(pvUrl(q.song))}" crossorigin="anonymous" alt="악보 한 줄"
+            style="width:${(W / w * 100).toFixed(3)}%;margin-left:${(-x0 / w * 100).toFixed(3)}%;margin-top:${(-st.t / w * 100).toFixed(3)}%"></div>`;
+    }).join('');
+}
+function showMore(q) {
+    const st = q.an.staves, nx = st[q.an.pick + 1], pv = st[q.an.pick - 1], box = app.querySelector('.tabcrop');
+    if (nx) box.insertAdjacentHTML('beforeend', strip(q, nx));
+    else if (pv) box.insertAdjacentHTML('afterbegin', strip(q, pv));
 }
 function ask() {
     const q = G.qs[G.i];
     const L = 'ABCD';
     let body = '';
-    if (G.mode === 'tab') body = `<div class="ask">${esc(q.ask)}</div><div class="tabcrop"><img src="${esc(q.img)}" alt="악보 첫 줄"></div>
-        <button class="hint" id="hint"><i class="fas fa-lightbulb"></i> 힌트: 가수 보기</button>`;
-    else if (G.mode === 'artist') body = `<span class="chip">${esc(q.chip)}</span><div class="song">「${esc(q.title)}」</div><div class="ask" style="font-size:17px;color:#555;font-weight:700">누구 노래일까?</div>`;
+    if (G.mode === 'tab') {
+        const canMore = q.an.staves.length > 1;
+        body = `<div class="ask">${esc(q.ask)}</div><div class="tabcrop">${strip(q, q.an.staves[q.an.pick])}<span class="lbl">악보 by 안쌤</span></div>
+            <div class="hints">${canMore ? `<button class="hint" id="more"><i class="fas fa-plus"></i> 한 줄 더 보기 <small>−${HINT_COST}점</small></button>` : ''}
+            <button class="hint" id="hint"><i class="fas fa-user"></i> 가수 힌트 <small>−${HINT_COST}점</small></button></div>`;
+    } else if (G.mode === 'artist') body = `<span class="chip">${esc(q.chip)}</span><div class="song">「${esc(q.title)}」</div><div class="ask" style="font-size:17px;color:#555;font-weight:700">누구 노래일까?</div>`;
     else body = `<div class="ask">${esc(q.ask)}</div>`;
     app.innerHTML = `<div class="qhd"><span class="md"><i class="fas ${G.m.icon}"></i> ${esc(G.m.name)}</span><span class="no">${G.i + 1} / ${G.qs.length}</span>
-            <span class="sp"></span>${G.streak >= 2 ? `<span class="streak">🔥 ${G.streak}연속</span>` : ''}<span class="sc">맞힌 문제 ${G.score}</span></div>
+            <span class="sp"></span>${G.streak >= 2 ? `<span class="streak">🔥 ${G.streak}연속</span>` : ''}<span class="ok">맞힘 ${G.score}</span><span class="sc"><b>${G.pts.toLocaleString()}</b>점</span></div>
         <div class="timer" id="tm"><i></i></div>
         <div class="qbox card">${body}<div class="choices">${q.opts.map((o, k) => `<button data-o="${esc(o)}"><span class="k">${L[k]}</span>${esc(o)}</button>`).join('')}</div></div>
         <div id="fb"></div>`;
     app.querySelectorAll('.choices button').forEach(b => b.addEventListener('click', () => answer(b.dataset.o)));
-    const h = document.getElementById('hint');
-    if (h) h.addEventListener('click', () => { q.used = true; h.disabled = true; h.innerHTML = `<i class="fas fa-user"></i> ${esc(q.hint || '정보 없음')}`; });
+    q.hints = 0;
+    if (G.mode === 'tab') {
+        const more = document.getElementById('more'), hint = document.getElementById('hint');
+        if (more) more.addEventListener('click', () => { if (q.done || q.more) return; q.more = true; q.hints++; more.disabled = true; more.innerHTML = '<i class="fas fa-check"></i> 한 줄 더 봤어요'; showMore(q); });
+        hint.addEventListener('click', () => { if (q.done || q.art) return; q.art = true; q.hints++; hint.disabled = true; hint.innerHTML = `<i class="fas fa-user"></i> ${esc(q.hint || '정보 없음')}`; });
+    }
     // 제한 시간
     const bar = app.querySelector('#tm i'), t0 = performance.now(), T = G.m.sec * 1000;
+    q.left = 1;
     cancelAnimationFrame(timer);
     const tick = now => {
         const left = Math.max(0, 1 - (now - t0) / T);
+        q.left = left;
         bar.style.transform = `scaleX(${left})`;
         app.querySelector('#tm').classList.toggle('warn', left < 0.3);
         if (left <= 0) return answer(null);
@@ -237,26 +437,35 @@ function ask() {
 }
 function answer(o) {
     const q = G.qs[G.i];
-    if (q.done) return;
+    if (!q || q.done) return;
     q.done = true;
     cancelAnimationFrame(timer);
     const ok = o === q.a;
-    if (ok) { G.score++; G.streak++; } else G.streak = 0;
-    G.log.push({ q, o, ok });
+    const got = ok ? points(q.left, q.hints) : 0;
+    if (ok) { G.score++; G.streak++; G.pts += got; } else G.streak = 0;
+    G.log.push({ q, o, ok, got });
     app.querySelectorAll('.choices button').forEach(b => {
         b.disabled = true;
         if (b.dataset.o === q.a) b.classList.add('ok');
         else if (b.dataset.o === o) b.classList.add('no');
     });
-    const crop = app.querySelector('.tabcrop');
-    if (crop) crop.classList.add('open');   // 정답 공개: 악보 제목까지 보이게
+    app.querySelectorAll('.hint').forEach(h => { h.disabled = true; });
+    if (G.mode === 'tab') {                      // 정답 공개: 첫 칸을 같은 높이 그대로 그림 맨 위(전체 폭)로 바꿔 악보 제목·가수가 보이게
+        const img = app.querySelector('.tabcrop .strip img');
+        if (img) Object.assign(img.style, { width: '100%', marginLeft: '0%', marginTop: '0%' });
+        const lbl = app.querySelector('.tabcrop .lbl');
+        if (lbl) lbl.remove();
+    }
+    const sc = app.querySelector('.qhd');
+    sc.querySelector('.ok').textContent = `맞힘 ${G.score}`;
+    sc.querySelector('.sc b').textContent = G.pts.toLocaleString();
     const s = q.song;
     let x = q.x ? esc(q.x) : '';
-    if (s) x = `${G.mode === 'artist' ? `「${esc(q.title)}」 — ${esc(q.a)}` : `${esc(q.a)} — ${esc(nfc(s.artist))}`}${s.on_sale !== false && (G.mode === 'tab' || s.on_sale) ? ` · <a href="../tab-detail.html?id=${encodeURIComponent(s.id)}" target="_blank" rel="noopener">이 곡 악보 보기</a>` : ''}`;
+    if (s) x = `${G.mode === 'artist' ? `「${esc(q.title)}」 — ${esc(q.a)}` : `${esc(q.a)} — ${esc(nfc(s.artist))}`}${G.mode === 'tab' || s.on_sale ? ` · <a href="../tab-detail.html?id=${encodeURIComponent(s.id)}" target="_blank" rel="noopener">이 곡 악보 보기</a>` : ''}`;
     const cov = s && cvUrl(s);
     const last = G.i === G.qs.length - 1;
     document.getElementById('fb').innerHTML = `<div class="fb ${ok ? 'ok' : 'no'}">${cov ? `<img class="cover" src="${esc(cov)}" alt="">` : ''}
-        <span class="t">${ok ? '⭕ 정답!' : o === null ? '⏰ 시간 끝!' : '❌ 땡!'}</span><span class="x">${x}</span>
+        <span class="t">${ok ? `⭕ 정답!<em>+${got}점</em>` : o === null ? '⏰ 시간 끝!' : '❌ 땡!'}</span><span class="x">${x}</span>
         <button class="btn" id="next">${last ? '결과 보기' : '다음 문제'} <i class="fas fa-arrow-right"></i></button></div>`;
     document.getElementById('next').addEventListener('click', next);
     document.getElementById('next').focus({ preventScroll: true });
@@ -274,25 +483,39 @@ function result() {
     app.innerHTML = `<section class="res">
         <div class="md"><i class="fas ${G.m.icon}"></i> ${esc(G.m.name)}</div>
         <div class="score">${G.score}<small> / ${G.qs.length}</small></div>
+        <div class="pts">${G.pts.toLocaleString()}점</div>
         <div class="rank">${rank}</div><div class="cm">${esc(cm)}</div>
+        <div class="board" id="board"></div>
         <div class="btns"><button class="btn" id="again"><i class="fas fa-rotate-right"></i>다시 하기</button>
             <button class="btn ghost" id="other"><i class="fas fa-shuffle"></i>다른 퀴즈</button>
             <button class="btn ghost" id="share"><i class="fas fa-share-nodes"></i>점수 자랑하기</button></div>
         ${adSlot('r300')}
         <div class="review card"><h3>문제 다시 보기</h3><ul>${G.log.map((l, k) => `<li><i class="fas ${l.ok ? 'fa-circle-check' : 'fa-circle-xmark'}"></i><span>
-            <b>${k + 1}. ${esc(G.mode === 'artist' ? `「${l.q.title}」 누구 노래?` : G.mode === 'tab' ? '악보 보고 맞히기' : l.q.ask)}</b>
-            <small>정답: ${esc(l.q.a)}${!l.ok ? ` · 내 답: ${esc(l.o ?? '시간 끝')}` : ''}${l.q.used ? ' · 힌트 씀' : ''}</small></span></li>`).join('')}</ul></div>
+            <b>${k + 1}. ${esc(G.mode === 'artist' ? `「${l.q.title}」 누구 노래?` : G.mode === 'tab' ? `악보 보고 맞히기 — ${l.q.a}` : l.q.ask)}</b>
+            <small>${G.mode === 'tab' ? '' : `정답: ${esc(l.q.a)}`}${!l.ok ? `${G.mode === 'tab' ? '' : ' · '}내 답: ${esc(l.o ?? '시간 끝')}` : `${G.mode === 'tab' ? '' : ' · '}+${l.got}점`}${l.q.hints ? ` · 힌트 ${l.q.hints}개` : ''}</small></span></li>`).join('')}</ul></div>
         <div class="rec">${songs.length ? `<h3><i class="fas fa-music" style="color:var(--green-mid)"></i>이번 퀴즈에 나온 곡 악보 <small>안쌤 TAB악보</small></h3><div class="list">${songs.map(recRow).join('')}</div>`
             : `<h3><i class="fas fa-book" style="color:var(--green-mid)"></i>기초부터 탄탄하게</h3><div class="list"><a href="../#books"><span class="cv"><i class="fas fa-book"></i></span><span class="mt"><b>안쌤 기타 교본</b><small>코드·리듬·주법을 차근차근</small></span></a><a href="../tools.html"><span class="cv"><i class="fas fa-sliders"></i></span><span class="mt"><b>무료 연습도구</b><small>튜너 · 메트로놈 · 지판</small></span></a></div>`}</div>
     </section>`;
     scrollTo(0, 0);
-    document.getElementById('again').onclick = () => begin(G.mode);
+    const g = G;
+    document.getElementById('again').onclick = () => begin(g.mode);
     document.getElementById('other').onclick = start;
-    document.getElementById('share').onclick = () => share('안쌤의 기타 퀴즈쇼', `${G.m.name} ${G.score}/${G.qs.length} — ${rank.replace(/^\S+\s/, '')} 🎸 너는 몇 점?`);
+    document.getElementById('share').onclick = () => share('안쌤의 기타 퀴즈쇼', `${g.m.name} ${g.score}/${g.qs.length} (${g.pts.toLocaleString()}점) — ${rank.replace(/^\S+\s/, '')} 🎸 너는 몇 점?`);
+    // 다른 사람들과 비교 (db/play_stats.sql 적용 뒤부터 보임)
+    if (!g.saved) {
+        g.saved = true;
+        rpc('play_quiz_save', { p_mode: g.mode, p_correct: g.score, p_total: g.qs.length, p_score: g.pts }).then(r => {
+            const x = Array.isArray(r) ? r[0] : r;
+            if (!x || !x.plays) return;
+            const pct = Math.max(1, Math.ceil(x.rank / x.plays * 100));
+            const el = document.getElementById('board');
+            if (el && G === g) el.innerHTML = `📊 지금까지 ${x.plays.toLocaleString()}판 중 <b>${x.rank.toLocaleString()}등</b> · 상위 <b>${pct}%</b>`;
+        }).catch(() => {});
+    }
 }
 
 addEventListener('keydown', e => {
-    if (!G || !app.querySelector('.choices')) return;
+    if (!G || !app.querySelector('.choices') || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = 'abcd1234'.indexOf(e.key.toLowerCase());
     if (k >= 0 && !G.qs[G.i].done) { const b = app.querySelectorAll('.choices button')[k % 4]; if (b) b.click(); }
 });
