@@ -18,7 +18,7 @@ create policy sheet_sales_admin on public.sheet_sales for all to authenticated
 -- 숫자 넣기 (예시):
 -- insert into public.sheet_sales (fullscore_code, sold_total, sold_6m, six_from, as_of)
 -- select v.code, v.total, v.six, date '2026-05-04', date '2026-11-03' from (values
---   ('2312140030', 356, 5)
+--   ('0000000000', 0, 0)   -- (풀스코어 코드, 누적, 6개월)
 -- ) as v(code, total, six)
 -- on conflict (fullscore_code) do update
 --   set sold_total = excluded.sold_total, sold_6m = excluded.sold_6m, six_from = excluded.six_from, as_of = excluded.as_of;
