@@ -1,5 +1,6 @@
-// 기타 놀이터 공통 — 목업 (2026-11-07)
-// 광고는 아직 회색 상자. 실제로 붙일 때 adSlot() 안만 AdSense(또는 카카오 애드핏) 코드로 바꾸면 된다.
+// 기타 놀이터 공통 (2026-11-07 목업 → 2026-11-08 메뉴에 열림)
+// 광고는 아직 안 붙였다. 붙이기 전에는 광고 자리를 아예 안 보이고(전면 광고도 건너뜀), 주소에 ?ads=1 을 붙이면 회색 상자로 자리를 볼 수 있다.
+// 실제로 붙일 때 adSlot() 안만 AdSense(또는 카카오 애드핏) 코드로 바꾸고 ADS_ON 을 true 로.
 (function () {
     const SB_URL = 'https://qpcbrqgqylxkgdwoflku.supabase.co';
     const SB_KEY = 'sb_publishable_5rr-OZ7Sqjk1nXn59R7XnQ_HInATuSV';
@@ -8,12 +9,14 @@
 
     // 광고 자리: kind = 'r300'(300×250) | 'r320'(320×100) | 'wide'(728×90, 폰에선 320×100)
     const SIZE = { r300: '300×250', r320: '320×100', wide: '728×90' };
-    const adSlot = (kind = 'r300', note = '') =>
+    const ADS_ON = /[?&]ads=1\b/.test(location.search);
+    const adSlot = (kind = 'r300', note = '') => !ADS_ON ? '' :
         `<div class="ad ${kind}"><span class="tag">광고</span><div class="box"><b>광고 자리</b><small>${SIZE[kind]} · Google AdSense / 카카오 애드핏</small>${note ? `<small>${esc(note)}</small>` : ''}</div></div>`;
 
     // 결과를 보여 주기 직전 전면 광고(목업). 실제로는 AdSense 'H5 게임 광고'의 adBreak({type:'next'}) 자리 —
     // 광고를 띄울지·언제 닫힐지는 구글이 정한다(우리가 '광고를 봐야 결과'로 막으면 안 됨)
     function interstitial(done) {
+        if (!ADS_ON) return done();
         const el = document.createElement('div');
         el.className = 'inter';
         el.innerHTML = `<div class="in"><div class="top"><span>결과 보기 전 전면 광고 (목업)</span><button class="x" disabled>3</button></div>${adSlot('r300', '실제: AdSense 게임 광고(adBreak)')}<p>실제 광고에서는 닫기 버튼과 시간을 구글이 정해요</p></div>`;
