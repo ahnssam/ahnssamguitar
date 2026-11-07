@@ -33,6 +33,11 @@
     .theme .resume b { display: block; font-size: 14px; }
     .theme .resume small { display: block; font-size: 12px; color: #5b7a68; }
     .theme .resume:hover { background: #e3f0e8; }
+    .theme .resume-row { display: flex; gap: 6px; }
+    .theme .resume-row .resume { flex: 1; min-width: 0; }
+    .theme .reset { flex: none; width: 62px; border-radius: 12px; border: 1px solid var(--line); background: #fff; color: #777; font-size: 12px; font-weight: 700; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+    .theme .reset i { font-size: 13px; }
+    .theme .reset:hover { color: #c0392b; border-color: #f0c4be; background: #fff7f6; }
     .theme.soon { opacity: 0.75; }
     .theme.soon .peek i { background: repeating-linear-gradient(-45deg, #f1f4f2 0 8px, #eaeeeb 8px 16px); display: grid; place-items: center; font-style: normal; color: #b7c0bb; font-size: 22px; }
     .soonlist { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -361,7 +366,8 @@ function start() {
         <div class="peek">${t.items.slice(0, 4).map(it => `<i style="background-image:url('${imgSrc(it)}')"></i>`).join('')}</div>
         <h2><i class="fas ${t.icon}" style="color:var(--green-mid)"></i>${esc(t.title)} <small>${t.tag}</small></h2>
         <p>${esc(t.desc)}</p>
-        ${saved && saved.key === key ? `<button class="resume" data-resume><i class="fas fa-play"></i><span><b>하던 거 이어 하기</b><small>${saved.size}강 · 지금 ${roundName(saved.cur.length)} ${saved.i / 2 + 1} / ${saved.cur.length / 2}</small></span></button>` : ''}
+        ${saved && saved.key === key ? `<div class="resume-row"><button class="resume" data-resume><i class="fas fa-play"></i><span><b>하던 거 이어 하기</b><small>${saved.size}강 · 지금 ${roundName(saved.cur.length)} ${saved.i / 2 + 1} / ${saved.cur.length / 2}</small></span></button>
+            <button class="reset" data-reset title="하던 판 지우기"><i class="fas fa-rotate-left"></i><span>초기화</span></button></div>` : ''}
         <div class="btns">${sizeBtns(key)}</div>
         <div class="rkline"><span class="lead" data-lead="${key}"></span><button class="rk-link" data-rank="${key}"><i class="fas fa-ranking-star"></i> 순위 보기</button></div>
     </div>`;
@@ -374,6 +380,7 @@ function start() {
     app.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => play(b.dataset.go, +b.dataset.n)));
     app.querySelectorAll('[data-rank]').forEach(b => b.addEventListener('click', () => rankPage(b.dataset.rank)));
     app.querySelectorAll('[data-resume]').forEach(b => b.addEventListener('click', () => resume(saved)));
+    app.querySelectorAll('[data-reset]').forEach(b => b.addEventListener('click', () => { clearSave(); start(); PLAY.toast('하던 판을 지웠어요'); }));
     scrollTo(0, 0);
     // 지금 1위 (기록이 쌓인 뒤에만 보임)
     app.querySelectorAll('[data-lead]').forEach(el => loadRank(el.dataset.lead).then(d => {
