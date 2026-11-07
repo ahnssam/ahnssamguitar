@@ -317,6 +317,8 @@
     .f label small { font-weight: 400; color: var(--sub); margin-left: 4px; }
     .f input, .f select, .f textarea { border: 1px solid #dadada; border-radius: 8px; padding: 8px 10px; background: #fff; outline: none; width: 100%; }
     .f input:focus, .f select:focus, .f textarea:focus { border-color: var(--green); }
+    .f input[readonly] { background: #f5f6f5; color: #555; cursor: default; }
+    .f input[readonly]:focus { border-color: #dadada; }
     .f textarea { min-height: 70px; resize: vertical; }
     .stars { display: flex; gap: 4px; }
     .stars button { border: 1px solid #dadada; background: #fff; border-radius: 8px; width: 38px; height: 36px; cursor: pointer; color: #ccc; font-size: 13px; }
@@ -488,7 +490,7 @@
                 <div class="f"><label>장르</label>
                     <select name="genre"><option value="">선택 안 함</option><option>가요</option><option>팝</option><option>J-POP</option><option>OST</option><option>록</option><option>연주곡</option><option>클래식</option><option>재즈</option><option>기타</option><option>자작곡</option></select></div>
                 <div class="f"><label>난이도</label><div class="stars" id="stars"></div></div>
-                <div class="f"><label>쪽 수</label><input name="pages" type="number" min="1" title="PDF에서 자동"></div>
+                <div class="f"><label>쪽 수</label><input name="pages" type="number" min="1" readonly tabindex="-1" placeholder="PDF 자동" title="PDF를 올리면 그 PDF의 쪽 수가 저절로 들어가요 (손으로는 못 고쳐요)"></div>
             </div>
             <div class="f"><label>가격 (원) <em>*</em> <small id="priceHint"></small></label><input name="price" type="number" min="0" step="500" value="3000" required></div>
             <div class="f"><label>카포</label>
@@ -947,7 +949,7 @@
         $('edMsg').textContent = '';
         pdfMeta = null; setDrop(''); pdfMsg('');   // 앞에 연 악보의 PDF 안내가 남지 않게 (2026-11-08: 그대에게를 열었는데 토이스토리 PDF 안내가 보였음)
         if (s) {
-            ['title', 'title_original', 'artist', 'kind', 'style', 'genre', 'price', 'pages', 'capo', 'lyricist', 'composer', 'album', 'label', 'release_date', 'komca_code']
+            ['title', 'title_original', 'artist', 'kind', 'style', 'genre', 'price', 'capo', 'lyricist', 'composer', 'album', 'label', 'release_date', 'komca_code']
                 .forEach(k => {
                     const el = form.elements[k];
                     if (!el) return;
@@ -958,6 +960,8 @@
                 });
             form.elements.youtube.value = s.youtube_id ? 'https://youtu.be/' + s.youtube_id : '';
             form.elements.published.checked = !!s.published;
+            // 쪽 수는 PDF에서만 (2026-11-08 사용자: 자동으로만). PDF가 없으면 비워 둔다 — DB 값은 풀스코어에서 옮겨 온 숫자라 실제와 다를 수 있음
+            form.elements.pages.value = filesById[s.id] && s.pages ? s.pages : '';
             const f = filesById[s.id];
             if (f) { pdfMeta = { pages: s.pages, size: f.file_size }; setDrop(f.file_name || 'PDF'); }
             paperSrc = previewUrl(s);
@@ -1647,7 +1651,6 @@
             genre: nul(el.genre.value),
             difficulty,
             price: Math.max(0, parseInt(el.price.value, 10) || 0),
-            pages: parseInt(el.pages.value, 10) || null,
             youtube_id: yt,
             capo: parseInt(el.capo.value, 10) || null,
             lyricist: nul(el.lyricist.value),
@@ -1658,6 +1661,7 @@
             komca_code: nul(el.komca_code.value),
             published: el.published.checked,
         };
+        if (newPdf && pdfMeta && pdfMeta.pages) row.pages = pdfMeta.pages;   // 쪽 수는 새 PDF를 올릴 때만 그 PDF에서
         saving = true; updateSaveBtn();
         const body = $('editor').querySelector('.ed-body');
         body.inert = true;
