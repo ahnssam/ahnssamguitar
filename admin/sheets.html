@@ -293,6 +293,11 @@
     .cap:empty { display: none; }
     .cv-tools { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
     .cv-tools .btn { white-space: nowrap; }
+    /* 묶인 악보의 커버 가져오기 (2026-11-08) */
+    .cv-from { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+    .cv-from button { display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px dashed #cfd9d3; border-radius: 8px; background: #fff; padding: 5px 10px; font: inherit; font-size: 12.5px; font-weight: 700; color: #444; cursor: pointer; }
+    .cv-from button:hover { border-color: var(--green); color: var(--green); }
+    .cv-from img { width: 24px; height: 24px; border-radius: 4px; object-fit: cover; flex: none; }
     .ytp { margin-top: 16px; }
     .ytp .lb { font-size: 11.5px; color: var(--sub); margin-bottom: 6px; text-align: center; }
     .ytp a.v { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #111; box-shadow: 0 0 0 1px var(--line); }
@@ -454,6 +459,7 @@
                 <button class="btn" id="cvDel" type="button" hidden title="이 악보의 앨범 커버 빼기"><i class="fas fa-xmark"></i> 빼기</button>
                 <input type="file" id="cvInput" accept="image/*" hidden>
             </div>
+            <div class="cv-from" id="cvFrom"></div>
             <div class="cap" id="cvNote"></div>
             <div class="ytp" id="ytPrev" hidden></div>
         </div>
@@ -564,6 +570,7 @@
     let newCover = null;       // 새로 고른 앨범 커버 (정사각형으로 자른 Blob)
     let newCoverUrl = '';
     let dropCover = false;     // 저장할 때 이 악보의 앨범 커버를 뺀다
+    let coverFrom = null;      // 묶인 다른 악보의 커버를 가져다 쓴다(그 악보 id) — 저장하면 cover_path 를 그 그림 파일로 (파일은 같이 씀)
     let difficulty = 3;
     let openedState = '';      // 편집창을 열었을 때 값 — 바깥을 눌렀을 때 바뀐 게 있으면 저장
     let pdfReading = false;    // PDF 읽는 중에는 바깥을 눌러도 닫지 않는다
@@ -932,7 +939,7 @@
         editing = s || null;
         newPdf = null; newPreview = null;
         newFull = null; fullMeta = null; dropFull = false;
-        newCover = null; dropCover = false;
+        newCover = null; dropCover = false; coverFrom = null;
         if (newCoverUrl) { URL.revokeObjectURL(newCoverUrl); newCoverUrl = ''; }
         form.reset();
         $('edTitle').textContent = s ? '악보 수정' : '새 악보';
@@ -986,7 +993,7 @@
         if (fromRank) { fromRank = false; showRank(); }
     }
     const formState = () => [...form.elements].filter(el => el.id !== 'linkQ' && el.name !== 'gkind').map(el => el.type === 'checkbox' ? el.checked : el.value).join('\u0001') + '|' + difficulty + '|' + [...linkIds].sort().join() + '|' + grpKind;
-    const isDirty = () => !!newPdf || !!newPreview || !!newCover || dropCover || !!newFull || dropFull || formState() !== openedState;
+    const isDirty = () => !!newPdf || !!newPreview || !!newCover || dropCover || !!coverFrom || !!newFull || dropFull || formState() !== openedState;
     // 저장 버튼은 꺼 둔 채로 열리고, 무엇이든 바꾸면 켜진다. 저장하면 다시 꺼진다 (2026-11-08 사용자)
     //   칸 입력·난이도·묶기·PDF·커버가 모두 updateThumb() 를 거쳐서 여기로 온다
     function updateSaveBtn() {
@@ -1241,7 +1248,8 @@
         const v = k => form.elements[k].value;
         const linked = [...linkIds].map(id => sheets.find(x => x.id === id)).filter(Boolean);
         // 앨범 커버: 새로 고른 그림 > 이 악보의 커버 > 같은 곡으로 묶은 악보의 커버
-        const own = newCover ? newCoverUrl : (!dropCover && editing && editing.cover_path) ? coverUrl(editing) : '';
+        const from = coverFrom && sheets.find(x => x.id === coverFrom);
+        const own = newCover ? newCoverUrl : from ? coverUrl(from) : (!dropCover && editing && editing.cover_path) ? coverUrl(editing) : '';
         const sib = own ? null : linked.find(x => x.cover_path);
         // 썸네일에는 곡명 대신 종류를 크게 적는다 (곡명은 악보 미리보기와 목록 글자에 이미 보임)
         const html = thumbHtml({ style: v('style'), kind: v('kind'), lv: difficulty, title: v('title'), cover: own || coverUrl(sib), paper: paperSrc,
@@ -1249,12 +1257,31 @@
         if (html !== lastThumb) $('thumb').innerHTML = lastThumb = html;
         $('cvBtnTxt').textContent = own ? '커버 바꾸기' : '앨범 커버 올리기';
         $('cvDel').hidden = !own;
-        $('cvNote').textContent = newCover ? '저장하면 올라가요' : dropCover ? '저장하면 커버가 빠져요'
+        renderCoverFrom(linked, from);
+        $('cvNote').textContent = newCover ? '저장하면 올라가요' : from ? `‘${coverLabel(from)}’의 커버를 같이 써요 — 저장하면 바뀌어요` : dropCover ? '저장하면 커버가 빠져요'
             : sib ? `같은 곡 ‘${sib.title}’ (${(STYLE[sib.style] || ['악보'])[0]}) 악보의 커버를 같이 써요` : own ? '' : '커버 그림을 끌어다 놓거나 붙여넣어도 돼요 (없으면 레코드 그림)';
         updatePdfInfo();
         updateSaveBtn();
     }
     form.addEventListener('input', updateThumb);
+    // 묶인 악보의 커버 가져오기 (2026-11-08 사용자 요청): 여러 편곡·파트의 썸네일 커버를 하나로 맞출 때.
+    //   묶인 악보 중 커버가 있고 지금 이 악보와 다른 그림이면 '커버 바꾸기' 아래에 'OO의 커버 가져오기' 단추가 나온다.
+    //   그림 파일은 새로 올리지 않고 같이 쓴다(악보관리는 다른 악보가 쓰는 커버 파일을 지우지 않는다)
+    const coverLabel = x => grpKind === 'versions' ? ((String(x.title || '').match(VER_RE) || [, '기본 편곡'])[1]) : (STYLE[x.style] || ['악보'])[0] + ' 악보';
+    function renderCoverFrom(linked, from) {
+        const cur = newCover ? null : from ? from.cover_path : (!dropCover && editing && editing.cover_path) || null;
+        // 같은 그림을 여러 악보가 같이 쓰면 단추 하나에 이름을 같이 적는다 (예: 2025 편곡 · 쉬운 편곡의 커버 가져오기)
+        const byPath = new Map();
+        linked.filter(x => x.cover_path && x.cover_path !== cur).sort((a, b) => String(a.title).localeCompare(String(b.title), 'ko'))
+            .forEach(x => { if (!byPath.has(x.cover_path)) byPath.set(x.cover_path, []); byPath.get(x.cover_path).push(x); });
+        $('cvFrom').innerHTML = [...byPath.values()].map(g => `<button type="button" data-cover-from="${g[0].id}" title="${esc(g.map(x => x.title).join(' / '))} 악보의 앨범 커버를 이 악보에도 써요"><img src="${esc(coverUrl(g[0]))}" alt="">${esc(g.map(coverLabel).join(' · '))}의 커버 가져오기</button>`).join('');
+    }
+    $('cvFrom').addEventListener('click', e => {
+        const b = e.target.closest('[data-cover-from]'); if (!b) return;
+        if (newCover) { newCover = null; URL.revokeObjectURL(newCoverUrl); newCoverUrl = ''; }
+        coverFrom = b.dataset.coverFrom; dropCover = false;
+        updateThumb();
+    });
 
     // 같은 곡 묶기: 묶인 악보 목록(✕로 풀기) + 곡명으로 찾아 더하기 (그 악보가 이미 다른 악보와 묶여 있으면 그 묶음째)
     const linkLabel = x => `${x.title} — ${(STYLE[x.style] || ['악보'])[0]}${x.artist ? ' · ' + x.artist : ''}`;
@@ -1533,7 +1560,7 @@
         }
         if (newCoverUrl) URL.revokeObjectURL(newCoverUrl);
         newCoverUrl = URL.createObjectURL(newCover);
-        dropCover = false;
+        dropCover = false; coverFrom = null;
         $('edMsg').textContent = '';
         updateThumb();
     }
@@ -1541,6 +1568,7 @@
     $('cvInput').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) useCover(f); };
     $('cvDel').onclick = () => {
         if (newCover) { newCover = null; URL.revokeObjectURL(newCoverUrl); newCoverUrl = ''; }
+        coverFrom = null;
         if (editing && editing.cover_path) dropCover = true;
         updateThumb();
     };
@@ -1698,6 +1726,14 @@
                 const { error } = await sb.from('sheets').update({ cover_path: path }).eq('id', id);
                 if (error) throw error;
                 if (editing && editing.cover_path && editing.cover_path !== path) await removeCover(editing.cover_path, id);
+            } else if (coverFrom) {
+                // 묶인 악보의 커버를 같이 쓴다 — 파일은 그대로, cover_path 만 (커버만 바꾸면 수정 시각은 그대로)
+                const from = sheets.find(x => x.id === coverFrom);
+                if (from && from.cover_path) {
+                    const { error } = await sb.from('sheets').update({ cover_path: from.cover_path }).eq('id', id);
+                    if (error) throw error;
+                    if (editing && editing.cover_path && editing.cover_path !== from.cover_path) await removeCover(editing.cover_path, id);
+                }
             } else if (dropCover && editing && editing.cover_path) {
                 const { error } = await sb.from('sheets').update({ cover_path: null }).eq('id', id);
                 if (error) throw error;
