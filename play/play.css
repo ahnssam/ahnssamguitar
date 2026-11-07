@@ -76,3 +76,74 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 footer { margin-top: 48px; padding: 26px 16px 34px; background: #fff; border-top: 1px solid var(--line); font-size: 12px; color: #888; text-align: center; line-height: 1.9; }
 footer span { margin: 0 6px; display: inline-block; }
 footer .links a { margin: 0 7px; color: #555; }
+
+/* ===== 썸네일 그림 (그림 파일 없이 HTML로 그림) — PLAY.thumb('tab' | 'artist' | 'trivia')
+   상자 높이에 맞춰 크기가 같이 줄고 늘도록 cqh(상자 높이의 1%) 단위를 쓴다. 부모는 position:relative + 높이 */
+.thumb { position: absolute; inset: 0; overflow: hidden; container-type: size; color: #fff; text-align: left; pointer-events: none; }
+.thumb * { box-sizing: border-box; }
+.thumb .bub { position: absolute; left: 6%; top: 10%; z-index: 3; background: #fff; color: #1d1d3a; font-size: 8cqh; font-weight: 900; padding: 3.6cqh 6.6cqh; border-radius: 7cqh; box-shadow: 0 4cqh 9cqh rgba(0, 0, 0, 0.3); transform: rotate(-4deg); letter-spacing: -0.02em; white-space: nowrap; }
+.thumb .bub::after { content: ''; position: absolute; left: 11cqh; bottom: -4cqh; border: 4.2cqh solid transparent; border-top-color: #fff; border-bottom: 0; }
+.thumb .bigq { position: absolute; z-index: 3; width: 33cqh; height: 33cqh; border-radius: 50%; background: #ffd23f; color: #241c55; font: 900 21cqh/33cqh 'Arial Black', sans-serif; text-align: center; box-shadow: 0 0 0 2.6cqh rgba(255, 210, 63, 0.28), 0 5cqh 11cqh rgba(0, 0, 0, 0.35); animation: thBob 2.4s ease-in-out infinite; }
+@keyframes thBob { 0%, 100% { transform: rotate(12deg) translateY(0); } 50% { transform: rotate(4deg) translateY(-2.6cqh); } }
+@keyframes thSpin { to { transform: rotate(360deg); } }
+
+/* 1) 악보 보고 노래 맞히기: 무대 조명 + 악보 한 줄 + ? + 타이머 + ABCD */
+.th-tab { background: radial-gradient(120% 90% at 50% 0%, #3b2f86 0%, #241c55 55%, #160f36 100%); }
+.th-tab .rays { position: absolute; inset: -40%; background: repeating-conic-gradient(from 0deg at 50% 62%, rgba(255, 214, 77, 0.13) 0deg 7deg, transparent 7deg 18deg); animation: thSpin 40s linear infinite; }
+.th-tab .sheet { position: absolute; left: 50%; top: 53%; width: min(84cqw, 176cqh); transform: translate(-50%, -50%) rotate(-3deg); background: #fffdf6; border-radius: 5cqh; padding: 4cqh 4cqh 2cqh; box-shadow: 0 7cqh 16cqh rgba(0, 0, 0, 0.45), 0 0 0 1.6cqh rgba(255, 255, 255, 0.12); transition: transform .3s; }
+.th-tab .sheet svg { display: block; width: 100%; height: auto; }
+.th-tab .ln line { stroke: #b9b9b9; stroke-width: 1; }
+.th-tab .ln .bar { stroke: #777; stroke-width: 1.4; }
+.th-tab .tb { font: 900 13px 'Arial Black', sans-serif; fill: #333; }
+.th-tab .nt rect { fill: #fffdf6; }
+.th-tab .nt text { font: 700 11.5px 'Courier New', monospace; fill: #1a1a1a; text-anchor: middle; }
+.th-tab .stem, .th-tab .beam { stroke: #222; stroke-width: 1.4; }
+.th-tab .beam { stroke-width: 3; }
+.th-tab .bigq { right: 7%; top: 8%; }
+.th-tab .timer { position: absolute; z-index: 3; right: 7%; bottom: 9%; white-space: nowrap; font-size: 6.3cqh; font-weight: 800; color: #ffd23f; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 210, 63, 0.5); border-radius: 999px; padding: 1.6cqh 4.7cqh; }
+.th-tab .abcd { position: absolute; left: 6%; bottom: 8%; display: flex; gap: 2.6cqh; }
+.th-tab .abcd span { width: 13cqh; height: 13cqh; border-radius: 3.6cqh; display: grid; place-items: center; color: #fff; font: 900 6.6cqh 'Arial Black', sans-serif; box-shadow: 0 1.6cqh 0 rgba(0, 0, 0, 0.3); }
+.th-tab .abcd span:nth-child(1) { background: #e8483f; } .th-tab .abcd span:nth-child(2) { background: #3c8df0; } .th-tab .abcd span:nth-child(3) { background: #f2b416; } .th-tab .abcd span:nth-child(4) { background: #3fae5a; }
+
+/* 2) 이 노래 누구 노래?: 파란 무대 + 핀 조명 아래 '?' 가수 + 재생 중인 곡 카드 */
+.th-artist { background: radial-gradient(110% 100% at 75% 0%, #4b95ff 0%, #1d58c4 45%, #0c2a6b 100%); }
+.th-artist .spot { position: absolute; right: 4%; top: 0; width: 42%; height: 100%; background: linear-gradient(rgba(255, 252, 214, 0.55), rgba(255, 252, 214, 0.04) 85%); clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%); }
+.th-artist .floor { position: absolute; right: 4%; bottom: -12cqh; width: 42%; height: 28cqh; border-radius: 50%; background: radial-gradient(rgba(255, 250, 200, 0.45), transparent 70%); }
+.th-artist .singer { position: absolute; right: 9%; bottom: -3cqh; font-size: 66cqh; color: #071a45; filter: drop-shadow(0 0 3cqh rgba(255, 255, 220, 0.35)); }
+.th-artist .singer-q { position: absolute; z-index: 1; right: calc(9% + 19cqh); bottom: 37cqh; font: 900 17cqh 'Arial Black', sans-serif; color: #ffd23f; text-shadow: 0 1.6cqh 0 rgba(0, 0, 0, 0.35); animation: thBob 2.4s ease-in-out infinite; }
+.th-artist .mic { position: absolute; right: calc(9% + 46cqh); bottom: 6cqh; font-size: 22cqh; color: #d9e6ff; transform: rotate(-18deg); }
+.th-artist .player { position: absolute; z-index: 2; left: 6%; top: 50%; width: min(62cqw, 132cqh); transform: translateY(-38%) rotate(-3deg); background: #fff; color: #182544; border-radius: 6cqh; padding: 4.5cqh 5cqh 4cqh; box-shadow: 0 7cqh 16cqh rgba(0, 0, 0, 0.35); }
+.th-artist .player .row { display: flex; align-items: center; gap: 4cqh; }
+.th-artist .cover { width: 24cqh; height: 24cqh; flex: none; border-radius: 4cqh; background: linear-gradient(135deg, #ff7a8a, #ffb347); display: grid; place-items: center; color: #fff; font-size: 11cqh; }
+.th-artist .pm { min-width: 0; white-space: nowrap; overflow: hidden; }
+.th-artist .pm small { display: block; font-size: 4.2cqh; font-weight: 800; letter-spacing: 0.12em; color: #3c8df0; }
+.th-artist .pm b { display: block; font-size: 8.4cqh; overflow: hidden; text-overflow: ellipsis; font-weight: 900; white-space: nowrap; letter-spacing: -0.02em; }
+.th-artist .pm i.who { display: inline-block; white-space: nowrap; font-style: normal; font-size: 5.6cqh; font-weight: 800; color: #fff; background: #182544; border-radius: 2cqh; padding: 0.6cqh 3cqh; margin-top: 1cqh; }
+.th-artist .prog { margin-top: 4cqh; height: 2.2cqh; border-radius: 99px; background: #e3e9f5; position: relative; }
+.th-artist .prog i { position: absolute; left: 0; top: 0; bottom: 0; width: 38%; border-radius: 99px; background: #3c8df0; }
+.th-artist .prog i::after { content: ''; position: absolute; right: -2cqh; top: -1.4cqh; width: 5cqh; height: 5cqh; border-radius: 50%; background: #3c8df0; }
+.th-artist .eq { position: absolute; left: 6%; bottom: 8%; display: flex; align-items: flex-end; gap: 1.6cqh; height: 13cqh; }
+.th-artist .eq span { width: 2.8cqh; background: #ffd23f; border-radius: 1cqh; animation: thEq 0.9s ease-in-out infinite; }
+.th-artist .eq span:nth-child(2) { animation-delay: -0.3s; } .th-artist .eq span:nth-child(3) { animation-delay: -0.6s; } .th-artist .eq span:nth-child(4) { animation-delay: -0.15s; } .th-artist .eq span:nth-child(5) { animation-delay: -0.45s; }
+@keyframes thEq { 0%, 100% { height: 25%; } 50% { height: 100%; } }
+
+/* 3) 기타 상식: 노란 바탕 + 코드 그림 카드 + 문제 카드 + 전구 */
+.th-trivia { background: radial-gradient(rgba(255, 255, 255, 0.28) 1.4px, transparent 1.6px) 0 0 / 15px 15px, linear-gradient(150deg, #ffd84d 0%, #ffb52e 60%, #f39317 100%); color: #3a2600; }
+.th-trivia .chord { position: absolute; left: 7%; top: 50%; width: 46cqh; transform: translateY(-50%) rotate(-6deg); background: #fff; border-radius: 5cqh; padding: 3.4cqh 4cqh 3cqh; box-shadow: 0 6cqh 14cqh rgba(120, 60, 0, 0.3); text-align: center; }
+.th-trivia .chord b { display: block; font-size: 6.4cqh; font-weight: 900; color: #3a2600; margin-bottom: 1.4cqh; white-space: nowrap; }
+.th-trivia .chord svg { display: block; width: 100%; height: auto; }
+.th-trivia .chord .str { stroke: #555; stroke-width: 1.3; }
+.th-trivia .chord .fr { stroke: #888; stroke-width: 1.3; }
+.th-trivia .chord .nut { stroke: #222; stroke-width: 5; }
+.th-trivia .chord .dot { fill: #e8483f; }
+.th-trivia .chord .op { font: 700 11px sans-serif; fill: #444; text-anchor: middle; }
+.th-trivia .card2 { position: absolute; left: calc(7% + 50cqh); right: 6%; top: 50%; transform: translateY(-42%) rotate(3deg); background: #fffdf3; border-radius: 5cqh; padding: 4cqh 5cqh 4.4cqh; box-shadow: 0 6cqh 14cqh rgba(120, 60, 0, 0.3); }
+.th-trivia .card2 .qn { display: inline-block; font: 900 5.4cqh 'Arial Black', sans-serif; color: #fff; background: #3a2600; border-radius: 2cqh; padding: 0.8cqh 3cqh; }
+.th-trivia .card2 p { font-size: 7cqh; font-weight: 900; line-height: 1.3; margin: 2.4cqh 0 3cqh; color: #3a2600; letter-spacing: -0.02em; }
+.th-trivia .card2 .ox { display: flex; gap: 2.4cqh; }
+.th-trivia .card2 .ox span { flex: 1; text-align: center; font: 900 6cqh 'Arial Black', sans-serif; padding: 1.8cqh 0; border-radius: 3cqh; background: #ffe9a3; color: #6b4a00; }
+.th-trivia .card2 .ox span.ok { background: #3fae5a; color: #fff; }
+.th-trivia .bulb { position: absolute; right: 5%; top: 6%; width: 26cqh; height: 26cqh; border-radius: 50%; background: #3a2600; color: #ffe066; display: grid; place-items: center; font-size: 13cqh; box-shadow: 0 0 0 3cqh rgba(255, 255, 255, 0.35), 0 0 9cqh rgba(255, 240, 150, 0.9); animation: thBob 2.6s ease-in-out infinite; }
+.th-trivia .cnt { position: absolute; right: 6%; bottom: 7%; font-size: 6cqh; font-weight: 900; color: #3a2600; background: rgba(255, 255, 255, 0.6); border-radius: 99px; padding: 1.4cqh 4.4cqh; }
+
+@media (prefers-reduced-motion: reduce) { .thumb *, .thumb .bigq { animation: none !important; } }

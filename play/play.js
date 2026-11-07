@@ -15,11 +15,12 @@
 
     // 결과를 보여 주기 직전 전면 광고(목업). 실제로는 AdSense 'H5 게임 광고'의 adBreak({type:'next'}) 자리 —
     // 광고를 띄울지·언제 닫힐지는 구글이 정한다(우리가 '광고를 봐야 결과'로 막으면 안 됨)
-    function interstitial(done) {
+    // 월드컵은 64강·32강·16강·8강으로 넘어갈 때도 부른다(label 로 어느 자리인지 표시)
+    function interstitial(done, label = '결과 보기 전 전면 광고') {
         if (!ADS_ON) return done();
         const el = document.createElement('div');
         el.className = 'inter';
-        el.innerHTML = `<div class="in"><div class="top"><span>결과 보기 전 전면 광고 (목업)</span><button class="x" disabled>3</button></div>${adSlot('r300', '실제: AdSense 게임 광고(adBreak)')}<p>실제 광고에서는 닫기 버튼과 시간을 구글이 정해요</p></div>`;
+        el.innerHTML = `<div class="in"><div class="top"><span>${esc(label)} (목업)</span><button class="x" disabled>3</button></div>${adSlot('r300', '실제: AdSense 게임 광고(adBreak)')}<p>실제 광고에서는 닫기 버튼과 시간을 구글이 정해요</p></div>`;
         document.body.appendChild(el);
         const x = el.querySelector('.x');
         let n = 3;
@@ -27,7 +28,7 @@
             n--;
             if (n > 0) { x.textContent = n; return; }
             clearInterval(t);
-            x.disabled = false; x.textContent = '결과 보기 ✕';
+            x.disabled = false; x.textContent = '계속 ✕';
         }, 1000);
         x.addEventListener('click', () => { el.remove(); done(); });
     }
@@ -82,5 +83,39 @@
     const recRow = s => `<a href="../tab-detail.html?id=${encodeURIComponent(s.id)}"><span class="cv"${cvUrl(s) ? ` style="background-image:url('${esc(cvUrl(s))}')"` : ''}>${cvUrl(s) ? '' : '<i class="fas fa-music"></i>'}</span>`
         + `<span class="mt"><b>${esc(s.title)}</b><small>${esc(s.artist || '')} · ${STYLE[s.style] || ''}</small></span>${IS_APP ? '' : `<span class="pr">${s.price ? Number(s.price).toLocaleString() + '원' : '악보 보기'}</span>`}</a>`;
 
-    window.PLAY = { esc, shuffle, adSlot, interstitial, toast, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow, IS_APP };
+    // 썸네일 그림 (play.css 의 .thumb) — 놀이터 카드와 퀴즈쇼 첫 화면이 같이 쓴다
+    function thumb(kind, opt = {}) {
+        if (kind === 'tab') {
+            const ys = [16, 28, 40, 52, 64, 76];
+            const notes = [[48, 2, 5], [66, 2, 7], [84, 3, 5], [102, 3, 7], [120, 2, 5], [138, 1, 8], [170, 1, 7], [188, 2, 5], [206, 3, 7], [224, 3, 5], [242, 4, 7], [260, 3, 5], [278, 2, 8]];
+            const svg = '<svg viewBox="0 0 300 96"><g class="ln">' + ys.map(y => `<line x1="26" y1="${y}" x2="296" y2="${y}"/>`).join('')
+                + [26, 156, 296].map(x => `<line x1="${x}" y1="16" x2="${x}" y2="76" class="bar"/>`).join('') + '</g>'
+                + '<text class="tb" x="8" y="33">T</text><text class="tb" x="8" y="49">A</text><text class="tb" x="8" y="65">B</text><g class="nt">'
+                + notes.map(([x, st, f]) => { const y = ys[st - 1]; return `<rect x="${x - 6}" y="${y - 6}" width="12" height="12" rx="2"/><text x="${x}" y="${y + 4}">${f}</text><line x1="${x}" y1="80" x2="${x}" y2="90" class="stem"/>`; }).join('')
+                + '</g><line x1="42" y1="90" x2="144" y2="90" class="beam"/><line x1="164" y1="90" x2="284" y2="90" class="beam"/></svg>';
+            return `<div class="thumb th-tab" aria-hidden="true"><span class="rays"></span><span class="timer"><i class="fas fa-stopwatch"></i> 0:30</span>
+                <div class="sheet">${svg}</div><span class="bigq">?</span><span class="bub">이 노래 뭘까?</span>
+                <div class="abcd"><span>A</span><span>B</span><span>C</span><span>D</span></div></div>`;
+        }
+        if (kind === 'artist') {
+            return `<div class="thumb th-artist" aria-hidden="true"><span class="spot"></span><span class="floor"></span>
+                <i class="fas fa-user singer"></i><span class="singer-q">?</span><i class="fas fa-microphone mic"></i>
+                <div class="player"><div class="row"><span class="cover"><i class="fas fa-music"></i></span>
+                    <span class="pm"><small>NOW PLAYING</small><b>「위잉위잉」</b><i class="who">부른 사람 ???</i></span></div>
+                    <div class="prog"><i></i></div></div>
+                <span class="bub">누가 불렀게?</span>
+                <div class="eq"><span></span><span></span><span></span><span></span><span></span></div></div>`;
+        }
+        // trivia: C 코드 그림 + 문제 카드 + 전구
+        const sx = [10, 20, 30, 40, 50, 60], fy = [14, 30, 46, 62, 78];
+        const chord = '<svg viewBox="0 0 70 82">' + fy.slice(1).map(y => `<line x1="10" y1="${y}" x2="60" y2="${y}" class="fr"/>`).join('')
+            + sx.map(x => `<line x1="${x}" y1="14" x2="${x}" y2="78" class="str"/>`).join('') + '<line x1="9" y1="14" x2="61" y2="14" class="nut"/>'
+            + '<text x="10" y="10" class="op">×</text><text x="40" y="10" class="op">o</text><text x="60" y="10" class="op">o</text>'
+            + [[20, 54], [30, 38], [50, 22]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="5.2" class="dot"/>`).join('') + '</svg>';
+        return `<div class="thumb th-trivia" aria-hidden="true"><div class="chord"><b>이 코드는?</b>${chord}</div>
+            <div class="card2"><span class="qn">Q.</span><p>6번 줄 개방현,<br>무슨 음일까?</p><div class="ox"><span>E</span><span>A</span><span>D</span><span>G</span></div></div>
+            <span class="bulb"><i class="fas fa-lightbulb"></i></span>${opt.count ? `<span class="cnt">${opt.count}문제</span>` : ''}</div>`;
+    }
+
+    window.PLAY = { thumb, esc, shuffle, adSlot, interstitial, toast, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow, IS_APP };
 })();

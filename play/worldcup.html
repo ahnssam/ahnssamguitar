@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
 <meta name="theme-color" content="#2a6b4a">
 <title>기타 이상형 월드컵 | 안쌤의 기타나무숲</title>
 <meta name="description" content="둘 중 하나만 산다면? 일렉기타 명기부터 괴상한 기타까지, 내 마음속 1등 기타를 골라 보세요.">
 <link rel="icon" href="../images/favicon.ico" type="image/x-icon">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="play.css?v=2026110703">
+<link rel="stylesheet" href="play.css?v=2026110803">
 <style>
     /* 시작: 주제 고르기 */
     .hero { text-align: center; padding: 34px 0 6px; }
@@ -137,7 +138,7 @@
     <div>© 2026 안쌤의 기타나무숲</div>
 </footer>
 
-<script src="play.js?v=2026110801"></script>
+<script src="play.js?v=2026110803"></script>
 <script>
 // ---------- 주제와 기타 (사진: Wikimedia Commons, 사진마다 작가·라이선스 표시) ----------
 // 실제로 열 때는 안쌤이 찍은 사진이나 쓸 수 있는 사진으로 바꾸는 걸 권함
@@ -236,18 +237,47 @@ const THEMES = {
             { k: 'twang', n: 'Bo Diddley "Twang Machine"', ko: '보 디들리 네모 기타', y: '1960년쯤', d: '네모난 기타! 그레치가 보 디들리를 위해 만든 사각형 몸통', p: '보 디들리', by: 'Eden, Janine and Jim', lic: 'CC BY 2.0', src: 'https://commons.wikimedia.org/wiki/File:Bo_Diddley%27s_Fred_Gretsch_%22Twang_Machine%22_(ca.1960)_-_Play_It_Loud._MET_(2019-05-13_18.36.00_by_Eden,_Janine_and_Jim).jpg' },
             { k: 'gittler', n: 'Gittler Guitar', ko: '기틀러 기타', y: '1970년대', d: '몸통이 없다! 금속 뼈대만 남은 기타', p: '', by: 'Frank Kovalchek', lic: 'CC BY 2.0', src: 'https://commons.wikimedia.org/wiki/File:Gittler_(electric_guitar)_(1970-1985)_-_MIM_PHX.jpg' },
             { k: 'corvus', n: 'Gibson Corvus', ko: '깁슨 코버스', y: 1982, d: '"깡통따개"라는 별명이 붙은 몸통', p: '', by: 'mbaylor', lic: 'CC BY 2.0', src: 'https://commons.wikimedia.org/wiki/File:Gibson_Corvus_II.jpg' },
+            //@@WEIRD_MORE@@
+        ],
+    },
+    guitarist: {
+        title: '최애 기타리스트 월드컵', tag: '기타리스트 @@GT_N@@', icon: 'fa-user-music',
+        desc: '헨드릭스냐 클랩튼이냐, 코타로 오시오냐 정성하냐. 끝까지 남는 내 최애 기타리스트는?',
+        q: '더 좋아하는 기타리스트는?', rec: '최애처럼 쳐 볼 악보',
+        items: [
+            //@@GUITARIST@@
+        ],
+    },
+    pedal: {
+        title: '최애 이펙터 월드컵', tag: '이펙터 @@PEDAL_N@@', icon: 'fa-sliders',
+        desc: '오버드라이브냐 퍼즈냐, 와우냐 딜레이냐. 페달보드에 딱 하나만 넣을 수 있다면?',
+        q: '페달보드에 하나만 넣는다면?', rec: '이 페달 밟고 쳐 볼 일렉 악보',
+        items: [
+            //@@PEDAL@@
+        ],
+    },
+    acc: {
+        title: '최애 액세서리 월드컵', tag: '액세서리 @@ACC_N@@', icon: 'fa-toolbox',
+        desc: '카포, 피크, 튜너, 슬라이드… 기타 가방에 딱 하나만 챙겨 간다면?',
+        q: '하나만 챙겨 간다면?', rec: '오늘 쳐 볼 안쌤 악보',
+        items: [
+            //@@ACC@@
         ],
     },
 };
+// 기타가 8개도 안 모인 주제는 아직 안 보이게 (사진 모으는 중)
+for (const k of Object.keys(THEMES)) if (THEMES[k].items.length < 8) delete THEMES[k];
 // 다음에 만들 주제 (준비 중으로만 보임)
-const SOON = ['입문 일렉 (100만원 아래)', '통기타 브랜드', '이펙터 페달', '기타 앰프', '전설의 기타리스트 기타'];
+const SOON = ['입문 일렉 (100만원 아래)', '기타 앰프', '통기타 브랜드'];
 
 const { esc, shuffle, adSlot, interstitial, share, catalog, recRow, rpc } = PLAY;
 const app = document.getElementById('app');
 const imgSrc = it => `../images/play/wc/${it.k}.jpg`;
 const roundName = n => n === 2 ? '결승' : n === 4 ? '4강' : `${n}강`;
-// 그 주제로 할 수 있는 판 크기 (기타 수만큼, 큰 것부터): 명기 64 → 64·32·16·8강
-const sizesOf = key => [64, 32, 16, 8].filter(n => n <= THEMES[key].items.length);
+// 그 주제로 할 수 있는 판 크기 (기타 수만큼, 큰 것부터): 명기 64 → 64·32·16·8강, 기타리스트 128 → 128강부터
+const sizesOf = key => [128, 64, 32, 16, 8].filter(n => n <= THEMES[key].items.length);
+// 전면 광고는 64강·32강·16강·8강으로 넘어갈 때만 (4강·결승으로 넘어갈 때는 안 넣음 — 2026-11-08 사용자 결정)
+const AD_ROUNDS = [64, 32, 16, 8];
 const sizeBtns = key => sizesOf(key).map((n, i) => `<button class="btn${i ? ' ghost' : ''}" data-go="${key}" data-n="${n}">${i ? '' : '<i class="fas fa-play"></i>'}${n}강${i ? '' : ' 시작'}</button>`).join('');
 
 // ---------- 하던 판 기억 (64강은 63번 골라야 해서, 새로고침·뒤로 가기로 날아가지 않게) ----------
@@ -347,6 +377,8 @@ function choose(side) {
         if (S.i >= S.cur.length) {
             if (S.next.length === 1) { clearSave(); return interstitial(() => winner(S.next[0])); }
             S.cur = S.next; S.next = []; S.i = 0;
+            saveNow();
+            if (AD_ROUNDS.includes(S.cur.length)) return interstitial(match, `${roundName(S.cur.length)} 시작 전 광고`);
         }
         saveNow();
         match();
@@ -402,7 +434,7 @@ async function winner(w) {
         const rows = (await catalog()).filter(s => s.on_sale && (s.style === 'electric' || s.style === 'solo'));
         rows.sort((a, b) => (b.fullscore_orders || 0) - (a.fullscore_orders || 0));
         const seen = new Set(), top = rows.filter(s => { const k = PLAY.baseTitle(s.title).toLowerCase(); return !seen.has(k) && seen.add(k); }).slice(0, 6);   // 같은 곡 일렉·솔로는 하나만
-        if (top.length) document.getElementById('rec').innerHTML = `<h3><i class="fas fa-music" style="color:var(--green-mid)"></i>이 기타로 쳐 볼 일렉 악보 <small>안쌤 TAB악보</small></h3><div class="list">${top.map(recRow).join('')}</div>`;
+        if (top.length) document.getElementById('rec').innerHTML = `<h3><i class="fas fa-music" style="color:var(--green-mid)"></i>${esc(t.rec || '이 기타로 쳐 볼 일렉 악보')} <small>안쌤 TAB악보</small></h3><div class="list">${top.map(recRow).join('')}</div>`;
     } catch (e) {}
 }
 
