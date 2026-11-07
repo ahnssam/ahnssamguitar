@@ -26,6 +26,13 @@
     .theme p { color: #555; font-size: 13.5px; }
     .theme .btns { justify-content: flex-start; }
     .theme .btn { padding: 10px 16px; font-size: 14px; }
+    .theme .btns { gap: 6px; }
+    .theme .btns .btn.ghost { padding: 9px 11px; font-size: 13.5px; }
+    .theme .resume { display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 14px; border-radius: 12px; background: var(--green-faint); border: 1px solid var(--green-pale); color: var(--green-deep); }
+    .theme .resume > i { width: 30px; height: 30px; border-radius: 50%; background: var(--green-mid); color: #fff; display: grid; place-items: center; font-size: 12px; flex: none; }
+    .theme .resume b { display: block; font-size: 14px; }
+    .theme .resume small { display: block; font-size: 12px; color: #5b7a68; }
+    .theme .resume:hover { background: #e3f0e8; }
     .theme.soon { opacity: 0.75; }
     .theme.soon .peek i { background: repeating-linear-gradient(-45deg, #f1f4f2 0 8px, #eaeeeb 8px 16px); display: grid; place-items: center; font-style: normal; color: #b7c0bb; font-size: 22px; }
     .soonlist { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -138,8 +145,8 @@
 // 실제로 열 때는 안쌤이 찍은 사진이나 쓸 수 있는 사진으로 바꾸는 걸 권함
 const THEMES = {
     classic: {
-        title: '둘 중 하나만 산다면?', tag: '명기 16', icon: 'fa-guitar',
-        desc: '스트랫이냐 레스폴이냐, 평생 하나만 가질 수 있다면 뭘 살까요?',
+        title: '둘 중 하나만 산다면?', tag: '명기 64', icon: 'fa-guitar',
+        desc: '스트랫이냐 레스폴이냐, 마틴이냐 깁슨이냐. 일렉·통기타 명기 64대 중 평생 하나만 가질 수 있다면?',
         q: '둘 중 하나만 산다면?',
         items: [
             { k: 'strat', n: 'Fender Stratocaster', ko: '펜더 스트라토캐스터', y: 1954, d: '싱글 픽업 3개에 몸에 착 붙는 곡선 몸통. 가장 많이 따라 만든 일렉기타 모양', p: '지미 헨드릭스 · 에릭 클랩튼 · 존 메이어', by: 'Atlantictire (Stra2caster 사진 수정)', lic: 'Public domain', src: 'https://commons.wikimedia.org/wiki/File:Fender_Stratocaster_004-2.jpg' },
@@ -155,9 +162,59 @@ const THEMES = {
             { k: 'rick330', n: 'Rickenbacker 330', ko: '리켄배커 330', y: 1958, d: '반짝이는 할로우 바디와 독특한 사운드홀. 60년대 영국 밴드 소리', p: '피트 타운센드 · 폴 웰러', by: 'Wikimedia Commons', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:Rickenbacker_330JG.jpg' },
             { k: 'prs24', n: 'PRS Custom 24', ko: 'PRS 커스텀 24', y: 1985, d: 'PRS의 첫 대표 모델. 화려한 나뭇결 무늬에 24프렛', p: '마크 트레몬티 · 카를로스 산타나(PRS)', by: 'Rachmaninoff', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:PRS_Custom_24_teal_black_2004,_body.jpg' },
             { k: 'gretsch6120', n: 'Gretsch 6120', ko: '그레치 6120', y: 1954, d: '몸통에 G 낙인이 찍힌 오렌지 할로우 바디. 로커빌리 그 자체', p: '에디 코크런 · 브라이언 세처', by: 'Francis pullen', lic: 'Public domain', src: 'https://commons.wikimedia.org/wiki/File:Gretsch_6120_G-_Brand_1955_vintage.jpg' },
-            { k: 'ibanezrg', n: 'Ibanez RG', ko: '아이바네즈 RG', y: 1987, d: '얇은 넥과 날카로운 뿔. 속주·메탈의 상징 슈퍼스트랫', p: '폴 길버트 · 스티브 바이(형제 모델 JEM)', by: 'Soulrefrain', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:Ibanez_RG350EXZ_BK_Electric_Guitar_c.a._2011.jpg' },
+            { k: 'ibanezrg', n: 'Ibanez RG', ko: '아이바네즈 RG', y: 1987, d: '얇은 넥과 날카로운 뿔. 속주·메탈의 상징 슈퍼스트랫', p: '폴 길버트', by: 'Soulrefrain', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:Ibanez_RG350EXZ_BK_Electric_Guitar_c.a._2011.jpg' },
             { k: 'firebird', n: 'Gibson Firebird', ko: '깁슨 파이어버드', y: 1963, d: '자동차 디자이너가 그린 거꾸로 선 듯한 몸통', p: '조니 윈터 · 앨런 콜린스', by: 'Jones629', lic: 'Public domain', src: 'https://commons.wikimedia.org/wiki/File:Firebirdv2008.jpg' },
             { k: 'casino', n: 'Epiphone Casino', ko: '에피폰 카지노', y: 1961, d: '속이 다 빈 할로우 바디. 비틀즈 세 명이 모두 썼다', p: '존 레논 · 조지 해리슨', by: 'Ronald Saunders', lic: 'CC BY-SA 2.0', src: 'https://commons.wikimedia.org/wiki/File:John_Lennon%27s_guitar,_Imagine_room_replica_of_the_Beatles_Story_museum.jpg' },
+            // ↓ 64강용으로 더한 일렉 32대
+            { k: 'es175', n: 'Gibson ES-175', ko: '깁슨 ES-175', y: 1949, d: '뾰족한 컷어웨이의 풀 할로우 바디. 재즈 기타의 교과서', p: '조 패스 · 짐 홀 · 팻 메스니', by: 'Thomas Despoix', lic: 'CC BY-SA 2.5', src: 'https://commons.wikimedia.org/wiki/File:Gibson_ES-175.png' },
+            { k: 'l5', n: 'Gibson L-5 CES', ko: '깁슨 L-5 CES', y: 1951, d: '1922년에 나온 아치탑 L-5에 픽업을 단 고급 재즈 기타', p: '웨스 몽고메리', by: 'Cruciniacus (배경 제거: Auge=mit)', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:Gibson_L-5_CES_noBG.png' },
+            { k: 'es150', n: 'Gibson ES-150', ko: '깁슨 ES-150', y: 1936, d: '처음으로 크게 성공한 전기 기타. 기타가 밴드 맨 앞에 나서게 됐다', p: '찰리 크리스천', by: 'Thomas Despoix', lic: 'CC BY-SA 2.5', src: 'https://commons.wikimedia.org/wiki/File:Gibson_ES-150.png' },
+            { k: 'lpjr', n: 'Gibson Les Paul Junior', ko: '깁슨 레스폴 주니어', y: 1954, d: '픽업 하나에 노브 두 개. 단순해서 더 거친 소리 (사진은 1959년 더블컷)', p: '레슬리 웨스트 · 빌리 조 암스트롱', by: 'Pirao (수정: Guitarpop · Clusternote)', lic: 'CC0', src: 'https://commons.wikimedia.org/wiki/File:Gibson_%2759_Les_Paul_Junior_DC_TV_Yellow.jpg' },
+            { k: 'lpcustom', n: 'Gibson Les Paul Custom', ko: '깁슨 레스폴 커스텀', y: 1954, d: '검은 몸통에 금색 부품. "블랙 뷰티"라 불린 고급형 레스폴', p: '피터 프램튼 · 잭 와일드', by: 'Pinotto992 (수정: Clusternote)', lic: 'CC0', src: 'https://commons.wikimedia.org/wiki/File:Gibson_Custom_50th_Anniversary_1960_Les_Paul_Custom_(clip).jpg' },
+            { k: 'es355', n: 'Gibson ES-355', ko: '깁슨 ES-355', y: 1958, d: 'ES-335의 고급형. 금색 부품에 화려한 장식', p: 'B.B. 킹 · 척 베리', by: 'Auge=mit', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:Gibson_ES_355_59_GCS_AvR.png' },
+            { k: 'melody', n: 'Gibson Melody Maker', ko: '깁슨 멜로디 메이커', y: 1959, d: '깁슨의 입문용. 얇은 몸통에 좁은 픽업 하나 (사진은 1967년 더블컷)', p: '조안 제트', by: 'Jpowell3404', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:67MelodyMaker_Front_XLG.jpg' },
+            { k: 'thinline', n: 'Fender Telecaster Thinline', ko: '펜더 텔레캐스터 신라인', y: 1968, d: '몸통 속을 파내고 f홀을 낸 가벼운 텔레', p: '', by: 'Elías Gómez', lic: 'CC BY-SA 2.0', src: 'https://commons.wikimedia.org/wiki/File:Telecaster_Thinline_(by_El%C3%ADas_G%C3%B3mez).jpg' },
+            { k: 'starcaster', n: 'Fender Starcaster', ko: '펜더 스타캐스터', y: 1976, d: '펜더가 만든 세미할로우. 한쪽으로 비틀린 몸통', p: '', by: 'Tasmer (배경 제거: Auge=mit)', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:Fender_Starcaster_noBG.png' },
+            { k: 'duosonic', n: 'Fender Duo-Sonic', ko: '펜더 듀오소닉', y: 1956, d: '짧은 스케일의 학생용 기타. 픽업 두 개 (사진은 머스탱 몸통의 듀오소닉 II)', p: '', by: 'Adrian Furby', lic: 'CC BY 2.0', src: 'https://commons.wikimedia.org/wiki/File:Fender_Duo-Sonic_II.jpg' },
+            { k: 'falcon', n: 'Gretsch White Falcon', ko: '그레치 화이트 팔콘', y: 1954, d: '흰 몸통에 금빛 장식. "기타계의 캐딜락"이라 불린 할로우 바디', p: '닐 영 · 스티븐 스틸스', by: 'Eric Kilby from USA', lic: 'CC BY-SA 2.0', src: 'https://commons.wikimedia.org/wiki/File:Gretsch_White_Falcon_(1995),_played_by_The_Reverend_Horton_Heat,_Petersen_Auto_Museum.jpg' },
+            { k: 'duojet', n: 'Gretsch Duo Jet', ko: '그레치 듀오젯', y: 1953, d: '솔리드처럼 보이지만 속을 비운 검은 몸통. 비틀즈 데뷔 무렵 조지 해리슨의 기타', p: '조지 해리슨', by: 'CasinoKat', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:Gretsch_DuoJet_G6128T_DSV(with_Bigsby).jpg' },
+            { k: 'countrygent', n: 'Gretsch Country Gentleman', ko: '그레치 컨트리 젠틀맨', y: 1957, d: '쳇 앳킨스의 이름을 단 큰 할로우 바디. 비틀즈가 미국 TV에 처음 나올 때 조지 해리슨이 든 기타', p: '쳇 앳킨스 · 조지 해리슨', by: 'matanao', lic: 'Public domain', src: 'https://commons.wikimedia.org/wiki/File:Gretsch_Country_Gentleman_1.jpg' },
+            { k: 'jem', n: 'Ibanez JEM', ko: '아이바네즈 JEM', y: 1987, d: '몸통에 손잡이 구멍(몽키 그립)이 뚫린 화려한 슈퍼스트랫', p: '스티브 바이', by: 'GreyCat (원본: Rachmaninoff)', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:Ibanez_Jem_7VWH_vertical.png' },
+            { k: 'ibanezs', n: 'Ibanez S', ko: '아이바네즈 S', y: 1987, d: '아주 얇게 깎은 가벼운 몸통. 둥글게 깎인 테두리', p: '', by: 'Defaultdotxbe', lic: 'Public domain', src: 'https://commons.wikimedia.org/wiki/File:Ibanez_S-470.jpg' },
+            { k: 'soloist', n: 'Jackson Soloist', ko: '잭슨 솔로이스트', y: 1984, d: '넥이 몸통 끝까지 통으로 이어진(넥스루) 80년대 메탈 슈퍼스트랫', p: '', by: 'PJM', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:PJM_Jackson_Soloist.jpg' },
+            { k: 'wolfgang', n: 'EVH Wolfgang', ko: 'EVH 울프강', y: 1996, d: '에디 밴 헤일런이 아들 이름을 붙인 기타 (사진은 피비 시절 모델)', p: '에디 밴 헤일런', by: 'Henning Ihmels', lic: 'CC BY 2.5', src: 'https://commons.wikimedia.org/wiki/File:PEAVEY_Wolfgang_EvH.jpg' },
+            { k: 'jp', n: 'Music Man JP', ko: '뮤직맨 JP', y: 2001, d: '손목 닿는 곳을 깎아 낸 몸통에 피에조 픽업까지 단 시그니처', p: '존 페트루치 (드림 시어터)', by: 'Ddt Eagleeye', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:Music_Man_JP6_BFR_Ruby_Burst_Quilt.png' },
+            { k: 'deanml', n: 'Dean ML', ko: '딘 ML', y: 1977, d: '플라잉 V와 익스플로러를 합친 모양 (사진은 다임백의 \'딘 프롬 헬\' 복제품)', p: '다임백 대럴 (판테라)', by: 'MuzafferB (en.wikipedia)', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:Replica_of_Dean_From_Hell.jpg' },
+            { k: 'razorback', n: 'Dean Razorback', ko: '딘 레이저백', y: '2000년대', d: '칼날처럼 갈라진 몸통. 다임백 대럴을 위해 그린 디자인', p: '다임백 대럴', by: 'Maurauth', lic: 'CC BY 2.5', src: 'https://commons.wikimedia.org/wiki/File:DeanRazorback.JPG' },
+            { k: 'pacifica', n: 'Yamaha Pacifica', ko: '야마하 퍼시피카', y: 1990, d: '가볍고 다루기 쉬운 입문용 일렉의 대표', p: '마이크 스턴', by: 'Freebird from Madrid, Spain', lic: 'CC BY-SA 2.0', src: 'https://commons.wikimedia.org/wiki/File:1990_Yamaha_Pacifica_921_(5848606856).jpg' },
+            { k: 'yamahasg', n: 'Yamaha SG2000', ko: '야마하 SG2000', y: 1976, d: '넥이 몸통 끝까지 이어진 일본 야마하의 더블컷 명기', p: '카를로스 산타나', by: 'Kevin Spencer (수정: Clusternote)', lic: 'CC BY 2.0', src: 'https://commons.wikimedia.org/wiki/File:Yamaha_SG2000_Devadip,_Carlos_Santana.png' },
+            { k: 'sheraton', n: 'Epiphone Sheraton', ko: '에피폰 쉐라톤', y: 1958, d: '화려한 장식의 세미할로우. ES-335의 에피폰 사촌', p: '노엘 갤러거 · 존 리 후커', by: 'Paul Hermans (nl.wikipedia)', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:My_Epiphone_Sheraton_II.jpg' },
+            { k: 'danelectro', n: 'Danelectro 59', ko: '댄일렉트로 59', y: '1950년대', d: '압축 나무판 몸통에 립스틱 통 모양 픽업. 싸고 쨍한 소리', p: '지미 페이지', by: 'Sander van Malssen (수정: Clusternote)', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:Danelectro_59-DC_(clip).jpg' },
+            { k: 'hagstrom', n: 'Hagström Swede', ko: '하그스트롬 스위드', y: 1970, d: '스웨덴 하그스트롬이 만든 레스폴 모양 기타', p: '', by: 'Kaitil', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:Hagstrom_Swede_(1974).png' },
+            { k: 'guild', n: 'Guild Starfire', ko: '길드 스타파이어', y: 1960, d: '미국 길드의 얇은 할로우 바디 (사진은 12줄 모델)', p: '', by: 'Ed', lic: 'CC BY 2.0', src: 'https://commons.wikimedia.org/wiki/File:Guild_Starfire_SF-XII.jpg' },
+            { k: 'strandberg', n: 'Strandberg Boden', ko: '스트랜드버그 보덴', y: '2010년대', d: '헤드가 없고 몸에 맞게 깎은 요즘 기타 (사진은 8줄)', p: '플리니', by: 'Psychaosphere', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:Strandberg-boden-8-Extended-Range-Headless-Guitar.png' },
+            { k: 'silversky', n: 'PRS Silver Sky', ko: 'PRS 실버 스카이', y: 2018, d: '존 메이어와 PRS가 함께 만든 스트랫 모양 기타 (사진은 SE 모델)', p: '존 메이어', by: 'Freebird from Madrid, Spain', lic: 'CC BY-SA 2.0', src: 'https://commons.wikimedia.org/wiki/File:2022_PRS_SE_John_Mayer_Silver_Sky_Moon_White.jpg' },
+            { k: 'charvel', n: 'Charvel San Dimas', ko: '샤벨 샌디마스', y: '1970년대 말', d: '에디 밴 헤일런 기타의 몸통·넥을 만든 공방에서 시작한 슈퍼스트랫', p: '', by: 'Shixart1985', lic: 'CC BY 2.0', src: 'https://commons.wikimedia.org/wiki/File:Charvel_San_Dimas_hawaiian_koa_electric_guitar.jpg' },
+            { k: 'kingv', n: 'Jackson King V', ko: '잭슨 킹 V', y: '1980년대', d: '데이브 머스테인을 위해 만든 날카로운 V', p: '데이브 머스테인 (메가데스)', by: 'Krzysztof Ostrowski', lic: 'CC BY-SA 2.5', src: 'https://commons.wikimedia.org/wiki/File:Jackson_king.jpg' },
+            { k: 'esp', n: 'ESP Iron Cross', ko: 'ESP 아이언 크로스', y: '2000년대', d: '일본 ESP의 레스폴 모양 기타에 쇠십자 무늬를 넣은 시그니처', p: '제임스 헷필드 (메탈리카)', by: '6-StringGuitars', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:ESP_Iron_Cross_James_Hetfield_2014_Electric_Guitar_w_case_(1).JPG' },
+            { k: 'rick325', n: 'Rickenbacker 325', ko: '리켄배커 325', y: 1958, d: '짧고 작은 몸통. 비틀즈 초기 존 레논의 기타', p: '존 레논', by: 'CasinoKat', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:Rickenbacker_325C64.jpg' },
+            // ↓ 통기타·클래식 16대
+            { k: 'd28', n: 'Martin D-28', ko: '마틴 D-28', y: 1931, d: '큰 몸통의 \'드레드노트\' 통기타 표준. 깊고 웅장한 소리', p: '행크 윌리엄스 · 닐 영', by: 'Claude Humbert', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:Ricky_Nelson%27s_circa_1967_Martin_D-28_(Rock_and_Roll_Hall_of_Fame,_Cleveland,_OH).jpg' },
+            { k: 'd18', n: 'Martin D-18', ko: '마틴 D-18', y: 1932, d: '마호가니로 만든 드레드노트. D-28보다 또렷하고 담백한 소리 (사진은 엘비스의 기타)', p: '엘비스 프레슬리', by: 'Eden, Janine and Jim from New York City', lic: 'CC BY 2.0', src: 'https://commons.wikimedia.org/wiki/File:Elvis_Presley%27s_C._F._Martin_D-18_(1942,_serial_no._80221)_-_Play_It_Loud._MET_(2019-05-13_18.35.19_by_Eden,_Janine_and_Jim).jpg' },
+            { k: 'j160e', n: 'Gibson J-160E', ko: '깁슨 J-160E', y: 1954, d: '픽업을 단 통기타. 존 레논과 조지 해리슨이 같이 썼다', p: '존 레논 · 조지 해리슨', by: 'Lauren Gerson (수정: Clusternote)', lic: 'CC0', src: 'https://commons.wikimedia.org/wiki/File:John_Lennon%27s_missing_1962_Gibson_J-160E_guitar_in_the_exhibit_(clip3)_-_Ladies_and_Gentlemen..._the_Beatles!_exhibit_at_LBJ_Presidential_Library,_Austin,_TX,_2015-06-12_11.37.55.jpg' },
+            { k: 'j45', n: 'Gibson J-45', ko: '깁슨 J-45', y: 1942, d: '둥근 어깨의 "일하는 기타". 따뜻하고 단단한 소리', p: '', by: 'Jim Hutcheson', lic: 'CC BY 2.0', src: 'https://commons.wikimedia.org/wiki/File:Gibson_J-45_(by_Jim_Hutcheson).jpg' },
+            { k: 'hummingbird', n: 'Gibson Hummingbird', ko: '깁슨 허밍버드', y: 1960, d: '벌새가 그려진 픽가드. 깁슨 첫 각진 어깨 드레드노트', p: '키스 리처즈', by: 'Guitarpimp (de.wikipedia)', lic: 'CC BY 3.0', src: 'https://commons.wikimedia.org/wiki/File:Gibson-Hummingbird.jpg' },
+            { k: 'dove', n: 'Gibson Dove', ko: '깁슨 도브', y: 1962, d: '비둘기 그림 픽가드와 메이플 몸통. 밝고 또렷한 소리 (사진은 엘비스 모델)', p: '엘비스 프레슬리', by: 'Pappenheim', lic: 'Copyrighted free use', src: 'https://commons.wikimedia.org/wiki/File:Gibson_Elvis_Presley_Artist_Dove.jpg' },
+            { k: 'j200', n: 'Gibson J-200', ko: '깁슨 J-200', y: 1937, d: '아주 큰 몸통에 콧수염 모양 브리지. "플랫톱의 왕" (사진은 조니 캐시의 기타)', p: '엘비스 프레슬리 · 조니 캐시', by: 'e Kat', lic: 'CC0', src: 'https://commons.wikimedia.org/wiki/File:Johnny_Cash_Custom_1959_Gibson_J-200_(chery_sunburst_finish,_custom_pickguard,_fretboard_inlay,_etc)_-_Johnny_Cash_Museum_(2015-04-09_15.32.57_by_e_Kat).jpg' },
+            { k: 'l1', n: 'Gibson L-1', ko: '깁슨 L-1', y: 1926, d: '작은 몸통의 옛 깁슨 통기타. 블루스 전설의 사진 속 그 기타', p: '로버트 존슨', by: 'Rovermeiren (en.wikipedia)', lic: 'Public domain', src: 'https://commons.wikimedia.org/wiki/File:Gibson_rj_l-1.jpg' },
+            { k: 'ovation', n: 'Ovation Balladeer', ko: '오베이션 발라디어', y: 1966, d: '뒤판이 둥근 그릇 모양 합성 소재. 무대에서 하울링이 적다', p: '글렌 캠벨', by: 'Veradrive', lic: 'CC0', src: 'https://commons.wikimedia.org/wiki/File:Ovation_Model_1861_Standard_Balladeer.JPG' },
+            { k: 'maccaferri', n: 'Selmer-Maccaferri', ko: '셀마 마카페리 (집시 기타)', y: 1932, d: '집시 재즈의 기타. 작은 타원형 사운드홀 (사진은 복제품)', p: '장고 라인하르트', by: 'Holzwurm52', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:Selmer-Maccaferri_o-Type_Nachbau.jpg' },
+            { k: 'dobro', n: 'Dobro', ko: '도브로 (리조네이터)', y: 1928, d: '몸통 안 금속 울림판으로 소리를 키운 기타. 블루그래스·슬라이드에 쓴다', p: '제리 더글러스', by: 'Frank Kovalchek', lic: 'CC BY 2.0', src: 'https://commons.wikimedia.org/wiki/File:Dobro_Model_66B_(1932-1933)_resonator_guitar,_Quijada_de_caballo_-_MIM_PHX.jpg' },
+            { k: 'classical', n: 'Classical Guitar', ko: '클래식 기타', y: '19세기', d: '나일론 줄에 넓은 넥. 스페인의 토레스가 지금 모양을 정했다', p: '안드레스 세고비아', by: 'Martin Möller', lic: 'CC BY-SA 2.0 de', src: 'https://commons.wikimedia.org/wiki/File:Classical_Guitar_two_views2.png' },
+            { k: 'twelve', n: '12-String Acoustic', ko: '12줄 통기타', y: '20세기 초', d: '줄이 두 개씩 짝지어 12줄. 찰랑찰랑 풍성한 소리', p: '레드벨리 · 존 덴버', by: 'Superikonoskop', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:Roland_Oetter_12string.jpg' },
+            { k: 'fg180', n: 'Yamaha FG-180', ko: '야마하 FG-180', y: 1966, d: '야마하의 첫 스틸 줄 통기타. 싸고 튼튼한 \'빨간 라벨\'', p: '', by: 'Jim Hutcheson', lic: 'CC BY 2.0', src: 'https://commons.wikimedia.org/wiki/File:Yamaha_FG-180_Red_Label_(by_Jim_Hutcheson).jpg' },
+            { k: 'takamine', n: 'Takamine', ko: '타카미네', y: '1962년 창업', d: '무대용 픽업이 잘 달린 일본 통기타 (사진은 드레드노트)', p: '브루스 스프링스틴', by: 'Larry Jacobsen', lic: 'CC BY 2.0', src: 'https://commons.wikimedia.org/wiki/File:Takamine_Dreadnaught_Series_Acoustic_guitar_1.jpg' },
+            { k: 'texan', n: 'Epiphone Texan', ko: '에피폰 텍산', y: 1958, d: '폴 매카트니가 \'Yesterday\'를 녹음한 통기타', p: '폴 매카트니', by: 'Tony 1212', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:66-texan.jpg' },
         ],
     },
     weird: {
@@ -191,15 +248,44 @@ const { esc, shuffle, adSlot, interstitial, share, catalog, recRow, rpc } = PLAY
 const app = document.getElementById('app');
 const imgSrc = it => `../images/play/wc/${it.k}.jpg`;
 const roundName = n => n === 2 ? '결승' : n === 4 ? '4강' : `${n}강`;
+// 그 주제로 할 수 있는 판 크기 (기타 수만큼, 큰 것부터): 명기 64 → 64·32·16·8강
+const sizesOf = key => [64, 32, 16, 8].filter(n => n <= THEMES[key].items.length);
+const sizeBtns = key => sizesOf(key).map((n, i) => `<button class="btn${i ? ' ghost' : ''}" data-go="${key}" data-n="${n}">${i ? '' : '<i class="fas fa-play"></i>'}${n}강${i ? '' : ' 시작'}</button>`).join('');
+
+// ---------- 하던 판 기억 (64강은 63번 골라야 해서, 새로고침·뒤로 가기로 날아가지 않게) ----------
+const SAVE = 'wc.save';
+function saveNow() {
+    if (!S) return;
+    const ks = a => a.map(it => it.k);
+    PLAY.mem.set(SAVE, { key: S.key, size: S.size, cur: ks(S.cur), next: ks(S.next), i: S.i, out: S.out.map(o => [o.it.k, o.at]), log: S.log, t: Date.now() });
+}
+function loadSave() {
+    const s = PLAY.mem.get(SAVE, null);
+    const t = s && THEMES[s.key];
+    if (!t || !Array.isArray(s.cur) || s.cur.length < 2 || Date.now() - (s.t || 0) > 7 * 864e5) return null;   // 일주일 지난 건 버림
+    const by = new Map(t.items.map(it => [it.k, it]));
+    const get = k => by.get(k);
+    const cur = s.cur.map(get), next = (s.next || []).map(get);
+    if (cur.some(x => !x) || next.some(x => !x) || s.i % 2 || s.i >= cur.length) return null;
+    return { ...s, cur, next, out: (s.out || []).filter(o => get(o[0])).map(o => ({ it: get(o[0]), at: o[1] })), log: s.log || [] };
+}
+const clearSave = () => PLAY.mem.set(SAVE, null);
+function resume(s) {
+    S = { key: s.key, theme: THEMES[s.key], size: s.size, cur: s.cur, next: s.next, i: s.i, hist: [], out: s.out, log: s.log };
+    history.replaceState(null, '', `?t=${s.key}&n=${s.size}`);
+    match();
+}
 
 // ---------- 시작 화면 ----------
 function start() {
     history.replaceState(null, '', location.pathname);
+    const saved = loadSave();
     const card = (key, t) => `<div class="theme card">
         <div class="peek">${t.items.slice(0, 4).map(it => `<i style="background-image:url('${imgSrc(it)}')"></i>`).join('')}</div>
         <h2><i class="fas ${t.icon}" style="color:var(--green-mid)"></i>${esc(t.title)} <small>${t.tag}</small></h2>
         <p>${esc(t.desc)}</p>
-        <div class="btns"><button class="btn" data-go="${key}" data-n="16"><i class="fas fa-play"></i>16강 시작</button><button class="btn ghost" data-go="${key}" data-n="8">8강 빠르게</button></div>
+        ${saved && saved.key === key ? `<button class="resume" data-resume><i class="fas fa-play"></i><span><b>하던 거 이어 하기</b><small>${saved.size}강 · 지금 ${roundName(saved.cur.length)} ${saved.i / 2 + 1} / ${saved.cur.length / 2}</small></span></button>` : ''}
+        <div class="btns">${sizeBtns(key)}</div>
         <div class="rkline"><span class="lead" data-lead="${key}"></span><button class="rk-link" data-rank="${key}"><i class="fas fa-ranking-star"></i> 순위 보기</button></div>
     </div>`;
     app.innerHTML = `<section class="hero"><h1>기타 <em>이상형 월드컵</em></h1><p>둘 중 하나만 고르세요. 끝까지 남는 게 당신의 운명의 기타!</p></section>
@@ -210,6 +296,7 @@ function start() {
         ${adSlot('wide')}`;
     app.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => play(b.dataset.go, +b.dataset.n)));
     app.querySelectorAll('[data-rank]').forEach(b => b.addEventListener('click', () => rankPage(b.dataset.rank)));
+    app.querySelectorAll('[data-resume]').forEach(b => b.addEventListener('click', () => resume(saved)));
     scrollTo(0, 0);
     // 지금 1위 (기록이 쌓인 뒤에만 보임)
     app.querySelectorAll('[data-lead]').forEach(el => loadRank(el.dataset.lead).then(d => {
@@ -225,6 +312,7 @@ function play(key, size) {
     history.replaceState(null, '', `?t=${key}&n=${size}`);
     const pool = shuffle(theme.items).slice(0, size);
     S = { key, theme, size, cur: pool, next: [], i: 0, hist: [], out: [], log: [] };
+    saveNow();
     match();
 }
 function match() {
@@ -247,7 +335,7 @@ function match() {
 }
 let busy = false;
 function choose(side) {
-    if (busy) return;
+    if (busy || !S || S.i + 1 >= S.cur.length) return;   // 결승까지 다 고른 뒤(광고 뜬 사이) 키를 또 눌러도 무시
     busy = true;
     const picks = app.querySelectorAll('.pick');
     picks[side].classList.add('won'); picks[1 - side].classList.add('lost');
@@ -259,9 +347,10 @@ function choose(side) {
     setTimeout(() => {
         busy = false;
         if (S.i >= S.cur.length) {
-            if (S.next.length === 1) return interstitial(() => winner(S.next[0]));
+            if (S.next.length === 1) { clearSave(); return interstitial(() => winner(S.next[0])); }
             S.cur = S.next; S.next = []; S.i = 0;
         }
+        saveNow();
         match();
     }, 420);
 }
@@ -269,10 +358,11 @@ function undo() {
     const h = S.hist.pop();
     if (!h) return;
     Object.assign(S, h);
+    saveNow();
     match();
 }
 addEventListener('keydown', e => {
-    if (!S || !app.querySelector('.vs')) return;
+    if (!S || !app.querySelector('.vs') || document.querySelector('.inter')) return;
     if (e.key === 'ArrowLeft') choose(0);
     if (e.key === 'ArrowRight') choose(1);
 });
@@ -353,7 +443,7 @@ async function rankPage(key) {
     history.replaceState(null, '', `?t=${key}&rank=1`);
     app.innerHTML = `<section class="win"><div class="crown">📊 RANKING</div><h1>${esc(t.title)}</h1><div class="ko">다른 사람들이 가장 많이 우승시킨 기타</div>
         <div id="rk"><p class="stat-soon" style="text-align:center">불러오는 중…</p></div>
-        <div class="btns"><button class="btn" data-go="${key}" data-n="16"><i class="fas fa-play"></i>나도 16강 하기</button><button class="btn ghost" data-go="${key}" data-n="8">8강 빠르게</button><button class="btn ghost" id="other"><i class="fas fa-shuffle"></i>다른 월드컵</button></div>
+        <div class="btns">${sizeBtns(key).replace(/(\d+)강 시작/, '나도 $1강 하기')}<button class="btn ghost" id="other"><i class="fas fa-shuffle"></i>다른 월드컵</button></div>
         ${adSlot('r300')}</section>`;
     app.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => play(b.dataset.go, +b.dataset.n)));
     document.getElementById('other').onclick = start;
@@ -363,9 +453,15 @@ async function rankPage(key) {
 }
 
 // 주소로 바로 들어오면(?t=classic&n=16) 그 월드컵부터, ?t=classic&rank=1 이면 순위
+// 하던 판과 같은 주제·크기면(하다가 새로고침) 이어서
 const P = new URLSearchParams(location.search);
-if (THEMES[P.get('t')] && P.get('rank')) rankPage(P.get('t'));
-else if (THEMES[P.get('t')]) play(P.get('t'), [8, 16].includes(+P.get('n')) ? +P.get('n') : 16);
+const pt = P.get('t'), pn = +P.get('n');
+if (THEMES[pt] && P.get('rank')) rankPage(pt);
+else if (THEMES[pt]) {
+    const sv = loadSave();
+    if (sv && sv.key === pt && sv.size === pn) resume(sv);
+    else play(pt, sizesOf(pt).includes(pn) ? pn : 16);
+}
 else start();
 </script>
 </body>

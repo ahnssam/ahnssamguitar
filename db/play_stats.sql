@@ -9,7 +9,7 @@
 create table if not exists public.play_wc_results (
     id bigint generated always as identity primary key,
     theme text not null check (theme ~ '^[a-z0-9_-]{1,24}$'),
-    size smallint not null check (size in (8, 16, 32)),
+    size smallint not null check (size in (8, 16, 32, 64)),
     winner text not null check (winner ~ '^[a-z0-9_-]{1,32}$'),
     matches jsonb not null,            -- [["이긴 기타", "진 기타"], ...] 대결 순서대로, 마지막이 결승
     created_at timestamptz not null default now()
@@ -42,7 +42,7 @@ declare
 begin
     if p_matches is null or jsonb_typeof(p_matches) <> 'array' then raise exception 'matches must be an array'; end if;
     n := jsonb_array_length(p_matches);
-    if p_size not in (8, 16, 32) or n <> p_size - 1 then raise exception 'wrong number of matches'; end if;
+    if p_size not in (8, 16, 32, 64) or n <> p_size - 1 then raise exception 'wrong number of matches'; end if;
     if exists (
         select 1 from jsonb_array_elements(p_matches) m
         where jsonb_typeof(m) <> 'array' or jsonb_array_length(m) <> 2
