@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#2a6b4a">
+<title>기타 이상형 월드컵 | 안쌤의 기타나무숲</title>
+<meta name="description" content="둘 중 하나만 산다면? 일렉기타 명기부터 괴상한 기타까지, 내 마음속 1등 기타를 골라 보세요.">
+<link rel="icon" href="../images/favicon.ico" type="image/x-icon">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="play.css?v=2026110702">
+<style>
+    /* 시작: 주제 고르기 */
+    .hero { text-align: center; padding: 34px 0 6px; }
+    .hero h1 { font-size: clamp(24px, 4.4vw, 36px); font-weight: 900; letter-spacing: -0.02em; }
+    .hero h1 em { font-style: normal; color: var(--green-deep); }
+    .hero p { color: var(--sub); margin-top: 6px; font-size: 14.5px; }
+    .themes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 24px; }
+    .theme { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .theme .peek { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .theme .peek i { aspect-ratio: 3/4; border-radius: 8px; background: #f1f4f2 center/contain no-repeat; display: block; }
+    .theme h2 { font-size: 19px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+    .theme h2 small { font-size: 12px; font-weight: 700; color: var(--green-deep); background: var(--green-faint); padding: 2px 8px; border-radius: 999px; }
+    .theme p { color: #555; font-size: 13.5px; }
+    .theme .btns { justify-content: flex-start; }
+    .theme .btn { padding: 10px 16px; font-size: 14px; }
+    .theme.soon { opacity: 0.75; }
+    .theme.soon .peek i { background: repeating-linear-gradient(-45deg, #f1f4f2 0 8px, #eaeeeb 8px 16px); display: grid; place-items: center; font-style: normal; color: #b7c0bb; font-size: 22px; }
+    .soonlist { display: flex; flex-wrap: wrap; gap: 6px; }
+    .soonlist span { font-size: 12.5px; padding: 4px 10px; border-radius: 999px; background: #f1f4f2; color: #666; }
+
+    /* 대결 */
+    .round { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 0 4px; flex-wrap: wrap; }
+    .round b { font-size: 22px; font-weight: 900; }
+    .round .bar { width: min(320px, 60vw); height: 6px; background: #dfe7e2; border-radius: 99px; overflow: hidden; }
+    .round .bar i { display: block; height: 100%; background: var(--green-mid); transition: width .3s; }
+    .round .undo { font-size: 13px; color: #666; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: #fff; }
+    .round .undo[disabled] { opacity: .4; cursor: default; }
+    .q { text-align: center; color: var(--sub); font-size: 13.5px; margin-bottom: 12px; }
+    .vs { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .vs .mark { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); z-index: 2; width: 56px; height: 56px; border-radius: 50%; background: var(--ink); color: #fff; font-weight: 900; font-size: 18px; display: grid; place-items: center; box-shadow: 0 0 0 5px var(--cream); font-family: 'Arial Black', sans-serif; pointer-events: none; }
+    .pick { text-align: left; padding: 10px; transition: transform .25s, opacity .25s, box-shadow .25s; display: flex; flex-direction: column; }
+    .pick:hover { transform: translateY(-3px); box-shadow: 0 2px 0 var(--green-pale), 0 14px 34px rgba(42, 107, 74, 0.16); }
+    .pick .ph-img { height: min(54vh, 470px); border-radius: 12px; background: #f1f4f2; display: block; overflow: hidden; }
+    .pick .ph-img img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .pick .nm { padding: 10px 4px 2px; }
+    .pick .nm b { display: block; font-size: 17px; font-weight: 900; line-height: 1.3; }
+    .pick .nm small { display: block; color: var(--sub); font-size: 12.5px; }
+    .pick .nm span { display: block; color: #444; font-size: 13px; margin-top: 4px; }
+    .pick.won { transform: scale(1.03); box-shadow: 0 0 0 3px var(--green-mid), 0 14px 34px rgba(42, 107, 74, 0.2); }
+    .pick.lost { opacity: .25; transform: scale(.96); }
+    .keys { text-align: center; color: #aaa; font-size: 12px; margin-top: 10px; }
+    @media (max-width: 640px) {
+        .vs { gap: 8px; }
+        .pick { padding: 6px; }
+        .pick .ph-img { height: 46vh; }
+        .pick .nm b { font-size: 14.5px; }
+        .pick .nm span { display: none; }
+        .vs .mark { width: 42px; height: 42px; font-size: 14px; }
+        .keys { display: none; }
+    }
+
+    /* 우승 */
+    .win { text-align: center; padding: 26px 0 0; }
+    .win .crown { font-size: 13px; font-weight: 900; letter-spacing: .2em; color: var(--gold); }
+    .win h1 { font-size: clamp(24px, 4.6vw, 34px); font-weight: 900; margin-top: 4px; }
+    .win .ko { color: var(--sub); }
+    .win .big { margin: 18px auto 0; max-width: 560px; padding: 14px; }
+    .win .big .ph-img { height: min(58vh, 520px); border-radius: 12px; background: #f1f4f2; overflow: hidden; }
+    .win .big .ph-img img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .win .facts { text-align: left; padding: 12px 6px 2px; font-size: 14px; color: #333; }
+    .win .facts div { margin-top: 4px; }
+    .win .facts i { width: 20px; color: var(--green-mid); }
+    .podium { display: flex; justify-content: center; gap: 10px; margin: 16px auto 0; flex-wrap: wrap; max-width: 560px; }
+    .podium div { flex: 1 1 150px; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 8px; display: flex; gap: 8px; align-items: center; text-align: left; }
+    .podium img { width: 40px; height: 52px; object-fit: contain; background: #f1f4f2; border-radius: 6px; }
+    .podium small { display: block; font-size: 11.5px; color: var(--gold); font-weight: 700; }
+    .podium b { font-size: 13px; }
+    .win .btns { margin-top: 18px; }
+    .stat-soon { max-width: 560px; margin: 16px auto 0; padding: 12px 14px; font-size: 13px; color: #666; text-align: left; border: 1px dashed #c9d6ce; border-radius: 12px; background: #fbfdfc; }
+    .stat-soon b { color: var(--green-deep); }
+    .credits { max-width: 860px; margin: 24px auto 0; font-size: 11.5px; color: #999; text-align: left; }
+    .credits summary { cursor: pointer; }
+    .credits ul { list-style: none; margin-top: 6px; columns: 2 260px; }
+    .credits a { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="mock-bar">🚧 <b>목업</b> — 광고는 회색 상자로만 보여요. 아직 메뉴에 연결하지 않은 시험 페이지예요.</div>
+<header class="ph"><div class="wrap">
+    <a class="logo" href="../"><img src="../images/logo-vertical.webp" alt="안쌤의 기타나무숲"></a>
+    <span class="ttl"><i class="fas fa-trophy"></i>기타 이상형 월드컵</span>
+    <span class="sp"></span>
+    <a class="lnk" href="./"><i class="fas fa-gamepad"></i><span>놀이터</span></a>
+    <a class="lnk" href="quiz.html"><i class="fas fa-circle-question"></i><span>퀴즈쇼</span></a>
+</div></header>
+
+<main class="wrap" id="app"></main>
+
+<footer>
+    <div class="links"><a href="../">TAB악보</a><a href="../requests.html">악보요청</a><a href="../tools.html">연습도구</a><a href="../legal/terms.html">이용약관</a><a href="../legal/privacy.html">개인정보 처리방침</a></div>
+    <span>상호: 안쌤의 기타나무숲</span><span>대표: 안규호</span><span>사업자등록번호: 453-22-00905</span><span>통신판매업 신고번호: 제2026-서울강남-06306호</span><br>
+    <span>주소: 서울특별시 강남구 영동대로 210 쌍용종합상가 지하1층 3호</span><span>고객센터: 0507-1334-9804</span><span>이메일: ahnssamguitar@gmail.com</span><span>호스팅: GitHub</span>
+    <div>© 2026 안쌤의 기타나무숲</div>
+</footer>
+
+<script src="play.js?v=2026110702"></script>
+<script>
+// ---------- 주제와 기타 (사진: Wikimedia Commons, 사진마다 작가·라이선스 표시) ----------
+// 실제로 열 때는 안쌤이 찍은 사진이나 쓸 수 있는 사진으로 바꾸는 걸 권함
+const THEMES = {
+    classic: {
+        title: '둘 중 하나만 산다면?', tag: '명기 16', icon: 'fa-guitar',
+        desc: '스트랫이냐 레스폴이냐, 평생 하나만 가질 수 있다면 뭘 살까요?',
+        q: '둘 중 하나만 산다면?',
+        items: [
+            { k: 'strat', n: 'Fender Stratocaster', ko: '펜더 스트라토캐스터', y: 1954, d: '싱글 픽업 3개에 몸에 착 붙는 곡선 몸통. 가장 많이 따라 만든 일렉기타 모양', p: '지미 헨드릭스 · 에릭 클랩튼 · 존 메이어', by: 'Atlantictire (Stra2caster 사진 수정)', lic: 'Public domain', src: 'https://commons.wikimedia.org/wiki/File:Fender_Stratocaster_004-2.jpg' },
+            { k: 'tele', n: 'Fender Telecaster', ko: '펜더 텔레캐스터', y: 1951, d: '처음으로 대량 생산된 솔리드 바디 일렉기타. 쨍하고 단단한 소리', p: '키스 리처즈 · 브루스 스프링스틴', by: 'Jackson-Lewis1717', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:Jim_Root_Telecaster.jpg' },
+            { k: 'lespaul', n: 'Gibson Les Paul', ko: '깁슨 레스폴', y: 1952, d: '두툼한 마호가니 몸통. 굵고 길게 우는 소리의 대명사', p: '지미 페이지 · 슬래시', by: 'Lightburst', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:Full_front_R9_Les_Paul.jpg' },
+            { k: 'sg', n: 'Gibson SG', ko: '깁슨 SG', y: 1961, d: '얇고 가벼운 몸통에 뾰족한 뿔 두 개', p: '앵거스 영 · 토니 아이오미', by: 'wetwebwork', lic: 'CC BY-SA 2.0', src: 'https://commons.wikimedia.org/wiki/File:Gibson_SG_Standard_(1984).jpg' },
+            { k: 'es335', n: 'Gibson ES-335', ko: '깁슨 ES-335', y: 1958, d: '속이 반쯤 빈 세미할로우. 재즈부터 블루스·록까지', p: '래리 칼튼 · 에릭 클랩튼', by: 'Lightburst', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:1960_Gibson_ES-335TD.jpg' },
+            { k: 'flyingv', n: 'Gibson Flying V', ko: '깁슨 플라잉 V', y: 1958, d: '화살촉 같은 V자 몸통. 너무 앞서가서 처음엔 거의 안 팔렸다', p: '앨버트 킹 · 마이클 쉥커', by: 'Jérôme Fischer', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:Flying_V_crop.jpg' },
+            { k: 'explorer', n: 'Gibson Explorer', ko: '깁슨 익스플로러', y: 1958, d: '번개처럼 각진 몸통. 플라잉 V와 같은 해에 나온 형제', p: '제임스 헷필드 · 디 엣지', by: 'ZngZng', lic: 'Public domain', src: 'https://commons.wikimedia.org/wiki/File:Gibson_Explorer.jpg' },
+            { k: 'jazzmaster', n: 'Fender Jazzmaster', ko: '펜더 재즈마스터', y: 1958, d: '재즈용으로 만들었는데 정작 얼터너티브·슈게이즈가 사랑한 기타', p: 'J 마스시스 · 엘비스 코스텔로', by: 'Dirk-X', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:Fender_Jazzmaster_rot_(cropped).jpg' },
+            { k: 'jaguar', n: 'Fender Jaguar', ko: '펜더 재규어', y: 1962, d: '짧은 스케일에 스위치가 가득한 크롬 판', p: '커트 코베인 · 조니 마', by: 'badgreeb fattkatt (배경 제거: Auge=mit)', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:Fender_Jaguar_3_tone_burst_noBG.png' },
+            { k: 'mustang', n: 'Fender Mustang', ko: '펜더 머스탱', y: 1964, d: '학생용으로 나온 작고 가벼운 기타. 손 작은 사람에게 딱', p: '커트 코베인', by: 'Vaiodagger', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:1998FenderMustangVintageWhite.jpg' },
+            { k: 'rick330', n: 'Rickenbacker 330', ko: '리켄배커 330', y: 1958, d: '반짝이는 할로우 바디와 독특한 사운드홀. 60년대 영국 밴드 소리', p: '피트 타운센드 · 폴 웰러', by: 'Wikimedia Commons', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:Rickenbacker_330JG.jpg' },
+            { k: 'prs24', n: 'PRS Custom 24', ko: 'PRS 커스텀 24', y: 1985, d: 'PRS의 첫 대표 모델. 화려한 나뭇결 무늬에 24프렛', p: '마크 트레몬티 · 카를로스 산타나(PRS)', by: 'Rachmaninoff', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:PRS_Custom_24_teal_black_2004,_body.jpg' },
+            { k: 'gretsch6120', n: 'Gretsch 6120', ko: '그레치 6120', y: 1954, d: '몸통에 G 낙인이 찍힌 오렌지 할로우 바디. 로커빌리 그 자체', p: '에디 코크런 · 브라이언 세처', by: 'Francis pullen', lic: 'Public domain', src: 'https://commons.wikimedia.org/wiki/File:Gretsch_6120_G-_Brand_1955_vintage.jpg' },
+            { k: 'ibanezrg', n: 'Ibanez RG', ko: '아이바네즈 RG', y: 1987, d: '얇은 넥과 날카로운 뿔. 속주·메탈의 상징 슈퍼스트랫', p: '폴 길버트 · 스티브 바이(형제 모델 JEM)', by: 'Soulrefrain', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:Ibanez_RG350EXZ_BK_Electric_Guitar_c.a._2011.jpg' },
+            { k: 'firebird', n: 'Gibson Firebird', ko: '깁슨 파이어버드', y: 1963, d: '자동차 디자이너가 그린 거꾸로 선 듯한 몸통', p: '조니 윈터 · 앨런 콜린스', by: 'Jones629', lic: 'Public domain', src: 'https://commons.wikimedia.org/wiki/File:Firebirdv2008.jpg' },
+            { k: 'casino', n: 'Epiphone Casino', ko: '에피폰 카지노', y: 1961, d: '속이 다 빈 할로우 바디. 비틀즈 세 명이 모두 썼다', p: '존 레논 · 조지 해리슨', by: 'Ronald Saunders', lic: 'CC BY-SA 2.0', src: 'https://commons.wikimedia.org/wiki/File:John_Lennon%27s_guitar,_Imagine_room_replica_of_the_Beatles_Story_museum.jpg' },
+        ],
+    },
+    weird: {
+        title: '괴상한 기타 월드컵', tag: '괴짜 16', icon: 'fa-ghost',
+        desc: '넥이 네 개, 몸통이 없는 기타, 네모난 기타… 이게 정말 기타라고?',
+        q: '더 갖고 싶은 괴짜는?',
+        items: [
+            { k: 'fryingpan', n: 'Rickenbacker "Frying Pan"', ko: '리켄배커 프라이팬', y: 1932, d: '세계 최초의 상업용 전기기타. 이름 그대로 프라이팬 모양 (무릎에 눕혀 치는 스틸 기타)', p: '', by: 'Kevin Spencer', lic: 'CC BY 2.0', src: 'https://commons.wikimedia.org/wiki/File:Rickenbacker_Frying_Pan_guitar_(cropped).jpg' },
+            { k: 'eds1275', n: 'Gibson EDS-1275', ko: '깁슨 더블넥', y: 1958, d: '넥이 두 개! 위는 12줄, 아래는 6줄', p: '지미 페이지 (Stairway to Heaven 라이브)', by: 'T. Wesley', lic: 'Public domain', src: 'https://commons.wikimedia.org/wiki/File:Gibson_EDS1275.jpg' },
+            { k: 'pikasso', n: 'Manzer Pikasso', ko: '만저 피카소 기타', y: 1984, d: '넥 4개에 줄이 42개. 피카소 그림처럼 생겨서 붙은 이름', p: '팻 메스니', by: 'Lana from San Francisco', lic: 'CC BY 2.0', src: 'https://commons.wikimedia.org/wiki/File:Pikasso_Guitar_(lowres).jpg' },
+            { k: 'steinberger', n: 'Steinberger', ko: '스타인버거', y: 1980, d: '헤드가 없다! 막대기 같은 몸통의 헤드리스 기타 원조 (사진 위는 베이스)', p: '', by: 'Magi Media Styroks', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:Steinberger_Bass_und_Spirit_headless.jpg' },
+            { k: 'parkerfly', n: 'Parker Fly', ko: '파커 플라이', y: 1993, d: '나무 위에 탄소섬유를 입혀 아주 가벼운, 조각품 같은 몸통', p: '', by: 'Peboyle', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:Parker_Fly.jpg' },
+            { k: 'iceman', n: 'Ibanez Iceman', ko: '아이바네즈 아이스맨', y: 1975, d: '한쪽만 갈고리처럼 튀어나온 몸통', p: '폴 스탠리 (KISS)', by: 'Ultimate Guitar', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:Ibanez_Iceman_Guitar.jpg' },
+            { k: 'rhoads', n: 'Jackson Rhoads', ko: '잭슨 랜디 로즈', y: 1980, d: '날카롭게 비틀린 V. 메탈 기타의 정석', p: '랜디 로즈', by: 'Eugene Zelenko', lic: 'CC BY-SA 4.0', src: 'https://commons.wikimedia.org/wiki/File:Jackson_Randy_Rhoads_JS20-1.jpg' },
+            { k: 'warlock', n: 'B.C. Rich Warlock', ko: 'B.C. 리치 워록', y: 1981, d: '사방으로 뾰족뾰족. 헤비메탈 그 자체', p: '', by: 'Phil Burton', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:BC_Rich_Warlock_Guitar.JPG' },
+            { k: 'harp', n: 'Harp Guitar', ko: '하프 기타', y: '19세기', d: '기타 위에 울림용 베이스 줄을 더 단 하프 같은 기타', p: '', by: 'Von-zoid', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:Guitare_harpe.jpg' },
+            { k: 'moderne', n: 'Gibson Moderne', ko: '깁슨 모던', y: '1957 설계 · 1982 출시', d: '플라잉 V·익스플로러와 같이 그렸지만 25년 동안 나오지 않은 전설의 기타', p: '', by: 'Guitarpimp (de.wikipedia)', lic: 'CC BY 3.0', src: 'https://commons.wikimedia.org/wiki/File:Gibson-Moderne-Heritage.jpg' },
+            { k: 'phantom', n: 'Vox Phantom', ko: '복스 팬텀', y: 1962, d: '영국 Vox의 오각형 몸통 기타', p: '이언 커티스 (조이 디비전)', by: 'LittleRoughRhinestone', lic: 'Public domain', src: 'https://commons.wikimedia.org/wiki/File:1966_Vox_Phantom_VI.jpg' },
+            { k: 'longhorn', n: 'Danelectro Longhorn', ko: '댄일렉트로 롱혼', y: 1958, d: '소뿔처럼 긴 뿔. 몸통은 압축 나무판(메이소나이트)', p: '', by: 'Andrew Russeth', lic: 'CC BY-SA 3.0', src: 'https://commons.wikimedia.org/wiki/File:Danelectro_Longhorn_4623_(1958),_MIM_PHX_(edit).jpg' },
+            { k: 'cloud', n: 'Prince "Cloud" Guitar', ko: '프린스 구름 기타', y: 1984, d: '영화 〈퍼플 레인〉에 나온 구름 모양 기타', p: '프린스', by: 'Will from New York', lic: 'CC BY-SA 2.0', src: 'https://commons.wikimedia.org/wiki/File:Prince_guitar_Smithsonian-20060219.jpg' },
+            { k: 'twang', n: 'Bo Diddley "Twang Machine"', ko: '보 디들리 네모 기타', y: '1960년쯤', d: '네모난 기타! 그레치가 보 디들리를 위해 만든 사각형 몸통', p: '보 디들리', by: 'Eden, Janine and Jim', lic: 'CC BY 2.0', src: 'https://commons.wikimedia.org/wiki/File:Bo_Diddley%27s_Fred_Gretsch_%22Twang_Machine%22_(ca.1960)_-_Play_It_Loud._MET_(2019-05-13_18.36.00_by_Eden,_Janine_and_Jim).jpg' },
+            { k: 'gittler', n: 'Gittler Guitar', ko: '기틀러 기타', y: '1970년대', d: '몸통이 없다! 금속 뼈대만 남은 기타', p: '', by: 'Frank Kovalchek', lic: 'CC BY 2.0', src: 'https://commons.wikimedia.org/wiki/File:Gittler_(electric_guitar)_(1970-1985)_-_MIM_PHX.jpg' },
+            { k: 'corvus', n: 'Gibson Corvus', ko: '깁슨 코버스', y: 1982, d: '"깡통따개"라는 별명이 붙은 몸통', p: '', by: 'mbaylor', lic: 'CC BY 2.0', src: 'https://commons.wikimedia.org/wiki/File:Gibson_Corvus_II.jpg' },
+        ],
+    },
+};
+// 다음에 만들 주제 (준비 중으로만 보임)
+const SOON = ['입문 일렉 (100만원 아래)', '통기타 브랜드', '이펙터 페달', '기타 앰프', '전설의 기타리스트 기타'];
+
+const { esc, shuffle, adSlot, interstitial, share, catalog, recRow } = PLAY;
+const app = document.getElementById('app');
+const imgSrc = it => `../images/play/wc/${it.k}.jpg`;
+const roundName = n => n === 2 ? '결승' : n === 4 ? '4강' : `${n}강`;
+
+// ---------- 시작 화면 ----------
+function start() {
+    history.replaceState(null, '', location.pathname);
+    const card = (key, t) => `<div class="theme card">
+        <div class="peek">${t.items.slice(0, 4).map(it => `<i style="background-image:url('${imgSrc(it)}')"></i>`).join('')}</div>
+        <h2><i class="fas ${t.icon}" style="color:var(--green-mid)"></i>${esc(t.title)} <small>${t.tag}</small></h2>
+        <p>${esc(t.desc)}</p>
+        <div class="btns"><button class="btn" data-go="${key}" data-n="16"><i class="fas fa-play"></i>16강 시작</button><button class="btn ghost" data-go="${key}" data-n="8">8강 빠르게</button></div>
+    </div>`;
+    app.innerHTML = `<section class="hero"><h1>기타 <em>이상형 월드컵</em></h1><p>둘 중 하나만 고르세요. 끝까지 남는 게 당신의 운명의 기타!</p></section>
+        <div class="themes">${Object.entries(THEMES).map(([k, t]) => card(k, t)).join('')}
+            <div class="theme card soon"><div class="peek"><i>?</i><i>?</i><i>?</i><i>?</i></div><h2><i class="fas fa-hourglass-half" style="color:#b7c0bb"></i>다음 월드컵 <small>준비 중</small></h2>
+            <div class="soonlist">${SOON.map(s => `<span>${esc(s)}</span>`).join('')}</div></div>
+        </div>
+        ${adSlot('wide')}`;
+    app.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => play(b.dataset.go, +b.dataset.n)));
+    scrollTo(0, 0);
+}
+
+// ---------- 대결 ----------
+let S = null;   // { key, theme, size, cur: [...], next: [...], i, hist: [], lost: {k: 강} }
+function play(key, size) {
+    const theme = THEMES[key];
+    history.replaceState(null, '', `?t=${key}&n=${size}`);
+    const pool = shuffle(theme.items).slice(0, size);
+    S = { key, theme, size, cur: pool, next: [], i: 0, hist: [], out: [] };
+    match();
+}
+function match() {
+    const n = S.cur.length, a = S.cur[S.i], b = S.cur[S.i + 1];
+    const done = S.size - n + S.i / 2, total = S.size - 1;   // 지금까지 끝난 대결 수 / 전체
+    const card = (it, side) => `<button class="pick card" data-side="${side}" aria-label="${esc(it.n)} 고르기">
+        <span class="ph-img"><img src="${imgSrc(it)}" alt="${esc(it.n)}"></span>
+        <span class="nm"><b>${esc(it.n)}</b><small>${esc(it.ko)} · ${esc(it.y)}</small><span>${esc(it.d)}</span></span></button>`;
+    app.innerHTML = `<div class="round"><b>${roundName(n)}${n > 2 ? ` <small style="font-size:15px;color:var(--sub)">${S.i / 2 + 1} / ${n / 2}</small>` : ''}</b>
+            <span class="bar"><i style="width:${done / total * 100}%"></i></span>
+            <button class="undo" ${S.hist.length ? '' : 'disabled'}><i class="fas fa-rotate-left"></i> 되돌리기</button></div>
+        <p class="q">${esc(S.theme.q)}</p>
+        <div class="vs">${card(a, 0)}<span class="mark">VS</span>${card(b, 1)}</div>
+        <p class="keys">키보드 ← → 로도 고를 수 있어요</p>`;
+    app.querySelectorAll('.pick').forEach(p => p.addEventListener('click', () => choose(+p.dataset.side)));
+    scrollTo(0, 0);
+    app.querySelector('.undo').addEventListener('click', undo);
+    // 다음 대결 사진 미리 받기
+    [S.cur[S.i + 2], S.cur[S.i + 3]].forEach(it => { if (it) new Image().src = imgSrc(it); });
+}
+let busy = false;
+function choose(side) {
+    if (busy) return;
+    busy = true;
+    const picks = app.querySelectorAll('.pick');
+    picks[side].classList.add('won'); picks[1 - side].classList.add('lost');
+    S.hist.push({ cur: S.cur, next: S.next.slice(), i: S.i, out: S.out.slice() });
+    const w = S.cur[S.i + side], l = S.cur[S.i + 1 - side];
+    S.out.push({ it: l, at: S.cur.length });
+    S.next.push(w); S.i += 2;
+    setTimeout(() => {
+        busy = false;
+        if (S.i >= S.cur.length) {
+            if (S.next.length === 1) return interstitial(() => winner(S.next[0]));
+            S.cur = S.next; S.next = []; S.i = 0;
+        }
+        match();
+    }, 420);
+}
+function undo() {
+    const h = S.hist.pop();
+    if (!h) return;
+    Object.assign(S, h);
+    match();
+}
+addEventListener('keydown', e => {
+    if (!S || !app.querySelector('.vs')) return;
+    if (e.key === 'ArrowLeft') choose(0);
+    if (e.key === 'ArrowRight') choose(1);
+});
+
+// ---------- 우승 ----------
+async function winner(w) {
+    const second = S.out.find(o => o.at === 2), semis = S.out.filter(o => o.at === 4);
+    const t = S.theme;
+    app.innerHTML = `<section class="win">
+        <div class="crown">🏆 WINNER · ${esc(t.title)} ${S.size}강</div>
+        <h1>${esc(w.n)}</h1><div class="ko">${esc(w.ko)} · ${esc(w.y)}</div>
+        <div class="big card"><div class="ph-img"><img src="${imgSrc(w)}" alt="${esc(w.n)}"></div>
+            <div class="facts"><div><i class="fas fa-circle-info"></i>${esc(w.d)}</div>${w.p ? `<div><i class="fas fa-user"></i>${esc(w.p)}</div>` : ''}</div></div>
+        <div class="podium">${second ? `<div><img src="${imgSrc(second.it)}" alt=""><span><small>준우승</small><b>${esc(second.it.n)}</b></span></div>` : ''}
+            ${semis.map(o => `<div><img src="${imgSrc(o.it)}" alt=""><span><small>4강</small><b>${esc(o.it.n)}</b></span></div>`).join('')}</div>
+        <div class="btns"><button class="btn" id="again"><i class="fas fa-rotate-right"></i>다시 하기</button>
+            <button class="btn ghost" id="other"><i class="fas fa-shuffle"></i>다른 월드컵</button>
+            <button class="btn ghost" id="share"><i class="fas fa-share-nodes"></i>결과 공유</button></div>
+        ${adSlot('r300')}
+        <div class="stat-soon"><b>📊 다른 사람들은 뭘 골랐을까? (준비 중)</b><br>실제로 만들면 우승·대결 결과를 모아 '우승 비율 순위'와 '이 대결에서 몇 %가 골랐는지'를 보여 줄 수 있어요.</div>
+        <div class="rec" id="rec"></div>
+        <details class="credits"><summary>사진 출처 (Wikimedia Commons)</summary><ul>${t.items.map(it => `<li>${esc(it.n)} — ${esc(it.by)}, ${esc(it.lic)} · <a href="${esc(it.src)}" target="_blank" rel="noopener">원본</a></li>`).join('')}</ul></details>
+    </section>`;
+    scrollTo(0, 0);
+    document.getElementById('again').onclick = () => play(S.key, S.size);
+    document.getElementById('other').onclick = start;
+    document.getElementById('share').onclick = () => share('기타 이상형 월드컵', `내 ${t.title} 우승은 「${w.n}」 🎸 너는 뭐 고를래?`);
+    // 일렉 악보 추천 — 공개한 일렉기타·기타솔로 악보 중 풀스코어 주문이 많은 곡
+    try {
+        const rows = (await catalog()).filter(s => s.on_sale && (s.style === 'electric' || s.style === 'solo'));
+        rows.sort((a, b) => (b.fullscore_orders || 0) - (a.fullscore_orders || 0));
+        const seen = new Set(), top = rows.filter(s => { const k = PLAY.baseTitle(s.title).toLowerCase(); return !seen.has(k) && seen.add(k); }).slice(0, 6);   // 같은 곡 일렉·솔로는 하나만
+        if (top.length) document.getElementById('rec').innerHTML = `<h3><i class="fas fa-music" style="color:var(--green-mid)"></i>이 기타로 쳐 볼 일렉 악보 <small>안쌤 TAB악보</small></h3><div class="list">${top.map(recRow).join('')}</div>`;
+    } catch (e) {}
+}
+
+// 주소로 바로 들어오면(?t=classic&n=16) 그 월드컵부터
+const P = new URLSearchParams(location.search);
+if (THEMES[P.get('t')]) play(P.get('t'), [8, 16].includes(+P.get('n')) ? +P.get('n') : 16);
+else start();
+</script>
+</body>
+</html>

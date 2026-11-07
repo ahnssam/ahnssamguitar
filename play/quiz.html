@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#2a6b4a">
+<title>기타 퀴즈쇼 | 안쌤의 기타나무숲</title>
+<meta name="description" content="TAB 악보 보고 노래 맞히기, 이 노래 누구 노래?, 기타 상식까지. 10문제로 내 기타 레벨을 알아보세요.">
+<link rel="icon" href="../images/favicon.ico" type="image/x-icon">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="play.css?v=2026110702">
+<style>
+    .hero { text-align: center; padding: 34px 0 6px; }
+    .hero h1 { font-size: clamp(24px, 4.4vw, 36px); font-weight: 900; letter-spacing: -0.02em; }
+    .hero h1 em { font-style: normal; color: var(--green-deep); }
+    .hero p { color: var(--sub); margin-top: 6px; font-size: 14.5px; }
+    .modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 24px; }
+    .mode { padding: 22px 20px; text-align: left; display: flex; flex-direction: column; gap: 8px; transition: transform .2s, box-shadow .2s; }
+    .mode:hover { transform: translateY(-3px); box-shadow: 0 2px 0 var(--green-pale), 0 14px 34px rgba(42, 107, 74, 0.14); }
+    .mode .ic { width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center; font-size: 22px; color: #fff; }
+    .mode h2 { font-size: 19px; font-weight: 900; }
+    .mode p { color: #555; font-size: 13.5px; }
+    .mode .meta { font-size: 12px; color: var(--sub); display: flex; gap: 10px; margin-top: auto; padding-top: 6px; }
+    .mode .go { font-weight: 700; color: var(--green-deep); font-size: 14px; }
+
+    /* 문제 */
+    .qhd { display: flex; align-items: center; gap: 12px; padding: 18px 0 8px; flex-wrap: wrap; }
+    .qhd .md { font-weight: 900; color: var(--green-deep); }
+    .qhd .no { font-weight: 700; }
+    .qhd .sp { flex: 1; }
+    .qhd .sc { font-weight: 700; }
+    .qhd .streak { font-size: 13px; color: #e06a2a; font-weight: 700; }
+    .timer { height: 8px; background: #dfe7e2; border-radius: 99px; overflow: hidden; }
+    .timer i { display: block; height: 100%; width: 100%; background: var(--green-mid); transform-origin: left; }
+    .timer.warn i { background: #e9a23b; }
+    .qbox { margin-top: 14px; padding: 22px; text-align: center; }
+    .qbox .ask { font-size: clamp(18px, 3vw, 23px); font-weight: 900; line-height: 1.45; }
+    .qbox .chip { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--green-faint); color: var(--green-deep); margin-bottom: 10px; }
+    .song { font-size: clamp(22px, 4vw, 32px); font-weight: 900; margin: 6px 0 4px; }
+    .tabcrop { margin: 14px auto 0; max-width: 760px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: #fff; aspect-ratio: 1000 / 300; position: relative; }
+    .tabcrop img { width: 100%; display: block; margin-top: -12.6%; transition: margin .35s; }
+    .tabcrop.open img { margin-top: 0; }   /* 정답 공개: 같은 높이에서 위로 올려 제목·가수 줄이 보이게 */
+    .hint { margin-top: 10px; font-size: 13px; color: var(--green-deep); font-weight: 700; padding: 6px 12px; border-radius: 999px; border: 1px dashed var(--green-mid); background: #fff; }
+    .hint[disabled] { color: #666; border-style: solid; border-color: var(--line); cursor: default; }
+    .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+    .choices button { background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 14px 14px; font-size: 15.5px; font-weight: 700; text-align: left; display: flex; align-items: center; gap: 10px; transition: border-color .15s, background .15s; }
+    .choices button:hover:not([disabled]) { border-color: var(--green-mid); background: #fbfefc; }
+    .choices button .k { flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: #f1f4f2; font-size: 13px; color: #666; }
+    .choices button.ok { border-color: var(--green-mid); background: var(--green-faint); }
+    .choices button.ok .k { background: var(--green-mid); color: #fff; }
+    .choices button.no { border-color: var(--red); background: #fdeeee; }
+    .choices button.no .k { background: var(--red); color: #fff; }
+    .choices button[disabled] { cursor: default; }
+    @media (max-width: 640px) { .choices { grid-template-columns: 1fr; } .qbox { padding: 16px 12px; } }
+    .fb { margin-top: 14px; padding: 14px 16px; border-radius: 14px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .fb.ok { background: var(--green-faint); }
+    .fb.no { background: #fdeeee; }
+    .fb .t { font-weight: 900; font-size: 16px; }
+    .fb .x { flex: 1 1 260px; font-size: 13.5px; color: #333; }
+    .fb .x a { color: var(--green-deep); font-weight: 700; text-decoration: underline; }
+    .fb .btn { padding: 10px 18px; }
+    .cover { width: 54px; height: 54px; border-radius: 8px; object-fit: cover; }
+
+    /* 결과 */
+    .res { text-align: center; padding: 26px 0 0; }
+    .res .md { font-weight: 700; color: var(--sub); }
+    .res .score { font-size: clamp(54px, 10vw, 84px); font-weight: 900; line-height: 1.1; color: var(--green-deep); font-family: 'Arial Black', 'Noto Sans KR', sans-serif; }
+    .res .score small { font-size: .4em; color: #aaa; }
+    .res .rank { font-size: clamp(22px, 4vw, 30px); font-weight: 900; margin-top: 2px; }
+    .res .cm { color: #555; margin-top: 4px; }
+    .res .btns { margin-top: 18px; }
+    .review { max-width: 760px; margin: 8px auto 0; text-align: left; padding: 8px 16px; }
+    .review h3 { font-size: 15px; font-weight: 900; padding: 8px 0; }
+    .review li { list-style: none; display: flex; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 13.5px; }
+    .review li i { margin-top: 3px; }
+    .review li .fa-circle-check { color: var(--green-mid); }
+    .review li .fa-circle-xmark { color: var(--red); }
+    .review li small { display: block; color: var(--sub); }
+    .res .rec { max-width: 860px; margin-left: auto; margin-right: auto; }
+</style>
+</head>
+<body>
+<div class="mock-bar">🚧 <b>목업</b> — 광고는 회색 상자로만 보여요. 아직 메뉴에 연결하지 않은 시험 페이지예요.</div>
+<header class="ph"><div class="wrap">
+    <a class="logo" href="../"><img src="../images/logo-vertical.webp" alt="안쌤의 기타나무숲"></a>
+    <span class="ttl"><i class="fas fa-circle-question"></i>기타 퀴즈쇼</span>
+    <span class="sp"></span>
+    <a class="lnk" href="./"><i class="fas fa-gamepad"></i><span>놀이터</span></a>
+    <a class="lnk" href="worldcup.html"><i class="fas fa-trophy"></i><span>이상형 월드컵</span></a>
+</div></header>
+
+<main class="wrap" id="app"></main>
+
+<footer>
+    <div class="links"><a href="../">TAB악보</a><a href="../requests.html">악보요청</a><a href="../tools.html">연습도구</a><a href="../legal/terms.html">이용약관</a><a href="../legal/privacy.html">개인정보 처리방침</a></div>
+    <span>상호: 안쌤의 기타나무숲</span><span>대표: 안규호</span><span>사업자등록번호: 453-22-00905</span><span>통신판매업 신고번호: 제2026-서울강남-06306호</span><br>
+    <span>주소: 서울특별시 강남구 영동대로 210 쌍용종합상가 지하1층 3호</span><span>고객센터: 0507-1334-9804</span><span>이메일: ahnssamguitar@gmail.com</span><span>호스팅: GitHub</span>
+    <div>© 2026 안쌤의 기타나무숲</div>
+</footer>
+
+<script src="play.js?v=2026110702"></script>
+<script>
+const { esc, shuffle, adSlot, interstitial, share, catalog, previews, pvUrl, cvUrl, STYLE, baseTitle, recRow, IS_APP } = PLAY;
+const app = document.getElementById('app');
+const N = 10;   // 한 판 문제 수
+
+// ---------- 기타 상식 문제 (a = 정답, w = 오답 3개, x = 해설) ----------
+const TRIVIA = [
+    { q: '기타 표준 튜닝에서 6번줄(가장 굵은 줄)의 음은?', a: 'E (미)', w: ['A (라)', 'D (레)', 'G (솔)'], x: '굵은 줄부터 E-A-D-G-B-E. 6번줄과 1번줄이 둘 다 E예요.' },
+    { q: '표준 튜닝을 굵은 줄(6번)부터 차례로 적으면?', a: 'E A D G B E', w: ['E A D G C E', 'D A D G A D', 'E A C G B E'], x: 'D A D G A D는 "대드개드"라고 부르는 다른 튜닝이에요.' },
+    { q: '12프렛을 누르면 개방현보다 얼마나 높은 소리가 날까?', a: '1옥타브', w: ['반음', '5도', '2옥타브'], x: '12프렛은 줄 길이의 딱 절반 — 그래서 정확히 1옥타브 위예요.' },
+    { q: '프렛 한 칸을 올라가면 음이 얼마나 올라갈까?', a: '반음', w: ['온음', '3도', '1옥타브'], x: '프렛 한 칸 = 반음, 두 칸 = 온음.' },
+    { q: '카포(capo)는 무엇을 하는 도구일까?', a: '줄을 한꺼번에 눌러 키를 올린다', w: ['줄을 갈 때 쓴다', '소리를 크게 키운다', '박자를 맞춰 준다'], x: '카포 2프렛이면 같은 코드 모양으로 키가 온음 올라가요.' },
+    { q: '펜더 스트라토캐스터에 기본으로 달린 픽업은 몇 개?', a: '3개', w: ['1개', '2개', '4개'], x: '싱글코일 픽업 3개 — 넥·가운데·브리지.' },
+    { q: '험버커(humbucker) 픽업이 이름처럼 줄여 주는 것은?', a: '"웅—" 하는 잡음(험)', w: ['줄의 떨림', '음량', '튜닝이 틀어지는 것'], x: '코일 두 개를 반대로 감아 험 잡음을 없애요 (hum + buck).' },
+    { q: '레스폴(Les Paul)은 어느 회사의 기타일까?', a: '깁슨 (Gibson)', w: ['펜더 (Fender)', '아이바네즈 (Ibanez)', '야마하 (Yamaha)'], x: '기타리스트 레스 폴과 깁슨이 함께 만든 모델이에요 (1952년).' },
+    { q: 'TAB 악보에서 맨 위 줄은 몇 번 줄일까?', a: '1번줄 (가장 얇은 줄)', w: ['6번줄 (가장 굵은 줄)', '3번줄', '악보마다 다르다'], x: 'TAB은 기타를 내려다본 모습 — 맨 위가 가장 얇은 1번줄이에요.' },
+    { q: 'C 코드를 이루는 세 음은?', a: '도 · 미 · 솔', w: ['도 · 파 · 라', '레 · 파 · 라', '솔 · 시 · 레'], x: '도 파 라는 F, 레 파 라는 Dm, 솔 시 레는 G 코드예요.' },
+    { q: '코드 이름 Am의 m은 무슨 뜻?', a: '마이너 (minor)', w: ['메이저 (major)', '뮤트 (mute)', '미디엄 (medium)'], x: '마이너 코드는 조금 어둡고 슬픈 느낌이에요.' },
+    { q: '줄을 튕기지 않고 왼손 손가락으로 때려서 소리를 내는 주법은?', a: '해머링 온 (hammer-on)', w: ['풀링 오프 (pull-off)', '벤딩 (bending)', '팜 뮤트 (palm mute)'], x: '풀링 오프는 반대로 손가락을 뜯듯이 떼면서 소리를 내요.' },
+    { q: '줄을 밀어 올려 음을 높이는 주법은?', a: '벤딩 (bending)', w: ['슬라이드 (slide)', '하모닉스 (harmonics)', '스트로크 (stroke)'], x: '록 기타 솔로에서 "우~왕" 하고 우는 그 소리!' },
+    { q: '팜 뮤트(palm mute)는 어디로 줄을 막을까?', a: '오른손 손날을 브리지 쪽 줄에 살짝', w: ['왼손 엄지로 6번줄을', '카포로 1프렛을', '왼손 손바닥 전체로'], x: '"둥둥둥" 하는 묵직한 소리 — 록·메탈 리프의 기본이에요.' },
+    { q: '파워코드(power chord)는 보통 어떤 음으로 만들까?', a: '근음 + 5도', w: ['근음 + 3도 + 5도', '근음 + 7도', '3도 + 7도'], x: '3도가 없어서 메이저도 마이너도 아니에요. 그래서 E5처럼 "5"를 붙여요.' },
+    { q: '클래식 기타 줄은 보통 무엇으로 만들까?', a: '나일론', w: ['스틸(쇠)', '구리', '고무'], x: '통기타·일렉은 쇠줄, 클래식 기타는 나일론 줄이에요.' },
+    { q: '헤드 쪽에서 줄을 받쳐 주는 작은 부품(줄이 지나가는 홈)은?', a: '너트 (nut)', w: ['새들 (saddle)', '프렛 (fret)', '픽가드 (pickguard)'], x: '새들은 반대쪽 브리지에서 줄을 받쳐 줘요.' },
+    { q: '코드 이름 G/B에서 슬래시 뒤의 B는 무엇일까?', a: '가장 낮게 칠 음 (베이스)', w: ['같이 칠 멜로디 음', '카포 위치', '다음에 칠 코드'], x: '분수 코드 — 슬래시 뒤 음을 베이스로 쳐요.' },
+    { q: '3/4박자는 한 마디에 4분음표가 몇 개?', a: '3개', w: ['4개', '2개', '6개'], x: '쿵짝짝 — 왈츠 박자예요.' },
+    { q: '메트로놈의 BPM은 무엇을 뜻할까?', a: '1분에 몇 박인지', w: ['1초에 몇 박인지', '한 마디에 몇 박인지', '음의 높이'], x: 'Beats Per Minute — 60이면 1초에 한 박이에요.' },
+    { q: '세계 최초의 상업용 전기기타는 무엇처럼 생겨서 별명이 붙었을까?', a: '프라이팬', w: ['국자', '테니스 라켓', '바이올린'], x: '1932년 리켄배커 "프라이팬" — 이상형 월드컵에도 나와요!' },
+    { q: '지미 헨드릭스는 오른손잡이용 기타를 어떻게 쳤을까?', a: '뒤집어서 왼손잡이처럼', w: ['오른손으로 그대로', '왼손잡이용만 주문해서', '줄을 4개만 걸고'], x: '오른손잡이용 스트랫을 뒤집고 줄을 거꾸로 걸어서 쳤어요.' },
+    { q: '"Smoke on the Water" 기타 리프로 유명한 밴드는?', a: '딥 퍼플 (Deep Purple)', w: ['레드 제플린 (Led Zeppelin)', '퀸 (Queen)', '너바나 (Nirvana)'], x: '1972년 앨범 《Machine Head》에 실린 곡이에요.' },
+    { q: '퀸 브라이언 메이의 기타 "Red Special"은 어디서 났을까?', a: '아버지와 함께 직접 만들었다', w: ['펜더가 선물했다', '깁슨 매장에서 샀다', '경매에서 샀다'], x: '10대 때 아버지와 함께, 낡은 벽난로 나무로 넥을 깎아 만들었어요.' },
+    { q: '"Hotel California"의 트윈 기타 솔로로 유명한 밴드는?', a: '이글스 (Eagles)', w: ['비틀즈 (The Beatles)', '오아시스 (Oasis)', '롤링 스톤스 (The Rolling Stones)'], x: '돈 펠더와 조 월시가 주고받는 솔로가 명장면이에요.' },
+    { q: '줄에 손가락을 살짝 대기만 하고 쳐서 "띵~" 맑은 소리를 내는 주법은?', a: '하모닉스 (harmonics)', w: ['슬라이드 (slide)', '스트로크 (stroke)', '아르페지오 (arpeggio)'], x: '12·7·5프렛 바로 위에서 잘 나요.' },
+    { q: 'G7처럼 코드 이름 뒤의 "7"은 무슨 뜻일까?', a: '7번째 음(단7도)을 더한 코드', w: ['7프렛을 누르라는 뜻', '7번 치라는 뜻', '7번줄까지 치라는 뜻'], x: 'G7 = 솔 · 시 · 레 + 파.' },
+];
+
+// ---------- 퀴즈 종류 ----------
+const MODES = {
+    tab: { name: 'TAB 보고 노래 맞히기', icon: 'fa-guitar', color: '#42a854', sec: 25, desc: '안쌤 악보의 첫 줄만 보여 줘요. 코드와 TAB만 보고 무슨 곡인지 맞혀 보세요.', meta: '10문제 · 25초 · 힌트 있음' },
+    artist: { name: '이 노래 누구 노래?', icon: 'fa-microphone', color: '#52a6f2', sec: 12, desc: '곡 제목을 보고 부른 가수(연주자)를 골라요. 안쌤 악보 목록에서 나와요.', meta: '10문제 · 12초' },
+    trivia: { name: '기타 상식 퀴즈', icon: 'fa-lightbulb', color: '#eaac14', sec: 15, desc: '튜닝, 코드, 주법, 전설의 기타까지. 기타 좀 쳐 본 사람이라면 맞힐 수 있는 문제들!', meta: '10문제 · 15초 · 해설 있음' },
+};
+const RANK = [
+    [10, '🏆 기타 신(神)', '더 가르칠 게 없네요. 안쌤 자리를 노리는 중?'],
+    [8, '🔥 무대 체질', '이 정도면 버스킹 나가도 되겠어요!'],
+    [6, '🎸 합주실 단골', '꽤 치시는데요? 조금만 더 하면 고수!'],
+    [3, '🎵 코드 좀 잡는 사람', '기본은 있어요. 악보 한 곡 끝까지 쳐 보는 건 어때요?'],
+    [0, '🌱 기타 새싹', '괜찮아요, 다들 여기서 시작해요. 안쌤이랑 같이 해요!'],
+];
+
+function start() {
+    history.replaceState(null, '', location.pathname);
+    app.innerHTML = `<section class="hero"><h1>안쌤의 <em>기타 퀴즈쇼</em></h1><p>10문제로 알아보는 내 기타 레벨. 친구랑 점수 내기 해 보세요!</p></section>
+        <div class="modes">${Object.entries(MODES).map(([k, m]) => `<button class="mode card" data-m="${k}">
+            <span class="ic" style="background:${m.color}"><i class="fas ${m.icon}"></i></span>
+            <h2>${esc(m.name)}</h2><p>${esc(m.desc)}</p>
+            <span class="meta"><span>${esc(m.meta)}</span><span class="sp" style="flex:1"></span><span class="go">시작 →</span></span></button>`).join('')}</div>
+        ${adSlot('wide')}`;
+    app.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => begin(b.dataset.m)));
+    scrollTo(0, 0);
+}
+
+// ---------- 문제 만들기 ----------
+const nfc = s => String(s || '').normalize('NFC').trim();
+const key = s => nfc(s).toLowerCase().replace(/[\s.,'’!?&()-]/g, '');
+// 같은 곡(편곡·파트가 달라도)은 하나로
+function uniqSongs(rows, title) {
+    const m = new Map();
+    shuffle(rows).forEach(r => { const k = key(baseTitle(title(r))); if (k && !m.has(k)) m.set(k, r); });
+    return [...m.values()];
+}
+async function build(mode) {
+    if (mode === 'trivia') return shuffle(TRIVIA).slice(0, N).map(t => ({ ask: t.q, a: t.a, opts: shuffle([t.a, ...t.w]), x: t.x }));
+    if (mode === 'tab') {
+        const songs = uniqSongs(await previews(), r => r.title);
+        return songs.slice(0, N).map(s => {
+            const a = baseTitle(nfc(s.title));
+            const others = shuffle(songs.filter(o => o !== s)).map(o => baseTitle(nfc(o.title))).filter(t => key(t) !== key(a)).slice(0, 3);
+            return { ask: '이 악보, 무슨 곡일까?', img: pvUrl(s), hint: nfc(s.artist), a, opts: shuffle([a, ...others]), song: s };
+        });
+    }
+    // artist: 가수 칸에 괄호(OST·원곡 설명)가 없고 진짜 가수·연주자인 곡만 — 'OO OST', '안쌤의 기타나무숲', 영화사 이름은 빼서 정답이 헷갈리지 않게
+    const rows = (await catalog()).filter(s => s.artist && !/[()]/.test(s.artist) && !/OST|안쌤|기타나무숲|폭스|fox/i.test(s.artist) && s.kind !== 'original');
+    const songs = uniqSongs(rows, r => r.title);
+    const artists = [...new Map(rows.map(r => [key(r.artist), { name: nfc(r.artist), genre: r.genre }])).values()];
+    return songs.slice(0, N).map(s => {
+        const a = nfc(s.artist);
+        const same = shuffle(artists.filter(x => x.genre === s.genre && key(x.name) !== key(a)));
+        const any = shuffle(artists.filter(x => key(x.name) !== key(a) && !same.includes(x)));
+        const others = [...same, ...any].slice(0, 3).map(x => x.name);
+        return { ask: '', title: baseTitle(nfc(s.title)), chip: `${s.genre || ''}${s.genre ? ' · ' : ''}${STYLE[s.style] || ''} 악보`, a, opts: shuffle([a, ...others]), song: s };
+    });
+}
+
+// ---------- 진행 ----------
+let G = null, timer = null;
+async function begin(mode) {
+    history.replaceState(null, '', `?m=${mode}`);
+    app.innerHTML = `<p style="text-align:center;padding:60px 0;color:#888"><i class="fas fa-spinner fa-spin"></i> 문제를 고르는 중…</p>`;
+    let qs;
+    try { qs = await build(mode); }
+    catch (e) { app.innerHTML = `<p style="text-align:center;padding:60px 0">문제를 불러오지 못했어요. <a href="" style="text-decoration:underline">다시 시도</a></p>`; return; }
+    G = { mode, m: MODES[mode], qs, i: 0, score: 0, streak: 0, log: [] };
+    ask();
+}
+function ask() {
+    const q = G.qs[G.i];
+    const L = 'ABCD';
+    let body = '';
+    if (G.mode === 'tab') body = `<div class="ask">${esc(q.ask)}</div><div class="tabcrop"><img src="${esc(q.img)}" alt="악보 첫 줄"></div>
+        <button class="hint" id="hint"><i class="fas fa-lightbulb"></i> 힌트: 가수 보기</button>`;
+    else if (G.mode === 'artist') body = `<span class="chip">${esc(q.chip)}</span><div class="song">「${esc(q.title)}」</div><div class="ask" style="font-size:17px;color:#555;font-weight:700">누구 노래일까?</div>`;
+    else body = `<div class="ask">${esc(q.ask)}</div>`;
+    app.innerHTML = `<div class="qhd"><span class="md"><i class="fas ${G.m.icon}"></i> ${esc(G.m.name)}</span><span class="no">${G.i + 1} / ${G.qs.length}</span>
+            <span class="sp"></span>${G.streak >= 2 ? `<span class="streak">🔥 ${G.streak}연속</span>` : ''}<span class="sc">맞힌 문제 ${G.score}</span></div>
+        <div class="timer" id="tm"><i></i></div>
+        <div class="qbox card">${body}<div class="choices">${q.opts.map((o, k) => `<button data-o="${esc(o)}"><span class="k">${L[k]}</span>${esc(o)}</button>`).join('')}</div></div>
+        <div id="fb"></div>`;
+    app.querySelectorAll('.choices button').forEach(b => b.addEventListener('click', () => answer(b.dataset.o)));
+    const h = document.getElementById('hint');
+    if (h) h.addEventListener('click', () => { q.used = true; h.disabled = true; h.innerHTML = `<i class="fas fa-user"></i> ${esc(q.hint || '정보 없음')}`; });
+    // 제한 시간
+    const bar = app.querySelector('#tm i'), t0 = performance.now(), T = G.m.sec * 1000;
+    cancelAnimationFrame(timer);
+    const tick = now => {
+        const left = Math.max(0, 1 - (now - t0) / T);
+        bar.style.transform = `scaleX(${left})`;
+        app.querySelector('#tm').classList.toggle('warn', left < 0.3);
+        if (left <= 0) return answer(null);
+        timer = requestAnimationFrame(tick);
+    };
+    timer = requestAnimationFrame(tick);
+    scrollTo(0, 0);
+}
+function answer(o) {
+    const q = G.qs[G.i];
+    if (q.done) return;
+    q.done = true;
+    cancelAnimationFrame(timer);
+    const ok = o === q.a;
+    if (ok) { G.score++; G.streak++; } else G.streak = 0;
+    G.log.push({ q, o, ok });
+    app.querySelectorAll('.choices button').forEach(b => {
+        b.disabled = true;
+        if (b.dataset.o === q.a) b.classList.add('ok');
+        else if (b.dataset.o === o) b.classList.add('no');
+    });
+    const crop = app.querySelector('.tabcrop');
+    if (crop) crop.classList.add('open');   // 정답 공개: 악보 제목까지 보이게
+    const s = q.song;
+    let x = q.x ? esc(q.x) : '';
+    if (s) x = `${G.mode === 'artist' ? `「${esc(q.title)}」 — ${esc(q.a)}` : `${esc(q.a)} — ${esc(nfc(s.artist))}`}${s.on_sale !== false && (G.mode === 'tab' || s.on_sale) ? ` · <a href="../tab-detail.html?id=${encodeURIComponent(s.id)}" target="_blank" rel="noopener">이 곡 악보 보기</a>` : ''}`;
+    const cov = s && cvUrl(s);
+    const last = G.i === G.qs.length - 1;
+    document.getElementById('fb').innerHTML = `<div class="fb ${ok ? 'ok' : 'no'}">${cov ? `<img class="cover" src="${esc(cov)}" alt="">` : ''}
+        <span class="t">${ok ? '⭕ 정답!' : o === null ? '⏰ 시간 끝!' : '❌ 땡!'}</span><span class="x">${x}</span>
+        <button class="btn" id="next">${last ? '결과 보기' : '다음 문제'} <i class="fas fa-arrow-right"></i></button></div>`;
+    document.getElementById('next').addEventListener('click', next);
+    document.getElementById('next').focus({ preventScroll: true });
+}
+function next() {
+    G.i++;
+    if (G.i < G.qs.length) return ask();
+    interstitial(result);
+}
+
+// ---------- 결과 ----------
+function result() {
+    const [, rank, cm] = RANK.find(([min]) => G.score * (10 / G.qs.length) >= min);
+    const songs = G.log.map(l => l.q.song).filter(s => s && (G.mode === 'tab' || s.on_sale));
+    app.innerHTML = `<section class="res">
+        <div class="md"><i class="fas ${G.m.icon}"></i> ${esc(G.m.name)}</div>
+        <div class="score">${G.score}<small> / ${G.qs.length}</small></div>
+        <div class="rank">${rank}</div><div class="cm">${esc(cm)}</div>
+        <div class="btns"><button class="btn" id="again"><i class="fas fa-rotate-right"></i>다시 하기</button>
+            <button class="btn ghost" id="other"><i class="fas fa-shuffle"></i>다른 퀴즈</button>
+            <button class="btn ghost" id="share"><i class="fas fa-share-nodes"></i>점수 자랑하기</button></div>
+        ${adSlot('r300')}
+        <div class="review card"><h3>문제 다시 보기</h3><ul>${G.log.map((l, k) => `<li><i class="fas ${l.ok ? 'fa-circle-check' : 'fa-circle-xmark'}"></i><span>
+            <b>${k + 1}. ${esc(G.mode === 'artist' ? `「${l.q.title}」 누구 노래?` : G.mode === 'tab' ? '악보 보고 맞히기' : l.q.ask)}</b>
+            <small>정답: ${esc(l.q.a)}${!l.ok ? ` · 내 답: ${esc(l.o ?? '시간 끝')}` : ''}${l.q.used ? ' · 힌트 씀' : ''}</small></span></li>`).join('')}</ul></div>
+        <div class="rec">${songs.length ? `<h3><i class="fas fa-music" style="color:var(--green-mid)"></i>이번 퀴즈에 나온 곡 악보 <small>안쌤 TAB악보</small></h3><div class="list">${songs.map(recRow).join('')}</div>`
+            : `<h3><i class="fas fa-book" style="color:var(--green-mid)"></i>기초부터 탄탄하게</h3><div class="list"><a href="../#books"><span class="cv"><i class="fas fa-book"></i></span><span class="mt"><b>안쌤 기타 교본</b><small>코드·리듬·주법을 차근차근</small></span></a><a href="../tools.html"><span class="cv"><i class="fas fa-sliders"></i></span><span class="mt"><b>무료 연습도구</b><small>튜너 · 메트로놈 · 지판</small></span></a></div>`}</div>
+    </section>`;
+    scrollTo(0, 0);
+    document.getElementById('again').onclick = () => begin(G.mode);
+    document.getElementById('other').onclick = start;
+    document.getElementById('share').onclick = () => share('안쌤의 기타 퀴즈쇼', `${G.m.name} ${G.score}/${G.qs.length} — ${rank.replace(/^\S+\s/, '')} 🎸 너는 몇 점?`);
+}
+
+addEventListener('keydown', e => {
+    if (!G || !app.querySelector('.choices')) return;
+    const k = 'abcd1234'.indexOf(e.key.toLowerCase());
+    if (k >= 0 && !G.qs[G.i].done) { const b = app.querySelectorAll('.choices button')[k % 4]; if (b) b.click(); }
+});
+
+const P = new URLSearchParams(location.search);
+if (MODES[P.get('m')]) begin(P.get('m')); else start();
+</script>
+</body>
+</html>
