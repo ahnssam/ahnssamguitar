@@ -17,7 +17,7 @@
 <link rel="icon" href="../images/favicon.ico" type="image/x-icon">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="play.css?v=2026110901">
+<link rel="stylesheet" href="play.css?v=2026111001">
 <style>
     /* 시작: 주제 고르기 */
     .hero { text-align: center; padding: 34px 0 6px; }
@@ -245,8 +245,8 @@
     <div>© 2026 안쌤의 기타나무숲</div>
 </footer>
 
-<script src="play.js?v=2026110901"></script>
-<script src="riffs.js?v=2026110902"></script>
+<script src="play.js?v=2026111001"></script>
+<script src="riffs.js?v=2026111001"></script>
 <script>
 // ---------- 주제와 기타 (사진: Wikimedia Commons, 사진마다 작가·라이선스 표시) ----------
 // 실제로 열 때는 안쌤이 찍은 사진이나 쓸 수 있는 사진으로 바꾸는 걸 권함
@@ -397,7 +397,7 @@ const THEMES = {
     },
     guitarist: {
         title: '최애 기타리스트 월드컵', tag: '기타리스트 128', icon: 'fa-star',
-        desc: '헨드릭스냐 클랩튼이냐, 코타로 오시오냐 정성하냐. 끝까지 남는 내 최애 기타리스트는?',
+        desc: '헨드릭스냐 클랩튼이냐, 지미 페이지냐 존 메이어냐. 끝까지 남는 내 최애 기타리스트는?',
         q: '더 좋아하는 기타리스트는?', rec: '최애처럼 쳐 볼 악보',
         items: [
             { k: 'gt-hendrix', n: 'Jimi Hendrix', ko: '지미 헨드릭스', y: 1942, d: '일렉기타 소리를 새로 쓴 전설, 이로 치고 불태운 쇼맨', p: 'Purple Haze · Little Wing · Voodoo Child', by: '작가 미상', lic: 'Public domain', src: 'https://commons.wikimedia.org/wiki/File:Jimi_Hendrix_(1967)_(cropped).jpg' },
@@ -532,7 +532,7 @@ const THEMES = {
     },
     riff: {
         title: '최강 리프곡 월드컵', tag: '리프 64', icon: 'fa-bolt', song: true,
-        desc: 'Smoke on the Water부터 고민중독까지. 기타 치는 사람 심장을 뛰게 한 리프, 최강은?',
+        desc: 'Smoke on the Water부터 사건의 지평선까지. 기타 치는 사람 심장을 뛰게 한 리프, 최강은?',
         q: '더 끝내주는 리프는?', rec: '이 리프 쳐 보기 — 안쌤 악보',
         items: (window.RIFFS || []).map(r => ({ ...r, ko: r.a })),
     },
@@ -876,6 +876,7 @@ async function winner(w) {
     app.innerHTML = `<section class="win">
         <div class="crown">🏆 WINNER · ${esc(t.title)} ${S.size}강</div>
         <h1>${esc(w.n)}</h1><div class="ko">${esc(w.ko)} · ${esc(w.y)}</div>
+        <div id="pkgot"></div>
         ${ad}
         <p class="wait"><i class="fas fa-spinner fa-spin"></i>다른 사람들 결과 모으는 중…</p>
         <div class="later">
@@ -903,11 +904,13 @@ async function winner(w) {
     const s = S;
     if (!s.saved) {
         s.saved = true;
+        s.pk = PLAY.picks.earn();          // 한 판 끝 → 피크 10 (하루 200까지)
         rpc('play_wc_save', { p_theme: s.key, p_size: s.size, p_matches: s.log }).catch(() => {})
             .then(() => loadRank(s.key))
             .then(d => { if (S === s) document.getElementById('rk').innerHTML = rankHtml(s.key, d, w.k); })
             .catch(() => { if (S === s) document.getElementById('rk').innerHTML = SOON_BOX; });
     }
+    document.getElementById('pkgot').innerHTML = PLAY.pickLine(s.pk);
     comments(s, w);
     // 일렉 악보 추천 — 공개한 일렉기타·기타솔로 악보 중 풀스코어 주문이 많은 곡
     try {

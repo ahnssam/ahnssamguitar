@@ -141,6 +141,92 @@
         get(k, d) { try { const v = localStorage.getItem('play.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
         set(k, v) { try { localStorage.setItem('play.' + k, JSON.stringify(v)); } catch (e) {} },
     };
+    // ---------- 사이트 위 메뉴 (2026-11-10 사용자 요청: 놀이터에도 메인과 같은 메뉴) ----------
+    // 메인·약관 페이지와 같은 모양. 로그인 버튼은 auth.js 가 .auth-slot 에 넣는다.
+    // 앱(TWA) 안에서는 판매 사이트로 가는 길을 막으니(CLAUDE.md 6번) 넣지 않는다.
+    function siteHeader() {
+        if (IS_APP || document.querySelector('header.site-hd')) return;
+        const SNS = [
+            ['https://www.youtube.com/channel/UC0TC0fLj3ZahhlKcC9ebVrg', 'YouTube', '<i class="fab fa-youtube"></i>', '<i class="fab fa-youtube"></i>'],
+            ['https://www.instagram.com/ahnssamguitar/', 'Instagram', '<i class="fab fa-instagram"></i>', '<i class="fab fa-instagram"></i>'],
+            ['https://www.tiktok.com/@ahnssamguitar', 'TikTok', '<i class="fab fa-tiktok"></i>', '<i class="fab fa-tiktok"></i>'],
+            ['https://blog.naver.com/ynlee2568', '네이버 블로그', '<b>bl</b>', '<i class="fas fa-blog"></i>'],
+            ['https://cafe.naver.com/ahnsguitarforest', '네이버 카페', '<i class="fas fa-mug-hot" style="color:#5cc06b"></i>', '<i class="fas fa-mug-hot"></i>'],
+        ];
+        const sns = m => SNS.map(([u, l, a, b]) => `<a href="${u}" target="_blank" rel="noopener" aria-label="${l}">${m ? b : a}</a>`).join('');
+        const MENU = [['/#sheets', 'TAB악보', 'fa-music'], ['/requests.html', '악보요청', 'fa-comment-dots'], ['/#books', '교본', 'fa-book'], ['/#contents', '콘텐츠', 'fab fa-youtube'], ['/play/', '놀이터', 'fa-gamepad'], ['/#contact', 'CONTACT', 'fa-envelope']];
+        const ic = c => c.startsWith('fab') ? c : 'fas ' + c;
+        document.body.insertAdjacentHTML('afterbegin', `<header class="site-hd"><div class="hd">
+            <a class="logo" href="/"><img src="../images/logo-vertical.webp" alt="안쌤의 기타나무숲"></a>
+            <nav class="nav">${MENU.map(([h, t]) => `<a href="${h}"${h === '/play/' ? ' class="on"' : ''}>${t}${h === '/play/' ? '<span class="nav-new">NEW</span>' : ''}</a>`).join('')}</nav>
+            <div class="hd-right"><a class="pill-btn" href="/tools.html"><i class="fas fa-guitar"></i> 연습도구</a>
+                <div class="auth-slot" style="display:inline-flex;align-items:center;"></div><span class="sns-mini">${sns(false)}</span></div>
+            <div class="hd-mobile"><div class="auth-slot" style="display:inline-flex;align-items:center;"></div>
+                <button type="button" class="burger" aria-label="메뉴 열기" aria-expanded="false"><i class="fas fa-bars"></i></button></div></div>
+            <nav class="mnav">${MENU.map(([h, t, c]) => `<a href="${h}"${h === '/play/' ? ' class="on"' : ''}><i class="${ic(c)}"></i>${h === '/play/' ? '기타 놀이터 <span class="nav-new">NEW</span>' : t}</a>`).join('')}
+                <a href="/tools.html"><i class="fas fa-guitar"></i>무료 연습도구</a><div class="mnav-sns">${sns(true)}</div></nav></header>`);
+        document.body.classList.add('has-site');
+        const hd = document.querySelector('header.site-hd'), b = hd.querySelector('.burger'), m = hd.querySelector('.mnav');
+        const set = open => { m.classList.toggle('open', open); b.setAttribute('aria-expanded', open); b.innerHTML = open ? '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>'; };
+        b.addEventListener('click', () => set(!m.classList.contains('open')));
+        m.addEventListener('click', e => { if (e.target.closest('a')) set(false); });
+        if (!document.querySelector('script[src*="auth.js"]')) {
+            const s = document.createElement('script');
+            s.src = '../auth.js'; s.defer = true;
+            document.head.appendChild(s);
+        }
+    }
+    siteHeader();
+
+    // ---------- 피크 (놀이터 포인트) ----------
+    // 2026-11-10 사용자 결정: 놀이터 안에서만 쓰는 포인트. 퀴즈·월드컵 한 판 끝낼 때마다 10, 하루 200까지.
+    // 퀴즈 찬스(시간 멈추기·오답 2개 지우기, 30)에 쓴다. 돈 가치가 없고 악보 포인트로 바꾸지 못한다(애드센스 정책 — CLAUDE.md 10번).
+    // 이 브라우저에만 저장(로그인 없이 놀이터를 하니까). 기기를 바꾸면 따로 쌓인다.
+    const PICK = { per: 10, day: 200, chance: 30 };
+    const pickIcon = (cls = '') => `<svg class="pki ${cls}" viewBox="0 0 20 22" aria-hidden="true"><path d="M10 21C6 17 1 10.5 1 6.5 1 3 4.5 1 10 1s9 2 9 5.5C19 10.5 14 17 10 21z"/><path class="sh" d="M5.5 5.2c1.2-1.4 3.2-1.9 5-1.9"/></svg>`;
+    const today = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+    const picks = {
+        get() {
+            const w = mem.get('pick', null), t = today();
+            const o = w && Number.isFinite(w.bal) ? w : { bal: 0, day: t, got: 0 };
+            if (o.day !== t) { o.day = t; o.got = 0; }
+            return o;
+        },
+        bal() { return this.get().bal; },
+        // 한 판 끝: 오늘 받은 게 200이 안 되면 10 (넘치는 만큼은 안 줌). 실제로 받은 수를 돌려준다
+        earn(n = PICK.per) {
+            const w = this.get(), add = Math.max(0, Math.min(n, PICK.day - w.got));
+            w.bal += add; w.got += add;
+            mem.set('pick', w); paintPicks(add);
+            return add;
+        },
+        spend(n = PICK.chance) {
+            const w = this.get();
+            if (w.bal < n) return false;
+            w.bal -= n;
+            mem.set('pick', w); paintPicks();
+            return true;
+        },
+    };
+    // 머리줄 오른쪽 피크 표시 (누르면 설명)
+    function paintPicks(added) {
+        let b = document.querySelector('.ph .pkb');
+        const sp = document.querySelector('.ph .sp');
+        if (!b && sp) {
+            sp.insertAdjacentHTML('afterend', `<button class="pkb" type="button" title="피크 — 놀이터에서 쓰는 포인트">${pickIcon()}<b></b><span>피크</span></button>`);
+            b = document.querySelector('.ph .pkb');
+            b.addEventListener('click', () => toast(`피크는 퀴즈·월드컵 한 판 끝낼 때마다 ${PICK.per}씩, 하루 ${PICK.day}까지 쌓여요. 퀴즈 찬스에 써요!`));
+        }
+        if (!b) return;
+        b.querySelector('b').textContent = picks.bal().toLocaleString();
+        if (added) { b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); }
+    }
+    paintPicks();
+    // 결과 화면에 넣는 '피크 받음' 한 줄
+    const pickLine = got => got
+        ? `<div class="pk-got">${pickIcon()}<b>+${got} 피크!</b> <span>지금 ${picks.bal().toLocaleString()}피크 · 퀴즈 찬스에 써요</span></div>`
+        : `<div class="pk-got full">${pickIcon()}<span>오늘 받을 수 있는 피크(${PICK.day})를 다 모았어요. 내일 또 와요!</span></div>`;
+
     const pvUrl = s => SB_URL + '/storage/v1/object/public/sheet-previews/' + encodeURIComponent(s.preview_path) + '?v=' + encodeURIComponent(s.updated_at || '');
     const cvUrl = s => s.cover_path ? SB_URL + '/storage/v1/object/public/sheet-covers/' + encodeURIComponent(s.cover_path) + '?v=' + encodeURIComponent(s.updated_at || '') : '';
     const STYLE = { acoustic: '통기타', electric: '일렉기타', fingerstyle: '핑거스타일', solo: '기타솔로', chord: '코드악보', bass: '베이스' };
@@ -185,5 +271,5 @@
             <span class="bulb"><i class="fas fa-lightbulb"></i></span>${opt.count ? `<span class="cnt">${opt.count}문제</span>` : ''}</div>`;
     }
 
-    window.PLAY = { hasLogin: () => !!userToken(), thumb, esc, shuffle, adSlot, interstitial, toast, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow, IS_APP };
+    window.PLAY = { hasLogin: () => !!userToken(), picks, PICK, pickIcon, pickLine, thumb, esc, shuffle, adSlot, interstitial, toast, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow, IS_APP };
 })();

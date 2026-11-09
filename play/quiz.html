@@ -17,7 +17,7 @@
 <link rel="icon" href="../images/favicon.ico" type="image/x-icon">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="play.css?v=2026110901">
+<link rel="stylesheet" href="play.css?v=2026111001">
 <style>
     .hero { text-align: center; padding: 34px 0 6px; }
     .hero h1 { font-size: clamp(24px, 4.4vw, 36px); font-weight: 900; letter-spacing: -0.02em; }
@@ -175,6 +175,19 @@
     .review .qr.first small { font-size: 12px; color: var(--green-deep); font-weight: 700; }
     .review .qhl { font-size: 13.5px; font-weight: 700; color: #b8461f; background: #fff3e8; border-radius: 10px; padding: 8px 12px; margin: 0 0 6px; }
     .res .rec { max-width: 860px; margin-left: auto; margin-right: auto; }
+    /* 피크 찬스 (2026-11-10 사용자 결정): 시간 멈추기 · 오답 2개 지우기, 하나에 30피크, 한 판에 2번까지 */
+    .chs { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .chs .chl { font-size: 12.5px; color: var(--sub); margin-right: auto; display: inline-flex; align-items: center; gap: 4px; }
+    .chs .chl b { color: #c96a00; }
+    .ch { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 999px; border: 1.5px solid #f6d29a; background: #fff8ec; color: #8a4b00; transition: background .15s; }
+    .ch small { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 800; color: #c96a00; }
+    .ch:hover:not([disabled]) { background: #ffefd4; }
+    .ch.poor { opacity: .6; }
+    .ch.used { background: #e8f1fb; border-color: #a9c9ea; color: #2c6aa8; cursor: default; }
+    .ch[disabled]:not(.used) { opacity: .45; cursor: default; }
+    .timer.paused i { background: #6fa8dc; }
+    .choices button.gone { opacity: .3; text-decoration: line-through; }
+    @media (max-width: 640px) { .ch { font-size: 12.5px; padding: 6px 10px; } }
     .ph a.ttl { text-decoration: none; cursor: pointer; }
     .ph a.ttl:hover { opacity: .8; }
 </style>
@@ -197,11 +210,11 @@
     <div>© 2026 안쌤의 기타나무숲</div>
 </footer>
 
-<script src="play.js?v=2026110901"></script>
+<script src="play.js?v=2026111001"></script>
 <script src="trivia.js?v=2026110901"></script>
 <script src="songs.js?v=2026110801"></script>
 <script>
-const { esc, shuffle, adSlot, interstitial, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow } = PLAY;
+const { esc, shuffle, adSlot, interstitial, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow, picks, PICK, pickIcon, pickLine, toast } = PLAY;
 const app = document.getElementById('app');
 const N = 10;   // 한 판 문제 수
 
@@ -456,7 +469,7 @@ async function begin(mode, lv = 0) {
     try { qs = await build(mode, lv); if (my !== nav) return; if (qs.length < 4) throw new Error('few'); }
     catch (e) { if (my !== nav) return; app.innerHTML = `<p style="text-align:center;padding:60px 0">문제를 불러오지 못했어요. <a href="" style="text-decoration:underline">다시 시도</a></p>`; return; }
     remember(mode, qs.map(q => q.id));
-    G = { mode, lv, m: MODES[mode], qs, i: 0, score: 0, pts: 0, streak: 0, log: [] };
+    G = { mode, lv, m: MODES[mode], qs, i: 0, score: 0, pts: 0, streak: 0, log: [], ch: 0 };
     ask();
 }
 // 악보 자르기: 그림에서 [t, b] 구간만 같은 비율로 (그림 폭 = 상자 폭). 한 줄 더 보면 다음 줄(없으면 앞 줄)을 따로 붙인다
@@ -490,6 +503,7 @@ function ask() {
             <span class="sp"></span>${G.streak >= 2 ? `<span class="streak">🔥 ${G.streak}연속</span>` : ''}<span class="ok">맞힘 ${G.score}</span><span class="sc"><b>${G.pts.toLocaleString()}</b>점</span>
             <button class="snd" id="snd" aria-label="효과음 켜고 끄기" title="효과음 켜고 끄기"><i class="fas ${soundOn() ? 'fa-volume-high' : 'fa-volume-xmark'}"></i></button></div>
         <div class="timer" id="tm"><i></i></div>
+        <div class="chs" id="chs"></div>
         <div class="qbox card">${body}<div class="choices">${q.opts.map((o, k) => `<button data-o="${esc(o)}"><span class="k">${L[k]}</span>${esc(o)}</button>`).join('')}</div></div>
         <div id="fb"></div>`;
     app.querySelectorAll('.choices button').forEach(b => b.addEventListener('click', () => answer(b.dataset.o)));
@@ -498,7 +512,8 @@ function ask() {
         e.currentTarget.innerHTML = `<i class="fas ${soundOn() ? 'fa-volume-high' : 'fa-volume-xmark'}"></i>`;
         if (soundOn()) fxSound(true);
     });
-    q.hints = 0;
+    q.hints = 0; q.ch = [];
+    paintChances(q);
     if (G.mode === 'tab') {
         const more = document.getElementById('more'), hint = document.getElementById('hint');
         if (more) more.addEventListener('click', () => { if (q.done || q.more) return; q.more = true; q.hints++; more.disabled = true; more.innerHTML = '<i class="fas fa-check"></i> 한 줄 더 봤어요'; showMore(q); });
@@ -519,6 +534,33 @@ function ask() {
     timer = requestAnimationFrame(tick);
     scrollTo(0, 0);
 }
+// ---------- 피크 찬스 ----------
+const CH_MAX = 2;   // 한 판에 찬스 2번까지 (찬스로만 풀면 순위가 의미 없어져서)
+const CH = { stop: ['⏸', '시간 멈추기', '시간 멈춤!'], cut: ['✂️', '오답 2개 지우기', '오답 지웠어요'] };
+function paintChances(q) {
+    const box = document.getElementById('chs');
+    if (!box) return;
+    const left = CH_MAX - G.ch, poor = picks.bal() < PICK.chance;
+    box.innerHTML = `<span class="chl">찬스 <b>${left}</b>/${CH_MAX} · ${pickIcon()} ${picks.bal().toLocaleString()}피크</span>`
+        + Object.entries(CH).map(([id, [ic, label, done]]) => {
+            const used = q.ch.includes(id);
+            return `<button class="ch${used ? ' used' : poor ? ' poor' : ''}" data-ch="${id}"${used || q.done || left <= 0 ? ' disabled' : ''}>${ic} ${used ? done : `${label} <small>${pickIcon()}${PICK.chance}</small>`}</button>`;
+        }).join('');
+    box.querySelectorAll('[data-ch]').forEach(b => b.addEventListener('click', () => useChance(q, b.dataset.ch)));
+}
+function useChance(q, kind) {
+    if (!G || q !== G.qs[G.i] || q.done || q.ch.includes(kind) || G.ch >= CH_MAX) return;
+    if (!picks.spend(PICK.chance)) return toast(`피크가 모자라요 (${PICK.chance} 필요). 퀴즈·월드컵 한 판 끝낼 때마다 ${PICK.per}씩 쌓여요!`);
+    q.ch.push(kind); G.ch++;
+    if (kind === 'stop') {                       // 이 문제 타이머를 멈춤 — 빨리 맞힌 점수는 멈춘 순간 기준
+        cancelAnimationFrame(timer);
+        app.querySelector('#tm').classList.add('paused');
+    } else {                                     // 오답 2개를 지워 보기를 2개로
+        shuffle([...app.querySelectorAll('.choices button')].filter(b => b.dataset.o !== q.a)).slice(0, 2)
+            .forEach(b => { b.disabled = true; b.classList.add('gone'); });
+    }
+    paintChances(q);
+}
 function answer(o) {
     const q = G.qs[G.i];
     if (!q || q.done) return;
@@ -534,6 +576,7 @@ function answer(o) {
         else if (b.dataset.o === o) b.classList.add('no');
     });
     app.querySelectorAll('.hint').forEach(h => { h.disabled = true; });
+    paintChances(q);
     if (G.mode === 'tab') {                      // 정답 공개: 첫 칸을 같은 높이 그대로 그림 맨 위(전체 폭)로 바꿔 악보 제목·가수가 보이게
         const img = app.querySelector('.tabcrop .strip img');
         if (img) Object.assign(img.style, { width: '100%', marginLeft: '0%', marginTop: '0%' });
@@ -642,6 +685,7 @@ function result() {
         <div class="score">${G.score}<small> / ${G.qs.length}</small></div>
         <div class="pts">${G.pts.toLocaleString()}점</div>
         <div class="rank">${rank}</div><div class="cm">${esc(cm)}</div>
+        <div id="pkgot"></div>
         <div class="board" id="board"></div>
         <div class="btns"><button class="btn" id="again"><i class="fas fa-rotate-right"></i>다시 하기</button>
             ${G.lv ? `<button class="btn ghost" id="lvb"><i class="fas fa-signal"></i>다른 난이도</button>` : ''}
@@ -650,7 +694,7 @@ function result() {
         ${adSlot('r300')}
         <div class="review card" id="review"><h3>문제 다시 보기</h3><ul>${G.log.map((l, k) => `<li><i class="fas ${l.ok ? 'fa-circle-check' : 'fa-circle-xmark'}"></i><span>
             <b>${k + 1}. ${esc(G.mode === 'artist' ? `「${l.q.title}」 누구 노래?` : G.mode === 'tab' ? `악보 보고 맞히기 — ${l.q.a}` : l.q.ask)}</b>
-            <small>${G.mode === 'tab' ? '' : `정답: ${esc(l.q.a)}`}${!l.ok ? `${G.mode === 'tab' ? '' : ' · '}내 답: ${esc(l.o ?? '시간 끝')}` : `${G.mode === 'tab' ? '' : ' · '}+${l.got}점`}${l.q.hints ? ` · 힌트 ${l.q.hints}개` : ''}</small></span><span class="qr" data-k="${k}"></span></li>`).join('')}</ul></div>
+            <small>${G.mode === 'tab' ? '' : `정답: ${esc(l.q.a)}`}${!l.ok ? `${G.mode === 'tab' ? '' : ' · '}내 답: ${esc(l.o ?? '시간 끝')}` : `${G.mode === 'tab' ? '' : ' · '}+${l.got}점`}${l.q.hints ? ` · 힌트 ${l.q.hints}개` : ''}${(l.q.ch || []).length ? ` · 찬스: ${l.q.ch.map(c => CH[c][1]).join(', ')}` : ''}</small></span><span class="qr" data-k="${k}"></span></li>`).join('')}</ul></div>
         <div class="rec">${songs.length ? `<h3><i class="fas fa-music" style="color:var(--green-mid)"></i>이번 퀴즈에 나온 곡 악보 <small>안쌤 TAB악보</small></h3><div class="list">${songs.map(recRow).join('')}</div>`
             : `<h3><i class="fas fa-book" style="color:var(--green-mid)"></i>기초부터 탄탄하게</h3><div class="list"><a href="../#books"><span class="cv"><i class="fas fa-book"></i></span><span class="mt"><b>안쌤 기타 교본</b><small>코드·리듬·주법을 차근차근</small></span></a><a href="../tools.html"><span class="cv"><i class="fas fa-sliders"></i></span><span class="mt"><b>무료 연습도구</b><small>튜너 · 메트로놈 · 지판</small></span></a></div>`}</div>
     </section>`;
@@ -663,6 +707,7 @@ function result() {
     // 다른 사람들과 비교 (db/play_stats.sql 적용 뒤부터 보임)
     if (!g.saved) {
         g.saved = true;
+        g.pk = picks.earn();          // 한 판 끝 → 피크 10 (하루 200까지)
         rpc('play_quiz_save', { p_mode: g.lv ? `${g.mode}${g.lv}` : g.mode, p_correct: g.score, p_total: g.qs.length, p_score: g.pts }).then(r => {
             const x = Array.isArray(r) ? r[0] : r;
             if (!x || !x.plays) return;
@@ -670,14 +715,16 @@ function result() {
             const el = document.getElementById('board');
             if (el && G === g) el.innerHTML = `📊 지금까지 ${x.plays.toLocaleString()}판 중 <b>${x.rank.toLocaleString()}등</b> · 상위 <b>${pct}%</b>`;
         }).catch(() => {});
-        // 문제마다 다른 사람 정답률 (db/play_quiz_answers.sql 적용 뒤부터 보임) — 내 답까지 더한 숫자
+        // 문제마다 다른 사람 정답률 (db/play_quiz_answers.sql 적용 뒤부터 보임) — 내 답까지 더한 숫자. '오답 지우기' 찬스를 쓴 문제는 셈에서 뺀다
         const qids = g.log.map(l => qHash(`${g.mode}|${nfc(l.q.id)}`));
-        rpc('play_quiz_answers_save', { p_mode: g.mode, p_items: g.log.map((l, k) => ({ q: qids[k], ok: l.ok })) }).then(rows => {
+        const items = g.log.map((l, k) => ({ q: qids[k], ok: l.ok })).filter((x, k) => !(g.log[k].q.ch || []).includes('cut'));
+        if (items.length) rpc('play_quiz_answers_save', { p_mode: g.mode, p_items: items }).then(rows => {
             if (!Array.isArray(rows) || !rows.length || G !== g) return;
             g.rates = new Map(rows.map(r => [r.qid, r]));
             showRates(g, qids);
         }).catch(() => {});
     } else if (g.rates) showRates(g, g.log.map(l => qHash(`${g.mode}|${nfc(l.q.id)}`)));
+    document.getElementById('pkgot').innerHTML = pickLine(g.pk);
 }
 // 문제 표시: "종류|문제" → 16자리 해시 (문제 글을 그대로 DB에 보내지 않게)
 function qHash(s) {
