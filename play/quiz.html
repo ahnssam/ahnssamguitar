@@ -175,12 +175,14 @@
     .review .qr.first small { font-size: 12px; color: var(--green-deep); font-weight: 700; }
     .review .qhl { font-size: 13.5px; font-weight: 700; color: #b8461f; background: #fff3e8; border-radius: 10px; padding: 8px 12px; margin: 0 0 6px; }
     .res .rec { max-width: 860px; margin-left: auto; margin-right: auto; }
+    .ph a.ttl { text-decoration: none; cursor: pointer; }
+    .ph a.ttl:hover { opacity: .8; }
 </style>
 </head>
 <body>
 <header class="ph"><div class="wrap">
     <a class="logo" href="../"><img src="../images/logo-vertical.webp" alt="안쌤의 기타나무숲"></a>
-    <span class="ttl"><i class="fas fa-circle-question"></i>기타 퀴즈쇼</span>
+    <a class="ttl" href="quiz.html" id="toList" title="퀴즈 목록"><i class="fas fa-circle-question"></i>기타 퀴즈쇼</a>
     <span class="sp"></span>
     <a class="lnk" href="./"><i class="fas fa-gamepad"></i><span>놀이터</span></a>
     <a class="lnk" href="worldcup.html"><i class="fas fa-trophy"></i><span>이상형 월드컵</span></a>
@@ -208,7 +210,7 @@ const TRIVIA = window.TRIVIA || [];
 
 // ---------- 퀴즈 종류 ----------
 const MODES = {
-    tab: { name: '악보 보고 노래 맞히기', icon: 'fa-guitar', color: '#42a854', sec: 30, desc: '안쌤 악보의 한 줄만 보여 줘요. 코드와 TAB만 보고 무슨 곡인지 맞혀 보세요. 막히면 한 줄 더 보기 · 가수 힌트!', meta: '10문제 · 30초 · 힌트 2개' },
+    tab: { name: '악보 보고 노래 맞히기', icon: 'fa-guitar', color: '#42a854', sec: 60, desc: '안쌤 악보의 한 줄만 보여 줘요. 코드와 TAB만 보고 무슨 곡인지 맞혀 보세요. 모르겠으면 기타로 직접 쳐 봐도 돼요!', meta: '10문제 · 60초 · 힌트 2개' },
     artist: { name: '이 노래 누구 노래?', icon: 'fa-microphone', color: '#52a6f2', sec: 12, desc: '곡 제목을 보고 부른 가수(연주자)를 골라요. 안쌤 악보와 요즘 기타 유튜브 인기곡에서 나와요.', meta: '10문제 · 12초' },
     trivia: { name: '기타 상식 퀴즈', icon: 'fa-lightbulb', color: '#eaac14', sec: 15, desc: '튜닝, 코드, 주법, 장비, 전설의 기타리스트까지. 초보 · 중수 · 고수 중 내 실력에 맞게 골라요!', meta: '10문제 · 15초 · 난이도 3단계' },
 };
@@ -232,7 +234,7 @@ const RANK = [
 ];
 
 function start() {
-    G = null;
+    G = null; nav++; cancelAnimationFrame(timer);
     history.replaceState(null, '', location.pathname);
     app.innerHTML = `<section class="hero"><h1>안쌤의 <em>기타 퀴즈쇼</em></h1><p>10문제로 알아보는 내 기타 레벨. 친구랑 점수 내기 해 보세요!</p></section>
         <div class="modes">${Object.entries(MODES).map(([k, m]) => `<button class="mode card" data-m="${k}">
@@ -245,7 +247,7 @@ function start() {
 }
 // 기타 상식: 난이도 고르기
 function pickLevel() {
-    G = null;
+    G = null; nav++; cancelAnimationFrame(timer);
     history.replaceState(null, '', '?m=trivia');
     app.innerHTML = `<section class="hero"><h1>기타 상식 <em>퀴즈</em></h1><p>내 실력에 맞는 난이도를 골라요. 10문제 · 15초</p></section>
         <div class="lvs">${[1, 2, 3].map(l => `<button class="lv card" data-lv="${l}" style="--c:${LV[l].c}">
@@ -277,6 +279,9 @@ const qTitle = t => nfc(t)
 const NOT_SONG = /^neo soul progression$|브금|bgm|테마|theme|anthem|^원령공주 ost$|미션 임파서블|mission impossible|he's a pirate|way back then|the last waltz|에어맨|뽀로로/i;
 const NOT_SONG_ARTIST = /크레용 신짱|스펀지밥|명탐정 코난|20세기 폭스|스타워즈|마블|한스 짐머|hans zimmer|랄로 쉬프린|에어맨|뽀로로/i;
 const isSong = s => !NOT_SONG.test(nfc(s.title)) && !NOT_SONG_ARTIST.test(nfc(s.artist || ''));
+// '이 노래 누구 노래?'에서 뺄 리메이크: 악보는 리메이크 가수 버전인데 원곡 가수가 따로 있어 정답이 헷갈리는 곡 (2026-11-10 사용자 의견)
+//   걱정말아요 그대 = 이적(응답하라 1988) · 원곡 전인권 / 푸른산호초 = 하니 · 원곡 마츠다 세이코
+const REMAKE = /^걱정\s*말아요\s*그대$|^푸른\s*산호초$/;
 const EXT = window.EXT_SONGS || [];
 
 // 같은 곡·가수를 다르게 적은 것("Kotaro Oshio" ↔ "코타로 오시오 Kotaro Oshio", "황혼" ↔ "황혼 Twilight")은 같은 걸로 본다
@@ -411,7 +416,8 @@ async function build(mode, lv) {
     }
     // artist: 가수 칸에 괄호(OST·원곡 설명)가 없고 진짜 가수·연주자인 곡만 — 'OO OST', '안쌤의 기타나무숲', 영화사 이름은 빼서 정답이 헷갈리지 않게
     const rows = (await catalog()).filter(s => s.artist && !/[()]/.test(s.artist) && !/OST|안쌤|기타나무숲|폭스|fox/i.test(s.artist) && s.kind !== 'original' && isSong(s)
-        && !key(s.title).includes(key(s.artist)));      // "뽀로로 - 노는게 제일 좋아"처럼 제목에 답이 든 곡은 빼기
+        && !key(s.title).includes(key(s.artist))        // "뽀로로 - 노는게 제일 좋아"처럼 제목에 답이 든 곡은 빼기
+        && !REMAKE.test(qTitle(s.title)));
     const uniq = new Map();
     shuffle(rows).forEach(r => { const k = key(qTitle(r.title)); if (k && !uniq.has(k)) uniq.set(k, r); });
     const songs = fresh([...uniq.values()], s => key(qTitle(s.title)), mode);
@@ -436,15 +442,16 @@ async function build(mode, lv) {
 }
 
 // ---------- 진행 ----------
-let G = null, timer = null;
+let G = null, timer = null, nav = 0;   // nav: 목록으로 가면 늘려서, 불러오던 문제는 버린다
 async function begin(mode, lv = 0) {
     if (mode !== 'trivia') lv = 0;
     history.replaceState(null, '', `?m=${mode}${lv ? `&lv=${lv}` : ''}`);
     G = null;
     app.innerHTML = `<p style="text-align:center;padding:60px 0;color:#888"><i class="fas fa-spinner fa-spin"></i> 문제를 고르는 중…</p>`;
     let qs;
-    try { qs = await build(mode, lv); if (qs.length < 4) throw new Error('few'); }
-    catch (e) { app.innerHTML = `<p style="text-align:center;padding:60px 0">문제를 불러오지 못했어요. <a href="" style="text-decoration:underline">다시 시도</a></p>`; return; }
+    const my = ++nav;
+    try { qs = await build(mode, lv); if (my !== nav) return; if (qs.length < 4) throw new Error('few'); }
+    catch (e) { if (my !== nav) return; app.innerHTML = `<p style="text-align:center;padding:60px 0">문제를 불러오지 못했어요. <a href="" style="text-decoration:underline">다시 시도</a></p>`; return; }
     remember(mode, qs.map(q => q.id));
     G = { mode, lv, m: MODES[mode], qs, i: 0, score: 0, pts: 0, streak: 0, log: [] };
     ask();
@@ -701,6 +708,13 @@ addEventListener('keydown', e => {
     if (!G || !app.querySelector('.choices') || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = 'abcd1234'.indexOf(e.key.toLowerCase());
     if (k >= 0 && !G.qs[G.i].done) { const b = app.querySelectorAll('.choices button')[k % 4]; if (b) b.click(); }
+});
+
+// 위쪽 '기타 퀴즈쇼' 글자를 누르면 퀴즈 목록으로 (2026-11-10 사용자 요청) — 풀던 판은 그만둔다
+document.getElementById('toList').addEventListener('click', e => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey) return;   // 새 탭으로 열기는 그대로
+    e.preventDefault();
+    start();
 });
 
 const P = new URLSearchParams(location.search);
