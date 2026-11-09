@@ -36,8 +36,7 @@
     /* 몇 강 단추는 무조건 한 줄 (2026-11-09 사용자 요청) */
     .theme .btns { gap: 6px; flex-wrap: nowrap; }
     .theme .btns .btn { flex: 1 1 auto; min-width: 0; justify-content: center; white-space: nowrap; padding: 10px 6px; font-size: 14px; }
-    .theme .btns .btn:first-child { flex-grow: 1.6; }
-    .theme .btns .btn.ghost { padding: 9px 4px; font-size: 13.5px; }
+    .theme .btns .btn.ghost { flex: 1 1 0; padding: 9px 4px; font-size: 14px; }
     .theme .resume { display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 14px; border-radius: 12px; background: var(--green-faint); border: 1px solid var(--green-pale); color: var(--green-deep); }
     .theme .resume > i { width: 30px; height: 30px; border-radius: 50%; background: var(--green-mid); color: #fff; display: grid; place-items: center; font-size: 12px; flex: none; }
     .theme .resume b { display: block; font-size: 14px; }
@@ -656,7 +655,8 @@ const sizesOf = key => [128, 64, 32, 16, 8].filter(n => n <= THEMES[key].items.l
 // 판 중간 전면 광고는 64강·32강·16강으로 넘어갈 때만 (2026-11-09 사용자 결정: 32강 판은 16강 넘어갈 때 한 번, 16강 판부터는 중간 광고 없음).
 // 8강·4강·결승으로 넘어갈 때는 안 넣는다. 결승이 끝나면 우승 화면 → 결과 전 광고는 그대로
 const AD_ROUNDS = [64, 32, 16];
-const sizeBtns = key => sizesOf(key).map((n, i) => `<button class="btn${i ? ' ghost' : ''}" data-go="${key}" data-n="${n}">${i ? '' : '<i class="fas fa-play"></i>'}${n}강${i ? '' : ' 시작'}</button>`).join('');
+// 몇 강 단추는 모두 같은 모양, '시작' 글자 없이 (2026-11-09 사용자 요청)
+const sizeBtns = key => sizesOf(key).map(n => `<button class="btn ghost" data-go="${key}" data-n="${n}">${n}강</button>`).join('');
 
 // ---------- 하던 판 기억 (64강은 63번 골라야 해서, 새로고침·뒤로 가기로 날아가지 않게) ----------
 const SAVE = 'wc.save';
@@ -696,7 +696,7 @@ function start() {
         <p>${esc(t.desc)}</p>
         ${saved && saved.key === key ? `<div class="resume-row"><button class="resume" data-resume><i class="fas fa-play"></i><span><b>하던 거 이어 하기</b><small>${saved.size}강 · 지금 ${roundName(saved.cur.length)} ${saved.i / 2 + 1} / ${saved.cur.length / 2}</small></span></button>
             <button class="reset" data-reset title="하던 판 지우기"><i class="fas fa-rotate-left"></i><span>초기화</span></button></div>` : ''}
-        <div class="btns">${sizeBtns(key).replace(' 시작', '')}</div>
+        <div class="btns">${sizeBtns(key)}</div>
     </div>`;
     app.innerHTML = `<section class="hero"><h1>기타 <em>이상형 월드컵</em></h1><p>둘 중 하나만 고르세요. 끝까지 남는 게 당신의 운명의 기타!</p></section>
         <div class="themes">${Object.entries(THEMES).map(([k, t]) => card(k, t)).join('')}
@@ -1025,7 +1025,7 @@ async function rankPage(key) {
     goUrl(`?t=${key}&rank=1`);
     app.innerHTML = `<section class="win"><div class="crown">📊 RANKING</div><h1>${esc(t.title)}</h1><div class="ko">다른 사람들이 가장 많이 우승시킨 기타</div>
         <div id="rk"><p class="stat-soon" style="text-align:center">불러오는 중…</p></div>
-        <div class="btns">${sizeBtns(key).replace(/(\d+)강 시작/, '나도 $1강 하기')}<button class="btn ghost" id="other"><i class="fas fa-shuffle"></i>다른 월드컵</button></div>
+        <div class="btns">${sizeBtns(key)}<button class="btn ghost" id="other"><i class="fas fa-shuffle"></i>다른 월드컵</button></div>
         ${adSlot('r300')}</section>`;
     app.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => play(b.dataset.go, +b.dataset.n)));
     document.getElementById('other').onclick = start;
