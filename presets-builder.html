@@ -1714,21 +1714,14 @@
             <h1><i class="fas fa-music"></i> 프리셋 빌더</h1>
             <div class="bd-userinfo" id="userInfo">
                 <a class="bd-back" href="tools.html">← 도구로</a>
-                <button id="lockBtn" type="button" style="display:none;">잠그기</button>
             </div>
         </div>
 
-        <!-- 게이트 — 4자리 비번. 통과 시 바로 편집 화면. -->
+        <!-- 게이트 — 운영 계정 로그인. 통과 시 바로 편집 화면. (2026-11-09: 4자리 비번 → 로그인) -->
         <div class="bd-card bd-gateCTA" id="gateCard">
-            <p>관리자 전용 페이지입니다. 4자리 비밀번호를 입력하세요.</p>
-            <div class="bd-passcode-row" id="passcodeRow">
-                <input type="text" class="bd-passcode-input" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
-                <input type="text" class="bd-passcode-input" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
-                <input type="text" class="bd-passcode-input" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
-                <input type="text" class="bd-passcode-input" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
-            </div>
+            <p id="gateMsg">로그인 확인 중…</p>
+            <button type="button" class="bd-btn bd-btn-primary" id="gateLoginBtn" style="display:none;">로그인</button>
             <div class="bd-gate-error" id="gateError"></div>
-            <div class="bd-gate-lockout" id="gateLockout" style="display:none; margin-top:0.6rem; color:#b83a2e; font-size:0.85rem;"></div>
         </div>
 
         <!-- Stage 3 — 편집 화면 -->
@@ -2012,17 +2005,15 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/dist/umd/supabase.min.js"></script>
+    <script src="auth.js" defer></script>
     <script>
         (function() {
             'use strict';
 
             // ─── 설정 ───────────────────────────────────────────────
-            const SUPABASE_URL = 'https://qpcbrqgqylxkgdwoflku.supabase.co';
-            const SUPABASE_KEY = 'sb_publishable_5rr-OZ7Sqjk1nXn59R7XnQ_HInATuSV';
+            //   DB 는 사이트 로그인(auth.js)의 클라이언트로 읽고 쓴다.
+            //   presets 쓰기는 운영 계정만 되므로(db/presets_rls_lockdown.sql) 로그인이 꼭 필요하다.
             const ALLOWED_EMAIL = 'steveq2568@gmail.com';
-            // 4자리 비밀번호. 변경하려면 이 줄 숫자만 바꾸면 됨.
-            const PASSCODE = '9728';
-            const GATE_LS_KEY = 'ahnsamPresetsGateOK';
 
             let sb = null;
             let presets = [];
@@ -2667,147 +2658,54 @@
             }
 
             // ═══════════════════════════════════════════════════════
-            //  STAGE 1 — Passcode gate
+            //  STAGE 1 — 로그인 게이트 (2026-11-09: 4자리 비번 → 운영 계정 로그인)
             // ═══════════════════════════════════════════════════════
-            // ─── 비번 게이트 + 1분 lockout ──────────────────────────────
-            // 비번 통과 → 바로 편집 화면 (OAuth 단계 제거됨).
-            // 틀리면 60초 락아웃 — localStorage 에 unlockAt 저장하므로 새로고침해도 유지.
-            const LOCKOUT_MS = 60 * 1000;
-            const LOCKOUT_LS_KEY = 'ahnsamPresetsLockUntil';
-
-            function getLockRemainingMs() {
-                var until = parseInt(localStorage.getItem(LOCKOUT_LS_KEY), 10);
-                if (!until) return 0;
-                var rem = until - Date.now();
-                if (rem <= 0) {
-                    localStorage.removeItem(LOCKOUT_LS_KEY);
-                    return 0;
-                }
-                return rem;
+            //   presets 쓰기가 운영 계정만 되게 막혀서(db/presets_rls_lockdown.sql)
+            //   예전처럼 공개 키(anon)로는 저장·삭제가 안 된다. 사이트 로그인(auth.js)을 그대로 쓴다.
+            //   예전 코드는 열 때 sb-* 저장값을 지워 사이트 로그인까지 풀었는데, 이제는 지우지 않는다.
+            var _gatePassed = false;
+            function showGate(msg, withLogin) {
+                $('gateMsg').textContent = msg;
+                var lb = $('gateLoginBtn');
+                lb.style.display = withLogin ? 'inline-flex' : 'none';
+                lb.onclick = function() { if (window.ahnssamAuth) window.ahnssamAuth.openLogin(); };
+                $('gateCard').style.display = '';
+                $('editorCard').style.display = 'none';
             }
-
-            function setLockout() {
-                localStorage.setItem(LOCKOUT_LS_KEY, String(Date.now() + LOCKOUT_MS));
-            }
-
-            function setupPasscodeGate() {
-                if (localStorage.getItem(GATE_LS_KEY) === '1') {
-                    passGate();
+            function onAuth(user) {
+                if (!user) {
+                    _gatePassed = false;
+                    showGate('운영 계정으로 로그인해 주세요.', true);
                     return;
                 }
-                const inputs = document.querySelectorAll('.bd-passcode-input');
-                const lockoutEl = $('gateLockout');
-                let lockoutTimerId = null;
-
-                function applyLockoutUI(rem) {
-                    inputs.forEach(function(i) { i.disabled = true; i.value = ''; });
-                    function tick() {
-                        var r = getLockRemainingMs();
-                        if (r <= 0) {
-                            // unlock
-                            inputs.forEach(function(i) { i.disabled = false; });
-                            lockoutEl.style.display = 'none';
-                            $('gateError').textContent = '';
-                            inputs[0].focus();
-                            if (lockoutTimerId) { clearInterval(lockoutTimerId); lockoutTimerId = null; }
-                            return;
-                        }
-                        lockoutEl.textContent = '잠김 — ' + Math.ceil(r / 1000) + '초 후 다시 시도 가능';
-                        lockoutEl.style.display = 'block';
-                    }
-                    tick();
-                    if (lockoutTimerId) clearInterval(lockoutTimerId);
-                    lockoutTimerId = setInterval(tick, 250);
+                if (String(user.email || '').toLowerCase() !== ALLOWED_EMAIL) {
+                    _gatePassed = false;
+                    showGate('이 페이지는 운영 계정만 쓸 수 있어요. (' + user.email + ')', false);
+                    return;
                 }
-
-                // 페이지 진입 시점에 이미 락이 걸려있는지 확인
-                var initialLock = getLockRemainingMs();
-                if (initialLock > 0) {
-                    applyLockoutUI(initialLock);
-                }
-
-                inputs.forEach(function(inp, idx) {
-                    inp.addEventListener('input', function() {
-                        inp.value = inp.value.replace(/[^0-9]/g, '');
-                        if (inp.value && idx < inputs.length - 1) {
-                            inputs[idx + 1].focus();
-                        }
-                        checkPasscode();
-                    });
-                    inp.addEventListener('keydown', function(e) {
-                        if (e.key === 'Backspace' && !inp.value && idx > 0) {
-                            inputs[idx - 1].focus();
-                        }
-                    });
-                    inp.addEventListener('paste', function(e) {
-                        e.preventDefault();
-                        const txt = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 4);
-                        for (let i = 0; i < txt.length && i < inputs.length; i++) {
-                            inputs[i].value = txt[i];
-                        }
-                        checkPasscode();
-                    });
-                });
-                if (initialLock <= 0) inputs[0].focus();
-
-                function checkPasscode() {
-                    if (getLockRemainingMs() > 0) return; // 락 걸린 상태면 무시
-                    const entered = Array.from(inputs).map(function(i) { return i.value; }).join('');
-                    if (entered.length !== 4) return;
-                    if (entered === PASSCODE) {
-                        localStorage.setItem(GATE_LS_KEY, '1');
-                        passGate();
-                        return;
-                    }
-                    // 틀림 — 즉시 락아웃
-                    setLockout();
-                    inputs.forEach(function(i) {
-                        i.classList.add('error');
-                        i.value = '';
-                    });
-                    $('gateError').textContent = '비밀번호가 틀렸습니다';
-                    setTimeout(function() {
-                        inputs.forEach(function(i) { i.classList.remove('error'); });
-                    }, 500);
-                    applyLockoutUI(LOCKOUT_MS);
-                }
+                if (_gatePassed) return;   // 토큰 갱신 등으로 다시 불려도 한 번만
+                _gatePassed = true;
+                passGate();
             }
+            window.addEventListener('ahnssam-auth-settled', function(e) { onAuth(e && e.detail && e.detail.user); });
 
             function passGate() {
                 $('gateCard').style.display = 'none';
                 $('editorCard').style.display = 'block';
-                var lockBtn = $('lockBtn');
-                if (lockBtn) {
-                    lockBtn.style.display = 'inline-block';
-                    lockBtn.onclick = function() {
-                        localStorage.removeItem(GATE_LS_KEY);
-                        location.reload();
-                    };
-                }
                 init();
             }
 
             // ═══════════════════════════════════════════════════════
-            //  STAGE 2 — Supabase 초기화 (OAuth 단계 제거됨, anon key 만 사용)
+            //  STAGE 2 — Supabase 초기화 (사이트 로그인 클라이언트)
             // ═══════════════════════════════════════════════════════
-            // RLS 는 anon write 허용으로 변경됨 (presets_anon_write).
-            // 게이트 비번이 사실상의 인증 — 4자리 + 1분 lockout.
             async function init() {
-                if (!window.supabase) {
-                    $('gateError').textContent = 'Supabase SDK 로드 실패';
+                sb = window.ahnssamAuth && window.ahnssamAuth.supabase;
+                if (!sb) {
+                    $('gateError').textContent = 'Supabase 연결 실패 — 새로고침해 주세요';
+                    showGate('연결하지 못했어요.', false);
+                    _gatePassed = false;
                     return;
                 }
-                // 이전 OAuth 시기에 남은 세션 키 청소 — 안 그러면 SDK 가 stale token 으로
-                // 요청하다가 401 / refresh 에서 hang 걸리는 케이스가 있어서 저장 spinner 가
-                // 영원히 도는 증상이 났음.
-                try {
-                    Object.keys(localStorage).forEach(function(k) {
-                        if (k.indexOf('sb-') === 0) localStorage.removeItem(k);
-                    });
-                } catch (e) {}
-                sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-                    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
-                });
                 loadPresets();
             }
 
@@ -2815,8 +2713,10 @@
             //  STAGE 3 — Presets CRUD
             // ═══════════════════════════════════════════════════════
             async function loadPresets() {
+                // 공개 곡만 — 예전(로그인 없이 읽던 때)과 같은 목록. 운영 계정의 '나만 보는' 곡은 반주 도구에서 다룬다.
                 const res = await sb.from('presets')
                     .select('*')
+                    .eq('is_public', true)
                     .order('sort_order', { ascending: true })
                     .order('created_at', { ascending: true });
                 if (res.error) {
@@ -3376,7 +3276,7 @@
                     // 비-변경 버튼은 무시 (저장/삭제/재생/외부이동/복제/붙여넣기/confirm 모달)
                     var skip = e.target.closest(
                         '#saveBtn, #deleteBtn, #previewPlayBtn, #testBtn, #duplicateBtn, #pasteBtn, ' +
-                        '#bdConfirmCancel, #bdConfirmSave, #bdConfirmDiscard, #lockBtn'
+                        '#bdConfirmCancel, #bdConfirmSave, #bdConfirmDiscard'
                     );
                     if (skip) return;
                     // 변경을 일으키는 클릭 가능한 element 들 (마디, 시퀀서, 도돌이, 리듬, pill 등)
@@ -4278,19 +4178,7 @@
             //  Wire up
             // ═══════════════════════════════════════════════════════
             document.addEventListener('DOMContentLoaded', function() {
-                setupPasscodeGate();
-
-                // 빌더 게이트 통과되면 lockBtn 표시 — 클릭 시 게이트 다시 활성화 (다른 사람이 손 못 대게).
-                if (localStorage.getItem(GATE_LS_KEY) === '1') {
-                    var lockBtn = $('lockBtn');
-                    if (lockBtn) {
-                        lockBtn.style.display = 'inline-block';
-                        lockBtn.onclick = function() {
-                            localStorage.removeItem(GATE_LS_KEY);
-                            location.reload();
-                        };
-                    }
-                }
+                // 게이트는 로그인 상태(ahnssam-auth-settled)로 열린다 — 위 STAGE 1
                 $('newBtn').onclick = function() {
                     navigateWithConfirm(function() { newPreset(); });
                 };
