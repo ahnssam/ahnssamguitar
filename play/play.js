@@ -54,7 +54,7 @@
 
     // 결과를 보여 주기 직전 전면 광고 = AdSense 'H5 게임 광고'의 adBreak({type:'next'}).
     // 광고를 띄울지·언제 닫힐지는 구글이 정한다(우리가 '광고를 봐야 결과'로 막으면 안 됨). 안 띄우면 바로 done.
-    // 월드컵은 64강·32강·16강·8강으로 넘어갈 때도 부른다(label 은 목업 표시, name 은 AdSense 보고서에 남는 이름)
+    // 월드컵은 64강·32강·16강으로 넘어갈 때도 부른다(label 은 목업 표시, name 은 AdSense 보고서에 남는 이름)
     function interstitial(done, label = '결과 보기 전 전면 광고', name = 'result') {
         if (!MOCK) {
             if (!LIVE || !ADSENSE.games || adLib !== 'ok') return done();   // 광고 차단·로딩 중이면 기다리지 않는다

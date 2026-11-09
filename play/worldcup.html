@@ -633,8 +633,9 @@ const ytSearch = it => 'https://www.youtube.com/results?search_query=' + encodeU
 const roundName = n => n === 2 ? '결승' : n === 4 ? '4강' : `${n}강`;
 // 그 주제로 할 수 있는 판 크기 (기타 수만큼, 큰 것부터): 명기 64 → 64·32·16·8강, 기타리스트 128 → 128강부터
 const sizesOf = key => [128, 64, 32, 16, 8].filter(n => n <= THEMES[key].items.length);
-// 전면 광고는 64강·32강·16강·8강으로 넘어갈 때만 (4강·결승으로 넘어갈 때는 안 넣음 — 2026-11-08 사용자 결정)
-const AD_ROUNDS = [64, 32, 16, 8];
+// 판 중간 전면 광고는 64강·32강·16강으로 넘어갈 때만 (2026-11-09 사용자 결정: 32강 판은 16강 넘어갈 때 한 번, 16강 판부터는 중간 광고 없음).
+// 8강·4강·결승으로 넘어갈 때는 안 넣는다. 결승이 끝나면 우승 화면 → 결과 전 광고는 그대로
+const AD_ROUNDS = [64, 32, 16];
 const sizeBtns = key => sizesOf(key).map((n, i) => `<button class="btn${i ? ' ghost' : ''}" data-go="${key}" data-n="${n}">${i ? '' : '<i class="fas fa-play"></i>'}${n}강${i ? '' : ' 시작'}</button>`).join('');
 
 // ---------- 하던 판 기억 (64강은 63번 골라야 해서, 새로고침·뒤로 가기로 날아가지 않게) ----------
