@@ -78,6 +78,26 @@
     .pick.lost { opacity: 0; transform: translateX(var(--out, 0)) rotate(var(--rot, 0)) scale(.9); }
     @media (prefers-reduced-motion: reduce) { .pick.won { transform: none; } .pick.lost { transform: none; } .pick.won::after { animation: none; } }
     .keys { text-align: center; color: #aaa; font-size: 12px; margin-top: 10px; }
+    /* 강이 바뀔 때 '16강' 같은 큰 글자를 잠깐, 결승이 끝나면 우승을 잠깐 보여 준다 (2026-11-09 사용자 요청). 누르면 바로 넘어감 */
+    .rsplash { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; padding: 16px;
+        background: radial-gradient(circle at 50% 45%, #2f7a54 0%, #173f2b 70%); color: #fff; cursor: pointer; animation: fade .2s; }
+    .rsplash.out { opacity: 0; transition: opacity .25s; }
+    .rsplash .lbl { font-size: 14px; font-weight: 700; letter-spacing: .3em; color: #cfe6d8; animation: rsUp .5s .05s both; }
+    .rsplash b { font-size: clamp(64px, 17vw, 150px); font-weight: 900; line-height: 1.05; font-family: 'Noto Sans KR', sans-serif; text-shadow: 0 6px 30px rgba(0,0,0,.35); animation: rsPop .55s cubic-bezier(.3, 1.5, .5, 1) both; }
+    .rsplash small { font-size: 15px; color: #d9ecdf; animation: rsUp .5s .2s both; }
+    .rsplash.final { background: radial-gradient(circle at 50% 40%, #4a3a12 0%, #17130a 75%); }
+    .rsplash.final .lbl { color: #f1d58a; }
+    .rsplash.final .ph { width: min(62vw, 300px); height: min(42vh, 340px); border-radius: 16px; background: #fff center/contain no-repeat; box-shadow: 0 0 0 4px #e3c06a, 0 18px 50px rgba(0,0,0,.5); margin: 8px 0 6px; animation: rsPop .6s .1s cubic-bezier(.3, 1.5, .5, 1) both; }
+    .rsplash.final b { font-size: clamp(26px, 6vw, 44px); }
+    @keyframes rsPop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes rsUp { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .rsplash *, .rsplash { animation: none !important; } }
+    /* 결과 화면: 우승 이름과 광고가 먼저, 몇 초 뒤 사진·순위·악보·댓글 (2026-11-09 사용자 요청) */
+    .win .later { display: none; }
+    .win.open .later { display: block; animation: rsUp .5s both; }
+    .win .wait { margin: 18px auto 0; color: var(--sub); font-size: 13px; }
+    .win .wait i { color: var(--green-mid); margin-right: 6px; }
+    .win.open .wait { display: none; }
     .listen { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 8px; }
     .listen a { text-align: center; font-size: 13px; font-weight: 700; color: #c4302b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 4px; }
     .listen a:hover { text-decoration: underline; }
@@ -680,7 +700,27 @@ function play(key, size) {
     const pool = shuffle(theme.items).slice(0, size);
     S = { key, theme, size, cur: pool, next: [], i: 0, hist: [], out: [], log: [] };
     saveNow();
-    match();
+    roundSplash(size, match);
+}
+// 강이 바뀔 때 큰 글자로 잠깐 (누르면 바로 넘어감)
+const SPLASH_MS = 1300, FINAL_MS = 2300;
+function splash(html, cls, ms, done) {
+    const el = document.createElement('div');
+    el.className = 'rsplash ' + cls;
+    el.innerHTML = html;
+    document.body.appendChild(el);
+    let over = false;
+    const fin = () => { if (over) return; over = true; clearTimeout(t); el.classList.add('out'); setTimeout(() => el.remove(), 250); done(); };
+    const t = setTimeout(fin, ms);
+    el.addEventListener('click', fin);
+}
+function roundSplash(n, done) {
+    const sub = n === 2 ? '마지막 대결!' : n === 4 ? '이제 네 개만 남았어요' : `${n / 2}번 대결`;
+    done();   // 첫 대결을 뒤에 미리 그려 두고, 글자가 사라지면 바로 보이게
+    splash(`<span class="lbl">${esc(S.theme.title)}</span><b>${roundName(n)}</b><small>${sub}</small>`, '', SPLASH_MS, () => {});
+}
+function finalSplash(w, done) {
+    splash(`<span class="lbl">🏆 WINNER</span><span class="ph" style="background-image:url('${imgSrc(w)}')"></span><b>${esc(w.n)}</b><small>${esc(w.ko)}</small>`, 'final', FINAL_MS, done);
 }
 function match() {
     const n = S.cur.length, a = S.cur[S.i], b = S.cur[S.i + 1];
@@ -722,10 +762,14 @@ function choose(side) {
     setTimeout(() => {
         busy = false;
         if (S.i >= S.cur.length) {
-            if (S.next.length === 1) { clearSave(); return interstitial(() => winner(S.next[0])); }
+            // 결승이 끝나면: 우승을 잠깐 보여 주고 → 전면 광고 → 결과 화면
+            if (S.next.length === 1) { clearSave(); const w = S.next[0]; return finalSplash(w, () => interstitial(() => winner(w))); }
             S.cur = S.next; S.next = []; S.i = 0;
             saveNow();
-            if (AD_ROUNDS.includes(S.cur.length)) return interstitial(match, `${roundName(S.cur.length)} 시작 전 광고`, `round-${S.cur.length}`);
+            // 강이 바뀌면 (광고 →) '16강' 큰 글자 → 첫 대결
+            const go = () => roundSplash(S.cur.length, match);
+            if (AD_ROUNDS.includes(S.cur.length)) return interstitial(go, `${roundName(S.cur.length)} 시작 전 광고`, `round-${S.cur.length}`);
+            return go();
         }
         saveNow();
         match();
@@ -739,18 +783,22 @@ function undo() {
     match();
 }
 addEventListener('keydown', e => {
-    if (!S || !app.querySelector('.vs') || document.querySelector('.inter')) return;
+    if (!S || !app.querySelector('.vs') || document.querySelector('.inter, .rsplash')) return;
     if (e.key === 'ArrowLeft') choose(0);
     if (e.key === 'ArrowRight') choose(1);
 });
 
 // ---------- 우승 ----------
 async function winner(w) {
+    const ad = adSlot('r300');
     const second = S.out.find(o => o.at === 2), semis = S.out.filter(o => o.at === 4);
     const t = S.theme;
     app.innerHTML = `<section class="win">
         <div class="crown">🏆 WINNER · ${esc(t.title)} ${S.size}강</div>
         <h1>${esc(w.n)}</h1><div class="ko">${esc(w.ko)} · ${esc(w.y)}</div>
+        ${ad}
+        <p class="wait"><i class="fas fa-spinner fa-spin"></i>다른 사람들 결과 모으는 중…</p>
+        <div class="later">
         <div class="big card"><div class="ph-img"><img src="${imgSrc(w)}" alt="${esc(w.n)}"></div>
             <div class="facts"><div><i class="fas fa-circle-info"></i>${esc(w.d)}</div>${w.p ? `<div><i class="fas fa-user"></i>${esc(w.p)}</div>` : ''}${t.song ? `<div><i class="fab fa-youtube" style="color:#e62117"></i><a href="${esc(ytSearch(w))}" target="_blank" rel="noopener" style="text-decoration:underline">유튜브에서 들어보기</a></div>` : ''}</div></div>
         <div class="podium">${second ? `<div><img src="${imgSrc(second.it)}" alt=""><span><small>준우승</small><b>${esc(second.it.n)}</b></span></div>` : ''}
@@ -758,13 +806,16 @@ async function winner(w) {
         <div class="btns"><button class="btn" id="again"><i class="fas fa-rotate-right"></i>다시 하기</button>
             <button class="btn ghost" id="other"><i class="fas fa-shuffle"></i>다른 월드컵</button>
             <button class="btn ghost" id="share"><i class="fas fa-share-nodes"></i>결과 공유</button></div>
-        ${adSlot('r300')}
         <div id="rk"><p class="stat-soon" style="text-align:center">📊 다른 사람들의 순위를 불러오는 중…</p></div>
         <div class="rec" id="rec"></div>
         <div class="cmts" id="cm"></div>
         ${t.song ? '' : `<details class="credits"><summary>사진 출처 (Wikimedia Commons)</summary><ul>${t.items.map(it => `<li>${esc(it.n)} — ${esc(it.by)}, ${esc(it.lic)} · <a href="${esc(it.src)}" target="_blank" rel="noopener">원본</a></li>`).join('')}</ul></details>`}
+        </div>
     </section>`;
     scrollTo(0, 0);
+    // 광고 칸이 있으면 3초, 없으면 잠깐만 기다렸다가 나머지를 펼친다. 광고는 위에 그대로 있고 아래로만 늘어나서, 광고 자리가 움직이지 않는다
+    const sec = app.querySelector('.win');
+    setTimeout(() => sec.classList.add('open'), ad ? 3000 : 900);
     document.getElementById('again').onclick = () => play(S.key, S.size);
     document.getElementById('other').onclick = start;
     document.getElementById('share').onclick = () => share('기타 이상형 월드컵', `내 ${t.title} 우승은 「${w.n}」 🎸 너는 뭐 고를래?`);
