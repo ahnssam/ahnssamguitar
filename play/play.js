@@ -1,23 +1,76 @@
-// 기타 놀이터 공통 (2026-11-07 목업 → 2026-11-08 메뉴에 열림)
-// 광고는 아직 안 붙였다. 붙이기 전에는 광고 자리를 아예 안 보이고(전면 광고도 건너뜀), 주소에 ?ads=1 을 붙이면 회색 상자로 자리를 볼 수 있다.
-// 실제로 붙일 때 adSlot() 안만 AdSense(또는 카카오 애드핏) 코드로 바꾸고 ADS_ON 을 true 로.
+// 기타 놀이터 공통 (2026-11-07 목업 → 2026-11-08 메뉴에 열림 → 2026-11-09 공개, AdSense 코드 준비)
 (function () {
     const SB_URL = 'https://qpcbrqgqylxkgdwoflku.supabase.co';
     const SB_KEY = 'sb_publishable_5rr-OZ7Sqjk1nXn59R7XnQ_HInATuSV';
     const esc = v => String(v ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+    const IS_APP = window.matchMedia && matchMedia('(display-mode: standalone)').matches;
+
+    // ===== 광고 (Google AdSense) =====
+    // 승인 받은 뒤 아래 값만 채우면 진짜 광고가 나온다. client 가 비어 있으면 광고 자리를 아예 안 보이고 전면 광고도 건너뛴다.
+    //   client : AdSense 게시자 ID 'ca-pub-숫자16자리' (AdSense > 계정 > 계정 정보). 공개 값이라 커밋해도 된다.
+    //   slots  : 디스플레이 광고 단위 ID(숫자) — AdSense > 광고 > 광고 단위별 > 디스플레이 광고. wide = 가로형(시작 화면 아래), r300 = 300×250(결과 화면)
+    //   games  : 'H5 게임 광고' 승인을 따로 받으면 true → 결과 직전·월드컵 64·32·16·8강 전환 때 전면 광고(adBreak)
+    //   test   : true 면 전면 광고를 시험 광고로(data-adbreak-test). 붙인 직후 확인할 때만 잠깐 켠다
+    // 앱(TWA) 안에서는 광고를 안 보인다(Play 스토어에 '광고 포함' 신고를 안 했다).
+    // 주소에 ?ads=1 을 붙이면 진짜 광고 대신 회색 상자로 자리만 본다.
+    const ADSENSE = { client: '', slots: { wide: '', r300: '' }, games: false, test: false };
+    const MOCK = /[?&]ads=1\b/.test(location.search);
+    const LIVE = !MOCK && !IS_APP && /^ca-pub-\d{10,20}$/.test(ADSENSE.client);
+    let adLib = LIVE ? 'loading' : 'off';   // 'loading' | 'ok' | 'fail'(광고 차단 등)
+    if (LIVE) {
+        const s = document.createElement('script');
+        s.async = true; s.crossOrigin = 'anonymous';
+        s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + ADSENSE.client;
+        if (ADSENSE.games) s.setAttribute('data-ad-frequency-hint', '30s');
+        if (ADSENSE.test) s.setAttribute('data-adbreak-test', 'on');
+        s.onload = () => { adLib = 'ok'; };
+        s.onerror = () => { adLib = 'fail'; document.querySelectorAll('.ad.live').forEach(el => el.remove()); };
+        document.head.appendChild(s);
+        window.adsbygoogle = window.adsbygoogle || [];
+        if (ADSENSE.games) adsbygoogle.push({ preloadAdBreaks: 'on', sound: 'on' });   // = adConfig(...)
+        // 화면을 innerHTML 로 새로 그리니, 새로 생긴 광고 칸을 찾아 하나씩 채운다
+        const fill = () => document.querySelectorAll('.ad.live ins.adsbygoogle:not([data-filled])').forEach(ins => {
+            if (!ins.isConnected || !ins.offsetWidth) return;   // 숨은 칸은 폭이 0이라 오류가 난다 — 보일 때 채움
+            ins.setAttribute('data-filled', '1');
+            try { adsbygoogle.push({}); } catch (e) {}
+        });
+        let t = 0;   // requestAnimationFrame 은 뒤에 숨은 탭에서 멈추니 setTimeout 으로
+        new MutationObserver(() => { clearTimeout(t); t = setTimeout(fill, 60); })
+            .observe(document.documentElement, { childList: true, subtree: true });
+    }
 
     // 광고 자리: kind = 'r300'(300×250) | 'r320'(320×100) | 'wide'(728×90, 폰에선 320×100)
     const SIZE = { r300: '300×250', r320: '320×100', wide: '728×90' };
-    const ADS_ON = /[?&]ads=1\b/.test(location.search);
-    const adSlot = (kind = 'r300', note = '') => !ADS_ON ? '' :
-        `<div class="ad ${kind}"><span class="tag">광고</span><div class="box"><b>광고 자리</b><small>${SIZE[kind]} · Google AdSense / 카카오 애드핏</small>${note ? `<small>${esc(note)}</small>` : ''}</div></div>`;
+    const adSlot = (kind = 'r300', note = '') => {
+        if (MOCK) return `<div class="ad ${kind}"><span class="tag">광고</span><div class="box"><b>광고 자리</b><small>${SIZE[kind]} · Google AdSense</small>${note ? `<small>${esc(note)}</small>` : ''}</div></div>`;
+        const slot = LIVE && adLib !== 'fail' && ADSENSE.slots[kind];
+        if (!slot) return '';
+        const ins = kind === 'wide'
+            ? `<ins class="adsbygoogle" style="display:block" data-ad-format="horizontal" data-full-width-responsive="true"`
+            : `<ins class="adsbygoogle" style="display:inline-block;width:300px;height:250px"`;
+        return `<div class="ad live ${kind}"><span class="tag">광고</span>${ins} data-ad-client="${ADSENSE.client}" data-ad-slot="${esc(slot)}"></ins></div>`;
+    };
 
-    // 결과를 보여 주기 직전 전면 광고(목업). 실제로는 AdSense 'H5 게임 광고'의 adBreak({type:'next'}) 자리 —
-    // 광고를 띄울지·언제 닫힐지는 구글이 정한다(우리가 '광고를 봐야 결과'로 막으면 안 됨)
-    // 월드컵은 64강·32강·16강·8강으로 넘어갈 때도 부른다(label 로 어느 자리인지 표시)
-    function interstitial(done, label = '결과 보기 전 전면 광고') {
-        if (!ADS_ON) return done();
+    // 결과를 보여 주기 직전 전면 광고 = AdSense 'H5 게임 광고'의 adBreak({type:'next'}).
+    // 광고를 띄울지·언제 닫힐지는 구글이 정한다(우리가 '광고를 봐야 결과'로 막으면 안 됨). 안 띄우면 바로 done.
+    // 월드컵은 64강·32강·16강·8강으로 넘어갈 때도 부른다(label 은 목업 표시, name 은 AdSense 보고서에 남는 이름)
+    function interstitial(done, label = '결과 보기 전 전면 광고', name = 'result') {
+        if (!MOCK) {
+            if (!LIVE || !ADSENSE.games || adLib !== 'ok') return done();   // 광고 차단·로딩 중이면 기다리지 않는다
+            let over = false, showing = false;
+            const fin = () => { if (!over) { over = true; done(); } };
+            const guard = setTimeout(() => { if (!showing) fin(); }, 2500);   // 응답이 없으면 그냥 넘어간다
+            try {
+                adsbygoogle.push({
+                    type: 'next', name,
+                    beforeAd: () => { showing = true; clearTimeout(guard); },
+                    afterAd: () => {},
+                    adBreakDone: () => { clearTimeout(guard); fin(); },
+                });
+            } catch (e) { clearTimeout(guard); fin(); }
+            return;
+        }
         const el = document.createElement('div');
         el.className = 'inter';
         el.innerHTML = `<div class="in"><div class="top"><span>${esc(label)} (목업)</span><button class="x" disabled>3</button></div>${adSlot('r300', '실제: AdSense 게임 광고(adBreak)')}<p>실제 광고에서는 닫기 버튼과 시간을 구글이 정해요</p></div>`;
@@ -93,7 +146,6 @@
     const STYLE = { acoustic: '통기타', electric: '일렉기타', fingerstyle: '핑거스타일', solo: '기타솔로', chord: '코드악보', bass: '베이스' };
     // 제목 뒤 "(2021 편곡)" 같은 표시는 빼고 같은 곡으로 본다
     const baseTitle = t => String(t || '').normalize('NFC').replace(/\s*\((?:\d{4}|쉬운|[^)]*)\s*편곡\)\s*$/, '').trim();
-    const IS_APP = window.matchMedia && matchMedia('(display-mode: standalone)').matches;
 
     // 결과 화면 '이 곡 악보' 줄
     const recRow = s => `<a href="../tab-detail.html?id=${encodeURIComponent(s.id)}"><span class="cv"${cvUrl(s) ? ` style="background-image:url('${esc(cvUrl(s))}')"` : ''}>${cvUrl(s) ? '' : '<i class="fas fa-music"></i>'}</span>`
