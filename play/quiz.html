@@ -159,6 +159,21 @@
     .review li .fa-circle-check { color: var(--green-mid); }
     .review li .fa-circle-xmark { color: var(--red); }
     .review li small { display: block; color: var(--sub); }
+    /* 문제마다 다른 사람 정답률 (db/play_quiz_answers.sql 적용 뒤부터 보임) */
+    .review h3 { display: flex; align-items: baseline; gap: 8px; }
+    .review h3 .qrh { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--sub); }
+    .review li > span:first-of-type { flex: 1; min-width: 0; }
+    .review .qr { flex: none; width: 70px; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; text-align: right; }
+    .review .qr:empty { display: none; }
+    .review .qr b { font-size: 15px; font-weight: 900; color: #333; line-height: 1.1; }
+    .review .qr .bar { display: block; width: 64px; height: 5px; border-radius: 99px; background: #e6ece8; overflow: hidden; }
+    .review .qr .bar span { display: block; height: 100%; background: var(--green-mid); }
+    .review .qr.mid .bar span { background: #e9a23b; }
+    .review .qr.hard .bar span { background: #e0553a; }
+    .review .qr.hard b { color: #c8402a; }
+    .review .qr small { font-size: 11.5px; }
+    .review .qr.first small { font-size: 12px; color: var(--green-deep); font-weight: 700; }
+    .review .qhl { font-size: 13.5px; font-weight: 700; color: #b8461f; background: #fff3e8; border-radius: 10px; padding: 8px 12px; margin: 0 0 6px; }
     .res .rec { max-width: 860px; margin-left: auto; margin-right: auto; }
 </style>
 </head>
@@ -623,9 +638,9 @@ function result() {
             <button class="btn ghost" id="other"><i class="fas fa-shuffle"></i>다른 퀴즈</button>
             <button class="btn ghost" id="share"><i class="fas fa-share-nodes"></i>점수 자랑하기</button></div>
         ${adSlot('r300')}
-        <div class="review card"><h3>문제 다시 보기</h3><ul>${G.log.map((l, k) => `<li><i class="fas ${l.ok ? 'fa-circle-check' : 'fa-circle-xmark'}"></i><span>
+        <div class="review card" id="review"><h3>문제 다시 보기</h3><ul>${G.log.map((l, k) => `<li><i class="fas ${l.ok ? 'fa-circle-check' : 'fa-circle-xmark'}"></i><span>
             <b>${k + 1}. ${esc(G.mode === 'artist' ? `「${l.q.title}」 누구 노래?` : G.mode === 'tab' ? `악보 보고 맞히기 — ${l.q.a}` : l.q.ask)}</b>
-            <small>${G.mode === 'tab' ? '' : `정답: ${esc(l.q.a)}`}${!l.ok ? `${G.mode === 'tab' ? '' : ' · '}내 답: ${esc(l.o ?? '시간 끝')}` : `${G.mode === 'tab' ? '' : ' · '}+${l.got}점`}${l.q.hints ? ` · 힌트 ${l.q.hints}개` : ''}</small></span></li>`).join('')}</ul></div>
+            <small>${G.mode === 'tab' ? '' : `정답: ${esc(l.q.a)}`}${!l.ok ? `${G.mode === 'tab' ? '' : ' · '}내 답: ${esc(l.o ?? '시간 끝')}` : `${G.mode === 'tab' ? '' : ' · '}+${l.got}점`}${l.q.hints ? ` · 힌트 ${l.q.hints}개` : ''}</small></span><span class="qr" data-k="${k}"></span></li>`).join('')}</ul></div>
         <div class="rec">${songs.length ? `<h3><i class="fas fa-music" style="color:var(--green-mid)"></i>이번 퀴즈에 나온 곡 악보 <small>안쌤 TAB악보</small></h3><div class="list">${songs.map(recRow).join('')}</div>`
             : `<h3><i class="fas fa-book" style="color:var(--green-mid)"></i>기초부터 탄탄하게</h3><div class="list"><a href="../#books"><span class="cv"><i class="fas fa-book"></i></span><span class="mt"><b>안쌤 기타 교본</b><small>코드·리듬·주법을 차근차근</small></span></a><a href="../tools.html"><span class="cv"><i class="fas fa-sliders"></i></span><span class="mt"><b>무료 연습도구</b><small>튜너 · 메트로놈 · 지판</small></span></a></div>`}</div>
     </section>`;
@@ -645,7 +660,41 @@ function result() {
             const el = document.getElementById('board');
             if (el && G === g) el.innerHTML = `📊 지금까지 ${x.plays.toLocaleString()}판 중 <b>${x.rank.toLocaleString()}등</b> · 상위 <b>${pct}%</b>`;
         }).catch(() => {});
-    }
+        // 문제마다 다른 사람 정답률 (db/play_quiz_answers.sql 적용 뒤부터 보임) — 내 답까지 더한 숫자
+        const qids = g.log.map(l => qHash(`${g.mode}|${nfc(l.q.id)}`));
+        rpc('play_quiz_answers_save', { p_mode: g.mode, p_items: g.log.map((l, k) => ({ q: qids[k], ok: l.ok })) }).then(rows => {
+            if (!Array.isArray(rows) || !rows.length || G !== g) return;
+            g.rates = new Map(rows.map(r => [r.qid, r]));
+            showRates(g, qids);
+        }).catch(() => {});
+    } else if (g.rates) showRates(g, g.log.map(l => qHash(`${g.mode}|${nfc(l.q.id)}`)));
+}
+// 문제 표시: "종류|문제" → 16자리 해시 (문제 글을 그대로 DB에 보내지 않게)
+function qHash(s) {
+    let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+    for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');
+}
+function showRates(g, qids) {
+    const box = document.getElementById('review');
+    if (!box) return;
+    let best = null;          // 남들이 많이 틀렸는데 내가 맞힌 문제
+    g.log.forEach((l, k) => {
+        const r = g.rates.get(qids[k]), el = box.querySelector(`.qr[data-k="${k}"]`);
+        if (!r || !el) return;
+        if (r.plays <= 1) { el.className = 'qr first'; el.innerHTML = '<small>처음 푼 문제</small>'; return; }
+        const pct = Math.round(r.correct / r.plays * 100);
+        el.className = `qr ${pct < 40 ? 'hard' : pct < 70 ? 'mid' : ''}`;
+        el.title = `${r.plays.toLocaleString()}명 중 ${r.correct.toLocaleString()}명이 맞혔어요`;
+        el.innerHTML = `<b>${pct}%</b><span class="bar"><span style="width:${pct}%"></span></span><small>${r.plays.toLocaleString()}명</small>`;
+        if (l.ok && r.plays >= 5 && pct <= 40 && (!best || pct < best.pct)) best = { k, pct };
+    });
+    const h3 = box.querySelector('h3');
+    if (!h3.querySelector('.qrh')) h3.insertAdjacentHTML('beforeend', '<span class="qrh">다른 사람 정답률</span>');
+    box.querySelector('.qhl')?.remove();
+    if (best) h3.insertAdjacentHTML('afterend', `<p class="qhl">🔥 ${best.k + 1}번은 정답률 ${best.pct}%짜리 어려운 문제인데 맞혔어요!</p>`);
 }
 
 addEventListener('keydown', e => {
