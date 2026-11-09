@@ -35,12 +35,25 @@
     .theme .btn { padding: 10px 16px; font-size: 14px; }
     /* 몇 강 단추는 무조건 한 줄 (2026-11-09 사용자 요청) */
     .theme .btns { gap: 8px; flex-wrap: nowrap; }
-    .sz { position: relative; flex: none; display: inline-flex; }
-    .sz select { appearance: none; -webkit-appearance: none; padding: 11px 34px 11px 18px; border-radius: 999px; border: 1.5px solid var(--green-mid); background: #fff; color: var(--green-deep); font-weight: 800; font-size: 15px; font-family: inherit; cursor: pointer; }
-    .sz select:hover { background: var(--green-faint); }
-    .sz i { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--green-mid); pointer-events: none; }
     .btns .btn.go { flex: 1 1 auto; min-width: 120px; font-size: 16px; padding: 12px 18px; white-space: nowrap; }
     .win .btns .btn.go { flex: none; }
+    /* 시작 → 몇 강 고르는 창 */
+    .szpop { position: fixed; inset: 0; z-index: 60; background: rgba(20, 30, 25, .45); display: grid; place-items: center; padding: 16px; animation: szIn .18s ease-out; }
+    .szpop .box { position: relative; width: min(100%, 380px); background: #fff; border-radius: 20px; padding: 22px 18px 18px; box-shadow: 0 24px 60px rgba(0,0,0,.25); text-align: center; animation: szUp .22s cubic-bezier(.2,.9,.3,1.2); }
+    .szpop h3 { font-size: 18px; font-weight: 900; padding: 0 28px; }
+    .szpop p { color: var(--sub); font-size: 13.5px; margin-top: 2px; }
+    .szpop .x { position: absolute; right: 10px; top: 10px; width: 34px; height: 34px; border-radius: 50%; color: #888; font-size: 16px; }
+    .szpop .x:hover { background: #f2f2f2; }
+    .szpop .opts { display: grid; gap: 6px; margin: 16px 0; }   /* 판 개수만큼 한 줄 */
+    .szpop .opt { padding: 10px 2px; min-width: 0; border-radius: 12px; border: 1.5px solid var(--line); background: #fff; color: var(--ink); }
+    .szpop .opt b { display: block; font-size: 16px; font-weight: 900; }
+    .szpop .opt small { display: block; font-size: 10.5px; white-space: nowrap; color: var(--sub); margin-top: 1px; }
+    .szpop .opt:hover { border-color: var(--green-mid); }
+    .szpop .opt.on { border-color: var(--green-mid); background: var(--green-faint); color: var(--green-deep); box-shadow: 0 0 0 2px var(--green-mid) inset; }
+    .szpop .big { width: 100%; font-size: 16px; padding: 13px; }
+    @media (max-width: 420px) { .szpop .opt small { display: none; } .szpop .opt { padding: 12px 2px; } }
+    @keyframes szIn { from { opacity: 0; } }
+    @keyframes szUp { from { transform: translateY(16px) scale(.97); opacity: 0; } }
     .theme .resume { display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 14px; border-radius: 12px; background: var(--green-faint); border: 1px solid var(--green-pale); color: var(--green-deep); }
     .theme .resume > i { width: 30px; height: 30px; border-radius: 50%; background: var(--green-mid); color: #fff; display: grid; place-items: center; font-size: 12px; flex: none; }
     .theme .resume b { display: block; font-size: 14px; }
@@ -659,13 +672,33 @@ const sizesOf = key => [128, 64, 32, 16, 8].filter(n => n <= THEMES[key].items.l
 // 판 중간 전면 광고는 64강·32강·16강으로 넘어갈 때만 (2026-11-09 사용자 결정: 32강 판은 16강 넘어갈 때 한 번, 16강 판부터는 중간 광고 없음).
 // 8강·4강·결승으로 넘어갈 때는 안 넣는다. 결승이 끝나면 우승 화면 → 결과 전 광고는 그대로
 const AD_ROUNDS = [64, 32, 16];
-// 몇 강은 드롭다운(32강이 기본, 32강이 없으면 가장 큰 판) + 큰 시작 단추 (2026-11-09 사용자 요청)
-const sizeBtns = key => {
-    const ns = sizesOf(key), def = ns.includes(32) ? 32 : ns[0];
-    return `<label class="sz"><select data-sz aria-label="몇 강으로 할지">${ns.map(n => `<option value="${n}"${n === def ? ' selected' : ''}>${n}강</option>`).join('')}</select><i class="fas fa-chevron-down"></i></label>`
-        + `<button class="btn go" data-go="${key}"><i class="fas fa-play"></i>시작</button>`;
-};
-const goSize = b => play(b.dataset.go, +b.parentNode.querySelector('[data-sz]').value);
+// 카드에는 큰 '시작' 단추만. 누르면 창이 떠서 몇 강인지 고른다(32강이 기본, 32강이 없으면 가장 큰 판) (2026-11-09 사용자 요청)
+const sizeBtns = key => `<button class="btn go" data-go="${key}"><i class="fas fa-play"></i>시작</button>`;
+const goSize = b => pickSize(b.dataset.go);
+function pickSize(key) {
+    const t = THEMES[key], ns = sizesOf(key);
+    let n = ns.includes(32) ? 32 : ns[0];
+    const el = document.createElement('div');
+    el.className = 'szpop';
+    el.innerHTML = `<div class="box" role="dialog" aria-modal="true" aria-label="몇 강으로 할지 고르기">
+        <button class="x" aria-label="닫기"><i class="fas fa-xmark"></i></button>
+        <h3>${esc(t.title)}</h3><p>몇 강으로 할까요?</p>
+        <div class="opts" style="grid-template-columns:repeat(${ns.length},1fr)">${ns.map(v => `<button class="opt${v === n ? ' on' : ''}" data-n="${v}"><b>${v}강</b><small>${v - 1}번 고르기</small></button>`).join('')}</div>
+        <button class="btn go big"><i class="fas fa-play"></i><span>${n}강 시작</span></button></div>`;
+    document.body.appendChild(el);
+    const close = () => { el.remove(); removeEventListener('keydown', key2); };
+    const key2 = e => { if (e.key === 'Escape') close(); };
+    addEventListener('keydown', key2);
+    el.addEventListener('click', e => { if (e.target === el) close(); });
+    el.querySelector('.x').onclick = close;
+    el.querySelectorAll('.opt').forEach(o => o.onclick = () => {
+        n = +o.dataset.n;
+        el.querySelectorAll('.opt').forEach(x => x.classList.toggle('on', x === o));
+        el.querySelector('.big span').textContent = `${n}강 시작`;
+    });
+    el.querySelector('.big').onclick = () => { close(); play(key, n); };
+    el.querySelector('.big').focus();
+}
 
 // ---------- 하던 판 기억 (64강은 63번 골라야 해서, 새로고침·뒤로 가기로 날아가지 않게) ----------
 const SAVE = 'wc.save';
