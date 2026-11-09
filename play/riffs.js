@@ -1,17 +1,18 @@
 // 최강 리프곡 월드컵 곡 목록 (2026-11-08) — 사진 대신 곡 카드 그림(worldcup.html 의 songArt)으로 보인다.
-// 리프(악보)를 그림에 그리지는 않는다(저작권). 들어보기는 유튜브 검색으로만 잇는다.
+// 리프(악보)를 그림에 그리지는 않는다(저작권).
+// v: 유튜브 영상 ID(공식 영상·음원, 퍼가기 허용 확인) — 대결 카드 안에서 바로 재생된다. 없으면 곡 그림 + 유튜브 검색 링크.
 // k: 키(rf-), n: 곡, a: 가수, y: 발표 해, d: 한 줄 설명, p: 리프를 친 기타리스트(확실한 것만)
 window.RIFFS = [
     { k: 'rf-smoke', n: 'Smoke on the Water', a: 'Deep Purple', y: 1972, d: '기타 처음 잡으면 누구나 쳐 보는 네 음짜리 리프', p: '리치 블랙모어' },
-    { k: 'rf-sweetchild', n: "Sweet Child O' Mine", a: "Guns N' Roses", y: 1987, d: '슬래시가 손풀기로 치던 게 그대로 인트로가 됐다', p: '슬래시' },
-    { k: 'rf-sevennation', n: 'Seven Nation Army', a: 'The White Stripes', y: 2003, d: '베이스 같지만 기타 + 옥타브 페달. 경기장 응원가가 된 리프', p: '잭 화이트' },
-    { k: 'rf-backinblack', n: 'Back in Black', a: 'AC/DC', y: 1980, d: '쉬는 박자까지 리프인 하드록 교과서', p: '앵거스 영 · 말콤 영' },
-    { k: 'rf-teenspirit', n: 'Smells Like Teen Spirit', a: 'Nirvana', y: 1991, d: '파워코드 네 개로 90년대를 연 리프', p: '커트 코베인' },
-    { k: 'rf-sandman', n: 'Enter Sandman', a: 'Metallica', y: 1991, d: '메탈리카를 세계 최고 밴드로 만든 리프', p: '커크 해밋' },
-    { k: 'rf-ironman', n: 'Iron Man', a: 'Black Sabbath', y: 1970, d: '쿵쿵 걸어오는 듯한 헤비메탈의 원조 리프', p: '토니 아이오미' },
-    { k: 'rf-paranoid', n: 'Paranoid', a: 'Black Sabbath', y: 1970, d: '쉬지 않고 달리는 빠른 리프. 몇 분 만에 만든 곡', p: '토니 아이오미' },
-    { k: 'rf-wholelotta', n: 'Whole Lotta Love', a: 'Led Zeppelin', y: 1969, d: '단순한데 묵직한, 레드 제플린의 대표 리프', p: '지미 페이지' },
-    { k: 'rf-blackdog', n: 'Black Dog', a: 'Led Zeppelin', y: 1971, d: '노래와 리프가 주고받는 박자 꼬기의 끝판왕', p: '지미 페이지' },
+    { k: 'rf-sweetchild', v: '1w7OgIMMRc4', n: "Sweet Child O' Mine", a: "Guns N' Roses", y: 1987, d: '슬래시가 손풀기로 치던 게 그대로 인트로가 됐다', p: '슬래시' },
+    { k: 'rf-sevennation', v: '0J2QdDbelmY', n: 'Seven Nation Army', a: 'The White Stripes', y: 2003, d: '베이스 같지만 기타 + 옥타브 페달. 경기장 응원가가 된 리프', p: '잭 화이트' },
+    { k: 'rf-backinblack', v: 'pAgnJDJN4VA', n: 'Back in Black', a: 'AC/DC', y: 1980, d: '쉬는 박자까지 리프인 하드록 교과서', p: '앵거스 영 · 말콤 영' },
+    { k: 'rf-teenspirit', v: 'hTWKbfoikeg', n: 'Smells Like Teen Spirit', a: 'Nirvana', y: 1991, d: '파워코드 네 개로 90년대를 연 리프', p: '커트 코베인' },
+    { k: 'rf-sandman', v: 'CD-E-LDc384', n: 'Enter Sandman', a: 'Metallica', y: 1991, d: '메탈리카를 세계 최고 밴드로 만든 리프', p: '커크 해밋' },
+    { k: 'rf-ironman', v: 'b3-QqGVt-tM', n: 'Iron Man', a: 'Black Sabbath', y: 1970, d: '쿵쿵 걸어오는 듯한 헤비메탈의 원조 리프', p: '토니 아이오미' },
+    { k: 'rf-paranoid', v: '0qanF-91aJo', n: 'Paranoid', a: 'Black Sabbath', y: 1970, d: '쉬지 않고 달리는 빠른 리프. 몇 분 만에 만든 곡', p: '토니 아이오미' },
+    { k: 'rf-wholelotta', v: 'HibBnC6SVk8', n: 'Whole Lotta Love', a: 'Led Zeppelin', y: 1969, d: '단순한데 묵직한, 레드 제플린의 대표 리프', p: '지미 페이지' },
+    { k: 'rf-blackdog', v: '2KPEHohJMuw', n: 'Black Dog', a: 'Led Zeppelin', y: 1971, d: '노래와 리프가 주고받는 박자 꼬기의 끝판왕', p: '지미 페이지' },
     { k: 'rf-satisfaction', n: '(I Can\'t Get No) Satisfaction', a: 'The Rolling Stones', y: 1965, d: '퍼즈 페달을 유명하게 만든 지글지글 리프', p: '키스 리처즈' },
     { k: 'rf-sunshine', n: 'Sunshine of Your Love', a: 'Cream', y: 1967, d: '블루스를 무겁게 비튼 60년대 대표 리프', p: '에릭 클랩튼' },
     { k: 'rf-purplehaze', n: 'Purple Haze', a: 'Jimi Hendrix', y: 1967, d: '첫 음부터 불안하게 부딪히는 헨드릭스의 리프', p: '지미 헨드릭스' },

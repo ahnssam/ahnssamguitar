@@ -98,9 +98,22 @@
     .win .wait { margin: 18px auto 0; color: var(--sub); font-size: 13px; }
     .win .wait i { color: var(--green-mid); margin-right: 6px; }
     .win.open .wait { display: none; }
-    .listen { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 8px; }
-    .listen a { text-align: center; font-size: 13px; font-weight: 700; color: #c4302b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 4px; }
-    .listen a:hover { text-decoration: underline; }
+    .ph a.ttl { text-decoration: none; cursor: pointer; }
+    .ph a.ttl:hover { opacity: .8; }
+    /* 리프곡: 카드 안에서 유튜브 영상이 바로 나온다 (2026-11-09 사용자 요청) */
+    .pick.song { cursor: default; }
+    .pick.song .ph-img { height: auto; aspect-ratio: 16 / 9; background: #1d1f22; }   /* 영상 없는 곡 그림도 같은 크기로 */
+    .pick.song .ph-img.yt iframe { width: 100%; height: 100%; border: 0; display: block; }
+    .pick.song .yt-play { position: relative; width: 100%; height: 100%; border: 0; padding: 0; cursor: pointer; background: #000 center / cover no-repeat; display: block; }
+    .pick.song .yt-play::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.35)); }
+    .pick.song .yt-play i { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 68px; height: 48px; border-radius: 14px; background: #e62117; color: #fff; font-size: 20px; display: grid; place-items: center; box-shadow: 0 4px 14px rgba(0,0,0,.35); transition: transform .15s; }
+    .pick.song .yt-play:hover i { transform: translate(-50%, -50%) scale(1.08); }
+    .pick.song .yt-play small { position: absolute; left: 0; right: 0; bottom: 8px; color: #fff; font-size: 12px; font-weight: 700; text-align: center; text-shadow: 0 1px 4px rgba(0,0,0,.7); }
+    .pick.song .yt-go { display: inline-block; margin-top: 6px; font-size: 12.5px; font-weight: 700; color: #c4302b; }
+    .pick.song .yt-go:hover { text-decoration: underline; }
+    .pick.song .choose { margin-top: 10px; width: 100%; padding: 12px; border: 0; border-radius: 12px; background: var(--green-mid); color: #fff; font-weight: 900; font-size: 15px; cursor: pointer; font-family: inherit; }
+    .pick.song .choose:hover { filter: brightness(1.08); }
+    .vs.song .mark { top: 30%; }
     @media (max-width: 640px) {
         .vs { gap: 8px; }
         .pick { padding: 6px; }
@@ -109,6 +122,11 @@
         .pick .nm span { display: none; }
         .vs .mark { width: 42px; height: 42px; font-size: 14px; }
         .keys { display: none; }
+        /* 리프곡은 휴대폰에서 위아래로 (영상이 너무 작아지지 않게) */
+        .vs.song { grid-template-columns: 1fr; gap: 44px; }
+        .vs.song .mark { top: 50%; }
+        .pick.song .ph-img { height: auto; }
+        .pick.song .nm span { display: block; }
     }
 
     /* 우승 */
@@ -198,7 +216,7 @@
 <body>
 <header class="ph"><div class="wrap">
     <a class="logo" href="../"><img src="../images/logo-vertical.webp" alt="안쌤의 기타나무숲"></a>
-    <span class="ttl"><i class="fas fa-trophy"></i>기타 이상형 월드컵</span>
+    <a class="ttl" href="worldcup.html" id="toList" title="월드컵 목록"><i class="fas fa-trophy"></i>기타 이상형 월드컵</a>
     <span class="sp"></span>
     <a class="lnk" href="./"><i class="fas fa-gamepad"></i><span>놀이터</span></a>
     <a class="lnk" href="quiz.html"><i class="fas fa-circle-question"></i><span>퀴즈쇼</span></a>
@@ -214,7 +232,7 @@
 </footer>
 
 <script src="play.js?v=2026110901"></script>
-<script src="riffs.js?v=2026110801"></script>
+<script src="riffs.js?v=2026110901"></script>
 <script>
 // ---------- 주제와 기타 (사진: Wikimedia Commons, 사진마다 작가·라이선스 표시) ----------
 // 실제로 열 때는 안쌤이 찍은 사진이나 쓸 수 있는 사진으로 바꾸는 걸 권함
@@ -629,7 +647,8 @@ ${lines.map((l, i) => `<text x="40" y="${top + i * lh}" font-size="${size}" font
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg).replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29');
 }
 Object.values(THEMES).forEach(t => { if (t.song) t.items.forEach((it, i) => { it.art = songArt(it, i); }); });
-const ytSearch = it => 'https://www.youtube.com/results?search_query=' + encodeURIComponent(`${it.a} ${it.n}`);
+const ytSearch = it => it.v ? `https://www.youtube.com/watch?v=${it.v}` : 'https://www.youtube.com/results?search_query=' + encodeURIComponent(`${it.a} ${it.n}`);
+const ytEmbed = it => `https://www.youtube-nocookie.com/embed/${it.v}?rel=0&playsinline=1&autoplay=1`;
 const roundName = n => n === 2 ? '결승' : n === 4 ? '4강' : `${n}강`;
 // 그 주제로 할 수 있는 판 크기 (기타 수만큼, 큰 것부터): 명기 64 → 64·32·16·8강, 기타리스트 128 → 128강부터
 const sizesOf = key => [128, 64, 32, 16, 8].filter(n => n <= THEMES[key].items.length);
@@ -656,14 +675,18 @@ function loadSave() {
     return { ...s, cur, next, out: (s.out || []).filter(o => get(o[0])).map(o => ({ it: get(o[0]), at: o[1] })), log: s.log || [] };
 }
 const clearSave = () => PLAY.mem.set(SAVE, null);
+// 목록에서 판·순위로 들어갈 때는 주소를 하나 더 쌓아서, 뒤로 가기를 누르면 놀이터가 아니라 월드컵 목록으로 온다 (2026-11-09)
+function goUrl(url) { if (location.search) history.replaceState(null, '', url); else history.pushState(null, '', url); }
 function resume(s) {
     S = { key: s.key, theme: THEMES[s.key], size: s.size, cur: s.cur, next: s.next, i: s.i, hist: [], out: s.out, log: s.log };
-    history.replaceState(null, '', `?t=${s.key}&n=${s.size}`);
+    goUrl(`?t=${s.key}&n=${s.size}`);
     match();
 }
 
 // ---------- 시작 화면 ----------
 function start() {
+    S = null; busy = false;
+    document.querySelectorAll('.rsplash').forEach(el => el.remove());
     history.replaceState(null, '', location.pathname);
     const saved = loadSave();
     const card = (key, t) => `<div class="theme card">
@@ -697,7 +720,7 @@ function start() {
 let S = null;   // { key, theme, size, cur: [...], next: [...], i, hist: [], out: [{it, at: 몇 강에서 졌나}], log: [[이긴 k, 진 k], ...] }
 function play(key, size) {
     const theme = THEMES[key];
-    history.replaceState(null, '', `?t=${key}&n=${size}`);
+    goUrl(`?t=${key}&n=${size}`);
     const pool = shuffle(theme.items).slice(0, size);
     S = { key, theme, size, cur: pool, next: [], i: 0, hist: [], out: [], log: [] };
     saveNow();
@@ -726,21 +749,41 @@ function finalSplash(w, done) {
 function match() {
     const n = S.cur.length, a = S.cur[S.i], b = S.cur[S.i + 1];
     const done = S.size - n + S.i / 2, total = S.size - 1;   // 지금까지 끝난 대결 수 / 전체
-    const card = (it, side) => `<button class="pick card" data-side="${side}" aria-label="${esc(it.n)} 고르기">
+    // 리프곡은 카드 안에서 영상이 바로 나오고, 아래 '이 곡 고르기'로 고른다
+    const songCard = (it, side) => `<div class="pick card song" data-side="${side}">
+        ${it.v ? `<span class="ph-img yt"><button class="yt-play" data-v="${esc(it.v)}" aria-label="${esc(it.n)} 영상 보기" style="background-image:url('https://i.ytimg.com/vi/${esc(it.v)}/hqdefault.jpg'), url('${imgSrc(it)}')"><i class="fas fa-play"></i><small>눌러서 바로 듣기</small></button></span>`
+               : `<span class="ph-img"><img src="${imgSrc(it)}" alt="${esc(it.n)}"></span>`}
+        <span class="nm"><b>${esc(it.n)}</b><small>${esc(it.ko)} · ${esc(it.y)}</small><span>${esc(it.d)}</span>
+            ${it.v ? '' : `<a class="yt-go" href="${esc(ytSearch(it))}" target="_blank" rel="noopener"><i class="fab fa-youtube"></i> 유튜브에서 들어보기</a>`}</span>
+        <button class="choose" data-side="${side}"><i class="fas fa-check"></i> 이 곡 고르기</button></div>`;
+    const card = (it, side) => S.theme.song ? songCard(it, side) : `<button class="pick card" data-side="${side}" aria-label="${esc(it.n)} 고르기">
         <span class="ph-img"><img src="${imgSrc(it)}" alt="${esc(it.n)}"></span>
         <span class="nm"><b>${esc(it.n)}</b><small>${esc(it.ko)} · ${esc(it.y)}</small><span>${esc(it.d)}</span></span></button>`;
     app.innerHTML = `<div class="round"><b>${roundName(n)}${n > 2 ? ` <small style="font-size:15px;color:var(--sub)">${S.i / 2 + 1} / ${n / 2}</small>` : ''}</b>
             <span class="bar"><i style="width:${done / total * 100}%"></i></span>
             <button class="undo" ${S.hist.length ? '' : 'disabled'}><i class="fas fa-rotate-left"></i> 되돌리기</button></div>
         <p class="q">${esc(S.theme.q)}</p>
-        <div class="vs">${card(a, 0)}<span class="mark">VS</span>${card(b, 1)}</div>
-        ${S.theme.song ? `<div class="listen">${[a, b].map(it => `<a href="${esc(ytSearch(it))}" target="_blank" rel="noopener"><i class="fab fa-youtube"></i> ${esc(it.n)} 들어보기</a>`).join('')}</div>` : ''}
+        <div class="vs${S.theme.song ? ' song' : ''}">${card(a, 0)}<span class="mark">VS</span>${card(b, 1)}</div>
         <p class="keys">키보드 ← → 로도 고를 수 있어요</p>`;
-    app.querySelectorAll('.pick').forEach(p => p.addEventListener('click', () => choose(+p.dataset.side)));
+    app.querySelectorAll(S.theme.song ? '.choose' : '.pick').forEach(p => p.addEventListener('click', () => choose(+p.dataset.side)));
+    // 리프곡: 썸네일을 누르면 그 자리에서 영상 재생 (다른 쪽 영상은 멈춤 = 썸네일로 되돌림)
+    bindYt();
     scrollTo(0, 0);
     app.querySelector('.undo').addEventListener('click', undo);
     // 다음 대결 사진 미리 받기
     [S.cur[S.i + 2], S.cur[S.i + 3]].forEach(it => { if (it) new Image().src = imgSrc(it); });
+}
+function bindYt() {
+    app.querySelectorAll('.yt-play').forEach(btn => btn.onclick = () => {
+        stopYt();
+        const box = btn.parentNode;
+        box.dataset.back = box.innerHTML;
+        box.innerHTML = `<iframe src="${ytEmbed({ v: btn.dataset.v })}" title="영상" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
+    });
+}
+function stopYt() {
+    app.querySelectorAll('.ph-img.yt[data-back]').forEach(box => { box.innerHTML = box.dataset.back; delete box.dataset.back; });
+    bindYt();
 }
 let busy = false;
 const PICK_MS = 1500;   // 고른 기타를 보여 주는 시간 (2026-11-08 사용자 요청: 예전 0.4초 → 1초 더 길게)
@@ -760,7 +803,9 @@ function choose(side) {
     S.out.push({ it: l, at: S.cur.length });
     S.log.push([w.k, l.k]);              // [이긴 기타, 진 기타] — 순위 집계용
     S.next.push(w); S.i += 2;
+    const game = S;
     setTimeout(() => {
+        if (S !== game) return;   // 그사이 뒤로 가기로 목록에 나갔으면 그만
         busy = false;
         if (S.i >= S.cur.length) {
             // 결승이 끝나면: 우승을 잠깐 보여 주고 → 전면 광고 → 결과 화면
@@ -982,7 +1027,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-allr
 async function rankPage(key) {
     const t = THEMES[key];
     S = null;
-    history.replaceState(null, '', `?t=${key}&rank=1`);
+    goUrl(`?t=${key}&rank=1`);
     app.innerHTML = `<section class="win"><div class="crown">📊 RANKING</div><h1>${esc(t.title)}</h1><div class="ko">다른 사람들이 가장 많이 우승시킨 기타</div>
         <div id="rk"><p class="stat-soon" style="text-align:center">불러오는 중…</p></div>
         <div class="btns">${sizeBtns(key).replace(/(\d+)강 시작/, '나도 $1강 하기')}<button class="btn ghost" id="other"><i class="fas fa-shuffle"></i>다른 월드컵</button></div>
@@ -996,15 +1041,26 @@ async function rankPage(key) {
 
 // 주소로 바로 들어오면(?t=classic&n=16) 그 월드컵부터, ?t=classic&rank=1 이면 순위
 // 하던 판과 같은 주제·크기면(하다가 새로고침) 이어서
-const P = new URLSearchParams(location.search);
-const pt = P.get('t'), pn = +P.get('n');
-if (THEMES[pt] && P.get('rank')) rankPage(pt);
-else if (THEMES[pt]) {
-    const sv = loadSave();
-    if (sv && sv.key === pt && sv.size === pn) resume(sv);
-    else play(pt, sizesOf(pt).includes(pn) ? pn : 16);
+function route() {
+    const P = new URLSearchParams(location.search);
+    const pt = P.get('t'), pn = +P.get('n');
+    if (THEMES[pt] && P.get('rank')) rankPage(pt);
+    else if (THEMES[pt]) {
+        const sv = loadSave();
+        if (sv && sv.key === pt && sv.size === pn) resume(sv);
+        else play(pt, sizesOf(pt).includes(pn) ? pn : 16);
+    }
+    else start();
 }
-else start();
+route();
+// 위쪽 '기타 이상형 월드컵' 글자를 누르면 월드컵 목록으로 (하던 판은 저장돼 있어 '이어 하기'로 돌아옴, 2026-11-09)
+document.getElementById('toList').addEventListener('click', e => {
+    e.preventDefault();
+    if (location.search) history.pushState(null, '', location.pathname);
+    start();
+});
+// 뒤로·앞으로 가기: 하던 판은 저장돼 있으니 목록의 '하던 거 이어 하기'로 다시 들어갈 수 있다
+addEventListener('popstate', route);
 </script>
 </body>
 </html>
