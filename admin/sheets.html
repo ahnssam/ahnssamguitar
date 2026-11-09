@@ -377,6 +377,20 @@
     .rk-sub { font-size: 12.5px; font-weight: 900; margin: 14px 0 2px; color: #444; }
     .rk-sub small { font-weight: 500; color: var(--sub); margin-left: 4px; }
     .rk-col.yt h4 { border-color: #e04a3f; }
+    /* 악보영상 뭐찍지? (2026-11-10) */
+    .btn.film-btn { color: #b03a30; border-color: #f3c9c4; background: #fff4f2; }
+    .btn.film-btn:hover { border-color: #e59a92; }
+    .film .rk-hd h3 i { color: #e04a3f; }
+    .fm-vid { display: flex; align-items: center; gap: 6px; margin: 12px 0 2px; padding: 7px 10px; border-radius: 8px; background: #fff4f2; font-size: 12.5px; font-weight: 700; color: #8a2e26; text-decoration: none; }
+    .fm-vid:hover { background: #ffe9e5; }
+    .fm-vid span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fm-vid small { flex: none; font-weight: 500; color: #b06a62; }
+    .rk-row .yt { flex: none; color: #e04a3f; font-size: 15px; padding: 2px 4px; }
+    .rk-row .yt:hover { color: #b03a30; }
+    .rk-row .why i.pub { background: var(--green-bg); color: var(--green); font-weight: 700; }
+    .film .rk-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); }   /* 긴 칩이 칸을 화면 밖으로 밀지 않게 */
+    .film .rk-row .why i { white-space: normal; }
+    @media (max-width: 900px) { .film .rk-cols { grid-template-columns: minmax(0, 1fr); } }
     .rk-col.now h4 { border-color: var(--green-2); }
 
     @media (max-width: 900px) {
@@ -428,6 +442,7 @@
         </div>
         <div class="search"><i class="fas fa-search"></i><input id="q" placeholder="곡명·가수 검색"></div>
         <button class="btn rank-btn" id="rankBtn" title="다음에 올릴 악보 순위 · 최근 올린 악보 · 판매 TOP"><i class="fas fa-ranking-star"></i> 뭐부터 올리지?</button>
+        <button class="btn film-btn" id="filmBtn" title="걸어 둔 유튜브 영상이 그 곡만의 영상이 아닌 악보 — 합본 영상·다른 곡 영상 (다시 찍을 곡)"><i class="fas fa-video"></i> 악보영상 뭐찍지?</button>
         <button class="btn primary" id="newBtn"><i class="fas fa-plus"></i> 새 악보</button>
     </div>
     <div class="progress" id="progress" hidden></div>
@@ -541,6 +556,11 @@
         <button class="btn plain" value="cancel">취소</button>
     </form>
 </dialog>
+
+<div class="rank film" id="film" role="dialog" aria-label="악보영상 뭐찍지?" hidden>
+    <div class="rk-hd"><h3><i class="fas fa-video"></i>악보영상 뭐찍지?</h3><small id="fmNote"></small><button class="x" id="fmClose" aria-label="닫기"><i class="fas fa-xmark"></i></button></div>
+    <div class="rk-body" id="fmBody"></div>
+</div>
 
 <div class="rank" id="rank" role="dialog" aria-label="뭐부터 올리지?" hidden>
     <div class="rk-hd"><h3><i class="fas fa-ranking-star"></i>뭐부터 올리지?</h3><span class="rk-mode" id="rkMode"><button type="button" data-mode="up" class="on">올릴 악보</button><button type="button" data-mode="new">새로 만들 곡</button></span><label class="rk-done" title="이미 올린 곡(새로 만들 곡은 이미 만든 곡)도 순위 자리에 ✓ 로 보여요"><input type="checkbox" id="rkShowDone"> 올린 곡도 보기</label><small id="rkNote"></small><button class="x" id="rkClose" aria-label="닫기"><i class="fas fa-xmark"></i></button></div>
@@ -1017,6 +1037,7 @@
     function closeEditor() {
         $('dim').classList.remove('open'); $('editor').classList.remove('open');
         if (fromRank) { fromRank = false; showRank(); }
+        if (fromFilm) { fromFilm = false; showFilm(); }
     }
     const formState = () => [...form.elements].filter(el => el.id !== 'linkQ' && el.name !== 'gkind').map(el => el.type === 'checkbox' ? el.checked : el.value).join('\u0001') + '|' + difficulty + '|' + [...linkIds].sort().join() + '|' + grpKind;
     const isDirty = () => !!newPdf || !!newPreview || !!newCover || dropCover || !!coverFrom || !!newFull || dropFull || formState() !== openedState;
@@ -1033,6 +1054,7 @@
     // 바깥(어두운 부분)을 누르면 바뀐 게 있을 때 저장하고 닫는다 — 저장 못 하면 창을 그대로 두고 이유를 보여 준다
     $('dim').onclick = async () => {
         if (!$('rank').hidden && !$('editor').classList.contains('open')) { closeRank(); return; }
+        if (!$('film').hidden && !$('editor').classList.contains('open')) { closeFilm(); return; }
         if (pdfReading || saving) return;
         if (!isDirty()) { closeEditor(); return; }
         if (await save()) closeEditor();
@@ -1040,7 +1062,7 @@
     document.addEventListener('keydown', e => {
         if (e.key !== 'Escape') return;
         if ($('pubAsk').open) return;   // 공개 묻는 창의 Esc 는 그 창만 닫는다(= 취소)
-        if ($('editor').classList.contains('open')) closeEditor(); else if (!$('rank').hidden) closeRank();
+        if ($('editor').classList.contains('open')) closeEditor(); else if (!$('rank').hidden) closeRank(); else if (!$('film').hidden) closeFilm();
     });
 
     // ---------- 뭐부터 올리지? (풀스코어 판매 순위 → 다음에 올릴 악보) ----------
@@ -1084,6 +1106,101 @@
         const s = sheets.find(x => x.id === r.dataset.id); if (!s) return;
         closeRank(); fromRank = true; openEditor(s);
     });
+
+    // ---------- 악보영상 뭐찍지? (2026-11-10 사용자 요청) ----------
+    //   악보에 걸린 유튜브 영상이 그 곡만의 영상이 아닌 경우 = 나중에 다시 찍어 올릴 곡.
+    //   영상 제목·설명 앞부분은 data/sheet-yt.json 의 t (Claude가 공개 영상 페이지에서 읽어 둔 것, 새로 건 영상은 다시 읽어야 보임)
+    //   ① 합본 영상: 제목이 'Best 5'·'Vol.2'·'N곡'·'모음' 같은 영상, 또는 여러 곡이 같은 영상을 걸었는데 어느 곡 영상인지 모르는 것
+    //   ② 다른 곡 영상: 같은 영상을 건 곡 중 제목·설명에 이름이 있는 곡이 하나뿐이면, 나머지 곡은 남의 영상을 건 것
+    //   ③ 이름 없음: 그 곡만 건 영상인데 제목에도 설명 첫머리에도 곡 이름이 없음 (제목만 재밌게 지은 그 곡 영상일 수도 있음)
+    const FILM_STOP = new Set(['vs', 'ver', 'ost', 'tab', 'the', 'main', 'theme', '쉽게', '쉬운', '버전', '편곡', '파트', '브금', '순한맛', '매운맛', '보통', '천상계맛', '지옥의', '불맛', '기타', '핑거스타일', '일렉', '일렉기타', '통기타', '솔로', '기타솔로', '반주', '안쌤', '원곡', '인트로', '후반부', '리프', '일차', '년차', '메인테마']);
+    const fnrm = s => String(s || '').normalize('NFC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+    // 곡 이름 열쇠: 괄호 뺀 제목 전체 + '가수 - 곡' 앞뒤 + 한글 덩어리·로마자 덩어리 ("렛 잇 고 Let it go" → 렛잇고, letitgo)
+    function nameKeys(title) {
+        const base = String(title || '').replace(/\([^)]*\)|\[[^\]]*\]/g, ' ');
+        const keys = new Set();
+        const ok = k => !FILM_STOP.has(k) && !/^vs\d/.test(k) && (/^[a-z0-9]+$/.test(k) ? k.length >= 3 && /[a-z]/.test(k) : k.length >= 2);
+        const add = s => { const k = fnrm(s), t = k.replace(/^\d+|\d+$/g, ''); if (ok(k)) keys.add(k); if (t !== k && ok(t)) keys.add(t); };   // '400km' 은 그대로, 'Counting stars 1' 은 countingstars 도
+        add(base);
+        base.split(/\s[-–]\s/).forEach(add);
+        (base.match(/[\p{Script=Hangul}][\p{Script=Hangul}\s,.!?'’&]*|[\p{Script=Latin}][\p{Script=Latin}\d\s,.!?'’&/]*|[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]+/gu) || []).forEach(add);
+        return [...keys];
+    }
+    const FILM_MULTI = /best\s*\d|vol\.?\s*\d|모음|메들리|medley|\d+\s*곡/i;
+    function filmList(list, T) {
+        const out = [], byVid = {};
+        list.forEach(s => { if (s.youtube_id) (byVid[s.youtube_id] ||= []).push(s); });
+        const same = (a, b) => (a.song_key && a.song_key === b.song_key) || (a.version_key && a.version_key === b.version_key) || nameKeys(a.title).some(k => nameKeys(b.title).includes(k));
+        for (const [vid, ss] of Object.entries(byVid)) {
+            const info = T[vid]; if (!info) continue;            // 아직 안 읽은 영상
+            const vt = info[0] || '', v = fnrm(vt), head = fnrm(String(info[1] || '').slice(0, 160));
+            const own = s => nameKeys(s.title).some(k => v.includes(k) || head.includes(k));
+            const groups = [];                                    // 같은 곡(파트·편곡·같은 이름)끼리
+            ss.forEach(s => { const g = groups.find(g => g.some(x => same(x, s))); g ? g.push(s) : groups.push([s]); });
+            if (FILM_MULTI.test(vt)) { ss.forEach(s => out.push({ s, why: 'multi', vid, vt })); continue; }
+            if (groups.length > 1) {
+                const owners = groups.filter(g => g.some(own));
+                if (owners.length === 1) groups.filter(g => g !== owners[0]).forEach(g => g.forEach(s => out.push({ s, why: 'other', vid, vt, other: owners[0][0].title })));
+                else ss.forEach(s => out.push({ s, why: 'multi', vid, vt }));
+                continue;
+            }
+            ss.forEach(s => { if (!own(s)) out.push({ s, why: 'name', vid, vt }); });
+        }
+        return out;
+    }
+    let fromFilm = false;      // 목록에서 곡을 눌러 편집 창을 열었으면 닫을 때 목록으로 돌아간다
+    function showFilm() { $('film').hidden = false; $('dim').classList.add('open'); renderFilm(); }
+    function closeFilm() { $('film').hidden = true; if (!$('editor').classList.contains('open')) $('dim').classList.remove('open'); }
+    $('filmBtn').onclick = async () => {
+        $('film').hidden = false; $('dim').classList.add('open');
+        if (!ytData || !ytData.t) {
+            $('fmBody').innerHTML = '<p class="rk-msg"><i class="fas fa-spinner fa-spin"></i> 영상 정보를 불러오고 있어요…</p>';
+            try { ytData = await (await fetch('../data/sheet-yt.json?v=' + Date.now())).json(); } catch (e) { ytData = { v: {}, t: {} }; }
+        }
+        renderFilm();
+    };
+    $('fmClose').onclick = closeFilm;
+    $('fmBody').addEventListener('click', e => {
+        if (e.target.closest('a')) return;                        // 유튜브 링크는 새 탭으로만
+        const r = e.target.closest('.rk-row'); if (!r) return;
+        const s = sheets.find(x => x.id === r.dataset.id); if (!s) return;
+        closeFilm(); fromFilm = true; openEditor(s);
+    });
+    function renderFilm() {
+        const T = (ytData && ytData.t) || {};
+        const all = filmList(sheets, T);                          // 숨김 곡까지 넣고 봐야 합본을 알아본다
+        const items = all.filter(x => !isHidden(x.s));
+        const hidN = all.length - items.length;
+        const live = sheets.filter(s => !isHidden(s));
+        const unread = new Set(live.filter(s => s.youtube_id && !T[s.youtube_id]).map(s => s.youtube_id)).size;
+        const noYt = live.filter(s => !s.youtube_id && s.style !== 'chord').length;
+        // 먼저 찍을 곡: 공개한 곡 → 풀스코어 판매(최근 6개월 ×4 + 누적 ÷2)
+        const pri = s => { const r = saleBy[s.fullscore_code]; return (s.published ? 1e6 : 0) + (r ? r.sold_6m * 4 + r.sold_total / 2 : 0); };
+        const ytUrl = id => 'https://www.youtube.com/watch?v=' + encodeURIComponent(id);
+        const row = x => {
+            const s = x.s, r = saleBy[s.fullscore_code], chips = [`<i class="kd">${esc((STYLE[s.style] || ['악보'])[0])}</i>`, s.published ? '<i class="pub">공개</i>' : '<i>비공개</i>', filesById[s.id] ? '<i>PDF 있음</i>' : '<i class="dn">PDF 없음</i>'];
+            if (r && r.sold_6m) chips.push(`<i class="up">6개월 ${r.sold_6m}장</i>`);
+            if (r && r.sold_total) chips.push(`<i>누적 ${r.sold_total}장</i>`);
+            if (x.why === 'other') chips.push(`<i class="dn">‘${esc(x.other)}’ 영상이 걸려 있어요</i>`);
+            return `<div class="rk-row" data-id="${s.id}" title="눌러서 이 악보 편집 (영상 주소 바꾸기)"><span class="nm"><b>${esc(s.title)}</b><small>${esc(s.artist || '')}</small><span class="why">${chips.join('')}</span></span><a class="yt" href="${ytUrl(x.vid)}" target="_blank" rel="noopener" title="걸린 영상 보기: ${esc(x.vt)}"><i class="fab fa-youtube"></i></a></div>`;
+        };
+        const sorted = list => list.slice().sort((a, b) => pri(b.s) - pri(a.s));
+        const none = '<p class="rk-how">없어요 👍</p>';
+        // ① 합본 영상: 영상마다 묶어서 (그 영상에 걸린 곡 중 먼저 찍을 곡이 있는 영상부터)
+        const multi = items.filter(x => x.why === 'multi'), byVid = {};
+        multi.forEach(x => (byVid[x.vid] ||= []).push(x));
+        const vids = Object.keys(byVid).sort((a, b) => Math.max(...byVid[b].map(x => pri(x.s))) - Math.max(...byVid[a].map(x => pri(x.s))));
+        const multiHtml = vids.map(v => `<a class="fm-vid" href="${ytUrl(v)}" target="_blank" rel="noopener" title="${esc(byVid[v][0].vt)}"><i class="fab fa-youtube"></i><span>${esc(byVid[v][0].vt)}</span><small>${byVid[v].length}곡</small></a>${sorted(byVid[v]).map(row).join('')}`).join('');
+        const other = sorted(items.filter(x => x.why === 'other')), name = sorted(items.filter(x => x.why === 'name'));
+        $('fmNote').textContent = `영상 제목·설명 ${fmtDay((ytData && ytData.tAt) || '')} 기준 · 숨김 곡 ${hidN}개 뺌`;
+        $('fmBody').innerHTML = `<div class="rk-cols">
+            <div class="rk-col yt"><h4>합본 영상에 걸린 곡 ${multi.length}<small>여러 곡을 한 영상에 담은 영상이 걸려 있어요 — 곡마다 따로 찍기</small></h4>${multi.length ? multiHtml : none}</div>
+            <div class="rk-col yt"><h4>다른 곡 영상이 걸린 곡 ${other.length}<small>같은 영상을 건 다른 곡의 영상이에요 — 이 곡 영상을 찍거나 주소를 고치기</small></h4>${other.length ? other.map(row).join('') : none}</div>
+            <div class="rk-col"><h4>영상 제목에 곡 이름이 없는 곡 ${name.length}<small>제목·설명 첫머리에 곡 이름이 없어요 — 그 곡 영상인데 제목만 재밌게 지었으면 넘어가도 돼요</small></h4>${name.length ? name.map(row).join('') : none}</div>
+        </div>
+        <p class="rk-how">공개한 곡 먼저, 그다음 풀스코어 판매(최근 6개월 ×4 + 누적 ÷2) 순이에요. 곡을 누르면 편집 창(영상 주소 바꾸기), <i class="fab fa-youtube" style="color:#e04a3f"></i>를 누르면 걸린 영상이 새 탭으로 열려요.<br>
+        영상이 아예 없는 악보 ${noYt}곡은 목록 위 '유튜브 없음'으로 볼 수 있어요.${unread ? ` 새로 건 영상 ${unread}개는 아직 제목을 못 읽었어요 — Claude에게 "영상 제목 다시 읽어줘"라고 하면 넣어 줘요.` : ''}</p>`;
+    }
 
     // 다음에 올릴 곡 점수 (2026-11-06) — 이유를 칩으로 같이 보여 준다
     //   최근 6개월 판매 ×4 (지금 찾는 곡) + 누적 판매 ÷2 (꾸준히 찾는 곡)
