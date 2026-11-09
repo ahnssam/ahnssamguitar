@@ -15694,7 +15694,7 @@
                                 { token: _localToolToken(), chart_id: id, patch: ltPatch });
                             if (!ok) { msg.textContent = '저장 실패'; return; }
                             Object.assign(p, ltPatch, { capo: ltPatch.capo || null });   // 캐시 즉시 반영
-                            if (_loopActivePresetId === id) { try { _updateLoopCapoNote(p.capo); } catch (e5) {} }
+                            if (_loopActivePresetId === id) { try { _updateLoopCapoNote(p.capo); } catch (e5) {} _syncActiveMeta(p); }
                             // 악보검색 화면(곡 목록·제목)도 바로 갱신
                             try { if (window.parent !== window && typeof window.parent.__onChartMetaSaved === 'function')
                                       window.parent.__onChartMetaSaved(id, { name: p.name, artist: p.artist, bpm: p.bpm,
@@ -15973,7 +15973,7 @@
                 var p = (_loopPresetsCache || []).find(function(x) { return x.id === id; });
                 if (!p || !patch) return;
                 Object.assign(p, patch);
-                if (_loopActivePresetId === id) { try { _updateLoopCapoNote(p.capo); } catch (e) {} }
+                if (_loopActivePresetId === id) { try { _updateLoopCapoNote(p.capo); } catch (e) {} _syncActiveMeta(p); }
                 try { var s = document.getElementById('loopPresetSearch'); if (s && document.activeElement === s) renderLoopPresetList(s.value); } catch (e) {}
             };
             // 로컬 툴이 현재 편집 상태를 통째로 가져갈 때 사용 (리듬패턴 병합 후 한 번에 저장)
@@ -16035,6 +16035,8 @@
                         { token: tok, chart_id: _loopActivePresetId, patch: patch });
                     loopToast(ok ? '저장했어요' : '저장 실패');
                     if (ok) { try { window.__loopMarkClean(); } catch (e) {} }   // 저장했으니 '나가시겠습니까' 안 띄움
+                    if (ok) { try { if (window.parent !== window && typeof window.parent.__onChartSaved === 'function')
+                                        window.parent.__onChartSaved(_loopActivePresetId); } catch (e) {} }   // 악보검색 목록: 최근순 맨 위로
                     return !!ok;
                 } catch (e) { loopToast('저장 실패: ' + e.message); return false; }
             };
@@ -16422,6 +16424,12 @@
             var _loopActivePresetSequencer = null;
             var _loopActivePresetId = null;
             var _loopActiveMeta = null;   // 불러온 프리셋의 제목·아티스트·카포 (인쇄 자동 채우기)
+            // 열어 둔 곡의 곡 정보(곡명·아티스트·카포)를 연필로 고치면 인쇄·이미지 창 자동 채우기도 새 값으로
+            function _syncActiveMeta(p) {
+                _loopActiveMeta = { name: p.name || '', artist: p.artist || '', capo: p.capo || '' };
+                // 로컬 툴에서 새 곡으로 추가한 곡은 _loopSavedName 이 먼저 쓰이므로 같이 맞춘다 (내 프리셋 슬롯은 건드리지 않음)
+                if (_loopSavedSlot == null && _loopSavedName != null) { _loopSavedName = p.name || _loopSavedName; _loopSavedArtist = p.artist || ''; }
+            }
             // 커스텀이 선택됐을 때 사용할 드럼 리듬 (프리셋의 원래 rhythm).
             var _loopActivePresetRhythm = null;
             // 프리셋이 베이스/피아노 커스텀 시퀀서를 활성화하고 있는지.
@@ -18444,6 +18452,14 @@
                 var img = document.getElementById('loopImgBtn');
                 if (mp3) { if (isTool) mp3.setAttribute('hidden', ''); else mp3.removeAttribute('hidden'); }
                 if (img) img.removeAttribute('hidden');
+                // 악보검색(로컬) 툴에서는 로그인이 안 되니 '내 프리셋'(폴더)·'저장(내 프리셋)' 단추를 감춘다.
+                //   저장은 '공용저장' 하나로 — 곡이 없으면 새 곡으로 추가된다.
+                if (isTool) {
+                    var myb = document.getElementById('loopMyPresetBtn');
+                    var svw = document.querySelector('.loop-save-wrap');
+                    if (myb) myb.style.display = 'none';
+                    if (svw) svw.style.display = 'none';
+                }
                 var b = document.getElementById('loopSharedSaveBtn');
                 if (!b) return;
                 if (_loopIsAdmin()) b.removeAttribute('hidden');
@@ -18473,6 +18489,7 @@
             window.openSavePreset = function() {
                 _closeSaveMenu();
                 if (!hasLoopInput()) return;
+                if (_localToolToken()) { window.openSaveShared(); return; }   // 로컬 툴은 로그인 대신 공용저장으로
                 if (!loopCurrentUser()) { loopLoginGate(); return; }
                 if (_loopSavedSlot) {
                     doSaveUserPreset(_loopSavedSlot, _loopSavedName || ('프리셋 ' + _loopSavedSlot), _loopSavedArtist || '', null);
@@ -18502,9 +18519,9 @@
                 _closeSaveMenu();
                 if (!_loopIsAdmin()) { loopToast('권한이 없습니다'); return; }
                 if (!hasLoopInput()) { loopToast('먼저 코드를 입력해주세요'); return; }
-                // 로컬 툴 모드 — 로그인 없이 토큰 RPC 로 현재 곡을 덮어쓴다
+                // 로컬 툴 모드 — 로그인 없이 토큰 RPC 로 현재 곡을 덮어쓴다. 곡이 없으면 새 곡으로 추가.
                 if (_localToolToken()) {
-                    if (!_loopActivePresetId) { loopToast('먼저 곡을 선택해주세요'); return; }
+                    if (!_loopActivePresetId) { _localToolCreateChart(); return; }
                     window.localToolSaveChart();
                     return;
                 }
@@ -18562,10 +18579,68 @@
                     }
                 };
             };
+            // ─── 로컬 툴(악보검색) — 새 곡으로 추가 ─────────────────────────
+            //   앱 안에서는 로그인이 안 되므로 토큰 RPC(create_chart_for_tool)로 새 곡을 만든다.
+            //   새 곡은 홈페이지에 바로 안 보이게(비공개) 만들어지고, 다 만든 뒤 악보검색 곡 정보에서 공개로 바꾼다.
+            //   만든 뒤에는 그 곡이 선택된 상태가 되어, 다음 공용저장부터는 그 곡에 덮어쓴다.
+            function _localToolCreateChart() {
+                var tok = _localToolToken();
+                if (!tok) return;
+                if (!hasLoopInput()) { loopToast('먼저 코드를 입력해주세요'); return; }
+                var ov = loopEnsureModal('loopToolNewModal',
+                    '<div class="loop-modal-title">새 곡으로 추가</div>' +
+                    '<div class="loop-modal-msg">지금 입력한 코드를 새 곡으로 저장해요.<br>홈페이지에는 아직 안 보이고, 다 만든 뒤 곡 정보에서 공개로 바꿀 수 있어요.</div>' +
+                    '<input type="text" id="loopTnName" class="loop-modal-input" placeholder="곡 제목" maxlength="60">' +
+                    '<input type="text" id="loopTnArtist" class="loop-modal-input" placeholder="아티스트 (선택)" maxlength="60" style="margin-top:8px;">' +
+                    '<div class="loop-modal-msg" id="loopTnMsg" style="margin-top:6px;"></div>' +
+                    '<div class="loop-modal-actions">' +
+                        '<button type="button" class="loop-modal-btn ghost" data-close>취소</button>' +
+                        '<button type="button" class="loop-modal-btn primary" id="loopTnOk">추가</button>' +
+                    '</div>');
+                ov.classList.add('open');
+                var nEl = ov.querySelector('#loopTnName'), aEl = ov.querySelector('#loopTnArtist');
+                var msg = ov.querySelector('#loopTnMsg'), okBtn = ov.querySelector('#loopTnOk');
+                setTimeout(function() { try { nEl.focus(); } catch (e) {} }, 50);
+                var busy = false;
+                var go = async function() {
+                    if (busy) return;
+                    var nm = (nEl.value || '').trim(), ar = (aEl.value || '').trim();
+                    if (!nm) { msg.textContent = '곡 제목을 입력해주세요.'; nEl.focus(); return; }
+                    busy = true; okBtn.disabled = true; msg.textContent = '추가 중…';
+                    try {
+                        var payload = _sharedPayload(nm, ar);
+                        delete payload.updated_at;
+                        var id = await _localToolRpc('create_chart_for_tool', { token: tok, data: payload });
+                        if (!id) throw new Error('DB 가 새 곡을 만들지 못했어요');
+                        _loopActivePresetId = id;
+                        _loopSavedSlot = null; _loopSavedName = nm; _loopSavedArtist = ar;
+                        _loopActiveMeta = { name: nm, artist: ar, capo: '' };
+                        var row = Object.assign({ id: id, is_public: false }, payload, { artist: ar || null });
+                        _loopPresetsCache = (_loopPresetsCache || []).concat([row]);
+                        try { _loopSetPresetLabel(null, nm, ar); } catch (e) {}
+                        ov.classList.remove('open');
+                        // 송폼 흐름·리듬 패턴·가사·코드 다이어그램까지 한 번 더 저장 (툴 쪽 편집분 포함)
+                        await window.localToolSaveChart();
+                        loopToast('새 곡으로 추가했어요');
+                        try { if (window.parent !== window && typeof window.parent.__onChartCreated === 'function')
+                                  window.parent.__onChartCreated(id); } catch (e2) {}
+                    } catch (err) {
+                        var m = (err && err.message) ? err.message : String(err);
+                        // 함수가 아직 DB 에 없으면 404
+                        msg.textContent = /404/.test(m) ? '추가 실패: DB 에 새 곡 추가 기능이 아직 없어요.' : ('추가 실패: ' + m);
+                    } finally { busy = false; okBtn.disabled = false; }
+                };
+                okBtn.onclick = go;
+                [nEl, aEl].forEach(function(el) { el.onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); go(); } }; });
+            }
+            // 악보검색의 '＋ 새 곡' — 빈 4마디로 (홈페이지 초기화와 같은데 확인 창 없이)
+            window.localToolNewChart = function() { _doResetLoopAll(); };
+
             // 다른 이름으로 저장 — 항상 슬롯 선택 모달.
             window.openSaveAsPreset = function() {
                 _closeSaveMenu();
                 if (!hasLoopInput()) return;
+                if (_localToolToken()) { _localToolCreateChart(); return; }   // 로컬 툴은 로그인 대신 새 곡으로
                 if (!loopCurrentUser()) { loopLoginGate(); return; }
                 openSavePresetModal();
             };
@@ -21663,6 +21738,13 @@
                 if (search) search.value = '';
                 if (typeof closeLoopPresetList === 'function') closeLoopPresetList();
                 if (typeof clearLoopRange === 'function') clearLoopRange();
+                // 악보검색(로컬) 툴 — 그 곡의 가사·TAB 이미지도 비우고, 악보검색 화면도 '새 곡' 상태로
+                if (typeof _localToolToken === 'function' && _localToolToken()) {
+                    try { if (typeof window.chartLyricsLoad === 'function') window.chartLyricsLoad([]); } catch (e) {}
+                    try { if (typeof window.chartTabsLoad === 'function') window.chartTabsLoad(null); } catch (e) {}
+                    try { window.__loopMarkClean(); } catch (e) {}
+                    try { if (window.parent !== window && typeof window.parent.__onChartReset === 'function') window.parent.__onChartReset(); } catch (e) {}
+                }
                 gtag('event', 'loop_reset_all');
             };
 
