@@ -278,7 +278,10 @@ const qTitle = t => nfc(t)
 // 노래가 아닌 것은 안 낸다 (2026-11-08 사용자 결정: 실제 노래만) — 연습용 진행, 브금·테마곡·영화 음악, 밈·어린이 콘텐츠
 const NOT_SONG = /^neo soul progression$|브금|bgm|테마|theme|anthem|^원령공주 ost$|미션 임파서블|mission impossible|he's a pirate|way back then|the last waltz|에어맨|뽀로로/i;
 const NOT_SONG_ARTIST = /크레용 신짱|스펀지밥|명탐정 코난|20세기 폭스|스타워즈|마블|한스 짐머|hans zimmer|랄로 쉬프린|에어맨|뽀로로/i;
-const isSong = s => !NOT_SONG.test(nfc(s.title)) && !NOT_SONG_ARTIST.test(nfc(s.artist || ''));
+// 안쌤 콘텐츠용으로 만든 악보도 안 낸다 (2026-11-10 사용자 결정): 안쌤 ver·안쌤 편곡, 순한맛·매운맛·천상계맛·지옥의 불맛,
+//   1일 vs 10년, 선 씨게 넘은 — 원곡 그대로가 아니라 콘텐츠용 편곡이라서. 같은 곡의 보통 악보가 있으면 그 악보로는 나온다
+const CONTENT = /안쌤|맛|순한|매운|(^|[^a-z])vs([^a-z]|$)|선 씨게/i;
+const isSong = s => !NOT_SONG.test(nfc(s.title)) && !NOT_SONG_ARTIST.test(nfc(s.artist || '')) && !CONTENT.test(nfc(s.title));
 // '이 노래 누구 노래?'에서 뺄 리메이크: 악보는 리메이크 가수 버전인데 원곡 가수가 따로 있어 정답이 헷갈리는 곡 (2026-11-10 사용자 의견)
 //   걱정말아요 그대 = 이적(응답하라 1988) · 원곡 전인권 / 푸른산호초 = 하니 · 원곡 마츠다 세이코
 const REMAKE = /^걱정\s*말아요\s*그대$|^푸른\s*산호초$/;
