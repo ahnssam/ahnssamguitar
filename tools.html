@@ -26586,13 +26586,18 @@
                 if (h) playProgression(h.seq, h.key);
             };
 
+            // 키를 숨겼을 때 보이는 도수 — 마이너는 m 을 붙인다 (iim · iiim · vim, vii° 는 그대로)
+            function progDegLabel(i) {
+                var d = PROG_DEGREES[i];
+                return d.roman + (d.quality === 'm' ? 'm' : '');
+            }
             function renderProgChoices() {
                 var el = document.getElementById('etProgChoices');
                 if (!el) return;
                 var hidden = progKeyHidden();
                 el.innerHTML = PROG_DEGREES.map(function(d, i) {
                     // 키를 숨기는 동안엔 코드 이름 대신 도수만 (이름을 보면 키가 드러나므로)
-                    var main = hidden ? d.roman : progChordName(_etProgGraded && _etProgAnswer ? _etProgAnswerKey : progActiveKey(), i);
+                    var main = hidden ? progDegLabel(i) : progChordName(_etProgGraded && _etProgAnswer ? _etProgAnswerKey : progActiveKey(), i);
                     var sub = hidden ? '&nbsp;' : d.roman;
                     return '<button class="et-choice-btn" data-pci="' + i + '" data-action="etProgPick" data-args="' + i + '">' +
                         main + '<br><span style="font-size:0.7rem;opacity:0.5;">' + sub + '</span></button>';
@@ -26614,7 +26619,7 @@
                         cls += pick === _etProgAnswer[i] ? ' correct' : ' wrong';
                     }
                     var label = pick === undefined ? (i + 1)
-                        : progKeyHidden() ? PROG_DEGREES[pick].roman
+                        : progKeyHidden() ? progDegLabel(pick)
                         : progChordName(_etProgAnswer ? _etProgAnswerKey : progActiveKey(), pick);
                     // 푸는 중: 누르면 그 칸 취소 / 채점 후: 누르면 정답 코드 소리
                     var act = '';
