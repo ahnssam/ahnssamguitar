@@ -10203,8 +10203,8 @@
                             <span class="et-setting-label">하이컷</span>
                             <div class="et-prog-lp">
                                 <svg class="sp-eq-ico" viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M3 5 L 20 5 C 28 5, 30 21, 37 21"/></svg>
-                                <input type="range" id="etProgLpFreq" min="0" max="100" step="0.5" value="47" aria-label="로우패스 주파수" title="왼쪽으로 갈수록 높은 소리가 더 깎여요">
-                                <span id="etProgLpVal" class="et-prog-lp-val">250Hz</span>
+                                <input type="range" id="etProgLpFreq" min="0" max="100" step="0.5" value="31" aria-label="로우패스 주파수" title="왼쪽으로 갈수록 높은 소리가 더 깎여요">
+                                <span id="etProgLpVal" class="et-prog-lp-val">135Hz</span>
                             </div>
                         </div>
                     </div>
@@ -26132,7 +26132,7 @@
             // ── 베이스만 듣기(로우패스) — 통기타 소리는 이 출력(로우패스 2단, 24dB/oct)을 거친다.
             //    끄면 필터를 들리는 대역 밖으로 보내 그대로 통과. 밴드는 __etBand.lowpass 로.
             const PROG_LP_MIN = 40, PROG_LP_MAX = 2000;
-            let _etProgLpOn = false, _etProgLpPos = 47, _etProgLp = null;
+            let _etProgLpOn = false, _etProgLpPos = 31, _etProgLp = null;   // 31 = 135Hz (기본)
             function progLpPosToHz(pos) { return PROG_LP_MIN * Math.pow(PROG_LP_MAX / PROG_LP_MIN, pos / 100); }
             function progLpHz() { return _etProgLpOn ? progLpPosToHz(_etProgLpPos) : 0; }
             function progOut() {
@@ -26160,7 +26160,7 @@
                     _etProgLp.forEach(function(n) { n.frequency.setTargetAtTime(f, _etCtx.currentTime, 0.015); });
                 }
                 if (typeof _etProgBandOn !== 'undefined' && _etProgBandOn && window.__etBand) window.__etBand.lowpass(hz);
-                try { localStorage.setItem('et_prog_lp', JSON.stringify({ on: _etProgLpOn, pos: _etProgLpPos })); } catch (e) {}
+                try { localStorage.setItem('et_prog_lp2', JSON.stringify({ on: _etProgLpOn, pos: _etProgLpPos })); } catch (e) {}
             }
             window.setETProgLp = function(on) {
                 _etProgLpOn = !!on;
@@ -26900,7 +26900,7 @@
             // 지난번 '베이스만 듣기' 설정 복원
             (function() {
                 try {
-                    var sv = JSON.parse(localStorage.getItem('et_prog_lp') || 'null');
+                    var sv = JSON.parse(localStorage.getItem('et_prog_lp2') || 'null');
                     if (sv) { _etProgLpOn = !!sv.on; if (isFinite(sv.pos)) _etProgLpPos = Math.max(0, Math.min(100, +sv.pos)); }
                 } catch (e) {}
                 var cb = document.getElementById('etProgLpOn'); if (cb) cb.checked = _etProgLpOn;
