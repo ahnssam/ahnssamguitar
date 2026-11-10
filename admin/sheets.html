@@ -473,7 +473,7 @@
     <div class="progress" id="progress" hidden></div>
     <div class="toolbar2">
         <span class="lbl">정렬</span>
-        <div class="seg" id="sortSeg"><button data-s="up" title="뭐부터 올리지? — 판매·영상으로 본 다음에 올릴 악보 순서 (PDF 있는 곡은 뒤로)">올릴 순서</button><button class="on" data-s="orders">풀스코어 주문순</button><button data-s="new">최신순</button></div>
+        <div class="seg" id="sortSeg"><button data-s="up" title="뭐부터 올리지? — PDF 없는 곡을 풀스코어 누적 판매가 많은 순으로 (올린 곡은 빠짐)">올릴 순서</button><button class="on" data-s="orders">풀스코어 주문순</button><button data-s="new">최신순</button></div>
         <span class="lbl" style="margin-left:8px;">PDF</span>
         <div class="seg" id="pdfSeg"><button class="on" data-p="all">전체</button><button data-p="none">없음</button><button data-p="has">있음</button></div>
         <span class="lbl" style="margin-left:8px;">확인용</span>
@@ -782,7 +782,7 @@
                 (new Date(b.created_at) - new Date(a.created_at)));
         }
         const up = sortBy === 'up' ? upOrder() : null;
-        if (up) rows = rows.slice().sort((a, b) => upKey(up, a) - upKey(up, b) || ((b.fullscore_orders || 0) - (a.fullscore_orders || 0)));
+        if (up) rows = rows.filter(s => !filesById[s.id]).sort((a, b) => upKey(up, a) - upKey(up, b) || ((b.fullscore_orders || 0) - (a.fullscore_orders || 0)));
         if (checkFilter === 'dup') rows = rows.slice().sort((a, b) => dupKey(a).localeCompare(dupKey(b), 'ko'));   // 같은 곡끼리 붙여서
         const pages = Math.max(1, Math.ceil(rows.length / PER_PAGE));
         page = Math.min(Math.max(1, page), pages);   // 저장·삭제로 곡 수가 바뀌어도 있는 쪽에 머문다
@@ -802,7 +802,7 @@
             $('listWrap').innerHTML = `<div class="empty"><i class="fas fa-circle-check" style="font-size:24px;color:var(--green);display:block;margin-bottom:10px;"></i>${chk.done}${filter !== 'all' || pdfFilter !== 'all' || q ? '<br><small>(위의 공개·PDF·검색 조건도 함께 걸려 있어요)</small>' : ''}</div>`;
             return;
         }
-        $('listWrap').innerHTML = `<table class="list"><thead><tr>${up ? '<th class="rk" title="다음에 올릴 순서 (PDF 없는 곡만 순위)">올릴<br>순서</th>' : '<th class="rk" title="풀스코어 주문수 순위">주문순</th>'}<th></th><th>곡명</th><th class="c-st">종류·스타일</th><th class="c-lv">난이도</th><th>가격</th><th>상태</th><th class="c-up">수정일</th><th class="c-go"></th></tr></thead><tbody>${
+        $('listWrap').innerHTML = `<table class="list"><thead><tr>${up ? '<th class="rk" title="풀스코어 누적 판매 순위 (PDF 없는 곡만)">올릴<br>순서</th>' : '<th class="rk" title="풀스코어 주문수 순위">주문순</th>'}<th></th><th>곡명</th><th class="c-st">종류·스타일</th><th class="c-lv">난이도</th><th>가격</th><th>상태</th><th class="c-up">수정일</th><th class="c-go"></th></tr></thead><tbody>${
             rows.map(s => `<tr data-id="${s.id}" class="${filesById[s.id] ? 'done' : ''}">
                 <td class="rk">${up ? (up[s.id] && up[s.id].no ? `<b>${up[s.id].no}</b><small>주문 ${s.fullscore_orders || 0}</small>` : filesById[s.id] ? '<small>✓ 올림</small>' : '<small>-</small>')
                     : rank[s.id] ? `<b>${rank[s.id]}</b><small>주문 ${s.fullscore_orders}</small>` : `<small>${hasOrders ? '주문 0' : '-'}</small>`}</td>
@@ -1279,31 +1279,28 @@
     }
 
     // 목록 정렬 '올릴 순서' (2026-11-10 사용자: 뭐부터 올리지를 단추·팝업 말고 정렬로)
-    //   ① 판매 점수(nextList) 순으로 PDF 없는 곡에 1, 2, 3 … (반주·솔로 짝은 같은 순위). 유튜브 한 달 조회수가 있으면 칩으로 같이.
-    //   그다음 판매 기록이 없는 PDF 없는 곡, 맨 뒤에 PDF 있는 곡. 크리스마스 곡·숨김 곡은 순위 없이 뒤로
+    //   풀스코어에서 가장 많이 팔린 곡(누적 판매)부터 위로 — 같으면 최근 6개월 판매가 많은 곡 (2026-11-10 사용자)
+    //   PDF를 올린 곡은 이 정렬에서 빠진다(올리면 리스트에서 없어짐). 판매 기록 없는 곡·크리스마스 곡은 순위 없이 맨 뒤
     function upOrder() {
         const out = {};
         if (!sales) return out;
-        const byCode = {}; sheets.forEach(s => { if (s.fullscore_code) byCode[s.fullscore_code] = s; });
-        const items = sales.map(r => ({ ...r, s: byCode[r.fullscore_code] })).filter(x => x.s && !isXmas(x.s) && !isHidden(x.s));
         const yv = (ytData && ytData.v) || {}, ytAt = new Date((ytData && ytData.at) || Date.now());
         const share = {}; sheets.forEach(s => { if (s.youtube_id) share[s.youtube_id] = (share[s.youtube_id] || 0) + 1; });
         const man = n => n >= 10000 ? (n / 10000).toFixed(n >= 100000 ? 0 : 1).replace(/\.0$/, '') + '만' : n.toLocaleString();
-        let no = 0;
-        nextList(items, x => !!filesById[x.s.id]).forEach(x => {
-            const n = x.done ? 0 : ++no;
-            (x.pair || [x]).forEach(y => {
-                const why = x.why.slice(), v = y.s.youtube_id && yv[y.s.youtube_id];
-                if (v) why.push(['', `유튜브 한 달 ${man(Math.round(v[0] / (share[y.s.youtube_id] || 1) / Math.max(1, (ytAt - new Date(v[1])) / 2.63e9)))}`]);
-                out[y.s.id] = { no: n, sc: x.sc, why };
-            });
+        const list = sheets.filter(s => !filesById[s.id] && !isXmas(s) && saleBy[s.fullscore_code])
+            .sort((a, b) => (saleBy[b.fullscore_code].sold_total - saleBy[a.fullscore_code].sold_total) || (saleBy[b.fullscore_code].sold_6m - saleBy[a.fullscore_code].sold_6m));
+        list.forEach((s, k) => {
+            const r = saleBy[s.fullscore_code], v = s.youtube_id && yv[s.youtube_id];
+            const why = [['up', `누적 ${r.sold_total}장`], [r.sold_6m >= 5 ? 'up' : '', `6개월 ${r.sold_6m}`]];
+            const mate = s.song_key && sheets.find(y => y.song_key === s.song_key && y.id !== s.id && filesById[y.id]);
+            if (mate) why.push(['up', `${STYLE[mate.style] ? STYLE[mate.style][0] : '짝'} 올라가 있음 → 바로 묶음`]);
+            if (v) why.push(['', `유튜브 한 달 ${man(Math.round(v[0] / (share[s.youtube_id] || 1) / Math.max(1, (ytAt - new Date(v[1])) / 2.63e9)))}`]);
+            else if (!s.youtube_id) why.push(['dn', '영상 없음']);
+            out[s.id] = { no: k + 1, why };
         });
         return out;
     }
-    const upKey = (up, s) => { const u = up[s.id];
-        if (filesById[s.id]) return 3e6 - (u ? u.sc : 0);
-        if (u && u.no) return u.no;
-        return isXmas(s) || isHidden(s) ? 2e6 : 1e6; };
+    const upKey = (up, s) => { const u = up[s.id]; return u ? u.no : isXmas(s) ? 2e6 : 1e6; };
     // 크리스마스·캐롤·겨울왕국 곡은 목록에서 아예 뺀다 (2026-11-07 사용자: 누적 판매가 적어 지금 올려도 안 팔릴 것 같다 — 나중에 다시 작업해서 올림)
     const XMAS_RE = /크리스마스|christmas|xmas|캐롤|캐럴|carol|산타|santa|징글|jingle|루돌프|rudolph|울면\s*안\s*돼|silent night|고요한\s*밤|겨울왕국|frozen|let it go|렛\s*잇\s*고|into the unknown|snowman/i;
     const isXmas = s => XMAS_RE.test(`${s.title || ''} ${s.artist || ''}`);
