@@ -5077,6 +5077,12 @@
         .et-prog-key-select:disabled { cursor: default; opacity: 1; border-style: dashed; background: transparent; }
         :root[data-theme="dark"] .et-prog-key-select { background: #1d2a24; color: #e8f0ec; border-color: rgba(180, 230, 200, 0.28); }
         .et-prog-slot.playable { cursor: pointer; }
+        /* 베이스만 듣기(로우패스) 페이더 */
+        .et-prog-lp-row[hidden] { display: none; }
+        .et-prog-lp { display: flex; align-items: center; gap: 0.55rem; flex: 1; min-width: 0; max-width: 420px; }
+        .et-prog-lp input[type=range] { flex: 1; min-width: 0; }
+        .et-prog-lp-val { min-width: 4.2em; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--green-deep); font-size: 0.9rem; }
+        :root[data-theme="dark"] .et-prog-lp-val { color: var(--green-light); }
         .et-prog-break { flex-basis: 100%; height: 0; }
         /* 밴드 반주 페이더 — 반주 화면 믹서 모양 그대로, 정답 버튼 아래 */
         .et-prog-mix { margin: 0.2rem 0 1rem; }
@@ -10164,12 +10170,31 @@
                                     <span class="fb-switch-slider"></span>
                                     <span class="fb-switch-label">1도로 시작</span>
                                 </label>
+                                <label class="fb-switch" id="etProgLpWrap" title="높은 소리를 깎아 베이스(낮은 음)만 들리게 해요 — 근음을 듣는 힌트">
+                                    <input type="checkbox" id="etProgLpOn" data-change="setETProgLp" data-args="$checked">
+                                    <span class="fb-switch-slider"></span>
+                                    <span class="fb-switch-label">베이스만 듣기</span>
+                                </label>
+                                <label class="fb-switch" id="etProgHellHideWrap" style="display:none;" title="켜면 정답 확인 전까지 키를 숨기고 도수(I·ii·V…)로만 골라요. 끄면 코드 이름이 보여요">
+                                    <input type="checkbox" id="etProgHellHide" data-change="setETProgHellHide" data-args="$checked" checked>
+                                    <span class="fb-switch-slider"></span>
+                                    <span class="fb-switch-label">키 숨기기</span>
+                                </label>
                                 <label class="fb-switch" id="etProgRandomKeyWrap" style="display:none;" title="문제마다 키가 바뀌고, 키는 정답 확인 후에 알려줘요">
                                     <input type="checkbox" id="etProgRandomKey" data-change="setETProgRealRandomKey" data-args="$checked">
                                     <span class="fb-switch-slider"></span>
                                     <span class="fb-switch-label">키 계속 바꾸기</span>
                                 </label>
                                 <select class="et-prog-key-select" id="etProgKey" data-change="setETProgKey" data-args="$value" aria-label="키 선택"></select>
+                            </div>
+                        </div>
+                        <!-- 베이스만 듣기(로우패스) — 토글을 켰을 때만 보인다 -->
+                        <div class="et-setting-row et-prog-lp-row" id="etProgLpRow" hidden>
+                            <span class="et-setting-label">하이컷</span>
+                            <div class="et-prog-lp">
+                                <svg class="sp-eq-ico" viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M3 5 L 20 5 C 28 5, 30 21, 37 21"/></svg>
+                                <input type="range" id="etProgLpFreq" min="0" max="100" step="0.5" value="47" aria-label="로우패스 주파수" title="왼쪽으로 갈수록 높은 소리가 더 깎여요">
+                                <span id="etProgLpVal" class="et-prog-lp-val">250Hz</span>
                             </div>
                         </div>
                     </div>
@@ -11446,7 +11471,7 @@
             eartraining: '두 음 간격이나 코드, 코드 진행을 듣고 맞히는 훈련. 정답이 누적되면 랭킹에 반영돼요. 절대음감보다 상대음감 훈련에 효과적이에요.',
             eartraining_pitch:    '음정을 듣고 무슨 음정인지 맞추는 연습이에요. 어려움 난이도부터는 샵(♯) 음계까지 함께 출제됩니다.',
             eartraining_interval: '낮은 음과 높은 음 사이 간격을 맞추는 연습이에요. 절대음감 없이도 음악을 분석할 수 있게 해주는 상대음감 트레이닝의 핵심 방식.',
-            eartraining_prog:     '고른 키의 다이아토닉 코드(1도~7도)로 된 진행을 듣고 순서대로 맞추는 연습이에요.\n\n• 단계 1~8 = 코드 개수. 코드마다 70BPM 으로 두 번씩 쳐줍니다.\n• 실전: 가요·팝에서 실제로 많이 쓰는 8마디 진행이 나와요 (캐논, 로열 로드, 6-4-1-5 …). 5문제가 한 세트이고, "키 계속 바꾸기"를 켜면 문제마다 키가 바뀌며 키는 정답 확인 후에 알려줘요.\n• 연속 듣기: 정지를 누를 때까지 진행을 계속 반복해요.\n• 반주: 통기타 스트럼 또는 밴드(드럼·베이스·피아노). 밴드의 악기별 볼륨은 반주 메뉴 믹서와 같이 움직여요.\n• 지옥: 문제마다 키가 바뀌고, 코드 개수도 5~8개가 섞여 나와요. 키는 정답 확인 후에 알려줘요.\n• 1도로 시작을 켜면 첫 코드는 항상 1도로 고정돼요.\n• 10문제가 한 라운드예요. 첫 문제를 들을 때 타이머가 시작되고, 10문제를 끝내면 걸린 시간을 알려줘요.\n• 아래 칸을 누르면 고른 코드를 뺄 수 있어요.\n\n점수는 랭킹(종합)에 반영돼요. 단계가 높을수록 계수가 커져요 (1단계 ×1.0 ~ 8단계 ×3.0, 실전 ×3.25, 지옥 ×3.5).',
+            eartraining_prog:     '고른 키의 다이아토닉 코드(1도~7도)로 된 진행을 듣고 순서대로 맞추는 연습이에요.\n\n• 단계 1~8 = 코드 개수. 코드마다 70BPM 으로 두 번씩 쳐줍니다.\n• 실전: 가요·팝에서 실제로 많이 쓰는 8마디 진행이 나와요 (캐논, 로열 로드, 6-4-1-5 …). 5문제가 한 세트이고, "키 계속 바꾸기"를 켜면 문제마다 키가 바뀌며 키는 정답 확인 후에 알려줘요.\n• 연속 듣기: 정지를 누를 때까지 진행을 계속 반복해요.\n• 반주: 통기타 스트럼 또는 밴드(드럼·베이스·피아노). 밴드의 악기별 볼륨은 반주 메뉴 믹서와 같이 움직여요.\n• 지옥: 문제마다 키가 바뀌고, 코드 개수도 5~8개가 섞여 나와요. “키 숨기기”(기본 켜짐)를 켜 두면 키는 정답 확인 후에 알려주고 도수로만 골라요. 끄면 키와 코드 이름이 보여요.\n• 1도로 시작을 켜면 첫 코드는 항상 1도로 고정돼요.\n• 10문제가 한 라운드예요. 첫 문제를 들을 때 타이머가 시작되고, 10문제를 끝내면 걸린 시간을 알려줘요. 정답 확인 뒤에는 다음 문제를 누를 때까지 시간이 멈춰요.\n• 베이스만 듣기: 켜면 하이컷 페이더가 나오고, 높은 소리를 깎아 베이스(근음)만 들리게 해요. 왼쪽으로 갈수록 더 깎여요.\n• 아래 칸을 누르면 고른 코드를 뺄 수 있어요.\n\n점수는 랭킹(종합)에 반영돼요. 단계가 높을수록 계수가 커져요 (1단계 ×1.0 ~ 8단계 ×3.0, 실전 ×3.25, 지옥 ×3.5).',
             eartraining_chord:    '구성음을 듣고 어떤 코드인지 맞추는 연습이에요. 코드 사운드 자체에 익숙해지면 실전 연주에서 코드 진행을 빠르게 캐치할 수 있어 큰 도움이 됩니다.',
             chords: '기본·텐션·세븐스 코드까지 운지법과 사운드를 한 번에 검색·재생. 코드를 클릭하면 바로 그 코드 사운드가 들려요.',
             fretboard: '지판 위 모든 음의 위치를 시각화. 트레이닝 모드로 음 이름 맞추기 연습도 가능합니다.',
@@ -21523,7 +21548,7 @@
                     var ticksPerChord = st.beatsPerChord * 2;      // 8분음표 단위
                     var total = st.chords.length * ticksPerChord;
                     while (st && st.nextTime < ahead) {
-                        if (!st.loop && st.tick >= total) { clearInterval(timer); timer = null; st = null; return; }
+                        if (!st.loop && st.tick >= total) { clearInterval(timer); timer = null; st = null; lowpassOffLater(3000); return; }
                         var k = st.tick % total;
                         var chord = st.chords[Math.floor(k / ticksPerChord)];
                         var sub = k % ticksPerChord;
@@ -21548,10 +21573,44 @@
                         st.nextTime += st.tickDur;
                     }
                 }
+                // 코드 진행 '베이스만 듣기' — 반주 마스터 출력 뒤에 로우패스 2단을 끼운다.
+                //   hz 가 0 이면 빼서 원래대로(반주 메뉴 소리에는 영향 없게, 끝나면 늘 뺀다)
+                var lpF = null, lpMaster = null, lpOffTimer = null;
+                function lowpass(hz) {
+                    if (!audioCtx) return;
+                    if (lpOffTimer) { clearTimeout(lpOffTimer); lpOffTimer = null; }
+                    var m = getMasterOut();
+                    if (hz > 0) {
+                        if (!lpF || lpF[0].context !== audioCtx) {
+                            lpF = [0, 1].map(function() {
+                                var f = audioCtx.createBiquadFilter();
+                                f.type = 'lowpass'; f.Q.value = 0.707; f.frequency.value = hz;
+                                return f;
+                            });
+                            lpF[0].connect(lpF[1]);
+                            lpF[1].connect(audioCtx.destination);
+                        }
+                        lpF.forEach(function(f) { f.frequency.setTargetAtTime(hz, audioCtx.currentTime, 0.015); });
+                        if (lpMaster !== m) {
+                            try { m.disconnect(); } catch (e) {}
+                            m.connect(lpF[0]);
+                            lpMaster = m;
+                        }
+                    } else if (lpMaster) {
+                        try { lpMaster.disconnect(); } catch (e) {}
+                        lpMaster.connect(audioCtx.destination);
+                        lpMaster = null;
+                    }
+                }
+                function lowpassOffLater(ms) {
+                    if (lpOffTimer) clearTimeout(lpOffTimer);
+                    lpOffTimer = setTimeout(function() { lpOffTimer = null; if (!st) lowpass(0); }, ms);
+                }
                 function stop() {
                     if (timer) { clearInterval(timer); timer = null; }
                     var was = !!st;
                     st = null;
+                    lowpassOffLater(400);
                     if (was && audioCtx) {
                         var now = audioCtx.currentTime;
                         try { chokePiano(now); } catch (e) {}
@@ -21561,6 +21620,7 @@
                 }
                 return {
                     ensure: ensure,
+                    lowpass: lowpass,
                     now: function() { return audioCtx ? audioCtx.currentTime : 0; },
                     // chords: 코드 이름 배열. 반환값 = 첫 박의 audioCtx 시각
                     start: function(chords, opts) {
@@ -21591,6 +21651,7 @@
                         playPianoChord(name, t, 1.0);
                         var bn = chordBassNote(name);
                         if (bn) playBass(bn, t, 0);
+                        lowpassOffLater(3000);
                     },
                     stop: stop,
                     // 페이더 표시를 지금 볼륨에 맞춘다
@@ -25867,7 +25928,10 @@
             // 실전 '키 계속 바꾸기' — 문제마다 키를 바꾸고, 정답 확인 전까지 키를 숨긴다
             let _etProgRealRandom = false;
             function progRealRandom() { return progIsReal() && _etProgRealRandom; }
-            function progKeyHidden() { return (progIsHell() || progRealRandom()) && !_etProgGraded; }   // 지옥도 정답 확인 전엔 키·코드 이름 숨김
+            // 지옥 '키 숨기기' (기본 켜짐) — 켜면 정답 확인 전까지 키를 숨기고 도수로만 고른다
+            let _etProgHellHide = true;
+            try { if (localStorage.getItem('et_prog_hell_hide') === '0') _etProgHellHide = false; } catch (e) {}
+            function progKeyHidden() { return ((progIsHell() && _etProgHellHide) || progRealRandom()) && !_etProgGraded; }   // 지옥도 정답 확인 전엔 키·코드 이름 숨김
             function progRoundSize() { return progIsReal() ? PROG_ROUND_SIZE_REAL : PROG_ROUND_SIZE; }
             // 이번 문제의 코드 개수 / 키 / 랭킹 난이도 값
             function progCount() { return progIsHell() ? _etProgHellCount : progIsReal() ? 8 : _etProgLevel; }
@@ -25919,6 +25983,10 @@
             function progShowKeyToggle() {
                 var wrap = document.getElementById('etProgRandomKeyWrap');
                 if (wrap) wrap.style.display = progIsReal() ? '' : 'none';
+                var hw = document.getElementById('etProgHellHideWrap');
+                if (hw) hw.style.display = progIsHell() ? '' : 'none';
+                var hc = document.getElementById('etProgHellHide');
+                if (hc) hc.checked = _etProgHellHide;
             }
 
             function progTonicOn() {
@@ -26051,6 +26119,45 @@
                 _etProgVoices = [];
             }
 
+            // ── 베이스만 듣기(로우패스) — 통기타 소리는 이 출력(로우패스 2단, 24dB/oct)을 거친다.
+            //    끄면 필터를 들리는 대역 밖으로 보내 그대로 통과. 밴드는 __etBand.lowpass 로.
+            const PROG_LP_MIN = 40, PROG_LP_MAX = 2000;
+            let _etProgLpOn = false, _etProgLpPos = 47, _etProgLp = null;
+            function progLpPosToHz(pos) { return PROG_LP_MIN * Math.pow(PROG_LP_MAX / PROG_LP_MIN, pos / 100); }
+            function progLpHz() { return _etProgLpOn ? progLpPosToHz(_etProgLpPos) : 0; }
+            function progOut() {
+                if (!_etProgLp || _etProgLp[0].context !== _etCtx) {
+                    _etProgLp = [0, 1].map(function() {
+                        var f = _etCtx.createBiquadFilter();
+                        f.type = 'lowpass'; f.Q.value = 0.707;
+                        return f;
+                    });
+                    _etProgLp[0].connect(_etProgLp[1]);
+                    _etProgLp[1].connect(_etCtx.destination);
+                    progApplyLp();
+                }
+                return _etProgLp[0];
+            }
+            function progApplyLp() {
+                var hz = progLpHz();
+                var row = document.getElementById('etProgLpRow');
+                if (row) row.hidden = !_etProgLpOn;
+                var val = document.getElementById('etProgLpVal');
+                if (val) { var h = progLpPosToHz(_etProgLpPos); val.textContent = h >= 1000 ? (h / 1000).toFixed(1) + 'kHz' : Math.round(h) + 'Hz'; }
+                if (_etProgLp) {
+                    var nyq = _etCtx.sampleRate / 2;
+                    var f = hz > 0 ? hz : nyq - 100;
+                    _etProgLp.forEach(function(n) { n.frequency.setTargetAtTime(f, _etCtx.currentTime, 0.015); });
+                }
+                if (typeof _etProgBandOn !== 'undefined' && _etProgBandOn && window.__etBand) window.__etBand.lowpass(hz);
+                try { localStorage.setItem('et_prog_lp', JSON.stringify({ on: _etProgLpOn, pos: _etProgLpPos })); } catch (e) {}
+            }
+            window.setETProgLp = function(on) {
+                _etProgLpOn = !!on;
+                var cb = document.getElementById('etProgLpOn'); if (cb) cb.checked = _etProgLpOn;
+                progApplyLp();
+            };
+
             // 스트럼 하나 스케줄. releaseAt 부터 자연스럽게 줄어든다.
             //   다음 스트럼이 있으면 그 박에 맞춰 짧게 겹치며 정리(손으로 줄을 다시 치는 느낌),
             //   마지막 스트럼은 길게 울린다.
@@ -26066,7 +26173,7 @@
                 g.gain.setValueAtTime(vol, releaseAt);
                 g.gain.setTargetAtTime(0, releaseAt, tau);
                 src.connect(g);
-                g.connect(_etCtx.destination);
+                g.connect(progOut());
                 var stopAt = Math.min(ringEnd, releaseAt + tau * 7) + 0.02;
                 src.start(start, s.offset);
                 src.stop(stopAt);
@@ -26144,6 +26251,7 @@
                     progSetPlayButtons();
                     _etProgBandOn = true;
                     var t0 = band.start(names, { bpm: PROG_BPM, loop: loop, beatsPerChord: PROG_STRUMS_PER_CHORD });
+                    band.lowpass(progLpHz());
                     var beat = 60 / PROG_BPM;
                     var total = seq.length * PROG_STRUMS_PER_CHORD;
                     // 칸 울림 — 박마다 (통기타의 스트럼 자리와 같음). 반복이면 바퀴마다 다시 예약.
@@ -26189,6 +26297,7 @@
                         etProgStopVoices();
                         _etProgBandOn = true;
                         band.chord(name);
+                        band.lowpass(progLpHz());
                     });
                     return;
                 }
@@ -26301,7 +26410,7 @@
 
             function progRoundElapsed() {
                 var r = _etProgRound;
-                return r.running ? performance.now() - r.start : r.elapsed;
+                return (r.running && !r.paused) ? performance.now() - r.start : r.elapsed;
             }
 
             function renderProgRound() {
@@ -26350,10 +26459,14 @@
                 if (!r.running) return;
                 r.done++;
                 if (isCorrect) r.correct++;
+                // 정답 확인 뒤엔 시간을 멈춘다 — '다음 문제'를 눌러야 다시 흐른다
+                if (!r.paused) r.elapsed = performance.now() - r.start;
+                r.paused = true;
+                progStopTimer();
                 if (r.done >= (r.size || PROG_ROUND_SIZE)) {
-                    r.elapsed = performance.now() - r.start;
                     r.running = false;
                     r.finished = true;
+                    r.paused = false;
                     progStopTimer();
                     try { gtag('event', 'ear_prog_round', { level: _etProgLevel, key: (progIsHell() || progRealRandom()) ? 'random' : _etProgKey, correct: r.correct, seconds: Math.round(r.elapsed / 1000) }); } catch (e) {}
                 }
@@ -26511,6 +26624,13 @@
                 playMode = playMode === 'loop' ? 'loop' : 'once';
                 // 라운드 첫 문제(또는 지난 라운드를 끝낸 뒤)면 새 라운드 + 타이머 시작
                 if (!_etProgRound.running) progStartRound();
+                else if (_etProgRound.paused) {
+                    // 멈춰 둔 시간 이어서
+                    _etProgRound.start = performance.now() - _etProgRound.elapsed;
+                    _etProgRound.paused = false;
+                    progStopTimer();
+                    _etProgTimerId = setInterval(renderProgRound, 100);
+                }
                 // 랭킹 라운드(10문제)도 이 라운드와 같이 간다 — 단계가 곧 난이도
                 // 지옥: 문제마다 새 키 + 새 코드 개수 (초기화 직후 첫 문제는 미리 굴린 값 그대로)
                 if (progIsHell()) {
@@ -26725,6 +26845,15 @@
                 try { localStorage.setItem('et_prog_accomp', _etProgAccomp); } catch (e) {}
             };
 
+            // 지옥 키 숨기기 — 바로 화면(키 칸·보기·답 칸)에 반영. 문제는 그대로 이어간다.
+            window.setETProgHellHide = function(on) {
+                _etProgHellHide = !!on;
+                try { localStorage.setItem('et_prog_hell_hide', _etProgHellHide ? '1' : '0'); } catch (e) {}
+                renderProgChoices();
+                renderProgSlots();
+                progSyncKeySelect();
+            };
+
             window.setETProgRealRandomKey = function(on) {
                 _etProgRealRandom = !!on;
                 etProgReset();
@@ -26756,6 +26885,20 @@
             renderProgChoices();
             renderProgSlots();
             renderProgRound();
+            // 지난번 '베이스만 듣기' 설정 복원
+            (function() {
+                try {
+                    var sv = JSON.parse(localStorage.getItem('et_prog_lp') || 'null');
+                    if (sv) { _etProgLpOn = !!sv.on; if (isFinite(sv.pos)) _etProgLpPos = Math.max(0, Math.min(100, +sv.pos)); }
+                } catch (e) {}
+                var cb = document.getElementById('etProgLpOn'); if (cb) cb.checked = _etProgLpOn;
+                var sl = document.getElementById('etProgLpFreq');
+                if (sl) {
+                    sl.value = _etProgLpPos;
+                    sl.addEventListener('input', function() { _etProgLpPos = +sl.value; progApplyLp(); });
+                }
+                progApplyLp();
+            })();
             // 지난번 반주 선택 복원 — 반주 엔진(__etBand)은 다른 스크립트 블록이라 로드 뒤에 맞춘다
             window.addEventListener('load', function() {
                 var saved = null;
