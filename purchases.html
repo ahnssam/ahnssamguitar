@@ -57,6 +57,19 @@
         .empty i { font-size: 36px; color: var(--green-pale); margin-bottom: 12px; display: block; }
         .empty p { margin-bottom: 16px; line-height: 1.6; }
         .note { font-size: 12.5px; color: var(--text-light); margin-top: 14px; line-height: 1.6; }
+        /* 비회원 주문 (2026-11-11) */
+        .guest { margin-top: 30px; }
+        .guest h2 { font-size: 19px; font-weight: 900; color: var(--green-deep); margin-bottom: 10px; }
+        .guest .list { margin-bottom: 14px; }
+        .oid { display: inline-block; font-size: 12px; color: var(--text-mid); background: #f1f6f3; border-radius: 6px; padding: 1px 7px; margin-top: 4px; font-family: ui-monospace, Menlo, monospace; }
+        .look { background: #fff; border-radius: 18px; box-shadow: 0 8px 24px rgba(42,107,74,0.08); padding: 18px 18px 16px; }
+        .look h3 { font-size: 15.5px; font-weight: 900; margin-bottom: 4px; }
+        .look p { font-size: 13px; color: var(--text-light); margin-bottom: 10px; line-height: 1.6; }
+        .look form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
+        .look input { width: 100%; padding: 10px 12px; border: 1.5px solid #cfe3d7; border-radius: 10px; font: inherit; font-size: 14px; }
+        .look input:focus { outline: none; border-color: var(--green-mid); }
+        .look .err { color: var(--red); font-size: 12.5px; margin-top: 6px; min-height: 1em; }
+        @media (max-width: 600px) { .look form { grid-template-columns: 1fr; } }
         /* 하단 사업자 정보 (전자상거래법 표시 사항 — 다른 페이지 하단과 같은 내용) */
         .ft { border-top: 1px solid #e3ece6; margin-top: 40px; padding: 22px 20px 30px; text-align: center; font-size: 12px; color: var(--text-light); line-height: 1.9; }
         .ft .ft-links { display: flex; justify-content: center; gap: 16px; margin-bottom: 6px; font-weight: 700; color: var(--green-deep); }
@@ -158,6 +171,20 @@
         <h1>구매한 악보</h1>
         <div class="pay" id="pay" hidden></div>
         <div class="list" id="list"><div class="empty"><i class="fas fa-spinner fa-spin"></i><p>불러오고 있어요…</p></div></div>
+        <section class="guest" id="guest" hidden>
+            <h2>비회원 주문</h2>
+            <div id="guestList"></div>
+            <div class="look">
+                <h3><i class="fas fa-magnifying-glass"></i> 비회원 주문 조회</h3>
+                <p>비회원으로 산 악보는 주문번호와 주문할 때 적은 이메일로 언제든 다시 받을 수 있어요.</p>
+                <form id="lookForm" novalidate>
+                    <input id="lookOrder" placeholder="주문번호 (AS로 시작)" autocomplete="off" spellcheck="false">
+                    <input id="lookEmail" type="email" placeholder="이메일" autocomplete="email">
+                    <button class="btn" type="submit"><i class="fas fa-magnifying-glass"></i> 조회</button>
+                </form>
+                <div class="err" id="lookErr"></div>
+            </div>
+        </section>
         <p class="note">PDF는 개인 연습·학습용이에요. 다른 사람에게 나눠 주거나 올리지 말아 주세요.<br>내려받기에 문제가 있으면 <a href="mailto:ahnssamguitar@gmail.com" style="color:var(--green-deep);font-weight:700;">ahnssamguitar@gmail.com</a> 으로 알려 주세요.</p>
     </main>
 
@@ -168,7 +195,7 @@
     </footer>
 
     <script src="auth.js" defer></script>
-    <script src="checkout.js?v=20261105" defer></script>
+    <script src="checkout.js?v=20261111" defer></script>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         'use strict';
@@ -220,7 +247,63 @@
             catch (e) { $('list').innerHTML = `<div class="empty"><i class="fas fa-triangle-exclamation"></i><p>목록을 불러오지 못했어요.<br><small>${esc(e.message)}</small></p></div>`; }
         }
 
+        // ---------- 비회원 주문 ----------
+        let guestShown = [];   // [{ o: { orderId, key|paymentKey|email }, r: { order, items } }]
+        function guestRows(g) {
+            const its = g.r.items;
+            return its.map(s => {
+                const img = s.preview_path ? `${SB_URL}/storage/v1/object/public/sheet-previews/${encodeURIComponent(s.preview_path)}?v=${encodeURIComponent(s.updated_at)}` : '';
+                const twin = its.length > 1;
+                const part = twin ? (s.style === 'electric' && its.some(x => x.style === 'solo') ? '일렉기타 [반주만]' : PART[s.style]) : PART[s.style];
+                const row = (label, full, note) => `<div class="row${g.fresh ? ' new' : ''}">
+                    <div class="thumb" style="${img ? `background-image:url('${img}')` : ''}"></div>
+                    <div class="info"><b>${esc(s.title)}${g.r.order.is_test ? '<span class="tag-test">테스트 결제</span>' : ''}</b>
+                        <small>${esc(note)}</small>
+                        <small>${day(g.r.order.purchased_at)} 구매 · ${won(g.r.order.amount)}</small>
+                        <span class="oid">주문번호 ${esc(g.o.orderId)}</span></div>
+                    <button class="btn" data-gdl="${esc(s.sheet_id)}" data-order="${esc(g.o.orderId)}"${full ? ' data-full="1"' : ''}><i class="fas fa-download"></i> ${label}</button>
+                </div>`;
+                return row('PDF 내려받기', false, [part, s.artist, s.pages ? s.pages + '페이지' : ''].filter(Boolean).join(' · '))
+                    + (s.bundle_pdf ? row('합본 PDF', true, '반주 + 기타솔로 합본 · 함께 사서 받는 덤 악보') : '');
+            }).join('');
+        }
+        function renderGuest() {
+            $('guestList').innerHTML = guestShown.length ? `<div class="list">${guestShown.map(guestRows).join('')}</div>` : '';
+            $('guest').hidden = false;
+            if (location.hash === '#guest' && !renderGuest.scrolled) { renderGuest.scrolled = true; $('guest').scrollIntoView({ block: 'start' }); }
+        }
+        async function loadGuest(freshId) {
+            const local = C.guestOrders().slice(0, 10);
+            const got = await Promise.all(local.map(o => C.guestList(o).then(r => (r && r.ok ? { o, r, fresh: o.orderId === freshId } : null)).catch(() => null)));
+            guestShown = got.filter(Boolean);
+            renderGuest();
+        }
+        $('lookForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const orderId = $('lookOrder').value.trim().toUpperCase().replace(/^AS/, 'AS'), email = $('lookEmail').value.trim().toLowerCase();
+            const err = $('lookErr');
+            err.textContent = '';
+            if (!orderId || !email) { err.textContent = '주문번호와 이메일을 모두 적어 주세요.'; return; }
+            const o = { orderId: orderId.replace(/[^A-Z0-9-]/g, '').replace(/-([0-9A-F]+)$/, (m, x) => '-' + x.toLowerCase()), email };
+            const r = await C.guestList(o);
+            if (!r || !r.ok) { err.textContent = r && r.error === 'not_paid' ? '결제가 끝나지 않은 주문이에요.' : '주문을 찾지 못했어요. 주문번호와 이메일을 다시 확인해 주세요.'; return; }
+            C.rememberGuest(Object.assign({ at: Date.now() }, C.guestOrder(o.orderId) || {}, o));
+            guestShown = [{ o, r, fresh: true }, ...guestShown.filter(g => g.o.orderId !== o.orderId)];
+            renderGuest();
+        });
+
         document.addEventListener('click', async e => {
+            const gb = e.target.closest('[data-gdl]');
+            if (gb) {
+                const g = guestShown.find(x => x.o.orderId === gb.dataset.order);
+                const s = g && g.r.items.find(x => x.sheet_id === gb.dataset.gdl);
+                if (!g || !s) return;
+                gb.disabled = true;
+                const twin = g.r.items.length > 1;
+                await C.guestDownload(g.o, s.sheet_id, s.title, s.artist, twin ? (s.style === 'electric' ? '일렉기타 반주만' : PART[s.style] || '') : '', !!gb.dataset.full);
+                setTimeout(() => { gb.disabled = false; }, 1500);
+                return;
+            }
             const b = e.target.closest('[data-dl]');
             if (!b) return;
             const s = items.find(x => x.sheet_id === b.dataset.dl);
@@ -247,14 +330,41 @@
                     (paid ? '방금 결제창은 테스트용이라 돈이 빠지지 않았고, 악보도 구매되지 않았어요. ' : '돈은 빠지지 않았어요. ') +
                     '지금은 결제 연동을 점검하고 있어요. 이 악보는 지금 풀스코어에서 구매할 수 있어요(악보 페이지에 링크가 있어요).', backBtn);
             }
+            // 비회원 주문에서 돌아옴 (이 브라우저가 기억하는 주문이거나, 로그인 안 한 채 돌아옴) — 로그인 없이 승인
+            const guestBack = !trial && q.get('orderId') && (C.guestOrder(q.get('orderId')) || !(auth && auth.getSession()));
+            if (guestBack) {
+                const oid = q.get('orderId'), pk = q.get('paymentKey');
+                history.replaceState(null, '', location.pathname);
+                if (pk) {
+                    showPay('wait', 'fa-spinner fa-spin', '결제를 확인하고 있어요…', '창을 닫지 말고 잠시만 기다려 주세요.');
+                    const r = await C.confirm(pk, oid, q.get('amount'));
+                    if (r && r.ok && r.guest) {
+                        C.rememberGuestPayment(oid, pk);
+                        const o = C.guestOrder(oid);
+                        showPay('ok', 'fa-circle-check', '결제가 완료됐어요',
+                            `고맙습니다! 아래 <b>비회원 주문</b>에서 바로 PDF를 받을 수 있어요.<br>나중에 다시 받을 때는 <b>주문번호 ${esc(oid)}</b>와 주문할 때 적은 이메일${o && o.email ? `(${esc(o.email)})` : ''}로 이 페이지의 '비회원 주문 조회'를 쓰세요. 이 화면을 캡처해 두면 편해요.`);
+                    } else if (r && r.error === 'auth_required') {
+                        showPay('info', 'fa-circle-info', '로그인이 필요해요', '회원으로 결제한 주문이에요. 결제한 계정으로 로그인하면 확인할 수 있어요.');
+                    } else {
+                        const why = (r && (r.message || { order_closed: '이미 끝났거나 취소된 주문이에요.', test_mode_admin_only: '지금은 결제 연동을 점검하고 있어서 실제 구매는 되지 않아요. 방금 결제는 테스트라 돈이 빠지지 않았어요.', record_failed: '결제는 됐는데 기록에 문제가 생겼어요. 주문번호를 메일로 알려 주시면 바로 처리해 드릴게요.' }[r.error])) || '결제를 확인하지 못했어요.';
+                        showPay('bad', 'fa-circle-exclamation', '결제가 완료되지 않았어요', esc(why) + `<br><small>주문번호 ${esc(oid)}</small>`, backBtn);
+                    }
+                } else if (q.get('code')) {
+                    const canceled = q.get('code') === 'PAY_PROCESS_CANCELED' || q.get('code') === 'USER_CANCEL';
+                    showPay('bad', canceled ? 'fa-circle-xmark' : 'fa-circle-exclamation', canceled ? '결제를 취소했어요' : '결제가 되지 않았어요',
+                        canceled ? '돈은 빠지지 않았어요. 다시 구매하려면 악보로 돌아가 주세요.' : esc(q.get('message') || '잠시 뒤 다시 시도해 주세요.'), backBtn);
+                }
+                await loadGuest(oid);
+            }
             if (!auth || !auth.getSession()) {
-                $('list').innerHTML = `<div class="empty"><i class="fas fa-lock"></i><p>로그인하면 구매한 악보를 볼 수 있어요.</p><button class="btn" id="loginBtn">로그인</button></div>`;
+                if (!guestBack) await loadGuest(null);
+                $('list').innerHTML = `<div class="empty"><i class="fas fa-lock"></i><p>로그인하면 구매한 악보를 볼 수 있어요.<br><small>비회원으로 샀다면 아래 '비회원 주문 조회'를 쓰세요.</small></p><button class="btn" id="loginBtn">로그인</button></div>`;
                 $('loginBtn').onclick = () => auth && auth.openLogin();
                 window.addEventListener('ahnssam-auth-settled', ev => { if (ev.detail && ev.detail.user) location.reload(); }, { once: true });
                 return;
             }
 
-            if (trial) {
+            if (trial || guestBack) {
                 // 위에서 안내함
             } else if (q.get('paymentKey') && q.get('orderId')) {
                 // 토스 결제창에서 성공으로 돌아옴 → 서버에 승인 요청
@@ -278,6 +388,7 @@
                     canceled ? '돈은 빠지지 않았어요. 다시 구매하려면 악보로 돌아가 주세요.' : esc(q.get('message') || '잠시 뒤 다시 시도해 주세요.'), backBtn);
             }
             await loadList();
+            if (!guestBack && C.guestOrders().length) loadGuest(null);
             // 한 번에 여러 악보(반주 + 기타솔로)를 샀으면 위 안내에도 악보마다 내려받기 버튼
             const got = newSheet ? items.filter(isNew) : [];
             if (got.length > 1) {
