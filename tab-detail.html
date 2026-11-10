@@ -942,11 +942,18 @@
             // 유튜브 영상: 들어온 악보의 영상이 맨 위, 같은 곡 다른 구성(기타솔로·통기타 …)의 영상이 그 아래 (같은 영상은 한 번만)
             //   다른 편곡이 있으면 그 영상들도 아래에 (들어온 편곡이 맨 위)
             renderVersions(p);
-            const seen = new Set(), vids = [p, ...PARTS.filter(x => x.id !== p.id), ...VERSIONS].filter(x => x.youtube_id && !seen.has(x.youtube_id) && seen.add(x.youtube_id));
+            //   악보마다 대표 영상(youtube_id) 다음에 더 건 영상(youtube_more)이 이어진다 (2026-11-10, db/sheet_youtube_more.sql)
+            const seen = new Set(), vids = [];
+            [p, ...PARTS.filter(x => x.id !== p.id), ...VERSIONS].forEach(x => {
+                [x.youtube_id, ...(x.youtube_more || [])].filter(v => v && !seen.has(v) && seen.add(v)).forEach((v, k) => vids.push({ x, v, k }));
+            });
             const vlabel = x => VERSIONS.length && (x === p || VERSIONS.includes(x)) ? verTag(x.title) : (STYLE_LABEL[x.style] || '악보');
+            // 여러 악보의 영상이 섞이면 '기타솔로 영상 2'처럼, 한 악보의 영상만 여럿이면 '영상 1 · 영상 2'
+            const many = new Set(vids.map(o => o.x)).size > 1;
+            const label = o => many ? `${vlabel(o.x)} 영상${o.k ? ' ' + (o.k + 1) : ''}` : `영상 ${o.k + 1}`;
             const yt = document.getElementById('productYoutube');
-            yt.innerHTML = vids.map((x, i) => `<div class="yt-item">${vids.length > 1 ? `<div class="yt-label"><i class="fab fa-youtube"></i>${escHtml(vlabel(x))} 영상</div>` : ''}<div class="yt-wrapper">
-                <iframe src="https://www.youtube.com/embed/${encodeURIComponent(x.youtube_id)}" title="${escHtml(x.title)} ${escHtml(PART_NAME[x.style] || '')} 영상"${i ? ' loading="lazy"' : ''} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div></div>`).join('');
+            yt.innerHTML = vids.map((o, i) => { const x = o.x; return `<div class="yt-item">${vids.length > 1 ? `<div class="yt-label"><i class="fab fa-youtube"></i>${escHtml(label(o))}</div>` : ''}<div class="yt-wrapper">
+                <iframe src="https://www.youtube.com/embed/${encodeURIComponent(o.v)}" title="${escHtml(x.title)} ${escHtml(PART_NAME[x.style] || '')} 영상"${i ? ' loading="lazy"' : ''} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div></div>`; }).join('');
             yt.hidden = !vids.length;
         }
 
