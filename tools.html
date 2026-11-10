@@ -5061,6 +5061,18 @@
             cursor: default;
         }
         .et-prog-options { align-items: center; gap: 0.8rem; }
+        /* 옵션 토글 사이 | 구분선 (숨긴 토글은 선도 같이 빠짐) */
+        .et-prog-options > * + * { position: relative; margin-left: 0.15rem; padding-left: 0.95rem; }
+        .et-prog-options > * + *::before {
+            content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+            width: 1px; height: 1.1em; background: rgba(42, 107, 74, 0.3);
+        }
+        :root[data-theme="dark"] .et-prog-options > * + *::before { background: rgba(180, 230, 200, 0.3); }
+        /* 좁은 화면은 토글이 줄마다 하나씩 쌓이니 구분선 없이 */
+        @media (max-width: 640px) {
+            .et-prog-options > * + * { margin-left: 0; padding-left: 0; }
+            .et-prog-options > * + *::before { display: none; }
+        }
         .fb-switch.disabled { cursor: not-allowed; opacity: 0.4; }
         .et-prog-key-select {
             padding: 0.3rem 0.6rem;
@@ -5084,6 +5096,17 @@
         .et-prog-lp-val { min-width: 4.2em; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--green-deep); font-size: 0.9rem; }
         :root[data-theme="dark"] .et-prog-lp-val { color: var(--green-light); }
         .et-prog-break { flex-basis: 100%; height: 0; }
+        /* 보기 → 답 칸 끌어다 놓기 */
+        .et-prog-hint { margin: 0.5rem 0 0.9rem; text-align: center; font-size: 0.8rem; color: var(--text-secondary); }
+        .et-prog-hint i { margin-right: 0.25rem; opacity: 0.7; }
+        #etProgChoices .et-choice-btn { touch-action: none; -webkit-user-select: none; user-select: none; }
+        #etProgChoices .et-choice-btn.dragging-src { opacity: 0.45; }
+        .et-prog-ghost {
+            position: fixed; z-index: 9999; pointer-events: none; margin: 0;
+            transform: translate(-50%, -60%) scale(1.06);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22); opacity: 0.95;
+        }
+        .et-prog-slot.drop-target { border-style: solid; border-color: var(--green-mid); background: rgba(114, 196, 146, 0.18); transform: scale(1.06); }
         /* 5칸 이상: 4칸 격자 — 아랫줄이 윗줄 첫 칸부터 같은 열에 놓인다 */
         .et-prog-slots.rows4 {
             display: grid;
@@ -10195,7 +10218,7 @@
                                     <span class="fb-switch-slider"></span>
                                     <span class="fb-switch-label">키 계속 바꾸기</span>
                                 </label>
-                                <select class="et-prog-key-select" id="etProgKey" data-change="setETProgKey" data-args="$value" aria-label="키 선택"></select>
+                                <span class="et-prog-key-wrap"><select class="et-prog-key-select" id="etProgKey" data-change="setETProgKey" data-args="$value" aria-label="키 선택"></select></span>
                             </div>
                         </div>
                         <!-- 베이스만 듣기(로우패스) — 토글을 켰을 때만 보인다 -->
@@ -10249,6 +10272,7 @@
                     </div>
                     <div class="et-prog-slots" id="etProgSlots"></div>
                     <div class="et-choices" id="etProgChoices"></div>
+                    <p class="et-prog-hint"><i class="fas fa-hand-pointer" aria-hidden="true"></i> 코드를 누르면 앞 칸부터 차례로 들어가고, 원하는 칸으로 끌어다 놓아도 돼요</p>
                     <!-- 밴드 반주 페이더 — 반주 메뉴 믹서와 같은 볼륨(어느 쪽을 움직여도 둘 다 바뀜) -->
                     <div class="loop-mix-row et-prog-mix" id="etProgMixRow">
                         <div class="loop-mix-cell" data-kind="drum">
@@ -11481,7 +11505,7 @@
             eartraining: '두 음 간격이나 코드, 코드 진행을 듣고 맞히는 훈련. 정답이 누적되면 랭킹에 반영돼요. 절대음감보다 상대음감 훈련에 효과적이에요.',
             eartraining_pitch:    '음정을 듣고 무슨 음정인지 맞추는 연습이에요. 어려움 난이도부터는 샵(♯) 음계까지 함께 출제됩니다.',
             eartraining_interval: '낮은 음과 높은 음 사이 간격을 맞추는 연습이에요. 절대음감 없이도 음악을 분석할 수 있게 해주는 상대음감 트레이닝의 핵심 방식.',
-            eartraining_prog:     '고른 키의 다이아토닉 코드(1도~7도)로 된 진행을 듣고 순서대로 맞추는 연습이에요.\n\n• 단계 1~8 = 코드 개수. 코드마다 70BPM 으로 두 번씩 쳐줍니다.\n• 실전: 가요·팝에서 실제로 많이 쓰는 8마디 진행이 나와요 (캐논, 로열 로드, 6-4-1-5 …). 5문제가 한 세트이고, "키 계속 바꾸기"를 켜면 문제마다 키가 바뀌며 키는 정답 확인 후에 알려줘요.\n• 연속 듣기: 정지를 누를 때까지 진행을 계속 반복해요.\n• 반주: 통기타 스트럼 또는 밴드(드럼·베이스·피아노). 밴드의 악기별 볼륨은 반주 메뉴 믹서와 같이 움직여요.\n• 지옥: 문제마다 키가 바뀌고, 코드 개수도 5~8개가 섞여 나와요. “키 숨기기”(기본 켜짐)를 켜 두면 키는 정답 확인 후에 알려주고 도수로만 골라요. 끄면 키와 코드 이름이 보여요.\n• 1도로 시작을 켜면 첫 코드는 항상 1도로 고정돼요.\n• 10문제가 한 라운드예요. 첫 문제를 들을 때 타이머가 시작되고, 10문제를 끝내면 걸린 시간을 알려줘요. 정답 확인 뒤에는 다음 문제를 누를 때까지 시간이 멈춰요.\n• 베이스만 듣기: 켜면 하이컷 페이더가 나오고, 높은 소리를 깎아 베이스(근음)만 들리게 해요. 왼쪽으로 갈수록 더 깎여요.\n• 아래 칸을 누르면 고른 코드를 뺄 수 있어요. 아직 안 고른 빈 칸(1·2·3…)을 누르면 그 자리 코드를 한 번 들려줘요.\n\n점수는 랭킹(종합)에 반영돼요. 단계가 높을수록 계수가 커져요 (1단계 ×1.0 ~ 8단계 ×3.0, 실전 ×3.25, 지옥 ×3.5).',
+            eartraining_prog:     '고른 키의 다이아토닉 코드(1도~7도)로 된 진행을 듣고 순서대로 맞추는 연습이에요.\n\n• 단계 1~8 = 코드 개수. 코드마다 70BPM 으로 두 번씩 쳐줍니다.\n• 실전: 가요·팝에서 실제로 많이 쓰는 8마디 진행이 나와요 (캐논, 로열 로드, 6-4-1-5 …). 5문제가 한 세트이고, "키 계속 바꾸기"를 켜면 문제마다 키가 바뀌며 키는 정답 확인 후에 알려줘요.\n• 연속 듣기: 정지를 누를 때까지 진행을 계속 반복해요.\n• 반주: 통기타 스트럼 또는 밴드(드럼·베이스·피아노). 밴드의 악기별 볼륨은 반주 메뉴 믹서와 같이 움직여요.\n• 지옥: 문제마다 키가 바뀌고, 코드 개수도 5~8개가 섞여 나와요. “키 숨기기”(기본 켜짐)를 켜 두면 키는 정답 확인 후에 알려주고 도수로만 골라요. 끄면 키와 코드 이름이 보여요.\n• 1도로 시작을 켜면 첫 코드는 항상 1도로 고정돼요.\n• 10문제가 한 라운드예요. 첫 문제를 들을 때 타이머가 시작되고, 10문제를 끝내면 걸린 시간을 알려줘요. 정답 확인 뒤에는 다음 문제를 누를 때까지 시간이 멈추고, 아래 코드 버튼을 누르면 그 코드 소리를 들을 수 있어요.\n• 베이스만 듣기: 켜면 하이컷 페이더가 나오고, 높은 소리를 깎아 베이스(근음)만 들리게 해요. 왼쪽으로 갈수록 더 깎여요.\n• 코드를 누르면 앞 칸부터 차례로 들어가고, 원하는 칸으로 끌어다 놓을 수도 있어요. 칸을 누르면 고른 코드를 뺄 수 있어요. 아직 안 고른 빈 칸(1·2·3…)을 누르면 그 자리 코드를 한 번 들려줘요.\n\n점수는 랭킹(종합)에 반영돼요. 단계가 높을수록 계수가 커져요 (1단계 ×1.0 ~ 8단계 ×3.0, 실전 ×3.25, 지옥 ×3.5).',
             eartraining_chord:    '구성음을 듣고 어떤 코드인지 맞추는 연습이에요. 코드 사운드 자체에 익숙해지면 실전 연주에서 코드 진행을 빠르게 캐치할 수 있어 큰 도움이 됩니다.',
             chords: '기본·텐션·세븐스 코드까지 운지법과 사운드를 한 번에 검색·재생. 코드를 클릭하면 바로 그 코드 사운드가 들려요.',
             fretboard: '지판 위 모든 음의 위치를 시각화. 트레이닝 모드로 음 이름 맞추기 연습도 가능합니다.',
@@ -26623,11 +26647,11 @@
 
             function etProgUpdateNextState() {
                 if (_etProgGraded) return;
-                var ready = _etProgAnswer && _etProgPicks.length === progCount();
+                var ready = _etProgAnswer && progFilledCount() === progCount();
                 setEtBtnState('etProgNextBtn', ready ? 'check-active' : 'check-disabled');
                 var fb = document.getElementById('etProgFeedback');
                 if (!_etProgAnswer) return;
-                var remaining = progCount() - _etProgPicks.length;
+                var remaining = progCount() - progFilledCount();
                 fb.textContent = remaining > 0 ? '들린 순서대로 코드 ' + remaining + '개를 골라주세요' : '';
                 fb.className = 'et-feedback';
             }
@@ -26681,26 +26705,109 @@
             };
             window.etProgStopPlayback = function() { etProgStopVoices(); };
 
+            // 고른 코드 — 칸 번호 자리에 들어간다 (끌어다 놓으면 중간이 비어 있을 수 있음)
+            function progFilledCount() {
+                var n = 0, c = progCount();
+                for (var i = 0; i < c; i++) if (_etProgPicks[i] !== undefined) n++;
+                return n;
+            }
+            // 누르면 앞에서부터 빈 칸에 차례로
             window.etProgPick = function(ci) {
+                // 정답 확인 뒤: 누르면 그 코드 소리만
+                if (_etProgAnswer && _etProgGraded) { etProgPlayChord(+ci, _etProgAnswerKey); return; }
                 if (!_etProgAnswer || _etProgGraded) return;
-                if (_etProgPicks.length >= progCount()) return;
-                _etProgPicks.push(ci);
+                var c = progCount();
+                for (var i = 0; i < c; i++) {
+                    if (_etProgPicks[i] === undefined) { etProgPlaceAt(i, ci); return; }
+                }
+            };
+            // 끌어다 놓기 — 그 칸에 넣는다 (이미 있으면 바꿈, 1도로 시작 칸은 그대로)
+            function etProgPlaceAt(i, ci) {
+                if (!_etProgAnswer || _etProgGraded) return;
+                if (i < 0 || i >= progCount()) return;
+                if (i === 0 && progTonicOn()) return;
+                _etProgPicks[i] = +ci;
+                renderProgSlots();
+                etProgUpdateNextState();
+            }
+
+            // 고른 칸 누르면 빼기 — 그 칸만 비운다
+            window.etProgUnpick = function(i) {
+                if (_etProgGraded) return;
+                if (i === 0 && progTonicOn()) return;
+                _etProgPicks[i] = undefined;
+                while (_etProgPicks.length && _etProgPicks[_etProgPicks.length - 1] === undefined) _etProgPicks.pop();
                 renderProgSlots();
                 etProgUpdateNextState();
             };
 
-            window.etProgUnpick = function(i) {
-                if (_etProgGraded) return;
-                if (i === 0 && progTonicOn()) return;
-                _etProgPicks.splice(i, 1);
-                renderProgSlots();
-                etProgUpdateNextState();
-            };
+            // 보기 버튼을 답 칸으로 끌어다 놓기 (마우스·손가락 모두 — pointer 이벤트)
+            (function() {
+                var box = document.getElementById('etProgChoices');
+                if (!box) return;
+                var drag = null, justDragged = false;
+                function slotAt(x, y) {
+                    var el = document.elementFromPoint(x, y);
+                    el = el && el.closest ? el.closest('#etProgSlots .et-prog-slot') : null;
+                    if (!el) return -1;
+                    return Array.prototype.indexOf.call(document.querySelectorAll('#etProgSlots .et-prog-slot'), el);
+                }
+                function mark(i) {
+                    document.querySelectorAll('#etProgSlots .et-prog-slot').forEach(function(el, k) {
+                        el.classList.toggle('drop-target', k === i);
+                    });
+                }
+                function end(e, cancel) {
+                    if (!drag) return;
+                    var d = drag; drag = null;
+                    if (d.ghost) {
+                        d.ghost.remove();
+                        d.btn.classList.remove('dragging-src');
+                        mark(-1);
+                        justDragged = true;
+                        setTimeout(function() { justDragged = false; }, 0);
+                        if (!cancel) {
+                            var i = slotAt(e.clientX, e.clientY);
+                            if (i >= 0) etProgPlaceAt(i, d.ci);
+                        }
+                    }
+                }
+                box.addEventListener('pointerdown', function(e) {
+                    if (e.button !== undefined && e.button !== 0) return;
+                    var btn = e.target.closest ? e.target.closest('.et-choice-btn') : null;
+                    if (!btn || !_etProgAnswer || _etProgGraded) return;
+                    drag = { btn: btn, ci: +btn.dataset.pci, x: e.clientX, y: e.clientY, ghost: null };
+                });
+                document.addEventListener('pointermove', function(e) {
+                    if (!drag) return;
+                    if (!drag.ghost) {
+                        if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) < 8) return;
+                        var r = drag.btn.getBoundingClientRect();
+                        var g = drag.btn.cloneNode(true);
+                        g.removeAttribute('data-action');
+                        g.className = 'et-choice-btn et-prog-ghost';
+                        g.style.width = r.width + 'px';
+                        document.body.appendChild(g);
+                        drag.ghost = g;
+                        drag.btn.classList.add('dragging-src');
+                    }
+                    e.preventDefault();
+                    drag.ghost.style.left = e.clientX + 'px';
+                    drag.ghost.style.top = e.clientY + 'px';
+                    mark(slotAt(e.clientX, e.clientY));
+                }, { passive: false });
+                document.addEventListener('pointerup', function(e) { end(e, false); });
+                document.addEventListener('pointercancel', function(e) { end(e, true); });
+                // 끌어다 놓은 뒤 따라오는 click 은 무시 (누르기로 한 번 더 들어가지 않게)
+                box.addEventListener('click', function(e) {
+                    if (justDragged) { e.stopPropagation(); e.preventDefault(); }
+                }, true);
+            })();
 
             function etProgGradeAnswer() {
                 if (_etProgGraded || !_etProgAnswer) return;
                 var count = progCount();
-                if (_etProgPicks.length !== count) return;
+                if (progFilledCount() !== count) return;
                 var wasHidden = progKeyHidden();
                 _etProgGraded = true;
                 _etProgStats.total++;
@@ -26741,9 +26848,7 @@
                 progFxVisual(allCorrect);
                 // 마지막 문제 채점 즉시 팝업 — 늦게 뜨면 같은 자리 '새 라운드'를 실수로 누르게 됨
                 if (_etProgRound.finished) openProgSummary();
-                document.querySelectorAll('#etProgChoices .et-choice-btn').forEach(function(b) {
-                    b.classList.add('disabled');
-                });
+                // 정답 확인 뒤 보기 버튼은 끄지 않고, 누르면 그 코드 소리 (etProgPick)
                 _etProgHistory.push({
                     correct: allCorrect,
                     seq: _etProgAnswer.slice(),
