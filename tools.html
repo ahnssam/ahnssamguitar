@@ -6773,7 +6773,7 @@
         #loopSavePresetBtn:disabled { opacity: 0.4; cursor: default; }
         :root[data-theme="dark"] .loop-preset-mini { color: var(--green-light); border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); }
         :root[data-theme="dark"] #loopSavePresetBtn:not(:disabled) { color: #fff; background: var(--green-dark); }
-        /* 공용저장 — 아이콘+텍스트라 고정폭(30px)을 풀고 글자에 맞춰 넓힌다 */
+        /* 저장(운영 계정·로컬 툴) — 아이콘+텍스트라 고정폭(30px)을 풀고 글자에 맞춰 넓힌다 */
         #loopSharedSaveBtn { width: auto; min-width: 0; padding: 0 0.55rem; gap: 0.3rem; white-space: nowrap; font-weight: 700; }
         #loopSharedSaveBtn[hidden] { display: none; }
         /* 저장 버튼(아이콘+텍스트) + 드롭다운 (저장 / 다른 이름으로 저장) */
@@ -7285,6 +7285,24 @@
         .loop-capo-sub { font-size: 0.72rem; font-weight: 600; opacity: 0.75; margin-left: 0.1rem; }
         .loop-capo-note[hidden] { display: none; }
         :root[data-theme="dark"] .loop-capo-note { color: #b9adf5; background: rgba(120,100,220,0.20); border-color: rgba(160,145,240,0.38); }
+        /* 코드 위 곡 머리말 — 제목(가운데) · 카포(왼쪽) · 아티스트(오른쪽). 인쇄물(.lp-head) 모양을 화면 크기로 */
+        .loop-song-head { margin: 0.3rem 0 0.9rem; }
+        .loop-song-head[hidden] { display: none; }
+        .loop-song-head .lp-title { font-size: 26px; }
+        .loop-song-head .lp-capo, .loop-song-head .lp-artist { font-size: 15px; }
+        @media (max-width: 600px) {
+            .loop-song-head .lp-title { font-size: 21px; }
+            .loop-song-head .lp-capo, .loop-song-head .lp-artist { font-size: 13px; }
+        }
+        :root[data-theme="dark"] .loop-song-head .lp-title,
+        :root[data-theme="dark"] .loop-song-head .lp-capo,
+        :root[data-theme="dark"] .loop-song-head .lp-artist { color: var(--green-light); }
+        /* 설정 안 카포 고르기 */
+        .loop-capo-sel {
+            padding: 0.28rem 0.5rem; border-radius: 8px; border: 1px solid rgba(42,107,74,0.25);
+            background: var(--bg-panel); color: var(--text-mid); font-family: inherit; font-size: 0.8rem; cursor: pointer;
+        }
+        :root[data-theme="dark"] .loop-capo-sel { border-color: rgba(150,200,175,0.3); color: #cfe0d6; }
         /* 목록 아이템 — 좌(정보) / 우(메타 + 별 + 연필) */
         .loop-preset-item-main { min-width: 0; flex: 1; }
         .loop-preset-item-right { display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0; }
@@ -9733,8 +9751,10 @@
                                 <button type="button" id="loopExportMenuBtn" data-action="openExportPreset" hidden>파일로 내보내기</button>
                             </div>
                         </div>
-                        <!-- 공용 프리셋 바로 저장 — 운영 계정(또는 로컬 툴)에서만 표시 -->
-                        <button type="button" class="loop-preset-mini" id="loopSharedSaveBtn" data-action="openSaveShared" aria-label="공용 프리셋에 저장" title="공용 프리셋에 저장" hidden><i class="fas fa-floppy-disk"></i><span>공용저장</span></button>
+                        <!-- 저장 — 운영 계정(또는 로컬 툴)에서만 표시. 곡 목록(presets)에 바로 저장한다.
+                             열린 곡이 있으면 그 곡에 덮어쓰고, 없으면 제목을 받아 새 곡으로 추가.
+                             운영 계정은 '내 프리셋'·저장 메뉴·파일 내보내기를 감추고 이 단추 하나만 쓴다. -->
+                        <button type="button" class="loop-preset-mini" id="loopSharedSaveBtn" data-action="openSaveShared" aria-label="저장" title="저장" hidden><i class="fas fa-floppy-disk"></i><span>저장</span></button>
                         <button type="button" class="loop-preset-mini" id="loopPrintBtn" data-action="openPrintDialog" aria-label="악보 인쇄" title="악보 인쇄"><i class="fas fa-print"></i></button>
                         <button type="button" class="loop-preset-mini" id="loopMp3Btn" data-action="openMp3Dialog" aria-label="MP3로 내보내기" title="MP3로 내보내기 (반주 오디오 다운로드)"><i class="fas fa-download"></i></button>
                         <!-- 악보검색(로컬) 툴에서는 MP3 자리에 '이미지로 저장' 이 들어간다 -->
@@ -9848,9 +9868,18 @@
                                         <button type="button" class="loop-style-btn" data-pstyle="8beat" data-action="setLoopPianoStyle" data-args="8beat">8비트</button>
                                     </div>
                                 </div>
+                                <!-- 카포 — 코드 위 곡 머리말과 인쇄물에 표시, 저장하면 곡에 같이 저장 -->
+                                <div class="loop-style-group loop-capo-group" title="카포를 끼우는 프렛 — 코드 위 제목 줄과 인쇄물에 표시돼요">
+                                    <label for="loopCapoSel">카포</label>
+                                    <select id="loopCapoSel" class="loop-capo-sel" data-change="setLoopCapo" data-args="$value" aria-label="카포">
+                                        <option value="">없음</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    <!-- 곡 머리말(제목·카포·아티스트) — 이름 있는 곡을 불러오거나 저장하면 표시. 로컬 툴은 악보검색이 따로 넣는다. -->
+                    <div class="lp-head loop-song-head" id="loopSongHead" hidden></div>
                     <!-- 코드 다이어그램 줄 — 악보검색(로컬) 툴에서만 채워짐. 제목 아래·첫 마디줄 위. -->
                     <div class="loop-chorddiag" id="loopChordDiag" hidden></div>
                     <div class="loop-grid cols-4" id="loopGrid"></div>
@@ -15753,7 +15782,7 @@
                                 { token: _localToolToken(), chart_id: id, patch: ltPatch });
                             if (!ok) { msg.textContent = '저장 실패'; return; }
                             Object.assign(p, ltPatch, { capo: ltPatch.capo || null });   // 캐시 즉시 반영
-                            if (_loopActivePresetId === id) { try { _updateLoopCapoNote(p.capo); } catch (e5) {} _syncActiveMeta(p); }
+                            if (_loopActivePresetId === id) _syncActiveMeta(p);   // 카포 안내·머리말까지
                             // 악보검색 화면(곡 목록·제목)도 바로 갱신
                             try { if (window.parent !== window && typeof window.parent.__onChartMetaSaved === 'function')
                                       window.parent.__onChartMetaSaved(id, { name: p.name, artist: p.artist, bpm: p.bpm,
@@ -15781,8 +15810,8 @@
                         var res = await authc.from('presets').update(patch).eq('id', id);
                         if (res.error) { msg.textContent = '저장 실패: ' + res.error.message; return; }
                         Object.assign(p, patch);          // 캐시 즉시 반영
-                        // 지금 불러와 있는 곡이면 카포 안내도 갱신
-                        if (_loopActivePresetId === id) { try { _updateLoopCapoNote(patch.capo); } catch (e4) {} }
+                        // 지금 불러와 있는 곡이면 카포 안내·설정 칸·코드 위 머리말도 갱신
+                        if (_loopActivePresetId === id) _syncActiveMeta(p);
                         _loopEditingId = null;
                         var s = document.getElementById('loopPresetSearch');
                         try { renderSubFilterRow(); } catch (er) {}
@@ -16032,7 +16061,7 @@
                 var p = (_loopPresetsCache || []).find(function(x) { return x.id === id; });
                 if (!p || !patch) return;
                 Object.assign(p, patch);
-                if (_loopActivePresetId === id) { try { _updateLoopCapoNote(p.capo); } catch (e) {} _syncActiveMeta(p); }
+                if (_loopActivePresetId === id) _syncActiveMeta(p);   // 카포 안내·머리말까지
                 try { var s = document.getElementById('loopPresetSearch'); if (s && document.activeElement === s) renderLoopPresetList(s.value); } catch (e) {}
             };
             // 로컬 툴이 현재 편집 상태를 통째로 가져갈 때 사용 (리듬패턴 병합 후 한 번에 저장)
@@ -16089,13 +16118,27 @@
                     bass_style: s.bass_style, piano_style: s.piano_style,
                     chords_a: s.chords_a, chords_b: s.chords_b, sequencer_pattern: sp
                 };
+                // 카포 — 설정에서 바꿨을 때만 같이 저장 (없음으로 바꾸면 빈 값 '' 이어야 지워진다)
+                var capoWas = (_loopActiveMeta && _loopActiveMeta.capo) || '';
+                var capoChanged = (_capoNum(s.capo) || null) !== (_capoNum(capoWas) || null);
+                if (capoChanged) patch.capo = s.capo || '';
+                var savedId = _loopActivePresetId;
                 try {
                     var ok = await _localToolRpc('save_chart_for_tool',
-                        { token: tok, chart_id: _loopActivePresetId, patch: patch });
+                        { token: tok, chart_id: savedId, patch: patch });
                     loopToast(ok ? '저장했어요' : '저장 실패');
+                    if (ok && capoChanged) {
+                        // 저장된 카포를 기억하고 악보검색 목록(카포 배지)·머리말도 맞춘다
+                        var capoNew = s.capo || null;
+                        if (_loopActiveMeta) _loopActiveMeta.capo = capoNew || '';
+                        var cRow = (_loopPresetsCache || []).find(function(x) { return x.id === savedId; });
+                        if (cRow) cRow.capo = capoNew;
+                        try { if (window.parent !== window && typeof window.parent.__onChartMetaSaved === 'function')
+                                  window.parent.__onChartMetaSaved(savedId, { capo: capoNew }); } catch (e) {}
+                    }
                     if (ok) { try { window.__loopMarkClean(); } catch (e) {} }   // 저장했으니 '나가시겠습니까' 안 띄움
                     if (ok) { try { if (window.parent !== window && typeof window.parent.__onChartSaved === 'function')
-                                        window.parent.__onChartSaved(_loopActivePresetId); } catch (e) {} }   // 악보검색 목록: 최근순 맨 위로
+                                        window.parent.__onChartSaved(savedId); } catch (e) {} }   // 악보검색 목록: 최근순 맨 위로
                     return !!ok;
                 } catch (e) { loopToast('저장 실패: ' + e.message); return false; }
             };
@@ -16482,13 +16525,40 @@
             //   null 이면 커스텀 없음 → 리듬 드로어에 "커스텀" 항목 미노출.
             var _loopActivePresetSequencer = null;
             var _loopActivePresetId = null;
-            var _loopActiveMeta = null;   // 불러온 프리셋의 제목·아티스트·카포 (인쇄 자동 채우기)
-            // 열어 둔 곡의 곡 정보(곡명·아티스트·카포)를 연필로 고치면 인쇄·이미지 창 자동 채우기도 새 값으로
+            var _loopActiveMeta = null;   // 불러온(저장된) 곡의 제목·아티스트·카포 — 저장된 값 그대로
+            var loopCapo = null;          // 지금 화면의 카포(숫자, 없으면 null) — 설정에서 바꾸면 여기만 바뀌고 저장할 때 곡에 들어간다
+            // 열어 둔 곡의 곡 정보(곡명·아티스트·카포)를 연필로 고치면 머리말·인쇄·이미지 창 자동 채우기도 새 값으로
             function _syncActiveMeta(p) {
+                // 연필 저장은 DB 에 바로 들어가니, 그 전에 '저장 안 한 변경'이 없었으면 고친 뒤에도 없는 것으로
+                var wasClean = false;
+                try { wasClean = !window.__loopIsDirty(); } catch (e) {}
                 _loopActiveMeta = { name: p.name || '', artist: p.artist || '', capo: p.capo || '' };
                 // 로컬 툴에서 새 곡으로 추가한 곡은 _loopSavedName 이 먼저 쓰이므로 같이 맞춘다 (내 프리셋 슬롯은 건드리지 않음)
                 if (_loopSavedSlot == null && _loopSavedName != null) { _loopSavedName = p.name || _loopSavedName; _loopSavedArtist = p.artist || ''; }
+                try { _updateLoopCapoNote(p.capo); } catch (e) {}
+                if (wasClean) { try { window.__loopMarkClean(); } catch (e) {} }
             }
+            // 코드 위 곡 머리말 — 이름 있는 곡(불러온 곡·저장한 곡)이면 제목·카포·아티스트를 보인다. 보이면 true.
+            //   악보검색(로컬) 툴은 자기 머리말(albo-head)을 따로 넣으니 여기선 감춘다.
+            function _renderSongHead() {
+                var h = document.getElementById('loopSongHead');
+                if (!h) return false;
+                var isTool = (typeof _localToolToken === 'function') && !!_localToolToken();
+                var m = _loopActiveMeta || {};
+                var name = _loopSavedName || m.name || '';
+                var artist = (_loopSavedName ? _loopSavedArtist : m.artist) || '';
+                if (isTool || !name) { h.hidden = true; h.innerHTML = ''; return false; }
+                h.innerHTML = '<div class="lp-title">' + _escHtml(name) + '</div>' +
+                    '<div class="lp-meta"><div class="lp-capo">' + (loopCapo ? ('Capo ' + loopCapo) : '') + '</div>' +
+                    '<div class="lp-artist">' + _escHtml(artist) + '</div></div>';
+                h.hidden = false;
+                return true;
+            }
+            // 설정의 카포 고르기
+            window.setLoopCapo = function(v) {
+                _updateLoopCapoNote(v);
+                loopOnStateChange();
+            };
             // 커스텀이 선택됐을 때 사용할 드럼 리듬 (프리셋의 원래 rhythm).
             var _loopActivePresetRhythm = null;
             // 프리셋이 베이스/피아노 커스텀 시퀀서를 활성화하고 있는지.
@@ -18321,11 +18391,17 @@
                 var m = String(v).match(/(\d+)/);
                 return m ? parseInt(m[1], 10) : null;
             }
+            //   지금 카포(loopCapo)를 정하고 설정 칸·곡 머리말·안내 줄을 맞춘다.
+            //   머리말이 보이면 거기에 'Capo N' 이 있으니 안내 줄은 감춘다.
             function _updateLoopCapoNote(capo) {
+                loopCapo = _capoNum(capo) || null;
+                var sel = document.getElementById('loopCapoSel');
+                if (sel) sel.value = loopCapo ? String(loopCapo) : '';
+                var headOn = _renderSongHead();
                 var el = document.getElementById('loopCapoNote');
                 if (!el) return;
-                var n = _capoNum(capo);
-                if (!n) { el.hidden = true; el.textContent = ''; return; }
+                var n = loopCapo;
+                if (!n || headOn) { el.hidden = true; el.textContent = ''; return; }
                 el.hidden = false;
                 el.innerHTML = '<i class="fas fa-grip-lines-vertical"></i> 카포 ' + n +
                                '<span class="loop-capo-sub">번 프렛에 끼우고 연주</span>';
@@ -18358,6 +18434,7 @@
                     chords_b: Object.assign({}, loopChordsB),
                     chords_c: Object.assign({}, loopChordsC),
                     chords_d: Object.assign({}, loopChordsD),
+                    capo: loopCapo ? ('Capo ' + loopCapo) : '',
                     sequencer_pattern: sp
                 };
             }
@@ -18482,6 +18559,7 @@
                 if (!s) return;
                 var t = (artist ? (artist + ' - ') : '') + (name || '');
                 s.value = (slot ? (slot + '. ') : '') + t;
+                try { _updateLoopCapoNote(loopCapo); } catch (e) {}   // 코드 위 곡 머리말도 이 이름으로
             }
             // 저장 버튼 아래 드롭다운 (저장 / 다른 이름으로 저장) 열고 닫기
             function _closeSaveMenu() {
@@ -18511,14 +18589,15 @@
                 var img = document.getElementById('loopImgBtn');
                 if (mp3) { if (isTool) mp3.setAttribute('hidden', ''); else mp3.removeAttribute('hidden'); }
                 if (img) img.removeAttribute('hidden');
-                // 악보검색(로컬) 툴에서는 로그인이 안 되니 '내 프리셋'(폴더)·'저장(내 프리셋)' 단추를 감춘다.
-                //   저장은 '공용저장' 하나로 — 곡이 없으면 새 곡으로 추가된다.
-                if (isTool) {
-                    var myb = document.getElementById('loopMyPresetBtn');
-                    var svw = document.querySelector('.loop-save-wrap');
-                    if (myb) myb.style.display = 'none';
-                    if (svw) svw.style.display = 'none';
-                }
+                // 운영 계정·악보검색(로컬) 툴은 '내 프리셋'(폴더)·저장 메뉴(내 프리셋·파일 내보내기)를 감추고
+                //   '저장' 하나만 쓴다 — 곡 목록 자체가 운영자의 곡이라서 (2026-11-10 사용자 결정).
+                //   열린 곡이 있으면 그 곡에 덮어쓰고, 없으면 제목을 받아 새 곡으로 추가된다.
+                //   다른 로그인 사용자는 예전처럼 내 프리셋(10칸)에 저장한다.
+                var admin = _loopIsAdmin();
+                var myb = document.getElementById('loopMyPresetBtn');
+                var svw = document.querySelector('.loop-save-wrap');
+                if (myb) myb.style.display = admin ? 'none' : '';
+                if (svw) svw.style.display = admin ? 'none' : '';
                 var b = document.getElementById('loopSharedSaveBtn');
                 if (!b) return;
                 if (_loopIsAdmin()) b.removeAttribute('hidden');
@@ -18571,10 +18650,12 @@
                     name: s.name, artist: s.artist, bpm: s.bpm, bars: s.bars, rhythm: s.rhythm,
                     bass_style: s.bass_style, piano_style: s.piano_style,
                     chords_a: s.chords_a, chords_b: s.chords_b,
+                    capo: s.capo || null,
                     sequencer_pattern: sp, updated_at: new Date().toISOString()
                 };
             }
-            window.openSaveShared = function() {
+            var _sharedSaving = false;
+            window.openSaveShared = async function() {
                 _closeSaveMenu();
                 if (!_loopIsAdmin()) { loopToast('권한이 없습니다'); return; }
                 if (!hasLoopInput()) { loopToast('먼저 코드를 입력해주세요'); return; }
@@ -18589,54 +18670,74 @@
                 var target = _loopActivePresetId
                     ? (_loopPresetsCache || []).find(function(x) { return x.id === _loopActivePresetId; })
                     : null;
-                var body = target
-                    ? ('<div class="loop-modal-msg"><b>' + _escHtml(target.name) +
-                       (target.artist ? ' · ' + _escHtml(target.artist) : '') +
-                       '</b><br>이 공용 프리셋을 지금 내용으로 덮어쓸까요?</div>')
-                    : ('<div class="loop-modal-msg">공용 프리셋으로 새로 추가합니다.</div>' +
-                       '<input type="text" id="loopShName" class="loop-modal-input" placeholder="곡 제목" maxlength="60">' +
-                       '<input type="text" id="loopShArtist" class="loop-modal-input" placeholder="아티스트 (선택)" maxlength="60" style="margin-top:8px;">');
+                // 목록을 다시 받는 중이라 캐시에 없더라도, 열린 곡(id·이름)이 있으면 그 곡으로
+                if (!target && _loopActivePresetId && _loopActiveMeta && _loopActiveMeta.name)
+                    target = { id: _loopActivePresetId, name: _loopActiveMeta.name, artist: _loopActiveMeta.artist || '' };
+                // 열린 곡이 있으면 묻지 않고 바로 그 곡에 덮어쓴다
+                if (target) {
+                    if (_sharedSaving) return;
+                    _sharedSaving = true;
+                    try {
+                        var payload0 = _sharedPayload(target.name, target.artist || '');
+                        var res0 = await authc.from('presets').update(payload0).eq('id', target.id);
+                        if (res0 && res0.error) throw res0.error;
+                        Object.assign(target, payload0);   // 캐시 즉시 반영
+                        _loopActiveMeta = { name: target.name || '', artist: target.artist || '', capo: payload0.capo || '' };
+                        loopToast('저장했어요');
+                        try { window.__loopMarkClean(); } catch (e) {}
+                    } catch (err0) {
+                        loopToast('저장 실패: ' + (err0 && err0.message ? err0.message : err0));
+                    } finally { _sharedSaving = false; }
+                    return;
+                }
+                // 열린 곡이 없으면 제목·아티스트를 받아 새 곡으로 추가 — 추가한 뒤엔 그 곡이 열린 곡이 되어 다음 저장부터 덮어쓴다
                 var ov = loopEnsureModal('loopSharedModal',
-                    '<div class="loop-modal-title">저장 (공용 프리셋)</div>' + body +
+                    '<div class="loop-modal-title">새 곡으로 저장</div>' +
+                    '<div class="loop-modal-msg">곡 목록에 새 곡으로 추가해요. 처음에는 나만 보이고, 다 만든 뒤 목록의 연필에서 \'전체 공개\'로 바꾸면 돼요. 카포는 설정에서 고를 수 있어요.</div>' +
+                    '<input type="text" id="loopShName" class="loop-modal-input" placeholder="곡 제목" maxlength="60">' +
+                    '<input type="text" id="loopShArtist" class="loop-modal-input" placeholder="아티스트 (선택)" maxlength="60" style="margin-top:8px;">' +
                     '<div class="loop-modal-msg" id="loopShMsg" style="margin-top:6px;"></div>' +
                     '<div class="loop-modal-actions">' +
                         '<button type="button" class="loop-modal-btn ghost" data-close>취소</button>' +
-                        '<button type="button" class="loop-modal-btn primary" id="loopShOk">' +
-                            (target ? '덮어쓰기' : '추가') + '</button>' +
+                        '<button type="button" class="loop-modal-btn primary" id="loopShOk">저장</button>' +
                     '</div>');
                 ov.classList.add('open');
-                var msg = ov.querySelector('#loopShMsg');
-                ov.querySelector('#loopShOk').onclick = async function() {
-                    var nm = target ? target.name : ((ov.querySelector('#loopShName') || {}).value || '').trim();
-                    var ar = target ? (target.artist || '') : ((ov.querySelector('#loopShArtist') || {}).value || '').trim();
-                    if (!nm) { msg.textContent = '곡 제목을 입력해주세요.'; return; }
-                    msg.textContent = '저장 중…';
+                var nEl = ov.querySelector('#loopShName'), aEl = ov.querySelector('#loopShArtist');
+                var msg = ov.querySelector('#loopShMsg'), okBtn = ov.querySelector('#loopShOk');
+                setTimeout(function() { try { nEl.focus(); } catch (e) {} }, 50);
+                var go = async function() {
+                    if (_sharedSaving) return;
+                    var nm = (nEl.value || '').trim(), ar = (aEl.value || '').trim();
+                    if (!nm) { msg.textContent = '곡 제목을 입력해주세요.'; nEl.focus(); return; }
+                    _sharedSaving = true; okBtn.disabled = true; msg.textContent = '저장 중…';
                     try {
                         var payload = _sharedPayload(nm, ar);
-                        var res;
-                        if (target) {
-                            res = await authc.from('presets').update(payload).eq('id', target.id);
-                        } else {
-                            // 새 곡 — 기본은 공개, 소유자는 나
-                            var u = loopCurrentUser();
-                            payload.is_public = true;
-                            if (u) payload.user_id = u.id;
-                            res = await authc.from('presets').insert(payload);
-                        }
+                        // 새 곡 — 처음에는 숨김('나만 보기', 소유자는 나). 다 만든 뒤 목록 연필에서 '전체 공개'로 바꾼다 (2026-11-10 사용자 결정)
+                        var u = loopCurrentUser();
+                        payload.is_public = false;
+                        if (u) payload.user_id = u.id;
+                        var res = await authc.from('presets').insert(payload).select('id').single();
                         if (res && res.error) { msg.textContent = '저장 실패: ' + res.error.message; return; }
-                        if (target) Object.assign(target, payload);   // 캐시 즉시 반영
-                        else { _loopPresetsCache = null; _loopMyLoaded = false; await loadLoopPresets(); }
+                        var newId = res && res.data ? res.data.id : null;
+                        if (!newId) { msg.textContent = '저장 실패: 새 곡 번호를 받지 못했어요.'; return; }
+                        _loopPresetsCache = null; _loopMyLoaded = false; await loadLoopPresets();
+                        // 다시 받은 목록에 아직 없으면(받는 중 등) 직접 넣어 둔다
+                        if (!(_loopPresetsCache || []).some(function(x) { return x.id === newId; }))
+                            _loopPresetsCache = (_loopPresetsCache || []).concat([Object.assign({ id: newId }, payload)]);
+                        // 방금 만든 곡을 '열린 곡'으로 — 다음 저장은 새로 만들지 않고 이 곡에 덮어쓴다
+                        _loopActivePresetId = newId;
+                        _loopActiveMeta = { name: nm, artist: ar, capo: payload.capo || '' };
+                        _loopSavedSlot = null; _loopSavedName = null; _loopSavedArtist = null;
+                        _loopSetPresetLabel(null, nm, ar);   // 검색창·코드 위 머리말
                         ov.classList.remove('open');
-                        loopToast('공용 프리셋에 저장했어요');
+                        loopToast('새 곡으로 저장했어요');
                         try { window.__loopMarkClean(); } catch (e) {}
-                        try {
-                            var s2 = document.getElementById('loopPresetSearch');
-                            renderLoopPresetList(s2 ? s2.value : '');
-                        } catch (e2) {}
                     } catch (err) {
                         msg.textContent = '저장 실패: ' + (err && err.message ? err.message : err);
-                    }
+                    } finally { _sharedSaving = false; okBtn.disabled = false; }
                 };
+                okBtn.onclick = go;
+                [nEl, aEl].forEach(function(el) { el.onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); go(); } }; });
             };
             // ─── 로컬 툴(악보검색) — 새 곡으로 추가 ─────────────────────────
             //   앱 안에서는 로그인이 안 되므로 토큰 RPC(create_chart_for_tool)로 새 곡을 만든다.
@@ -21092,10 +21193,8 @@
                 if (sName) tEl.value = sName;
                 var sArtist = _loopSavedArtist || _meta.artist;
                 if (sArtist) aEl.value = sArtist;
-                if (_meta.capo) {
-                    var _cn = _capoNum(_meta.capo);
-                    if (_cn) cEl.value = _cn;
-                }
+                // 카포 = 지금 화면의 카포(설정에서 고른 값, 불러온 곡의 카포)
+                if (loopCapo) cEl.value = loopCapo;
                 function refresh() {
                     prev.innerHTML = '';
                     var _rhyChk = document.getElementById('lpRhythm');
@@ -21809,8 +21908,8 @@
                 _loopActivePresetRhythm = null;
                 // 코드악보 부가 데이터(다이어그램·리듬)도 함께 비움 (관리자 홈 표시용)
                 try { _syncChartExtras(); } catch (e) {}
-                try { _updateLoopCapoNote(null); } catch (e) {}
                 _loopSavedSlot = null; _loopSavedName = null; _loopSavedArtist = null;
+                try { _updateLoopCapoNote(null); } catch (e) {}   // 카포 없음 + 곡 머리말 감춤 (이름을 비운 뒤에)
                 var _sbR = document.getElementById('loopSavePresetBtn');
                 if (_sbR) _sbR.title = '저장';
                 setLoopMeasureLen(1);
