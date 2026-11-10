@@ -826,16 +826,13 @@
     // 쪽 단추: ‹ 1 … 4 5 [6] 7 8 … 25 › (처음·끝 쪽과 지금 쪽 앞뒤 둘)
     function pagerHtml(total, pages) {
         if (pages <= 1) return '';
-        const nums = [...new Set([1, pages, page - 2, page - 1, page, page + 1, page + 2])].filter(n => n >= 1 && n <= pages).sort((a, b) => a - b);
-        let html = '', prev = 0;
-        for (const n of nums) {
-            if (n - prev > 1) html += '<span class="gap">…</span>';
-            html += `<button type="button" data-pg="${n}" class="${n === page ? 'on' : ''}"${n === page ? ' aria-current="page"' : ''}>${n}</button>`;
-            prev = n;
-        }
+        // 쪽 번호는 10개씩 묶어 보인다 (2026-11-10 사용자): 1~10 → › 누르면 11~20(마지막까지) 묶음의 첫 쪽, ‹ 는 앞 묶음의 마지막 쪽
+        const g0 = Math.floor((page - 1) / 10) * 10 + 1, g1 = Math.min(pages, g0 + 9);
+        let html = '';
+        for (let n = g0; n <= g1; n++) html += `<button type="button" data-pg="${n}" class="${n === page ? 'on' : ''}"${n === page ? ' aria-current="page"' : ''}>${n}</button>`;
         const from = (page - 1) * PER_PAGE + 1, to = Math.min(total, page * PER_PAGE);
-        return `<nav class="pager" aria-label="목록 쪽"><button type="button" class="arw" data-pg="${page - 1}"${page <= 1 ? ' disabled' : ''} aria-label="이전 쪽"><i class="fas fa-chevron-left"></i></button>${html}`
-            + `<button type="button" class="arw" data-pg="${page + 1}"${page >= pages ? ' disabled' : ''} aria-label="다음 쪽"><i class="fas fa-chevron-right"></i></button><span class="info">${total}곡 중 ${from}~${to}</span></nav>`;
+        return `<nav class="pager" aria-label="목록 쪽"><button type="button" class="arw" data-pg="${g0 - 1}"${g0 <= 1 ? ' disabled' : ''} aria-label="앞 쪽 묶음 (${Math.max(1, g0 - 10)}~${g0 - 1})"><i class="fas fa-chevron-left"></i></button>${html}`
+            + `<button type="button" class="arw" data-pg="${g1 + 1}"${g1 >= pages ? ' disabled' : ''} aria-label="다음 쪽 묶음 (${g1 + 1}~${Math.min(pages, g1 + 10)})"><i class="fas fa-chevron-right"></i></button><span class="info">${total}곡 중 ${from}~${to}</span></nav>`;
     }
     const ymd = t => { const d = new Date(t); return isNaN(d) ? '' : `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`; };
 
