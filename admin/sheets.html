@@ -376,6 +376,10 @@
     .rk-row.done .why { display: none; }   /* 올린 곡은 한 줄로 작게 — 안 올린 곡이 눈에 들어오게 (2026-11-07) */
     .rk-row .ok { flex: none; font-size: 12px; font-weight: 800; color: var(--green-2); white-space: nowrap; }
     .rk-row .go { flex: none; font-size: 12px; color: var(--gold); font-weight: 700; }
+    td.nm .why { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+    td.nm .why i { font-style: normal; font-size: 10.5px; padding: 0 6px; border-radius: 8px; background: #f1f4f2; color: #555; white-space: nowrap; }
+    td.nm .why i.up { background: #e6f4ea; color: var(--green); font-weight: 700; }
+    td.nm .why i.dn { background: #fbeeee; color: #b04a4a; }
     .rk-row .why { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
     .rk-row .why i { font-style: normal; font-size: 10.5px; padding: 0 6px; border-radius: 8px; background: #f1f4f2; color: #555; white-space: nowrap; }
     .rk-row .why i.up { background: #e6f4ea; color: var(--green); font-weight: 700; }
@@ -455,7 +459,7 @@
     <div class="toolbar">
         <h2>판매 악보</h2><span class="count" id="count"></span>
         <div class="tb-acts">
-            <button class="btn rank-btn" id="rankBtn" title="다음에 올릴 악보 순위 · 최근 올린 악보 · 판매 TOP"><i class="fas fa-ranking-star"></i> 뭐부터 올리지?</button>
+            <button class="btn rank-btn" id="rankBtn" title="아직 악보가 없는 곡 조사 목록 (올릴 악보 순서는 목록 정렬 '올릴 순서')"><i class="fas fa-lightbulb"></i> 새로 만들 곡</button>
             <button class="btn film-btn" id="filmBtn" title="걸어 둔 유튜브 영상이 그 곡만의 영상이 아닌 악보 — 합본 영상·다른 곡 영상 (다시 찍을 곡)"><i class="fas fa-video"></i> 악보영상 뭐찍지?</button>
             <button class="btn primary" id="newBtn"><i class="fas fa-plus"></i> 새 악보</button>
         </div>
@@ -469,7 +473,7 @@
     <div class="progress" id="progress" hidden></div>
     <div class="toolbar2">
         <span class="lbl">정렬</span>
-        <div class="seg" id="sortSeg"><button class="on" data-s="orders">풀스코어 주문순</button><button data-s="new">최신순</button></div>
+        <div class="seg" id="sortSeg"><button data-s="up" title="뭐부터 올리지? — 판매·영상으로 본 다음에 올릴 악보 순서 (PDF 있는 곡은 뒤로)">올릴 순서</button><button class="on" data-s="orders">풀스코어 주문순</button><button data-s="new">최신순</button></div>
         <span class="lbl" style="margin-left:8px;">PDF</span>
         <div class="seg" id="pdfSeg"><button class="on" data-p="all">전체</button><button data-p="none">없음</button><button data-p="has">있음</button></div>
         <span class="lbl" style="margin-left:8px;">확인용</span>
@@ -586,7 +590,7 @@
 </div>
 
 <div class="rank" id="rank" role="dialog" aria-label="뭐부터 올리지?" hidden>
-    <div class="rk-hd"><h3><i class="fas fa-ranking-star"></i>뭐부터 올리지?</h3><span class="rk-mode" id="rkMode"><button type="button" data-mode="up" class="on">올릴 악보</button><button type="button" data-mode="new">새로 만들 곡</button></span><label class="rk-done" title="이미 올린 곡(새로 만들 곡은 이미 만든 곡)도 순위 자리에 ✓ 로 보여요"><input type="checkbox" id="rkShowDone"> 올린 곡도 보기</label><small id="rkNote"></small><button class="x" id="rkClose" aria-label="닫기"><i class="fas fa-xmark"></i></button></div>
+    <div class="rk-hd"><h3><i class="fas fa-ranking-star"></i>뭐부터 올리지?</h3><span class="rk-mode" id="rkMode"><button type="button" data-mode="new" class="on">새로 만들 곡</button><button type="button" data-mode="up">올릴 악보</button></span><label class="rk-done" title="이미 올린 곡(새로 만들 곡은 이미 만든 곡)도 순위 자리에 ✓ 로 보여요"><input type="checkbox" id="rkShowDone"> 올린 곡도 보기</label><small id="rkNote"></small><button class="x" id="rkClose" aria-label="닫기"><i class="fas fa-xmark"></i></button></div>
     <div class="rk-body" id="rkBody"></div>
 </div>
 
@@ -777,6 +781,8 @@
             rows = rows.slice().sort((a, b) => ((b.fullscore_orders || 0) - (a.fullscore_orders || 0)) ||
                 (new Date(b.created_at) - new Date(a.created_at)));
         }
+        const up = sortBy === 'up' ? upOrder() : null;
+        if (up) rows = rows.slice().sort((a, b) => upKey(up, a) - upKey(up, b) || ((b.fullscore_orders || 0) - (a.fullscore_orders || 0)));
         if (checkFilter === 'dup') rows = rows.slice().sort((a, b) => dupKey(a).localeCompare(dupKey(b), 'ko'));   // 같은 곡끼리 붙여서
         const pages = Math.max(1, Math.ceil(rows.length / PER_PAGE));
         page = Math.min(Math.max(1, page), pages);   // 저장·삭제로 곡 수가 바뀌어도 있는 쪽에 머문다
@@ -796,12 +802,14 @@
             $('listWrap').innerHTML = `<div class="empty"><i class="fas fa-circle-check" style="font-size:24px;color:var(--green);display:block;margin-bottom:10px;"></i>${chk.done}${filter !== 'all' || pdfFilter !== 'all' || q ? '<br><small>(위의 공개·PDF·검색 조건도 함께 걸려 있어요)</small>' : ''}</div>`;
             return;
         }
-        $('listWrap').innerHTML = `<table class="list"><thead><tr><th class="rk" title="풀스코어 주문수 순위">주문순</th><th></th><th>곡명</th><th class="c-st">종류·스타일</th><th class="c-lv">난이도</th><th>가격</th><th>상태</th><th class="c-up">수정일</th><th class="c-go"></th></tr></thead><tbody>${
+        $('listWrap').innerHTML = `<table class="list"><thead><tr>${up ? '<th class="rk" title="다음에 올릴 순서 (PDF 없는 곡만 순위)">올릴<br>순서</th>' : '<th class="rk" title="풀스코어 주문수 순위">주문순</th>'}<th></th><th>곡명</th><th class="c-st">종류·스타일</th><th class="c-lv">난이도</th><th>가격</th><th>상태</th><th class="c-up">수정일</th><th class="c-go"></th></tr></thead><tbody>${
             rows.map(s => `<tr data-id="${s.id}" class="${filesById[s.id] ? 'done' : ''}">
-                <td class="rk">${rank[s.id] ? `<b>${rank[s.id]}</b><small>주문 ${s.fullscore_orders}</small>` : `<small>${hasOrders ? '주문 0' : '-'}</small>`}</td>
+                <td class="rk">${up ? (up[s.id] && up[s.id].no ? `<b>${up[s.id].no}</b><small>주문 ${s.fullscore_orders || 0}</small>` : filesById[s.id] ? '<small>✓ 올림</small>' : '<small>-</small>')
+                    : rank[s.id] ? `<b>${rank[s.id]}</b><small>주문 ${s.fullscore_orders}</small>` : `<small>${hasOrders ? '주문 0' : '-'}</small>`}</td>
                 <td>${listThumb(s)}</td>
                 <td class="nm"><b>${esc(s.title)}</b><small>${esc(s.artist || '')}</small>${filesById[s.id] ? '<div class="haspdf"><i class="fas fa-circle-check"></i> PDF 있음</div>' : '<div class="nopdf"><i class="fas fa-triangle-exclamation"></i> PDF 없음</div>'}${
                     (isHidden(s) ? hidNote(s) : '')}${
+                    (up && up[s.id] && !filesById[s.id] ? `<span class="why">${up[s.id].why.map(([c, t]) => `<i class="${c}">${esc(t)}</i>`).join('')}</span>` : '')}${
                     (m => m.length ? `<div class="miss"><i class="fas fa-triangle-exclamation"></i> 빈 칸: ${m.join(' · ')}</div>` : '')(missingOf(s))}${
                     (u => u.length ? `<div class="sugrow"><i class="fas fa-link"></i> 같은 곡 ${u.map(x => (STYLE[x.style] || ['악보'])[0]).join(' · ')} 악보가 따로 있어요 — 묶기 안 됨</div>` : '')(unlinkedSameSong(s))}</td>
                 <td class="c-st"><span class="chip ${s.kind}">${KIND[s.kind] || ''}</span>${s.style ? `<span class="chip">${STYLE[s.style][0]}</span>` : ''}${
@@ -962,6 +970,7 @@
         sortBy = b.dataset.s; page = 1;
         [...$('sortSeg').children].forEach(x => x.classList.toggle('on', x === b));
         render();
+        if (sortBy === 'up' && !ytData) fetch('../data/sheet-yt.json?v=' + Date.now()).then(r => r.json()).catch(() => ({ v: {} })).then(d => { ytData = ytData || d; render(); });
     });
     // ---------- 확인용: 아직 안 채운 칸이 있는 악보만 보기 ----------
     // 중복곡: 곡명(괄호 속 말·띄어쓰기 빼고)과 종류가 같은 악보가 둘 이상. 'OOOO 버전' 은 다른 악보로 본다
@@ -1111,10 +1120,11 @@
             sales = data || [];
         }
         if (!ytData) { try { ytData = await (await fetch('../data/sheet-yt.json?v=' + Date.now())).json(); } catch (e) { ytData = { v: {} }; } }
+        if (rkMode === 'new' && !nextSongs) { try { nextSongs = await (await fetch('../data/next-songs.json?v=' + Date.now())).json(); } catch (e) { nextSongs = {}; } }
         renderRank();
     };
     // 위 단추: 올릴 악보(이미 만든 악보 중 다음에 올릴 것) | 새로 만들 곡(조사한 곡, data/next-songs.json)
-    let rkMode = 'up', nextSongs = null;
+    let rkMode = 'new', nextSongs = null;   // 단추 = '새로 만들 곡'. 팝업 안 '올릴 악보'로 ①②③ 세 칸도 그대로 볼 수 있다
     $('rkMode').addEventListener('click', async e => {
         const b = e.target.closest('[data-mode]'); if (!b || b.dataset.mode === rkMode) return;
         rkMode = b.dataset.mode;
@@ -1271,6 +1281,32 @@
         return out.sort((a, b) => b.sc - a.sc);
     }
 
+    // 목록 정렬 '올릴 순서' (2026-11-10 사용자: 뭐부터 올리지를 단추·팝업 말고 정렬로)
+    //   ① 판매 점수(nextList) 순으로 PDF 없는 곡에 1, 2, 3 … (반주·솔로 짝은 같은 순위). 유튜브 한 달 조회수가 있으면 칩으로 같이.
+    //   그다음 판매 기록이 없는 PDF 없는 곡, 맨 뒤에 PDF 있는 곡. 크리스마스 곡·숨김 곡은 순위 없이 뒤로
+    function upOrder() {
+        const out = {};
+        if (!sales) return out;
+        const byCode = {}; sheets.forEach(s => { if (s.fullscore_code) byCode[s.fullscore_code] = s; });
+        const items = sales.map(r => ({ ...r, s: byCode[r.fullscore_code] })).filter(x => x.s && !isXmas(x.s) && !isHidden(x.s));
+        const yv = (ytData && ytData.v) || {}, ytAt = new Date((ytData && ytData.at) || Date.now());
+        const share = {}; sheets.forEach(s => { if (s.youtube_id) share[s.youtube_id] = (share[s.youtube_id] || 0) + 1; });
+        const man = n => n >= 10000 ? (n / 10000).toFixed(n >= 100000 ? 0 : 1).replace(/\.0$/, '') + '만' : n.toLocaleString();
+        let no = 0;
+        nextList(items, x => !!filesById[x.s.id]).forEach(x => {
+            const n = x.done ? 0 : ++no;
+            (x.pair || [x]).forEach(y => {
+                const why = x.why.slice(), v = y.s.youtube_id && yv[y.s.youtube_id];
+                if (v) why.push(['', `유튜브 한 달 ${man(Math.round(v[0] / (share[y.s.youtube_id] || 1) / Math.max(1, (ytAt - new Date(v[1])) / 2.63e9)))}`]);
+                out[y.s.id] = { no: n, sc: x.sc, why };
+            });
+        });
+        return out;
+    }
+    const upKey = (up, s) => { const u = up[s.id];
+        if (filesById[s.id]) return 3e6 - (u ? u.sc : 0);
+        if (u && u.no) return u.no;
+        return isXmas(s) || isHidden(s) ? 2e6 : 1e6; };
     // 크리스마스·캐롤·겨울왕국 곡은 목록에서 아예 뺀다 (2026-11-07 사용자: 누적 판매가 적어 지금 올려도 안 팔릴 것 같다 — 나중에 다시 작업해서 올림)
     const XMAS_RE = /크리스마스|christmas|xmas|캐롤|캐럴|carol|산타|santa|징글|jingle|루돌프|rudolph|울면\s*안\s*돼|silent night|고요한\s*밤|겨울왕국|frozen|let it go|렛\s*잇\s*고|into the unknown|snowman/i;
     const isXmas = s => XMAS_RE.test(`${s.title || ''} ${s.artist || ''}`);
@@ -1759,6 +1795,18 @@
         if (m) return m[1];
         return /^[A-Za-z0-9_-]{11}$/.test(v) ? v : undefined;
     }
+    // 네이버 영상 (2026-11-10 사용자: 블로그에 올린 영상도 걸기) — '더 넣은 영상' 칸에만. DB에는 'nv:<vid>:<outKey>'로 넣는다
+    //   네이버 영상 퍼가기 주소(serviceapi.nmv.naver.com/…convertIframeTag…?vid=…&outKey=…)나 iframe 코드를 붙여 넣으면 된다.
+    //   블로그 글 주소만으로는 브라우저가 영상 키를 못 읽는다(네이버가 막음) → 퍼가기 코드가 필요
+    const NV_EMBED = v => { const [, vid, key] = v.split(':'); return `https://serviceapi.nmv.naver.com/flash/convertIframeTag.nhn?vid=${vid}&outKey=${key}`; };
+    const isBlogUrl = v => /blog\.naver\.com|naver\.me\//.test(v || '');
+    function naverId(v) {
+        v = (v || '').trim();
+        if (/^nv:[0-9A-F]{20,}:[A-Za-z0-9]+$/.test(v)) return v;
+        const vid = (v.match(/[?&]vid=([0-9A-F]{20,})/) || [])[1], key = (v.match(/[?&](?:amp;)?outKey=([A-Za-z0-9]+)/) || [])[1];
+        return vid && key && /nmv\.naver\.com|naver\.com/.test(v) ? `nv:${vid}:${key}` : undefined;
+    }
+    const moreId = v => { const y = youtubeId(v); return y === undefined ? naverId(v) : y; };
 
     // 넣은 유튜브 주소가 어떤 영상인지 썸네일 · 제목 · 채널로 보여 준다 (제목은 유튜브 oEmbed)
     let ytShown = null;
@@ -1769,14 +1817,14 @@
     function addYtMore(v) {
         const row = document.createElement('div');
         row.className = 'row';
-        row.innerHTML = `<input name="youtube_more" placeholder="https://youtu.be/... (영상 하나 더)"><button class="btn x" type="button" title="이 영상 빼기"><i class="fas fa-xmark"></i></button>`;
+        row.innerHTML = `<input name="youtube_more" placeholder="유튜브 주소 또는 네이버 영상 퍼가기 코드"><button class="btn x" type="button" title="이 영상 빼기"><i class="fas fa-xmark"></i></button>`;
         row.querySelector('input').value = v || '';
         row.querySelector('.x').onclick = () => { row.remove(); afterYtMore(); };
         $('ytMore').append(row);
         return row.querySelector('input');
     }
     function afterYtMore() { $('ytAdd').hidden = moreInputs().length >= YT_MAX; updateYt(); updateSaveBtn(); }
-    function setYtMore(ids) { $('ytMore').innerHTML = ''; ids.forEach(id => addYtMore('https://youtu.be/' + id)); $('ytAdd').hidden = ids.length >= YT_MAX; }
+    function setYtMore(ids) { $('ytMore').innerHTML = ''; ids.forEach(id => addYtMore(id.startsWith('nv:') ? NV_EMBED(id) : 'https://youtu.be/' + id)); $('ytAdd').hidden = ids.length >= YT_MAX; }
     $('ytAdd').onclick = () => { addYtMore('').focus(); afterYtMore(); };
     $('ytMore').addEventListener('input', () => updateYt());
     function updateYt() {
@@ -1786,14 +1834,16 @@
         if (key === ytShown) return;
         ytShown = key;
         const moreHtml = more.length ? `<div class="lb" style="margin-top:12px">더 건 영상 ${more.length}개</div><div class="more">${more.map(u => {
-            const m = youtubeId(u);
+            const m = moreId(u);
+            if (m && m.startsWith('nv:')) return `<a class="mv" href="${NV_EMBED(m)}" target="_blank" rel="noopener"><img src="" alt="" style="visibility:hidden"><span>네이버 영상 (판매 페이지에 그대로 떠요)</span></a>`;
+            if (!m && isBlogUrl(u)) return `<div class="mv bad"><span></span><span>블로그 글 주소로는 영상을 못 찾아요 — 영상 퍼가기 코드를 붙여 넣어 주세요</span></div>`;
             return m ? `<a class="mv" href="https://youtu.be/${m}" target="_blank" rel="noopener" data-v="${m}"><img src="https://i.ytimg.com/vi/${m}/mqdefault.jpg" alt=""><span>불러오는 중…</span></a>`
                 : `<div class="mv bad"><span></span><span>주소를 알아볼 수 없어요</span></div>`;
         }).join('')}</div>` : '';
         const fillMore = () => box.querySelectorAll('.mv[data-v]').forEach(a => ytTitle(a.dataset.v).then(d => { a.querySelector('span').textContent = d.title || ''; }));
         if (!id && more.length) {   // 대표 칸이 비었어도 더 건 영상은 보여 준다
             box.hidden = false;
-            box.innerHTML = (id === undefined ? '<div class="bad">대표 영상 주소를 알아볼 수 없어요</div>' : '<div class="lb">대표 영상이 비었어요 — 저장하면 첫 번째 영상이 대표가 돼요</div>') + moreHtml;
+            box.innerHTML = (id === undefined ? '<div class="bad">대표 영상 주소를 알아볼 수 없어요</div>' : (more.some(u => youtubeId(u)) ? '<div class="lb">대표 영상이 비었어요 — 저장하면 첫 번째 유튜브 영상이 대표가 돼요</div>' : '<div class="lb">유튜브 영상이 없어요 — 판매 페이지에는 아래 영상이 보여요 (목록의 \'유튜브 없음\'에는 계속 나와요)</div>')) + moreHtml;
             return fillMore();
         }
         box.hidden = !id && id !== undefined;
@@ -1851,12 +1901,15 @@
         const tagNorm = t => { t = String(t || '').trim(); return !t ? '' : /편곡$/.test(t) ? t : t + ' 편곡'; };
         const title = isVer && tagNorm(el.ver_tag.value) ? `${base} (${tagNorm(el.ver_tag.value)})` : base;
         let yt = youtubeId(el.youtube.value);
+        if (yt === undefined && naverId(el.youtube.value)) {   // 네이버 영상을 대표 칸에 넣었으면 '더 넣은 영상' 맨 앞으로
+            addYtMore(el.youtube.value); $('ytMore').prepend($('ytMore').lastElementChild); el.youtube.value = ''; yt = null; afterYtMore();
+        }
         if (yt === undefined) { el.youtube.focus(); $('edMsg').textContent = '유튜브 주소를 알아볼 수 없어요.'; return false; }
         // 더 건 영상: 알아볼 수 없는 주소는 막고, 빈 칸·겹치는 영상은 뺀다. 대표 칸이 비었으면 첫 번째가 대표
-        const badMore = moreInputs().find(i => youtubeId(i.value) === undefined);
-        if (badMore) { badMore.focus(); $('edMsg').textContent = '더 넣은 유튜브 주소를 알아볼 수 없어요.'; return false; }
-        let ytMore = [...new Set(moreInputs().map(i => youtubeId(i.value)).filter(Boolean))];
-        if (!yt && ytMore.length) yt = ytMore.shift();
+        const badMore = moreInputs().find(i => moreId(i.value) === undefined);
+        if (badMore) { badMore.focus(); $('edMsg').textContent = isBlogUrl(badMore.value) ? '네이버 블로그 글 주소로는 영상을 못 찾아요. 영상 퍼가기 코드를 붙여 넣어 주세요.' : '더 넣은 영상 주소를 알아볼 수 없어요.'; return false; }
+        let ytMore = [...new Set(moreInputs().map(i => moreId(i.value)).filter(Boolean))];
+        if (!yt) { const i = ytMore.findIndex(v => !v.startsWith('nv:')); if (i >= 0) yt = ytMore.splice(i, 1)[0]; }   // 대표는 유튜브 영상만
         ytMore = ytMore.filter(v => v !== yt);
         const hasPdf = !!newPdf || !!(editing && filesById[editing.id]);
         if (el.published.checked && !hasPdf) { $('edMsg').textContent = 'PDF를 올려야 공개할 수 있어요.'; return false; }

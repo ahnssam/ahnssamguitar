@@ -951,9 +951,11 @@
             // 여러 악보의 영상이 섞이면 '기타솔로 영상 2'처럼, 한 악보의 영상만 여럿이면 '영상 1 · 영상 2'
             const many = new Set(vids.map(o => o.x)).size > 1;
             const label = o => many ? `${vlabel(o.x)} 영상${o.k ? ' ' + (o.k + 1) : ''}` : `영상 ${o.k + 1}`;
+            // 'nv:<vid>:<outKey>' = 네이버(블로그) 영상 퍼가기 (2026-11-10)
+            const vsrc = v => { const m = /^nv:([0-9A-F]+):([A-Za-z0-9]+)$/.exec(v); return m ? `https://serviceapi.nmv.naver.com/flash/convertIframeTag.nhn?vid=${m[1]}&outKey=${m[2]}` : `https://www.youtube.com/embed/${encodeURIComponent(v)}`; };
             const yt = document.getElementById('productYoutube');
             yt.innerHTML = vids.map((o, i) => { const x = o.x; return `<div class="yt-item">${vids.length > 1 ? `<div class="yt-label"><i class="fab fa-youtube"></i>${escHtml(label(o))}</div>` : ''}<div class="yt-wrapper">
-                <iframe src="https://www.youtube.com/embed/${encodeURIComponent(o.v)}" title="${escHtml(x.title)} ${escHtml(PART_NAME[x.style] || '')} 영상"${i ? ' loading="lazy"' : ''} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div></div>`; }).join('');
+                <iframe src="${vsrc(o.v)}" title="${escHtml(x.title)} ${escHtml(PART_NAME[x.style] || '')} 영상"${i ? ' loading="lazy"' : ''} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div></div>`; }).join('');
             yt.hidden = !vids.length;
         }
 
