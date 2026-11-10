@@ -26400,8 +26400,8 @@
                 });
             }
 
-            // 출제 비중 — vii°(dim)는 실제 곡에서 드물어 다른 코드의 절반만 나오게
-            const PROG_DEGREE_WEIGHTS = [1, 1, 1, 1, 1, 1, 0.5];
+            // 출제 비중 — vii°(dim)는 실제 곡에서 드물어 다른 코드의 1/5만 나오게, 한 문제에 한 번까지
+            const PROG_DEGREE_WEIGHTS = [1, 1, 1, 1, 1, 1, 0.2];
             function progWeightedDegree(exclude) {
                 var total = 0, d;
                 for (d = 0; d < PROG_DEGREES.length; d++) if (d !== exclude) total += PROG_DEGREE_WEIGHTS[d];
@@ -26426,7 +26426,9 @@
                     if (i === 0 && progTonicOn()) { seq.push(0); continue; }
                     // 같은 코드가 연달아 나오면 구분이 안 되므로 바로 앞 코드는 후보에서 뺀다
                     var prev = i > 0 ? seq[i - 1] : -1;
-                    seq.push(progWeightedDegree(prev));
+                    var d = progWeightedDegree(prev);
+                    while (d === 6 && seq.indexOf(6) !== -1) d = progWeightedDegree(prev);   // dim 은 한 문제에 한 번까지
+                    seq.push(d);
                 }
                 return seq;
             }
