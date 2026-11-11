@@ -81,6 +81,7 @@
   - **로그인 메일 양식** (2026-11-11 사용자: 인증 메일이 Supabase 영어라 이상함): 가입 인증·비밀번호 재설정 메일을 한국어 + 로고로 만든 양식이 `supabase/templates/`에 있다(제목·붙여 넣는 곳은 그 폴더 README). 로고 그림은 `images/email-logo.png`.
     - 2026-11-11 Supabase에 4개(가입 인증·비밀번호 재설정·로그인 링크·이메일 변경) 제목과 함께 넣음. 양식 파일을 고치면 Supabase에도 다시 넣는다.
     - 기본 메일은 한 시간에 2통·보내는 사람 'Supabase Auth'라서, 메일 서비스 **Resend**(무료 하루 100통·월 3,000통, 지역 도쿄)를 붙인다. 보내는 사람 `noreply@ahnssamguitar.com` · 이름 '안쌤의 기타나무숲', SMTP `smtp.resend.com:465`, 사용자 `resend`, 비밀번호 = Resend API 키(사용자가 직접 넣고, 이 저장소엔 안 적음). Resend 도메인 인증은 2026-11-11 Verified. 비회원 주문 메일도 나중에 이걸로 보낸다.
+      - 2026-11-11 Supabase SMTP에 붙임(키는 사용자가 넣음). 시험 메일(비밀번호 재설정 → 심사용 테스트 계정)이 1초 만에 Gmail 받은편지함으로, 보내는 사람 '안쌤의 기타나무숲', DKIM·SPF·DMARC 모두 통과. 메일 한도는 SMTP를 붙여서 한 시간 30통(Authentication → Rate Limits에서 바꿀 수 있음).
 - **도메인 DNS는 Cloudflare** (2026-11-11 옮김): 도메인 등록·연장은 그대로 가비아, 네임서버만 Cloudflare(`audrey`·`dave.ns.cloudflare.com`)로 바꿨다. **DNS를 고칠 일은 Cloudflare에서** 한다.
   - 옮긴 이유: 가비아 DNS 관리가 Resend 인증용 `send`(CNAME)·`resend._domainkey`(TXT)만 저장을 거절했다('소유 도메인이 아닙니다' = 서버 403, 입력 형식은 맞았음).
   - 레코드 9줄: A `@` 4줄(GitHub Pages 185.199.108~111.153), CNAME `www` → `ahnssam.github.io`, TXT `_dmarc`, CNAME `rsend`·`send`(Resend), TXT `resend._domainkey`(Resend DKIM).
