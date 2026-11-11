@@ -79,7 +79,13 @@
 - **회원가입 비밀번호 규칙** (2026-11-11 사용자 결정): 새로 가입할 때만 **9자 이상 + 영문 대문자·소문자·숫자·특수문자 모두**. 이미 가입한 사람은 그대로 두고, 로그인 때는 검사하지 않는다(`auth.js`의 `PW_RULES`, 가입 창에 규칙 칩이 보이고 하나씩 ✓). auth.js 주소는 `?v=`를 붙여 부른다.
   - **비밀번호 재설정 화면** (2026-11-11 만듦): '비밀번호를 잊으셨나요?' 메일 링크로 돌아오면(주소 hash의 `type=recovery`, 또는 `PASSWORD_RECOVERY`) 로그인 창 모양의 '새 비밀번호 정하기' 창이 뜬다. 새 비밀번호도 가입과 같은 규칙(규칙 칩 + 확인 칸)이고 `sb.auth.updateUser`로 바꾼다. 재설정 창은 바깥을 눌러도 안 닫힌다(X·Esc만). 링크가 만료됐으면(`otp_expired`) 로그인 창에 '메일을 다시 받아 주세요'를 보여 준다.
   - **로그인 메일 양식** (2026-11-11 사용자: 인증 메일이 Supabase 영어라 이상함): 가입 인증·비밀번호 재설정 메일을 한국어 + 로고로 만든 양식이 `supabase/templates/`에 있다(제목·붙여 넣는 곳은 그 폴더 README). 로고 그림은 `images/email-logo.png`.
-    - 기본 메일은 한 시간에 2통·보내는 사람 'Supabase Auth'라서, 메일 서비스(SMTP)를 붙이고 보내는 사람 이름을 '안쌤의 기타나무숲'으로 한다. 서비스 가입·키 입력은 사용자가 한다. 도메인 DNS는 가비아에 있다.
+    - 2026-11-11 Supabase에 4개(가입 인증·비밀번호 재설정·로그인 링크·이메일 변경) 제목과 함께 넣음. 양식 파일을 고치면 Supabase에도 다시 넣는다.
+    - 기본 메일은 한 시간에 2통·보내는 사람 'Supabase Auth'라서, 메일 서비스 **Resend**(무료 하루 100통·월 3,000통, 지역 도쿄)를 붙인다. 보내는 사람 `noreply@ahnssamguitar.com` · 이름 '안쌤의 기타나무숲', SMTP `smtp.resend.com:465`, 사용자 `resend`, 비밀번호 = Resend API 키(사용자가 직접 넣고, 이 저장소엔 안 적음). Resend 도메인 인증은 2026-11-11 Verified. 비회원 주문 메일도 나중에 이걸로 보낸다.
+- **도메인 DNS는 Cloudflare** (2026-11-11 옮김): 도메인 등록·연장은 그대로 가비아, 네임서버만 Cloudflare(`audrey`·`dave.ns.cloudflare.com`)로 바꿨다. **DNS를 고칠 일은 Cloudflare에서** 한다.
+  - 옮긴 이유: 가비아 DNS 관리가 Resend 인증용 `send`(CNAME)·`resend._domainkey`(TXT)만 저장을 거절했다('소유 도메인이 아닙니다' = 서버 403, 입력 형식은 맞았음).
+  - 레코드 9줄: A `@` 4줄(GitHub Pages 185.199.108~111.153), CNAME `www` → `ahnssam.github.io`, TXT `_dmarc`, CNAME `rsend`·`send`(Resend), TXT `resend._domainkey`(Resend DKIM).
+  - **모두 회색 구름(DNS only)** 으로 둔다. 주황(Proxied)으로 바꾸면 GitHub Pages https 인증서와 Resend 인증이 깨진다. Cloudflare가 '보호 안 됨' 창을 띄워도 'I'll do this later'.
+  - 되돌리려면 가비아 네임서버 설정에 `ns.gabia.co.kr`·`ns1.gabia.co.kr`·`ns.gabia.net`을 다시 넣는다(가비아 DNS 관리의 예전 레코드는 지우지 않고 둠).
 
 ## 3. 악보 판매 규칙
 
