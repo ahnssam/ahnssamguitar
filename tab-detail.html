@@ -944,8 +944,9 @@
             //   다른 편곡이 있으면 그 영상들도 아래에 (들어온 편곡이 맨 위)
             renderVersions(p);
             //   악보마다 대표 영상(youtube_id) 다음에 더 건 영상(youtube_more)이 이어진다 (2026-11-10, db/sheet_youtube_more.sql)
+            //   베이스 악보는 베이스 영상만 — 같은 곡 기타 영상이 뜨면 헷갈려서, 베이스 영상이 없으면 영상 칸을 숨긴다 (2026-11-11 사용자 요청)
             const seen = new Set(), vids = [];
-            [p, ...PARTS.filter(x => x.id !== p.id), ...VERSIONS].forEach(x => {
+            [p, ...PARTS.filter(x => x.id !== p.id), ...VERSIONS].filter(x => p.style !== 'bass' || x.style === 'bass').forEach(x => {
                 [x.youtube_id, ...(x.youtube_more || [])].filter(v => v && !seen.has(v) && seen.add(v)).forEach((v, k) => vids.push({ x, v, k }));
             });
             const vlabel = x => VERSIONS.length && (x === p || VERSIONS.includes(x)) ? verTag(x.title) : (STYLE_LABEL[x.style] || '악보');
@@ -1000,7 +1001,7 @@
                 ? '<span style="font-size:1rem;font-weight:600;color:var(--text-light)">구성을 골라 주세요</span>'
                 : t.off ? `<span class="price-was">₩${t.sum.toLocaleString()}</span>₩${t.total.toLocaleString()}<span class="price-off">${won(t.off)} 할인</span>`
                 : '₩' + t.total.toLocaleString();
-            document.getElementById('productStyle').textContent = '기타 TAB · ' + (t.list.map(x => PART_NAME[x.style] || '악보').join(' + ') || '고른 악보 없음');
+            document.getElementById('productStyle').textContent = (t.list.length && t.list.every(x => x.style === 'bass') ? '베이스 TAB · ' : t.list.some(x => x.style === 'bass') ? 'TAB · ' : '기타 TAB · ') + (t.list.map(x => PART_NAME[x.style] || '악보').join(' + ') || '고른 악보 없음');   // 베이스만 고르면 '베이스 TAB'
             const pg = t.list.filter(x => x.pages);
             document.getElementById('pagesRow').style.display = pg.length ? '' : 'none';
             document.getElementById('productPages').textContent = pg.length === 1 ? pg[0].pages + '페이지' : pg.map(x => partShort(x) + ' ' + x.pages + '페이지').join(' · ');

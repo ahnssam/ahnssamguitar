@@ -1173,23 +1173,31 @@
         PAY_OPEN = !!(window.ahnssamCheckout && !window.ahnssamCheckout.isTest());
         const $ = id => document.getElementById(id);
         // w = 최근 7일, m = 최근 30일 사이트 판매. 많이 팔린 순(o)은 풀스코어 누적 주문수 + 사이트 판매
+        // fw·fm = 풀스코어에서 그 기간(풀스코어 자료 마지막 날까지 7일·30일)에 팔린 곡의 순위 (db/sheet_popularity_fullscore.sql — 숫자 없이 순위만)
+        const lo = (a, b) => (b == null ? a : a == null ? b : Math.min(a, b));
         for (const x of ALL) {
-            x.w = 0; x.m = 0;
-            for (const id of x.members || [x.id]) { const p = POP.get(id); if (p) { x.w += p.sold_7d; x.m += p.sold_30d; x.o += p.sold_total; } }   // 한 줄로 합친 편곡들은 판매도 합쳐서
+            x.w = 0; x.m = 0; x.fw = null; x.fm = null;
+            for (const id of x.members || [x.id]) {   // 한 줄로 합친 편곡들은 판매도 합쳐서
+                const p = POP.get(id);
+                if (p) { x.w += p.sold_7d; x.m += p.sold_30d; x.o += p.sold_total; x.fw = lo(x.fw, p.fs_7d_rank); x.fm = lo(x.fm, p.fs_30d_rank); }
+            }
         }
         $('newList').innerHTML = [...ALL].sort(SORT.fresh).slice(0, 7).map(x => row('<span class="new">NEW</span>', x)).join('');
         // 인기 악보 주별·월별·전체 — 전체 = 추천 순(올린 곡 먼저, 많이 팔린 순).
-        // 주별·월별 = 그 기간 사이트 판매 순, 7곡이 안 되면 남은 자리는 전체 순으로 채우고 위에 안내 한 줄
+        // 주별·월별 = 그 기간 사이트 판매 순 → 풀스코어에서 그 기간에 팔린 곡(순위) → 그래도 7곡이 안 되면 전체 순 + 위에 안내 한 줄 (2026-11-11)
         const PERIOD = { w: '최근 7일', m: '최근 30일' };
+        const FS = { w: 'fw', m: 'fm' };
         let bestP = 'all';
         const drawBest = p => {
             bestP = p;
             const all = [...ALL].sort(SORT.rec);
             let list = all, sold = 0;
             if (PERIOD[p]) {
+                const f = FS[p];
                 const hot = ALL.filter(x => x[p] > 0).sort((a, b) => (b[p] - a[p]) || SORT.rec(a, b));
-                sold = hot.length;
-                list = [...hot, ...all.filter(x => !(x[p] > 0))];
+                const fs = ALL.filter(x => !(x[p] > 0) && x[f] != null).sort((a, b) => (a[f] - b[f]) || SORT.rec(a, b));
+                sold = hot.length + fs.length;
+                list = [...hot, ...fs, ...all.filter(x => !(x[p] > 0) && x[f] == null)];
             }
             $('bestList').innerHTML = list.slice(0, 7).map((x, i) => row(`<span class="no">${i + 1}</span>`, x)).join('');
             const note = $('bestNote');

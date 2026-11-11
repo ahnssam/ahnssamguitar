@@ -98,6 +98,11 @@
     .rsplash { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; padding: 16px;
         background: radial-gradient(circle at 50% 45%, #2f7a54 0%, #173f2b 70%); color: #fff; cursor: pointer; animation: fade .2s; }
     .rsplash.out { opacity: 0; transition: opacity .25s; }
+    /* 강 바뀔 때·우승 때 모두 화면 전체 말고 고르는 카드 두 개 자리만 덮는다 (2026-11-11 사용자 요청: 전체를 덮는 건 과함) */
+    .rsplash.in { position: absolute; inset: -6px; z-index: 6; border-radius: 22px; box-shadow: 0 12px 34px rgba(23, 63, 43, 0.28); overflow: hidden; }
+    .rsplash.in b { font-size: clamp(54px, 13vw, 128px); }
+    .rsplash.in.final .ph { width: min(70%, 260px); height: min(56%, 280px); margin: 4px 0; }
+    .rsplash.in.final b { font-size: clamp(22px, 5vw, 38px); }
     .rsplash .lbl { font-size: 14px; font-weight: 700; letter-spacing: .3em; color: #cfe6d8; animation: rsUp .5s .05s both; }
     .rsplash b { font-size: clamp(64px, 17vw, 150px); font-weight: 900; line-height: 1.05; font-family: 'Noto Sans KR', sans-serif; text-shadow: 0 6px 30px rgba(0,0,0,.35); animation: rsPop .55s cubic-bezier(.3, 1.5, .5, 1) both; }
     .rsplash small { font-size: 15px; color: #d9ecdf; animation: rsUp .5s .2s both; }
@@ -836,11 +841,11 @@ function play(key, size) {
 }
 // 강이 바뀔 때 큰 글자로 잠깐 (누르면 바로 넘어감)
 const SPLASH_MS = 1300, FINAL_MS = 2300;
-function splash(html, cls, ms, done) {
+function splash(html, cls, ms, done, host) {
     const el = document.createElement('div');
-    el.className = 'rsplash ' + cls;
+    el.className = 'rsplash ' + cls + (host ? ' in' : '');
     el.innerHTML = html;
-    document.body.appendChild(el);
+    (host || document.body).appendChild(el);
     let over = false;
     const fin = () => { if (over) return; over = true; clearTimeout(t); el.classList.add('out'); setTimeout(() => el.remove(), 250); done(); };
     const t = setTimeout(fin, ms);
@@ -849,10 +854,10 @@ function splash(html, cls, ms, done) {
 function roundSplash(n, done) {
     const sub = n === 2 ? '마지막 대결!' : n === 4 ? '이제 네 개만 남았어요' : `${n / 2}번 대결`;
     done();   // 첫 대결을 뒤에 미리 그려 두고, 글자가 사라지면 바로 보이게
-    splash(`<span class="lbl">${esc(S.theme.title)}</span><b>${roundName(n)}</b><small>${sub}</small>`, '', SPLASH_MS, () => {});
+    splash(`<span class="lbl">${esc(S.theme.title)}</span><b>${roundName(n)}</b><small>${sub}</small>`, '', SPLASH_MS, () => {}, app.querySelector('.vs'));
 }
 function finalSplash(w, done) {
-    splash(`<span class="lbl">🏆 WINNER</span><span class="ph" style="background-image:url('${imgSrc(w)}')"></span><b>${esc(w.n)}</b><small>${esc(w.ko)}</small>`, 'final', FINAL_MS, done);
+    splash(`<span class="lbl">🏆 WINNER</span><span class="ph" style="background-image:url('${imgSrc(w)}')"></span><b>${esc(w.n)}</b><small>${esc(w.ko)}</small>`, 'final', FINAL_MS, done, app.querySelector('.vs'));
 }
 function match() {
     const n = S.cur.length, a = S.cur[S.i], b = S.cur[S.i + 1];
