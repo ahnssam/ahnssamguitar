@@ -448,17 +448,6 @@
         .row5 { grid-template-columns: 1fr 1fr 1fr; }
         .fold-in { grid-template-columns: 1fr; }
     }
-    /* 처음 PDF를 올려 저장할 때 공개할지 묻는 창 (2026-11-10) */
-    .ask { margin: auto; border: 0; border-radius: 14px; padding: 24px 24px 20px; width: min(400px, calc(100% - 32px)); box-shadow: 0 18px 50px rgba(0,0,0,.25); color: var(--ink); }
-    .ask::backdrop { background: rgba(0,0,0,.35); }
-    .ask h3 { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 900; margin: 0 0 8px; }
-    .ask h3 i { color: var(--green); }
-    .ask p { margin: 0 0 4px; font-size: 13.5px; color: #444; word-break: keep-all; }
-    .ask p b { color: var(--ink); }
-    .ask small { display: block; font-size: 12px; color: var(--sub); margin-bottom: 18px; word-break: keep-all; }
-    .ask form { display: flex; flex-direction: column; gap: 8px; }
-    .ask .btn { justify-content: center; padding: 11px 14px; font-size: 14px; }
-    .ask .btn.plain { border-color: transparent; color: var(--sub); }
 </style>
 </head>
 <body>
@@ -590,17 +579,6 @@
         <button class="btn go" id="pubSaveBtn"><i class="fas fa-cloud-arrow-up"></i> 저장 후 업로드</button>
     </div>
 </aside>
-
-<dialog class="ask" id="pubAsk" aria-labelledby="pubAskT">
-    <h3 id="pubAskT"><i class="fas fa-store"></i> 판매 페이지를 공개할까요?</h3>
-    <p><b id="pubAskName"></b>에 PDF를 처음 올려요. 지금은 비공개라 손님에게 안 보여요.</p>
-    <small>PDF 점검(마디 빠짐·오타)을 마쳤으면 공개해도 돼요. 나중에 목록의 공개 버튼으로도 바꿀 수 있어요.</small>
-    <form method="dialog">
-        <button class="btn primary" value="pub"><i class="fas fa-eye"></i> 공개로 바꾸고 올리기</button>
-        <button class="btn" value="keep"><i class="fas fa-eye-slash"></i> 공개하지 않고 올리기</button>
-        <button class="btn plain" value="cancel">취소</button>
-    </form>
-</dialog>
 
 <div class="rank film" id="film" role="dialog" aria-label="악보영상 뭐찍지?" hidden>
     <div class="rk-hd"><h3><i class="fas fa-video"></i>악보영상 뭐찍지?</h3><small id="fmNote"></small><button class="x" id="fmClose" aria-label="닫기"><i class="fas fa-xmark"></i></button></div>
@@ -1144,7 +1122,6 @@
     };
     document.addEventListener('keydown', e => {
         if (e.key !== 'Escape') return;
-        if ($('pubAsk').open) return;   // 공개 묻는 창의 Esc 는 그 창만 닫는다(= 취소)
         if ($('editor').classList.contains('open')) closeEditor(); else if (!$('rank').hidden) closeRank(); else if (!$('film').hidden) closeFilm();
     });
 
@@ -1922,33 +1899,20 @@
     const extOf = blob => blob.type === 'image/webp' ? 'webp' : blob.type === 'image/png' ? 'png' : 'jpg';
 
     $('saveBtn').onclick = () => save();
-    // 저장 후 업로드 (2026-11-12 사용자): '스토어에 공개하기'를 켜고 바로 저장(공개 묻는 창 없이) → 편집 창을 닫는다.
+    // 저장 후 업로드 (2026-11-12 사용자): '스토어에 공개하기'를 켜고 바로 저장 → 편집 창을 닫는다.
     //   저장하지 못하면(곡명·영상 주소 등) 창을 그대로 두고, 공개 칸도 누르기 전으로 돌린다
     $('pubSaveBtn').onclick = async () => {
-        if (saving || asking || pdfReading) return;
+        if (saving || pdfReading) return;
         const pub = form.elements.published, was = pub.checked;
         pub.checked = true;
         if (!isDirty()) { closeEditor(); return; }
         if (await save()) closeEditor();
         else { pub.checked = was; updateSaveBtn(); }
     };
-    // PDF가 없던 비공개 악보에 처음 PDF를 올려 저장할 때 공개할지 묻는다 (2026-11-10 사용자)
-    //   'pub' = 공개로 바꾸고 올리기, 'keep' = 공개하지 않고 올리기, 'cancel' = 취소(Esc·바깥 누르기도 취소)
-    function askPublish(name) {
-        const d = $('pubAsk');
-        $('pubAskName').textContent = name ? `‘${name}’` : '이 악보';
-        d.returnValue = '';
-        return new Promise(res => {
-            d.addEventListener('close', () => res(d.returnValue || 'cancel'), { once: true });
-            d.showModal();
-            d.querySelector('[value="pub"]').focus();
-        });
-    }
-    $('pubAsk').addEventListener('click', e => { if (e.target === $('pubAsk')) $('pubAsk').close('cancel'); });   // 창 바깥(어두운 곳)
-    let asking = false;
     // 저장해도 창은 닫지 않는다 (2026-11-08 사용자). 저장되면 true
+    //   저장은 저장만 — 처음 PDF를 넣어도 공개할지 묻지 않는다 (2026-11-12 사용자, 2026-11-10의 묻는 창은 뺌). 공개는 '스토어에 공개하기' 칸이나 '저장 후 업로드'로
     async function save() {
-        if (saving || asking) return false;
+        if (saving) return false;
         const el = form.elements;
         const base = el.title.value.trim();
         if (!base) { el.title.focus(); $('edMsg').textContent = '곡명을 넣어 주세요.'; return false; }
@@ -1969,13 +1933,6 @@
         ytMore = ytMore.filter(v => v !== yt);
         const hasPdf = !!newPdf || !!(editing && filesById[editing.id]);
         if (el.published.checked && !hasPdf) { $('edMsg').textContent = 'PDF를 올려야 공개할 수 있어요.'; return false; }
-        if (newPdf && !(editing && filesById[editing.id]) && !el.published.checked) {
-            asking = true;
-            const ans = await askPublish(title);
-            asking = false;
-            if (ans === 'cancel') { $('edMsg').textContent = ''; return false; }
-            if (ans === 'pub') el.published.checked = true;
-        }
         const nul = v => (v || '').trim() || null;
         const row = {
             title,
