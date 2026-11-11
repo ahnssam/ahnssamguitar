@@ -57,6 +57,7 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
+#variable_conflict use_column
 declare
   v_hash text;
   v_nick text := btrim(regexp_replace(coalesce(p_nick, ''), '\s+', ' ', 'g'));
