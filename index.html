@@ -999,9 +999,10 @@
     const linkAttrs = x => !href(x) ? '' : x.on ? `href="${esc(href(x))}"` : `href="${esc(href(x))}" target="_blank" rel="noopener"`;
     // 풀스코어 가격은 사이트 새 가격과 다를 수 있어서, 아직 안 올린 곡은 가격 대신 '풀스코어'로
     const price = x => x.on ? `${Number(x.pmin ?? x.p ?? 0).toLocaleString()}원${x.pmin != null && x.pmin !== x.pmax ? '~' : ''}` : `<span class="fs-link">${IS_APP ? '준비 중' : '풀스코어<i class="fas fa-arrow-up-right-from-square"></i>'}</span>`;
-    // 실결제 전(checkout.js 가 테스트 키)에는 올린 곡도 아직 살 수 없어서 '곧 사이트 구매'로
+    // 실결제 전(checkout.js 가 테스트 키)에는 올린 곡에 구매 표시를 달지 않는다 — 토스 카드사 심사 중 '곧 사이트 구매'가
+    //   "아직 안 파는 상품"으로 보일 수 있어서 숨김(2026-11-11 사용자 결정). 실결제가 열리면 '바로 구매'.
     let PAY_OPEN = false;
-    const chip = x => IS_APP ? '' : x.on ? `<span class="chip buy">${PAY_OPEN ? '바로 구매' : '곧 사이트 구매'}</span>` : '<span class="chip fs">풀스코어</span>';   // 앱에서는 구매 표시 없이
+    const chip = x => IS_APP ? '' : x.on ? (PAY_OPEN ? '<span class="chip buy">바로 구매</span>' : '') : '<span class="chip fs">풀스코어</span>';   // 앱에서는 구매 표시 없이
     // 썸네일: 앨범 커버(sheet-covers) + 악보 윗부분(sheet-previews) + 종류 색 곡선 면에 [편곡] 종류·영문·난이도.
     // 곡명은 옆 글자에 이미 보여서 큰 글자로는 안 쓴다 (미리보기가 없을 때 종이 그림에만 작게). 그림을 못 불러오면 빈 커버·종이 그림으로
     const pvUrl = x => SB_URL + '/storage/v1/object/public/sheet-previews/' + encodeURIComponent(x.pv) + '?v=' + encodeURIComponent(x.up || '');
@@ -1410,7 +1411,7 @@
         } catch (e) { console.warn('유튜브 정보를 불러오지 못했어요', e); }
     })();
 </script>
-<script src="auth.js?v=20261111" defer></script>
+<script src="auth.js?v=20261111b" defer></script>
 <script src="checkout.js?v=20261111b" defer></script>
 <!-- PWA service worker 등록 -->
 <script>
