@@ -243,6 +243,14 @@ nav.scrolled .auth-btn:hover {
 .auth-pw-rules span::before { content: '○ '; }
 .auth-pw-rules span.ok { color: #2a6b4a; background: #e2f5ea; font-weight: 600; }
 .auth-pw-rules span.ok::before { content: '✓ '; }
+/* 비밀번호 재설정 메일 링크로 돌아왔을 때 — '새 비밀번호 정하기' (2026-11-11) */
+.auth-recovery-head { display: none; padding: 0.5rem 2.4rem 0; }
+.auth-overlay.auth-recovery .auth-recovery-head { display: block; }
+.auth-overlay.auth-recovery .auth-tabs { display: none; }
+.auth-overlay.auth-recovery .auth-body { min-height: 0; }
+.auth-field-confirm { display: none; }
+.auth-overlay.auth-recovery .auth-field-confirm { display: flex; }
+.auth-input[readonly] { color: rgba(0,0,0,0.55); background: rgba(0,0,0,0.04); }
 .auth-label { font-size: 0.8rem; font-weight: 600; color: rgba(0,0,0,0.7); }
 .auth-input {
     padding: 0.75rem 0.9rem;
@@ -349,6 +357,7 @@ nav.scrolled .auth-btn:hover {
 :root[data-theme="dark"] .auth-label { color: rgba(232, 240, 236, 0.78); }
 :root[data-theme="dark"] .auth-pw-rules span { color: rgba(232, 240, 236, 0.55); background: rgba(255, 255, 255, 0.06); }
 :root[data-theme="dark"] .auth-pw-rules span.ok { color: #9be0b6; background: rgba(82, 168, 114, 0.18); }
+:root[data-theme="dark"] .auth-input[readonly] { color: rgba(232, 240, 236, 0.55); background: rgba(255, 255, 255, 0.02); }
 :root[data-theme="dark"] .auth-input {
     background: rgba(255, 255, 255, 0.04);
     color: #e8f0ec;
@@ -382,6 +391,10 @@ nav.scrolled .auth-btn:hover {
     <div class="auth-modal" role="document">
         <div class="auth-modal-header">
             <button class="auth-modal-close" aria-label="닫기" data-auth-action="close">&times;</button>
+            <div class="auth-recovery-head">
+                <div class="auth-modal-title" id="authModalTitle">새 비밀번호 정하기</div>
+                <div class="auth-modal-sub">앞으로 로그인할 때 쓸 비밀번호를 새로 정해 주세요.</div>
+            </div>
         </div>
         <div class="auth-tabs" role="tablist">
             <button class="auth-tab active" data-auth-tab="login" role="tab">로그인</button>
@@ -394,11 +407,15 @@ nav.scrolled .auth-btn:hover {
                     <input class="auth-input" id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com">
                 </div>
                 <div class="auth-field">
-                    <label class="auth-label" for="authPassword">비밀번호</label>
+                    <label class="auth-label" for="authPassword" id="authPasswordLabel">비밀번호</label>
                     <input class="auth-input" id="authPassword" type="password" autocomplete="current-password" required minlength="6" placeholder="비밀번호">
                     <div class="auth-pw-rules" id="authPwRules" style="display:none;" aria-live="polite">
                         <span data-rule="len">9자 이상</span><span data-rule="upper">대문자</span><span data-rule="lower">소문자</span><span data-rule="digit">숫자</span><span data-rule="special">특수문자</span>
                     </div>
+                </div>
+                <div class="auth-field auth-field-confirm">
+                    <label class="auth-label" for="authPassword2">새 비밀번호 확인</label>
+                    <input class="auth-input" id="authPassword2" type="password" autocomplete="new-password" placeholder="같은 비밀번호를 한 번 더">
                 </div>
                 <div class="auth-field auth-field-nickname" style="display:none;">
                     <label class="auth-label" for="authNickname">닉네임</label>
@@ -693,44 +710,74 @@ nav.scrolled .auth-btn:hover {
         // 때만 키보드가 올라오도록.
         if (_isTouchOnlyDevice()) return;
         setTimeout(() => {
-            const emailInput = document.getElementById('authEmail');
-            if (emailInput) emailInput.focus();
+            const first = document.getElementById(currentMode === 'recovery' ? 'authPassword' : 'authEmail');
+            if (first) first.focus();
         }, 60);
     }
 
     function closeModal() {
         const ov = document.getElementById('authOverlay');
         if (ov) ov.classList.remove('open');
+        // '새 비밀번호 정하기'는 한 번 닫으면 끝 — 다음에 열 때는 보통 로그인 창
+        if (currentMode === 'recovery') {
+            currentMode = 'login';
+            updateModalMode();
+            clearMsg();
+        }
+    }
+
+    // 비밀번호 재설정 메일 링크로 돌아온 사람에게 '새 비밀번호 정하기' 창을 띄운다 (2026-11-11).
+    // 링크를 누르면 Supabase 가 그 계정으로 잠깐 로그인시켜 주므로, 여기서 updateUser 로 바꾼다.
+    function openRecovery() {
+        const ov = document.getElementById('authOverlay');
+        if (!ov) return;
+        if (currentMode === 'recovery' && ov.classList.contains('open')) return;
+        const user = currentSession && currentSession.user;
+        document.getElementById('authEmail').value = (user && user.email) || '';
+        document.getElementById('authPassword').value = '';
+        document.getElementById('authPassword2').value = '';
+        openModal('recovery');
     }
 
     function updateModalMode() {
         const isSignup = currentMode === 'signup';
+        const isRecovery = currentMode === 'recovery';
+        const newPw = isSignup || isRecovery;   // 새 비밀번호를 만드는 창 → 강한 규칙
+        const overlay = document.getElementById('authOverlay');
+        if (overlay) overlay.classList.toggle('auth-recovery', isRecovery);
         document.querySelectorAll('.auth-tab').forEach((t) => {
             t.classList.toggle('active', t.getAttribute('data-auth-tab') === currentMode);
         });
         document.querySelector('.auth-field-nickname').style.display = isSignup ? '' : 'none';
-        document.getElementById('authSubmit').textContent = isSignup ? '회원가입' : '로그인';
+        document.getElementById('authSubmit').textContent = isRecovery ? '새 비밀번호 저장' : (isSignup ? '회원가입' : '로그인');
+        // 재설정 창에서는 이메일을 보여 주기만 한다(어느 계정인지 + 비밀번호 관리자용).
+        const email = document.getElementById('authEmail');
+        email.readOnly = isRecovery;
+        email.required = !isRecovery;
+        document.getElementById('authPasswordLabel').textContent = isRecovery ? '새 비밀번호' : '비밀번호';
         const pw = document.getElementById('authPassword');
-        pw.setAttribute('autocomplete', isSignup ? 'new-password' : 'current-password');
-        // 새로 가입할 때만 강한 비밀번호 규칙(2026-11-11). 로그인은 예전 가입자 비밀번호 그대로 받는다.
-        pw.setAttribute('minlength', isSignup ? String(PW_MIN) : '6');
-        pw.setAttribute('placeholder', isSignup ? '영문 대·소문자, 숫자, 특수문자 포함 9자 이상' : '비밀번호');
-        document.getElementById('authPwRules').style.display = isSignup ? '' : 'none';
+        pw.setAttribute('autocomplete', newPw ? 'new-password' : 'current-password');
+        // 새로 가입할 때·재설정할 때만 강한 비밀번호 규칙(2026-11-11). 로그인은 예전 가입자 비밀번호 그대로 받는다.
+        pw.setAttribute('minlength', newPw ? String(PW_MIN) : '6');
+        pw.setAttribute('placeholder', newPw ? '영문 대·소문자, 숫자, 특수문자 포함 9자 이상' : '비밀번호');
+        document.getElementById('authPwRules').style.display = newPw ? '' : 'none';
+        document.getElementById('authPassword2').required = isRecovery;
         updatePwRules();
         // Hide OAuth buttons + "또는" divider in signup mode — email+password only
         const oauth = document.querySelector('.auth-oauth');
         const divider = document.querySelector('.auth-divider');
-        if (oauth) oauth.style.display = isSignup ? 'none' : '';
-        if (divider) divider.style.display = isSignup ? 'none' : '';
+        if (oauth) oauth.style.display = newPw ? 'none' : '';
+        if (divider) divider.style.display = newPw ? 'none' : '';
         const forgotLink = document.querySelector('[data-auth-action="reset-password"]');
-        if (forgotLink) forgotLink.style.display = isSignup ? 'none' : '';
+        if (forgotLink) forgotLink.style.display = newPw ? 'none' : '';
     }
 
     function wireModal() {
         document.getElementById('authPassword').addEventListener('input', updatePwRules);
         const overlay = document.getElementById('authOverlay');
         overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) closeModal();
+            // 새 비밀번호를 치다가 바깥을 잘못 눌러 날아가지 않게, 재설정 창은 X·Esc 로만 닫는다
+            if (e.target === overlay && currentMode !== 'recovery') closeModal();
         });
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && overlay.classList.contains('open')) closeModal();
@@ -775,6 +822,28 @@ nav.scrolled .auth-btn:hover {
         const submitBtn = document.getElementById('authSubmit');
         submitBtn.disabled = true;
         try {
+            if (currentMode === 'recovery') {
+                const miss = pwMissing(password);
+                if (miss.length) {
+                    setMsg('비밀번호에 빠진 것: ' + miss.join(', ') + '. 영문 대문자·소문자, 숫자, 특수문자를 모두 넣어 9자 이상으로 만들어 주세요.', 'error');
+                    document.getElementById('authPassword').focus();
+                    return;
+                }
+                const pw2 = document.getElementById('authPassword2');
+                if (pw2.value !== password) {
+                    setMsg('두 칸의 비밀번호가 서로 달라요. 같은 비밀번호를 한 번 더 넣어 주세요.', 'error');
+                    pw2.focus();
+                    return;
+                }
+                const { error } = await sb.auth.updateUser({ password });
+                if (error) { setMsg(humanError(error), 'error'); return; }
+                document.getElementById('authPassword').value = '';
+                pw2.value = '';
+                updatePwRules();
+                setMsg('새 비밀번호로 바꿨어요. 다음부터 이 비밀번호로 로그인하면 돼요.', 'success');
+                setTimeout(() => { if (currentMode === 'recovery') closeModal(); }, 2500);
+                return;
+            }
             if (currentMode === 'signup') {
                 const miss = pwMissing(password);
                 if (miss.length) {
@@ -930,6 +999,8 @@ nav.scrolled .auth-btn:hover {
     function humanError(err) {
         const msg = (err && err.message) || String(err);
         const map = [
+            [/different from the old password|same_password/i, '지금까지 쓰던 비밀번호와 다른 비밀번호로 정해 주세요.'],
+            [/Auth session missing|session.*(expired|not found)|JWT expired/i, '재설정 링크의 시간이 지났어요. 로그인 창의 \'비밀번호를 잊으셨나요?\'로 메일을 다시 받아 주세요.'],
             [/Invalid login credentials/i, '이메일 또는 비밀번호가 올바르지 않아요.'],
             [/Email not confirmed/i, '이메일 인증이 필요해요. 받은 메일함을 확인해주세요.'],
             [/User already registered/i, '이미 가입된 이메일이에요. 로그인 탭을 이용해주세요.'],
@@ -1095,6 +1166,12 @@ nav.scrolled .auth-btn:hover {
         const hashStr = earlyHash || (window.location.hash || '');
         const searchStr = window.location.search || '';
         const hasOAuthHash = hashStr.indexOf('access_token=') !== -1;
+        // 비밀번호 재설정 메일 링크로 돌아오면 hash 에 type=recovery 가 붙는다.
+        // (index·tools 등은 <head> 에서 hash 를 먼저 치워 SDK 가 PASSWORD_RECOVERY 를
+        //  못 보므로, 여기서 직접 알아본다.)
+        const isRecoveryLink = hasOAuthHash && /(^|[#&])type=recovery(&|$)/.test(hashStr);
+        // 메일 링크가 만료됐거나 이미 쓰인 경우: #error=...&error_code=otp_expired
+        const expiredMailLink = !hasOAuthHash && /(^|[#&])error_code=otp_expired(&|$)/.test(hashStr);
         try {
             if (hasOAuthHash) {
                 debugLog('OAuth callback: access_token in hash (implicit flow)');
@@ -1207,9 +1284,29 @@ nav.scrolled .auth-btn:hover {
             }));
         } catch (e) {}
 
+        if (isRecoveryLink) {
+            debugLog('Password recovery link → ' + (currentSession ? 'open new-password modal' : 'no session'));
+            if (currentSession) {
+                openRecovery();
+            } else {
+                openModal('login');
+                setMsg('재설정 링크로 들어오지 못했어요. 이메일을 넣고 아래 \'비밀번호를 잊으셨나요?\'를 눌러 메일을 다시 받아 주세요.', 'error');
+            }
+        } else if (expiredMailLink) {
+            debugLog('Mail link expired (otp_expired)');
+            try {
+                window.history.replaceState(null, '', window.location.origin + window.location.pathname + (window.location.search || ''));
+            } catch (e) {}
+            if (!currentSession) {
+                openModal('login');
+                setMsg('메일 속 링크의 시간이 지났거나 이미 쓰인 링크예요. 비밀번호를 바꾸려면 이메일을 넣고 아래 \'비밀번호를 잊으셨나요?\'를 눌러 메일을 다시 받아 주세요.', 'error');
+            }
+        }
+
         sb.auth.onAuthStateChange((event, session) => {
             debugLog('state change: ' + event + ' / ' + (session ? session.user.email : 'no session'));
             currentSession = session || null;
+            if (event === 'PASSWORD_RECOVERY' && session) setTimeout(openRecovery, 0);
             // 이 콜백은 SDK 의 auth 잠금 안에서 불린다. 여기서 Supabase 요청을 기다리면
             // 잠금이 영영 안 풀려 이후 모든 요청이 멈춘다(창을 숨겼다 다시 볼 때 잘 터짐).
             // 그래서 프로필 조회·알림은 잠금이 풀린 다음 틱으로 미룬다.
@@ -1220,7 +1317,9 @@ nav.scrolled .auth-btn:hover {
                     currentProfile = null;
                 }
                 renderSlot();
-                if (event === 'SIGNED_IN') closeModal();
+                // 재설정 창은 SIGNED_IN(링크로 로그인됨·탭 다시 보기)으로 닫지 않는다
+                if (event === 'SIGNED_IN' && currentMode !== 'recovery') closeModal();
+                if (event === 'SIGNED_OUT' && currentMode === 'recovery') closeModal();
                 try {
                     window.dispatchEvent(new CustomEvent('ahnssam-auth-settled', {
                         detail: { user: session ? session.user : null, event: event }
