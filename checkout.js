@@ -179,7 +179,7 @@
             const back = document.createElement('div');
             back.className = 'gb-back';
             back.innerHTML = `<div class="gb" role="dialog" aria-modal="true" aria-label="구매 방법 고르기">
-                <h3>어떻게 구매할까요?</h3><p>로그인하면 구매한 악보를 언제든 '구매한 악보'에서 다시 받을 수 있어요.</p>
+                <h3>어떻게 구매할까요?</h3><p>로그인하면 구매한 악보를 구매일로부터 1년 동안 '구매한 악보'에서 다시 받을 수 있어요.</p>
                 <button type="button" class="opt main" data-login><i class="fas fa-right-to-bracket"></i> 로그인하고 구매<small>구글·카카오로 바로 로그인</small></button>
                 <form novalidate>
                     <label for="gbEmail">비회원으로 구매 — 이메일</label>
