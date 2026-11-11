@@ -775,9 +775,13 @@ nav.scrolled .auth-btn:hover {
     function wireModal() {
         document.getElementById('authPassword').addEventListener('input', updatePwRules);
         const overlay = document.getElementById('authOverlay');
+        // 입력칸에서 글자를 드래그하다 바깥에서 마우스를 놓아도 닫히지 않게 — 누른 곳과 뗀 곳이 모두 바깥일 때만 닫는다
+        let downOutside = false;
+        overlay.addEventListener('pointerdown', (e) => { downOutside = e.target === overlay; });
         overlay.addEventListener('click', (e) => {
             // 새 비밀번호를 치다가 바깥을 잘못 눌러 날아가지 않게, 재설정 창은 X·Esc 로만 닫는다
-            if (e.target === overlay && currentMode !== 'recovery') closeModal();
+            if (e.target === overlay && downOutside && currentMode !== 'recovery') closeModal();
+            downOutside = false;
         });
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && overlay.classList.contains('open')) closeModal();

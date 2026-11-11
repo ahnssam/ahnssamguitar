@@ -9361,7 +9361,7 @@
          silently no-op and the banner never rendered. -->
     <script src="https://ads-partners.coupang.com/g.js"></script>
     <!-- Supabase auth (shared) -->
-    <script src="auth.js?v=2026111102" defer></script>
+    <script src="auth.js?v=2026111103" defer></script>
     <!-- Ear training session tracker + rankings + mypage -->
     <script src="ranking/ear-ranking.js" defer></script>
 </head>
@@ -18508,10 +18508,14 @@
                     ov.id = id;
                     ov.className = 'loop-modal-overlay';
                     document.body.appendChild(ov);
+                    // 입력칸에서 드래그하다 바깥에서 마우스를 놓아도 닫히지 않게 — 누른 곳도 바깥일 때만 바깥 클릭으로 본다
+                    var downOutside = false;
+                    ov.addEventListener('pointerdown', function(e) { downOutside = e.target === ov; });
                     ov.addEventListener('click', function(e) {
                         if (e.target.closest && e.target.closest('[data-close]')) { ov.classList.remove('open'); return; }
                         // 바깥(오버레이) 클릭으로 닫기 — data-no-outside-close 가 있으면 무시
-                        if (e.target === ov && !ov.hasAttribute('data-no-outside-close')) ov.classList.remove('open');
+                        if (e.target === ov && downOutside && !ov.hasAttribute('data-no-outside-close')) ov.classList.remove('open');
+                        downOutside = false;
                     });
                 }
                 ov.innerHTML = '<div class="loop-modal-card">' + html + '</div>';

@@ -191,9 +191,13 @@
                 </form></div>`;
             const done = v => { back.remove(); document.removeEventListener('keydown', onKey); res(v); };
             const onKey = e => { if (e.key === 'Escape') done(null); };
+            // 이메일 칸에서 드래그하다 바깥에서 마우스를 놓아도 닫히지 않게 — 누른 곳도 바깥일 때만 바깥 클릭으로 본다
+            let downOutside = false;
+            back.addEventListener('pointerdown', e => { downOutside = e.target === back; });
             back.addEventListener('click', e => {
-                if (e.target === back || e.target.closest('[data-x]')) done(null);
+                if ((e.target === back && downOutside) || e.target.closest('[data-x]')) done(null);
                 else if (e.target.closest('[data-login]')) done({ mode: 'login' });
+                downOutside = false;
             });
             back.querySelector('form').addEventListener('submit', e => {
                 e.preventDefault();

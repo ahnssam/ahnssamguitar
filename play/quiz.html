@@ -878,7 +878,10 @@ function askRank(g) {
             err.textContent = { link: '닉네임에 링크는 쓸 수 없어요.', long: '닉네임은 12자까지예요.' }[e.code] || '지금은 올리지 못했어요. 잠시 뒤 다시 해 주세요.';
         }
     };
-    back.addEventListener('click', e => { if (e.target === back || e.target.closest('[data-x]')) close(); else if (e.target.closest('[data-y]')) send(); });
+    // 닉네임 칸에서 드래그하다 바깥에서 마우스를 놓아도 닫히지 않게 — 누른 곳도 바깥일 때만 닫는다
+    let downOutside = false;
+    back.addEventListener('pointerdown', e => { downOutside = e.target === back; });
+    back.addEventListener('click', e => { if ((e.target === back && downOutside) || e.target.closest('[data-x]')) close(); else if (e.target.closest('[data-y]')) send(); downOutside = false; });
     document.addEventListener('keydown', onKey);
     document.body.appendChild(back);
     back.querySelector('#rkNick').focus();
