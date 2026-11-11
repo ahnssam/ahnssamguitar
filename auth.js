@@ -238,6 +238,11 @@ nav.scrolled .auth-btn:hover {
 .auth-form { display: flex; flex-direction: column; gap: 0.7rem; }
 .auth-field { display: flex; flex-direction: column; gap: 0.3rem; }
 .auth-field-nickname { margin-bottom: 1.6rem; }
+.auth-pw-rules { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.15rem; }
+.auth-pw-rules span { font-size: 0.72rem; padding: 0.12rem 0.5rem; border-radius: 999px; color: rgba(0,0,0,0.5); background: rgba(0,0,0,0.05); }
+.auth-pw-rules span::before { content: '○ '; }
+.auth-pw-rules span.ok { color: #2a6b4a; background: #e2f5ea; font-weight: 600; }
+.auth-pw-rules span.ok::before { content: '✓ '; }
 .auth-label { font-size: 0.8rem; font-weight: 600; color: rgba(0,0,0,0.7); }
 .auth-input {
     padding: 0.75rem 0.9rem;
@@ -342,6 +347,8 @@ nav.scrolled .auth-btn:hover {
     background: rgba(180, 230, 200, 0.14);
 }
 :root[data-theme="dark"] .auth-label { color: rgba(232, 240, 236, 0.78); }
+:root[data-theme="dark"] .auth-pw-rules span { color: rgba(232, 240, 236, 0.55); background: rgba(255, 255, 255, 0.06); }
+:root[data-theme="dark"] .auth-pw-rules span.ok { color: #9be0b6; background: rgba(82, 168, 114, 0.18); }
 :root[data-theme="dark"] .auth-input {
     background: rgba(255, 255, 255, 0.04);
     color: #e8f0ec;
@@ -388,7 +395,10 @@ nav.scrolled .auth-btn:hover {
                 </div>
                 <div class="auth-field">
                     <label class="auth-label" for="authPassword">비밀번호</label>
-                    <input class="auth-input" id="authPassword" type="password" autocomplete="current-password" required minlength="6" placeholder="최소 6자 이상">
+                    <input class="auth-input" id="authPassword" type="password" autocomplete="current-password" required minlength="6" placeholder="비밀번호">
+                    <div class="auth-pw-rules" id="authPwRules" style="display:none;" aria-live="polite">
+                        <span data-rule="len">9자 이상</span><span data-rule="upper">대문자</span><span data-rule="lower">소문자</span><span data-rule="digit">숫자</span><span data-rule="special">특수문자</span>
+                    </div>
                 </div>
                 <div class="auth-field auth-field-nickname" style="display:none;">
                     <label class="auth-label" for="authNickname">닉네임</label>
@@ -700,7 +710,13 @@ nav.scrolled .auth-btn:hover {
         });
         document.querySelector('.auth-field-nickname').style.display = isSignup ? '' : 'none';
         document.getElementById('authSubmit').textContent = isSignup ? '회원가입' : '로그인';
-        document.getElementById('authPassword').setAttribute('autocomplete', isSignup ? 'new-password' : 'current-password');
+        const pw = document.getElementById('authPassword');
+        pw.setAttribute('autocomplete', isSignup ? 'new-password' : 'current-password');
+        // 새로 가입할 때만 강한 비밀번호 규칙(2026-11-11). 로그인은 예전 가입자 비밀번호 그대로 받는다.
+        pw.setAttribute('minlength', isSignup ? String(PW_MIN) : '6');
+        pw.setAttribute('placeholder', isSignup ? '영문 대·소문자, 숫자, 특수문자 포함 9자 이상' : '비밀번호');
+        document.getElementById('authPwRules').style.display = isSignup ? '' : 'none';
+        updatePwRules();
         // Hide OAuth buttons + "또는" divider in signup mode — email+password only
         const oauth = document.querySelector('.auth-oauth');
         const divider = document.querySelector('.auth-divider');
@@ -711,6 +727,7 @@ nav.scrolled .auth-btn:hover {
     }
 
     function wireModal() {
+        document.getElementById('authPassword').addEventListener('input', updatePwRules);
         const overlay = document.getElementById('authOverlay');
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) closeModal();
@@ -759,6 +776,12 @@ nav.scrolled .auth-btn:hover {
         submitBtn.disabled = true;
         try {
             if (currentMode === 'signup') {
+                const miss = pwMissing(password);
+                if (miss.length) {
+                    setMsg('비밀번호에 빠진 것: ' + miss.join(', ') + '. 영문 대문자·소문자, 숫자, 특수문자를 모두 넣어 9자 이상으로 만들어 주세요.', 'error');
+                    document.getElementById('authPassword').focus();
+                    return;
+                }
                 const nickname = document.getElementById('authNickname').value.trim();
                 if (nickname.length < 2) {
                     setMsg('닉네임은 2자 이상 입력해주세요.', 'error');
@@ -882,13 +905,35 @@ nav.scrolled .auth-btn:hover {
         renderSlot();
     }
 
+    // 회원가입 비밀번호 규칙 (2026-11-11 사용자 결정): 9자 이상 + 영문 대문자·소문자·숫자·특수문자 모두.
+    // 이미 가입한 사람은 그대로 둔다 — 로그인 때는 검사하지 않는다.
+    const PW_MIN = 9;
+    const PW_RULES = [
+        ['len', '9자 이상', (p) => p.length >= PW_MIN],
+        ['upper', '대문자', (p) => /[A-Z]/.test(p)],
+        ['lower', '소문자', (p) => /[a-z]/.test(p)],
+        ['digit', '숫자', (p) => /[0-9]/.test(p)],
+        ['special', '특수문자', (p) => /[!-\/:-@\[-`{-~]/.test(p)],
+    ];
+    function pwMissing(p) { return PW_RULES.filter(([, , ok]) => !ok(p || '')).map(([, name]) => name); }
+    function updatePwRules() {
+        const box = document.getElementById('authPwRules');
+        const input = document.getElementById('authPassword');
+        if (!box || !input) return;
+        const p = input.value || '';
+        PW_RULES.forEach(([key, , ok]) => {
+            const el = box.querySelector('[data-rule="' + key + '"]');
+            if (el) el.classList.toggle('ok', ok(p));
+        });
+    }
+
     function humanError(err) {
         const msg = (err && err.message) || String(err);
         const map = [
             [/Invalid login credentials/i, '이메일 또는 비밀번호가 올바르지 않아요.'],
             [/Email not confirmed/i, '이메일 인증이 필요해요. 받은 메일함을 확인해주세요.'],
             [/User already registered/i, '이미 가입된 이메일이에요. 로그인 탭을 이용해주세요.'],
-            [/Password should be at least/i, '비밀번호는 최소 6자 이상이어야 해요.'],
+            [/Password should (be at least|contain)|weak.?password/i, '비밀번호는 영문 대문자·소문자, 숫자, 특수문자를 모두 넣어 9자 이상이어야 해요.'],
             [/rate limit/i, '잠시 후 다시 시도해주세요.']
         ];
         for (const [re, ko] of map) {
