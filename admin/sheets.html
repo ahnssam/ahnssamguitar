@@ -101,6 +101,7 @@
     .list .rk { width: 64px; text-align: center; }
     .list .rk b { display: block; font-size: 15px; font-weight: 900; color: var(--green); }
     .list .rk small { color: var(--sub); font-size: 11px; white-space: nowrap; }
+    .list .rk small.sold { display: block; margin-top: 2px; color: #2f6f4c; font-weight: 700; }
     .list tr.done td { background: #f6fbf8; }
     .pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; margin: 16px 0 6px; }
     .pager button { min-width: 34px; height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font: inherit; font-size: 13px; font-weight: 700; color: #555; cursor: pointer; }
@@ -745,6 +746,9 @@
     }
     const hidNote = s => { const r = saleBy[s.fullscore_code] || {};
         return `<div class="hidrow" title="풀스코어 판매 ${fmtDay(r.year_from)}~${fmtDay(r.as_of)} 0장"><i class="fas fa-eye-slash"></i> 숨김 · 1년째 안 팔림 · ${r.last_sold ? '마지막 판매 ' + fmtDay(r.last_sold) + ' · 누적 ' + r.sold_total : '한 번도 안 팔림'}</div>`; };
+    // 풀스코어 주문순일 때 순위 아래 '6개월 판매 / 전체 판매' (sheet_sales — 운영 계정만 읽힘, 2026-11-11 사용자 요청)
+    const soldOf = s => { const r = sortBy === 'orders' && s.fullscore_code && saleBy[s.fullscore_code];
+        return r ? `<small class="sold" title="풀스코어 판매 · 최근 6개월(${fmtDay(r.six_from)}~${fmtDay(r.as_of)}) / 전체">6개월 ${r.sold_6m} / 전체 ${r.sold_total}</small>` : ''; };
     // 풀스코어 주문수 순위 (주문 1건 이상만). 같은 수면 같은 순위.
     function orderRanks() {
         const ranked = sheets.filter(s => (s.fullscore_orders || 0) > 0).sort((a, b) => b.fullscore_orders - a.fullscore_orders);
@@ -805,7 +809,7 @@
         $('listWrap').innerHTML = `<table class="list"><thead><tr>${up ? '<th class="rk" title="풀스코어 누적 판매 순위 (PDF 없는 곡만)">올릴<br>순서</th>' : '<th class="rk" title="풀스코어 주문수 순위">주문순</th>'}<th></th><th>곡명</th><th class="c-st">종류·스타일</th><th class="c-lv">난이도</th><th>가격</th><th>상태</th><th class="c-up">수정일</th><th class="c-go"></th></tr></thead><tbody>${
             rows.map(s => `<tr data-id="${s.id}" class="${filesById[s.id] ? 'done' : ''}">
                 <td class="rk">${up ? (up[s.id] && up[s.id].no ? `<b>${up[s.id].no}</b><small>주문 ${s.fullscore_orders || 0}</small>` : filesById[s.id] ? '<small>✓ 올림</small>' : '<small>-</small>')
-                    : rank[s.id] ? `<b>${rank[s.id]}</b><small>주문 ${s.fullscore_orders}</small>` : `<small>${hasOrders ? '주문 0' : '-'}</small>`}</td>
+                    : (rank[s.id] ? `<b>${rank[s.id]}</b><small>주문 ${s.fullscore_orders}</small>` : `<small>${hasOrders ? '주문 0' : '-'}</small>`) + soldOf(s)}</td>
                 <td>${listThumb(s)}</td>
                 <td class="nm"><b>${esc(s.title)}</b><small>${esc(s.artist || '')}</small>${filesById[s.id] ? '<div class="haspdf"><i class="fas fa-circle-check"></i> PDF 있음</div>' : '<div class="nopdf"><i class="fas fa-triangle-exclamation"></i> PDF 없음</div>'}${
                     (isHidden(s) ? hidNote(s) : '')}${
