@@ -1068,13 +1068,15 @@
         low: (a, b) => (b.on - a.on) || (a.p - b.p),                                   // 낮은 가격: 가격이 보이는 올린 곡 먼저
         w: (a, b) => (b.w - a.w) || SORT.rec(a, b),                                    // 이번 주 인기: 최근 7일 사이트 판매, 같으면 추천순
         m: (a, b) => (b.m - a.m) || SORT.rec(a, b),                                    // 이번 달 인기: 최근 30일 사이트 판매, 같으면 추천순
-        fresh: (a, b) => (b.on - a.on) || String(b.rel).localeCompare(String(a.rel)),   // 올린 곡 먼저, 그다음 악보가 나온 날(rel) 최신순
+        fresh: (a, b) => (b.on - a.on) || String(b.rel).localeCompare(String(a.rel)),   // 올린 곡 먼저(올린 순서), 그다음 안 올린 곡은 풀스코어 등록 순
     };
 
-    // 악보가 나온 날 = 풀스코어 등록 순서 (2026-11-06 사용자 요청: '새로 나온 악보'는 풀스코어 내 악보 목록 최신순대로).
-    //   풀스코어 코드(2511210007)의 앞 6자리가 등록 날짜라 코드 순서 = 풀스코어 목록 최신순.
-    //   풀스코어에 없는 사이트 전용 악보(코드악보 등)는 사이트에 올린 날로 같은 꼴(YYMMDD + 9999)을 만들어 그 날짜 자리에 끼운다
-    const relKey = x => x.c ? String(x.c) : x.up ? String(x.up).slice(2, 10).replace(/-/g, '') + '9999' : '';
+    // 악보가 나온 날 (2026-11-11 사용자 결정: '새로 나온 악보'·최신순은 사이트에 올린 순서 — 최근에 PDF를 올린 곡이 위).
+    //   사이트에 올린 곡 = 수정 시각(PDF를 올려 공개하고 저장한 때. 가격·난이도·커버·묶기만 고치면 그대로라 순서가 안 바뀜).
+    //   아직 안 올린 곡 = 풀스코어 등록 순서(코드 2511210007 의 앞 6자리가 날짜).
+    //   (2026-11-06 ~ 11-10 에는 올린 곡도 풀스코어 등록 순이라, 예전 풀스코어 곡을 올려도 안 보이고 코드악보가 위에 남았음)
+    const upKey = up => up ? String(up).replace(/\D/g, '').slice(2, 14) : '';   // 2026-11-10T12:29:05 → 261110122905
+    const relKey = x => x.on ? upKey(x.up) : x.c ? String(x.c) : upKey(x.up);
     const tidy = list => mergeVersions(bundle(list.filter(x => STYLE[x.s === 'fingerstyle' ? 'finger' : x.s])
         .map(x => ({ ...x, rel: relKey(x), t: String(x.t || '').normalize('NFC'), s: x.s === 'fingerstyle' ? 'finger' : x.s, k: norm(x.t + ' ' + (x.a || '') + ' ' + STYLE[x.s === 'fingerstyle' ? 'finger' : x.s][1]) }))));   // 종류 이름(기타솔로·코드악보…)으로도 검색
     // 같은 곡(sk = song_key)의 반주 + 기타솔로: 반주 칸에 '+ 솔로'로 하나만, 가격은 함께 산 값(500원 할인).
@@ -1090,6 +1092,7 @@
             const solo = g.find(y => y.s === 'solo'), back = g.find(y => y.s === 'electric') || g.find(y => y.s === 'acoustic');
             if (x === back && solo && (solo.on || !x.on)) {
                 x.plus = true; x.k += ' 기타솔로';
+                if (solo.on && String(solo.rel) > String(x.rel)) x.rel = solo.rel;   // 솔로를 나중에 올렸으면 그날로
                 if (x.on && solo.on) x.p = (x.p || 0) + (solo.p || 0) - SET_DISCOUNT;
             }
             if (x.s === 'solo' && back && (back.on || !x.on)) { x.hide = true; if (x.pk && !back.pk) back.pk = x.pk; }   // 픽으로 고른 솔로가 숨으면 반주 줄이 그 자리를
