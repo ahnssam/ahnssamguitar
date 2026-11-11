@@ -17,7 +17,7 @@
 <link rel="icon" href="../images/favicon.ico" type="image/x-icon">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="play.css?v=2026111001">
+<link rel="stylesheet" href="play.css?v=2026111101">
 <style>
     .hero { text-align: center; padding: 34px 0 6px; }
     .hero h1 { font-size: clamp(24px, 4.4vw, 36px); font-weight: 900; letter-spacing: -0.02em; }
@@ -175,6 +175,55 @@
     .review .qr.first small { font-size: 12px; color: var(--green-deep); font-weight: 700; }
     .review .qhl { font-size: 13.5px; font-weight: 700; color: #b8461f; background: #fff3e8; border-radius: 10px; padding: 8px 12px; margin: 0 0 6px; }
     .res .rec { max-width: 860px; margin-left: auto; margin-right: auto; }
+    /* 결과 화면 (2026-11-11 사용자 요청): 왼쪽 점수·문제 다시 보기, 오른쪽 랭킹 + 나온 곡 악보. 휴대폰은 점수 → 랭킹 → 문제 → 악보 */
+    .rlay { display: grid; grid-template-columns: minmax(0, 1fr) 340px; grid-template-areas: "head side" "list side"; gap: 0 26px; align-items: start; }
+    .rlay .rhead { grid-area: head; }
+    .rlay .rside { grid-area: side; padding-top: 26px; position: sticky; top: 72px; }
+    .rlay .rlist { grid-area: list; }
+    .rlay .review { max-width: none; margin: 16px 0 0; }
+    .rlay .rec { margin-top: 16px; }
+    .rlay .rec .list { grid-template-columns: 1fr; }
+    .res .prog { margin-top: 10px; font-size: 14px; color: #444; }
+    .res .prog b { color: var(--green-deep); }
+    @media (max-width: 860px) {
+        .rlay { display: flex; flex-direction: column; }
+        .rlay .rside { display: contents; }
+        .rlay .rhead { order: 1; } .rlay .rk { order: 2; margin-top: 16px; } .rlay .rlist { order: 3; } .rlay .rec { order: 4; }
+    }
+    .review li { align-items: center; padding: 7px 0; }
+    .review li i { margin-top: 0; }
+    .review li .t b { font-weight: 700; }
+    .review li .pt { flex: none; font-weight: 900; color: var(--green-deep); font-size: 14px; }
+    .review li.no .pt { color: var(--red); font-weight: 700; font-size: 12.5px; }
+    /* 랭킹 */
+    .rk { padding: 16px 16px 12px; text-align: left; }
+    .rk h3 { font-size: 16px; font-weight: 900; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .rk h3 small { font-size: 12px; color: var(--sub); font-weight: 600; }
+    .rk .sub { font-size: 12.5px; color: var(--sub); margin: 2px 0 8px; }
+    .rk ol { list-style: none; }
+    .rk li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 6px; border-top: 1px solid var(--line); font-size: 14px; }
+    .rk li .n { font-weight: 900; color: var(--sub); text-align: center; }
+    .rk li .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+    .rk li .nm small { font-size: 11px; color: #fff; background: var(--green-mid); border-radius: 6px; padding: 1px 5px; margin-left: 4px; vertical-align: 1px; }
+    .rk li .c { font-weight: 900; color: var(--green-deep); }
+    .rk li.me { background: var(--green-faint); border-radius: 8px; border-top-color: transparent; }
+    .rk li.gap { color: var(--sub); padding: 2px 6px; }
+    .rk .soon { font-size: 13px; color: var(--sub); line-height: 1.6; }
+    .rk .mine { margin-top: 10px; font-size: 13px; padding: 10px; border-radius: 10px; background: #f6f9f7; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .rk .mine b { color: var(--green-deep); }
+    .rk .mine .btn { padding: 6px 12px; font-size: 13px; margin-left: auto; }
+    /* '랭킹에 올릴까요?' */
+    .rkask-back { position: fixed; inset: 0; z-index: 200; background: rgba(15, 30, 22, 0.62); display: grid; place-items: center; padding: 16px; animation: fade .2s; }
+    .rkask { width: min(380px, 100%); padding: 24px 22px 18px; text-align: center; }
+    .rkask .em { font-size: 40px; line-height: 1; }
+    .rkask h3 { font-size: 20px; font-weight: 900; margin-top: 8px; }
+    .rkask p { font-size: 14px; color: #555; margin-top: 6px; line-height: 1.6; }
+    .rkask p b { color: var(--green-deep); }
+    .rkask input { width: 100%; margin-top: 12px; padding: 11px 12px; border: 1.5px solid var(--line); border-radius: 10px; font: inherit; font-size: 15px; text-align: center; }
+    .rkask input:focus { outline: none; border-color: var(--green-mid); }
+    .rkask .err { color: var(--red); font-size: 12.5px; min-height: 1em; margin-top: 6px; }
+    .rkask .acts { display: flex; gap: 8px; margin-top: 8px; }
+    .rkask .acts .btn { flex: 1; justify-content: center; }
     /* 피크 찬스 (2026-11-10 사용자 결정): 시간 멈추기 · 오답 2개 지우기, 하나에 30피크, 한 판에 2번까지 */
     .chs { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
     .chs .chl { font-size: 12.5px; color: var(--sub); margin-right: auto; display: inline-flex; align-items: center; gap: 4px; }
@@ -210,7 +259,7 @@
     <div>© 2026 안쌤의 기타나무숲</div>
 </footer>
 
-<script src="play.js?v=2026111001"></script>
+<script src="play.js?v=2026111101"></script>
 <script src="trivia.js?v=2026110901"></script>
 <script src="songs.js?v=2026110801"></script>
 <script>
@@ -312,10 +361,28 @@ function pickOthers(cands, ans) {
     return out;
 }
 
-// 최근에 낸 문제는 뒤로 미룬다 (이 브라우저에서 최근 30개)
-function fresh(list, id, mode) {
+// ---------- 맞힌 문제 · 랭킹 (2026-11-11 사용자 요청, db/play_quiz_rank.sql) ----------
+// 랭킹은 한 판 점수가 아니라 '그 퀴즈에서 지금까지 맞힌 문제(곡) 수'. 상식은 난이도마다 따로.
+// 맞힌 문제는 이 브라우저에 기억하고(다음 판에 안 냄), 랭킹에 올리면 서버에도 남는다.
+const rankMode = (mode, lv) => (mode === 'trivia' ? 'trivia' + (lv || 1) : mode);
+const qidOf = (mode, id) => qHash(`${mode}|${nfc(id)}`);
+const solvedSet = rm => new Set(mem.get('quiz.solved.' + rm, []));
+function addSolved(rm, qids) {
+    const s = solvedSet(rm);
+    qids.forEach(q => s.add(q));
+    mem.set('quiz.solved.' + rm, [...s].slice(-2000));
+    return s;
+}
+const UNIT = rm => (rm.startsWith('trivia') ? '문제' : '곡');
+
+// 고르는 순서: 아직 못 맞힌(틀렸거나 안 나온) 문제 먼저 — 맞힌 문제는 다 맞힌 뒤에만 다시 나온다.
+// 그 안에서는 이 브라우저에서 최근에 낸 문제(30개)를 뒤로 미룬다
+function fresh(list, id, mode, rm) {
     const seen = new Set(mem.get('quiz.seen.' + mode, []));
-    return [...list.filter(x => !seen.has(id(x))), ...list.filter(x => seen.has(id(x)))];
+    const solved = solvedSet(rm || mode);
+    const order = arr => [...arr.filter(x => !seen.has(id(x))), ...arr.filter(x => seen.has(id(x)))];
+    const done = x => solved.has(qidOf(mode, id(x)));
+    return [...order(list.filter(x => !done(x))), ...order(list.filter(done))];
 }
 function remember(mode, ids) {
     const old = mem.get('quiz.seen.' + mode, []).filter(x => !ids.includes(x));
@@ -405,8 +472,9 @@ function loadSheet(s) {
 
 async function build(mode, lv) {
     if (mode === 'trivia') {
-        const list = fresh(shuffle(TRIVIA.filter(t => !lv || t.lv === lv)), t => t.q, mode).slice(0, N);
-        return list.map(t => ({ id: t.q, ask: t.q, a: t.a, opts: shuffle([t.a, ...t.w]), x: t.x }));
+        const pool = TRIVIA.filter(t => !lv || t.lv === lv);
+        const list = fresh(shuffle(pool), t => t.q, mode, rankMode(mode, lv)).slice(0, N);
+        return Object.assign(list.map(t => ({ id: t.q, ask: t.q, a: t.a, opts: shuffle([t.a, ...t.w]), x: t.x })), { pool: pool.map(t => qidOf(mode, t.q)) });
     }
     if (mode === 'tab') {
         // 같은 곡은 하나만 — 반주·핑거 악보를 먼저(솔로·베이스는 곡 처음이 아니라 알아보기 어려움). 코드악보·자작곡은 뺌
@@ -415,7 +483,7 @@ async function build(mode, lv) {
         const uniq = new Map();
         shuffle(rows).sort((a, b) => pref(a) - pref(b)).forEach(s => { const k = key(qTitle(s.title)); if (k && !uniq.has(k)) uniq.set(k, s); });
         const songs = [...uniq.values()];
-        const order = fresh(shuffle(songs), s => key(qTitle(s.title)), mode);
+        const order = fresh(shuffle(songs), s => key(qTitle(s.title)), mode, mode);
         const got = [];
         for (let i = 0; i < order.length && got.length < N; ) {      // 그림을 읽어 보표를 못 찾으면 다음 곡
             const part = order.slice(i, i + (N - got.length) + 2);
@@ -423,12 +491,12 @@ async function build(mode, lv) {
             (await Promise.all(part.map(s => loadSheet(s).catch(() => null)))).forEach(x => { if (x && got.length < N) got.push(x); });
         }
         const grp = s => (s.style === 'fingerstyle' ? 'f' : 'b');      // 오답은 같은 느낌(핑거 ↔ 밴드) 곡에서 먼저
-        return got.map(({ s, a: an }) => {
+        return Object.assign(got.map(({ s, a: an }) => {
             const a = qTitle(s.title);
             const same = shuffle(songs.filter(o => o !== s && grp(o) === grp(s))), diff = shuffle(songs.filter(o => o !== s && grp(o) !== grp(s)));
             const others = pickOthers([...same, ...diff].map(o => qTitle(o.title)), a);
             return { id: key(a), ask: '이 악보, 무슨 곡일까?', a, opts: shuffle([a, ...others]), song: s, an, hint: nfc(s.artist) };
-        });
+        }), { pool: songs.map(s => qidOf(mode, key(qTitle(s.title)))) });
     }
     // artist: 가수 칸에 괄호(OST·원곡 설명)가 없고 진짜 가수·연주자인 곡만 — 'OO OST', '안쌤의 기타나무숲', 영화사 이름은 빼서 정답이 헷갈리지 않게
     const rows = (await catalog()).filter(s => s.artist && !/[()]/.test(s.artist) && !/OST|안쌤|기타나무숲|폭스|fox/i.test(s.artist) && s.kind !== 'original' && isSong(s)
@@ -436,9 +504,9 @@ async function build(mode, lv) {
         && !REMAKE.test(qTitle(s.title)));
     const uniq = new Map();
     shuffle(rows).forEach(r => { const k = key(qTitle(r.title)); if (k && !uniq.has(k)) uniq.set(k, r); });
-    const songs = fresh([...uniq.values()], s => key(qTitle(s.title)), mode);
+    const songs = fresh([...uniq.values()], s => key(qTitle(s.title)), mode, mode);
     // 1/3 정도는 다른 기타 채널(하루한곡·그랩더기타)이 요즘 많이 치는 곡 — 안쌤 악보에 이미 있는 곡은 빼고
-    const ext = fresh(shuffle(EXT.filter(e => !uniq.has(key(qTitle(e.t))) && ![...uniq.keys()].some(k => alike(k, key(e.t))))), e => key(e.t), mode);
+    const ext = fresh(shuffle(EXT.filter(e => !uniq.has(key(qTitle(e.t))) && ![...uniq.keys()].some(k => alike(k, key(e.t))))), e => key(e.t), mode, mode);
     const nExt = Math.min(ext.length, Math.round(N / 3) + (Math.random() < 0.33 ? 1 : 0));
     const artists = [];
     const addArtist = (name, genre) => { if (!artists.some(x => alike(x.name, name))) artists.push({ name, genre }); };
@@ -454,7 +522,7 @@ async function build(mode, lv) {
         const others = pickOthers(shuffle(artists).map(x => x.name), e.a);
         return { id: key(e.t), ask: '', title: e.t, chip: '요즘 기타 유튜브 인기곡', a: e.a, opts: shuffle([e.a, ...others]) };
     });
-    return shuffle([...fromSite, ...fromExt]);
+    return Object.assign(shuffle([...fromSite, ...fromExt]), { pool: [...songs.map(s => qidOf(mode, key(qTitle(s.title)))), ...ext.map(e => qidOf(mode, key(e.t)))] });
 }
 
 // ---------- 진행 ----------
@@ -469,7 +537,7 @@ async function begin(mode, lv = 0) {
     try { qs = await build(mode, lv); if (my !== nav) return; if (qs.length < 4) throw new Error('few'); }
     catch (e) { if (my !== nav) return; app.innerHTML = `<p style="text-align:center;padding:60px 0">문제를 불러오지 못했어요. <a href="" style="text-decoration:underline">다시 시도</a></p>`; return; }
     remember(mode, qs.map(q => q.id));
-    G = { mode, lv, m: MODES[mode], qs, i: 0, score: 0, pts: 0, streak: 0, log: [], ch: 0 };
+    G = { mode, lv, m: MODES[mode], qs, i: 0, score: 0, pts: 0, streak: 0, log: [], ch: 0, rm: rankMode(mode, lv), pool: new Set(qs.pool || []) };
     ask();
 }
 // 악보 자르기: 그림에서 [t, b] 구간만 같은 비율로 (그림 폭 = 상자 폭). 한 줄 더 보면 다음 줄(없으면 앞 줄)을 따로 붙인다
@@ -679,52 +747,141 @@ function next() {
 // ---------- 결과 ----------
 function result() {
     const [, rank, cm] = RANK.find(([min]) => G.score * (10 / G.qs.length) >= min);
-    const songs = G.log.map(l => l.q.song).filter(s => s && (G.mode === 'tab' || s.on_sale));
-    app.innerHTML = `<section class="res">
-        <div class="md"><i class="fas ${G.m.icon}"></i> ${esc(modeName(G))}</div>
-        <div class="score">${G.score}<small> / ${G.qs.length}</small></div>
-        <div class="pts">${G.pts.toLocaleString()}점</div>
-        <div class="rank">${rank}</div><div class="cm">${esc(cm)}</div>
-        <div id="pkgot"></div>
-        <div class="board" id="board"></div>
-        <div class="btns"><button class="btn" id="again"><i class="fas fa-rotate-right"></i>다시 하기</button>
-            ${G.lv ? `<button class="btn ghost" id="lvb"><i class="fas fa-signal"></i>다른 난이도</button>` : ''}
-            <button class="btn ghost" id="other"><i class="fas fa-shuffle"></i>다른 퀴즈</button>
-            <button class="btn ghost" id="share"><i class="fas fa-share-nodes"></i>점수 자랑하기</button></div>
-        ${adSlot('r300')}
-        <div class="review card" id="review"><h3>문제 다시 보기</h3><ul>${G.log.map((l, k) => `<li><i class="fas ${l.ok ? 'fa-circle-check' : 'fa-circle-xmark'}"></i><span>
-            <b>${k + 1}. ${esc(G.mode === 'artist' ? `「${l.q.title}」 누구 노래?` : G.mode === 'tab' ? `악보 보고 맞히기 — ${l.q.a}` : l.q.ask)}</b>
-            <small>${G.mode === 'tab' ? '' : `정답: ${esc(l.q.a)}`}${!l.ok ? `${G.mode === 'tab' ? '' : ' · '}내 답: ${esc(l.o ?? '시간 끝')}` : `${G.mode === 'tab' ? '' : ' · '}+${l.got}점`}${l.q.hints ? ` · 힌트 ${l.q.hints}개` : ''}${(l.q.ch || []).length ? ` · 찬스: ${l.q.ch.map(c => CH[c][1]).join(', ')}` : ''}</small></span><span class="qr" data-k="${k}"></span></li>`).join('')}</ul></div>
-        <div class="rec">${songs.length ? `<h3><i class="fas fa-music" style="color:var(--green-mid)"></i>이번 퀴즈에 나온 곡 악보 <small>안쌤 TAB악보</small></h3><div class="list">${songs.map(recRow).join('')}</div>`
-            : `<h3><i class="fas fa-book" style="color:var(--green-mid)"></i>기초부터 탄탄하게</h3><div class="list"><a href="../#books"><span class="cv"><i class="fas fa-book"></i></span><span class="mt"><b>안쌤 기타 교본</b><small>코드·리듬·주법을 차근차근</small></span></a><a href="../tools.html"><span class="cv"><i class="fas fa-sliders"></i></span><span class="mt"><b>무료 연습도구</b><small>튜너 · 메트로놈 · 지판</small></span></a></div>`}</div>
-    </section>`;
-    scrollTo(0, 0);
     const g = G;
-    document.getElementById('again').onclick = () => begin(g.mode, g.lv);
-    document.getElementById('other').onclick = start;
-    if (g.lv) document.getElementById('lvb').onclick = pickLevel;
-    document.getElementById('share').onclick = () => share('안쌤의 기타 퀴즈쇼', `${modeName(g)} ${g.score}/${g.qs.length} (${g.pts.toLocaleString()}점) — ${rank.replace(/^\S+\s/, '')} 🎸 너는 몇 점?`);
-    // 다른 사람들과 비교 (db/play_stats.sql 적용 뒤부터 보임)
+    // 처음 그릴 때만: 맞힌 문제 기억(랭킹·다음 판 문제 고르기) · 피크 · 기록
     if (!g.saved) {
         g.saved = true;
         g.pk = picks.earn();          // 한 판 끝 → 피크 10 (하루 200까지)
-        rpc('play_quiz_save', { p_mode: g.lv ? `${g.mode}${g.lv}` : g.mode, p_correct: g.score, p_total: g.qs.length, p_score: g.pts }).then(r => {
-            const x = Array.isArray(r) ? r[0] : r;
-            if (!x || !x.plays) return;
-            const pct = Math.max(1, Math.ceil(x.rank / x.plays * 100));
-            const el = document.getElementById('board');
-            if (el && G === g) el.innerHTML = `📊 지금까지 ${x.plays.toLocaleString()}판 중 <b>${x.rank.toLocaleString()}등</b> · 상위 <b>${pct}%</b>`;
-        }).catch(() => {});
+        g.qids = g.log.map(l => qidOf(g.mode, l.q.id));
+        const before = solvedSet(g.rm);
+        const okIds = g.qids.filter((q, k) => g.log[k].ok);
+        g.fresh = okIds.filter(q => !before.has(q)).length;
+        const all = addSolved(g.rm, okIds);
+        g.solved = g.pool.size ? [...all].filter(q => g.pool.has(q)).length : all.size;
+        // 판 기록 (db/play_stats.sql) — 화면에는 안 보이고 모아만 둔다
+        rpc('play_quiz_save', { p_mode: g.lv ? `${g.mode}${g.lv}` : g.mode, p_correct: g.score, p_total: g.qs.length, p_score: g.pts }).catch(() => {});
         // 문제마다 다른 사람 정답률 (db/play_quiz_answers.sql 적용 뒤부터 보임) — 내 답까지 더한 숫자. '오답 지우기' 찬스를 쓴 문제는 셈에서 뺀다
-        const qids = g.log.map(l => qHash(`${g.mode}|${nfc(l.q.id)}`));
-        const items = g.log.map((l, k) => ({ q: qids[k], ok: l.ok })).filter((x, k) => !(g.log[k].q.ch || []).includes('cut'));
+        const items = g.log.map((l, k) => ({ q: g.qids[k], ok: l.ok })).filter((x, k) => !(g.log[k].q.ch || []).includes('cut'));
         if (items.length) rpc('play_quiz_answers_save', { p_mode: g.mode, p_items: items }).then(rows => {
             if (!Array.isArray(rows) || !rows.length || G !== g) return;
             g.rates = new Map(rows.map(r => [r.qid, r]));
-            showRates(g, qids);
+            showRates(g, g.qids);
         }).catch(() => {});
-    } else if (g.rates) showRates(g, g.log.map(l => qHash(`${g.mode}|${nfc(l.q.id)}`)));
+    }
+    const songs = g.log.map(l => l.q.song).filter(s => s && (g.mode === 'tab' || s.on_sale));
+    const unit = UNIT(g.rm), total = g.pool.size;
+    // 문제 다시 보기: 한 줄에 '아티스트 - 제목'과 오른쪽 점수 (2026-11-11 사용자 요청: 세로를 줄이게)
+    const title = l => g.mode === 'tab' ? [qTitle(l.q.song.artist || ''), l.q.a].filter(Boolean).join(' - ')   // 가수 칸의 (OST·롤드컵 …) 설명은 뺌
+        : g.mode === 'artist' ? `${l.q.a} - ${l.q.title}` : l.q.ask;
+    const sub = l => [g.mode === 'trivia' ? `정답: ${l.q.a}` : '', !l.ok && g.mode !== 'tab' ? `내 답: ${l.o ?? '시간 끝'}` : '',
+        l.q.hints ? `힌트 ${l.q.hints}개` : '', (l.q.ch || []).length ? `찬스: ${l.q.ch.map(c => CH[c][1]).join(', ')}` : ''].filter(Boolean).join(' · ');
+    const pt = l => (l.ok ? `+${l.got}점` : l.o == null ? '시간 끝' : '틀림');
+    app.innerHTML = `<section class="rlay">
+        <div class="res rhead">
+            <div class="md"><i class="fas ${g.m.icon}"></i> ${esc(modeName(g))}</div>
+            <div class="score">${g.score}<small> / ${g.qs.length}</small></div>
+            <div class="pts">${g.pts.toLocaleString()}점</div>
+            <div class="rank">${rank}</div><div class="cm">${esc(cm)}</div>
+            <div id="pkgot"></div>
+            <p class="prog">지금까지 맞힌 ${unit} <b>${g.solved.toLocaleString()}</b>${total ? ` / ${total.toLocaleString()}${unit}` : ''}${g.fresh ? ` · 이번 판 새로 <b>+${g.fresh}</b>` : ''}</p>
+            <div class="btns"><button class="btn" id="again"><i class="fas fa-rotate-right"></i>다시 하기</button>
+                ${g.lv ? `<button class="btn ghost" id="lvb"><i class="fas fa-signal"></i>다른 난이도</button>` : ''}
+                <button class="btn ghost" id="other"><i class="fas fa-shuffle"></i>다른 퀴즈</button>
+                <button class="btn ghost" id="rkUp"><i class="fas fa-trophy"></i>랭킹에 올리기</button>
+                <button class="btn ghost" id="share"><i class="fas fa-share-nodes"></i>점수 자랑하기</button></div>
+        </div>
+        <aside class="rside">
+            <div class="rk card" id="rk"><p class="soon"><i class="fas fa-spinner fa-spin"></i> 랭킹 불러오는 중…</p></div>
+            <div class="rec">${songs.length ? `<h3><i class="fas fa-music" style="color:var(--green-mid)"></i>이번 퀴즈에 나온 곡 악보 <small>안쌤 TAB악보</small></h3><div class="list">${songs.map(recRow).join('')}</div>`
+                : `<h3><i class="fas fa-book" style="color:var(--green-mid)"></i>기초부터 탄탄하게</h3><div class="list"><a href="../#books"><span class="cv"><i class="fas fa-book"></i></span><span class="mt"><b>안쌤 기타 교본</b><small>코드·리듬·주법을 차근차근</small></span></a><a href="../tools.html"><span class="cv"><i class="fas fa-sliders"></i></span><span class="mt"><b>무료 연습도구</b><small>튜너 · 메트로놈 · 지판</small></span></a></div>`}</div>
+        </aside>
+        <div class="rlist">
+            ${adSlot('r300')}
+            <div class="review card" id="review"><h3>문제 다시 보기</h3><ul>${g.log.map((l, k) => `<li class="${l.ok ? 'ok' : 'no'}"><i class="fas ${l.ok ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
+                <span class="t"><b>${k + 1}. ${esc(title(l))}</b>${sub(l) ? `<small>${esc(sub(l))}</small>` : ''}</span>
+                <span class="pt">${pt(l)}</span><span class="qr" data-k="${k}"></span></li>`).join('')}</ul></div>
+        </div>
+    </section>`;
+    scrollTo(0, 0);
+    document.getElementById('again').onclick = () => begin(g.mode, g.lv);
+    document.getElementById('other').onclick = start;
+    if (g.lv) document.getElementById('lvb').onclick = pickLevel;
+    document.getElementById('rkUp').onclick = () => askRank(g);
+    document.getElementById('share').onclick = () => share('안쌤의 기타 퀴즈쇼', `${modeName(g)} ${g.score}/${g.qs.length} (${g.pts.toLocaleString()}점) · 지금까지 맞힌 ${unit} ${g.solved}${total ? '/' + total : ''} — ${rank.replace(/^\S+\s/, '')} 🎸 너는 몇 점?`);
+    if (g.rates) showRates(g, g.qids);
     document.getElementById('pkgot').innerHTML = pickLine(g.pk);
+    // 랭킹 (db/play_quiz_rank.sql 적용 뒤부터) — 불러와지면 '랭킹에 올릴까요?'를 먼저 묻는다 (2026-11-11 사용자 요청)
+    loadRank(g).then(ok => { if (ok && !g.asked && G === g) { g.asked = true; askRank(g); } });
+}
+
+// ---------- 랭킹 화면 ----------
+async function loadRank(g) {
+    const box = document.getElementById('rk');
+    if (!box) return false;
+    let rows = null;
+    try { rows = await rpc('play_quiz_rank_top', { p_mode: g.rm, p_key: PLAY.myKey() }); } catch (e) {}
+    if (G !== g || !document.body.contains(box)) return false;
+    const unit = UNIT(g.rm), total = g.pool.size;
+    if (!Array.isArray(rows)) {
+        box.innerHTML = `<h3>🏆 랭킹</h3><p class="soon">랭킹은 곧 열려요. 지금까지 맞힌 ${unit} 수로 순위를 매겨요.</p>`;
+        return false;
+    }
+    const players = rows[0] ? rows[0].players : 0;
+    const me = rows.find(r => r.me);
+    const medal = n => (n === 1 ? '🥇' : n === 2 ? '🥈' : n === 3 ? '🥉' : n);
+    const li = r => `<li class="${r.me ? 'me' : ''}"><span class="n">${medal(r.pos)}</span><span class="nm">${esc(r.nickname)}${r.me ? ' <small>나</small>' : ''}</span><span class="c">${r.solved.toLocaleString()}${unit}</span></li>`;
+    const top = rows.filter(r => r.pos <= 10), more = rows.filter(r => r.pos > 10);
+    box.innerHTML = `<h3>🏆 랭킹 <small>${esc(modeName(g))}</small></h3>
+        <p class="sub">지금까지 맞힌 ${unit} 수${total ? ` · 전체 ${total.toLocaleString()}${unit}` : ''}${players ? ` · ${players.toLocaleString()}명` : ''}</p>
+        ${top.length ? `<ol>${top.map(li).join('')}${more.length ? `<li class="gap"><span></span><span>⋯</span><span></span></li>${more.map(li).join('')}` : ''}</ol>`
+            : `<p class="soon">아직 아무도 안 올렸어요. 첫 번째 주인공이 되어 보세요!</p>`}
+        ${me ? '' : g.hidden ? `<div class="mine"><span>운영 계정으로 올려서 랭킹에는 안 보여요</span></div>`
+            : `<div class="mine"><span>나: <b>${g.solved.toLocaleString()}${unit}</b> · 아직 안 올렸어요</span><button class="btn" data-rkup><i class="fas fa-trophy"></i>올리기</button></div>`}`;
+    const up = box.querySelector('[data-rkup]');
+    if (up) up.onclick = () => askRank(g);
+    return true;
+}
+
+// '랭킹에 올릴까요?' — 올리면 이 브라우저가 지금까지 맞힌 문제를 모두 올린다(닉네임은 기억). 취소해도 화면의 '랭킹에 올리기'로 언제든
+function askRank(g) {
+    document.querySelector('.rkask-back')?.remove();
+    const unit = UNIT(g.rm), total = g.pool.size;
+    const back = document.createElement('div');
+    back.className = 'rkask-back';
+    back.innerHTML = `<div class="rkask card" role="dialog" aria-modal="true" aria-label="랭킹에 올리기">
+        <div class="em">${g.score === g.qs.length ? '🏆' : g.score >= g.qs.length * 0.6 ? '🎉' : '🎸'}</div>
+        <h3>${g.qs.length}문제 중 ${g.score}개 맞혔어요!</h3>
+        <p>지금까지 맞힌 ${unit} <b>${g.solved.toLocaleString()}</b>${total ? ` / ${total.toLocaleString()}${unit}` : ''}${g.fresh ? ` (이번 판 새로 +${g.fresh})` : ''}<br>랭킹에 올려서 자랑할까요?</p>
+        <input id="rkNick" maxlength="12" placeholder="닉네임 (비우면 익명)" value="${esc(mem.get('quiz.nick', ''))}" autocomplete="nickname">
+        <div class="err" id="rkErr"></div>
+        <div class="acts"><button class="btn ghost" type="button" data-x>취소</button><button class="btn" type="button" data-y><i class="fas fa-trophy"></i>올리기</button></div>
+    </div>`;
+    const close = () => { back.remove(); document.removeEventListener('keydown', onKey); };
+    const onKey = e => { if (e.key === 'Escape') close(); if (e.key === 'Enter' && e.target.id === 'rkNick') send(); };
+    let busy = false;
+    const send = async () => {
+        if (busy) return;
+        busy = true;
+        const nick = back.querySelector('#rkNick').value.trim();
+        const err = back.querySelector('#rkErr');
+        err.textContent = '';
+        try {
+            const r = await rpc('play_quiz_rank_submit', { p_key: PLAY.myKey(), p_nick: nick, p_mode: g.rm, p_qids: [...solvedSet(g.rm)].slice(-600) }, { auth: true });
+            const x = Array.isArray(r) ? r[0] : r;
+            mem.set('quiz.nick', nick);
+            g.hidden = !!(x && x.hidden);
+            close();
+            toast(g.hidden ? '올렸어요. 운영 계정이라 랭킹에는 안 보여요' : x && x.pos ? `랭킹에 올렸어요 — 지금 ${x.pos}위!` : '랭킹에 올렸어요');
+            loadRank(g);
+        } catch (e) {
+            busy = false;
+            err.textContent = { link: '닉네임에 링크는 쓸 수 없어요.', long: '닉네임은 12자까지예요.' }[e.code] || '지금은 올리지 못했어요. 잠시 뒤 다시 해 주세요.';
+        }
+    };
+    back.addEventListener('click', e => { if (e.target === back || e.target.closest('[data-x]')) close(); else if (e.target.closest('[data-y]')) send(); });
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(back);
+    back.querySelector('#rkNick').focus();
 }
 // 문제 표시: "종류|문제" → 16자리 해시 (문제 글을 그대로 DB에 보내지 않게)
 function qHash(s) {

@@ -223,6 +223,17 @@
     }
     paintPicks();
     // 결과 화면에 넣는 '피크 받음' 한 줄
+    // 이 브라우저의 무작위 열쇠 — 월드컵 댓글(내 글 지우기)과 퀴즈 랭킹(같은 사람 알아보기)이 같이 쓴다. 서버엔 해시만 남는다
+    function myKey() {
+        let k = mem.get('wc.ckey', '');
+        if (!/^[A-Za-z0-9_-]{16,64}$/.test(k)) {
+            const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+            k = [...crypto.getRandomValues(new Uint8Array(24))].map(b => A[b & 63]).join('');
+            mem.set('wc.ckey', k);
+        }
+        return k;
+    }
+
     const pickLine = got => got
         ? `<div class="pk-got">${pickIcon()}<b>+${got} 피크!</b> <span>지금 ${picks.bal().toLocaleString()}피크 · 퀴즈 찬스에 써요</span></div>`
         : `<div class="pk-got full">${pickIcon()}<span>오늘 받을 수 있는 피크(${PICK.day})를 다 모았어요. 내일 또 와요!</span></div>`;
@@ -271,5 +282,5 @@
             <span class="bulb"><i class="fas fa-lightbulb"></i></span>${opt.count ? `<span class="cnt">${opt.count}문제</span>` : ''}</div>`;
     }
 
-    window.PLAY = { hasLogin: () => !!userToken(), picks, PICK, pickIcon, pickLine, thumb, esc, shuffle, adSlot, interstitial, toast, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow, IS_APP };
+    window.PLAY = { hasLogin: () => !!userToken(), myKey, picks, PICK, pickIcon, pickLine, thumb, esc, shuffle, adSlot, interstitial, toast, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow, IS_APP };
 })();
