@@ -170,8 +170,11 @@
     .ed-hd h3 { font-size: 17px; font-weight: 900; }
     .ed-hd .x { margin-left: auto; border: 0; background: none; font-size: 20px; cursor: pointer; color: #888; }
     .ed-body { flex: 1; overflow-y: auto; padding: 20px 22px 30px; display: grid; grid-template-columns: 220px 1fr; gap: 24px; align-content: start; }
-    .ed-ft { display: flex; gap: 8px; padding: 14px 22px; border-top: 1px solid var(--line); }
+    .ed-ft { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 22px; border-top: 1px solid var(--line); }
     .ed-ft .msg { margin-left: auto; align-self: center; font-size: 13px; color: var(--sub); }
+    /* 저장 후 업로드 (2026-11-12): 공개로 바꿔 저장하고 창을 닫는다 — 오른쪽 끝 */
+    .btn.go { background: #1f5a3c; border-color: #1f5a3c; color: #fff; white-space: nowrap; }
+    .btn.go:hover:not(:disabled) { background: #174a31; border-color: #174a31; }
 
     .drop { border: 2px dashed #cfd9d3; border-radius: 12px; padding: 16px; text-align: center; color: #667; cursor: pointer; background: #fbfdfc; }
     .drop.over { border-color: var(--green); background: var(--green-bg); }
@@ -584,6 +587,7 @@
         <button class="btn primary" id="saveBtn"><i class="fas fa-check"></i> 저장</button>
         <button class="btn danger" id="delBtn" hidden><i class="far fa-trash-can"></i> 삭제</button>
         <span class="msg" id="edMsg"></span>
+        <button class="btn go" id="pubSaveBtn"><i class="fas fa-cloud-arrow-up"></i> 저장 후 업로드</button>
     </div>
 </aside>
 
@@ -1119,6 +1123,12 @@
     function updateSaveBtn() {
         const dirty = isDirty();
         $('saveBtn').disabled = saving || pdfReading || !dirty;
+        // 저장 후 업로드: PDF가 있어야 하고, 이미 공개인데 바뀐 것도 없으면 할 일이 없어 꺼 둔다
+        const hasPdf = !!newPdf || !!(editing && filesById[editing.id]);
+        const pb = $('pubSaveBtn');
+        pb.disabled = saving || pdfReading || !hasPdf || (!dirty && !!(editing && editing.published));
+        pb.title = !hasPdf ? 'PDF를 올려야 업로드할 수 있어요'
+            : '바꾼 내용을 저장하고 판매 페이지를 공개한 뒤 이 창을 닫아요' + (editing && editing.published ? ' (이미 공개 중)' : '');
         if (dirty && savedNote && !saving) { savedNote = false; $('edMsg').textContent = ''; }
     }
     form.addEventListener('change', () => updateSaveBtn());
@@ -1912,6 +1922,16 @@
     const extOf = blob => blob.type === 'image/webp' ? 'webp' : blob.type === 'image/png' ? 'png' : 'jpg';
 
     $('saveBtn').onclick = () => save();
+    // 저장 후 업로드 (2026-11-12 사용자): '스토어에 공개하기'를 켜고 바로 저장(공개 묻는 창 없이) → 편집 창을 닫는다.
+    //   저장하지 못하면(곡명·영상 주소 등) 창을 그대로 두고, 공개 칸도 누르기 전으로 돌린다
+    $('pubSaveBtn').onclick = async () => {
+        if (saving || asking || pdfReading) return;
+        const pub = form.elements.published, was = pub.checked;
+        pub.checked = true;
+        if (!isDirty()) { closeEditor(); return; }
+        if (await save()) closeEditor();
+        else { pub.checked = was; updateSaveBtn(); }
+    };
     // PDF가 없던 비공개 악보에 처음 PDF를 올려 저장할 때 공개할지 묻는다 (2026-11-10 사용자)
     //   'pub' = 공개로 바꾸고 올리기, 'keep' = 공개하지 않고 올리기, 'cancel' = 취소(Esc·바깥 누르기도 취소)
     function askPublish(name) {
