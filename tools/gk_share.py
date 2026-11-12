@@ -3,12 +3,12 @@
 #   그래서 계열 8 × 단계 21 = 168개의 작은 페이지(play/gk/s/<계열>-<단계>.html)와 썸네일(images/play/gk/share/<계열>-<단계>.jpg)을 미리 만든다.
 #   페이지는 열자마자 기타 키우기(play/guitar.html)로 넘어간다(주소 뒤 ?vs= 같은 것은 그대로 넘김).
 # 다시 만들기: 새 단계 그림이 오거나 이름이 바뀌면  python -X utf8 tools/gk_share.py
-#   이름·그림 접두어는 play/guitar-mockup.html 의 FAMS·GEAR 에서 읽는다(공개하면 guitar.html).
+#   이름·그림 접두어는 play/guitar.html 의 FAMS·GEAR 에서 읽는다(2026-11-13 공개 — 그 전에는 guitar-mockup.html).
 import re, os, sys, colorsys
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-GAME = 'play/guitar.html' if '--public' in sys.argv else 'play/guitar-mockup.html'
+GAME = 'play/guitar.html'
 SITE = 'https://ahnssamguitar.com'
 FONT_B = 'C:/Windows/Fonts/malgunbd.ttf'
 FONT_R = 'C:/Windows/Fonts/malgun.ttf'
