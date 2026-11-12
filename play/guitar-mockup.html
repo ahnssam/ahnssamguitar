@@ -402,9 +402,16 @@ const FAMS = { strat: { name: '스트랫', names: [
     '줄이 다섯 개로 늘어난 베이스', '쿵쿵 울려서 컵이 떨리는 베이스', '넥이 길게 늘어난 베이스', '몸통이 고래처럼 생긴 베이스', '치면 땅이 울리는 베이스',
     '심장 박동을 맞추는 베이스', '깊은 바다의 울림을 품은 베이스', '화산 속에서 단련된 베이스', '지구 반대편까지 울리는 베이스', '거인의 발걸음을 내는 베이스',
     '블랙홀의 저음을 켜는 베이스', '대지의 맥박이 흐르는 베이스', '천둥보다 낮은 베이스', '행성을 공전시키는 베이스', '태초의 첫 음을 낸 베이스',
-    '자코 파스토리오의 베이스'] } };
+    '자코 파스토리오의 베이스'] },
+    // 레스폴 (2026-11-12 사용자가 뽑은 lp_00~09, +6은 '노브가 커지는'으로 다시 뽑은 그림). +10~+20 이름은 Claude가 지은 것
+    lespaul: { name: '레스폴', art: 'lp', artMax: 9, names: [
+    '이모부 창고에서 나온 레스폴', '어깨가 빠질 듯 무거운 레스폴', '헤드가 한 번 부러졌다 붙은 레스폴', '픽업 커버 벗겼더니 얼룩말인 레스폴', '골드탑 칠하다 만 레스폴',
+    '무늬가 너무 진해서 불타 보이는 레스폴', '노브가 자꾸 커지는 레스폴', '체리 선버스트에 진짜 체리가 열린 레스폴', '무대 연기가 따라다니는 레스폴', '아무도 안 잡았는데 비브라토 걸리는 레스폴',
+    '용암이 흐르는 레스폴', '황금 시대를 기억하는 레스폴', '무대 조명을 삼킨 레스폴', '백 년 묵은 마호가니 정령의 레스폴', '폭풍 속에서 울린 레스폴',
+    '왕관을 쓴 레스폴', '만 명의 함성을 머금은 레스폴', '해 질 녘 금빛이 깃든 레스폴', '별똥별을 품은 레스폴', '전설의 무대에서 내려온 레스폴',
+    '게리 무르의 레스폴'] } };
 // 기타 찾기에서 나오는 계열 (2026-11-12 사용자: 통기타·베이스도 적용) — 지금은 셋 중 하나가 같은 확률로
-const FIND_FAMS = ['strat', 'acoustic', 'bass'];
+const FIND_FAMS = ['strat', 'acoustic', 'bass', 'lespaul'];
 // 튜너: 바늘이 초록 칸에 있을 때 탭하면 성공 +%p (유지에서 가져오고 파괴는 그대로)
 const TUNERS = [null,
     { name: '클립 튜너', icon: 'fa-paperclip', price: 3000, bonus: 2, zone: 0.2, period: 1.6, desc: '헤드에 꽂는 작은 튜너. 초록 칸이 좁고 바늘이 빨라요' },
@@ -825,10 +832,11 @@ function renderName() {
 // 빈 작업대: 첫 기타는 피크로 사고, 그다음부터는 공짜로 받는다
 function emptyCard() {
     const sil = `<img class="g1" src="../images/play/gk/item_strat.png" alt="">`;   // 무슨 기타가 나올지 모르게 그림자만
-    if (S.first) return `<p>작업대가 비었어요<small>창고에서 새 기타를 찾아 와요. 이제부터는 공짜예요.</small></p><button class="btn" type="button" data-a="new"><i class="fas fa-magnifying-glass"></i> 기타 찾기</button>`;
+    // 2026-11-12 사용자: 빈 작업대는 간단하게 위에 '기타 키우기', 아래 '시작'만
+    if (S.first) return `<p class="big">기타 키우기</p><button class="btn" type="button" data-a="new"><i class="fas fa-play"></i> 시작</button>`;
     const bal = PLAY.picks.bal(), need = FIRST_PICKS - bal;
-    if (need <= 0) return `${sil}<p>첫 기타를 찾아볼까요?<small>첫 기타는 놀이터 피크 ${FIRST_PICKS}개로 찾아요. 지금 ${bal.toLocaleString()}피크 있어요.</small></p>
-        <button class="btn pick" type="button" data-a="buy1"><i class="fas fa-magnifying-glass"></i> 기타 찾기 <small>${PLAY.pickIcon()} ${FIRST_PICKS}</small></button>`;
+    if (need <= 0) return `${sil}<p class="big">기타 키우기</p>
+        <button class="btn pick" type="button" data-a="buy1"><i class="fas fa-play"></i> 시작 <small>${PLAY.pickIcon()} ${FIRST_PICKS}</small></button>`;
     const dl = S.daily !== today();   // 오늘 출석 전이면 출석 단추가 먼저(말풍선에 안 가리게 놀이터 길은 한 줄 링크로)
     return `${sil}<p class="big">피크가 ${bal ? '모자라다' : '없다'}구요?<small>첫 기타는 피크 ${FIRST_PICKS}개로 찾아요 (지금 ${bal}개).<br>${dl ? `출석하면 ${DAILY_PICKS}개, 놀이터 한 판에 ${PLAY.PICK.per}개.` : `놀이터 퀴즈쇼·월드컵 한 판마다 ${PLAY.PICK.per}개씩 모여요.`}</small></p>
         ${dl ? `<button class="btn pick" type="button" data-a="daily"><i class="fas fa-gift"></i> 출석하고 피크 받기 <small>${PLAY.pickIcon()} ${DAILY_PICKS}</small></button>
