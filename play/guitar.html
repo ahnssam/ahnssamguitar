@@ -23,6 +23,9 @@
 <link rel="stylesheet" href="play.css?v=2026111101">
 <style>
     .gk { max-width: 560px; padding-top: 14px; }
+    /* 2026-11-13 사용자(카카오 브라우저에서 보고): 내릴 때 '기타 키우기' 줄 말고 '안쌤의 기타나무숲 · 로그인' 줄이 위에 붙게. 사이트 메뉴가 없는 앱(TWA)에서는 예전처럼 놀이터 줄이 붙음 */
+    body.has-site header.site-hd { position: sticky; top: 0; }
+    body.has-site .ph { position: static; }
     .gk [hidden] { display: none !important; }
 
     /* 메뉴 아래 줄: 골드·조각·하드케이스·출석·소리 — 휴대폰에서도 한 줄 (2026-11-13 사용자: 스피커가 아래로 내려가 두 줄이 됨, 구름 단추는 뺌) */
@@ -32,18 +35,17 @@
     .res.gold i { color: #e0a514; }
     /* 무대 왼쪽 위 조각·하드케이스 · 오른쪽 위 자랑하기 (2026-11-13 사용자) — 높이는 이름표 바로 아래(--nmb, renderName 이 잰다) */
     .stage .scbox, .stage .brag { position: absolute; z-index: 4; top: calc(var(--nmb, 54px) + 8px); color: #fff; background: rgba(8, 14, 12, 0.7); border: 1.5px solid rgba(255, 255, 255, 0.18); }
-    .stage .scbox { left: 10px; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 6px 9px; border-radius: 10px; font-size: 11.5px; font-weight: 700; line-height: 1.25; text-align: left; white-space: nowrap; }
-    .stage .scbox > span { display: flex; align-items: center; gap: 4px; }
-    .stage .scbox i { font-size: 11px; color: #c9d2ce; }
-    .stage .scbox i.pz { color: #f0a08a; }
-    .stage .scbox i.arr { font-size: 9px; color: #8d9a94; }
+    .stage .scbox { left: 8px; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 6px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; line-height: 1.3; text-align: left; white-space: nowrap; }
+    .stage .scbox .h { color: #c9d2ce; font-weight: 600; }
+    .stage .scbox .h + span { margin-bottom: 3px; }
+    .stage .scbox em, .stage .scbox i { font-style: normal; } .stage .scbox i { display: none; }
     .stage .scbox b { color: #ffd76a; font-weight: 900; }
     .stage .scbox b.full { color: #7be0a5; }
     .stage .scbox.ready { border-color: #f5b31e; box-shadow: 0 0 12px rgba(245, 179, 30, 0.5); }   /* 조각이 다 모여 지금 하드케이스를 만들 수 있을 때 */
-    .stage .brag { right: 10px; display: flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 999px; font-size: 12.5px; font-weight: 800; }
-    .stage .brag i { font-size: 12px; }
+    .stage .brag { right: 8px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 8px 6px; border-radius: 12px; font-size: 11px; font-weight: 800; }
+    .stage .brag i { font-size: 15px; }
     .stage .scbox:active, .stage .brag:active { transform: translateY(1px); }
-    @media (max-width: 345px) { .stage .scbox { font-size: 10.5px; padding: 5px 7px; left: 8px; } .stage .brag { right: 8px; padding: 6px 9px; font-size: 12px; gap: 5px; } }   /* 아주 좁은 폰: 둘이 안 붙게 */
+    @media (max-width: 359px) { .stage .scbox { font-size: 10px; padding: 5px 6px; left: 6px; } .stage .scbox .h, .stage .scbox em { display: none; } .stage .scbox i { display: inline; } .stage .scbox .h + span { margin-bottom: 0; } .stage .brag { right: 6px; padding: 6px 6px 5px; font-size: 10px; } }   /* 좁은 폰: 기타 옆 자리가 더 좁아서 '조각 7/20 · 하케 1/3' 두 줄로 */
     /* 맨 위 놀이터 줄: [피크] [출석] [스피커] [공유] [놀이터] (2026-11-13 사용자) */
     .ph .res.daily { height: 32px; padding: 0 10px; font-size: 13px; flex: none; }
     .ph .iconbtn { width: 32px; height: 32px; }
@@ -106,13 +108,14 @@
     .dex .note2 { margin-top: 4px; }
 
     /* 작업대 무대 */
-    /* 2026-11-13 사용자: 어느 단추도 기타를 가리면 안 됨 → 그림 자리(--h0) 위에 어두운 칸(--t)을 더해 이름표·조각 상자·자랑하기를 기타 위로 띄운다.
-       그림은 예전처럼 '그림 자리'를 덮는 크기로 아래에 붙이고(max(100%, --h0)), 기타·빛·효과도 그림 자리 기준 */
-    .stage { --s: 4; --h0: 400px; --t: 62px; position: relative; height: calc(var(--h0) + var(--t)); border-radius: 18px; overflow: hidden; background: #120d09 url(../images/play/gk/bg_workshop.webp) center bottom / max(100%, var(--h0)) no-repeat;   /* 공방 배경 (2026-11-12 사용자가 뽑은 그림, 예전 도트 bg_studio.png) */ touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+    /* 2026-11-13 사용자: 어느 단추도 기타를 가리면 안 됨 + "작업대 아래에 검은 공간이 있어야지 위로 있으면 안 됨, 만나는 면은 얇게 페더"
+       → 그림은 예전 무대 그대로(그림 자리 --h0 = 400·470·330px, 기타·빛·효과도 그 기준), 그 아래에 어두운 칸(--t)을 더해 [강화][팔기]를 둔다.
+       그림 위에는 이름표와 양옆 좁은 칸(조각 상자·자랑하기)만 — 기타 옆 빈자리라 기타를 안 가린다 */
+    .stage { --s: 4; --h0: 400px; --t: 64px; position: relative; height: calc(var(--h0) + var(--t)); border-radius: 18px; overflow: hidden; background: #120d09 url(../images/play/gk/bg_workshop.webp) center bottom var(--t) / max(100%, var(--h0)) no-repeat;   /* 공방 배경 (2026-11-12 사용자가 뽑은 그림, 예전 도트 bg_studio.png) */ touch-action: manipulation; user-select: none; -webkit-user-select: none; }
     .stage::before { content: ''; position: absolute; inset: 0; background: radial-gradient(60% 55% at 50% 50%, rgba(255, 228, 150, 0.08), rgba(8, 6, 4, 0.18) 70%, rgba(8, 6, 4, 0.45)); }
     @media (min-width: 480px) { .stage { --s: 5; --h0: 470px; } }
-    @media (max-width: 359px) { .stage { --s: 3; --h0: 330px; --t: 72px; } }   /* 좁은 폰은 이름이 두 줄이라 위 칸을 조금 더 */
-    .stage .topfade { position: absolute; left: 0; right: 0; top: 0; z-index: 0; height: calc(var(--t) + 34px); pointer-events: none; background: linear-gradient(#120d09 0, #120d09 calc(var(--t) - 10px), rgba(18, 13, 9, 0)); }
+    @media (max-width: 359px) { .stage { --s: 3; --h0: 330px; } }
+    .stage .botfade { position: absolute; left: 0; right: 0; bottom: 0; z-index: 0; height: calc(var(--t) + 22px); pointer-events: none; background: linear-gradient(rgba(18, 13, 9, 0), #120d09 22px); }   /* 그림과 어두운 칸이 만나는 선: 얇은 페더 */
     /* +10부터 기타 뒤 아우라 (2026-11-12 사용자: 그 기타 색상의 오로라 같은 게 흔들흔들). 색은 그림에서 가장 많이 쓰인 선명한 색(--ah 색상각) */
     /* 2026-11-12 사용자: 아우라가 너무 크다, 기타 주변에서 더 빛나게 → 커튼은 기타 폭만큼 작게, 기타 테두리가 그 색으로 빛난다(.stage.glow #cv) */
     .stage { --ah: 45; }
@@ -121,12 +124,12 @@
     .shopcat button.on { background: #fff; color: var(--green-deep); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
     @media (max-width: 400px) { .shopcat button i { display: none; } .shopcat button { font-size: 12.5px; } }
     .btncap { position: absolute; z-index: 5; width: 17px; height: 17px; border-radius: 50%; transform: translate(-50%, -50%); background: radial-gradient(circle at 35% 30%, #fff, #c9ced3 42%, #6d747a); box-shadow: 0 0 0 2px #2b2f33, 0 3px 5px rgba(0, 0, 0, 0.5); }
-    .stage .aura { position: absolute; z-index: 0; left: 50%; top: calc(var(--t) + var(--h0) * 0.5); width: 46%; height: calc(var(--h0) * 0.72); transform: translate(-50%, -50%); pointer-events: none; opacity: 0; transition: opacity .8s; filter: blur(10px); mix-blend-mode: screen; }
+    .stage .aura { position: absolute; z-index: 0; left: 50%; top: calc(var(--h0) * 0.5); width: 46%; height: calc(var(--h0) * 0.72); transform: translate(-50%, -50%); pointer-events: none; opacity: 0; transition: opacity .8s; filter: blur(10px); mix-blend-mode: screen; }
     .stage .aura.on { opacity: .55; }
     .stage .aura.l15 { opacity: .7; }
     .stage .aura.l20 { opacity: .85; }
     /* 2026-11-12 사용자: 기타 아래쪽에서 막 돌아가는 조명을 쏜 듯 — 거치대 자리에서 빛줄기 셋이 좌우로 휘젓고 바닥이 빛난다(+10부터) */
-    .stage .spots { position: absolute; z-index: 0; left: 50%; bottom: calc(var(--h0) * 0.09); width: 70%; height: calc(var(--h0) * 0.42); transform: translateX(-50%); pointer-events: none; opacity: 0; transition: opacity .8s; mix-blend-mode: screen; }   /* 2026-11-12 사용자: 조명은 작게 */
+    .stage .spots { position: absolute; z-index: 0; left: 50%; bottom: calc(var(--t) + var(--h0) * 0.09); width: 70%; height: calc(var(--h0) * 0.42); transform: translateX(-50%); pointer-events: none; opacity: 0; transition: opacity .8s; mix-blend-mode: screen; }   /* 2026-11-12 사용자: 조명은 작게 */
     .stage.glow .spots { opacity: .55; }
     .stage.glow.g20 .spots { opacity: .85; }
     .stage .spots i { position: absolute; left: 50%; bottom: 0; width: 22%; height: 100%; margin-left: -11%; transform-origin: 50% 100%; filter: blur(3px);
@@ -155,7 +158,7 @@
     .stage .aura.l20 i { background: linear-gradient(to top, hsla(var(--ah), 100%, 62%, 0) 0%, hsla(var(--ah), 100%, 64%, 0.95) 38%, hsla(calc(var(--ah) + 60), 100%, 72%, 0.7) 68%, hsla(calc(var(--ah) + 120), 100%, 80%, 0) 100%); }
     @keyframes auSway { 0% { transform: skewX(-16deg) scaleY(.88); opacity: .55; } 50% { transform: skewX(6deg) scaleY(1.04); opacity: 1; } 100% { transform: skewX(18deg) scaleY(.94); opacity: .7; } }
     @media (prefers-reduced-motion: reduce) { .stage .aura i, .stage.glow #cv { animation: none; } }
-    .stage canvas { position: absolute; z-index: 1; left: 50%; top: calc(var(--t) + var(--h0) * 0.46); width: calc(56px * var(--s)); height: calc(84px * var(--s)); transform: translate(-50%, -50%); image-rendering: auto; }
+    .stage canvas { position: absolute; z-index: 1; left: 50%; top: calc(var(--h0) * 0.46); width: calc(56px * var(--s)); height: calc(84px * var(--s)); transform: translate(-50%, -50%); image-rendering: auto; }
     /* 이름표: 기타 머리 위에 둥실 떠 있다 (2026-11-12 사용자: 검키우기처럼 단계마다 바뀌는 이름이 기타 위에) */
     .nmtag { position: absolute; left: 50%; top: 14px; z-index: 2; display: flex; align-items: center; gap: 8px; width: max-content; max-width: calc(100% - 24px); padding: 5px 15px 5px 5px; border-radius: 999px; background: rgba(8, 14, 12, 0.74); border: 2px solid rgba(255, 255, 255, 0.2); color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); transform: translateX(-50%); animation: nmBob 2.8s ease-in-out infinite; }
     .nmtag::after { content: ''; position: absolute; left: 50%; bottom: -10px; margin-left: -8px; border: 8px solid transparent; border-bottom: 0; border-top-color: rgba(8, 14, 12, 0.74); }
@@ -198,7 +201,7 @@
     .bench.wait .odds3 { opacity: .5; }
 
     /* 연출 */
-    .fx { position: absolute; left: 0; right: 0; bottom: 0; top: var(--t); z-index: 4; pointer-events: none; overflow: hidden; }   /* 효과 위치(%)는 그림 자리 기준 */
+    .fx { position: absolute; left: 0; right: 0; top: 0; bottom: var(--t); z-index: 4; pointer-events: none; overflow: hidden; }   /* 효과 위치(%)는 그림 자리 기준 */
     .fx .pt { position: absolute; display: block; image-rendering: pixelated; }
     .pop { position: absolute; left: 50%; transform: translate(-50%, -50%); font: 900 34px/1 'Arial Black', 'Noto Sans KR', sans-serif; color: #fff; white-space: nowrap; text-shadow: 0 3px 0 rgba(0, 0, 0, 0.45), 0 0 18px rgba(0, 0, 0, 0.35); animation: popUp 1.25s ease-out forwards; }
     .pop.ok { color: #ffe27a; }
@@ -277,7 +280,7 @@
     .maxed { text-align: center; padding: 14px; border-radius: 14px; background: linear-gradient(90deg, #fff1f1, #fff8e1, #eafff1, #eaf4ff, #f4eaff); font-weight: 800; }
     /* 무대 아래 검은 칸 (2026-11-13 사용자: 튜닝·팔기·버리기를 강화 아래로, 작업 박스 아래를 늘려서) */
     .stage.has-band { border-radius: 18px 18px 0 0; }
-    .sband { display: flex; gap: 8px; padding: 2px 10px 10px; border-radius: 0 0 18px 18px; background: linear-gradient(#17100b, #0f0b08); }
+    .sband { display: flex; gap: 8px; padding: 2px 10px 10px; border-radius: 0 0 18px 18px; background: linear-gradient(#120d09, #0f0b08); }
     .sband button { flex: 1 1 auto; min-width: 0; } .sband .tn { flex-grow: 1.3; }
     .sband button { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 12px; border-radius: 12px; font-weight: 800; font-size: 14px; color: #fff; white-space: nowrap;
         background: rgba(255, 255, 255, 0.08); border: 1.5px solid rgba(255, 255, 255, 0.2); box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5); }
@@ -424,6 +427,16 @@
     /* 배틀 창 */
     .gk-modal { position: fixed; inset: 0; z-index: 90; background: rgba(10, 18, 15, 0.84); display: flex; align-items: center; justify-content: center; padding: 16px; animation: fade .2s; }
     .gk-modal .in { background: #fff; border-radius: 18px; width: min(420px, 100%); padding: 16px; text-align: center; max-height: 94vh; overflow: auto; }
+    /* 도감 크게 보기 */
+    .dexz .in { width: min(360px, 100%); background: radial-gradient(70% 55% at 50% 42%, #3a2a1c, #120d09 75%); color: #fff; }
+    .dexz .art { height: min(62vh, 440px); display: flex; align-items: center; justify-content: center; }
+    .dexz .art img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.55)); }
+    .dexz .in:not(.sq) .art img { transform: scale(1.2); transform-origin: 50% 55%; }   /* 그림 틀의 빈 위아래를 덜어 기타를 더 크게 */
+    .dexz .in.sq .art img { max-width: 86%; }
+    .dexz .in.l10 .art img { filter: drop-shadow(0 0 14px rgba(255, 226, 122, 0.55)) drop-shadow(0 10px 18px rgba(0, 0, 0, 0.5)); }
+    .dexz .in.l20 .art img { filter: drop-shadow(0 0 22px rgba(255, 200, 255, 0.75)) drop-shadow(0 10px 18px rgba(0, 0, 0, 0.5)); }
+    .dexz .nm { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 10px 0 12px; font-size: 16px; font-weight: 900; line-height: 1.35; }
+    .dexz .nm .lvb { flex: none; background: #ffd23f; color: #3a2400; border-radius: 99px; padding: 2px 10px; font-size: 14px; }
     /* 배틀 싸움터 (2026-11-12 사용자: 넥끼리 칼싸움 + 어두운 싸움터 배경, 상점에서 스킨) */
     .arena { position: relative; height: 290px; border-radius: 14px; overflow: hidden; color: #fff; }
     .arena .vs { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); z-index: 3; font: 900 24px 'Arial Black', sans-serif; color: #ffd23f; text-shadow: 0 3px 0 #000, 0 0 14px rgba(255, 210, 63, 0.45); }
@@ -547,7 +560,7 @@
 
     <section id="tab-bench">
         <div class="stage" id="stage">
-            <div class="topfade"></div>
+            <div class="botfade"></div>
             <div class="spots"><i></i><i></i><i></i></div>
             <div class="aura" id="aura"><i></i><i></i><i></i><i></i></div>
             <canvas id="cv" width="448" height="672"></canvas>
@@ -555,10 +568,10 @@
             <div class="nmhud" id="nmhud"><div class="nmtag" id="nm"></div><div class="talk" id="talk" hidden></div></div>
             <!-- 2026-11-13 사용자: 조각 정보는 도형만으론 뜻을 모르니 무대 왼쪽 위(기타 이름 아래)에 글로. 누르면 상점 케이스 칸 -->
             <button type="button" class="scbox" id="rSC" data-a="gocase" hidden title="파괴되면 부서진 기타 조각이 나와요. 조각 20개 → 하드케이스 1개(3개까지, 끼우면 파괴 1번 막음)">
-                <span><i class="fas fa-puzzle-piece pz"></i>파괴 시 조각 획득 <b id="rShard"><span>0/20</span></b></span>
-                <span><i class="fas fa-arrow-right arr"></i><i class="fas fa-briefcase"></i>하드케이스로 파괴 방지 <b id="rCase"><span>0/3</span></b></span>
+                <span class="h">파괴 시 조각</span><span><em>획득</em><i>조각</i> <b id="rShard"><span>0/20</span></b></span>
+                <span class="h">→ 하드케이스로</span><span><em>파괴 방지</em><i>하케</i> <b id="rCase"><span>0/3</span></b></span>
             </button>
-            <button type="button" class="brag" id="rShare" hidden title="내 기타 자랑하기"><i class="fas fa-share-nodes"></i>자랑하기</button>
+            <button type="button" class="brag" id="rShare" hidden title="내 기타 자랑하기"><i class="fas fa-share-nodes"></i><span>자랑하기</span></button>
             <div class="empty" id="empty" hidden></div>
             <div class="fx" id="fx"></div>
             <div class="tuner" id="tuner" hidden></div>
@@ -1536,6 +1549,19 @@ function dexDot() {
     if ((!S.dexNew || tab === 'dex') && dot) dot.remove();
 }
 const artSrc = (f, lv) => { const F = FAMS[f] || FAMS.strat, n = F.extra && F.extra.includes(lv) ? lv : Math.min(lv, F.artMax); return `../images/play/gk/${F.art}_${String(n).padStart(2, '0')}.webp${artV(F.art, n)}`; };
+// 도감 크게 보기 (2026-11-13 사용자: 모은 기타를 누르면 그림이 확대돼서 보이게) — 바깥·닫기·Esc 로 닫는다
+function dexZoom(f, lv) {
+    const F = FAMS[f]; if (!F) return;
+    const m = document.createElement('div');
+    m.className = 'gk-modal dexz';
+    m.innerHTML = `<div class="in ${F.sq ? 'sq' : ''} ${lv >= 20 ? 'l20' : lv >= 15 ? 'l15' : lv >= 10 ? 'l10' : ''}"><div class="art"><img src="${artSrc(f, lv)}" alt=""></div>
+        <p class="nm"><span class="lvb">+${lv}</span>${esc(F.names[lv])}</p><button class="btn" type="button" data-x>닫기</button></div>`;
+    const close = () => { m.remove(); removeEventListener('keydown', esc1); };
+    const esc1 = e => { if (e.key === 'Escape') close(); };
+    m.addEventListener('click', e => { if (e.target === m || e.target.closest('[data-x]')) close(); });
+    addEventListener('keydown', esc1);
+    document.body.appendChild(m);
+}
 function renderDex() {
     S.dexNew = false; save(); dexDot();
     const N = MAX + 1, cnt = f => Array.from({ length: N }, (_, i) => dexHas(f, i)).filter(Boolean).length;
@@ -2239,7 +2265,7 @@ $('#app').addEventListener('click', e => {
     else if (a === 'shopcat') { shopCat = b.dataset.c; renderShop(); }
     else if (a === 'rerank') { const bt = btDay(); bt.rr = (bt.rr | 0) + 1; save(); rerankAnim = true; sfx('drop'); renderBattle(); toast('새 연습 상대가 왔어요'); }
     else if (a === 'gocase') { talkClear(); shopCat = 'case'; setTab('shop'); }   // 위 줄 조각 → 하드케이스 칩
-    else if (a === 'dex') toast(`+${b.dataset.lv} ${FAMS[b.dataset.f].names[+b.dataset.lv]}`);
+    else if (a === 'dex') dexZoom(b.dataset.f, +b.dataset.lv);   // 2026-11-13 사용자: 도감에서 모은 기타를 누르면 크게
     else if (a === 'new') findGuitar(false);
     else if (a === 'newp') findGuitar(false, true);
     else if (a === 'buy1') findGuitar(true);
