@@ -91,11 +91,33 @@
     @media (min-width: 480px) { .stage { --s: 5; height: 470px; } }
     @media (max-width: 359px) { .stage { --s: 3; height: 330px; } }
     /* +10부터 기타 뒤 아우라 (2026-11-12 사용자: 그 기타 색상의 오로라 같은 게 흔들흔들). 색은 그림에서 가장 많이 쓰인 선명한 색(--ah 색상각) */
-    .stage .aura { position: absolute; z-index: 0; left: 50%; top: 47%; width: 80%; height: 90%; transform: translate(-50%, -50%); pointer-events: none; opacity: 0; transition: opacity .8s; filter: blur(14px); mix-blend-mode: screen; --ah: 45; }
-    .stage .aura.on { opacity: .8; }
-    .stage .aura.l15 { opacity: .85; filter: blur(12px); }
-    .stage .aura.l20 { opacity: 1; filter: blur(10px); }
-    .stage .aura i { position: absolute; bottom: 6%; width: 30%; height: 82%; border-radius: 50% 50% 35% 35%; transform-origin: 50% 100%;
+    /* 2026-11-12 사용자: 아우라가 너무 크다, 기타 주변에서 더 빛나게 → 커튼은 기타 폭만큼 작게, 기타 테두리가 그 색으로 빛난다(.stage.glow #cv) */
+    .stage { --ah: 45; }
+    .stage .aura { position: absolute; z-index: 0; left: 50%; top: 50%; width: 46%; height: 72%; transform: translate(-50%, -50%); pointer-events: none; opacity: 0; transition: opacity .8s; filter: blur(10px); mix-blend-mode: screen; }
+    .stage .aura.on { opacity: .55; }
+    .stage .aura.l15 { opacity: .7; }
+    .stage .aura.l20 { opacity: .85; }
+    /* 2026-11-12 사용자: 기타 아래쪽에서 막 돌아가는 조명을 쏜 듯 — 거치대 자리에서 빛줄기 셋이 좌우로 휘젓고 바닥이 빛난다(+10부터) */
+    .stage .spots { position: absolute; z-index: 0; left: 50%; bottom: 9%; width: 100%; height: 88%; transform: translateX(-50%); pointer-events: none; opacity: 0; transition: opacity .8s; mix-blend-mode: screen; }
+    .stage.glow .spots { opacity: .55; }
+    .stage.glow.g20 .spots { opacity: .85; }
+    .stage .spots i { position: absolute; left: 50%; bottom: 0; width: 26%; height: 100%; margin-left: -13%; transform-origin: 50% 100%; filter: blur(3px);
+        clip-path: polygon(46% 100%, 54% 100%, 100% 0, 0 0);
+        background: linear-gradient(to top, hsla(var(--ah), 100%, 80%, 0.85) 0%, hsla(var(--ah), 100%, 66%, 0.28) 55%, hsla(var(--ah), 100%, 60%, 0) 100%);
+        animation: spotSweep 2.8s ease-in-out infinite alternate; }
+    .stage .spots i:nth-child(2) { animation-duration: 3.6s; animation-delay: -1.4s; background: linear-gradient(to top, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.18) 55%, rgba(255, 255, 255, 0)); }
+    .stage .spots i:nth-child(3) { animation-duration: 4.3s; animation-delay: -2.9s; background: linear-gradient(to top, hsla(calc(var(--ah) + 40), 100%, 78%, 0.8), hsla(calc(var(--ah) + 40), 100%, 65%, 0.22) 55%, hsla(calc(var(--ah) + 40), 100%, 60%, 0)); }
+    .stage .spots::after { content: ''; position: absolute; left: 50%; bottom: -5%; width: 52%; height: 10%; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(closest-side, hsla(var(--ah), 100%, 75%, 0.9), hsla(var(--ah), 100%, 60%, 0)); animation: spotFloor 1.4s ease-in-out infinite alternate; }
+    @keyframes spotSweep { 0% { transform: rotate(-38deg); } 100% { transform: rotate(38deg); } }
+    @keyframes spotFloor { 0% { opacity: .55; transform: translateX(-50%) scaleX(.9); } 100% { opacity: 1; transform: translateX(-50%) scaleX(1.1); } }
+    @media (prefers-reduced-motion: reduce) { .stage .spots i, .stage .spots::after { animation: none; } }
+    .stage.glow #cv { animation: cvGlow 2.6s ease-in-out infinite; }
+    .stage.glow.g20 #cv { animation-name: cvGlow20; }
+    @keyframes cvGlow { 0%, 100% { filter: drop-shadow(0 0 3px hsla(var(--ah), 95%, 65%, 0.95)) drop-shadow(0 0 10px hsla(var(--ah), 95%, 60%, 0.6)); }
+        50% { filter: drop-shadow(0 0 6px hsla(var(--ah), 100%, 72%, 1)) drop-shadow(0 0 18px hsla(var(--ah), 95%, 60%, 0.85)); } }
+    @keyframes cvGlow20 { 0%, 100% { filter: drop-shadow(0 0 4px hsla(var(--ah), 100%, 72%, 1)) drop-shadow(0 0 14px hsla(var(--ah), 100%, 62%, 0.8)) drop-shadow(0 0 26px hsla(calc(var(--ah) + 50), 100%, 65%, 0.5)); }
+        50% { filter: drop-shadow(0 0 8px hsla(var(--ah), 100%, 80%, 1)) drop-shadow(0 0 22px hsla(var(--ah), 100%, 65%, 0.95)) drop-shadow(0 0 36px hsla(calc(var(--ah) + 50), 100%, 68%, 0.7)); } }
+    .stage .aura i { position: absolute; bottom: 6%; width: 34%; height: 82%; border-radius: 50% 50% 35% 35%; transform-origin: 50% 100%;
         background: linear-gradient(to top, hsla(var(--ah), 95%, 60%, 0) 0%, hsla(var(--ah), 95%, 62%, 0.9) 40%, hsla(calc(var(--ah) + 35), 95%, 72%, 0.55) 70%, hsla(calc(var(--ah) + 60), 95%, 80%, 0) 100%);
         animation: auSway 4s ease-in-out infinite alternate; }
     .stage .aura i:nth-child(1) { left: 6%; animation-duration: 4.4s; }
@@ -104,7 +126,7 @@
     .stage .aura i:nth-child(4) { left: 65%; animation-duration: 4.9s; animation-delay: -0.6s; }
     .stage .aura.l20 i { background: linear-gradient(to top, hsla(var(--ah), 100%, 62%, 0) 0%, hsla(var(--ah), 100%, 64%, 0.95) 38%, hsla(calc(var(--ah) + 60), 100%, 72%, 0.7) 68%, hsla(calc(var(--ah) + 120), 100%, 80%, 0) 100%); }
     @keyframes auSway { 0% { transform: skewX(-16deg) scaleY(.88); opacity: .55; } 50% { transform: skewX(6deg) scaleY(1.04); opacity: 1; } 100% { transform: skewX(18deg) scaleY(.94); opacity: .7; } }
-    @media (prefers-reduced-motion: reduce) { .stage .aura i { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .stage .aura i, .stage.glow #cv { animation: none; } }
     .stage canvas { position: absolute; z-index: 1; left: 50%; top: 46%; width: calc(56px * var(--s)); height: calc(84px * var(--s)); transform: translate(-50%, -50%); image-rendering: auto; }
     /* 이름표: 기타 머리 위에 둥실 떠 있다 (2026-11-12 사용자: 검키우기처럼 단계마다 바뀌는 이름이 기타 위에) */
     .nmtag { position: absolute; left: 50%; top: 14px; z-index: 2; display: flex; align-items: center; gap: 8px; width: max-content; max-width: calc(100% - 24px); padding: 5px 15px 5px 5px; border-radius: 999px; background: rgba(8, 14, 12, 0.74); border: 2px solid rgba(255, 255, 255, 0.2); color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); transform: translateX(-50%); animation: nmBob 2.8s ease-in-out infinite; }
@@ -394,6 +416,7 @@
 
     <section id="tab-bench">
         <div class="stage" id="stage">
+            <div class="spots"><i></i><i></i><i></i></div>
             <div class="aura" id="aura"><i></i><i></i><i></i><i></i></div>
             <canvas id="cv" width="448" height="672"></canvas>
             <div class="nmtag" id="nm"></div>
@@ -976,7 +999,8 @@ function updAura() {
     if (key === auraKey) return;
     auraKey = key;
     el.classList.toggle('on', !!key); el.classList.toggle('l15', !!key && g.lv >= 15); el.classList.toggle('l20', !!key && g.lv >= 20);
-    if (key) el.style.setProperty('--ah', auraHue(a));
+    const st = $('#stage'); st.classList.toggle('glow', !!key); st.classList.toggle('g20', !!key && g.lv >= 20);
+    if (key) st.style.setProperty('--ah', auraHue(a));
 }
 let auraT = 0;
 function frame(now) {
