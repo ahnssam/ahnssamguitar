@@ -927,6 +927,7 @@ function renderBench() {
     em.hidden = !!(g || ghost);
     if (!em.hidden) em.innerHTML = emptyCard();
     renderTable();
+    renderSact();   // 빈 작업대('기타 키우기 / 시작')에는 강화·진열하기 단추가 없어야 한다 (2026-11-12 사용자)
     if (!g) { box.innerHTML = `<p class="note2" style="text-align:center">${S.first ? '작업대가 비면 기타 찾기는 공짜예요.' : `첫 기타만 피크 ${FIRST_PICKS}개로 찾아요. 그다음부터 기타 찾기는 공짜예요.`} 걸어 둔 기타는 작업방에서 작업대로 가져올 수 있어요.</p>`; return; }
     const T = TUNERS[S.tuner];
     let h = '';
@@ -1188,7 +1189,7 @@ async function sellBench() {
     const price = SELL[g.lv];
     S.gold += price; S.st.sold++; S.st.earned += price;
     ghost = g; S.bench = null; if (S.rep === g.id) S.rep = '';
-    save(); updBar(true); $('#bench').innerHTML = '';
+    save(); updBar(true); renderSact(); $('#bench').innerHTML = '';
     sfx('sell'); pop('+' + gf(price), 'gold', 36);
     burst(12, ['#f5b31e', '#ffe27a', '#fff2b0'], { y: 50, spread: 120, size: [6, 10], dur: 900, grav: false });
     const a = cv.animate([{ transform: CVT, opacity: 1 }, { transform: `${CVT} translateX(120%) rotate(12deg)`, opacity: 0 }], { duration: 520, easing: 'ease-in', fill: 'forwards' });
@@ -1203,7 +1204,7 @@ async function hangBench() {
     const slot = HANG_ORDER.find(i => S.open[i] && !S.wall[i]);   // 처음엔 가운데, 그다음은 가운데에서 가까운 열린 걸이
     if (slot == null) { toast(S.open.every(Boolean) ? '벽이 꽉 찼어요. 걸린 기타를 팔거나 작업대로 가져와요' : '빈 걸이가 없어요. 작업방에서 잠긴 걸이를 열어요'); return; }
     busy = true; talkClear();
-    S.wall[slot] = g; ghost = g; S.bench = null;
+    S.wall[slot] = g; ghost = g; S.bench = null; renderSact();
     if (!S.rep) S.rep = g.id;
     save(); $('#bench').innerHTML = '';
     sfx('hang');
