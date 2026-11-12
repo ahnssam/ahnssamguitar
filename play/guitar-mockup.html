@@ -46,6 +46,23 @@
     .gk-tabs button .dot { width: 7px; height: 7px; border-radius: 50%; background: #e25555; }
     @media (max-width: 400px) { .gk-tabs button i { display: none; } }
     @media (max-width: 380px) { .gk-tabs button { font-size: 12.5px; } }
+    /* 작업방 바닥 장비 (2026-11-12): 앰프 오른쪽 아래, 그 왼쪽에 멀티이펙터 */
+    .wall5 .gear { position: absolute; bottom: 0; z-index: 3; padding: 0; border: 0; background: none; cursor: pointer; transform-origin: 50% 95%; }
+    .wall5 .gear img { display: block; width: 100%; filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.5)); pointer-events: none; }
+    .wall5 .gear span { position: absolute; left: 50%; bottom: 3%; transform: translateX(-50%); font-size: 10px; font-weight: 900; color: #fff; background: rgba(0, 0, 0, 0.6); border-radius: 99px; padding: 0 6px; line-height: 15px; }
+    .wall5 .gear.g-fx { z-index: 4; }
+    .wall5 .gear.sel img { filter: drop-shadow(0 0 5px #ffe27a) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.5)); }
+    .wall5 .gear.up { animation: gearUp .9s ease-in-out; }
+    @keyframes gearUp { 0%, 100% { transform: none; } 15%, 45%, 75% { transform: rotate(-3deg) scale(1.03); } 30%, 60%, 90% { transform: rotate(3deg) scale(1.03); } }
+    .gearbox { display: grid; gap: 8px; margin-top: 10px; }
+    .gearbox .gr { display: grid; grid-template-columns: 56px 1fr auto; gap: 10px; align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 8px 10px; }
+    .gearbox .gr img { width: 56px; height: 56px; object-fit: contain; background: #1c2a25; border-radius: 10px; }
+    .gearbox .gr b { display: block; font-size: 14px; }
+    .gearbox .gr small { color: var(--sub); font-size: 12px; }
+    .gearbox .gr button { padding: 9px 12px; border-radius: 12px; font-weight: 900; color: #fff; background: linear-gradient(#ff8a3d, #f0592b); white-space: nowrap; }
+    .gearbox .gr button small { color: #fff; opacity: .85; font-weight: 800; margin-left: 4px; }
+    .gearbox .gr button[disabled] { background: #c9cfcc; }
+    .gearbox .gr.sel { border-color: #f5c542; box-shadow: 0 0 0 2px rgba(245, 197, 66, 0.35); }
     /* 도감 (2026-11-12 사용자: 지금까지 어떤 기타를 땄는지) */
     .dex .dx-top { display: flex; align-items: baseline; justify-content: space-between; margin: 4px 2px 10px; }
     .dex .dx-top b { font-size: 18px; }
@@ -445,6 +462,25 @@ const FAMS = { strat: { name: '스트랫', names: [
     '음속을 넘어선 슈퍼스트랫', '용의 비늘을 두른 슈퍼스트랫', '플라즈마가 흐르는 슈퍼스트랫', '시간을 앞질러 치는 슈퍼스트랫', '차원의 틈을 가르는 슈퍼스트랫',
     '초신성이 터진 슈퍼스트랫', '1초에 백만 음을 치는 슈퍼스트랫', '사이버 천사의 슈퍼스트랫', '은하 끝까지 울린 슈퍼스트랫', '신의 손가락이 닿은 슈퍼스트랫',
     '스티브 바히의 슈퍼스트랫'] } };
+// 장비: 작업방 바닥에 놓는 앰프(오른쪽 아래)·멀티이펙터(그 왼쪽) (2026-11-12 사용자). 그림 amp_00~09 · fx_00~09 (448×448, 바닥 맞춤)
+//   하나씩 가지고 작업방에서 강화한다. 확률·비용은 기타와 같고, 부서짐 칸이 나오면 한 단계 내려간다(장비는 없어지지 않음).
+//   +10~+20 이름은 Claude가 지은 것. 그 단계 그림이 없으면 +9 그림
+const GEAR = {
+    amp: { name: '앰프', art: 'amp', artMax: 9, names: [
+        '동네 고물상에서 업어 온 앰프', '지직거리는 소리가 더 큰 앰프', '그릴 천을 꽃무늬 이불로 바꾼 앰프', '손잡이가 떨어져서 노끈을 단 앰프', '진공관이 하나 들여다보이는 앰프',
+        '볼륨 올리면 창문이 흔들리는 앰프', '머리 위에 앰프가 하나 더 얹힌 앰프', '스피커가 네 개로 늘어난 앰프', '노브마다 불이 들어오는 앰프', '전원을 안 꽂았는데 진공관이 켜진 앰프',
+        '별빛이 새어 나오는 앰프', '오로라를 뿜는 앰프', '천둥을 담은 앰프', '용의 숨결을 내뿜는 앰프', '하늘까지 쌓아 올린 앰프 탑',
+        '운석으로 만든 앰프', '은하를 울리는 앰프', '시간을 멈추는 앰프', '태양을 품은 앰프', '신들의 무대에 놓인 앰프',
+        '짐 마살의 앰프'] },
+    fx: { name: '멀티이펙터', art: 'fx', artMax: 9, names: [
+        '서랍 속에서 나온 건전지 멀티이펙터', '발판 하나가 눌린 채 안 올라오는 멀티이펙터', '화면이 반만 나오는 멀티이펙터', '발판마다 색깔 스티커를 붙인 멀티이펙터', '발로 밟는 페달이 달린 멀티이펙터',
+        '화면이 컬러가 된 멀티이펙터', '발판 불빛이 무지개로 도는 멀티이펙터', '케이블이 문어발처럼 뻗은 멀티이펙터', '보드가 두 배로 길어진 멀티이펙터', '아무도 안 밟았는데 혼자 프리셋이 바뀌는 멀티이펙터',
+        '생각만 해도 소리가 바뀌는 멀티이펙터', '홀로그램 화면이 뜨는 멀티이펙터', '우주 신호를 받는 멀티이펙터', '페달 백 개를 삼킨 멀티이펙터', '시간을 되감는 멀티이펙터',
+        '오로라 파형이 흐르는 멀티이펙터', '은하 지도가 그려진 멀티이펙터', '차원문이 열리는 멀티이펙터', '별자리로 프리셋을 고르는 멀티이펙터', '세상 모든 소리를 기억하는 멀티이펙터',
+        '디 엣쥐의 멀티이펙터'] },
+};
+const gearSrc = (k, lv) => { const G = GEAR[k]; return `../images/play/gk/${G.art}_${String(Math.min(lv, G.artMax)).padStart(2, '0')}.webp`; };
+
 // 기타 찾기에서 나오는 계열 (2026-11-12 사용자: 통기타·베이스도 적용) — 지금은 셋 중 하나가 같은 확률로
 const FIND_FAMS = ['strat', 'tele', 'lespaul', 'superstrat', 'acoustic', 'bass'];
 // 튜너: 바늘이 초록 칸에 있을 때 탭하면 성공 +%p (유지에서 가져오고 파괴는 그대로)
@@ -484,7 +520,7 @@ const rid = () => Math.random().toString(36).slice(2, 9);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ---------- 저장 (이 브라우저) ----------
-const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [null, null, null, null, null], open: [false, false, true, false, false], skin: 'wood', skins: ['wood'], dex: {}, rep: '', shards: 0, cases: 0, caseOn: false, tuner: 0, tuneOn: true, daily: '', nick: '', intro: false, first: false,
+const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [null, null, null, null, null], open: [false, false, true, false, false], skin: 'wood', skins: ['wood'], dex: {}, gear: { amp: 0, fx: 0 }, rep: '', shards: 0, cases: 0, caseOn: false, tuner: 0, tuneOn: true, daily: '', nick: '', intro: false, first: false,
     bt: { day: '', n: 0, done: {} }, st: { tries: 0, ok: 0, keep: 0, boom: 0, saved: 0, sold: 0, earned: 0, best: 0, win: 0, lose: 0 } });
 const okG = g => g && typeof g === 'object' && Number.isInteger(g.lv) && g.lv >= 0 && g.lv <= MAX && typeof g.id === 'string';
 function load() {
@@ -512,6 +548,7 @@ function load() {
     if (!s.skins.includes(s.skin)) s.skin = 'wood';
     ['gold', 'shards', 'cases'].forEach(k => { s[k] = Math.max(0, Math.floor(+s[k] || 0)); });
     s.tuner = Math.min(3, Math.max(0, s.tuner | 0));
+    s.gear = Object.assign({ amp: 0, fx: 0 }, s.gear || {}); ['amp', 'fx'].forEach(k => { s.gear[k] = Math.min(MAX, Math.max(0, s.gear[k] | 0)); });
     // 도감: 계열마다 딴 단계(비트). 도감 전(2026-11-12)에 시작했으면 가진 기타의 단계까지, 최고 기록은 스트랫으로 채운다(그때는 스트랫뿐이었다)
     s.dex = s.dex && typeof s.dex === 'object' ? s.dex : {};
     const mark = (f, lv) => { for (let i = 0; i <= lv; i++) s.dex[f] = (s.dex[f] | 0) | (1 << i); };
@@ -1211,6 +1248,38 @@ const wallSkin = () => WALLS.find(w => w.id === S.skin) || WALLS[0];
 const gs = n => n >= 1e4 ? `${+(n / 1e4).toFixed(1)}만G` : n >= 1000 ? `${+(n / 1000).toFixed(1)}천G` : n + 'G';   // 걸이 위 작은 값표
 const openPrice = () => SLOT_PRICE[Math.max(0, S.open.filter(Boolean).length - 1)] || 0;
 let justOpened = -1;
+// 바닥 장비: 앰프는 오른쪽 아래 구석, 멀티이펙터는 그 왼쪽 바닥
+let gearSel = '';
+function gearFloor() {
+    const one = (k, right, w) => `<button type="button" class="gear g-${k} ${gearSel === k ? 'sel' : ''}" id="gear-${k}" data-a="gearsel" data-k="${k}" style="right:${right}%;width:${w}%" aria-label="${esc(gearName(k))}"><img src="${gearSrc(k, S.gear[k])}" alt=""><span>+${S.gear[k]}</span></button>`;
+    return one('amp', -3, 18) + one('fx', 5, 16);   // 앰프는 오른쪽 끝(명판 바깥), 멀티이펙터는 그 왼쪽 앞 바닥(명판 아래, 앰프 앞에 살짝 겹침)
+}
+const gearName = k => `+${S.gear[k]} ${GEAR[k].names[S.gear[k]]}`;
+function gearBox() {
+    return `<div class="gearbox">${['amp', 'fx'].map(k => { const lv = S.gear[k], max = lv >= MAX, cost = COST[lv];
+        return `<div class="gr ${gearSel === k ? 'sel' : ''}" id="gr-${k}"><img src="${gearSrc(k, lv)}" alt=""><div><b>${esc(gearName(k))}</b><small>${GEAR[k].name} · ${max ? '최고 단계' : `성공 ${ODDS[lv][0]}% · 실패하면 그대로 · 부서짐 칸이면 한 단계 내려가요`}</small></div>
+            ${max ? '' : `<button type="button" data-a="gearup" data-k="${k}" ${S.gold < cost ? 'disabled' : ''}>강화<small>${cost ? gf(cost) : '공짜'}</small></button>`}</div>`; }).join('')}</div>`;
+}
+async function gearUp(k) {
+    const lv = S.gear[k], cost = COST[lv];
+    if (busy || lv >= MAX) return;
+    if (S.gold < cost) { toast('골드가 모자라요'); return; }
+    busy = true; S.gold -= cost; updBar();
+    const [sp, mp] = ODDS[lv], r = Math.random() * 100;
+    const out = r < sp ? 'ok' : r < sp + mp ? 'keep' : 'down';
+    S.gear[k] = out === 'ok' ? lv + 1 : out === 'down' ? Math.max(0, lv - 1) : lv;
+    save();   // 결과를 먼저 저장
+    const el = document.getElementById('gear-' + k);
+    if (el) { el.classList.remove('up'); void el.offsetWidth; el.classList.add('up'); }
+    sfx('charge', lv, 900);
+    await sleep(950);
+    busy = false; gearSel = k;
+    if (out === 'ok') { sfx('ok', S.gear[k]); toast(`성공! ${gearName(k)}`); }
+    else if (out === 'keep') { sfx('snap'); toast('실패 — 단계는 그대로예요'); }
+    else { sfx('boom'); toast(`고장! 한 단계 내려갔어요 (+${S.gear[k]})`); }
+    renderRoom();
+}
+
 function renderRoom(enter) {
     updBar();
     const W = wallSkin(), el = $('#tab-room'), rp = rep();
@@ -1234,8 +1303,9 @@ function renderRoom(enter) {
             <button type="button" data-a="take" data-id="${g.id}">${S.bench ? '작업대와 바꾸기' : '작업대로'}</button>
             <button type="button" data-a="wsell" data-id="${g.id}" ${g.lv ? '' : 'disabled'}>팔기</button></div></div>`).filter(Boolean);
     el.innerHTML = `<div class="wall5 ${enter ? 'enter' : ''}" style="aspect-ratio:${W.w} / ${W.h}">
-        <img class="bg" src="../images/play/gk/${W.src}" alt="작업방 진열 벽">${slots}</div>
+        <img class="bg" src="../images/play/gk/${W.src}" alt="작업방 진열 벽">${slots}${gearFloor()}</div>
         <p class="rinfo">걸이 <b>${nOpen}/${WALL_N}</b> 열림 · 기타 <b>${hung.length}</b>대 · 대표 기타: <b>${rp ? esc(full(rp)) : '없음'}</b></p>
+        ${gearBox()}
         <div class="glist">${rows.length ? rows.join('') : '<p class="note2">아직 걸린 기타가 없어요. 작업대에서 \'벽에 걸기\'를 누르면 가운데 걸이에 걸려요. 걸어 둔 기타 중 하나가 대표 기타로 배틀에 나가요.</p>'}</div>
         <p class="note2">${nOpen < WALL_N ? `양쪽 잠긴 걸이는 눌러서 골드로 열어요 (${SLOT_PRICE.map(gf).join(' → ')}, 어느 칸이든 여는 순서대로). ` : '걸이를 모두 열었어요. '}진열 벽 스킨은 상점에서 바꿔요.</p>`;
     paintAll(el);
@@ -1417,6 +1487,8 @@ $('#app').addEventListener('click', e => {
     if (busy) return;
     const a = b.dataset.a, id = b.dataset.id;
     if (a === 'again') enhance();
+    else if (a === 'gearsel') { gearSel = b.dataset.k; selId = ''; renderRoom(); const r = document.getElementById('gr-' + gearSel); if (r) r.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+    else if (a === 'gearup') gearUp(b.dataset.k);
     else if (a === 'dex') toast(`+${b.dataset.lv} ${FAMS[b.dataset.f].names[+b.dataset.lv]}`);
     else if (a === 'new') findGuitar(false);
     else if (a === 'buy1') findGuitar(true);
