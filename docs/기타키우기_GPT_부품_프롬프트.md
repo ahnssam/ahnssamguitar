@@ -162,6 +162,45 @@ Scene: the inside of a stylish, high-end boutique guitar workshop (luthier's ate
 - 더 아늑하게: `Make it cozier and brighter, like a warm daytime workshop with sunlight from a window on the left.`
 - 가운데가 복잡하면: `The center is too busy. Keep only the empty guitar stand and the floor light in the middle 40%.`
 
+- 2026-11-12 이 프롬프트로 뽑은 '밤의 기타 공방'을 기본 배경으로 넣었다(`images/play/gk/bg_workshop.webp`).
+
+### 작업대 배경 스킨 10개 (2026-11-12 사용자: "배경 스킨도 10개까지 괜찮은 테마로")
+
+진열 벽 스킨처럼 상점에서 사서 바꾸는 **작업대(강화 무대) 배경**이다. 기본 '밤의 기타 공방'과 자리를 똑같이 맞춰야 강화할 기타가 거치대 위에 그대로 선다.
+- 공방 배경을 뽑은 **그 대화**에 붙여 넣는다. 다른 대화면 `bg_workshop.webp`를 같이 올린다.
+- 한 장씩 나온다. 다음 테마를 보려면 "다음"이라고 쓴다. 마음에 안 드는 것은 "다시"라고 쓴다.
+- 받으면 Claude가 `bg_<이름>.webp`로 넣고, 목업 상점에 '작업대 배경' 칸을 만들어 값을 붙인다. 값은 그때 정한다.
+
+| # | 테마 | 느낌 |
+|---|---|---|
+| 1 | 햇살 드는 낮 공방 | 기본 공방의 낮 버전, 창으로 들어오는 햇빛과 나무 먼지 |
+| 2 | 지하 합주실 | 검은 흡음재, 빨간 LED 띠, 앰프와 드럼 (진열 벽 '합주실'과 짝) |
+| 3 | 빈티지 기타 가게 | 나무 선반에 줄줄이 걸린 기타, 유리 진열장, 오래된 포스터 틀 |
+| 4 | 라이브 클럽 무대 | 작은 무대, 색 조명, 철골 트러스, 모니터 스피커 |
+| 5 | 한옥 공방 | 창호지 문, 나무 격자, 종이 등, 나무 공구 |
+| 6 | 눈 내리는 통나무 오두막 | 벽난로, 눈 오는 창, 따뜻한 담요 (겨울 한정 판매 가능) |
+| 7 | 네온 신스웨이브 공방 | 보라·분홍 네온, 격자 바닥, 레트로 미래 |
+| 8 | 해질녘 해변 서핑숍 | 대나무 벽, 서핑보드, 노을 창, 우쿨렐레 |
+| 9 | 대형 공연장 무대 | 거대한 조명탑, 연기, 빈 객석의 불빛(사람 없이) |
+| 10 | 별빛 신전 | 밤하늘 돔, 떠다니는 별빛, 빛나는 기둥 (+15 넘은 기타에 어울림) |
+
+```
+Use the night guitar workshop background from earlier in this chat (or the attached image) as the EXACT layout template, and make new "skins" of it - ONE image per reply.
+Keep the layout identical: square 1024x1024, front view at eye level, a clear uncluttered vertical space in the middle (about 40% of the width, from the floor to near the top) with only an empty guitar stand at the bottom center and a soft pool of light on the floor under it, the wall behind the center calm and slightly darker so a guitar placed there stands out, decorations and details only on the left and right sides, and a simple floor strip in the bottom 15%. Keep the same art style (polished 2D mobile-game background with clean, lighter outlines and softer contrast than the game items). Only change the place, materials, colors and lighting to fit the theme. No people, no logos, and NO text, letters or numbers anywhere (no signs, no labels, no posters with writing).
+
+Make skin 1 now. Each time I say "다음", make the next one.
+1. Sunny daytime workshop: the same luthier workshop in the daytime, warm sunlight streaming through a big window on the left, light beams with floating sawdust, lighter wood tones, a few plants.
+2. Underground rehearsal room: black egg-crate acoustic foam walls, a red-orange LED strip along the ceiling, a drum kit and a stack of amps on the sides, coiled cables on the floor, a worn rug under the stand.
+3. Vintage guitar shop: dark wooden shelves on both sides with rows of hanging guitars, a glass display counter, empty vintage poster frames, warm brass lamps, a checkered floor.
+4. Live club stage: a small club stage with a black curtain, a metal lighting truss across the top, colorful spotlights (magenta, cyan, amber) aimed at the center, monitor speakers and amps on the sides, light haze.
+5. Korean hanok workshop: warm paper sliding doors with wooden lattice, exposed wooden beams, hanging paper lanterns instead of lamps, traditional wooden tools and a low wooden workbench on the sides, a small potted pine, a wooden floor.
+6. Snowy log cabin: log walls, a crackling stone fireplace on one side, a frosty window with snow falling outside on the other, a cozy knitted blanket on a chair, warm firelight.
+7. Neon synthwave workshop: dark purple room with glowing pink and cyan neon tubes outlining the walls, a glowing grid floor, a retro-futuristic sunset window, chrome tools on the sides.
+8. Beach surf shop at sunset: bamboo and driftwood walls, surfboards leaning on the sides, a ukulele on a hook, a big open window showing the ocean at sunset, string lights, a sandy wooden floor.
+9. Huge concert hall stage: a giant stage with tall lighting towers on both sides, bright beams sweeping through stage smoke, rows of small lights in the dark empty seats far behind (no people), a glossy black stage floor.
+10. Starlight shrine: a mystical temple under a night-sky dome full of stars, glowing marble pillars on both sides, floating particles of starlight, a soft beam of silver light falling on the stand, a polished stone floor.
+```
+
 작업방 진열 벽 (가로 1536×1024) — 걸이만 그리고 기타는 비워 둔다(기타는 게임이 단계에 맞춰 그려 넣는다).
 
 ```
