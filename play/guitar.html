@@ -227,9 +227,10 @@
     .sact { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 5; display: grid; grid-template-columns: 2.4fr 1fr; gap: 8px; animation: fade .2s; }
     .sact.one { grid-template-columns: 1fr; }
     .sact button { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 12px 10px; border-radius: 14px; font-weight: 900; font-size: 16px; color: #fff; white-space: nowrap; }
-    .sact .ag { background: linear-gradient(#ff8a3d, #f0592b); box-shadow: 0 4px 0 #b43c16, 0 8px 18px rgba(0, 0, 0, 0.35); }
+    /* 2026-11-13 사용자: 삼성 인터넷 강제 다크모드에서 주황이 어둡게 칠해짐 → 바탕을 그림(btn_up.jpg, 아래 입술 그늘까지 그림 안에)으로. 다크모드는 사진 같은 그림은 대부분 그대로 둔다 */
+    .sact .ag { min-width: 0; background: #f0592b url(../images/play/gk/btn_up.jpg) center / 100% 100% no-repeat; padding-bottom: 16px; box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35); }
     .sact .ag small { font-size: 12px; font-weight: 800; background: rgba(0, 0, 0, 0.18); border-radius: 99px; padding: 2px 9px; }
-    .sact .ag[disabled] { background: #8d9692; box-shadow: 0 4px 0 #5f6864; cursor: default; }
+    .sact .ag[disabled] { background: #8d9692; box-shadow: inset 0 -4px 0 #5f6864; cursor: default; }
     .sact .hg { font-size: 14.5px; background: rgba(14, 22, 20, 0.86); border: 2px solid rgba(255, 255, 255, 0.28); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.45); }
     .sact button:active { transform: translateY(3px); }
     /* 강화 위 하드케이스 ON/OFF (+7부터) */
@@ -520,10 +521,9 @@
     <a class="logo" href="../"><img src="../images/logo-vertical.webp" alt="안쌤의 기타나무숲"></a>
     <a class="ttl" href="guitar.html" id="toHome" title="작업대로"><i class="fas fa-guitar"></i>기타 키우기</a>
     <span class="sp"></span>
-    <!-- 2026-11-13 사용자: 출석·스피커·공유는 피크 개수와 같은 줄로 (피크 단추는 play.js 가 .sp 바로 뒤에 넣는다) -->
+    <!-- 2026-11-13 사용자: 출석·스피커는 피크 개수와 같은 줄로 (피크 단추는 play.js 가 .sp 바로 뒤에 넣는다). 공유는 돈 정보 줄 오른쪽 끝 -->
     <button class="res daily" id="rDaily" type="button" title="하루 한 번: 1,000G + 피크 10"><i class="fas fa-gift"></i><span>출석</span></button>
     <button class="iconbtn" id="rSnd" type="button" aria-label="효과음 켜기/끄기"><i class="fas fa-volume-high"></i></button>
-    <button class="iconbtn" id="rShare" type="button" aria-label="내 기타 자랑하기" title="내 기타 자랑하기"><i class="fas fa-share-nodes"></i></button>
     <a class="lnk" href="./"><i class="fas fa-gamepad"></i><span>놀이터</span></a>
 </div></header>
 
@@ -541,6 +541,8 @@
         <!-- 2026-11-12 사용자: 하드케이스 왼쪽에 부서진 조각 5/20 → 하드케이스 1/3 (조각으로 만든다는 게 보이게). 누르면 상점 케이스 칸 -->
         <button type="button" class="res sc" id="rSC" data-a="gocase" title="부서진 기타 조각 20개 → 하드케이스 1개 (3개까지, 끼우면 부서짐 1번 막음)">
             <span class="shard" id="rShard"><i class="fas fa-puzzle-piece"></i><span>0/20</span></span><i class="fas fa-arrow-right arr"></i><span class="case" id="rCase"><i class="fas fa-briefcase"></i><span>0/3</span></span></button>
+        <span class="sp"></span>
+        <button class="iconbtn" id="rShare" type="button" aria-label="내 기타 자랑하기" title="내 기타 자랑하기"><i class="fas fa-share-nodes"></i></button>
     </div>
 
     <section id="tab-bench">
@@ -775,7 +777,15 @@ const WALLS = [
 const fam = g => FAMS[g.f] || FAMS.strat;
 const gname = g => fam(g).names[Math.min(MAX, Math.max(0, g.lv))];
 const full = g => `+${g.lv} ${gname(g)}`;
-const gf = n => (n >= 1e8 ? +(n / 1e8).toFixed(2) + '억' : n >= 1e6 ? +(n / 1e4).toFixed(1) + '만' : Math.round(n).toLocaleString()) + 'G';
+// 2026-11-13 사용자: 돈은 웬만하면 숫자 그대로(1,234,567G). 칸이 좁아 넘칠 때만 줄임(gshort: 123.5만G · 1.23억G) — fitG
+const gf = n => Math.round(n).toLocaleString() + 'G';
+const gshort = n => (n >= 1e8 ? +(n / 1e8).toFixed(2) + '억' : n >= 1e4 ? +(n / 1e4).toFixed(1) + '만' : Math.round(n).toLocaleString()) + 'G';
+function fitG(el, n, box) {   // 숫자 그대로 넣어 보고, 상자가 넘치면 줄인 모양으로
+    if (!el) return;
+    el.textContent = gf(n);
+    box = box || el.closest('button, .gk-bar');
+    if (box && box.offsetWidth && box.scrollWidth > box.clientWidth + 1) el.textContent = gshort(n);
+}
 const winP = (me, op) => me === op ? 0.5 : me > op ? 1 - Math.pow(0.5, me - op + 1) : Math.pow(0.5, op - me + 1);   // 검키우기 공식
 const pct = p => p * 100 < 0.1 ? '0.1% 미만' : Math.round(p * 1000) / 10 + '%';
 const reward = lv =>Math.max(20, Math.round(SELL[lv] * 0.2 / 10) * 10);   // 상대 단계가 오를수록 거의 두 배씩
@@ -1322,7 +1332,7 @@ const LINES = {
 // ---------- 화면 ----------
 let busy = false, tuning = null, tab = 'bench', selId = '';
 function updBar(goldBump) {
-    $('#rGold span').textContent = S.gold >= 1e5 && S.gold < 1e8 ? +(S.gold / 1e4).toFixed(1) + '만G' : gf(S.gold);   // 좁은 화면에서 한 줄에 들어가게
+    fitG($('#rGold span'), S.gold, $('.gk-bar'));   // 숫자 그대로, 위 줄이 넘치면 그때만 만·억으로
     $('#rGold').title = '골드 ' + S.gold.toLocaleString() + 'G';
     if (goldBump) { const g = $('#rGold'); g.classList.remove('bump'); void g.offsetWidth; g.classList.add('bump'); }
     $('#rShard span').textContent = `${S.shards}/${CASE_SHARDS}`;
@@ -1420,12 +1430,13 @@ function renderBand() {
         ? `<button type="button" class="tn ${S.tuneOn ? 'on' : ''}" data-a="tune" aria-pressed="${S.tuneOn}" title="${S.tuneOn ? `튜닝하고 강화 — 바늘을 맞히면 성공 +${up}%p` : '튜닝 건너뛰기'}"><i class="fas ${T.icon}"></i>${S.tuneOn ? `튜닝${up > 0 ? ` <small>+${up}%p</small>` : ''}` : '튜닝 끔'}</button>` : '')
         + `<button type="button" class="sl" data-a="sell" ${g.lv ? '' : 'disabled'}><i class="fas fa-coins"></i>팔기 <b>${g.lv ? gf(SELL[g.lv]) : '0G'}</b></button>
         <button type="button" class="ts" data-a="toss"><i class="fas fa-trash-can"></i>버리기</button>`;
+    if (g.lv) fitG(el.querySelector('.sl b'), SELL[g.lv]);
 }
 function renderTable() {
     const el = $('#otab'), open = el.open, lv = S.bench ? S.bench.lv : -1;
     el.innerHTML = `<summary>강화 확률표 <small>— 화면에 적은 확률이 실제 확률이에요</small></summary>
         <table class="otab"><tr><th>강화</th><th>성공</th><th>${keepWord(S.bench)}</th><th>부서짐</th><th>비용</th><th>팔면</th></tr>
-        ${ODDS.map(([s, m, d], i) => `<tr class="${i === lv ? 'me' : ''}"><td>+${i}→+${i + 1}</td><td>${s}%</td><td>${m}%</td><td>${d}%</td><td>${COST[i] ? gf(COST[i]) : '공짜'}</td><td>${gf(SELL[i + 1])}</td></tr>`).join('')}</table>
+        ${ODDS.map(([s, m, d], i) => `<tr class="${i === lv ? 'me' : ''}"><td>+${i}→+${i + 1}</td><td>${s}%</td><td>${m}%</td><td>${d}%</td><td>${COST[i] ? gf(COST[i]) : '공짜'}</td><td>${gshort(SELL[i + 1])}</td></tr>`).join('')}</table>
         <p class="note2">${S.bench && S.bench.f === 'multi' ? '버튼이 빠지면 다시 끼우고, 단계는 그대로예요.' : '줄이 끊기면 단계는 그대로예요.'} 부서지면 기타가 없어지고 '부서진 기타 조각'이 1 ~ 단계만큼 랜덤으로 남아요(+8이면 1~8개). 조각 ${CASE_SHARDS}개로 하드케이스를 만들면 부서짐을 한 번 막아 줘요.</p>`;
     el.open = open;
 }
