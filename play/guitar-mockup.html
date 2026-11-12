@@ -877,7 +877,8 @@ addEventListener('keydown', e => {
 });
 
 // 강화 기다림(결과는 이미 정해져 저장됐다) — 두근두근하는 맛. 단계가 높을수록 길고, +10부터는 결과 직전에 한 박자 숨을 멈춘다
-const WAIT_MS = lv => lv === 0 ? 450 : lv < 5 ? 1000 : lv < 10 ? 1400 : lv < 15 ? 1900 : 2400;
+//   2026-11-12 사용자: 너무 빠르다, 한 3초는 걸리게 → 기본 3초, 높은 단계는 조금 더 (예전 0.45 · 1 · 1.4 · 1.9 · 2.4초)
+const WAIT_MS = lv => lv < 5 ? 3000 : lv < 10 ? 3300 : lv < 15 ? 3600 : 4000;
 const WAIT_TXT = lv => lv < 5 ? '강화 중…' : lv < 10 ? '두근두근…' : lv < 15 ? '제발…' : '숨 참는 중…';
 function gather() {   // 빛 알갱이가 기타로 모인다
     const d = document.createElement('i'), sz = 3 + Math.round(Math.random() * 4);
@@ -916,7 +917,7 @@ async function suspense(lv, o = {}) {   // o.find: 기타 찾기(그림자에서
     if (lv >= 10 || o.hush) {   // 결과 직전 한 박자: 소리도 떨림도 멈춘다
         cv.style.filter = o.find ? 'brightness(.12) drop-shadow(0 0 18px rgba(255, 226, 122, 0.9))' : 'brightness(1.6) drop-shadow(0 0 14px rgba(255, 226, 122, 0.85))';
         bar.querySelector('span').textContent = '……';
-        await sleep(320);
+        await sleep(o.find ? 320 : 500);
         cv.style.filter = '';
     }
     st.classList.remove('charging'); bar.remove(); $('#bench').classList.remove('wait');
