@@ -278,7 +278,8 @@
     .wall5 .wsb.lock i { font-size: clamp(14px, 3.6vw, 20px); opacity: .9; }
     .wall5 .wsb.lock span { font-size: clamp(9.5px, 2.4vw, 12.5px); background: rgba(0, 0, 0, 0.55); border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 99px; padding: 2px 7px; white-space: nowrap; }
     .wall5 .wsb.lock.sure span { background: #f5b31e; color: #3a2400; border-color: #f5b31e; }
-    .wall5 .wp { position: absolute; transform: translate(-50%, -50%); font: 900 clamp(9px, 2.4vw, 14px)/1 'Arial Black', sans-serif; color: #4a2c0c; text-shadow: 0 1px 0 rgba(255, 240, 190, 0.6); pointer-events: none; }
+    .wall5 .wp { position: absolute; z-index: 3; transform: translate(-50%, -50%); font: 900 clamp(9px, 2.4vw, 14px)/1 'Arial Black', sans-serif; color: #4a2c0c; text-shadow: 0 1px 0 rgba(255, 240, 190, 0.6); pointer-events: none; }
+    .wall5 .wp.floor { color: #fff; background: rgba(0, 0, 0, 0.55); border-radius: 99px; padding: 2px 6px; text-shadow: none; }   /* 바닥 물건(앰프·멀티)은 명판이 없어 작은 꼬리표로 */
     .wall5 .wrep { position: absolute; transform: translate(-50%, -50%); font-size: clamp(9px, 2.2vw, 11px); font-weight: 900; color: #3a2400; background: #f5b31e; border-radius: 99px; padding: 1px 7px; pointer-events: none; }
     /* 작업방에 들어갈 때: 벽이 사악 밝아지고, 기타가 가운데부터 내려와 걸린다 */
     .wall5.enter { animation: wallIn .9s ease-out both; }
@@ -1525,6 +1526,16 @@ function renderRoom(enter) {
     //   2026-11-12 사용자: 벽에 걸면 살짝 작게 → 88% (걸이 자리는 그대로, 아래 끝만 조금 올라감)
     const u = (W.foot - W.hook) / 42 * 0.88, top = W.hook - 34 * u, hh = 84 * u, hit = `top:${W.hook - 4}%;height:${W.foot - W.hook + 8}%`;
     const price = openPrice(), nOpen = S.open.filter(Boolean).length, hung = S.wall.filter(Boolean);
+    // 바닥 자리 (2026-11-12 사용자: 앰프는 지금보다 20% 크게 화면 오른쪽, 멀티는 그 바로 왼쪽에 살짝 작게):
+    //   걸이와 상관없이 앰프부터 오른쪽 끝에서 왼쪽으로, 그다음 멀티. 그림 속 물건 폭은 틀 폭의 앰프 51% · 멀티 62%
+    const floor = {}; let fx = 98.5;
+    const fh = { amp: hh * 0.96, multi: hh * 0.72 }, fw = { amp: 0.51, multi: 0.62 }, fb = { amp: 97, multi: 96.5 };
+    for (const f of ['amp', 'multi']) S.wall.forEach(g => {
+        if (!g || g.f !== f) return;
+        const h2 = fh[f], cw = h2 * (W.h / W.w) * (56 / 84), iw = cw * fw[f];
+        floor[g.id] = { x: fx - iw / 2, h2, t2: fb[f] - h2 * 75.75 / 84, bottom: fb[f], iw };
+        fx -= iw + 0.8;
+    });
     const slots = W.x.map((x, i) => {
         if (!S.open[i]) return `<div class="wl" style="left:${x}%"></div><button type="button" class="wsb lock" data-a="wopen" data-i="${i}" style="left:${x}%;${hit}" aria-label="걸이 열기 ${gf(price)}"><i class="fas fa-lock"></i><span>${gs(price)}</span></button>`;
         const g = S.wall[i], lit = i === justOpened ? `<div class="wl off" style="left:${x}%"></div>` : '';
@@ -1532,8 +1543,11 @@ function renderRoom(enter) {
         const isRep = rp && g.id === rp.id;
         // 앰프·멀티는 걸이에 걸지 않고 그 걸이 아래 바닥에 세운다 (2026-11-12 사용자: 이펙터니까 아래 깔려야지). 그림 바닥(75.75칸)이 벽 96%에 오게, 기타보다 작게
         //   2026-11-12 사용자: 진열 벽 바닥을 넓혀서(그림 아래로 판자를 이어 붙임) 앰프·멀티가 바닥에 서 있게 — 그림 바닥(75.75칸)이 벽 높이의 93%에 오게
-        const sq = (FAMS[g.f] || {}).sq, h2 = sq ? hh * 0.8 : hh, t2 = sq ? 93 - h2 * 75.75 / 84 : top;
-        return `${lit}<canvas class="gkc wg live ${g.id === selId ? 'sel' : ''}" width="448" height="672" data-lv="${g.lv}" data-f="${g.f || 'strat'}" style="left:${x}%;top:${t2}%;height:${h2}%;--d:${Math.abs(i - MID) * 0.1}s"></canvas>
+        const fl = floor[g.id];
+        if (fl) return `${lit}<canvas class="gkc wg live ${g.id === selId ? 'sel' : ''}" width="448" height="672" data-lv="${g.lv}" data-f="${g.f}" style="left:${fl.x}%;top:${fl.t2}%;height:${fl.h2}%;--d:${Math.abs(i - MID) * 0.1}s"></canvas>
+            <button type="button" class="wsb" data-a="slot" data-id="${g.id}" style="left:${fl.x}%;width:${fl.iw}%;top:${fl.bottom - fl.h2 * 0.4}%;height:${fl.h2 * 0.4}%" aria-label="${esc(full(g))}"></button>
+            <span class="wp floor" style="left:${fl.x}%;top:${fl.bottom - 3.5}%">+${g.lv}</span>${isRep ? `<span class="wrep" style="left:${fl.x}%;top:${fl.bottom - fl.h2 * 0.42}%">대표</span>` : ''}`;
+        return `${lit}<canvas class="gkc wg live ${g.id === selId ? 'sel' : ''}" width="448" height="672" data-lv="${g.lv}" data-f="${g.f || 'strat'}" style="left:${x}%;top:${top}%;height:${hh}%;--d:${Math.abs(i - MID) * 0.1}s"></canvas>
             <button type="button" class="wsb" data-a="slot" data-id="${g.id}" style="left:${x}%;${hit}" aria-label="${esc(full(g))}"></button>
             <span class="wp" style="left:${x}%;top:${W.plate}%">+${g.lv}</span>${isRep ? `<span class="wrep" style="left:${x}%;top:${Math.min(96, W.plate + 7.5)}%">대표</span>` : ''}`;
     }).join('');
