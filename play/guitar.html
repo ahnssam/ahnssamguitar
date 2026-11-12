@@ -1901,14 +1901,15 @@ const myNick = () => (S.nick || '').trim() || '익명';
 const repSig = g => g ? `${g.f}|${g.lv}|${myNick()}` : '';
 const LINK_RE = /(https?:|www\.|\.(com|net|kr|co|io|me|ly)\b)/i;
 // 대표 기타를 서버에 올린다(바뀌었거나 10분 지났을 때만). 운영 계정으로 로그인해 있으면 서버가 숨김으로 둔다
+// 2026-11-13 파이트 넘버가 무작위 6자리로 바뀌어서, 예전 번호를 기억한 것('gk.sync')은 버리고 'gk.sync2'로 새로 받는다
 async function syncMe(force) {
     const g = rep();
     if (!g) return null;
-    const old = mem.get('gk.sync', {}), sig = repSig(g) + '|' + S.st.best;
+    const old = mem.get('gk.sync2', {}), sig = repSig(g) + '|' + S.st.best;
     if (!force && old.sig === sig && old.id != null && Date.now() - (old.at || 0) < 10 * 60e3) return old;
     const r = (await PLAY.rpc('play_guitar_save', { p_key: gkKey(), p_nick: myNick(), p_fam: g.f, p_lv: g.lv, p_best: S.st.best }, { auth: true }))[0];
     const m = { sig, at: Date.now(), id: r.id, pos: r.pos, players: r.players, hidden: r.hidden };
-    mem.set('gk.sync', m);
+    mem.set('gk.sync2', m);
     return m;
 }
 async function loadNet() {
@@ -1939,7 +1940,7 @@ let OPPS = [], rerankAnim = false;
 //   2026-11-13 사용자: 차례 번호(000005) 말고 무작위 6자리, 운영 계정은 000000 (db/play_guitar_fight_no.sql — 서버 함수의 id 가 곧 파이트 넘버)
 //   로그인하면 계정에 저장된 열쇠(S.rk)로 이어져서 다른 기기에서도 같은 번호
 let FIND = null, findMsg = '', findQ = '', findBusy = false;
-const myNo = () => { const a = NET.me && NET.me.id, b = (mem.get('gk.sync', {}) || {}).id; return a != null ? a : b != null ? b : null; };
+const myNo = () => { const a = NET.me && NET.me.id, b = (mem.get('gk.sync2', {}) || {}).id; return a != null ? a : b != null ? b : null; };
 const fmtNo = n => String(n).padStart(6, '0');   // 늘 6자리 (#000000 · #482913)
 async function findNo(raw) {
     findQ = String(raw || '').trim();
