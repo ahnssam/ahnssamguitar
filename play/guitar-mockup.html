@@ -8,7 +8,7 @@
      공개할 때: 이 파일을 guitar.html 로 복사하고 title 의 (목업)·mock-bar·toHome 주소만 되돌린다 -->
 <meta name="robots" content="noindex, nofollow">
 <title>기타 키우기 (목업) | 안쌤의 기타나무숲</title>
-<meta name="description" content="창고에서 찾은 기타를 강화해서 +20 전설의 기타까지! 줄이 끊기고, 가끔은 부서지고. 키운 기타는 작업방에 걸고 배틀에 내보내요.">
+<meta name="description" content="창고에서 찾은 기타를 강화해서 +20 전설의 기타까지! 줄이 끊기고, 가끔은 부서지고. 키운 기타는 내 컬렉션에 걸고 배틀에 내보내요.">
 <meta property="og:site_name" content="안쌤의 기타나무숲">
 <meta property="og:title" content="기타 키우기 | 안쌤의 기타나무숲">
 <meta property="og:description" content="창고에서 찾은 기타를 강화해서 +20 전설의 기타까지! 내 기타랑 붙어 볼래?">
@@ -61,7 +61,13 @@
     .gk-tabs button .dot { width: 7px; height: 7px; border-radius: 50%; background: #e25555; }
     @media (max-width: 400px) { .gk-tabs button i { display: none; } }
     @media (max-width: 380px) { .gk-tabs button { font-size: 12.5px; } }
-    /* 작업방 바닥 장비 (2026-11-12): 앰프 오른쪽 아래, 그 왼쪽에 멀티이펙터 */
+    /* 작업대에서 강화할 것 고르기: 기타 | 앰프 | 멀티이펙터 (2026-11-12 사용자: 장비 강화도 작업대에서) */
+    .bmode { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 0 0 8px; background: #e6ede9; padding: 3px; border-radius: 12px; }
+    .bmode button { padding: 7px 0; border-radius: 9px; font-weight: 800; font-size: 13px; color: #5a6b62; display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .bmode button.on { background: #fff; color: var(--green-deep); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
+    .stage.gearmode #cv, .stage.gearmode .empty { visibility: hidden; }
+    .stage .gearimg { position: absolute; z-index: 1; left: 50%; bottom: 15%; width: min(62%, 280px); transform: translateX(-50%); pointer-events: none; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, 0.45)); }
+    /* 내 컬렉션 바닥 장비 (2026-11-12): 앰프 오른쪽 아래, 그 왼쪽에 멀티이펙터 */
     .wall5 .gear { position: absolute; bottom: 0; z-index: 3; padding: 0; border: 0; background: none; cursor: pointer; transform-origin: 50% 95%; }
     .wall5 .gear img { display: block; width: 100%; filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.5)); pointer-events: none; }
     .wall5 .gear span { position: absolute; left: 50%; bottom: 3%; transform: translateX(-50%); font-size: 10px; font-weight: 900; color: #fff; background: rgba(0, 0, 0, 0.6); border-radius: 99px; padding: 0 6px; line-height: 15px; }
@@ -387,15 +393,17 @@
     </div>
     <nav class="gk-tabs" id="tabs">
         <button type="button" data-t="bench" class="on"><i class="fas fa-screwdriver-wrench"></i>작업대</button>
-        <button type="button" data-t="room"><i class="fas fa-house"></i>작업방</button>
+        <button type="button" data-t="room"><i class="fas fa-house"></i>내 컬렉션</button>
         <button type="button" data-t="battle"><i class="fas fa-bolt"></i>배틀</button>
         <button type="button" data-t="shop"><i class="fas fa-store"></i>상점</button>
         <button type="button" data-t="dex"><i class="fas fa-book-open"></i>도감</button>
     </nav>
 
     <section id="tab-bench">
+        <div class="bmode" id="bmode"><button type="button" data-m="guitar" class="on"><i class="fas fa-guitar"></i>기타</button><button type="button" data-m="amp"><i class="fas fa-volume-high"></i>앰프</button><button type="button" data-m="fx"><i class="fas fa-sliders"></i>멀티이펙터</button></div>
         <div class="stage" id="stage">
             <canvas id="cv" width="448" height="672"></canvas>
+            <img class="gearimg" id="gearImg" alt="" hidden>
             <div class="nmtag" id="nm"></div>
             <div class="empty" id="empty" hidden></div>
             <div class="fx" id="fx"></div>
@@ -669,7 +677,7 @@ function askWhich(srv, uid) {
             const M = mergeSaves(S, srv.data || {});
             mem.set('gk', M); S = load();
             linkUp(uid, srv.rev); updBar(); setTab(tab);
-            toast('두 기록을 합쳤어요' + (S.store.length ? ` · 벽에 못 건 기타 ${S.store.length}대는 작업방 창고에 있어요` : ''));
+            toast('두 기록을 합쳤어요' + (S.store.length ? ` · 벽에 못 건 기타 ${S.store.length}대는 내 컬렉션 창고에 있어요` : ''));
         }
         else if (b.dataset.w === 'acct') adopt(srv, uid);
         else if (b.dataset.w === 'here') linkUp(uid, srv.rev);
@@ -989,7 +997,7 @@ $('#talk').addEventListener('click', e => { e.stopPropagation(); nextTalk(); });
 const one = a => a[Math.floor(Math.random() * a.length)];
 const LINES = {
     boom: [
-        [['me', '……'], ['boss', '무대에서 부수는 건 록이다. 작업방에서 부수는 건 그냥 손해다.']],
+        [['me', '……'], ['boss', '무대에서 부수는 건 록이다. 작업대에서 부수는 건 그냥 손해다.']],
         [['me', '……'], ['boss', '나도 옛날에 하나 부쉈다. …할부는 아직 남았다.']],
         [['me', '……'], ['boss', '조각은 버리지 마라. 모으면 케이스 값은 나온다.']],
         [['me', '……'], ['minji', '방금 거 찍었어요! …조회수는 잘 나올 것 같아요.']],
@@ -1021,6 +1029,7 @@ const LINES = {
 
 // ---------- 화면 ----------
 let busy = false, tuning = null, tab = 'bench', selId = '';
+let bmode = 'guitar';   // 작업대에서 강화할 것: guitar | amp | fx
 function updBar(goldBump) {
     $('#rGold span').textContent = S.gold >= 1e5 && S.gold < 1e8 ? +(S.gold / 1e4).toFixed(1) + '만G' : gf(S.gold);   // 좁은 화면에서 한 줄에 들어가게
     $('#rGold').title = '골드 ' + S.gold.toLocaleString() + 'G';
@@ -1037,6 +1046,13 @@ function updBar(goldBump) {
 }
 let nmLv = -1;
 function renderName() {
+    if (bmode !== 'guitar') {   // 장비 이름표
+        const el = $('#nm'), lv = S.gear[bmode], cls = lv >= 20 ? 'l20' : lv >= 15 ? 'l15' : lv >= 10 ? 'l10' : '';
+        el.hidden = false; el.className = 'nmtag ' + cls;
+        el.innerHTML = `<span class="lvb ${cls}">+${lv}</span><b>${esc(GEAR[bmode].names[lv])}</b>`;
+        if (nmLv >= 0 && lv > nmLv) el.animate([{ scale: 1 }, { scale: 1.2, offset: 0.35 }, { scale: 1 }], { duration: 520, easing: 'ease-out' });
+        nmLv = lv; return;
+    }
     const g = ghost || S.bench, el = $('#nm');
     if (!g) { el.innerHTML = ''; el.hidden = true; nmLv = -1; return; }
     const cls = g.lv >= 20 ? 'l20' : g.lv >= 15 ? 'l15' : g.lv >= 10 ? 'l10' : '';
@@ -1070,14 +1086,38 @@ function lackCard(title, why) {
         : `<a class="btn pick" href="./"><i class="fas fa-gamepad"></i> 놀이터에서 피크 모으기</a>
         <div class="alt"><a href="quiz.html">퀴즈쇼</a> · <a href="worldcup.html">월드컵</a> 바로 가기</div>`}`;
 }
+function setBmode(m) {
+    if (busy || !GEAR[m] && m !== 'guitar') return;
+    bmode = m; nmLv = -1;
+    document.querySelectorAll('#bmode button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+    renderBench();
+}
+function renderGearBench() {
+    const k = bmode, lv = S.gear[k], box = $('#bench'), img = $('#gearImg');
+    $('#stage').classList.add('gearmode'); $('#empty').hidden = true;
+    img.hidden = false; const src = gearSrc(k, lv); if (img.getAttribute('src') !== src) img.src = src;
+    renderTable();
+    let h = '';
+    if (lv >= MAX) h = `<div class="maxed">최고 단계! 더는 강화할 수 없어요.</div>`;
+    else {
+        const [sp, mp, dp] = ODDS[lv], cost = COST[lv];
+        h = `<div class="odds3"><span class="o">성공<b>${sp}%</b></span><span class="k">실패 (그대로)<b>${mp}%</b></span><span class="b">고장 (한 단계 ↓)<b>${dp}%</b></span></div>`;
+        if (S.gold < cost) h += `<p class="lack">골드가 ${gf(cost - S.gold)} 모자라요. 기타를 팔거나 출석 골드를 받아요.</p>`;
+    }
+    h += `<p class="note2" style="text-align:center">${GEAR[k].name}는 하나만 가지고 계속 키워요. 부서지지 않고, 고장 나면 한 단계 내려가요. 내 컬렉션 바닥에 놓여 있어요.</p>`;
+    box.innerHTML = h;
+    renderSact();
+}
 function renderBench() {
     updBar(); renderName();
+    if (bmode !== 'guitar') return renderGearBench();
+    $('#stage').classList.remove('gearmode'); $('#gearImg').hidden = true;
     const g = S.bench, box = $('#bench'), em = $('#empty');
     em.hidden = !!(g || ghost);
     if (!em.hidden) em.innerHTML = emptyCard();
     renderTable();
     renderSact();   // 빈 작업대('기타 키우기 / 시작')에는 강화·진열하기 단추가 없어야 한다 (2026-11-12 사용자)
-    if (!g) { box.innerHTML = `<p class="note2" style="text-align:center">${S.first ? `'시작'(기타 찾기)은 ${gf(FIND_GOLD)}예요. 골드가 모자라면 피크 ${FIRST_PICKS}개로 시작해요.` : `첫 기타만 피크 ${FIRST_PICKS}개로 찾아요. 그다음부터 '시작'은 ${gf(FIND_GOLD)}예요.`} 걸어 둔 기타는 작업방에서 작업대로 가져올 수 있어요.</p>`; return; }
+    if (!g) { box.innerHTML = `<p class="note2" style="text-align:center">${S.first ? `'시작'(기타 찾기)은 ${gf(FIND_GOLD)}예요. 골드가 모자라면 피크 ${FIRST_PICKS}개로 시작해요.` : `첫 기타만 피크 ${FIRST_PICKS}개로 찾아요. 그다음부터 '시작'은 ${gf(FIND_GOLD)}예요.`} 걸어 둔 기타는 내 컬렉션에서 작업대로 가져올 수 있어요.</p>`; return; }
     const T = TUNERS[S.tuner];
     let h = '';
     if (g.lv >= MAX) h += `<div class="maxed">🎸 최고 단계! 더는 강화할 수 없어요.<br><small>벽에 걸고 대표 기타로 배틀에 내보내요.</small></div>`;
@@ -1088,8 +1128,8 @@ function renderBench() {
         if (S.gold < cost) h += `<p class="lack">골드가 ${gf(cost - S.gold)} 모자라요. 팔거나 출석 골드를 받아요.</p>`;
     }
     h += `<div class="acts"><button type="button" data-a="sell" ${g.lv ? '' : 'disabled'}><i class="fas fa-coins"></i>팔기 <b>${g.lv ? gf(SELL[g.lv]) : '0G'}</b></button>
-        <button type="button" data-a="hang"><i class="fas fa-image"></i>벽에 걸기</button>
-        <button type="button" data-a="brag" aria-label="자랑하기"><i class="fas fa-share-nodes"></i></button></div>`;
+        <button type="button" data-a="toss"><i class="fas fa-trash-can"></i>버리기</button>
+        <button type="button" data-a="brag" aria-label="자랑하기"><i class="fas fa-share-nodes"></i></button></div>`;   // 2026-11-12 사용자: 벽에 걸기는 빼고(무대 안 '진열하기'와 같음) 팔기 옆에 버리기
     h += `<div class="opts">${S.cases || S.caseOn ? `<button type="button" class="chip ${S.caseOn ? 'on' : ''}" data-a="case"><i class="fas fa-briefcase"></i>하드케이스 ${S.caseOn ? '끼움' : '안 끼움'} <small>${S.cases}개</small></button>` : `<span class="chip" title="상점에서 조각 ${CASE_SHARDS}개로 만들어요" style="cursor:default"><i class="fas fa-briefcase"></i>하드케이스 없음 <small>조각 ${S.shards}/${CASE_SHARDS}</small></span>`}
         ${T ? `<button type="button" class="chip ${S.tuneOn ? 'on' : ''}" data-a="tune"><i class="fas ${T.icon}"></i>${S.tuneOn ? '튜닝하고 강화' : '튜닝 건너뛰기'}</button>` : ''}</div>`;
     box.innerHTML = h;
@@ -1098,6 +1138,12 @@ function renderBench() {
 // 무대 안 단추: 작업대에 기타가 있는 동안 늘 (기다리는 동안·튜닝 중엔 숨김)
 // 2026-11-12 사용자: 강화·진열하기는 무대 안 아래에 늘 (아래 큰 '강화하기' 단추는 뺐다). 기다리는 동안·빈 작업대엔 숨김
 function renderSact() {
+    if (bmode !== 'guitar') {   // 장비: 강화 단추만
+        const el = $('#sact'), lv = S.gear[bmode], show = !busy && lv < MAX, cost = COST[lv];
+        el.hidden = !show; $('#stage').classList.toggle('has-act', show); el.classList.add('one');
+        if (show) el.innerHTML = `<button type="button" class="ag" data-a="gearup" data-k="${bmode}" ${S.gold < cost ? 'disabled' : ''}><i class="fas fa-hammer"></i>강화 <small>${cost ? gf(cost) : '공짜'}</small></button>`;
+        return;
+    }
     const el = $('#sact'), g = S.bench, show = !!g && !busy;
     el.hidden = !show; $('#stage').classList.toggle('has-act', !!show);
     if (!show) return;
@@ -1226,16 +1272,17 @@ async function suspense(lv, o = {}) {   // o.find: 기타 찾기(그림자에서
             ? { transform: `${CVT} translate(${j(a)}px, ${j(a * 0.5)}px) scale(${(0.9 + 0.1 * k).toFixed(3)})`, opacity: Math.min(1, k * 4), filter: `brightness(${(0.02 + 0.1 * k * k).toFixed(2)}) ${glow}` }
             : { transform: `${CVT} translate(${j(a)}px, ${j(a * 0.5)}px) rotate(${j(a * 0.4)}deg)`, filter: `brightness(${(1 + 0.8 * k * k).toFixed(2)}) ${glow}` });
     }
-    const an = cv.animate(kf, { duration: ms, easing: 'linear', fill: 'forwards' });
+    const tg = o.el || cv;
+    const an = tg.animate(o.el ? kf.map(f => ({ ...f, transform: f.transform.replace(CVT, 'translateX(-50%)') })) : kf, { duration: ms, easing: 'linear', fill: 'forwards' });
     const iv = setInterval(gather, lv >= 10 ? 45 : 70);
     await sleep(ms);
     clearInterval(iv);
     an.cancel();
     if (lv >= 10 || o.hush) {   // 결과 직전 한 박자: 소리도 떨림도 멈춘다
-        cv.style.filter = o.find ? 'brightness(.12) drop-shadow(0 0 18px rgba(255, 226, 122, 0.9))' : 'brightness(1.6) drop-shadow(0 0 14px rgba(255, 226, 122, 0.85))';
+        tg.style.filter = o.find ? 'brightness(.12) drop-shadow(0 0 18px rgba(255, 226, 122, 0.9))' : 'brightness(1.6) drop-shadow(0 0 14px rgba(255, 226, 122, 0.85))';
         bar.querySelector('span').textContent = '……';
         await sleep(o.find ? 320 : 500);
-        cv.style.filter = '';
+        tg.style.filter = '';
     }
     st.classList.remove('charging'); bar.remove(); $('#bench').classList.remove('wait');
 }
@@ -1336,6 +1383,21 @@ async function findGuitar(first, byPick) {
     $('#nm').animate([{ opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1.15, offset: 0.6 }, { opacity: 1, scale: 1 }], { duration: 520, easing: 'ease-out' });
     if (first) setTimeout(() => talk(LINES.bought), 1000);
 }
+// 버리기: 골드 없이 작업대를 비운다(+0처럼 못 파는 기타를 치울 때). 한 번 더 눌러야 버린다
+async function tossBench(btn) {
+    const g = S.bench;
+    if (busy || !g) return;
+    if (btn && btn.dataset.sure !== '1') { btn.dataset.sure = '1'; btn.innerHTML = '<i class="fas fa-trash-can"></i>정말 버릴까요?'; return; }
+    busy = true; talkClear();
+    ghost = g; S.bench = null; if (S.rep === g.id) S.rep = '';
+    save(); renderSact(); $('#bench').innerHTML = '';
+    sfx('drop');
+    const a = cv.animate([{ transform: CVT, opacity: 1 }, { transform: `${CVT} translateY(40%) rotate(-25deg)`, opacity: 0 }], { duration: 520, easing: 'ease-in', fill: 'forwards' });
+    await sleep(540);
+    a.cancel(); ghost = null; busy = false;
+    toast('기타를 버렸어요');
+    renderBench();
+}
 async function sellBench() {
     const g = S.bench;
     if (busy || !g || !g.lv) return;
@@ -1356,7 +1418,7 @@ async function hangBench() {
     const g = S.bench;
     if (busy || !g) return;
     const slot = HANG_ORDER.find(i => S.open[i] && !S.wall[i]);   // 처음엔 가운데, 그다음은 가운데에서 가까운 열린 걸이
-    if (slot == null) { toast(S.open.every(Boolean) ? '벽이 꽉 찼어요. 걸린 기타를 팔거나 작업대로 가져와요' : '빈 걸이가 없어요. 작업방에서 잠긴 걸이를 열어요'); return; }
+    if (slot == null) { toast(S.open.every(Boolean) ? '벽이 꽉 찼어요. 걸린 기타를 팔거나 작업대로 가져와요' : '빈 걸이가 없어요. 내 컬렉션에서 잠긴 걸이를 열어요'); return; }
     busy = true; talkClear();
     S.wall[slot] = g; ghost = g; S.bench = null; renderSact();
     if (!S.rep) S.rep = g.id;
@@ -1365,7 +1427,7 @@ async function hangBench() {
     const a = cv.animate([{ transform: CVT, opacity: 1 }, { transform: `${CVT} translateY(-70%) scale(.6)`, opacity: 0 }], { duration: 450, easing: 'ease-in', fill: 'forwards' });
     await sleep(460);
     a.cancel(); ghost = null; busy = false;
-    toast('작업방 벽에 걸었어요');
+    toast('내 컬렉션 벽에 걸었어요');
     renderBench();
 }
 
@@ -1426,24 +1488,35 @@ function gearBox() {
         return `<div class="gr ${gearSel === k ? 'sel' : ''}" id="gr-${k}"><img src="${gearSrc(k, lv)}" alt=""><div><b>${esc(gearName(k))}</b><small>${GEAR[k].name} · ${max ? '최고 단계' : `성공 ${ODDS[lv][0]}% · 실패하면 그대로 · 부서짐 칸이면 한 단계 내려가요`}</small></div>
             ${max ? '' : `<button type="button" data-a="gearup" data-k="${k}" ${S.gold < cost ? 'disabled' : ''}>강화<small>${cost ? gf(cost) : '공짜'}</small></button>`}</div>`; }).join('')}</div>`;
 }
-async function gearUp(k) {
+async function gearUp(k) {   // 작업대에서 (2026-11-12 사용자: 앰프·멀티 강화도 작업대에서)
     const lv = S.gear[k], cost = COST[lv];
     if (busy || lv >= MAX) return;
     if (S.gold < cost) { toast('골드가 모자라요'); return; }
-    busy = true; S.gold -= cost; updBar();
+    busy = true; talkClear(); renderSact();
+    S.gold -= cost; updBar();
     const [sp, mp] = ODDS[lv], r = Math.random() * 100;
     const out = r < sp ? 'ok' : r < sp + mp ? 'keep' : 'down';
     S.gear[k] = out === 'ok' ? lv + 1 : out === 'down' ? Math.max(0, lv - 1) : lv;
     save();   // 결과를 먼저 저장
-    const el = document.getElementById('gear-' + k);
-    if (el) { el.classList.remove('up'); void el.offsetWidth; el.classList.add('up'); }
-    sfx('charge', lv, 900);
-    await sleep(950);
-    busy = false; gearSel = k;
-    if (out === 'ok') { sfx('ok', S.gear[k]); toast(`성공! ${gearName(k)}`); }
-    else if (out === 'keep') { sfx('snap'); toast('실패 — 단계는 그대로예요'); }
-    else { sfx('boom'); toast(`고장! 한 단계 내려갔어요 (+${S.gear[k]})`); }
-    renderRoom();
+    const img = $('#gearImg');
+    await suspense(lv, { el: img });
+    if (out === 'ok') {
+        sfx('ok', S.gear[k]); img.src = gearSrc(k, S.gear[k]); renderName();
+        img.animate([{ transform: 'translateX(-50%)', filter: 'brightness(1)' }, { transform: 'translateX(-50%) translateY(-10px) scale(1.06)', filter: 'brightness(2.2)', offset: 0.3 }, { transform: 'translateX(-50%)', filter: 'brightness(1)' }], { duration: 520, easing: 'ease-out' });
+        burst(14, ['#ffe27a', '#ffffff', '#72c492'], { y: 60, spread: 110, size: [4, 8], dur: 800, grav: false });
+        pop(`+${S.gear[k]} 성공!`, 'ok');
+        await sleep(330);
+    } else if (out === 'keep') {
+        sfx('snap'); pop('실패!', 'keep', 30); setTimeout(() => pop('단계는 그대로', 'sm', 46), 120);
+        img.animate([{ transform: 'translateX(-50%)' }, { transform: 'translateX(-50%) rotate(-3deg)' }, { transform: 'translateX(-50%) rotate(2deg)' }, { transform: 'translateX(-50%)' }], { duration: 300 });
+        await sleep(300);
+    } else {
+        sfx('boom'); shake(); pop('고장!', 'boom', 36); setTimeout(() => pop(`한 단계 내려갔어요 (+${S.gear[k]})`, 'sm', 22), 200);
+        img.src = gearSrc(k, S.gear[k]); renderName();
+        await sleep(600);
+    }
+    busy = false;
+    renderBench();
 }
 
 function renderRoom(enter) {
@@ -1469,9 +1542,9 @@ function renderRoom(enter) {
             <button type="button" data-a="take" data-id="${g.id}">${S.bench ? '작업대와 바꾸기' : '작업대로'}</button>
             <button type="button" data-a="wsell" data-id="${g.id}" ${g.lv ? '' : 'disabled'}>팔기</button></div></div>`).filter(Boolean);
     el.innerHTML = `<div class="wall5 ${enter ? 'enter' : ''}" style="aspect-ratio:${W.w} / ${W.h}">
-        <img class="bg" src="../images/play/gk/${W.src}" alt="작업방 진열 벽">${slots}${gearFloor()}</div>
+        <img class="bg" src="../images/play/gk/${W.src}" alt="내 컬렉션 진열 벽">${slots}${gearFloor()}</div>
         <p class="rinfo">걸이 <b>${nOpen}/${WALL_N}</b> 열림 · 기타 <b>${hung.length}</b>대 · 대표 기타: <b>${rp ? esc(full(rp)) : '없음'}</b></p>
-        ${gearBox()}${storeBox()}
+        ${storeBox()}
         <div class="glist">${rows.length ? rows.join('') : '<p class="note2">아직 걸린 기타가 없어요. 작업대에서 \'벽에 걸기\'를 누르면 가운데 걸이에 걸려요. 걸어 둔 기타 중 하나가 대표 기타로 배틀에 나가요.</p>'}</div>
         <p class="note2">${nOpen < WALL_N ? `양쪽 잠긴 걸이는 눌러서 골드로 열어요 (${SLOT_PRICE.map(gf).join(' → ')}, 어느 칸이든 여는 순서대로). ` : '걸이를 모두 열었어요. '}진열 벽 스킨은 상점에서 바꿔요.</p>`;
     paintAll(el);
@@ -1636,7 +1709,7 @@ function renderShop() {
         const own = S.skins.includes(W.id), use = S.skin === W.id;
         return `<div class="item"><span class="ic skin" style="background-image:url(../images/play/gk/${W.src})"></span><div class="it"><b>${W.name}</b><small>${W.desc}</small></div>
             ${use ? '<span class="own">쓰는 중</span>' : own ? `<button type="button" data-a="skin" data-id="${W.id}">바꾸기</button>` : `<button type="button" data-a="skin" data-id="${W.id}" ${S.gold >= W.price ? '' : 'disabled'}>${gf(W.price)}</button>`}</div>`;
-    }).join('') + (WALLS.length < 2 ? '<p class="note2">다른 스킨은 그림이 생기면 더해요. 걸이는 작업방에서 잠긴 걸이를 눌러 열어요.</p>' : '');
+    }).join('') + (WALLS.length < 2 ? '<p class="note2">다른 스킨은 그림이 생기면 더해요. 걸이는 내 컬렉션에서 잠긴 걸이를 눌러 열어요.</p>' : '');
     h += `<h3>내 기록</h3><div class="stats">
         <div><b>+${st.best}</b><small>최고 단계</small></div><div><b>${st.tries.toLocaleString()}</b><small>강화</small></div><div><b>${st.boom.toLocaleString()}</b><small>부순 기타</small></div>
         <div><b>${st.keep.toLocaleString()}</b><small>끊은 줄</small></div><div><b>${st.saved.toLocaleString()}</b><small>케이스로 막음</small></div><div><b>${gf(st.earned)}</b><small>판 돈 (${st.sold}대)</small></div></div>
@@ -1653,7 +1726,7 @@ $('#app').addEventListener('click', e => {
     if (busy) return;
     const a = b.dataset.a, id = b.dataset.id;
     if (a === 'again') enhance();
-    else if (a === 'gearsel') { gearSel = b.dataset.k; selId = ''; renderRoom(); const r = document.getElementById('gr-' + gearSel); if (r) r.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+    else if (a === 'gearsel') { setTab('bench'); setBmode(b.dataset.k); }
     else if (a === 'gearup') gearUp(b.dataset.k);
     else if (a === 'dex') toast(`+${b.dataset.lv} ${FAMS[b.dataset.f].names[+b.dataset.lv]}`);
     else if (a === 'new') findGuitar(false);
@@ -1661,6 +1734,7 @@ $('#app').addEventListener('click', e => {
     else if (a === 'buy1') findGuitar(true);
     else if (a === 'daily') $('#rDaily').click();
     else if (a === 'sell') sellBench();
+    else if (a === 'toss') tossBench(b);
     else if (a === 'hang') hangBench();
     else if (a === 'brag') brag(S.bench);
     else if (a === 'case') { S.caseOn = !S.caseOn && S.cases > 0; save(); renderBench(); }
@@ -1723,6 +1797,7 @@ $('#rDaily').addEventListener('click', () => {
     toast(`출석 +${gf(DAILY_GOLD)}${pk ? ` · 피크 +${pk}` : ' (피크는 오늘 한도를 다 받았어요)'}`);
     if (tab === 'bench') renderBench(); else if (tab === 'shop') renderShop();
 });
+$('#bmode').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (b) setBmode(b.dataset.m); });
 $('#rCloud').addEventListener('click', () => {
     if (cloudOff) { toast('계정 저장은 곧 열려요'); return; }
     if (!acctId()) { toast('로그인하면 이 기록이 계정에 저장돼요'); try { window.ahnssamAuth && window.ahnssamAuth.openLogin(); } catch (e) {} return; }
