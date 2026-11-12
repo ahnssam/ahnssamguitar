@@ -612,6 +612,10 @@ const floorRoom = (fl, g) => fl.filter(x => x.f === g.f).length < FLOOR_EACH;
 // 바닥에 놓은 앰프·멀티의 능력치 (2026-11-12 사용자: 앰프는 부서짐↓, 이펙터는 줄 끊김↓, 단계별로. 3개씩 놓을 수 있으니 너무 크지 않게)
 //   한 대에 단계 × 0.1%p (+10 = 1%p, +20 = 2%p), 바닥의 같은 종류끼리 더한다(3대 모두 +20이면 6%p).
 //   앰프가 줄인 부서짐은 줄 끊김으로, 멀티가 줄인 줄 끊김은 성공으로 간다. 작업대에서 강화 중인 앰프·멀티는 안 친다
+// 그림을 같은 이름으로 다시 뽑아 넣으면 브라우저가 예전 그림을 보여 줄 수 있어서 ?v= 를 붙인다 (그림 접두어 → { 단계: 판 })
+//   2026-11-12 멀티 +8·+10~19 안개 없는 판으로 바꿈
+const ART_V = { fx: { 8: 2, 10: 2, 11: 2, 12: 2, 13: 2, 14: 2, 15: 2, 16: 2, 17: 2, 18: 2, 19: 2 } };
+const artV = (pre, n) => { const v = ART_V[pre] && ART_V[pre][n]; return v ? `?v=${v}` : ''; };
 const GEAR_PER = 0.1, r1 = x => Math.round(x * 10) / 10;
 // '유지' 이름: 기타는 줄 끊김, 멀티이펙터는 버튼 빠짐 (2026-11-12 사용자: 이펙터는 줄이 없으니 버튼이 빠졌다가 다시 끼움)
 const keepWord = g => g && g.f === 'multi' ? '버튼 빠짐' : '줄 끊김';
@@ -1037,7 +1041,7 @@ function art(lv, f) {
         a = ART[key] = { img: new Image(), ok: false, bad: false, sq: !!F.sq };
         a.img.onload = () => { a.ok = true; paintAll(document); };
         a.img.onerror = () => { a.bad = true; paintAll(document); };
-        a.img.src = `../images/play/gk/${F.art}_${String(n).padStart(2, '0')}.webp`;
+        a.img.src = `../images/play/gk/${F.art}_${String(n).padStart(2, '0')}.webp${artV(F.art, n)}`;
     }
     return a.bad ? null : a;
 }
@@ -1418,7 +1422,7 @@ function dexDot() {
     if (S.dexNew && tab !== 'dex' && !dot) b.insertAdjacentHTML('beforeend', '<span class="dot" title="도감에 새로 들어온 기타"></span>');
     if ((!S.dexNew || tab === 'dex') && dot) dot.remove();
 }
-const artSrc = (f, lv) => { const F = FAMS[f] || FAMS.strat, n = F.extra && F.extra.includes(lv) ? lv : Math.min(lv, F.artMax); return `../images/play/gk/${F.art}_${String(n).padStart(2, '0')}.webp`; };
+const artSrc = (f, lv) => { const F = FAMS[f] || FAMS.strat, n = F.extra && F.extra.includes(lv) ? lv : Math.min(lv, F.artMax); return `../images/play/gk/${F.art}_${String(n).padStart(2, '0')}.webp${artV(F.art, n)}`; };
 function renderDex() {
     S.dexNew = false; save(); dexDot();
     const N = MAX + 1, cnt = f => Array.from({ length: N }, (_, i) => dexHas(f, i)).filter(Boolean).length;
