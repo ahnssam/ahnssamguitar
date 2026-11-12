@@ -23,8 +23,8 @@
     .gk { max-width: 560px; padding-top: 14px; }
     .gk [hidden] { display: none !important; }
 
-    /* 위 줄: 골드·조각·하드케이스·출석·소리 */
-    .gk-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    /* 메뉴 아래 줄: 골드·조각·하드케이스·출석·소리 — 휴대폰에서도 한 줄 (2026-11-13 사용자: 스피커가 아래로 내려가 두 줄이 됨, 구름 단추는 뺌) */
+    .gk-bar { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; margin-bottom: 12px; }
     .res { display: inline-flex; align-items: center; gap: 5px; height: 34px; padding: 0 10px; border-radius: 999px; background: #fff; border: 1.5px solid var(--line); font-weight: 800; font-size: 13.5px; white-space: nowrap; }
     .res i { font-size: 13px; }
     .res.gold i { color: #e0a514; }
@@ -38,7 +38,8 @@
     .res.sc .case.full > span { color: #2f7a4f; }
     /* 휴대폰: 위 줄이 한 줄에 들어가게 조금 촘촘히 (조각 → 하드케이스 칩이 길어져서) */
     @media (max-width: 420px) { .gk-bar { gap: 4px; } .res { padding: 0 8px; } .res.sc { padding: 0 7px; gap: 3px; } .res.sc .arr { font-size: 9px; } .gk-bar .iconbtn { width: 30px; height: 30px; } }
-    @media (max-width: 370px) { .gk-bar { gap: 3px; } .res { font-size: 12.5px; gap: 4px; padding: 0 7px; } .res i { font-size: 12px; } .res.sc > span { gap: 3px; } }
+    @media (max-width: 370px) { .gk-bar { gap: 3px; } .res, .res.sc { font-size: 12.5px; gap: 4px; padding: 0 6px; } .res.sc { gap: 3px; } .res i { font-size: 12px; } .res.sc > span { gap: 3px; } }
+    @media (max-width: 345px) { .res.sc .arr, .res.daily span { display: none; } .gk-bar .iconbtn { width: 28px; height: 28px; } }   /* 아주 좁은 폰: 화살표·'출석' 글자를 빼서 한 줄 */
     .res.gold.bump { animation: pkBump .6s cubic-bezier(.3, 1.6, .5, 1); }
     .gk-bar .sp { flex: 1; }
     .daily { border-color: #f6d29a; background: #fff8ec; color: #a85a00; cursor: pointer; }
@@ -63,7 +64,7 @@
     .iconbtn { width: 34px; height: 34px; border-radius: 50%; background: #fff; border: 1.5px solid var(--line); display: grid; place-items: center; color: #555; flex: none; }
 
     /* 탭 */
-    .gk-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 12px 0; background: #e6ede9; padding: 4px; border-radius: 14px; }
+    .gk-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 0 0 10px; background: #e6ede9; padding: 4px; border-radius: 14px; }
     .gk-tabs button { padding: 9px 0; border-radius: 10px; font-weight: 800; font-size: 13.5px; color: #5a6b62; display: flex; align-items: center; justify-content: center; gap: 6px; }
     .gk-tabs button.on { background: #fff; color: var(--green-deep); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
     .gk-tabs button .dot { width: 7px; height: 7px; border-radius: 50%; background: #e25555; }
@@ -510,16 +511,7 @@
 </div></header>
 
 <main class="wrap gk" id="app">
-    <div class="gk-bar">
-        <span class="res gold" id="rGold" title="골드"><i class="fas fa-coins"></i><span>0G</span></span>
-        <!-- 2026-11-12 사용자: 하드케이스 왼쪽에 부서진 조각 5/20 → 하드케이스 1/3 (조각으로 만든다는 게 보이게). 누르면 상점 케이스 칸 -->
-        <button type="button" class="res sc" id="rSC" data-a="gocase" title="부서진 기타 조각 20개 → 하드케이스 1개 (3개까지, 끼우면 부서짐 1번 막음)">
-            <span class="shard" id="rShard"><i class="fas fa-puzzle-piece"></i><span>0/20</span></span><i class="fas fa-arrow-right arr"></i><span class="case" id="rCase"><i class="fas fa-briefcase"></i><span>0/3</span></span></button>
-        <span class="sp"></span>
-        <button class="res daily" id="rDaily" type="button" title="하루 한 번: 1,000G + 피크 10"><i class="fas fa-gift"></i><span>출석</span></button>
-        <button class="iconbtn cloud" id="rCloud" type="button" aria-label="계정에 저장"><i class="fas fa-cloud"></i></button>
-        <button class="iconbtn" id="rSnd" type="button" aria-label="효과음 켜기/끄기"><i class="fas fa-volume-high"></i></button>
-    </div>
+    <!-- 2026-11-13 사용자: 메뉴(작업대·컬렉션…)를 돈 정보 위로 -->
     <nav class="gk-tabs" id="tabs">
         <button type="button" data-t="bench" class="on"><i class="fas fa-screwdriver-wrench"></i>작업대</button>
         <button type="button" data-t="room"><i class="fas fa-house"></i>컬렉션</button>
@@ -527,6 +519,15 @@
         <button type="button" data-t="shop"><i class="fas fa-store"></i>상점</button>
         <button type="button" data-t="dex"><i class="fas fa-book-open"></i>도감</button>
     </nav>
+    <div class="gk-bar">
+        <span class="res gold" id="rGold" title="골드"><i class="fas fa-coins"></i><span>0G</span></span>
+        <!-- 2026-11-12 사용자: 하드케이스 왼쪽에 부서진 조각 5/20 → 하드케이스 1/3 (조각으로 만든다는 게 보이게). 누르면 상점 케이스 칸 -->
+        <button type="button" class="res sc" id="rSC" data-a="gocase" title="부서진 기타 조각 20개 → 하드케이스 1개 (3개까지, 끼우면 부서짐 1번 막음)">
+            <span class="shard" id="rShard"><i class="fas fa-puzzle-piece"></i><span>0/20</span></span><i class="fas fa-arrow-right arr"></i><span class="case" id="rCase"><i class="fas fa-briefcase"></i><span>0/3</span></span></button>
+        <span class="sp"></span>
+        <button class="res daily" id="rDaily" type="button" title="하루 한 번: 1,000G + 피크 10"><i class="fas fa-gift"></i><span>출석</span></button>
+        <button class="iconbtn" id="rSnd" type="button" aria-label="효과음 켜기/끄기"><i class="fas fa-volume-high"></i></button>
+    </div>
 
     <section id="tab-bench">
         <div class="stage" id="stage">
@@ -2105,7 +2106,7 @@ function renderShop() {
     if (shopCat === 'rec') h += `<div class="stats">
         <div><b>+${st.best}</b><small>최고 단계</small></div><div><b>${st.tries.toLocaleString()}</b><small>강화</small></div><div><b>${st.boom.toLocaleString()}</b><small>부순 기타</small></div>
         <div><b>${st.keep.toLocaleString()}</b><small>끊은 줄</small></div><div><b>${st.saved.toLocaleString()}</b><small>케이스로 막음</small></div><div><b>${gf(st.earned)}</b><small>판 돈 (${st.sold}대)</small></div></div>
-        <p class="note2">진행은 이 브라우저에 저장되고, 로그인하면 계정에도 저장돼서 다른 기기에서도 이어서 해요(위 구름 단추). 놀이터 피크와 골드는 따로예요.</p>
+        <p class="note2">진행은 이 브라우저에 저장되고, 로그인하면 계정에도 저장돼서 다른 기기에서도 이어서 해요(맨 위 로그인). 놀이터 피크와 골드는 따로예요.</p>
         <button type="button" class="reset" data-a="reset">기록 지우고 처음부터</button>`;
     el.innerHTML = h;
 }
@@ -2207,13 +2208,6 @@ $('#rDaily').addEventListener('click', () => {
     const pk = PLAY.picks.earn(DAILY_PICKS);   // 놀이터 하루 200 한도를 넘으면 0
     toast(`출석 +${gf(DAILY_GOLD)}${pk ? ` · 피크 +${pk}` : ' (피크는 오늘 한도를 다 받았어요)'}`);
     if (tab === 'bench') renderBench(); else if (tab === 'shop') renderShop();
-});
-$('#rCloud').addEventListener('click', () => {
-    if (cloudOff) { toast('계정 저장은 곧 열려요'); return; }
-    if (!acctId()) { toast('로그인하면 이 기록이 계정에 저장돼요'); try { window.ahnssamAuth && window.ahnssamAuth.openLogin(); } catch (e) {} return; }
-    if (!linked()) { cloudSync(); return; }
-    if (cloud.dirty) cloudPush();
-    toast(cloud.dirty ? '계정에 저장하는 중…' : `계정에 저장돼 있어요${cloud.at ? ' · ' + new Date(cloud.at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : ''}`);
 });
 $('#rSnd').addEventListener('click', () => { mem.set('gk.sound', !soundOn()); updBar(); if (soundOn()) sfx('hang'); });
 $('#adw').innerHTML = PLAY.adSlot('wide');
