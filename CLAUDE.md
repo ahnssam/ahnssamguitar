@@ -298,6 +298,11 @@
   - 빌드할 때마다 버전 코드를 올리고 기존 키를 쓴다.
   - 키 파일 선택과 비밀번호 입력은 사용자가 직접 한다.
 - 사이트 `assetlinks.json`에는 업로드 키와 Play 앱 서명 키 지문이 둘 다 있어야 한다.
+- **앱 링크는 연습도구 주소만** (2026-11-13 사용자: 카카오 '다른 브라우저로 열기'가 삼성 인터넷 대신 앱으로 열림 → 앱 안에선 구매가 막혀 판매를 놓침): 3.0.0.0(PWABuilder)까지는 ahnssamguitar.com 주소 **전부**를 앱 링크로 잡았다. **4.0.0.0(버전 코드 4)부터 `/tools.html`만** 앱으로 열고 나머지는 원래 브라우저로.
+  - PWABuilder 웹사이트엔 경로 제한 설정이 없어서 **Bubblewrap CLI로 이 맥에서 빌드**한다. 빌드 폴더는 공개 저장소 밖 `~/Developer/ahnssam-app-build/twa/`(twa-manifest.json = 예전 앱 설정 그대로: 이름 '기타나무숲', 색 #e2f5ea, 시작 `/tools.html`, 최소 API 24, 알림, customtabs). 도구는 `~/.bubblewrap/`(JDK 17·Android SDK).
+  - **`bubblewrap update`를 하면 경로 제한이 지워진다** — 그 뒤엔 `app/src/main/AndroidManifest.xml`의 autoVerify intent-filter `<data>`에 `android:path="/tools.html"`을 다시 넣는다. 다음 버전은 twa-manifest의 `appVersionCode`·`appVersion`을 올리고 `bubblewrap build`(키 비밀번호 두 번은 사용자가 터미널에 직접. 틀리면 Bubblewrap이 오류에 비밀번호를 찍으니 창을 닫는다).
+  - 서명 키는 iCloud PWABuilder 패키지 폴더의 `signing.keystore`(별칭 my-key-alias, 세 패키지 폴더 모두 같은 파일). 지문 63:4E:91…19:37 = assetlinks의 업로드 키.
+  - 4.0.0.0 확인(2026-11-13): 서명 지문 같음, 아이콘·스플래시 그림 모두 예전과 같은 파일, 앱 링크 `/tools.html` 하나. 바탕화면에 `기타나무숲-4.0.0.0.aab` — 내부 테스트로 확인 → 프로덕션 → 심사 → 사용자가 게시.
 
 ## 9. 기타 놀이터 — 이상형 월드컵 · 퀴즈쇼 (2026-11-07 목업 → 2026-11-09 공개)
 
