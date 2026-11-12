@@ -411,8 +411,8 @@
     .gk-modal .in { background: #fff; border-radius: 18px; width: min(420px, 100%); padding: 16px; text-align: center; max-height: 94vh; overflow: auto; }
     /* 배틀 싸움터 (2026-11-12 사용자: 넥끼리 칼싸움 + 어두운 싸움터 배경, 상점에서 스킨) */
     .arena { position: relative; height: 290px; border-radius: 14px; overflow: hidden; color: #fff; }
-    .arena .vs { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 3; font: 900 24px 'Arial Black', sans-serif; color: #ffd23f; text-shadow: 0 3px 0 #000, 0 0 14px rgba(255, 210, 63, 0.45); }
-    .arena .fighter { position: absolute; bottom: 58px; width: 132px; height: 198px; z-index: 2; }
+    .arena .vs { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); z-index: 3; font: 900 24px 'Arial Black', sans-serif; color: #ffd23f; text-shadow: 0 3px 0 #000, 0 0 14px rgba(255, 210, 63, 0.45); }
+    .arena .fighter { position: absolute; bottom: 22px; width: 132px; height: 198px; z-index: 2; }
     .arena .fighter.me { left: calc(25% - 66px); }
     .arena .fighter.op { right: calc(25% - 66px); }
     .arena .fighter canvas { display: block; width: 132px; height: 198px; transform-origin: 50% 78%; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, 0.65)); }
@@ -421,7 +421,9 @@
     .arena .fighter.sq canvas { transform: none; }
     .arena .fighter.lose canvas { filter: grayscale(.9) brightness(.55) drop-shadow(0 8px 6px rgba(0, 0, 0, 0.65)); transition: filter .4s; }
     .arena .fighter.win canvas { filter: drop-shadow(0 0 12px #ffe27a) drop-shadow(0 8px 6px rgba(0, 0, 0, 0.65)); }
-    .arena .tags { position: absolute; left: 8px; right: 8px; bottom: 7px; z-index: 3; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .arena .tags { position: absolute; left: 8px; right: 8px; top: 8px; z-index: 3; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; }   /* 이름표는 위 양쪽, 가운데는 VS */
+    .arena .tag:last-child { text-align: right; }
+    .askin.img::before, .askin.img::after { display: none; }
     .arena .tag { background: rgba(0, 0, 0, 0.55); border-radius: 10px; padding: 4px 8px; min-width: 0; }
     .arena .tag b { display: block; font-size: 11.5px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .arena .tag small { font-size: 10.5px; opacity: .75; }
@@ -709,14 +711,17 @@ const SLOT_PRICE = [6000, 20000, 60000, 200000];   // 2026-11-12 사용자: 상�
 //   bg_<id>.webp 로 넣고 여기에 한 줄씩 더한다(가운데 거치대 자리를 기본 공방과 맞춰 뽑으므로 위치 조정은 필요 없음)
 // 싸움터(배틀 배경) 스킨 (2026-11-12 사용자: 어두운 싸움터 배경 + 상점에서 팔기). 그림 파일 없이 CSS로 그린다(.ask-<id>).
 //   GPT 그림을 뽑아 오면 bg 그림으로 바꿀 수 있다 — 프롬프트는 docs/기타키우기_GPT_부품_프롬프트.md '싸움터 배경'
+//   2026-11-12 사용자가 뽑은 6장(img: arena_<id>.webp 1152×768, 상점 미리보기 arenat_<id>.webp). 뒷골목은 아직 CSS 그림
+const arenaAttr = id => { const A = ARENAS.find(a => a.id === id) || ARENAS[0];
+    return A.img ? `class="arena askin img ask-${A.id}" style="background:#05060a url(../images/play/gk/${A.img}) center bottom / cover no-repeat"` : `class="arena askin ask-${A.id}"`; };
 const ARENAS = [
     { id: 'alley', name: '비 오는 뒷골목', desc: '가로등 하나, 젖은 바닥에 번지는 불빛', price: 0 },
-    { id: 'club', name: '지하 클럽', desc: '보랏빛 조명 아래 관객 그림자', price: 60000 },
-    { id: 'factory', name: '폐공장', desc: '녹슨 철골, 먼지 낀 주황 불빛', price: 100000 },
-    { id: 'rooftop', name: '한밤 옥상', desc: '도시 불빛이 깔린 옥상 위 달', price: 200000 },
-    { id: 'lava', name: '용암 무대', desc: '갈라진 바닥 틈으로 용암이 끓는다', price: 400000 },
-    { id: 'neon', name: '네온 링', desc: '분홍·청록 네온 줄을 두른 링', price: 700000 },
-    { id: 'space', name: '무중력 우주', desc: '별과 성운 사이에서 붙는다', price: 1000000 },
+    { id: 'club', name: '지하 클럽', desc: '보랏빛 조명 아래 관객 그림자', price: 60000, img: 'arena_club.webp' },
+    { id: 'factory', name: '폐공장', desc: '녹슨 철골, 먼지 낀 주황 불빛', price: 100000, img: 'arena_factory.webp' },
+    { id: 'rooftop', name: '한밤 옥상', desc: '도시 불빛이 깔린 옥상 위 달', price: 200000, img: 'arena_rooftop.webp' },
+    { id: 'lava', name: '용암 무대', desc: '갈라진 바닥 틈으로 용암이 끓는다', price: 400000, img: 'arena_lava.webp' },
+    { id: 'neon', name: '네온 링', desc: '분홍·청록 네온 줄을 두른 링', price: 700000, img: 'arena_neon.webp' },
+    { id: 'space', name: '무중력 우주', desc: '별과 성운 사이에서 붙는다', price: 1000000, img: 'arena_space.webp' },
 ];
 const BENCHES = [
     { id: 'workshop', name: '밤의 기타 공방', desc: '처음 받는 기본 작업대. 양쪽 벽에 기타, 가운데 거치대', src: 'bg_workshop.webp', price: 0 },
@@ -2041,7 +2046,7 @@ async function fight(id) {
     const got = PLAY.picks.earn();
     const m = document.createElement('div');
     m.className = 'gk-modal';
-    m.innerHTML = `<div class="in"><div class="arena askin ask-${S.ask}"><span class="vs">VS</span>
+    m.innerHTML = `<div class="in"><div ${arenaAttr(S.ask)}><span class="vs">VS</span>
         <div class="fighter me ${isSq(me) ? 'sq' : ''}">${gc(me.lv, 'live', 4, me.f)}</div><div class="fighter op ${isSq(o) ? 'sq' : ''}">${gc(o.lv, 'live', 4, o.f)}</div>
         <div class="tags"><div class="tag"><b>${esc(full(me))}</b><small>나</small></div><div class="tag"><b>${esc(full(o))}</b><small>${esc(o.nick)}</small></div></div></div>
         <div class="tug"><i></i></div><div class="bres"><p>배틀 중… 이길 확률 ${pct(p)}</p></div></div>`;
@@ -2080,7 +2085,7 @@ function renderShop() {
     }).join('') + (BENCHES.length < 2 ? '<p class="note2">작업대 스킨 10개는 그림을 뽑아 오면 여기에 더해요(낮 공방·합주실·빈티지 가게·클럽 무대·한옥·눈 오두막·네온·해변·공연장·별빛 신전).</p>' : '');
     if (shopCat === 'arena') h += ARENAS.map(A => {
         const own = S.asks.includes(A.id), use = S.ask === A.id;
-        return `<div class="item"><span class="ic apv askin ask-${A.id}"><i class="fas fa-guitar"></i><i class="fas fa-guitar"></i></span><div class="it"><b>${A.name}</b><small>${A.desc}</small></div>
+        return `<div class="item"><span class="ic apv ${A.img ? '' : `askin ask-${A.id}`}" ${A.img ? `style="background:#111 url(../images/play/gk/${A.img.replace('arena_', 'arenat_')}) center / cover"` : ''}><i class="fas fa-guitar"></i><i class="fas fa-guitar"></i></span><div class="it"><b>${A.name}</b><small>${A.desc}</small></div>
             ${use ? '<span class="own">쓰는 중</span>' : own ? `<button type="button" data-a="askin" data-id="${A.id}">바꾸기</button>` : `<button type="button" data-a="askin" data-id="${A.id}" ${S.gold >= A.price ? '' : 'disabled'}>${gf(A.price)}</button>`}</div>`;
     }).join('') + '<p class="note2">배틀할 때 내 싸움터 배경이에요. 기타 넥끼리 칼처럼 부딪쳐요.</p>';
     if (shopCat === 'skin') h += WALLS.map(W => {
