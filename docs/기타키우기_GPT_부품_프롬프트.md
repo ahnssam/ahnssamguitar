@@ -117,7 +117,25 @@ Same style. A front-facing wall of a small, cozy guitar workshop, seen perfectly
 - No text, letters, numbers or logos anywhere.
 ```
 
-- 지금 목업의 작업방은 원룸 3 · 합주실 6 · 스튜디오 10 걸이다. 벽 그림이 '5개 한 줄'이면 원룸 5 · 합주실 10(두 줄)처럼 걸이 수를 바꾸거나, 방마다 벽을 따로 뽑는다(그림을 보고 정한다).
+- 2026-11-12 사용자가 이 프롬프트로 뽑은 벽을 기본 스킨으로 넣었다(`images/play/gk/wall_wood.webp`, 초록 나무 벽 작업실). 목업 작업방이 이 벽 하나(걸이 5개)가 됐다.
+
+### 진열 벽 스킨 더 뽑기 (2026-11-12 사용자: "진열대 스킨도 여러 개")
+
+진열 벽을 뽑은 **그 ChatGPT 대화**에 붙여 넣는다(다른 대화면 `wall_wood.webp`를 같이 올린다). 한 장 나오면 "다음"이라고 쓰면 다음 스킨이 나온다.
+받으면 Claude가 걸이·명판 위치를 재서 목업 `WALLS`에 넣는다(상점 '진열 벽 스킨'). 스킨 값은 그때 정한다.
+
+```
+Use the guitar display wall picture from earlier in this chat as the EXACT layout template, and make new "skins" of it - ONE image per reply.
+Keep the layout identical: same landscape size, straight-on front view, five hangers in one row at exactly the same positions and height, one light above each hanger shining down its slot, one small blank plate under each slot at the same positions, a floor strip at the bottom, and NO guitars. Only change the materials, colors, lights and decorations to fit the theme. Keep the same art style as the original wall. Decorations only at the far left and right edges so the five slots stay clean. No text, letters, numbers or logos anywhere (the plates stay blank).
+
+Make skin 1 now. Each time I say "다음", make the next one.
+1. Rehearsal room: black egg-crate acoustic foam panels, a warm red-orange LED strip along the top, matte black metal hangers, a small amp and a coiled cable at the edges.
+2. Brick loft studio: exposed red brick wall, hanging Edison bulbs instead of spotlights, black iron hangers, brass plates, a small wooden stool at one edge.
+3. Luxury guitar showroom: dark walnut wood panels with thin gold trim, a deep red velvet panel behind each slot, gold hangers and gold plates, soft white display lights.
+4. Concert stage: black stage curtain, colorful stage spotlights (magenta, cyan, amber), a metal lighting truss across the top, chrome hangers, a monitor speaker at one edge.
+5. Starlight shrine (mystical): dark indigo stone wall with faint glowing abstract symbols (no letters), beams of starlight instead of lamps, silver hangers, moonstone plates, tiny floating sparkles.
+6. Korean hanok room: warm paper walls with wooden lattice frames, hanging paper lanterns instead of lamps, wooden peg hangers, bronze plates, a small potted pine at one edge.
+```
 
 ## 6. 나중 계획 — 첫 기타 찾기는 랜덤
 

@@ -170,22 +170,30 @@
     .otab tr.me td { background: #fff8e1; font-weight: 800; }
 
     /* 작업방 */
-    .room { position: relative; border-radius: 18px; overflow: hidden; aspect-ratio: 360 / 340; background: #16201d; image-rendering: pixelated; }
-    .room > img.bg { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
-    .room .prop { position: absolute; image-rendering: pixelated; pointer-events: none; }
-    .room .wall { position: absolute; left: 17%; right: 4%; top: 6%; height: 44%; display: grid; gap: 2%; }
-    .room .slot { position: relative; display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; }
-    .room .slot canvas { height: 135%; width: auto; aspect-ratio: 56 / 84; flex: none; image-rendering: pixelated; filter: drop-shadow(0 4px 2px rgba(0, 0, 0, 0.45)); }
-    .room .slot .tag { position: absolute; left: 50%; bottom: -2px; transform: translateX(-50%); font: 900 11px/1 'Arial Black', sans-serif; color: #3a2400; background: #f5b31e; border-radius: 6px; padding: 3px 5px; }
-    .room .slot.rep .tag { background: #fff; color: var(--green-deep); box-shadow: 0 0 0 2px #f5b31e; }
-    .room .slot .crown { position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 900; color: #fff; background: rgba(42, 107, 74, 0.9); border-radius: 99px; padding: 1px 7px; white-space: nowrap; }
-    .room .slot.sel canvas { filter: drop-shadow(0 0 6px #ffe27a) drop-shadow(0 0 2px #ffe27a); }
-    .room .slot.none { align-items: center; }
-    .room .slot.none .hook { width: 12px; height: 12px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.28); }
-    .room .benchmini { position: absolute; left: 50%; bottom: 6%; height: 30%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
-    .room .benchmini canvas { height: 100%; aspect-ratio: 56 / 84; image-rendering: pixelated; }
-    .room .benchmini span { font-size: 10.5px; font-weight: 800; color: #fff; background: rgba(0, 0, 0, 0.45); border-radius: 99px; padding: 1px 8px; margin-top: -4px; }
-    .room .rname { position: absolute; left: 10px; bottom: 10px; font-weight: 900; font-size: 13px; color: #fff; background: rgba(0, 0, 0, 0.5); border-radius: 99px; padding: 4px 11px; }
+    /* 작업방: 진열 벽 (걸이 5개, 2026-11-12 사용자 그림). 스킨마다 걸이 위치는 WALLS 에 */
+    .wall5 { position: relative; border-radius: 18px; overflow: hidden; background: #1d2a26; }
+    .wall5 > img.bg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .wall5 .wg { position: absolute; width: auto; aspect-ratio: 56 / 84; transform: translateX(-50%); image-rendering: pixelated; pointer-events: none; filter: drop-shadow(0 5px 3px rgba(0, 0, 0, 0.45)); }
+    .wall5 .wg.sel { filter: drop-shadow(0 0 6px #ffe27a) drop-shadow(0 0 2px #ffe27a); }
+    .wall5 .wsb { position: absolute; width: 13%; transform: translateX(-50%); border-radius: 10px; background: transparent; }
+    .wall5 .wsb:focus-visible { outline: 2px solid #ffe27a; }
+    .wall5 .wl { position: absolute; top: 0; width: 15.5%; height: 93%; transform: translateX(-50%); background: linear-gradient(rgba(6, 10, 9, 0.88), rgba(6, 10, 9, 0.74) 70%, rgba(6, 10, 9, 0.45)); pointer-events: none; }
+    .wall5 .wl.off { animation: lightOn .9s ease-out forwards; }
+    @keyframes lightOn { 0% { opacity: 1; } 25% { opacity: .35; } 35% { opacity: .85; } 55% { opacity: .2; } 100% { opacity: 0; } }
+    .wall5 .wsb.lock { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; color: #e8f0ec; font-weight: 900; }
+    .wall5 .wsb.lock i { font-size: clamp(14px, 3.6vw, 20px); opacity: .9; }
+    .wall5 .wsb.lock span { font-size: clamp(9.5px, 2.4vw, 12.5px); background: rgba(0, 0, 0, 0.55); border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 99px; padding: 2px 7px; white-space: nowrap; }
+    .wall5 .wsb.lock.sure span { background: #f5b31e; color: #3a2400; border-color: #f5b31e; }
+    .wall5 .wp { position: absolute; transform: translate(-50%, -50%); font: 900 clamp(9px, 2.4vw, 14px)/1 'Arial Black', sans-serif; color: #4a2c0c; text-shadow: 0 1px 0 rgba(255, 240, 190, 0.6); pointer-events: none; }
+    .wall5 .wrep { position: absolute; transform: translate(-50%, -50%); font-size: clamp(9px, 2.2vw, 11px); font-weight: 900; color: #3a2400; background: #f5b31e; border-radius: 99px; padding: 1px 7px; pointer-events: none; }
+    /* 작업방에 들어갈 때: 벽이 사악 밝아지고, 기타가 가운데부터 내려와 걸린다 */
+    .wall5.enter { animation: wallIn .9s ease-out both; }
+    .wall5.enter .wg { animation: wgIn .6s ease-out both; animation-delay: calc(.35s + var(--d, 0s)); }
+    .wall5.enter .wp, .wall5.enter .wrep, .wall5.enter .wsb.lock { animation: fadeOnly .5s ease-out both; animation-delay: .45s; }
+    @keyframes wallIn { from { opacity: 0; filter: brightness(.3); } to { opacity: 1; filter: none; } }
+    @keyframes wgIn { from { opacity: 0; transform: translate(-50%, -5%); } to { opacity: 1; transform: translateX(-50%); } }
+    @keyframes fadeOnly { from { opacity: 0; } }
+    .item .ic.skin { background: #1d2a26 center / cover; }
     .rinfo { margin: 10px 2px 8px; font-size: 13px; color: #555; }
     .glist { display: flex; flex-direction: column; gap: 6px; }
     .grow { display: grid; grid-template-columns: 38px 1fr; align-items: center; column-gap: 10px; row-gap: 6px; background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 8px 10px; }
@@ -286,7 +294,7 @@
     .stats small { font-size: 11.5px; color: var(--sub); }
     .reset { display: block; margin: 16px auto 0; font-size: 12px; color: #999; text-decoration: underline; }
 
-    @media (prefers-reduced-motion: reduce) { .pop, .daily, .nmtag, .stage.shake, .stage.shake2 { animation: none !important; } }
+    @media (prefers-reduced-motion: reduce) { .pop, .daily, .nmtag, .stage.shake, .stage.shake2, .wall5.enter, .wall5.enter .wg, .wall5 .wl.off { animation: none !important; } .wall5 .wl.off { opacity: 0; } }
 </style>
 </head>
 <body>
@@ -374,7 +382,14 @@ const TUNERS = [null,
     { name: '클립 튜너', icon: 'fa-paperclip', price: 3000, bonus: 2, zone: 0.2, period: 1.6, desc: '헤드에 꽂는 작은 튜너. 초록 칸이 좁고 바늘이 빨라요' },
     { name: '페달 튜너', icon: 'fa-gauge-high', price: 30000, bonus: 4, zone: 0.28, period: 2.0, desc: '발로 밟는 튜너. 칸이 넓어지고 바늘이 느려요' },
     { name: '스트로보 튜너', icon: 'fa-wave-square', price: 200000, bonus: 6, zone: 0.36, period: 2.4, desc: '칸이 가장 넓고 바늘이 가장 느려요' }];
-const ROOMS = [{ name: '원룸', slots: 3, price: 0 }, { name: '합주실', slots: 6, price: 30000 }, { name: '스튜디오', slots: 10, price: 300000 }];
+// 작업방 = 진열 벽 하나, 걸이 5개 (2026-11-12 사용자: 가운데는 처음부터, 양쪽 둘씩 넷은 골드로 연다).
+// 처음 거는 기타는 가운데, 그다음은 가운데에서 가까운 열린 걸이부터. 걸이 값은 어느 칸이든 몇 번째로 여느냐로 정한다
+const WALL_N = 5, MID = 2, HANG_ORDER = [2, 1, 3, 0, 4];
+const SLOT_PRICE = [3000, 10000, 30000, 100000];
+// 진열 벽 스킨(상점에서 바꾼다). x = 걸이 가운데(가로 %), hook = 걸이(세로 %), foot = 기타 아래 끝, plate = 명판 — 그림마다 잰다
+const WALLS = [
+    { id: 'wood', name: '초록 나무 벽 작업실', desc: '처음 받는 기본 벽. 걸이마다 작은 조명', src: 'wall_wood.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 0 },
+];
 
 const fam = g => FAMS[g.f] || FAMS.strat;
 const gname = g => fam(g).names[Math.min(MAX, Math.max(0, g.lv))];
@@ -388,7 +403,7 @@ const rid = () => Math.random().toString(36).slice(2, 9);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ---------- 저장 (이 브라우저) ----------
-const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [], rep: '', shards: 0, cases: 0, caseOn: false, tuner: 0, tuneOn: true, room: 0, daily: '', nick: '', intro: false, first: false,
+const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [null, null, null, null, null], open: [false, false, true, false, false], skin: 'wood', skins: ['wood'], rep: '', shards: 0, cases: 0, caseOn: false, tuner: 0, tuneOn: true, daily: '', nick: '', intro: false, first: false,
     bt: { day: '', n: 0, done: {} }, st: { tries: 0, ok: 0, keep: 0, boom: 0, saved: 0, sold: 0, earned: 0, best: 0, win: 0, lose: 0 } });
 const okG = g => g && typeof g === 'object' && Number.isInteger(g.lv) && g.lv >= 0 && g.lv <= MAX && typeof g.id === 'string';
 function load() {
@@ -400,10 +415,22 @@ function load() {
     s.st = Object.assign(f.st, s.st || {});
     s.bt = Object.assign(f.bt, s.bt || {});
     if (!okG(s.bench)) s.bench = null;
-    s.wall = (Array.isArray(s.wall) ? s.wall : []).filter(okG).slice(0, ROOMS[ROOMS.length - 1].slots);
+    if (Array.isArray(raw.open) && raw.open.length === WALL_N) {
+        s.open = raw.open.map(Boolean); s.open[MID] = true;
+        s.wall = Array.from({ length: WALL_N }, (_, i) => s.open[i] && Array.isArray(raw.wall) && okG(raw.wall[i]) ? raw.wall[i] : null);
+    } else if (raw.intro) {   // 진열 벽(2026-11-12) 전 방(원룸 3·합주실 6·스튜디오 10): 걸이를 그만큼 가운데부터 열고, 기타도 가운데부터 건다. 5대가 넘으면 판 값으로
+        const old = (Array.isArray(raw.wall) ? raw.wall : []).filter(okG);
+        const n = Math.min(WALL_N, Math.max((raw.room | 0) >= 1 ? WALL_N : 3, old.length));
+        s.open = Array(WALL_N).fill(false); HANG_ORDER.slice(0, n).forEach(i => { s.open[i] = true; });
+        s.wall = Array(WALL_N).fill(null); old.slice(0, WALL_N).forEach((g, k) => { s.wall[HANG_ORDER[k]] = g; });
+        old.slice(WALL_N).forEach(g => { s.gold = (+s.gold || 0) + SELL[g.lv]; });
+    }
+    delete s.room;
+    s.skins = (Array.isArray(s.skins) ? s.skins : []).filter(id => WALLS.some(w => w.id === id));
+    if (!s.skins.includes('wood')) s.skins.unshift('wood');
+    if (!s.skins.includes(s.skin)) s.skin = 'wood';
     ['gold', 'shards', 'cases'].forEach(k => { s[k] = Math.max(0, Math.floor(+s[k] || 0)); });
     s.tuner = Math.min(3, Math.max(0, s.tuner | 0));
-    s.room = Math.min(ROOMS.length - 1, Math.max(0, s.room | 0));
     return s;
 }
 let S = load();
@@ -411,8 +438,8 @@ const save = () => mem.set('gk', S);
 function btDay() { if (S.bt.day !== today()) S.bt = { day: today(), n: 0, done: {} }; return S.bt; }
 // 대표 기타: 고른 것 → 벽의 가장 높은 것 → 작업대
 function rep() {
-    const all = [...S.wall, ...(S.bench ? [S.bench] : [])];
-    return all.find(g => g.id === S.rep) || S.wall.slice().sort((a, b) => b.lv - a.lv)[0] || S.bench || null;
+    const hung = S.wall.filter(Boolean), all = [...hung, ...(S.bench ? [S.bench] : [])];
+    return all.find(g => g.id === S.rep) || hung.slice().sort((a, b) => b.lv - a.lv)[0] || S.bench || null;
 }
 
 // ---------- 효과음 (Web Audio로 만든 소리 — 음원 파일 없음) ----------
@@ -760,7 +787,7 @@ function setTab(t) {
     document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
     ['bench', 'room', 'battle', 'shop'].forEach(k => { $('#tab-' + k).hidden = k !== t; });
     if (t === 'bench') renderBench();
-    if (t === 'room') renderRoom();
+    if (t === 'room') renderRoom(true);
     if (t === 'battle') renderBattle();
     if (t === 'shop') renderShop();
 }
@@ -957,9 +984,10 @@ async function sellBench() {
 async function hangBench() {
     const g = S.bench;
     if (busy || !g) return;
-    if (S.wall.length >= ROOMS[S.room].slots) { toast(`${ROOMS[S.room].name} 벽이 꽉 찼어요. 상점에서 방을 넓히거나 걸린 기타를 팔아요`); return; }
+    const slot = HANG_ORDER.find(i => S.open[i] && !S.wall[i]);   // 처음엔 가운데, 그다음은 가운데에서 가까운 열린 걸이
+    if (slot == null) { toast(S.open.every(Boolean) ? '벽이 꽉 찼어요. 걸린 기타를 팔거나 작업대로 가져와요' : '빈 걸이가 없어요. 작업방에서 잠긴 걸이를 열어요'); return; }
     busy = true; talkClear();
-    S.wall.push(g); ghost = g; S.bench = null;
+    S.wall[slot] = g; ghost = g; S.bench = null;
     if (!S.rep) S.rep = g.id;
     save(); $('#bench').innerHTML = '';
     sfx('hang');
@@ -999,34 +1027,37 @@ async function challengeLink() {
     shareText('기타 키우기 배틀 신청', `${nick}의 ${full(g)}랑 붙어 볼래? 🎸⚡`, url);
 }
 
-// ---------- 작업방 ----------
-function renderRoom() {
+// ---------- 작업방 (진열 벽) ----------
+const wallSkin = () => WALLS.find(w => w.id === S.skin) || WALLS[0];
+const gs = n => n >= 1e4 ? `${+(n / 1e4).toFixed(1)}만G` : n >= 1000 ? `${+(n / 1000).toFixed(1)}천G` : n + 'G';   // 걸이 위 작은 값표
+const openPrice = () => SLOT_PRICE[Math.max(0, S.open.filter(Boolean).length - 1)] || 0;
+let justOpened = -1;
+function renderRoom(enter) {
     updBar();
-    const R = ROOMS[S.room], el = $('#tab-room'), rp = rep();
-    const rows = R.slots > 5 ? 2 : 1, cols = Math.ceil(R.slots / rows);
-    const props = [
-        S.room >= 1 ? `<img class="prop" src="../images/play/gk/prop_mic.png" alt="" style="left:5%;bottom:7%;width:17%">` : '',
-        S.room >= 1 ? `<img class="prop" src="../images/play/gk/prop_audio.png" alt="" style="left:24%;bottom:12%;width:9.4%">` : '',
-        S.room >= 2 ? `<img class="prop" src="../images/play/gk/prop_light.png" alt="" style="right:3%;bottom:4%;width:16%">` : '',
-        S.room >= 2 ? `<img class="prop" src="../images/play/gk/prop_sofa.png" alt="" style="right:20%;bottom:3%;width:22%">` : '',
-    ].join('');
-    const cells = Array.from({ length: R.slots }, (_, i) => S.wall[i]);
-    el.innerHTML = `<div class="room">
-        <img class="bg" src="../images/play/gk/bg_studio.png" alt="작업방">${props}
-        <div class="wall" style="grid-template-columns:repeat(${cols},1fr);grid-template-rows:repeat(${rows},1fr)">
-            ${cells.map(g => g ? `<button type="button" class="slot ${rp && g.id === rp.id ? 'rep' : ''} ${g.id === selId ? 'sel' : ''}" data-a="slot" data-id="${g.id}" aria-label="${esc(full(g))}">${gc(g.lv)}<span class="tag">+${g.lv}</span>${rp && g.id === rp.id ? '<span class="crown">대표</span>' : ''}</button>`
-                : '<div class="slot none"><span class="hook"></span></div>').join('')}
-        </div>
-        ${S.bench ? `<div class="benchmini">${gc(S.bench.lv)}<span>작업대 +${S.bench.lv}</span></div>` : ''}
-        <span class="rname">${R.name}</span></div>
-        <p class="rinfo">걸이 <b>${S.wall.length}/${R.slots}</b> · 대표 기타: <b>${rp ? esc(full(rp)) : '없음'}</b></p>
-        <div class="glist">${S.wall.length ? S.wall.map(g => `<div class="grow ${g.id === selId ? 'sel' : ''}" id="row-${g.id}">${gc(g.lv)}
-            <div class="gt"><b>${esc(full(g))}</b><small>${rp && g.id === rp.id ? '⭐ 대표 기타 · ' : ''}팔면 ${gf(SELL[g.lv])}</small></div>
+    const W = wallSkin(), el = $('#tab-room'), rp = rep();
+    // 기타 그림(56×84 칸, 몸통 19×50 이 26칸째부터)에서 넥 34칸째가 걸이에, 76칸째(몸통 끝)가 foot 에 오게
+    const u = (W.foot - W.hook) / 42, top = W.hook - 34 * u, hh = 84 * u, hit = `top:${W.hook - 4}%;height:${W.foot - W.hook + 8}%`;
+    const price = openPrice(), nOpen = S.open.filter(Boolean).length, hung = S.wall.filter(Boolean);
+    const slots = W.x.map((x, i) => {
+        if (!S.open[i]) return `<div class="wl" style="left:${x}%"></div><button type="button" class="wsb lock" data-a="wopen" data-i="${i}" style="left:${x}%;${hit}" aria-label="걸이 열기 ${gf(price)}"><i class="fas fa-lock"></i><span>${gs(price)}</span></button>`;
+        const g = S.wall[i], lit = i === justOpened ? `<div class="wl off" style="left:${x}%"></div>` : '';
+        if (!g) return lit;
+        const isRep = rp && g.id === rp.id;
+        return `${lit}<canvas class="gkc wg live ${g.id === selId ? 'sel' : ''}" width="56" height="84" data-lv="${g.lv}" style="left:${x}%;top:${top}%;height:${hh}%;--d:${Math.abs(i - MID) * 0.1}s"></canvas>
+            <button type="button" class="wsb" data-a="slot" data-id="${g.id}" style="left:${x}%;${hit}" aria-label="${esc(full(g))}"></button>
+            <span class="wp" style="left:${x}%;top:${W.plate}%">+${g.lv}</span>${isRep ? `<span class="wrep" style="left:${x}%;top:${Math.min(96, W.plate + 7.5)}%">대표</span>` : ''}`;
+    }).join('');
+    justOpened = -1;
+    const rows = S.wall.map((g, i) => g && `<div class="grow ${g.id === selId ? 'sel' : ''}" id="row-${g.id}">${gc(g.lv)}
+            <div class="gt"><b>${esc(full(g))}</b><small>${i === MID ? '가운데' : i < MID ? `왼쪽 ${MID - i}번째` : `오른쪽 ${i - MID}번째`} 걸이 · ${rp && g.id === rp.id ? '⭐ 대표 기타 · ' : ''}팔면 ${gf(SELL[g.lv])}</small></div>
             <div class="ga"><button type="button" class="pri" data-a="setrep" data-id="${g.id}" ${rp && g.id === rp.id ? 'disabled' : ''}>대표로</button>
             <button type="button" data-a="take" data-id="${g.id}">${S.bench ? '작업대와 바꾸기' : '작업대로'}</button>
-            <button type="button" data-a="wsell" data-id="${g.id}" ${g.lv ? '' : 'disabled'}>팔기</button></div></div>`).join('')
-            : '<p class="note2">아직 걸린 기타가 없어요. 작업대에서 \'벽에 걸기\'를 누르면 여기에 걸려요. 걸어 둔 기타 중 하나가 대표 기타로 배틀에 나가요.</p>'}</div>
-        <p class="note2">${S.room < ROOMS.length - 1 ? `상점에서 ${ROOMS[S.room + 1].name}(걸이 ${ROOMS[S.room + 1].slots}개)로 넓힐 수 있어요.` : '가장 넓은 방이에요.'}</p>`;
+            <button type="button" data-a="wsell" data-id="${g.id}" ${g.lv ? '' : 'disabled'}>팔기</button></div></div>`).filter(Boolean);
+    el.innerHTML = `<div class="wall5 ${enter ? 'enter' : ''}" style="aspect-ratio:${W.w} / ${W.h}">
+        <img class="bg" src="../images/play/gk/${W.src}" alt="작업방 진열 벽">${slots}</div>
+        <p class="rinfo">걸이 <b>${nOpen}/${WALL_N}</b> 열림 · 기타 <b>${hung.length}</b>대 · 대표 기타: <b>${rp ? esc(full(rp)) : '없음'}</b></p>
+        <div class="glist">${rows.length ? rows.join('') : '<p class="note2">아직 걸린 기타가 없어요. 작업대에서 \'벽에 걸기\'를 누르면 가운데 걸이에 걸려요. 걸어 둔 기타 중 하나가 대표 기타로 배틀에 나가요.</p>'}</div>
+        <p class="note2">${nOpen < WALL_N ? `양쪽 잠긴 걸이는 눌러서 골드로 열어요 (${SLOT_PRICE.map(gf).join(' → ')}, 어느 칸이든 여는 순서대로). ` : '걸이를 모두 열었어요. '}진열 벽 스킨은 상점에서 바꿔요.</p>`;
     paintAll(el);
 }
 function wallFind(id) { return S.wall.findIndex(g => g.id === id); }
@@ -1100,7 +1131,7 @@ function renderBattle() {
     let h = `<div class="card mycard">${me ? gc(me.lv) : ''}<div class="mt"><small>내 대표 기타</small><b>${me ? esc(full(me)) : '아직 기타가 없어요'}</b>
         <div class="left">오늘 남은 배틀 ${BT_DAY - bt.n}/${BT_DAY} · ${S.st.win}승 ${S.st.lose}패</div>${rankLine ? `<div class="rkline">${rankLine}</div>` : ''}</div></div>`;
     if (VS) {
-        const mineLink = [...S.wall, ...(S.bench ? [S.bench] : [])].some(g => g.id === VS.mine) || (VS.p && NET.me && VS.p === NET.me.id);
+        const mineLink = [...S.wall.filter(Boolean), ...(S.bench ? [S.bench] : [])].some(g => g.id === VS.mine) || (VS.p && NET.me && VS.p === NET.me.id);
         h += `<div class="sec-h"><h3>배틀 신청이 왔어요</h3><small>링크로 받은 기타</small></div>`;
         h += mineLink ? `<p class="note2">내가 보낸 신청 링크예요. 친구에게 보내 주세요!</p>` : oppRow(VS, 'vs');
     }
@@ -1185,11 +1216,11 @@ function renderShop() {
     h += `<h3>하드케이스</h3><div class="item"><span class="ic case"><i class="fas fa-briefcase"></i></span><div class="it"><b>하드케이스 만들기 (지금 ${S.cases}개)</b>
         <small>부서진 기타 조각 ${CASE_SHARDS}개 → 하드케이스 1개. 끼워 두면 부서짐을 한 번 막아 줘요.</small><div class="shardbar"><i style="width:${Math.min(100, S.shards / CASE_SHARDS * 100)}%"></i></div></div>
         <button type="button" data-a="craft" ${S.shards >= CASE_SHARDS ? '' : 'disabled'}>${S.shards >= CASE_SHARDS ? '만들기' : `조각 ${S.shards}/${CASE_SHARDS}`}</button></div>`;
-    h += '<h3>방 넓히기</h3>' + ROOMS.slice(1).map((R, i) => {
-        const n = i + 1, own = S.room >= n;
-        return `<div class="item"><span class="ic room"><i class="fas fa-house"></i></span><div class="it"><b>${R.name} · 걸이 ${R.slots}개</b><small>${n === 1 ? '마이크와 스피커가 들어와요' : '조명과 소파까지. 기타 10대를 걸어요'}</small></div>
-            ${own ? '<span class="own">이사 완료</span>' : `<button type="button" data-a="buyR" data-n="${n}" ${S.gold >= R.price && S.room === n - 1 ? '' : 'disabled'}>${gf(R.price)}</button>`}</div>`;
-    }).join('');
+    h += '<h3>진열 벽 스킨</h3>' + WALLS.map(W => {
+        const own = S.skins.includes(W.id), use = S.skin === W.id;
+        return `<div class="item"><span class="ic skin" style="background-image:url(../images/play/gk/${W.src})"></span><div class="it"><b>${W.name}</b><small>${W.desc}</small></div>
+            ${use ? '<span class="own">쓰는 중</span>' : own ? `<button type="button" data-a="skin" data-id="${W.id}">바꾸기</button>` : `<button type="button" data-a="skin" data-id="${W.id}" ${S.gold >= W.price ? '' : 'disabled'}>${gf(W.price)}</button>`}</div>`;
+    }).join('') + (WALLS.length < 2 ? '<p class="note2">다른 스킨은 그림이 생기면 더해요. 걸이는 작업방에서 잠긴 걸이를 눌러 열어요.</p>' : '');
     h += `<h3>내 기록</h3><div class="stats">
         <div><b>+${st.best}</b><small>최고 단계</small></div><div><b>${st.tries.toLocaleString()}</b><small>강화</small></div><div><b>${st.boom.toLocaleString()}</b><small>부순 기타</small></div>
         <div><b>${st.keep.toLocaleString()}</b><small>끊은 줄</small></div><div><b>${st.saved.toLocaleString()}</b><small>케이스로 막음</small></div><div><b>${gf(st.earned)}</b><small>판 돈 (${st.sold}대)</small></div></div>
@@ -1217,14 +1248,14 @@ $('#app').addEventListener('click', e => {
     else if (a === 'take') {
         const i = wallFind(id); if (i < 0) return;
         const g = S.wall[i];
-        if (S.bench) S.wall[i] = S.bench; else S.wall.splice(i, 1);
+        S.wall[i] = S.bench || null;
         S.bench = g; selId = ''; save();
         setTab('bench'); sfx('drop');
     } else if (a === 'wsell') {
         const i = wallFind(id); if (i < 0) return;
         const g = S.wall[i];
         if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = gf(SELL[g.lv]) + '에 팔기?'; return; }
-        S.wall.splice(i, 1); S.gold += SELL[g.lv]; S.st.sold++; S.st.earned += SELL[g.lv];
+        S.wall[i] = null; S.gold += SELL[g.lv]; S.st.sold++; S.st.earned += SELL[g.lv];
         if (S.rep === g.id) S.rep = '';
         save(); sfx('sell'); renderRoom(); updBar(true); toast(`${full(g)}을(를) ${gf(SELL[g.lv])}에 팔았어요`);
     } else if (a === 'fight') fight(id);
@@ -1233,10 +1264,16 @@ $('#app').addEventListener('click', e => {
         const n = +b.dataset.n, T = TUNERS[n];
         if (S.gold < T.price || S.tuner >= n) return;
         S.gold -= T.price; S.tuner = n; S.tuneOn = true; save(); sfx('sell'); renderShop(); toast(`${T.name}를 샀어요! 강화할 때 바늘을 맞춰요`);
-    } else if (a === 'buyR') {
-        const n = +b.dataset.n, R = ROOMS[n];
-        if (S.gold < R.price || S.room !== n - 1) return;
-        S.gold -= R.price; S.room = n; save(); sfx('hang'); renderShop(); toast(`${R.name}로 이사했어요! 걸이가 ${R.slots}개`);
+    } else if (a === 'wopen') {   // 잠긴 걸이 열기: 한 번 누르면 '열까요?', 한 번 더 누르면 연다
+        const i = +b.dataset.i, price = openPrice();
+        if (S.open[i]) return;
+        if (S.gold < price) { toast(`골드가 ${gf(price - S.gold)} 모자라요`); return; }
+        if (b.dataset.sure !== '1') { document.querySelectorAll('.wsb.lock.sure').forEach(x => { x.classList.remove('sure'); x.dataset.sure = ''; x.querySelector('span').textContent = gs(price); }); b.dataset.sure = '1'; b.classList.add('sure'); b.querySelector('span').textContent = '열까요?'; return; }
+        S.gold -= price; S.open[i] = true; justOpened = i; save(); sfx('hang'); renderRoom(); updBar(true); toast('걸이를 열었어요! 조명이 켜졌어요');
+    } else if (a === 'skin') {
+        const W = WALLS.find(w => w.id === b.dataset.id); if (!W) return;
+        if (!S.skins.includes(W.id)) { if (S.gold < W.price) return; S.gold -= W.price; S.skins.push(W.id); sfx('sell'); }
+        S.skin = W.id; save(); renderShop(); toast(`진열 벽을 '${W.name}'(으)로 바꿨어요`);
     } else if (a === 'craft') {
         if (S.shards < CASE_SHARDS) return;
         S.shards -= CASE_SHARDS; S.cases++; save(); sfx('case'); renderShop(); toast('하드케이스를 만들었어요. 작업대에서 끼워요');
