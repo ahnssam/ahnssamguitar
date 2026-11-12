@@ -29,8 +29,17 @@
     .res { display: inline-flex; align-items: center; gap: 5px; height: 34px; padding: 0 10px; border-radius: 999px; background: #fff; border: 1.5px solid var(--line); font-weight: 800; font-size: 13.5px; white-space: nowrap; }
     .res i { font-size: 13px; }
     .res.gold i { color: #e0a514; }
-    .res.shard i { color: #b0533c; }
-    .res.case i { color: #3a4a45; }
+    .res.sc { gap: 5px; padding: 0 9px; cursor: pointer; color: inherit; }
+    .res.sc > span { display: inline-flex; align-items: center; gap: 4px; }
+    .res.sc .shard i { color: #b0533c; }
+    .res.sc .case i { color: #3a4a45; }
+    .res.sc .arr { font-size: 10px; color: #a9b5af; }
+    .res.sc.ready { border-color: #f5b31e; background: #fff8e6; }   /* 조각이 다 모여 지금 만들 수 있을 때 */
+    .res.sc.ready .shard > span { color: #b06a00; }
+    .res.sc .case.full > span { color: #2f7a4f; }
+    /* 휴대폰: 위 줄이 한 줄에 들어가게 조금 촘촘히 (조각 → 하드케이스 칩이 길어져서) */
+    @media (max-width: 420px) { .gk-bar { gap: 4px; } .res { padding: 0 8px; } .res.sc { padding: 0 7px; gap: 3px; } .res.sc .arr { font-size: 9px; } .gk-bar .iconbtn { width: 30px; height: 30px; } }
+    @media (max-width: 370px) { .gk-bar { gap: 3px; } .res { font-size: 12.5px; gap: 4px; padding: 0 7px; } .res i { font-size: 12px; } .res.sc > span { gap: 3px; } }
     .res.gold.bump { animation: pkBump .6s cubic-bezier(.3, 1.6, .5, 1); }
     .gk-bar .sp { flex: 1; }
     .daily { border-color: #f6d29a; background: #fff8ec; color: #a85a00; cursor: pointer; }
@@ -210,6 +219,16 @@
     .sact .ag[disabled] { background: #8d9692; box-shadow: 0 4px 0 #5f6864; cursor: default; }
     .sact .hg { font-size: 14.5px; background: rgba(14, 22, 20, 0.86); border: 2px solid rgba(255, 255, 255, 0.28); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.45); }
     .sact button:active { transform: translateY(3px); }
+    /* 강화 위 하드케이스 ON/OFF (+7부터) */
+    .sact.cs-on .ag { grid-row: 2; grid-column: 1; }
+    .sact.cs-on .hg { grid-row: 2; grid-column: 2; }
+    .sact .cs { grid-row: 1; grid-column: 1; justify-self: center; padding: 6px 12px; gap: 6px; border-radius: 99px; font-size: 13px; font-weight: 800;
+        background: rgba(14, 22, 20, 0.82); border: 2px solid rgba(255, 255, 255, 0.3); box-shadow: 0 3px 0 rgba(0, 0, 0, 0.4); }
+    .sact .cs b { font-weight: 900; color: #c9d2ce; }
+    .sact .cs small { font-size: 11px; font-weight: 800; background: rgba(255, 255, 255, 0.14); border-radius: 99px; padding: 1px 7px; }
+    .sact .cs.on { background: linear-gradient(#3fb877, #23935a); border-color: #b9f5d2; box-shadow: 0 3px 0 #16683e, 0 0 14px rgba(80, 230, 150, 0.55); }
+    .sact .cs.on b { color: #fff; }
+    .sact .cs.none { opacity: .8; }
     .tuner { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 7; border-radius: 14px; padding: 10px 12px 12px; background: #0e1614; border: 2px solid #3a4a45; color: #e8f0ec; cursor: pointer; animation: fade .15s; }
     .tuner .tn-top { display: flex; align-items: baseline; gap: 8px; font-size: 12.5px; }
     .tuner .tn-top b { color: #72c492; font-size: 13.5px; }
@@ -414,8 +433,9 @@
 <main class="wrap gk" id="app">
     <div class="gk-bar">
         <span class="res gold" id="rGold" title="골드"><i class="fas fa-coins"></i><span>0G</span></span>
-        <span class="res shard" id="rShard" title="부서진 기타 조각 — 20개 모으면 하드케이스"><i class="fas fa-puzzle-piece"></i><span>0</span></span>
-        <span class="res case" id="rCase" title="하드케이스 — 부서짐 1번 막아 줌"><i class="fas fa-briefcase"></i><span>0</span></span>
+        <!-- 2026-11-12 사용자: 하드케이스 왼쪽에 부서진 조각 5/20 → 하드케이스 1/3 (조각으로 만든다는 게 보이게). 누르면 상점 케이스 칸 -->
+        <button type="button" class="res sc" id="rSC" data-a="gocase" title="부서진 기타 조각 20개 → 하드케이스 1개 (3개까지, 끼우면 부서짐 1번 막음)">
+            <span class="shard" id="rShard"><i class="fas fa-puzzle-piece"></i><span>0/20</span></span><i class="fas fa-arrow-right arr"></i><span class="case" id="rCase"><i class="fas fa-briefcase"></i><span>0/3</span></span></button>
         <span class="sp"></span>
         <button class="res daily" id="rDaily" type="button" title="하루 한 번: 1,000G + 피크 10"><i class="fas fa-gift"></i><span>출석</span></button>
         <button class="iconbtn cloud" id="rCloud" type="button" aria-label="계정에 저장"><i class="fas fa-cloud"></i></button>
@@ -1143,8 +1163,10 @@ function updBar(goldBump) {
     $('#rGold span').textContent = S.gold >= 1e5 && S.gold < 1e8 ? +(S.gold / 1e4).toFixed(1) + '만G' : gf(S.gold);   // 좁은 화면에서 한 줄에 들어가게
     $('#rGold').title = '골드 ' + S.gold.toLocaleString() + 'G';
     if (goldBump) { const g = $('#rGold'); g.classList.remove('bump'); void g.offsetWidth; g.classList.add('bump'); }
-    $('#rShard span').textContent = S.shards;
-    $('#rCase span').textContent = S.cases;
+    $('#rShard span').textContent = `${S.shards}/${CASE_SHARDS}`;
+    $('#rCase span').textContent = `${S.cases}/${CASE_MAX}`;
+    $('#rCase').classList.toggle('full', S.cases >= CASE_MAX);
+    $('#rSC').classList.toggle('ready', S.shards >= CASE_SHARDS && S.cases < CASE_MAX);
     const got = S.daily === today();
     $('#rDaily').classList.toggle('got', got);
     $('#rDaily span').textContent = got ? '출석함' : '출석';
@@ -1208,7 +1230,7 @@ function renderBench() {
     h += `<div class="acts"><button type="button" data-a="sell" ${g.lv ? '' : 'disabled'}><i class="fas fa-coins"></i>팔기 <b>${g.lv ? gf(SELL[g.lv]) : '0G'}</b></button>
         <button type="button" data-a="toss"><i class="fas fa-trash-can"></i>버리기</button>
         <button type="button" data-a="brag" aria-label="자랑하기"><i class="fas fa-share-nodes"></i></button></div>`;   // 2026-11-12 사용자: 벽에 걸기는 빼고(무대 안 '진열하기'와 같음) 팔기 옆에 버리기
-    h += `<div class="opts">${S.cases || S.caseOn ? `<button type="button" class="chip ${S.caseOn ? 'on' : ''}" data-a="case"><i class="fas fa-briefcase"></i>하드케이스 ${S.caseOn ? '끼움' : '안 끼움'} <small>${S.cases}개</small></button>` : `<span class="chip" title="상점에서 조각 ${CASE_SHARDS}개로 만들어요" style="cursor:default"><i class="fas fa-briefcase"></i>하드케이스 없음 <small>조각 ${S.shards}/${CASE_SHARDS}</small></span>`}
+    h += `<div class="opts">
         ${T ? `<button type="button" class="chip ${S.tuneOn ? 'on' : ''}" data-a="tune"><i class="fas ${T.icon}"></i>${S.tuneOn ? '튜닝하고 강화' : '튜닝 건너뛰기'}</button>` : ''}</div>`;
     box.innerHTML = h;
     renderSact();
@@ -1220,8 +1242,13 @@ function renderSact() {
     el.hidden = !show; $('#stage').classList.toggle('has-act', !!show);
     if (!show) return;
     const cost = COST[g.lv], can = g.lv < MAX;
-    el.classList.toggle('one', !can);
-    el.innerHTML = (can ? `<button type="button" class="ag" data-a="again" ${S.gold < cost ? 'disabled' : ''}><i class="fas fa-hammer"></i>강화 <small>${cost ? gf(cost) : '공짜'}</small></button>` : '')
+    // 2026-11-12 사용자: 부서짐 확률이 생기는 단계(+7)부터 강화 단추 위에 하드케이스 ON/OFF. 다시 누르면 OFF. 케이스가 없으면 누르면 상점 케이스 칸
+    const risk = can && ODDS[g.lv][2] > 0, on = S.caseOn && S.cases > 0;
+    el.classList.toggle('one', !can); el.classList.toggle('cs-on', risk);
+    el.innerHTML = (risk ? (S.cases
+        ? `<button type="button" class="cs ${on ? 'on' : ''}" data-a="case" aria-pressed="${on}"><i class="fas fa-briefcase"></i>하드케이스 <b>${on ? 'ON' : 'OFF'}</b><small>${S.cases}/${CASE_MAX}</small></button>`
+        : `<button type="button" class="cs none" data-a="gocase"><i class="fas fa-briefcase"></i>하드케이스 없음<small>조각 ${S.shards}/${CASE_SHARDS}</small></button>`) : '')
+        + (can ? `<button type="button" class="ag" data-a="again" ${S.gold < cost ? 'disabled' : ''}><i class="fas fa-hammer"></i>강화 <small>${cost ? gf(cost) : '공짜'}</small></button>` : '')
         + `<button type="button" class="hg" data-a="hang"><i class="fas fa-image"></i>진열하기</button>`;
 }
 function renderTable() {
@@ -1826,6 +1853,7 @@ $('#app').addEventListener('click', e => {
     const a = b.dataset.a, id = b.dataset.id;
     if (a === 'again') enhance();
     else if (a === 'shopcat') { shopCat = b.dataset.c; renderShop(); }
+    else if (a === 'gocase') { talkClear(); shopCat = 'case'; setTab('shop'); }   // 위 줄 조각 → 하드케이스 칩
     else if (a === 'dex') toast(`+${b.dataset.lv} ${FAMS[b.dataset.f].names[+b.dataset.lv]}`);
     else if (a === 'new') findGuitar(false);
     else if (a === 'newp') findGuitar(false, true);
