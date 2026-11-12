@@ -103,6 +103,35 @@ Bottom row, left to right:
 8. A small pile of broken red guitar fragments, wood splinters and a curled string (used as a UI icon).
 ```
 
+### 시트 E — 작업방 진열 벽 (가로 1536×1024, 2026-11-12 사용자 요청)
+
+정면에서 본 벽에 기타 5개를 걸 수 있는 진열대. **걸이만 그리고 기타는 비워 둔다.** 기타는 단계마다 모양이 바뀌어서 게임이 걸이 자리에 그려 넣는다.
+
+```
+A front-facing pixel-art wall of a small, cozy guitar workshop, seen perfectly straight-on (no perspective, no angle), filling the whole image.
+- One row of FIVE identical empty guitar wall hangers (a small wooden block with a U-shaped yoke), all at exactly the same height in the upper third of the wall, evenly spaced, centered as a group.
+- Below each hanger leave an EMPTY tall, narrow space where an upright electric guitar will be placed later by the game. Each space is about 1/8 of the image width and a bit more than half of the image height. Do NOT draw any guitars.
+- A small warm spotlight on the ceiling above each hanger, casting a soft cone of light down its slot (stepped pixel-art light bands, no smooth gradients).
+- A small blank brass nameplate on the wall under each slot (no text).
+- Dark green-grey vertical wooden slat wall, a wooden baseboard and a strip of worn wooden floor at the bottom. Put any small details (a coiled cable on a hook, an empty poster frame, a tiny plant) only at the far left and right edges so the five slots stay clean.
+- Same style guide as before: chunky pixels, 1-pixel dark outline, the same palette. No text, letters, numbers or logos anywhere.
+```
+
+분위기 보기용(게임에는 안 씀) — 같은 대화에서 이어서:
+
+```
+The same wall, exactly the same framing, now with five different plain ORIGINAL electric guitars hanging on the hangers (the yoke holds each guitar just under its headstock, the body hangs straight down). No logos, no text.
+```
+
+방이 커질 때(합주실·스튜디오) 같은 벽을 넓히려면:
+
+```
+The same wall but for a bigger rehearsal room: TWO rows of five empty hangers (ten slots), same hanger, spotlight and nameplate design, still no guitars. Same style.
+```
+
+- 지금 목업의 작업방은 원룸 3 · 합주실 6 · 스튜디오 10 걸이다. 벽 그림이 '5개 한 줄'이면 원룸 5 · 합주실 10(두 줄)처럼 걸이 수를 바꾸거나, 방마다 벽을 따로 뽑는다(그림을 보고 정한다).
+- 투명 배경은 필요 없다(벽 자체가 배경). 걸이 간격이 고르지 않으면 다시 뽑는다. 게임이 걸이 위치에 맞춰 기타를 놓는다.
+
 ## 4. 부품 표 (두 배 칸 기준 목표 크기)
 
 | 단계 | 꾸밈말 | 부품 | 붙는 곳 | 목표 크기(px) |
@@ -140,3 +169,13 @@ Bottom row, left to right:
 - 슈퍼스트랫: thin body with two sharp pointed horns, two humbuckers, locking tremolo
 - 통기타: dreadnought acoustic, round soundhole
 - 앰프: small tube amp head on a speaker cabinet (세로로 세운 기타 대신 정면 박스)
+
+## 6. 단계별 이름 — 검키우기 참고 (2026-11-12 조사)
+
+사용자 결정: 검키우기처럼 **단계마다 이름이 바뀌고, 그 이름이 기타 머리 위에 떠 있는** 방식으로 간다. 목업은 이름표를 기타 위에 띄워 두었다.
+
+- 검키우기(카카오톡 플레이봇)는 강화할 때마다 무기가 **다른 이름의 물건으로 바뀐다.** 예: 첫 강화(+1)에 '물이 줄줄 새는 주전자'(공략 블로그). 검이 아닌 물건도 나온다.
+- 무기 도감(SwordQ, `swordq.kr/weapons`)에는 검 60종 + 히든 19종이 있다. 계열 이름 예: 불씨 검, 새싹 검, 흐릿한 달빛 검, 새해의 약속 몽둥이. 단계가 높을수록 이름이 길어진다.
+- 검색 요약에서만 본 것(확인 못 함): 높은 단계에 신화 속 이름이 붙는다(불씨 검 → 헤파이스토스·수르트, 새싹 검 → 케르눈노스·디아나, 흐릿한 달빛 검 → 츠쿠요미·아르테미스). +10에 '태초의 강철 검'.
+- 2026-11-12에는 SwordQ가 서버 오류(502)라 계열별 +0~+20 전체 이름은 못 읽었다. 다시 보려면 그 사이트가 살아났을 때 Claude에게 "검 이름 다시 찾아줘".
+- 우리 게임은 이름을 그대로 가져오지 않는다. 같은 방식(계열 테마로 시작 → 단계마다 엉뚱하게 바뀜 → 꼭대기는 전설 이름)으로 기타 이름을 새로 짓는다. 이름을 정하면 목업 `ADJ`·`FAMS`(또는 단계별 이름 표)를 바꾼다.

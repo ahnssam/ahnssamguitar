@@ -51,10 +51,16 @@
     .stage::before { content: ''; position: absolute; inset: 0; background: radial-gradient(55% 50% at 50% 48%, rgba(255, 228, 150, 0.16), rgba(8, 14, 12, 0.6) 72%, rgba(8, 14, 12, 0.85)); }
     @media (min-width: 480px) { .stage { --s: 5; height: 470px; } }
     @media (max-width: 359px) { .stage { --s: 3; height: 330px; } }
-    .stage canvas { position: absolute; left: 50%; top: 46%; width: calc(56px * var(--s)); height: calc(84px * var(--s)); transform: translate(-50%, -50%); image-rendering: pixelated; }
-    .nmtag { position: absolute; left: 12px; right: 12px; top: 12px; z-index: 2; display: flex; align-items: center; gap: 8px; color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
-    .nmtag .lvb { flex: none; font: 900 22px/1 'Arial Black', sans-serif; padding: 6px 10px 5px; border-radius: 10px; background: #f5b31e; color: #3a2400; text-shadow: none; box-shadow: 0 3px 0 #b97f00; }
-    .nmtag b { font-size: 16px; font-weight: 900; letter-spacing: -0.02em; line-height: 1.3; }
+    .stage canvas { position: absolute; z-index: 1; left: 50%; top: 46%; width: calc(56px * var(--s)); height: calc(84px * var(--s)); transform: translate(-50%, -50%); image-rendering: pixelated; }
+    /* 이름표: 기타 머리 위에 둥실 떠 있다 (2026-11-12 사용자: 검키우기처럼 단계마다 바뀌는 이름이 기타 위에) */
+    .nmtag { position: absolute; left: 50%; top: 14px; z-index: 2; display: flex; align-items: center; gap: 8px; width: max-content; max-width: calc(100% - 24px); padding: 5px 15px 5px 5px; border-radius: 999px; background: rgba(8, 14, 12, 0.74); border: 2px solid rgba(255, 255, 255, 0.2); color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); transform: translateX(-50%); animation: nmBob 2.8s ease-in-out infinite; }
+    .nmtag::after { content: ''; position: absolute; left: 50%; bottom: -10px; margin-left: -8px; border: 8px solid transparent; border-bottom: 0; border-top-color: rgba(8, 14, 12, 0.74); }
+    @keyframes nmBob { 50% { transform: translate(-50%, -5px); } }
+    .nmtag .lvb { flex: none; font: 900 21px/1 'Arial Black', sans-serif; padding: 6px 10px 5px; border-radius: 99px; background: #f5b31e; color: #3a2400; text-shadow: none; box-shadow: 0 3px 0 #b97f00; }
+    .nmtag b { font-size: 16px; font-weight: 900; letter-spacing: -0.02em; line-height: 1.25; word-break: keep-all; }
+    .nmtag.l10 { border-color: rgba(255, 122, 61, 0.9); box-shadow: 0 0 16px rgba(255, 122, 61, 0.45); }
+    .nmtag.l15 { border-color: rgba(155, 107, 255, 0.95); box-shadow: 0 0 18px rgba(155, 107, 255, 0.5); }
+    .nmtag.l20 { border-color: #ffd76a; box-shadow: 0 0 22px rgba(255, 215, 106, 0.65); }
     .nmtag .lvb.l10 { background: #ff7a3d; box-shadow: 0 3px 0 #b8481a; color: #fff; }
     .nmtag .lvb.l15 { background: #9b6bff; box-shadow: 0 3px 0 #5b33c2; color: #fff; }
     .nmtag .lvb.l20 { background: linear-gradient(90deg, #ff5f6d, #ffc371, #47e891, #4fb2ff, #b06bff); box-shadow: 0 3px 0 #333; color: #fff; }
@@ -62,6 +68,25 @@
     .empty { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: #fff; text-align: center; padding: 20px; }
     .empty p { font-size: 15px; font-weight: 700; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
     .empty small { display: block; font-weight: 500; font-size: 12.5px; opacity: 0.85; margin-top: 4px; }
+    .empty { padding-bottom: 92px; }   /* 아래 말풍선 자리를 비워 둔다 */
+    .empty .g1 { width: 34px; height: 90px; image-rendering: pixelated; filter: drop-shadow(0 5px 3px rgba(0, 0, 0, 0.5)); transform: rotate(-5deg); }
+    .empty .g1.dim { filter: grayscale(.6) brightness(.7); }
+    @media (max-width: 359px) { .empty .g1 { display: none; } }
+    .empty p.big { font-size: 22px; font-weight: 900; }
+    .empty p.big small { font-size: 13px; line-height: 1.55; margin-top: 6px; }
+    .empty .btn.pick { background: linear-gradient(#ffc24a, #f29a1f); color: #3a2400; font-weight: 900; box-shadow: 0 4px 0 #c9700a; }
+    .empty .btn.pick .pki path { fill: #fff3d6; stroke: #a85a00; }
+    .empty .alt { font-size: 13px; font-weight: 700; }
+    .empty .alt a { color: #ffe27a; text-decoration: underline; text-underline-offset: 3px; }
+
+    /* 강화 기다림: 무대가 어두워지고 기타가 점점 세게 떨리며 빛이 모인다 */
+    .stage::after { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(36% 40% at 50% 55%, rgba(255, 214, 110, 0.2), rgba(0, 0, 0, 0.66) 72%); opacity: 0; transition: opacity .35s; }
+    .stage.charging::after { opacity: 1; }
+    .cast { position: absolute; left: 50%; bottom: 22px; z-index: 6; width: min(240px, 72%); transform: translateX(-50%); text-align: center; color: #fff; font-weight: 900; font-size: 15px; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55); animation: fade .2s; }
+    .cast em { display: block; height: 10px; margin-top: 7px; border-radius: 99px; background: rgba(0, 0, 0, 0.55); border: 1.5px solid rgba(255, 255, 255, 0.25); overflow: hidden; }
+    .cast i { display: block; height: 100%; background: linear-gradient(90deg, #ffe27a, #ffb238); transform-origin: left; transform: scaleX(0); box-shadow: 0 0 10px rgba(255, 226, 122, 0.8); }
+    .go.wait { background: linear-gradient(#6b7a74, #4c5a55); box-shadow: 0 5px 0 #34403c; }
+    .bench.wait .acts, .bench.wait .opts, .bench.wait .odds3 { opacity: .5; }
 
     /* 연출 */
     .fx { position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; }
@@ -260,7 +285,7 @@
     .stats small { font-size: 11.5px; color: var(--sub); }
     .reset { display: block; margin: 16px auto 0; font-size: 12px; color: #999; text-decoration: underline; }
 
-    @media (prefers-reduced-motion: reduce) { .pop, .daily, .stage.shake, .stage.shake2 { animation: none !important; } }
+    @media (prefers-reduced-motion: reduce) { .pop, .daily, .nmtag, .stage.shake, .stage.shake2 { animation: none !important; } }
 </style>
 </head>
 <body>
@@ -292,7 +317,7 @@
         <div class="stage" id="stage">
             <canvas id="cv" width="56" height="84"></canvas>
             <div class="nmtag" id="nm"></div>
-            <div class="empty" id="empty" hidden><p>작업대가 비었어요<small>중고나라에서 스트랫을 하나 더 받아 와요. 공짜예요.</small></p><button class="btn" type="button" data-a="new"><i class="fas fa-box-open"></i> 중고 스트랫 받기</button></div>
+            <div class="empty" id="empty" hidden></div>
             <div class="fx" id="fx"></div>
             <div class="talk" id="talk" hidden></div>
             <div class="tuner" id="tuner" hidden></div>
@@ -317,7 +342,7 @@
 <script>
 // ===== 기타 키우기 (2026-11-12 MVP — 스트랫 하나로 먼저) =====
 // 카톡 '검키우기' 구조: 강화 한 번 누를 때마다 성공 / 유지(줄 끊김) / 파괴(무대에서 내리찍기). 팔고, 걸고, 배틀한다.
-// 사용자 결정(2026-11-12): 능력치·상성 없이 단계만 / 게임 골드만 따로(배틀 한 번 끝내면 피크 10) / 스트랫만 / 기타+앰프 조합은 MVP에서 뺌.
+// 사용자 결정(2026-11-12): 능력치·상성 없이 단계만 / 게임 골드만 따로(배틀 한 번 끝내면 피크 10, 첫 기타만 피크 50개로 삼) / 스트랫만 / 기타+앰프 조합은 MVP에서 뺌.
 // 진행은 이 브라우저(localStorage 'play.gk')에만 저장한다. 배틀 상대는 지금은 브라우저 안 연습 상대(가짜 랭커).
 const { esc, mem, toast } = PLAY;
 const $ = s => document.querySelector(s);
@@ -333,6 +358,8 @@ const COST = [0, 10, 20, 40, 70, 120, 200, 300, 450, 700, 1000, 1400, 2000, 2800
 const SELL = [0, 30, 80, 180, 350, 700, 1300, 2400, 4200, 7500, 13000, 20000, 32000, 51000, 83000, 140000, 250000, 450000, 850000, 1700000, 3700000];
 const MAX = 20;
 const START_GOLD = 500, DAILY_GOLD = 1000, CASE_SHARDS = 50, BT_DAY = 10;
+// 맨 처음 기타만 놀이터 피크로 산다(2026-11-12 사용자 결정). 그다음부터 작업대가 비면 중고 스트랫은 공짜
+const FIRST_PICKS = 50;
 const ADJ = ['중고나라에서 온', '줄 녹슨', '줄 새로 간', '스티커 덕지덕지 붙인', '셋업 받은', '픽업 바꾼', '넥 하나 더 단', '반짝이 칠한', 'LED 박은', '앰프 내장된',
     '불 뿜는', '넥 세 개 달린', '냉장고 문 달린', '날개 돋친', '전봇대만 한', '위성 신호 잡히는', '관객이 따라 부르는', '번개 맞은', '우주에서 돌아온', '전설이 된', '라스트'];
 // 계열마다 +5·+10·+15 고비에는 그 기타다운 꾸밈말 (스트랫 = 싱글 픽업 셋 + 트레몰로 암)
@@ -356,11 +383,14 @@ const rid = () => Math.random().toString(36).slice(2, 9);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ---------- 저장 (이 브라우저) ----------
-const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [], rep: '', shards: 0, cases: 0, caseOn: false, tuner: 0, tuneOn: true, room: 0, daily: '', nick: '', intro: false,
+const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [], rep: '', shards: 0, cases: 0, caseOn: false, tuner: 0, tuneOn: true, room: 0, daily: '', nick: '', intro: false, first: false,
     bt: { day: '', n: 0, done: {} }, st: { tries: 0, ok: 0, keep: 0, boom: 0, saved: 0, sold: 0, earned: 0, best: 0, win: 0, lose: 0 } });
 const okG = g => g && typeof g === 'object' && Number.isInteger(g.lv) && g.lv >= 0 && g.lv <= MAX && typeof g.id === 'string';
 function load() {
-    const s = Object.assign(fresh(), mem.get('gk', {}) || {});
+    const raw = mem.get('gk', {}) || {};
+    const s = Object.assign(fresh(), raw);
+    // 첫 기타 피크 구매(2026-11-12)가 생기기 전에 시작한 사람은 이미 산 것으로
+    if (typeof raw.first !== 'boolean') s.first = !!(raw.intro || raw.bench || (Array.isArray(raw.wall) && raw.wall.length));
     const f = fresh();
     s.st = Object.assign(f.st, s.st || {});
     s.bt = Object.assign(f.bt, s.bt || {});
@@ -397,7 +427,7 @@ function noise(t, dur, vol, out, f0, f1) {
     s.buffer = b; lp.type = 'lowpass'; lp.frequency.setValueAtTime(f0, t); lp.frequency.exponentialRampToValueAtTime(f1, t + dur);
     g.gain.value = vol; s.connect(lp); lp.connect(g); g.connect(out); s.start(t);
 }
-function sfx(kind, lv = 0) {
+function sfx(kind, lv = 0, ms = 0) {
     if (!soundOn()) return;
     try {
         actx = actx || new (window.AudioContext || window.webkitAudioContext)();
@@ -417,6 +447,15 @@ function sfx(kind, lv = 0) {
         else if (kind === 'win') { [523, 659, 784, 1047].forEach((f, i) => T(f, i * 0.09, 0.4, 'square', 0.09)); }
         else if (kind === 'lose') { [392, 370, 349, 294].forEach((f, i) => T(f, i * 0.16, 0.3, 'triangle', 0.18)); }
         else if (kind === 'tick') { T(1200, 0, 0.04, 'square', 0.05); }
+        else if (kind === 'charge') {   // 강화 기다림: 낮은 북이 점점 빨라지고, 올라가는 소리가 점점 커진다
+            const dur = ms / 1000, b = 98 * Math.pow(2, lv / 30);
+            const o = actx.createOscillator(), g = actx.createGain(), lp = actx.createBiquadFilter();
+            o.type = 'sawtooth'; o.frequency.setValueAtTime(b, t); o.frequency.exponentialRampToValueAtTime(b * 4, t + dur);
+            lp.type = 'lowpass'; lp.frequency.setValueAtTime(300, t); lp.frequency.exponentialRampToValueAtTime(2600, t + dur);
+            g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.07, t + dur); g.gain.linearRampToValueAtTime(0.0001, t + dur + 0.04);
+            o.connect(lp); lp.connect(g); g.connect(out); o.start(t); o.stop(t + dur + 0.06);
+            for (let x = 0, gap = 0.3; x < dur - 0.04; x += gap, gap = Math.max(0.085, gap * 0.84)) T(140, x, 0.14, 'sine', 0.32, 50);
+        }
     } catch (e) {}
 }
 
@@ -639,7 +678,9 @@ const LINES = {
         15: [['minji', '위성 신호 잡혀요! 팬카페 회원이 두 명 됐어요.']],
         20: [['boss', '라스트 스트랫… 나는 거기까지 못 갔다.'], ['me', '……'], ['boss', '…줄은 네가 갈아라.']],
     },
-    intro: [['boss', '형준이가 중고 스트랫 하나 넘겼다. 박스 없고 설명서도 없대.'], ['boss', '고쳐서 팔든, 벽에 걸든 네 마음이다.'], ['boss', '…부수지만 마라.'], ['me', '……']],
+    intro: [['boss', '형준이가 중고 스트랫 하나 넘겼다. 박스 없고 설명서도 없대.'], ['boss', `첫 기타는 피크 ${FIRST_PICKS}개다. 돈은 안 받는다.`], ['me', '……']],
+    noPick: [['boss', '피크가 없다고? 놀이터 가서 퀴즈라도 한 판 풀고 와라. 한 판에 열 개다.']],
+    bought: [['boss', '고쳐서 팔든, 벽에 걸든 네 마음이다.'], ['boss', '…부수지만 마라.'], ['me', '……']],
 };
 
 // ---------- 화면 ----------
@@ -658,18 +699,35 @@ function updBar(goldBump) {
     if (left > 0 && !dot) $('#tabs [data-t="battle"]').insertAdjacentHTML('beforeend', '<span class="dot" title="오늘 배틀 남음"></span>');
     if (left <= 0 && dot) dot.remove();
 }
+let nmLv = -1;
 function renderName() {
     const g = ghost || S.bench, el = $('#nm');
-    if (!g) { el.innerHTML = ''; return; }
+    if (!g) { el.innerHTML = ''; el.hidden = true; nmLv = -1; return; }
     const cls = g.lv >= 20 ? 'l20' : g.lv >= 15 ? 'l15' : g.lv >= 10 ? 'l10' : '';
+    el.hidden = false; el.className = 'nmtag ' + cls;
     el.innerHTML = `<span class="lvb ${cls}">+${g.lv}</span><b>${esc(gname(g))}</b>`;
+    // 단계가 오르면 이름표가 한 번 통 튄다
+    if (nmLv >= 0 && g.lv > nmLv) el.animate([{ scale: 1 }, { scale: 1.2, offset: 0.35 }, { scale: 1 }], { duration: 520, easing: 'ease-out' });
+    nmLv = g.lv;
+}
+// 빈 작업대: 첫 기타는 피크로 사고, 그다음부터는 공짜로 받는다
+function emptyCard() {
+    const strat = cls => `<img class="g1 ${cls}" src="../images/play/gk/item_strat.png" alt="">`;
+    if (S.first) return `<p>작업대가 비었어요<small>중고나라에서 스트랫을 하나 더 받아 와요. 공짜예요.</small></p><button class="btn" type="button" data-a="new"><i class="fas fa-box-open"></i> 중고 스트랫 받기</button>`;
+    const bal = PLAY.picks.bal(), need = FIRST_PICKS - bal;
+    if (need <= 0) return `${strat('')}<p>중고 스트랫이 들어왔어요<small>첫 기타는 놀이터 피크 ${FIRST_PICKS}개로 사요. 지금 ${bal.toLocaleString()}피크 있어요.</small></p>
+        <button class="btn pick" type="button" data-a="buy1">${PLAY.pickIcon()} 피크 ${FIRST_PICKS}개로 사기</button>`;
+    return `${strat('dim')}<p class="big">피크가 ${bal ? '모자라다' : '없다'}구요?<small>첫 기타는 피크 ${FIRST_PICKS}개로 사요 (지금 ${bal}개).<br>놀이터 퀴즈쇼·월드컵 한 판마다 ${PLAY.PICK.per}개씩 모여요.</small></p>
+        <a class="btn pick" href="./"><i class="fas fa-gamepad"></i> 놀이터에서 피크 모으기</a>
+        <div class="alt"><a href="quiz.html">퀴즈쇼</a> · <a href="worldcup.html">월드컵</a> 바로 가기</div>`;
 }
 function renderBench() {
     updBar(); renderName();
-    const g = S.bench, box = $('#bench');
-    $('#empty').hidden = !!(g || ghost);
+    const g = S.bench, box = $('#bench'), em = $('#empty');
+    em.hidden = !!(g || ghost);
+    if (!em.hidden) em.innerHTML = emptyCard();
     renderTable();
-    if (!g) { box.innerHTML = `<p class="note2" style="text-align:center">작업대가 비면 중고 스트랫을 공짜로 다시 받아요. 걸어 둔 기타는 작업방에서 작업대로 가져올 수 있어요.</p>`; return; }
+    if (!g) { box.innerHTML = `<p class="note2" style="text-align:center">${S.first ? '' : `첫 기타만 피크 ${FIRST_PICKS}개로 사요. 그다음부터는 `}작업대가 비면 중고 스트랫을 공짜로 다시 받아요. 걸어 둔 기타는 작업방에서 작업대로 가져올 수 있어요.</p>`; return; }
     const T = TUNERS[S.tuner];
     let h = '';
     if (g.lv >= MAX) h += `<div class="maxed">🎸 최고 단계! 더는 강화할 수 없어요.<br><small>벽에 걸고 대표 기타로 배틀에 내보내요.</small></div>`;
@@ -743,6 +801,49 @@ addEventListener('keydown', e => {
     else if (e.key === 'Escape') tuning(true);
 });
 
+// 강화 기다림(결과는 이미 정해져 저장됐다) — 두근두근하는 맛. 단계가 높을수록 길고, +10부터는 결과 직전에 한 박자 숨을 멈춘다
+const WAIT_MS = lv => lv === 0 ? 450 : lv < 5 ? 1000 : lv < 10 ? 1400 : lv < 15 ? 1900 : 2400;
+const WAIT_TXT = lv => lv < 5 ? '강화 중…' : lv < 10 ? '두근두근…' : lv < 15 ? '제발…' : '숨 참는 중…';
+function gather() {   // 빛 알갱이가 기타로 모인다
+    const d = document.createElement('i'), sz = 3 + Math.round(Math.random() * 4);
+    const a = Math.random() * Math.PI * 2, r = 120 + Math.random() * 80;
+    d.className = 'pt';
+    d.style.cssText = `left:50%;top:54%;width:${sz}px;height:${sz}px;background:${one(['#ffe27a', '#ffffff', '#72c492', '#ffd23f'])}`;
+    $('#fx').appendChild(d);
+    d.animate([{ transform: `translate(calc(-50% + ${Math.round(Math.cos(a) * r)}px), calc(-50% + ${Math.round(Math.sin(a) * r)}px))`, opacity: 0 }, { opacity: 1, offset: 0.35 }, { transform: 'translate(-50%, -50%)', opacity: 0 }],
+        { duration: 520 + Math.random() * 200, easing: 'cubic-bezier(.5,0,.9,.6)', fill: 'forwards' }).onfinish = () => d.remove();
+}
+async function suspense(lv) {
+    const ms = WAIT_MS(lv), st = $('#stage'), go = $('#go'), txt = WAIT_TXT(lv);
+    if (go) { go.classList.add('wait'); go.textContent = txt; }
+    $('#bench').classList.add('wait');
+    st.classList.add('charging');
+    const bar = document.createElement('div');
+    bar.className = 'cast'; bar.innerHTML = `<span>${txt}</span><em><i></i></em>`;
+    st.appendChild(bar);
+    bar.querySelector('i').animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: ms, easing: 'cubic-bezier(.35,.05,.65,1)', fill: 'forwards' });
+    sfx('charge', lv, ms);
+    // 떨림: 처음엔 살살, 끝으로 갈수록 세게 + 점점 밝아진다
+    const amp = Math.min(1.5 + lv * 0.22, 6), N = Math.max(4, Math.round(ms / 50)), kf = [];
+    const j = a => +((Math.random() * 2 - 1) * a).toFixed(1);
+    for (let i = 0; i <= N; i++) {
+        const k = i / N, a = amp * k * k;
+        kf.push({ transform: `${CVT} translate(${j(a)}px, ${j(a * 0.5)}px) rotate(${j(a * 0.4)}deg)`, filter: `brightness(${(1 + 0.8 * k * k).toFixed(2)}) drop-shadow(0 0 ${Math.round(14 * k)}px rgba(255, 226, 122, ${(0.85 * k).toFixed(2)}))` });
+    }
+    const an = cv.animate(kf, { duration: ms, easing: 'linear', fill: 'forwards' });
+    const iv = setInterval(gather, lv >= 10 ? 45 : 70);
+    await sleep(ms);
+    clearInterval(iv);
+    an.cancel();
+    if (lv >= 10) {   // 결과 직전 한 박자: 소리도 떨림도 멈춘다
+        cv.style.filter = 'brightness(1.6) drop-shadow(0 0 14px rgba(255, 226, 122, 0.85))';
+        bar.querySelector('span').textContent = '……';
+        await sleep(320);
+        cv.style.filter = '';
+    }
+    st.classList.remove('charging'); bar.remove(); $('#bench').classList.remove('wait');
+}
+
 async function enhance() {
     const g = S.bench;
     if (busy || !g || g.lv >= MAX) return;
@@ -752,17 +853,22 @@ async function enhance() {
     let bonus = 0;
     const T = TUNERS[S.tuner];
     if (T && S.tuneOn && ODDS[g.lv][1] > 0) bonus = await tune(T);
-    const [s0, m0, d] = ODDS[g.lv], b = Math.min(bonus, m0), s = s0 + b, m = m0 - b;
+    const lv0 = g.lv, [s0, m0] = ODDS[lv0], b = Math.min(bonus, m0), s = s0 + b, m = m0 - b;
     const r = Math.random() * 100;
     let out = r < s ? 'ok' : r < s + m ? 'keep' : 'boom';
-    if (out === 'boom' && S.caseOn && S.cases > 0) { out = 'saved'; S.cases--; if (!S.cases) S.caseOn = false; }
+    if (out === 'boom' && S.caseOn && S.cases > 0) out = 'saved';
     S.gold -= cost; S.st.tries++;
-    // 결과를 먼저 저장하고(새로고침으로 되돌리기 막기) 연출은 그다음
+    updBar();   // 기다리는 동안 위 줄은 골드만 줄어든다(조각·케이스 수가 결과를 먼저 알려 주지 않게)
+    // 결과를 먼저 저장하고(새로고침으로 되돌리기 막기), 기다림·연출은 그다음. 기다리는 동안은 강화 전 기타·이름 그대로 보인다
+    ghost = { ...g };
     if (out === 'ok') { g.lv++; S.st.ok++; S.st.best = Math.max(S.st.best, g.lv); }
     else if (out === 'keep') S.st.keep++;
-    else if (out === 'saved') S.st.saved++;
-    else { S.st.boom++; S.shards += g.lv; ghost = g; S.bench = null; if (S.rep === g.id) S.rep = ''; }
-    save(); updBar();
+    else if (out === 'saved') { S.st.saved++; S.cases--; if (!S.cases) S.caseOn = false; }
+    else { S.st.boom++; S.shards += g.lv; S.bench = null; if (S.rep === g.id) S.rep = ''; }
+    save();
+    await suspense(lv0);
+    if (out !== 'boom') ghost = null;
+    updBar();
     if (out === 'ok') {
         sfx('ok', g.lv); renderName();
         cv.animate([{ transform: CVT, filter: 'brightness(1)' }, { transform: `${CVT} translateY(-10px) scale(1.06)`, filter: 'brightness(2.4)', offset: 0.3 }, { transform: CVT, filter: 'brightness(1)' }], { duration: 520, easing: 'ease-out' });
@@ -807,12 +913,19 @@ async function enhance() {
 }
 
 async function newGuitar(silent) {
-    if (S.bench || busy) return;
+    if (S.bench || busy || !S.first) return;
     S.bench = { id: rid(), lv: 0, f: 'strat' };
     save(); renderBench();
     if (silent) return;
     sfx('drop');
     cv.animate([{ transform: `${CVT} translateY(-130%)` }, { transform: CVT, offset: 0.7 }, { transform: `${CVT} translateY(-4%)`, offset: 0.85 }, { transform: CVT }], { duration: 600, easing: 'ease-out' });
+}
+function buyFirst() {
+    if (S.first || S.bench || busy) return;
+    if (!PLAY.picks.spend(FIRST_PICKS)) { toast(`피크가 모자라요 (${FIRST_PICKS}개 필요)`); renderBench(); return; }
+    S.first = true; save(); talkClear();
+    newGuitar();
+    setTimeout(() => talk(LINES.bought), 650);
 }
 async function sellBench() {
     const g = S.bench;
@@ -1082,6 +1195,7 @@ $('#app').addEventListener('click', e => {
     if (busy) return;
     const a = b.dataset.a, id = b.dataset.id;
     if (a === 'new') newGuitar();
+    else if (a === 'buy1') buyFirst();
     else if (a === 'sell') sellBench();
     else if (a === 'hang') hangBench();
     else if (a === 'brag') brag(S.bench);
@@ -1121,6 +1235,7 @@ $('#app').addEventListener('click', e => {
     }
 });
 $('#rDaily').addEventListener('click', () => {
+    if (busy) return;
     if (S.daily === today()) { toast('오늘 출석 골드는 받았어요. 내일 또 와요!'); return; }
     S.daily = today(); S.gold += DAILY_GOLD; save(); updBar(true); sfx('sell');
     toast(`출석 골드 +${gf(DAILY_GOLD)}`);
@@ -1132,11 +1247,12 @@ $('#adw').innerHTML = PLAY.adSlot('wide');
 function start() {
     if (!S.intro) {
         S.intro = true; S.gold = Math.max(S.gold, START_GOLD); save();
-        newGuitar(true);
-        setTimeout(() => talk(LINES.intro), 400);
+        setTimeout(() => talk(PLAY.picks.bal() >= FIRST_PICKS ? LINES.intro : [...LINES.intro, ...LINES.noPick]), 400);
     }
     if (VS) setTab('battle'); else setTab('bench');
 }
+addEventListener('pageshow', e => { if (e.persisted && !busy && tab === 'bench') renderBench(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !busy && tab === 'bench' && !S.bench) renderBench(); });
 start();
 </script>
 </body>
