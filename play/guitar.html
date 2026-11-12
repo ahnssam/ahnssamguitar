@@ -2013,9 +2013,12 @@ const repSig = g => g ? `${g.f}|${g.lv}|${myNick()}` : '';
 const LINK_RE = /(https?:|www\.|\.(com|net|kr|co|io|me|ly)\b)/i;
 // 대표 기타를 서버에 올린다(바뀌었거나 10분 지났을 때만). 운영 계정으로 로그인해 있으면 서버가 숨김으로 둔다
 // 2026-11-13 파이트 넘버가 무작위 6자리로 바뀌어서, 예전 번호를 기억한 것('gk.sync')은 버리고 'gk.sync2'로 새로 받는다
+// 시험 브라우저(2026-11-13 사용자: Claude 시험용 +18 기타가 진짜 랭킹 1위로 올라가 지우고 막음):
+//   그 브라우저에 localStorage 'play.gk.norank' = 'true' 를 두면 랭킹에 올리지 않는다(상대·랭킹 보기는 그대로, 진짜 상대와도 브라우저 안에서만 겨룸)
+const NORANK = mem.get('gk.norank', false) === true;
 async function syncMe(force) {
     const g = rep();
-    if (!g) return null;
+    if (!g || NORANK) return null;
     const old = mem.get('gk.sync2', {}), sig = repSig(g) + '|' + S.st.best;
     if (!force && old.sig === sig && old.id != null && Date.now() - (old.at || 0) < 10 * 60e3) return old;
     const r = (await PLAY.rpc('play_guitar_save', { p_key: gkKey(), p_nick: myNick(), p_fam: g.f, p_lv: g.lv, p_best: S.st.best }, { auth: true }))[0];
@@ -2051,7 +2054,7 @@ let OPPS = [], rerankAnim = false;
 //   2026-11-13 사용자: 차례 번호(000005) 말고 무작위 6자리, 운영 계정은 000000 (db/play_guitar_fight_no.sql — 서버 함수의 id 가 곧 파이트 넘버)
 //   로그인하면 계정에 저장된 열쇠(S.rk)로 이어져서 다른 기기에서도 같은 번호
 let FIND = null, findMsg = '', findQ = '', findBusy = false;
-const myNo = () => { const a = NET.me && NET.me.id, b = (mem.get('gk.sync2', {}) || {}).id; return a != null ? a : b != null ? b : null; };
+const myNo = () => { if (NORANK) return null; const a = NET.me && NET.me.id, b = (mem.get('gk.sync2', {}) || {}).id; return a != null ? a : b != null ? b : null; };
 const fmtNo = n => String(n).padStart(6, '0');   // 늘 6자리 (#000000 · #482913)
 async function findNo(raw) {
     findQ = String(raw || '').trim();
@@ -2082,11 +2085,11 @@ function renderBattle() {
     const real = NET.ok ? NET.opps : [];
     OPPS = NET.ok === null ? [] : rankers().slice(0, Math.max(0, 10 - real.length));
     const mine = NET.ok ? NET.top.find(r => r.me) : null, total = NET.ok && NET.top.length ? NET.top[0].players : 0;
-    const rankLine = NET.ok === null ? '랭킹 불러오는 중…' : NET.ok === false ? '랭킹에 연결이 안 돼요 · 연습 상대와 붙어요'
+    const rankLine = NORANK ? '시험 브라우저 · 랭킹에 안 올라가요' : NET.ok === null ? '랭킹 불러오는 중…' : NET.ok === false ? '랭킹에 연결이 안 돼요 · 연습 상대와 붙어요'
         : NET.me && NET.me.hidden ? '운영 계정이라 랭킹에 안 보여요' : mine ? `랭킹 ${mine.pos}위 / ${total}명` : '';
     const no = me ? myNo() : null;
     let h = `<div class="fno"><span class="lb">내 파이트 넘버 :</span>${no != null ? `<b>#${fmtNo(no)}</b><button type="button" data-a="copyno"><i class="fas fa-copy"></i>복사</button>`
-        : `<em>${!me ? '대표 기타가 생기면 받아요' : NET.ok === false ? '연결되면 받아요' : '받는 중…'}</em>`}</div>`;
+        : `<em>${NORANK ? '시험 브라우저라 안 받아요' : !me ? '대표 기타가 생기면 받아요' : NET.ok === false ? '연결되면 받아요' : '받는 중…'}</em>`}</div>`;
     h += `<div class="card mycard">${me ? gc(me.lv, '', 2, me.f) : ''}<div class="mt"><small>내 대표 기타</small><b>${me ? esc(full(me)) : '아직 기타가 없어요'}</b>
         <div class="left">오늘 남은 배틀 ${BT_DAY - bt.n}/${BT_DAY} · ${S.st.win}승 ${S.st.lose}패</div>${rankLine ? `<div class="rkline">${rankLine}</div>` : ''}</div></div>`;
     if (VS) {
@@ -2189,7 +2192,7 @@ async function fight(id) {
     if (bt.n >= BT_DAY) { toast('오늘 배틀은 다 했어요. 내일 또!'); return; }
     busy = true;
     let p, win;
-    if (o.pid != null) {   // 진짜 상대: 서버가 두 사람의 저장된 단계로 승패를 정한다
+    if (o.pid != null && !NORANK) {   // 진짜 상대: 서버가 두 사람의 저장된 단계로 승패를 정한다 (시험 브라우저는 아래 브라우저 안 배틀로)
         try {
             await syncMe();
             const go = () => PLAY.rpc('play_guitar_battle', { p_key: gkKey(), p_opp: o.pid });
