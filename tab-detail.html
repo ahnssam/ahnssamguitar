@@ -711,7 +711,7 @@
 </style>
     <!-- Supabase auth (shared) -->
     <script src="auth.js?v=2026111103" defer></script>
-    <script src="checkout.js?v=20261111c" defer></script>
+    <script src="checkout.js?v=20261112a" defer></script>
 </head>
 <body>
 
@@ -1076,7 +1076,8 @@
             await C.ready();
             if (!C.canPay()) { set('fa-hourglass-half', '결제 준비 중'); return; }
             const showDownload = () => set('fa-download', 'PDF 내려받기', () => C.download(p.id, p.title, p.artist));
-            try { const mine = new Set((await C.myPurchases()).map(x => x.sheet_id)); OWNED = new Set(PARTS.filter(x => mine.has(x.id)).map(x => x.id)); } catch (e) {}
+            // 산 지 1년이 지난 악보는 다시 살 수 있다 (db/sheet_download_1y.sql)
+            try { const mine = new Set((await C.myPurchases()).filter(x => !C.canRedownload || C.canRedownload(x)).map(x => x.sheet_id)); OWNED = new Set(PARTS.filter(x => mine.has(x.id)).map(x => x.id)); } catch (e) {}
             renderParts(p);
             if (PARTS.every(x => OWNED.has(x.id))) {
                 if (PARTS.length > 1) set('fa-circle-check', '모두 구매한 악보예요'); else showDownload();

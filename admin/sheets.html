@@ -426,6 +426,28 @@
     .film .rk-row .why i { white-space: normal; }
     @media (max-width: 900px) { .film .rk-cols { grid-template-columns: minmax(0, 1fr); } }
     .rk-col.now h4 { border-color: var(--green-2); }
+    /* 음저협 정산 (2026-11-12) — 곡별·월별 다운로드 수와 매출, 엑셀로 받기 */
+    .btn.komca-btn { color: #1d6f42; border-color: #bfe3cc; background: #f0faf4; }
+    .btn.komca-btn:hover { border-color: #86c9a0; }
+    .komca .rk-hd h3 i { color: #1d6f42; }
+    .km-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 22px; border-bottom: 1px solid var(--line); font-size: 13px; }
+    .km-bar input[type=month] { height: 32px; border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; font: inherit; }
+    .km-bar .km-chk { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; color: #555; cursor: pointer; }
+    .km-bar .km-chk input { accent-color: var(--green); margin: 0; }
+    .km-bar #kmXlsx { margin-left: auto; }
+    .km-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .km-stats div { background: var(--green-bg); border-radius: 10px; padding: 10px 12px; }
+    .km-stats small { display: block; font-size: 12px; color: var(--sub); }
+    .km-stats b { font-size: 18px; font-weight: 900; }
+    .km-how { font-size: 12px; color: var(--sub); line-height: 1.7; margin: 0 0 14px; }
+    .km-warn { font-size: 12.5px; color: #8a5a00; background: #fff8e6; border-radius: 8px; padding: 8px 10px; margin: 0 0 14px; }
+    .km-t { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 18px; }
+    .km-t th { text-align: left; font-size: 12px; color: var(--sub); font-weight: 700; padding: 6px 6px; border-bottom: 2px solid var(--line); white-space: nowrap; }
+    .km-t td { padding: 7px 6px; border-bottom: 1px dashed #ececec; }
+    .km-t td.n, .km-t th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .km-t td small { color: var(--sub); }
+    .km-sub { font-size: 14px; font-weight: 900; margin: 6px 0 6px; }
+    @media (max-width: 760px) { .km-stats { grid-template-columns: 1fr 1fr; } .km-bar #kmXlsx { margin-left: 0; } .km-t .hide-m { display: none; } }
 
     @media (max-width: 900px) {
         .rank { inset: 0; border-radius: 0; }
@@ -467,6 +489,7 @@
         <div class="tb-acts">
             <button class="btn rank-btn" id="rankBtn" title="아직 악보가 없는 곡 조사 목록 (올릴 악보 순서는 목록 정렬 '올릴 순서')"><i class="fas fa-lightbulb"></i> 새로 만들 곡</button>
             <button class="btn film-btn" id="filmBtn" title="걸어 둔 유튜브 영상이 그 곡만의 영상이 아닌 악보 — 합본 영상·다른 곡 영상 (다시 찍을 곡)"><i class="fas fa-video"></i> 악보영상 뭐찍지?</button>
+            <button class="btn komca-btn" id="komcaBtn" title="음저협 정산 자료 — 곡별·월별 다운로드 수와 매출 (엑셀로 받기)"><i class="fas fa-file-excel"></i> 음저협 정산</button>
             <button class="btn primary" id="newBtn"><i class="fas fa-plus"></i> 새 악보</button>
         </div>
     </div>
@@ -583,6 +606,18 @@
 <div class="rank film" id="film" role="dialog" aria-label="악보영상 뭐찍지?" hidden>
     <div class="rk-hd"><h3><i class="fas fa-video"></i>악보영상 뭐찍지?</h3><small id="fmNote"></small><button class="x" id="fmClose" aria-label="닫기"><i class="fas fa-xmark"></i></button></div>
     <div class="rk-body" id="fmBody"></div>
+</div>
+
+<div class="rank komca" id="komca" role="dialog" aria-label="음저협 정산" hidden>
+    <div class="rk-hd"><h3><i class="fas fa-file-excel"></i>음저협 정산</h3><small>곡별·월별 다운로드 수와 매출</small><button class="x" id="kmClose" aria-label="닫기"><i class="fas fa-xmark"></i></button></div>
+    <div class="km-bar">
+        <span class="seg" id="kmQuick"><button type="button" data-q="lastm">지난달</button><button type="button" data-q="lastq">지난 분기</button><button type="button" data-q="lasth">지난 반기</button><button type="button" data-q="year">올해</button></span>
+        <span>기간 <input type="month" id="kmFrom" aria-label="시작 달"> ~ <input type="month" id="kmTo" aria-label="끝 달"></span>
+        <label class="km-chk" title="음저협에 맡기지 않은 자작곡은 낼 필요가 없어서 기본으로 빼요. 음저협에 맡긴(신탁한) 자작곡은 편집 창 '저작권 정보'에 음저협 저작물 코드를 적으면 저절로 들어가요"><input type="checkbox" id="kmOrig"> 자작곡도 넣기</label>
+        <label class="km-chk" title="토스 테스트 키로 한 시험 결제 — 모양을 볼 때만"><input type="checkbox" id="kmTest"> 테스트 결제도 넣기</label>
+        <button type="button" class="btn primary" id="kmXlsx" disabled><i class="fas fa-download"></i> 엑셀로 받기</button>
+    </div>
+    <div class="rk-body" id="kmBody"></div>
 </div>
 
 <div class="rank" id="rank" role="dialog" aria-label="뭐부터 올리지?" hidden>
@@ -1116,14 +1151,156 @@
     $('dim').onclick = async () => {
         if (!$('rank').hidden && !$('editor').classList.contains('open')) { closeRank(); return; }
         if (!$('film').hidden && !$('editor').classList.contains('open')) { closeFilm(); return; }
+        if (!$('komca').hidden) { closeKomca(); return; }
         if (pdfReading || saving) return;
         if (!isDirty()) { closeEditor(); return; }
         if (await save()) closeEditor();
     };
     document.addEventListener('keydown', e => {
         if (e.key !== 'Escape') return;
-        if ($('editor').classList.contains('open')) closeEditor(); else if (!$('rank').hidden) closeRank(); else if (!$('film').hidden) closeFilm();
+        if ($('editor').classList.contains('open')) closeEditor(); else if (!$('rank').hidden) closeRank(); else if (!$('film').hidden) closeFilm(); else if (!$('komca').hidden) closeKomca();
     });
+
+    // ---------- 음저협 정산 (2026-11-12) — 곡별·월별 다운로드 수와 매출을 엑셀로 ----------
+    // 숫자는 서버 함수 sheet_sales_report (db/sheet_sales_report.sql, 운영 계정만): 결제 완료 주문의 악보 1개 = 1다운로드,
+    // 매출 = 결제 금액(부가세 포함, 묶음 할인은 정가 비율로 나눔), 달은 결제 승인 시각(한국 시간).
+    // 예상 사용료는 음저협 통화 안내(2026-11) 기준 참고값: 곡·달마다 max(77원 × 다운로드, 매출 × 11%) × 92.76%. 자작곡은 0.
+    const KM_RATE = 0.11, KM_MIN = 77, KM_SHARE = 0.9276;
+    const XLSX_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    let kmRows = null, kmSeq = 0, kmTimer = 0;
+    const ym = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    // 음저협 곡 = 커버·편곡, 또는 음저협에 맡겨(신탁해) 저작물 코드가 있는 자작곡 (2026-11-12 사용자: 자작곡도 음원 등록 예정)
+    const kmManaged = r => r.kind !== 'original' || !!(r.komca_code && String(r.komca_code).trim());
+    const kmFee = r => kmManaged(r) ? Math.round(Math.max(KM_MIN * r.downloads, r.revenue * KM_RATE) * KM_SHARE) : 0;
+    const kmLabel = r => [STYLE[r.style] ? STYLE[r.style][0] : '', KIND[r.kind] || ''].filter(Boolean).join(' · ');
+    function kmQuick(q) {
+        const now = new Date(), y = now.getFullYear(), m = now.getMonth();   // m: 0~11
+        let a, b;
+        if (q === 'lastm') { a = b = new Date(y, m - 1, 1); }
+        else if (q === 'lastq') { const qs = Math.floor(m / 3) * 3 - 3; a = new Date(y, qs, 1); b = new Date(y, qs + 2, 1); }
+        else if (q === 'lasth') { const hs = (m < 6 ? 0 : 6) - 6; a = new Date(y, hs, 1); b = new Date(y, hs + 5, 1); }
+        else { a = new Date(y, 0, 1); b = new Date(y, m, 1); }
+        $('kmFrom').value = ym(a); $('kmTo').value = ym(b);
+        document.querySelectorAll('#kmQuick button').forEach(x => x.classList.toggle('on', x.dataset.q === q));
+        loadKomca();
+    }
+    function kmRange() {
+        let f = $('kmFrom').value, t = $('kmTo').value;
+        if (!/^\d{4}-\d{2}$/.test(f) || !/^\d{4}-\d{2}$/.test(t)) return null;
+        if (f > t) [f, t] = [t, f];
+        const [ty, tm] = t.split('-').map(Number);
+        const last = new Date(ty, tm, 0).getDate();   // 끝 달의 마지막 날
+        return { from: f + '-01', to: t + '-' + String(last).padStart(2, '0'), f, t };
+    }
+    function closeKomca() { $('komca').hidden = true; if (!$('editor').classList.contains('open')) $('dim').classList.remove('open'); }
+    $('komcaBtn').onclick = () => {
+        $('komca').hidden = false; $('dim').classList.add('open');
+        if (!$('kmFrom').value) kmQuick('year'); else loadKomca();
+    };
+    $('kmClose').onclick = closeKomca;
+    $('kmQuick').onclick = e => { const b = e.target.closest('button[data-q]'); if (b) kmQuick(b.dataset.q); };
+    const kmLater = () => { document.querySelectorAll('#kmQuick button').forEach(x => x.classList.remove('on')); clearTimeout(kmTimer); kmTimer = setTimeout(loadKomca, 250); };
+    $('kmFrom').onchange = kmLater; $('kmTo').onchange = kmLater;
+    $('kmOrig').onchange = renderKomca;
+    $('kmTest').onchange = loadKomca;
+    async function loadKomca() {
+        const r = kmRange();
+        if (!r) return;
+        const seq = ++kmSeq;
+        kmRows = null; $('kmXlsx').disabled = true;
+        $('kmBody').innerHTML = '<p class="rk-msg"><i class="fas fa-spinner fa-spin"></i> 판매 기록을 모으고 있어요…</p>';
+        const { data, error } = await sb.rpc('sheet_sales_report', { p_from: r.from, p_to: r.to, p_include_test: $('kmTest').checked });
+        if (seq !== kmSeq) return;   // 그사이 기간을 또 바꿨으면 버림
+        if (error) {
+            $('kmBody').innerHTML = `<p class="rk-msg">판매 기록을 불러오지 못했어요.<br><small>${esc(error.message)} — <code>db/sheet_sales_report.sql</code> 을 Supabase 에 적용했는지 확인해 주세요.</small></p>`;
+            return;
+        }
+        kmRows = data || [];
+        renderKomca();
+    }
+    // 보이는 줄: 자작곡은 '자작곡도 넣기'를 켰을 때만
+    const kmShown = () => (kmRows || []).filter(x => $('kmOrig').checked || kmManaged(x));
+    function kmBySong(rows) {
+        const m = new Map();
+        rows.forEach(x => {
+            const a = m.get(x.sheet_id) || Object.assign({}, x, { downloads: 0, revenue: 0, fee: 0 });
+            a.downloads += x.downloads; a.revenue += x.revenue; a.fee += kmFee(x);
+            m.set(x.sheet_id, a);
+        });
+        return [...m.values()].sort((a, b) => b.downloads - a.downloads || b.revenue - a.revenue || String(a.title).localeCompare(String(b.title), 'ko'));
+    }
+    function kmByMonth(rows) {
+        const m = new Map();
+        rows.forEach(x => {
+            const a = m.get(x.month) || { month: x.month, songs: 0, downloads: 0, revenue: 0, fee: 0 };
+            a.songs += 1; a.downloads += x.downloads; a.revenue += x.revenue; a.fee += kmFee(x);
+            m.set(x.month, a);
+        });
+        return [...m.values()].sort((a, b) => a.month.localeCompare(b.month));
+    }
+    function renderKomca() {
+        if (!kmRows) return;
+        const r = kmRange();
+        const rows = kmShown();
+        const songs = kmBySong(rows), months = kmByMonth(rows);
+        const sum = k => rows.reduce((s, x) => s + (k === 'fee' ? kmFee(x) : x[k]), 0);
+        const noInfo = songs.filter(x => kmManaged(x) && !(x.composer && x.komca_code)).length;
+        const hidOrig = (kmRows || []).filter(x => !kmManaged(x)).length && !$('kmOrig').checked;
+        $('kmXlsx').disabled = !rows.length;
+        const how = `<p class="km-how">${r.f.replace('-', '.')} ~ ${r.t.replace('-', '.')} · 결제 완료된 주문만(테스트 결제${$('kmTest').checked ? ' 포함' : ' 뺌'}, 취소 뺌) · 악보 1개 판매 = 1다운로드 · 매출은 손님이 낸 금액(부가세 포함), 반주 + 기타솔로 묶음은 정가 비율로 나눔<br>`
+            + `예상 사용료는 참고값: 곡·달마다 max(77원 × 다운로드, 매출 × 11%) × 92.76%${hidOrig ? ' · 음저협 저작물 코드가 없는 자작곡은 빠져 있어요' : ''}</p>`;
+        if (!rows.length) { $('kmBody').innerHTML = how + '<p class="rk-msg">이 기간에 팔린 악보가 없어요.</p>'; return; }
+        $('kmBody').innerHTML = how
+            + `<div class="km-stats"><div><small>팔린 곡</small><b>${songs.length}곡</b></div><div><small>다운로드</small><b>${sum('downloads').toLocaleString()}</b></div>`
+            + `<div><small>매출</small><b>${won(sum('revenue'))}</b></div><div><small>예상 사용료</small><b>${won(sum('fee'))}</b></div></div>`
+            + (noInfo ? `<p class="km-warn"><i class="fas fa-triangle-exclamation"></i> 작곡가·음저협 작품코드가 빈 곡이 ${noInfo}곡 있어요. 음저협에 낼 때 채워야 해요(편집 창 '저작권 정보').</p>` : '')
+            + (months.length > 1 ? `<h4 class="km-sub">월별 합계</h4><table class="km-t"><thead><tr><th>달</th><th class="n">곡</th><th class="n">다운로드</th><th class="n">매출</th><th class="n">예상 사용료</th></tr></thead><tbody>`
+                + months.map(x => `<tr><td>${esc(x.month)}</td><td class="n">${x.songs}</td><td class="n">${x.downloads}</td><td class="n">${won(x.revenue)}</td><td class="n">${won(x.fee)}</td></tr>`).join('') + '</tbody></table>' : '')
+            + `<h4 class="km-sub">곡별 합계</h4><table class="km-t"><thead><tr><th>곡</th><th class="hide-m">구분</th><th class="n hide-m">정가</th><th class="n">다운로드</th><th class="n">매출</th><th class="n">예상 사용료</th></tr></thead><tbody>`
+            + songs.map(x => `<tr><td>${esc(x.title)}<br><small>${esc(x.artist || '')}</small></td><td class="hide-m"><small>${esc(kmLabel(x))}</small></td><td class="n hide-m">${won(x.price)}</td>`
+                + `<td class="n">${x.downloads}</td><td class="n">${won(x.revenue)}</td><td class="n">${won(x.fee)}</td></tr>`).join('') + '</tbody></table>';
+    }
+    let xlsxPromise = null;
+    const loadXlsx = () => xlsxPromise || (xlsxPromise = new Promise((res, rej) => {
+        if (window.XLSX) return res();
+        const s = document.createElement('script');
+        s.src = XLSX_SRC; s.onload = () => res(); s.onerror = () => { xlsxPromise = null; rej(new Error('엑셀 도구를 불러오지 못했어요')); };
+        document.head.appendChild(s);
+    }));
+    // 엑셀 통합 문서 만들기 (받기는 아래 단추에서만)
+    function komcaBook() {
+        const r = kmRange(), rows = kmShown();
+        const X = window.XLSX, wb = X.utils.book_new();
+        const add = (name, aoa, widths) => { const ws = X.utils.aoa_to_sheet(aoa); ws['!cols'] = widths.map(w => ({ wch: w })); X.utils.book_append_sheet(wb, ws, name); };
+        const info = x => [x.title, x.title_original || '', x.artist || '', x.composer || '', x.lyricist || '', x.komca_code || '', KIND[x.kind] || x.kind || '', STYLE[x.style] ? STYLE[x.style][0] : (x.style || '')];
+        const head = ['곡명', '원제', '가수(원곡)', '작곡', '작사', '음저협 작품코드', '구분', '악보 종류'];
+        add('곡별·월별', [['정산월', ...head, '정가(원)', '다운로드 수', '매출(원)', '예상 사용료(원)'],
+            ...rows.slice().sort((a, b) => a.month.localeCompare(b.month) || String(a.title).localeCompare(String(b.title), 'ko'))
+                .map(x => [x.month, ...info(x), x.price, x.downloads, x.revenue, kmFee(x)])], [9, 28, 22, 20, 14, 14, 14, 8, 10, 9, 10, 11, 13]);
+        add('곡별 합계', [[...head, '정가(원)', '다운로드 수', '매출(원)', '예상 사용료(원)'],
+            ...kmBySong(rows).map(x => [...info(x), x.price, x.downloads, x.revenue, x.fee])], [28, 22, 20, 14, 14, 14, 8, 10, 9, 10, 11, 13]);
+        add('월별 합계', [['정산월', '곡 수', '다운로드 수', '매출(원)', '예상 사용료(원)'],
+            ...kmByMonth(rows).map(x => [x.month, x.songs, x.downloads, x.revenue, x.fee])], [9, 7, 10, 11, 13]);
+        add('안내', [
+            ['안쌤의 기타나무숲 (ahnssamguitar.com) — TAB악보 PDF 다운로드 판매 기록'],
+            ['기간', `${r.from} ~ ${r.to}`],
+            ['뽑은 날', new Date().toLocaleString('ko-KR')],
+            ['다운로드 수', '결제 완료된 주문에 든 악보 1개 = 1다운로드 (같은 손님이 다시 받은 것은 세지 않음)'],
+            ['매출', '손님이 낸 결제 금액(부가세 포함). 같은 곡 반주 + 기타솔로를 함께 사서 할인된 주문은 주문 금액을 정가 비율로 나눔'],
+            ['달', '결제 승인 시각(한국 시간) 기준'],
+            ['뺀 것', ['취소된 주문', $('kmTest').checked ? '' : '테스트 결제', $('kmOrig').checked ? '' : '음저협에 맡기지 않은 자작곡(음저협 저작물 코드 없음)'].filter(Boolean).join(', ')],
+            ['예상 사용료', '참고값 — 곡·달마다 max(77원 × 다운로드 수, 매출 × 11%) × 92.76%'],
+        ], [14, 90]);
+        return wb;
+    }
+    $('kmXlsx').onclick = async () => {
+        const r = kmRange(); if (!r || !kmShown().length) return;
+        const b = $('kmXlsx'); b.disabled = true;
+        try { await loadXlsx(); window.XLSX.writeFile(komcaBook(), `음저협정산_${r.f}_${r.t}.xlsx`); }
+        catch (e) { alert(e.message || '엑셀 파일을 만들지 못했어요.'); }
+        finally { b.disabled = false; }
+    };
+    window.__komcaBook = komcaBook;   // 확인용: 받지 않고 통합 문서만 만들어 볼 때
 
     // ---------- 뭐부터 올리지? (풀스코어 판매 순위 → 다음에 올릴 악보) ----------
     // 순위 = sheet_sales 표 (db/sheet_sales.sql, 운영 계정만 읽음). 체크 = 사이트에 PDF 를 올린 곡.

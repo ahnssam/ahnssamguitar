@@ -282,7 +282,7 @@
         const name = [t + (pt ? ' [' + pt + ']' : ''), a, '악보나무숲'].filter(Boolean).join('_') + '.pdf';
         const { data, error } = await auth().supabase.storage.from('sheet-pdfs')
             .createSignedUrl(sheetId + (full ? '-full' : '') + '.pdf', 60, { download: name });
-        if (error || !data) { alert('파일을 내려받지 못했어요. 구매한 계정으로 로그인했는지 확인해 주세요.'); return false; }
+        if (error || !data) { alert('파일을 내려받지 못했어요. 구매한 계정으로 로그인했는지, 구매일로부터 1년이 지나지 않았는지 확인해 주세요.'); return false; }
         window.location.href = data.signedUrl;
         return true;
     }
@@ -293,10 +293,13 @@
         const t = clean(title) || '악보', a = clean(artist) || '안큐', pt = clean(full ? '반주+기타솔로' : part);
         const name = [t + (pt ? ' [' + pt + ']' : ''), a, '악보나무숲'].filter(Boolean).join('_') + '.pdf';
         const r = await guestCall(Object.assign({ action: 'download', orderId: o.orderId, sheetId, full: !!full, name }, cred(o)));
+        if (r && r.error === 'expired') { alert('다시 받을 수 있는 기간(구매일로부터 1년)이 지났어요.'); return false; }
         if (!r || !r.ok || !r.url) { alert('파일을 내려받지 못했어요. 주문번호와 이메일을 확인해 주세요.'); return false; }
         window.location.href = r.url;
         return true;
     }
+    // 주문번호를 잊은 비회원 — 그 이메일로 산(아직 받을 수 있는) 주문을 메일로 받는다. 주문이 없어도 서버는 똑같이 ok
+    function guestResend(email) { return guestCall({ action: 'resend', email }); }
 
     async function myPurchases() {
         await ready();
@@ -325,5 +328,7 @@
     }
 
     window.ahnssamCheckout = { ready, buy, download, myPurchases, confirm, canPay, trialOnly, isTest, isAdmin, returnSheet,
-        guestOrders, guestOrder, rememberGuest: saveGuest, rememberGuestPayment, guestList, guestDownload };
+        guestOrders, guestOrder, rememberGuest: saveGuest, rememberGuestPayment, guestList, guestDownload, guestResend,
+        // 다시 받을 수 있는 구매인지 (구매일로부터 1년, db/sheet_download_1y.sql). expires_at 이 없으면(예전 서버) 받을 수 있다고 본다
+        canRedownload: x => !x || !x.expires_at || Date.parse(x.expires_at) > Date.now() };
 })();

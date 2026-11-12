@@ -3,8 +3,11 @@
 // 비회원 주문(user_id 없음, guest_email 있음 — db/sheet_guest_orders.sql)은 로그인 없이 승인하고,
 // sheet_purchases 대신 결제 완료된 주문 자체로 내려받는다(Edge Function guest-order).
 // 비밀 키는 Supabase Edge Function Secrets 의 TOSS_SECRET_KEY (test_sk_… 면 테스트 결제).
-// 배포: verify_jwt=false (새 API 키 방식이라 함수 안에서 직접 로그인 확인)
+// 배포: verify_jwt=false (새 API 키 방식이라 함수 안에서 직접 로그인 확인). ../_shared/guest-mail.ts 도 같이 올린다.
+// 비회원 주문은 승인되면 주문할 때 적은 이메일로 주문 메일을 보낸다(2026-11-12, db/sheet_guest_mail.sql).
+// 회원이 1년 지난 악보를 다시 사면 구매 기록의 주문번호·구매 시각을 새것으로 바꾼다(db/sheet_download_1y.sql).
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { sendGuestMail } from '../_shared/guest-mail.ts';
 
 const ADMIN_EMAIL = 'steveq2568@gmail.com';
 const cors = {
@@ -101,22 +104,32 @@ Deno.serve(async (req) => {
     return json({ error: 'confirm_failed', code: pay.code, message: pay.message }, 400);
   }
 
-  const { error: upErr } = await db.from('sheet_orders').update({
+  const paid = {
     status: 'paid',
     is_test: isTest,
     payment_key: paymentKey,
     method: pay.method ?? null,
     approved_at: pay.approvedAt ?? new Date().toISOString(),
     receipt_url: pay.receipt?.url ?? null,
-  }).eq('order_id', orderId);
-  // 한 주문에 악보 여러 개(반주 + 기타솔로 등)면 sheet_ids 전부, 예전 주문은 sheet_id 하나. 비회원은 주문 자체가 기록
+  };
+  const { error: upErr } = await db.from('sheet_orders').update(paid).eq('order_id', orderId);
+  // 한 주문에 악보 여러 개(반주 + 기타솔로 등)면 sheet_ids 전부, 예전 주문은 sheet_id 하나. 비회원은 주문 자체가 기록.
+  // 이미 기록이 있으면(1년이 지나 다시 산 악보) 주문번호·구매 시각을 새것으로 — 그날부터 다시 1년 받을 수 있다.
   const ids: string[] = Array.isArray(order.sheet_ids) && order.sheet_ids.length ? order.sheet_ids : [order.sheet_id];
+  const now = new Date().toISOString();
   const { error: purErr } = guest ? { error: null } : await db.from('sheet_purchases')
-    .upsert(ids.map((id) => ({ user_id: order.user_id, sheet_id: id, order_id: orderId })), { onConflict: 'user_id,sheet_id', ignoreDuplicates: true });
+    .upsert(ids.map((id) => ({ user_id: order.user_id, sheet_id: id, order_id: orderId, created_at: now })), { onConflict: 'user_id,sheet_id' });
   if (upErr || purErr) {
     // 돈은 빠졌는데 기록이 안 된 경우 — 로그를 남기고 사용자에게 문의 안내
     console.error('record failed', orderId, upErr?.message, purErr?.message);
     return json({ error: 'record_failed', order_id: orderId }, 500);
+  }
+  // 비회원: 주문 메일 (실패해도 결제는 끝난 것 — 손님은 화면의 주문번호로 받을 수 있다). 응답은 기다리지 않고 뒤에서 보낸다.
+  if (guest) {
+    const task = sendGuestMail(db, [{ ...order, ...paid }], 'paid').catch((e) => { console.error('guest mail', orderId, String(e)); return false; });
+    // deno-lint-ignore no-explicit-any
+    const rt = (globalThis as any).EdgeRuntime;
+    if (rt && typeof rt.waitUntil === 'function') rt.waitUntil(task); else await task;
   }
   return done();
 });
