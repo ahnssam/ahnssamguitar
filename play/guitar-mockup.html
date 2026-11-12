@@ -93,6 +93,10 @@
     /* +10부터 기타 뒤 아우라 (2026-11-12 사용자: 그 기타 색상의 오로라 같은 게 흔들흔들). 색은 그림에서 가장 많이 쓰인 선명한 색(--ah 색상각) */
     /* 2026-11-12 사용자: 아우라가 너무 크다, 기타 주변에서 더 빛나게 → 커튼은 기타 폭만큼 작게, 기타 테두리가 그 색으로 빛난다(.stage.glow #cv) */
     .stage { --ah: 45; }
+    .shopcat { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 4px 0 12px; background: #e6ede9; padding: 3px; border-radius: 12px; }
+    .shopcat button { padding: 8px 0; border-radius: 9px; font-weight: 800; font-size: 13px; color: #5a6b62; display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .shopcat button.on { background: #fff; color: var(--green-deep); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
+    @media (max-width: 400px) { .shopcat button i { display: none; } .shopcat button { font-size: 12.5px; } }
     .stage .aura { position: absolute; z-index: 0; left: 50%; top: 50%; width: 46%; height: 72%; transform: translate(-50%, -50%); pointer-events: none; opacity: 0; transition: opacity .8s; filter: blur(10px); mix-blend-mode: screen; }
     .stage .aura.on { opacity: .55; }
     .stage .aura.l15 { opacity: .7; }
@@ -461,12 +465,12 @@ const ODDS = [[100, 0, 0], [95, 5, 0], [90, 10, 0], [82, 18, 0], [75, 25, 0], [6
 // 강화 비용(그 단계에서 한 번 누를 때)과 판매가. +10 에서 파는 게 누른 횟수당 가장 많이 남고(약 125G),
 // 그 위는 한 단계마다 기대값이 조금씩 손해인 도박이 되게 맞췄다(스트로보 튜너를 잘 맞히면 거의 본전).
 const COST = [0, 10, 20, 40, 70, 120, 200, 300, 450, 700, 1000, 1400, 2000, 2800, 3800, 5000, 6500, 8500, 11000, 14000];
-// 2026-11-12 사용자: 단계가 오를수록 판 값을 더 → 예전 값 × (1 + 0.07 × 단계) (+10 1.7배 · +20 2.4배 — 처음 0.05에서 '살짝 더 인플레')
+// 2026-11-12 사용자: 단계가 오를수록 판 값을 더 → 0.05 → 0.07 → '금액 단위를 단계 올라갈수록 더' → 예전 값 × 1.09^단계 (+10 2.4배 · +20 5.6배)
 const SELL = [0, 30, 80, 180, 350, 700, 1300, 2400, 4200, 7500, 13000, 20000, 32000, 51000, 83000, 140000, 250000, 450000, 850000, 1700000, 3700000]
-    .map((v, i) => { const x = v * (1 + 0.07 * i); return x < 1000 ? Math.round(x / 10) * 10 : x < 100000 ? Math.round(x / 100) * 100 : Math.round(x / 1000) * 1000; });
+    .map((v, i) => { const x = v * Math.pow(1.09, i); return x < 1000 ? Math.round(x / 10) * 10 : x < 100000 ? Math.round(x / 100) * 100 : Math.round(x / 1000) * 1000; });
 const MAX = 20;
 const START_GOLD = 500, DAILY_GOLD = 1000, DAILY_PICKS = 10,   // 출석: 골드 + 놀이터 피크 10 (2026-11-12 사용자 요청, 피크 하루 200 한도 안에서)
-      CASE_SHARDS = 50, BT_DAY = 10;
+      CASE_SHARDS = 20, BT_DAY = 10;
 // 맨 처음 '기타 찾기'만 놀이터 피크로 한다(2026-11-12 사용자 결정). 그다음부터 작업대가 비면 기타 찾기는 공짜
 // 두 번째부터 '시작'(기타 찾기)은 골드 FIND_GOLD (2026-11-12 사용자: 50G는 싸다 → 300G).
 //   +4에서 팔면(350G) 손해, +5(700G)는 가야 남는다. 출석 1,000G면 세 번. 골드가 모자라면 공짜가 아니라 피크 FIRST_PICKS개로 시작한다
@@ -538,32 +542,32 @@ const GEAR = {
 //   어차피 맘에 안 드는 거 뜨면 버리니까"). 그림이 정사각형(448×448)이라 sq — 캔버스 아래쪽에 세워 그린다. 랭킹 계열 이름은 amp·multi
 // 2026-11-12: 레스폴·슈퍼스트랫·통기타·베이스·앰프 +10~+20 그림이 들어왔다(텔레는 아직 +9까지). 멀티는 +20만 먼저(extra)
 FAMS.amp = { name: '앰프', art: 'amp', artMax: 20, sq: true, names: GEAR.amp.names };
-FAMS.multi = { name: '멀티이펙터', art: 'fx', artMax: 9, extra: [20], sq: true, names: GEAR.fx.names };
+FAMS.multi = { name: '멀티이펙터', art: 'fx', artMax: 20, sq: true, names: GEAR.fx.names };   // 2026-11-12 +0~+19도 받음(+0~+9는 색을 입혀 다시 뽑은 것)
 // '시작'에서 나오는 것: 기타 6종 + 앰프 + 멀티, 같은 확률
 const FIND_FAMS = ['strat', 'tele', 'lespaul', 'superstrat', 'acoustic', 'bass', 'amp', 'multi'];
 // 튜너: 바늘이 초록 칸에 있을 때 탭하면 성공 +%p (유지에서 가져오고 파괴는 그대로)
 const TUNERS = [null,
-    { name: '클립 튜너', icon: 'fa-paperclip', price: 3000, bonus: 2, zone: 0.2, period: 1.6, desc: '헤드에 꽂는 작은 튜너. 초록 칸이 좁고 바늘이 빨라요' },
-    { name: '페달 튜너', icon: 'fa-gauge-high', price: 30000, bonus: 4, zone: 0.28, period: 2.0, desc: '발로 밟는 튜너. 칸이 넓어지고 바늘이 느려요' },
-    { name: '스트로보 튜너', icon: 'fa-wave-square', price: 200000, bonus: 6, zone: 0.36, period: 2.4, desc: '칸이 가장 넓고 바늘이 가장 느려요' }];
+    { name: '클립 튜너', icon: 'fa-paperclip', price: 6000, bonus: 2, zone: 0.2, period: 1.6, desc: '헤드에 꽂는 작은 튜너. 초록 칸이 좁고 바늘이 빨라요' },
+    { name: '페달 튜너', icon: 'fa-gauge-high', price: 60000, bonus: 4, zone: 0.28, period: 2.0, desc: '발로 밟는 튜너. 칸이 넓어지고 바늘이 느려요' },
+    { name: '스트로보 튜너', icon: 'fa-wave-square', price: 400000, bonus: 6, zone: 0.36, period: 2.4, desc: '칸이 가장 넓고 바늘이 가장 느려요' }];
 // 작업방 = 진열 벽 하나, 걸이 5개 (2026-11-12 사용자: 가운데는 처음부터, 양쪽 둘씩 넷은 골드로 연다).
 // 처음 거는 기타는 가운데, 그다음은 가운데에서 가까운 열린 걸이부터. 걸이 값은 어느 칸이든 몇 번째로 여느냐로 정한다
 const WALL_N = 5, MID = 2, HANG_ORDER = [2, 1, 3, 0, 4];
-const SLOT_PRICE = [3000, 10000, 30000, 100000];
+const SLOT_PRICE = [6000, 20000, 60000, 200000];   // 2026-11-12 사용자: 상점 값도 올리기 → 두 배 (예전 3천·1만·3만·10만)
 // 진열 벽 스킨(상점에서 바꾼다). x = 걸이 가운데(가로 %), hook = 걸이(세로 %), foot = 기타 아래 끝, plate = 명판 — 그림마다 잰다
 const WALLS = [
     { id: 'wood', name: '초록 나무 벽 작업실', desc: '처음 받는 기본 벽. 걸이마다 작은 조명', src: 'wall_wood.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 0 },
     // 2026-11-12 사용자가 뽑은 스킨들 — 걸이·명판 자리가 모두 기본 벽과 같다. 값은 싼 것부터
-    { id: 'brick', name: '벽돌 로프트', desc: '붉은 벽돌 벽에 에디슨 전구, 구석엔 나무 의자', src: 'wall_brick.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 30000 },
-    { id: 'cabin', name: '통나무 오두막', desc: '통나무 벽에 등불, 창밖엔 눈과 벽난로', src: 'wall_cabin.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 40000 },
-    { id: 'rehearsal', name: '합주실 흡음벽', desc: '검은 흡음재 벽에 빨간 네온 띠, 구석엔 작은 앰프', src: 'wall_rehearsal.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 50000 },
-    { id: 'hanok', name: '한옥 사랑방', desc: '창호지 벽과 나무 격자, 종이 등불, 작은 분재', src: 'wall_hanok.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 80000 },
-    { id: 'vintage', name: '빈티지 기타 가게', desc: '짙은 나무 벽에 놋쇠 그림등, 진열장과 낡은 케이스', src: 'wall_vintage.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 100000 },
-    { id: 'showroom', name: '명품 쇼룸', desc: '호두나무 벽에 붉은 벨벳, 금빛 조명과 걸이', src: 'wall_showroom.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 150000 },
-    { id: 'neon', name: '네온 신스웨이브', desc: '보랏빛 네온 격자에 분홍·청록 형광등, 노을 창', src: 'wall_neon.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 200000 },
-    { id: 'stage', name: '콘서트 무대', desc: '검은 막과 붉은 커튼, 분홍·청록·주황 무대 조명', src: 'wall_stage.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 250000 },
-    { id: 'space', name: '우주 정거장', desc: '회색 패널에 파란 빛줄기, 둥근 창 너머 별과 행성', src: 'wall_space.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 350000 },
-    { id: 'shrine', name: '별빛 신전', desc: '남빛 돌벽에 별빛 깃발, 은빛 조명', src: 'wall_shrine.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 500000 },
+    { id: 'brick', name: '벽돌 로프트', desc: '붉은 벽돌 벽에 에디슨 전구, 구석엔 나무 의자', src: 'wall_brick.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 60000 },
+    { id: 'cabin', name: '통나무 오두막', desc: '통나무 벽에 등불, 창밖엔 눈과 벽난로', src: 'wall_cabin.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 80000 },
+    { id: 'rehearsal', name: '합주실 흡음벽', desc: '검은 흡음재 벽에 빨간 네온 띠, 구석엔 작은 앰프', src: 'wall_rehearsal.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 100000 },
+    { id: 'hanok', name: '한옥 사랑방', desc: '창호지 벽과 나무 격자, 종이 등불, 작은 분재', src: 'wall_hanok.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 160000 },
+    { id: 'vintage', name: '빈티지 기타 가게', desc: '짙은 나무 벽에 놋쇠 그림등, 진열장과 낡은 케이스', src: 'wall_vintage.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 200000 },
+    { id: 'showroom', name: '명품 쇼룸', desc: '호두나무 벽에 붉은 벨벳, 금빛 조명과 걸이', src: 'wall_showroom.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 300000 },
+    { id: 'neon', name: '네온 신스웨이브', desc: '보랏빛 네온 격자에 분홍·청록 형광등, 노을 창', src: 'wall_neon.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 400000 },
+    { id: 'stage', name: '콘서트 무대', desc: '검은 막과 붉은 커튼, 분홍·청록·주황 무대 조명', src: 'wall_stage.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 500000 },
+    { id: 'space', name: '우주 정거장', desc: '회색 패널에 파란 빛줄기, 둥근 창 너머 별과 행성', src: 'wall_space.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 700000 },
+    { id: 'shrine', name: '별빛 신전', desc: '남빛 돌벽에 별빛 깃발, 은빛 조명', src: 'wall_shrine.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 1000000 },
 ];
 
 const fam = g => FAMS[g.f] || FAMS.strat;
@@ -1670,28 +1674,30 @@ async function fight(id) {
 }
 
 // ---------- 상점 ----------
+// 상점: 카테고리 단추를 누르면 그 칸만 (2026-11-12 사용자: 아래로 쭉 늘어선 목록 말고)
+let shopCat = 'tuner';
+const SHOP_CATS = [['tuner', 'fa-gauge-high', '튜너'], ['case', 'fa-briefcase', '하드케이스'], ['skin', 'fa-image', '벽 스킨'], ['rec', 'fa-chart-simple', '내 기록']];
 function renderShop() {
     updBar();
     const el = $('#tab-shop'), st = S.st;
-    let h = '<h3>튜너</h3>';
-    h += TUNERS.slice(1).map((T, i) => {
+    let h = `<div class="shopcat">${SHOP_CATS.map(([k, ic, t]) => `<button type="button" data-a="shopcat" data-c="${k}" class="${shopCat === k ? 'on' : ''}"><i class="fas ${ic}"></i>${t}</button>`).join('')}</div>`;
+    if (shopCat === 'tuner') h += TUNERS.slice(1).map((T, i) => {
         const n = i + 1, own = S.tuner >= n;
         return `<div class="item"><span class="ic t${n}"><i class="fas ${T.icon}"></i></span><div class="it"><b>${T.name} · 성공 +${T.bonus}%p</b><small>${T.desc}</small></div>
             ${own ? `<span class="own">${S.tuner === n ? '쓰는 중' : '더 좋은 걸 써요'}</span>` : `<button type="button" data-a="buyT" data-n="${n}" ${S.gold >= T.price ? '' : 'disabled'}>${gf(T.price)}</button>`}</div>`;
-    }).join('');
-    h += `<p class="note2">튜너가 있으면 강화할 때 바늘을 맞춰요. 성공률은 '줄 끊김'에서 가져오고 '부서짐'은 그대로예요. 작업대에서 튜닝을 건너뛸 수도 있어요.</p>`;
-    h += `<h3>하드케이스</h3><div class="item"><span class="ic case"><i class="fas fa-briefcase"></i></span><div class="it"><b>하드케이스 만들기 (지금 ${S.cases}개)</b>
+    }).join('') + `<p class="note2">튜너가 있으면 강화할 때 바늘을 맞춰요. 성공률은 '줄 끊김'에서 가져오고 '부서짐'은 그대로예요. 작업대에서 튜닝을 건너뛸 수도 있어요.</p>`;
+    if (shopCat === 'case') h += `<div class="item"><span class="ic case"><i class="fas fa-briefcase"></i></span><div class="it"><b>하드케이스 만들기 (지금 ${S.cases}개)</b>
         <small>부서진 기타 조각 ${CASE_SHARDS}개 → 하드케이스 1개. 끼워 두면 부서짐을 한 번 막아 줘요.</small><div class="shardbar"><i style="width:${Math.min(100, S.shards / CASE_SHARDS * 100)}%"></i></div></div>
         <button type="button" data-a="craft" ${S.shards >= CASE_SHARDS ? '' : 'disabled'}>${S.shards >= CASE_SHARDS ? '만들기' : `조각 ${S.shards}/${CASE_SHARDS}`}</button></div>`;
-    h += '<h3>진열 벽 스킨</h3>' + WALLS.map(W => {
+    if (shopCat === 'skin') h += WALLS.map(W => {
         const own = S.skins.includes(W.id), use = S.skin === W.id;
         return `<div class="item"><span class="ic skin" style="background-image:url(../images/play/gk/${W.src})"></span><div class="it"><b>${W.name}</b><small>${W.desc}</small></div>
             ${use ? '<span class="own">쓰는 중</span>' : own ? `<button type="button" data-a="skin" data-id="${W.id}">바꾸기</button>` : `<button type="button" data-a="skin" data-id="${W.id}" ${S.gold >= W.price ? '' : 'disabled'}>${gf(W.price)}</button>`}</div>`;
     }).join('') + (WALLS.length < 2 ? '<p class="note2">다른 스킨은 그림이 생기면 더해요. 걸이는 컬렉션에서 잠긴 걸이를 눌러 열어요.</p>' : '');
-    h += `<h3>내 기록</h3><div class="stats">
+    if (shopCat === 'rec') h += `<div class="stats">
         <div><b>+${st.best}</b><small>최고 단계</small></div><div><b>${st.tries.toLocaleString()}</b><small>강화</small></div><div><b>${st.boom.toLocaleString()}</b><small>부순 기타</small></div>
         <div><b>${st.keep.toLocaleString()}</b><small>끊은 줄</small></div><div><b>${st.saved.toLocaleString()}</b><small>케이스로 막음</small></div><div><b>${gf(st.earned)}</b><small>판 돈 (${st.sold}대)</small></div></div>
-        <p class="note2">진행은 이 브라우저에만 저장돼요. 다른 기기나 다른 브라우저에서는 처음부터 시작해요. 놀이터 피크와 골드는 따로예요.</p>
+        <p class="note2">진행은 이 브라우저에 저장되고, 로그인하면 계정에도 저장돼서 다른 기기에서도 이어서 해요(위 구름 단추). 놀이터 피크와 골드는 따로예요.</p>
         <button type="button" class="reset" data-a="reset">기록 지우고 처음부터</button>`;
     el.innerHTML = h;
 }
@@ -1704,6 +1710,7 @@ $('#app').addEventListener('click', e => {
     if (busy) return;
     const a = b.dataset.a, id = b.dataset.id;
     if (a === 'again') enhance();
+    else if (a === 'shopcat') { shopCat = b.dataset.c; renderShop(); }
     else if (a === 'dex') toast(`+${b.dataset.lv} ${FAMS[b.dataset.f].names[+b.dataset.lv]}`);
     else if (a === 'new') findGuitar(false);
     else if (a === 'newp') findGuitar(false, true);
