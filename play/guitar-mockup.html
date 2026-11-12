@@ -49,6 +49,8 @@
     .cloudask button.pick2 b { display: block; font-size: 15px; }
     .cloudask button.pick2 small { color: var(--sub); font-size: 12.5px; }
     .cloudask button.pick2:hover { border-color: #2f9e5f; }
+    .cloudask button.pick2.best { background: #e9f6ee; border-color: #9fd6b4; }
+    .cloudask button.pick2.best b { color: #1f6b44; }
     .cloudask .later { display: block; margin: 4px auto 0; color: var(--sub); font-size: 12.5px; background: none; border: 0; text-decoration: underline; }
     .iconbtn { width: 34px; height: 34px; border-radius: 50%; background: #fff; border: 1.5px solid var(--line); display: grid; place-items: center; color: #555; flex: none; }
 
@@ -68,6 +70,9 @@
     .wall5 .gear.up { animation: gearUp .9s ease-in-out; }
     @keyframes gearUp { 0%, 100% { transform: none; } 15%, 45%, 75% { transform: rotate(-3deg) scale(1.03); } 30%, 60%, 90% { transform: rotate(3deg) scale(1.03); } }
     .gearbox { display: grid; gap: 8px; margin-top: 10px; }
+    .storebox { margin-top: 12px; }
+    .storebox h4 { margin: 0 2px 8px; font-size: 15px; }
+    .storebox h4 small { color: var(--sub); font-weight: 600; font-size: 12px; margin-left: 4px; }
     .gearbox .gr { display: grid; grid-template-columns: 56px 1fr auto; gap: 10px; align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 8px 10px; }
     .gearbox .gr img { width: 56px; height: 56px; object-fit: contain; background: #1c2a25; border-radius: 10px; }
     .gearbox .gr b { display: block; font-size: 14px; }
@@ -442,6 +447,7 @@ const START_GOLD = 500, DAILY_GOLD = 1000, DAILY_PICKS = 10,   // 출석: 골드
 //   (사용자: "골드 모자라면 다른 놀이터 게임 하고 와서 피크 벌어 오면 되지") — 피크도 없으면 놀이터·출석으로 안내
 const FIND_GOLD = 300;
 const FIRST_PICKS = 3;   // 2026-11-12 사용자: 50개 말고 3개(퀴즈·월드컵 한 판이면 찾을 수 있게)
+const STORE_MAX = 30;   // 창고: 기록을 합칠 때 벽·작업대에 못 둔 기타가 들어간다
 // 단계별 이름 (2026-11-12 사용자와 정함): +0~+9 개그 → +10부터 신비한 느낌 → +20은 그 기타로 유명한 기타리스트 이름을 살짝 바꿔서.
 // 계열마다 이름표를 따로 둔다(레스폴 +20 은 '게리 무르의 레스폴' 예정). 아예 다른 물건(주전자 등)은 나중에 '첫 기타 찾기' 랜덤으로 (CLAUDE.md 11절)
 const FAMS = { strat: { name: '스트랫', names: [
@@ -542,7 +548,7 @@ const rid = () => Math.random().toString(36).slice(2, 9);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ---------- 저장 (이 브라우저) ----------
-const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [null, null, null, null, null], open: [false, false, true, false, false], skin: 'wood', skins: ['wood'], dex: {}, gear: { amp: 0, fx: 0 }, rep: '', shards: 0, cases: 0, caseOn: false, tuner: 0, tuneOn: true, daily: '', nick: '', intro: false, first: false,
+const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [null, null, null, null, null], open: [false, false, true, false, false], skin: 'wood', skins: ['wood'], dex: {}, gear: { amp: 0, fx: 0 }, store: [], rep: '', shards: 0, cases: 0, caseOn: false, tuner: 0, tuneOn: true, daily: '', nick: '', intro: false, first: false,
     bt: { day: '', n: 0, done: {} }, st: { tries: 0, ok: 0, keep: 0, boom: 0, saved: 0, sold: 0, earned: 0, best: 0, win: 0, lose: 0 } });
 const okG = g => g && typeof g === 'object' && Number.isInteger(g.lv) && g.lv >= 0 && g.lv <= MAX && typeof g.id === 'string';
 function load() {
@@ -554,6 +560,7 @@ function load() {
     s.st = Object.assign(f.st, s.st || {});
     s.bt = Object.assign(f.bt, s.bt || {});
     if (!okG(s.bench)) s.bench = null;
+    s.store = (Array.isArray(s.store) ? s.store : []).filter(okG).slice(0, STORE_MAX);   // 창고(계정 합치기로 벽에 다 못 건 기타)
     if (Array.isArray(raw.open) && raw.open.length === WALL_N) {
         s.open = raw.open.map(Boolean); s.open[MID] = true;
         s.wall = Array.from({ length: WALL_N }, (_, i) => s.open[i] && Array.isArray(raw.wall) && okG(raw.wall[i]) ? raw.wall[i] : null);
@@ -605,7 +612,7 @@ async function cloudPush() {
     } catch (e) { if (e && e.status === 404) cloudOff = true; }   // 아직 DB 적용 전
     cloudBusy = false; cloudBtn();
 }
-const localEmpty = () => !S.first && !S.bench && !S.wall.some(Boolean);
+const localEmpty = () => !S.first && !S.bench && !S.wall.some(Boolean) && !S.store.length;
 function adopt(srv, uid) {
     mem.set('gk', srv.data); S = load();
     cloud = { uid, rev: srv.rev, dirty: false, at: Date.now() }; mem.set('gk.cloud', cloud);
@@ -615,6 +622,30 @@ function linkUp(uid, rev) {
     if (!S.rk) S.rk = PLAY.myKey();
     cloud = { uid, rev, dirty: true }; mem.set('gk', S); mem.set('gk.cloud', cloud);
     cloudPush().then(() => { if (linked() && !cloud.dirty) toast('이 기록을 계정에 저장했어요. 다른 기기에서도 이어서 할 수 있어요'); });
+}
+// 이 기기 기록 + 계정 기록 합치기 (2026-11-12 사용자: 로그인 없이 잘 뜬 악기를 계정에 '추가'할 수도 있어야)
+//   기타: 계정 것 그대로 + 이 기기 기타(작업대·벽·창고)를 빈 작업대 → 빈 걸이 → 창고 순으로. 골드·조각·케이스·기록은 더하고,
+//   도감·스킨은 합치고, 걸이·튜너·장비는 높은 쪽. 출석·배틀 횟수는 계정 쪽 그대로
+function mergeSaves(here, acct) {
+    mem.set('gk', acct); const A = load(); mem.set('gk', here); const H = load();
+    const ids = new Set([A.bench, ...A.wall, ...A.store].filter(Boolean).map(g => g.id));
+    const mine = [H.bench, ...H.wall, ...H.store].filter(Boolean).map(g => ids.has(g.id) ? { ...g, id: rid() } : g);
+    A.open = A.open.map((o, i) => o || H.open[i]);
+    for (const g of mine.sort((a, b) => b.lv - a.lv)) {
+        if (!A.bench) { A.bench = g; continue; }
+        const slot = HANG_ORDER.find(i => A.open[i] && !A.wall[i]);
+        if (slot != null) { A.wall[slot] = g; continue; }
+        if (A.store.length < STORE_MAX) A.store.push(g); else A.gold += SELL[g.lv];   // 창고도 꽉 차면 판 값으로
+    }
+    A.gold += H.gold; A.shards += H.shards; A.cases += H.cases;
+    for (const [f, bits] of Object.entries(H.dex)) A.dex[f] = (A.dex[f] | 0) | (bits | 0);
+    A.skins = [...new Set([...A.skins, ...H.skins])];
+    A.tuner = Math.max(A.tuner, H.tuner);
+    A.gear = { amp: Math.max(A.gear.amp, H.gear.amp), fx: Math.max(A.gear.fx, H.gear.fx) };
+    for (const k of Object.keys(A.st)) A.st[k] = k === 'best' ? Math.max(A.st.best, H.st.best) : (A.st[k] | 0) + (H.st[k] | 0);
+    A.first = A.first || H.first; A.rk = A.rk || H.rk; A.nick = A.nick || H.nick;
+    if (H.daily === today()) A.daily = today();
+    return A;
 }
 function saveSum(d) {   // 고르기 창에 보일 요약: 가장 높은 기타 · 골드 · 도감
     const gs = [d.bench, ...(Array.isArray(d.wall) ? d.wall : [])].filter(g => g && Number.isInteger(g.lv));
@@ -626,14 +657,21 @@ function askWhich(srv, uid) {
     if (document.querySelector('.cloudask')) return;
     const m = document.createElement('div');
     m.className = 'cloudask';
-    m.innerHTML = `<div class="in"><h3>어느 기록으로 할까요?</h3><p>이 기기에서 한 기록과 계정에 저장된 기록이 달라요. 고른 쪽으로 이어서 하고, 다른 쪽은 지워져요.</p>
-        <button type="button" class="pick2" data-w="here"><b>이 기기 기록</b><small>${esc(saveSum(S))}</small></button>
-        <button type="button" class="pick2" data-w="acct"><b>계정 기록</b><small>${esc(saveSum(srv.data || {}))} · ${new Date(srv.updated_at).toLocaleDateString('ko-KR')} 저장</small></button>
+    m.innerHTML = `<div class="in"><h3>계정에 이미 기록이 있어요</h3><p>이 기기에서 한 기록과 계정 기록이 달라요. 합치거나 한쪽만 고를 수 있어요(한쪽만 고르면 다른 쪽은 지워져요).</p>
+        <button type="button" class="pick2 best" data-w="merge"><b>둘 다 합치기 (추천)</b><small>기타는 모두 모으고(벽에 다 못 걸면 창고로), 골드·조각·도감도 합쳐요</small></button>
+        <button type="button" class="pick2" data-w="acct"><b>계정 기록만</b><small>${esc(saveSum(srv.data || {}))} · ${new Date(srv.updated_at).toLocaleDateString('ko-KR')} 저장</small></button>
+        <button type="button" class="pick2" data-w="here"><b>이 기기 기록만</b><small>${esc(saveSum(S))}</small></button>
         <button type="button" class="later">나중에 고르기 (그동안 계정에 저장 안 됨)</button></div>`;
     m.addEventListener('click', e => {
         const b = e.target.closest('button'); if (!b) return;
         m.remove();
-        if (b.dataset.w === 'acct') adopt(srv, uid);
+        if (b.dataset.w === 'merge') {
+            const M = mergeSaves(S, srv.data || {});
+            mem.set('gk', M); S = load();
+            linkUp(uid, srv.rev); updBar(); setTab(tab);
+            toast('두 기록을 합쳤어요' + (S.store.length ? ` · 벽에 못 건 기타 ${S.store.length}대는 작업방 창고에 있어요` : ''));
+        }
+        else if (b.dataset.w === 'acct') adopt(srv, uid);
         else if (b.dataset.w === 'here') linkUp(uid, srv.rev);
     });
     document.body.appendChild(m);
@@ -1365,6 +1403,16 @@ const wallSkin = () => WALLS.find(w => w.id === S.skin) || WALLS[0];
 const gs = n => n >= 1e4 ? `${+(n / 1e4).toFixed(1)}만G` : n >= 1000 ? `${+(n / 1000).toFixed(1)}천G` : n + 'G';   // 걸이 위 작은 값표
 const openPrice = () => SLOT_PRICE[Math.max(0, S.open.filter(Boolean).length - 1)] || 0;
 let justOpened = -1;
+// 창고: 계정 기록을 합칠 때 벽·작업대에 못 둔 기타. 작업대로 가져오거나(작업대 기타는 창고로), 빈 걸이에 걸거나, 판다
+function storeBox() {
+    if (!S.store.length) return '';
+    const free = HANG_ORDER.some(i => S.open[i] && !S.wall[i]);
+    return `<div class="storebox"><h4><i class="fas fa-box-archive"></i> 창고 <small>${S.store.length}대 · 기록을 합칠 때 벽에 못 건 기타</small></h4>${S.store.map(g => `<div class="grow" id="row-${g.id}">${gc(g.lv, '', 2, g.f)}
+        <div class="gt"><b>${esc(full(g))}</b><small>창고 · 팔면 ${gf(SELL[g.lv])}</small></div>
+        <div class="ga"><button type="button" class="pri" data-a="stake" data-id="${g.id}">${S.bench ? '작업대와 바꾸기' : '작업대로'}</button>
+        <button type="button" data-a="shang" data-id="${g.id}" ${free ? '' : 'disabled'}>벽에 걸기</button>
+        <button type="button" data-a="ssell" data-id="${g.id}" ${g.lv ? '' : 'disabled'}>팔기</button></div></div>`).join('')}</div>`;
+}
 // 바닥 장비: 앰프는 오른쪽 아래 구석, 멀티이펙터는 그 왼쪽 바닥
 let gearSel = '';
 function gearFloor() {
@@ -1423,7 +1471,7 @@ function renderRoom(enter) {
     el.innerHTML = `<div class="wall5 ${enter ? 'enter' : ''}" style="aspect-ratio:${W.w} / ${W.h}">
         <img class="bg" src="../images/play/gk/${W.src}" alt="작업방 진열 벽">${slots}${gearFloor()}</div>
         <p class="rinfo">걸이 <b>${nOpen}/${WALL_N}</b> 열림 · 기타 <b>${hung.length}</b>대 · 대표 기타: <b>${rp ? esc(full(rp)) : '없음'}</b></p>
-        ${gearBox()}
+        ${gearBox()}${storeBox()}
         <div class="glist">${rows.length ? rows.join('') : '<p class="note2">아직 걸린 기타가 없어요. 작업대에서 \'벽에 걸기\'를 누르면 가운데 걸이에 걸려요. 걸어 둔 기타 중 하나가 대표 기타로 배틀에 나가요.</p>'}</div>
         <p class="note2">${nOpen < WALL_N ? `양쪽 잠긴 걸이는 눌러서 골드로 열어요 (${SLOT_PRICE.map(gf).join(' → ')}, 어느 칸이든 여는 순서대로). ` : '걸이를 모두 열었어요. '}진열 벽 스킨은 상점에서 바꿔요.</p>`;
     paintAll(el);
@@ -1631,6 +1679,17 @@ $('#app').addEventListener('click', e => {
         if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = gf(SELL[g.lv]) + '에 팔기?'; return; }
         S.wall[i] = null; S.gold += SELL[g.lv]; S.st.sold++; S.st.earned += SELL[g.lv];
         if (S.rep === g.id) S.rep = '';
+        save(); sfx('sell'); renderRoom(); updBar(true); toast(`${full(g)}을(를) ${gf(SELL[g.lv])}에 팔았어요`);
+    } else if (a === 'stake' || a === 'shang' || a === 'ssell') {   // 창고
+        const i = S.store.findIndex(g => g.id === id); if (i < 0) return;
+        const g = S.store[i];
+        if (a === 'stake') { if (S.bench) S.store[i] = S.bench; else S.store.splice(i, 1); S.bench = g; save(); setTab('bench'); sfx('drop'); return; }
+        if (a === 'shang') {
+            const slot = HANG_ORDER.find(k => S.open[k] && !S.wall[k]); if (slot == null) { toast('빈 걸이가 없어요'); return; }
+            S.store.splice(i, 1); S.wall[slot] = g; save(); sfx('hang'); renderRoom(); toast('벽에 걸었어요'); return;
+        }
+        if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = gf(SELL[g.lv]) + '에 팔기?'; return; }
+        S.store.splice(i, 1); S.gold += SELL[g.lv]; S.st.sold++; S.st.earned += SELL[g.lv]; if (S.rep === g.id) S.rep = '';
         save(); sfx('sell'); renderRoom(); updBar(true); toast(`${full(g)}을(를) ${gf(SELL[g.lv])}에 팔았어요`);
     } else if (a === 'fight') fight(id);
     else if (a === 'vslink') { const ni = $('#nick'); if (ni && !setNick(ni.value)) return; challengeLink(); }
