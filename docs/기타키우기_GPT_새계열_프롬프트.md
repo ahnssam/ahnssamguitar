@@ -210,3 +210,86 @@ Original designs only: no logos, and NO text, letters or numbers anywhere - the 
 9. Twice as long: the board stretched to twice the length with two rows of footswitches and a bigger screen.
 10. Changes presets by itself: footswitches lighting up one after another by themselves, faint glowing footprints hovering above the switches, a subtle violet glow - the first hint of something mysterious.
 ```
+
+---
+
+# 통기타 · 베이스 (+0 ~ +9)
+
+2026-11-12 사용자가 "프롬프트에 레스폴류하고 통기타, 베이스 있었어?" — 레스폴은 위에 있었고, 통기타·베이스는 없어서 같은 방식으로 만들었다.
+받으면 `images/play/gk/ac_00`~, `bs_00`~ 로 넣는다(놀이터 베이스 월드컵 사진 `bs-*.jpg`와 이름이 겹치지 않게 밑줄).
+
+## 8. 단계별 이름과 컨셉
+
+### 통기타 — 교회 창고에서 캠프파이어 스타로
+
+| 단계 | 이름 | 그림 |
+|---|---|---|
+| +0 | 교회 창고에서 나온 통기타 | 먼지, 금 간 픽가드, 누런 줄 |
+| +1 | 줄이 너무 높아 손가락 아픈 통기타 | 지판 위로 둥 떠 있는 줄, 반창고 |
+| +2 | 사운드홀에 거미가 사는 통기타 | 사운드홀 안 거미줄과 작은 거미 |
+| +3 | 캠핑장 모닥불 냄새 밴 통기타 | 그을음, 꽂혀 있는 마시멜로 꼬치 |
+| +4 | 스트랩 대신 넥타이를 맨 통기타 | 줄무늬 넥타이 스트랩 |
+| +5 | 사운드홀에서 꽃이 피어난 통기타 | 사운드홀에서 피어난 들꽃 |
+| +6 | 카포가 세 개나 끼워진 통기타 | 넥에 카포 세 개 |
+| +7 | 몸통이 두 배로 커진 점보 통기타 | 커다란 점보 바디 |
+| +8 | 줄이 열두 개로 늘어난 통기타 | 12현, 헤드에 줄감개 열둘 |
+| +9 | 사운드홀에서 별빛이 새어 나오는 통기타 | 사운드홀 안 밤하늘과 새어 나오는 별빛 |
+| (+20 나중) | 에릭 크랩튼의 통기타 | — |
+
+### 베이스 — 아무도 안 듣는 줄 알았던 베이스
+
+| 단계 | 이름 | 그림 |
+|---|---|---|
+| +0 | 동아리방 구석에 버려진 베이스 | 먼지, 떼다 만 스티커 자국 |
+| +1 | 줄이 세 개뿐인 베이스 | 줄 하나 없음, 빈 줄감개 |
+| +2 | 슬랩 하다 엄지 자국 난 베이스 | 칠이 엄지 모양으로 닳음 |
+| +3 | 아무도 소리를 못 듣는 베이스 | 몸통이 반쯤 투명하게 흐려짐 (베이스 농담) |
+| +4 | 프렛이 사라진 베이스 | 프렛 없는 매끈한 지판, 선만 남음 |
+| +5 | 줄이 다섯 개로 늘어난 베이스 | 5현, 넓어진 넥 |
+| +6 | 쿵쿵 울려서 컵이 떨리는 베이스 | 몸통에 스피커 콘, 둥근 저음 물결, 떨리는 물컵 |
+| +7 | 넥이 길게 늘어난 베이스 | 길쭉한 넥(칸 안에 들어오게) |
+| +8 | 몸통이 고래처럼 생긴 베이스 | 고래 모양 몸통, 꼬리 같은 혼 |
+| +9 | 치면 땅이 울리는 베이스 | 바닥 금, 빛나는 지진파 고리 |
+| (+20 나중) | 자코 파스토리오의 베이스 | — |
+
+- +20 이름은 진짜 이름을 살짝 바꾼 것(스트랫 '지미 헨도릭스'와 같음). 바꾸고 싶으면 말해 달라.
+
+## 9. 프롬프트 — 통기타 (+0 ~ +9)
+
+```
+Same art style, same layout and same guitar size as the guitars in this chat (or the attached guitars). Make ONE image, landscape 1536x1024, transparent background: 10 guitars in a grid of 5 columns x 2 rows with lots of empty space between them. Order: top row left to right = guitars 1-5, bottom row left to right = guitars 6-10. Every guitar upright, seen exactly from the front, centered in its cell, all the same size (about 85% of the cell height); keep every effect inside its own cell.
+
+BASE GUITAR (same for all 10, only the described changes differ): a steel-string acoustic guitar with a dreadnought body in natural light spruce, a round soundhole with a simple rosette, a dark teardrop pickguard, a dark bridge with white pins, a rosewood fingerboard, and six tuners (three per side) on an ORIGINAL headstock (not any real brand's headstock shape).
+Original designs only: no logos, and NO text, letters or numbers anywhere.
+
+1. Found in an old church storage room: dusty, a cracked pickguard, yellowed old strings, a few scratches.
+2. Strings too high: the strings floating far above the fingerboard, a small band-aid stuck on the neck.
+3. A spider lives in the soundhole: a little cobweb inside the soundhole with a tiny cute spider.
+4. Smells like a campfire: light soot marks on the body, a toasted marshmallow on a stick tucked under the strings.
+5. Necktie strap: a striped necktie tied on as a strap, hanging in a loop.
+6. Flowers from the soundhole: small wild flowers and leaves growing out of the soundhole.
+7. Three capos: three capos clamped on the neck at different frets.
+8. Jumbo body: the body grown twice as big and rounder (still fitting in the cell), the neck the same.
+9. Twelve strings: twelve strings in pairs and twelve tuners on a longer headstock.
+10. Starlight soundhole: the soundhole shows a tiny night sky inside, soft starlight spilling out and floating around the guitar - the first hint of something mysterious.
+```
+
+## 10. 프롬프트 — 베이스 (+0 ~ +9)
+
+```
+Same art style, same layout and same size as the guitars in this chat (or the attached guitars). Make ONE image, landscape 1536x1024, transparent background: 10 electric bass guitars in a grid of 5 columns x 2 rows with lots of empty space between them. Order: top row left to right = basses 1-5, bottom row left to right = basses 6-10. Every bass upright, seen exactly from the front, centered in its cell, all the same size (about 90% of the cell height, a bit longer than the guitars); keep every effect inside its own cell.
+
+BASE BASS (same for all 10, only the described changes differ): a four-string electric bass with an offset double-cutaway body in three-tone sunburst, a tortoiseshell pickguard, one split pickup and one bridge pickup, a long rosewood neck, and four big tuners in one line on an ORIGINAL headstock (not any real brand's headstock shape).
+Original designs only: no logos, and NO text, letters or numbers anywhere.
+
+1. Abandoned in a club room corner: dusty, faded sunburst, sticky leftover marks from peeled-off stickers.
+2. Only three strings: one string missing, an empty tuner and a curled broken string end.
+3. Slap marks: the paint worn away in thumb-shaped patches near the neck pickup.
+4. Nobody can hear it: the body half transparent and faded like a ghost, as if it is not there (a joke about bass players), the strings still visible.
+5. Frets gone: a smooth fretless fingerboard with only thin lines where the frets were.
+6. Five strings: a wider neck with FIVE strings and five tuners.
+7. Shakes the room: a round speaker cone built into the body, big round low sound waves rippling out, a glass of water beside it shaking with little ripples.
+8. Extra long neck: the neck stretched much longer (the whole bass still fits in the cell).
+9. Whale body: the body shaped like a friendly cartoon whale with a tail-shaped horn, ocean-blue with a white belly.
+10. The ground shakes: cracks in a small patch of ground under it, glowing golden seismic rings spreading out, small pebbles floating - the first hint of something mysterious.
+```

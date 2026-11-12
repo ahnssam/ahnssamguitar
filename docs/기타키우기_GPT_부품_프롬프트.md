@@ -233,6 +233,18 @@ Make skin 1 now. Each time I say "다음", make the next one.
 6. Korean hanok room: warm paper walls with wooden lattice frames, hanging paper lanterns instead of lamps, wooden peg hangers, bronze plates, a small potted pine at one edge.
 ```
 
+- 2026-11-12: 사용자가 1~6을 ChatGPT에서 다 뽑았다. 그중 1 합주실을 상점에 넣었다(`wall_rehearsal.webp`, 5만G). 나머지 그림도 보내 주면 넣는다.
+
+**7~10 더 뽑기** (2026-11-12 사용자: 한옥까지 만들었으니 나머지를). 1~6을 뽑은 **같은 대화**에 붙여 넣는다.
+
+```
+Great. Continue with 4 more skins using exactly the same rules and the same layout template (five hangers in the same positions, one light above each, blank plates, floor strip, NO guitars, no text). Make skin 7 now. Each time I say "다음", make the next one.
+7. Vintage guitar shop: dark varnished wooden wall panels with carved trim, warm brass picture lights instead of spotlights, brass hangers and plates, a glass display case and a stack of old leather guitar cases at the edges.
+8. Neon synthwave: dark purple wall with a glowing pink-and-cyan neon grid, neon tube lights instead of lamps, chrome hangers, glowing plates, a retro sunset window shape at one edge.
+9. Snowy log cabin: rough log wall, small hanging lanterns instead of lamps, wooden peg hangers, iron plates, a frosty window with falling snow and a hint of fireplace glow at the edges.
+10. Space station: white and grey sci-fi panels with blue light strips, small round ceiling lights, metal clamp hangers, glowing blue plates, a round porthole showing stars and a planet at one edge.
+```
+
 ## 6. 나중 계획 — 첫 기타 찾기는 랜덤
 
 - 사용자 결정(2026-11-12): 피크로 처음 '기타 찾기'를 할 때 스트랫이 나올지, 텔레가 나올지, **주전자 같은 아예 다른 물건**이 나올지 모른다. 지금은 개발 첫 단계라 스트랫만 한다.
