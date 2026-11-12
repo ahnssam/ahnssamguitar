@@ -37,6 +37,19 @@
     .daily:not(.got) { animation: dPulse 1.8s ease-in-out infinite; }
     .daily.got { color: #999; background: #f3f4f2; border-color: var(--line); }
     @keyframes dPulse { 50% { box-shadow: 0 0 0 5px rgba(242, 154, 31, 0.18); } }
+    .iconbtn.cloud { color: #b8c4be; }
+    .iconbtn.cloud.on { color: #2f9e5f; border-color: #9fd6b4; }
+    .iconbtn.cloud.busy i { animation: cloudPulse 1s ease-in-out infinite; }
+    @keyframes cloudPulse { 50% { opacity: .35; } }
+    .cloudask { position: fixed; inset: 0; z-index: 60; background: rgba(8, 14, 12, 0.6); display: grid; place-items: center; padding: 16px; }
+    .cloudask .in { width: min(380px, 100%); background: #fff; border-radius: 18px; padding: 18px 16px 14px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35); }
+    .cloudask h3 { margin: 0 0 4px; font-size: 18px; }
+    .cloudask p { margin: 0 0 12px; color: var(--sub); font-size: 13px; line-height: 1.5; }
+    .cloudask button.pick2 { display: block; width: 100%; text-align: left; padding: 11px 12px; border-radius: 12px; border: 1.5px solid var(--line); background: #f7faf8; margin-bottom: 8px; }
+    .cloudask button.pick2 b { display: block; font-size: 15px; }
+    .cloudask button.pick2 small { color: var(--sub); font-size: 12.5px; }
+    .cloudask button.pick2:hover { border-color: #2f9e5f; }
+    .cloudask .later { display: block; margin: 4px auto 0; color: var(--sub); font-size: 12.5px; background: none; border: 0; text-decoration: underline; }
     .iconbtn { width: 34px; height: 34px; border-radius: 50%; background: #fff; border: 1.5px solid var(--line); display: grid; place-items: center; color: #555; flex: none; }
 
     /* 탭 */
@@ -106,7 +119,7 @@
     .empty p { font-size: 15px; font-weight: 700; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
     .empty small { display: block; font-weight: 500; font-size: 12.5px; opacity: 0.85; margin-top: 4px; }
     .empty { padding-bottom: 92px; }   /* 아래 말풍선 자리를 비워 둔다 */
-    .empty .g1 { width: 34px; height: 90px; image-rendering: pixelated; filter: brightness(0) drop-shadow(0 0 8px rgba(255, 226, 122, 0.55)); animation: g1Bob 2.6s ease-in-out infinite; }
+    .empty .g1 { width: 40px; height: auto; filter: drop-shadow(0 0 8px rgba(255, 226, 122, 0.55)); animation: g1Bob 2.6s ease-in-out infinite; }
     @keyframes g1Bob { 50% { transform: translateY(-6px); } }
     .empty .btn small { display: inline-flex; align-items: center; gap: 3px; margin: 0; opacity: 1; font-size: 12.5px; font-weight: 900; background: rgba(0, 0, 0, 0.14); border-radius: 99px; padding: 2px 8px; }
     @media (max-width: 359px) { .empty .g1 { display: none; } .empty { gap: 9px; padding-top: 10px; padding-bottom: 112px; } }   /* 좁으면 말풍선이 세 줄이라 더 비운다 */
@@ -364,6 +377,7 @@
         <span class="res case" id="rCase" title="하드케이스 — 부서짐 1번 막아 줌"><i class="fas fa-briefcase"></i><span>0</span></span>
         <span class="sp"></span>
         <button class="res daily" id="rDaily" type="button" title="하루 한 번: 1,000G + 피크 10"><i class="fas fa-gift"></i><span>출석</span></button>
+        <button class="iconbtn cloud" id="rCloud" type="button" aria-label="계정에 저장"><i class="fas fa-cloud"></i></button>
         <button class="iconbtn" id="rSnd" type="button" aria-label="효과음 켜기/끄기"><i class="fas fa-volume-high"></i></button>
     </div>
     <nav class="gk-tabs" id="tabs">
@@ -423,10 +437,10 @@ const MAX = 20;
 const START_GOLD = 500, DAILY_GOLD = 1000, DAILY_PICKS = 10,   // 출석: 골드 + 놀이터 피크 10 (2026-11-12 사용자 요청, 피크 하루 200 한도 안에서)
       CASE_SHARDS = 50, BT_DAY = 10;
 // 맨 처음 '기타 찾기'만 놀이터 피크로 한다(2026-11-12 사용자 결정). 그다음부터 작업대가 비면 기타 찾기는 공짜
-// 두 번째부터 '시작'(기타 찾기)은 골드 FIND_GOLD (2026-11-12: 사용자가 시작 값 보여 달라고 함 → Claude 추천 50G).
-//   +2에서 팔면(80G) 조금 남고 +1에서 팔면(30G) 손해. 골드가 모자라면 공짜가 아니라 피크 FIRST_PICKS개로 시작한다
+// 두 번째부터 '시작'(기타 찾기)은 골드 FIND_GOLD (2026-11-12 사용자: 50G는 싸다 → 300G).
+//   +4에서 팔면(350G) 손해, +5(700G)는 가야 남는다. 출석 1,000G면 세 번. 골드가 모자라면 공짜가 아니라 피크 FIRST_PICKS개로 시작한다
 //   (사용자: "골드 모자라면 다른 놀이터 게임 하고 와서 피크 벌어 오면 되지") — 피크도 없으면 놀이터·출석으로 안내
-const FIND_GOLD = 50;
+const FIND_GOLD = 300;
 const FIRST_PICKS = 3;   // 2026-11-12 사용자: 50개 말고 3개(퀴즈·월드컵 한 판이면 찾을 수 있게)
 // 단계별 이름 (2026-11-12 사용자와 정함): +0~+9 개그 → +10부터 신비한 느낌 → +20은 그 기타로 유명한 기타리스트 이름을 살짝 바꿔서.
 // 계열마다 이름표를 따로 둔다(레스폴 +20 은 '게리 무르의 레스폴' 예정). 아예 다른 물건(주전자 등)은 나중에 '첫 기타 찾기' 랜덤으로 (CLAUDE.md 11절)
@@ -565,7 +579,87 @@ function load() {
     return s;
 }
 let S = load();
-const save = () => mem.set('gk', S);
+const save = () => { mem.set('gk', S); cloudDirty(); };
+// 랭킹·배틀에 쓰는 열쇠. 계정에 처음 올린 기기의 열쇠를 저장해 두고(S.rk) 다른 기기에서도 같은 줄로 이어진다
+const gkKey = () => S.rk || PLAY.myKey();
+
+// ---------- 계정에 저장 (2026-11-12 사용자: 로그인 없이 하다가 로그인해도 끊기지 않게, db/play_guitar_saves.sql) ----------
+//   로그인 안 하면 브라우저에만. 로그인하면: 계정이 비었으면 올리고, 이 브라우저가 비었으면 불러오고, 둘 다 있으면 묻는다.
+//   그다음부터는 바뀔 때마다(2.5초 모아서) 계정에도 저장. mem 'gk.cloud' = { uid, rev, dirty }
+let cloud = mem.get('gk.cloud', null), cloudBusy = false, cloudT = 0, cloudOff = false;
+function acctId() {
+    try { const t = JSON.parse(localStorage.getItem('sb-qpcbrqgqylxkgdwoflku-auth-token') || 'null'); return t && t.user && t.user.id && PLAY.hasLogin() ? t.user.id : ''; } catch (e) { return ''; }
+}
+const linked = () => !!(cloud && cloud.uid && cloud.uid === acctId());
+function cloudDirty() {
+    if (!linked()) return;
+    cloud.dirty = true; mem.set('gk.cloud', cloud);
+    clearTimeout(cloudT); cloudT = setTimeout(cloudPush, 2500);
+}
+async function cloudPush() {
+    if (!linked() || cloudBusy || cloudOff) return;
+    cloudBusy = true; cloudBtn();
+    try {
+        const r = (await PLAY.rpc('play_guitar_store', { p_data: S }, { auth: true }))[0];
+        if (r) { cloud.rev = r.rev; cloud.dirty = false; cloud.at = Date.now(); mem.set('gk.cloud', cloud); }
+    } catch (e) { if (e && e.status === 404) cloudOff = true; }   // 아직 DB 적용 전
+    cloudBusy = false; cloudBtn();
+}
+const localEmpty = () => !S.first && !S.bench && !S.wall.some(Boolean);
+function adopt(srv, uid) {
+    mem.set('gk', srv.data); S = load();
+    cloud = { uid, rev: srv.rev, dirty: false, at: Date.now() }; mem.set('gk.cloud', cloud);
+    updBar(); setTab(tab); toast('계정에 저장된 기록으로 이어서 해요');
+}
+function linkUp(uid, rev) {
+    if (!S.rk) S.rk = PLAY.myKey();
+    cloud = { uid, rev, dirty: true }; mem.set('gk', S); mem.set('gk.cloud', cloud);
+    cloudPush().then(() => { if (linked() && !cloud.dirty) toast('이 기록을 계정에 저장했어요. 다른 기기에서도 이어서 할 수 있어요'); });
+}
+function saveSum(d) {   // 고르기 창에 보일 요약: 가장 높은 기타 · 골드 · 도감
+    const gs = [d.bench, ...(Array.isArray(d.wall) ? d.wall : [])].filter(g => g && Number.isInteger(g.lv));
+    const top = gs.sort((a, b) => b.lv - a.lv)[0];
+    const dex = Object.values(d.dex || {}).reduce((n, b) => { let k = 0; for (let x = b | 0; x; x &= x - 1) k++; return n + k; }, 0);
+    return `${top ? `+${top.lv} ${(FAMS[top.f] || FAMS.strat).name}` : '기타 없음'} · ${gf(Math.max(0, +d.gold || 0))} · 도감 ${dex}칸`;
+}
+function askWhich(srv, uid) {
+    if (document.querySelector('.cloudask')) return;
+    const m = document.createElement('div');
+    m.className = 'cloudask';
+    m.innerHTML = `<div class="in"><h3>어느 기록으로 할까요?</h3><p>이 기기에서 한 기록과 계정에 저장된 기록이 달라요. 고른 쪽으로 이어서 하고, 다른 쪽은 지워져요.</p>
+        <button type="button" class="pick2" data-w="here"><b>이 기기 기록</b><small>${esc(saveSum(S))}</small></button>
+        <button type="button" class="pick2" data-w="acct"><b>계정 기록</b><small>${esc(saveSum(srv.data || {}))} · ${new Date(srv.updated_at).toLocaleDateString('ko-KR')} 저장</small></button>
+        <button type="button" class="later">나중에 고르기 (그동안 계정에 저장 안 됨)</button></div>`;
+    m.addEventListener('click', e => {
+        const b = e.target.closest('button'); if (!b) return;
+        m.remove();
+        if (b.dataset.w === 'acct') adopt(srv, uid);
+        else if (b.dataset.w === 'here') linkUp(uid, srv.rev);
+    });
+    document.body.appendChild(m);
+}
+async function cloudSync() {
+    const uid = acctId();
+    cloudBtn();
+    if (!uid || cloudBusy || cloudOff) return;
+    let srv;
+    try { srv = ((await PLAY.rpc('play_guitar_load', {}, { auth: true })) || [])[0] || null; }
+    catch (e) { if (e && e.status === 404) cloudOff = true; cloudBtn(); return; }
+    if (!srv) { linkUp(uid, 0); return; }                                   // 계정이 비었다 → 이 기기 기록을 올린다
+    if (linked()) {                                                           // 이 기기가 이미 이 계정과 이어져 있다
+        if (srv.rev > (cloud.rev | 0)) { if (cloud.dirty) askWhich(srv, uid); else adopt(srv, uid); }   // 다른 기기가 그사이 저장
+        else if (cloud.dirty) cloudPush();
+        cloudBtn(); return;
+    }
+    if (localEmpty()) adopt(srv, uid);                                        // 이 기기는 아직 안 했다 → 계정 것
+    else askWhich(srv, uid);
+}
+function cloudBtn() {
+    const b = document.getElementById('rCloud'); if (!b) return;
+    const on = linked();
+    b.classList.toggle('on', on); b.classList.toggle('busy', cloudBusy);
+    b.title = cloudOff ? '계정 저장은 곧 열려요' : on ? (cloud.dirty ? '계정에 저장하는 중…' : '계정에 저장돼요 — 다른 기기에서 로그인해도 이어서 해요') : acctId() ? '계정과 이어 붙이는 중…' : '로그인하면 이 기록을 계정에 저장해서 다른 기기에서도 이어서 해요';
+}
 function btDay() { if (S.bt.day !== today()) S.bt = { day: today(), n: 0, done: {} }; return S.bt; }
 // 대표 기타: 고른 것 → 벽의 가장 높은 것 → 작업대
 function rep() {
@@ -916,7 +1010,7 @@ function renderName() {
 }
 // 빈 작업대: 첫 기타는 피크로 사고, 그다음부터는 공짜로 받는다
 function emptyCard() {
-    const sil = `<img class="g1" src="../images/play/gk/item_strat.png" alt="">`;   // 무슨 기타가 나올지 모르게 그림자만
+    const sil = `<img class="g1" src="../images/play/gk/sil_guitar.webp" alt="">`;   // 무슨 기타가 나올지 모르게 그림자만
     const bal = PLAY.picks.bal();
     // 2026-11-12 사용자: 빈 작업대는 간단하게 위에 '기타 키우기', 아래 '시작'만 + 단추 아래에 값
     const card = (a, cls, cost) => `${S.first ? '' : sil}<p class="big">기타 키우기</p><button class="btn ${cls}" type="button" data-a="${a}"><i class="fas fa-play"></i> 시작</button><small class="cost">${cost}</small>`;
@@ -932,7 +1026,7 @@ function emptyCard() {
 // 골드·피크가 모자랄 때: 출석 → 놀이터 퀴즈쇼·월드컵으로
 function lackCard(title, why) {
     const dl = S.daily !== today();   // 오늘 출석 전이면 출석 단추가 먼저(말풍선에 안 가리게 놀이터 길은 한 줄 링크로)
-    return `<img class="g1" src="../images/play/gk/item_strat.png" alt=""><p class="big">${title}<small>${why}<br>${dl ? `출석하면 ${gf(DAILY_GOLD)} + 피크 ${DAILY_PICKS}개, 놀이터 한 판에 피크 ${PLAY.PICK.per}개.` : `놀이터 퀴즈쇼·월드컵 한 판마다 피크 ${PLAY.PICK.per}개씩 모여요.`}</small></p>
+    return `<img class="g1" src="../images/play/gk/sil_guitar.webp" alt=""><p class="big">${title}<small>${why}<br>${dl ? `출석하면 ${gf(DAILY_GOLD)} + 피크 ${DAILY_PICKS}개, 놀이터 한 판에 피크 ${PLAY.PICK.per}개.` : `놀이터 퀴즈쇼·월드컵 한 판마다 피크 ${PLAY.PICK.per}개씩 모여요.`}</small></p>
         ${dl ? `<button class="btn pick" type="button" data-a="daily"><i class="fas fa-gift"></i> 출석하고 받기 <small>${PLAY.pickIcon()} ${DAILY_PICKS}</small></button>
         <div class="alt"><a href="./">놀이터</a> · <a href="quiz.html">퀴즈쇼</a> · <a href="worldcup.html">월드컵</a>에서도 모여요</div>`
         : `<a class="btn pick" href="./"><i class="fas fa-gamepad"></i> 놀이터에서 피크 모으기</a>
@@ -1364,7 +1458,7 @@ async function syncMe(force) {
     if (!g) return null;
     const old = mem.get('gk.sync', {}), sig = repSig(g) + '|' + S.st.best;
     if (!force && old.sig === sig && old.id && Date.now() - (old.at || 0) < 10 * 60e3) return old;
-    const r = (await PLAY.rpc('play_guitar_save', { p_key: PLAY.myKey(), p_nick: myNick(), p_fam: g.f, p_lv: g.lv, p_best: S.st.best }, { auth: true }))[0];
+    const r = (await PLAY.rpc('play_guitar_save', { p_key: gkKey(), p_nick: myNick(), p_fam: g.f, p_lv: g.lv, p_best: S.st.best }, { auth: true }))[0];
     const m = { sig, at: Date.now(), id: r.id, pos: r.pos, players: r.players, hidden: r.hidden };
     mem.set('gk.sync', m);
     return m;
@@ -1373,7 +1467,7 @@ async function loadNet() {
     netBusy = true;
     const sig = repSig(rep());
     try {
-        const me = await syncMe(), key = PLAY.myKey();
+        const me = await syncMe(), key = gkKey();
         const [opps, top] = await Promise.all([PLAY.rpc('play_guitar_opponents', { p_key: key }), PLAY.rpc('play_guitar_top', { p_key: key })]);
         if (VS && VS.p && !VS.pid) {
             try { const r = (await PLAY.rpc('play_guitar_player', { p_id: VS.p }))[0]; if (r) Object.assign(VS, { pid: r.id, nick: r.nickname, lv: r.lv, f: r.fam, w: r.wins, l: r.losses }); } catch (e) {}
@@ -1440,7 +1534,7 @@ async function fight(id) {
     if (o.pid) {   // 진짜 상대: 서버가 두 사람의 저장된 단계로 승패를 정한다
         try {
             await syncMe();
-            const r = (await PLAY.rpc('play_guitar_battle', { p_key: PLAY.myKey(), p_opp: o.pid }))[0];
+            const r = (await PLAY.rpc('play_guitar_battle', { p_key: gkKey(), p_opp: o.pid }))[0];
             p = r.chance; win = r.win; o.lv = r.opp_lv;
         } catch (e) {
             busy = false;
@@ -1570,9 +1664,18 @@ $('#rDaily').addEventListener('click', () => {
     toast(`출석 +${gf(DAILY_GOLD)}${pk ? ` · 피크 +${pk}` : ' (피크는 오늘 한도를 다 받았어요)'}`);
     if (tab === 'bench') renderBench(); else if (tab === 'shop') renderShop();
 });
+$('#rCloud').addEventListener('click', () => {
+    if (cloudOff) { toast('계정 저장은 곧 열려요'); return; }
+    if (!acctId()) { toast('로그인하면 이 기록이 계정에 저장돼요'); try { window.ahnssamAuth && window.ahnssamAuth.openLogin(); } catch (e) {} return; }
+    if (!linked()) { cloudSync(); return; }
+    if (cloud.dirty) cloudPush();
+    toast(cloud.dirty ? '계정에 저장하는 중…' : `계정에 저장돼 있어요${cloud.at ? ' · ' + new Date(cloud.at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : ''}`);
+});
 $('#rSnd').addEventListener('click', () => { mem.set('gk.sound', !soundOn()); updBar(); if (soundOn()) sfx('hang'); });
 $('#adw').innerHTML = PLAY.adSlot('wide');
 
+addEventListener('ahnssam-auth-settled', () => cloudSync());
+document.addEventListener('visibilitychange', () => { if (document.hidden && linked() && cloud.dirty) cloudPush(); });
 function start() {
     if (!S.intro) {
         S.intro = true; S.gold = Math.max(S.gold, START_GOLD); save();
@@ -1583,6 +1686,7 @@ function start() {
 addEventListener('pageshow', e => { if (e.persisted && !busy && tab === 'bench') renderBench(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && !busy && tab === 'bench' && !S.bench) renderBench(); });
 start();
+setTimeout(cloudSync, 1200);
 </script>
 </body>
 </html>
