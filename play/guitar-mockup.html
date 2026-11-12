@@ -40,11 +40,31 @@
     .iconbtn { width: 34px; height: 34px; border-radius: 50%; background: #fff; border: 1.5px solid var(--line); display: grid; place-items: center; color: #555; flex: none; }
 
     /* 탭 */
-    .gk-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 12px 0; background: #e6ede9; padding: 4px; border-radius: 14px; }
+    .gk-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 12px 0; background: #e6ede9; padding: 4px; border-radius: 14px; }
     .gk-tabs button { padding: 9px 0; border-radius: 10px; font-weight: 800; font-size: 13.5px; color: #5a6b62; display: flex; align-items: center; justify-content: center; gap: 6px; }
     .gk-tabs button.on { background: #fff; color: var(--green-deep); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
     .gk-tabs button .dot { width: 7px; height: 7px; border-radius: 50%; background: #e25555; }
     @media (max-width: 400px) { .gk-tabs button i { display: none; } }
+    @media (max-width: 380px) { .gk-tabs button { font-size: 12.5px; } }
+    /* 도감 (2026-11-12 사용자: 지금까지 어떤 기타를 땄는지) */
+    .dex .dx-top { display: flex; align-items: baseline; justify-content: space-between; margin: 4px 2px 10px; }
+    .dex .dx-top b { font-size: 18px; }
+    .dex .dx-top small { color: var(--sub); font-size: 12.5px; }
+    .dex .dx-bar { height: 8px; border-radius: 99px; background: #e6ede9; overflow: hidden; margin: -4px 2px 14px; }
+    .dex .dx-bar i { display: block; height: 100%; background: linear-gradient(90deg, #72c492, #2f9e5f); }
+    .dex .fam { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 10px 10px 12px; margin-bottom: 10px; }
+    .dex .fam h4 { margin: 0 2px 8px; font-size: 15px; display: flex; justify-content: space-between; align-items: baseline; }
+    .dex .fam h4 small { color: var(--sub); font-weight: 700; font-size: 12px; }
+    .dex .fam h4 small.full { color: #2f9e5f; }
+    .dex .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+    .dex .cell { position: relative; aspect-ratio: 2 / 3; border-radius: 9px; overflow: hidden; background: #1c2a25; border: 0; padding: 0; cursor: pointer; }
+    .dex .cell img { position: absolute; width: 150%; left: -25%; top: -41%; pointer-events: none; }
+    .dex .cell.no { background: #e9eeeb; cursor: default; }
+    .dex .cell.no::before { content: '?'; position: absolute; inset: 0 0 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: #b8c4be; }
+    .dex .cell span { position: absolute; left: 0; right: 0; bottom: 0; font-size: 10.5px; font-weight: 900; color: #fff; background: rgba(0, 0, 0, 0.45); line-height: 15px; text-align: center; }
+    .dex .cell.no span { background: none; color: #9aa8a1; }
+    .dex .cell.hi { box-shadow: inset 0 0 0 2px #f5c542; }
+    .dex .note2 { margin-top: 4px; }
 
     /* 작업대 무대 */
     .stage { --s: 4; position: relative; height: 400px; border-radius: 18px; overflow: hidden; background: #2a1c12 url(../images/play/gk/bg_workshop.webp) center bottom / cover;   /* 공방 배경 (2026-11-12 사용자가 뽑은 그림, 예전 도트 bg_studio.png) */ touch-action: manipulation; user-select: none; -webkit-user-select: none; }
@@ -330,6 +350,7 @@
         <button type="button" data-t="room"><i class="fas fa-house"></i>작업방</button>
         <button type="button" data-t="battle"><i class="fas fa-bolt"></i>배틀</button>
         <button type="button" data-t="shop"><i class="fas fa-store"></i>상점</button>
+        <button type="button" data-t="dex"><i class="fas fa-book-open"></i>도감</button>
     </nav>
 
     <section id="tab-bench">
@@ -348,6 +369,7 @@
     <section id="tab-room" hidden></section>
     <section id="tab-battle" hidden></section>
     <section id="tab-shop" class="shop" hidden></section>
+    <section id="tab-dex" class="dex" hidden></section>
     <div id="adw"></div>
 </main>
 
@@ -462,7 +484,7 @@ const rid = () => Math.random().toString(36).slice(2, 9);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ---------- 저장 (이 브라우저) ----------
-const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [null, null, null, null, null], open: [false, false, true, false, false], skin: 'wood', skins: ['wood'], rep: '', shards: 0, cases: 0, caseOn: false, tuner: 0, tuneOn: true, daily: '', nick: '', intro: false, first: false,
+const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [null, null, null, null, null], open: [false, false, true, false, false], skin: 'wood', skins: ['wood'], dex: {}, rep: '', shards: 0, cases: 0, caseOn: false, tuner: 0, tuneOn: true, daily: '', nick: '', intro: false, first: false,
     bt: { day: '', n: 0, done: {} }, st: { tries: 0, ok: 0, keep: 0, boom: 0, saved: 0, sold: 0, earned: 0, best: 0, win: 0, lose: 0 } });
 const okG = g => g && typeof g === 'object' && Number.isInteger(g.lv) && g.lv >= 0 && g.lv <= MAX && typeof g.id === 'string';
 function load() {
@@ -490,6 +512,11 @@ function load() {
     if (!s.skins.includes(s.skin)) s.skin = 'wood';
     ['gold', 'shards', 'cases'].forEach(k => { s[k] = Math.max(0, Math.floor(+s[k] || 0)); });
     s.tuner = Math.min(3, Math.max(0, s.tuner | 0));
+    // 도감: 계열마다 딴 단계(비트). 도감 전(2026-11-12)에 시작했으면 가진 기타의 단계까지, 최고 기록은 스트랫으로 채운다(그때는 스트랫뿐이었다)
+    s.dex = s.dex && typeof s.dex === 'object' ? s.dex : {};
+    const mark = (f, lv) => { for (let i = 0; i <= lv; i++) s.dex[f] = (s.dex[f] | 0) | (1 << i); };
+    [s.bench, ...s.wall].forEach(g => { if (g) mark(FAMS[g.f] ? g.f : 'strat', g.lv); });
+    if (!raw.dex && s.first) mark('strat', Math.min(MAX, s.st.best | 0));
     return s;
 }
 let S = load();
@@ -901,14 +928,45 @@ function renderTable() {
     el.open = open;
 }
 
+// ---------- 도감 ----------
+const DEX_FAMS = ['strat', 'tele', 'lespaul', 'superstrat', 'acoustic', 'bass'];
+const dexHas = (f, lv) => !!((S.dex[f] | 0) & (1 << lv));
+function dexAdd(f, lv) {
+    f = FAMS[f] ? f : 'strat';
+    if (dexHas(f, lv)) return false;
+    S.dex[f] = (S.dex[f] | 0) | (1 << lv); S.dexNew = true; dexDot();
+    return true;
+}
+function dexDot() {
+    const b = $('#tabs [data-t="dex"]'), dot = b.querySelector('.dot');
+    if (S.dexNew && tab !== 'dex' && !dot) b.insertAdjacentHTML('beforeend', '<span class="dot" title="도감에 새로 들어온 기타"></span>');
+    if ((!S.dexNew || tab === 'dex') && dot) dot.remove();
+}
+const artSrc = (f, lv) => { const F = FAMS[f] || FAMS.strat, n = Math.min(lv, F.artMax); return `../images/play/gk/${F.art}_${String(n).padStart(2, '0')}.webp`; };
+function renderDex() {
+    S.dexNew = false; save(); dexDot();
+    const N = MAX + 1, cnt = f => Array.from({ length: N }, (_, i) => dexHas(f, i)).filter(Boolean).length;
+    const total = DEX_FAMS.reduce((n, f) => n + cnt(f), 0), all = DEX_FAMS.length * N;
+    const cur = S.bench ? S.bench.id : '';
+    $('#tab-dex').innerHTML = `<div class="dx-top"><b>기타 도감 ${total} / ${all}</b><small>찾거나 강화해서 닿은 단계가 모여요</small></div>
+        <div class="dx-bar"><i style="width:${(total / all * 100).toFixed(1)}%"></i></div>
+        ${DEX_FAMS.map(f => { const F = FAMS[f], c = cnt(f);
+            return `<div class="fam"><h4>${esc(F.name)}<small class="${c === N ? 'full' : ''}">${c === N ? '완성! ' : ''}${c} / ${N}</small></h4><div class="grid">${
+                Array.from({ length: N }, (_, i) => dexHas(f, i)
+                    ? `<button type="button" class="cell ${i >= 10 ? 'hi' : ''}" data-a="dex" data-f="${f}" data-lv="${i}" title="+${i} ${esc(F.names[i])}"><img src="${artSrc(f, i)}" alt="" loading="lazy"><span>+${i}</span></button>`
+                    : `<div class="cell no" title="아직 못 닿은 단계"><span>+${i}</span></div>`).join('')}</div></div>`; }).join('')}
+        <p class="note2">칸을 누르면 그 단계 이름이 보여요. 부서지거나 팔아도 한 번 닿은 단계는 도감에 남아요.</p>`;
+}
+
 function setTab(t) {
     tab = t;
     document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
-    ['bench', 'room', 'battle', 'shop'].forEach(k => { $('#tab-' + k).hidden = k !== t; });
+    ['bench', 'room', 'battle', 'shop', 'dex'].forEach(k => { $('#tab-' + k).hidden = k !== t; });
     if (t === 'bench') renderBench();
     if (t === 'room') renderRoom(true);
     if (t === 'battle') renderBattle();
     if (t === 'shop') renderShop();
+    if (t === 'dex') renderDex();
 }
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b && !busy) { talkClear(); setTab(b.dataset.t); } });
 $('#toHome').addEventListener('click', e => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); if (!busy) setTab('bench'); });
@@ -1012,7 +1070,7 @@ async function enhance() {
     updBar();   // 기다리는 동안 위 줄은 골드만 줄어든다(조각·케이스 수가 결과를 먼저 알려 주지 않게)
     // 결과를 먼저 저장하고(새로고침으로 되돌리기 막기), 기다림·연출은 그다음. 기다리는 동안은 강화 전 기타·이름 그대로 보인다
     ghost = { ...g };
-    if (out === 'ok') { g.lv++; S.st.ok++; S.st.best = Math.max(S.st.best, g.lv); }
+    if (out === 'ok') { g.lv++; S.st.ok++; S.st.best = Math.max(S.st.best, g.lv); dexAdd(g.f, g.lv); }
     else if (out === 'keep') S.st.keep++;
     else if (out === 'saved') { S.st.saved++; S.cases--; if (!S.cases) S.caseOn = false; }
     else { S.st.boom++; S.shards += g.lv; S.bench = null; if (S.rep === g.id) S.rep = ''; }
@@ -1074,6 +1132,7 @@ async function findGuitar(first) {
     } else if (!S.first) return;
     busy = true; talkClear();
     S.bench = { id: rid(), lv: 0, f: one(FIND_FAMS) };
+    dexAdd(S.bench.f, 0);
     save();   // 먼저 저장(새로고침해도 찾은 기타는 그대로)
     $('#empty').hidden = true; $('#bench').innerHTML = '';
     await suspense(4, { find: true, ms: first ? 1900 : 1100, txt: first ? '첫 기타를 찾는 중…' : '기타 찾는 중…', hush: first });
@@ -1358,6 +1417,7 @@ $('#app').addEventListener('click', e => {
     if (busy) return;
     const a = b.dataset.a, id = b.dataset.id;
     if (a === 'again') enhance();
+    else if (a === 'dex') toast(`+${b.dataset.lv} ${FAMS[b.dataset.f].names[+b.dataset.lv]}`);
     else if (a === 'new') findGuitar(false);
     else if (a === 'buy1') findGuitar(true);
     else if (a === 'daily') $('#rDaily').click();
