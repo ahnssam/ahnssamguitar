@@ -129,3 +129,84 @@ Original designs only: no logos, and NO text, letters or numbers anywhere.
 - 기타 크기가 들쭉날쭉하면: `Make every guitar exactly the same size and position in its cell; only the decorations differ.`
 - 진짜 브랜드처럼 보이면: `The headstock looks like a real brand. Make it a clearly original shape.`
 - 글자가 들어가면: `Remove all text, letters and numbers.`
+
+---
+
+# 앰프 · 멀티이펙터 (+0 ~ +9)
+
+2026-11-12 사용자 요청: "앰프와 멀티이펙터도 1부터 10까지". 기타와 같은 방식(첫 10대는 개그, +9에서 처음 신비한 느낌). 기타와 함께 쓰는 장비 계열이라, 나중에 게임에서 '장비 키우기'나 기타 + 앰프 조합으로 쓸 수 있다(지금 MVP에서는 조합 효과를 뺐다).
+받으면 `images/play/gk/amp_00`~, `fx_00`~ 로 넣는다. 기타처럼 세로로 길지 않으니 칸 안 크기는 가로 기준(칸 폭의 70%)으로 맞춘다.
+
+## 5. 단계별 이름과 컨셉
+
+### 앰프 — 연습용 작은 앰프에서 무대 앰프로
+
+| 단계 | 이름 | 그림 |
+|---|---|---|
+| +0 | 동네 고물상에서 업어 온 앰프 | 먼지, 찢어진 그릴 천, 노브 하나 없음 |
+| +1 | 지직거리는 소리가 더 큰 앰프 | 지직 번개 선, 덜렁거리는 케이블 |
+| +2 | 그릴 천을 꽃무늬 이불로 바꾼 앰프 | 꽃무늬 이불 천 그릴 |
+| +3 | 손잡이가 떨어져서 노끈을 단 앰프 | 위에 묶은 노끈 손잡이 |
+| +4 | 진공관이 하나 들여다보이는 앰프 | 위 통풍구 사이로 주황빛 진공관 |
+| +5 | 볼륨 올리면 창문이 흔들리는 앰프 | 동그란 소리 물결, 뒤에서 흔들리는 작은 창틀 |
+| +6 | 머리 위에 앰프가 하나 더 얹힌 앰프 | 위에 올린 앰프 헤드(작은 스택) |
+| +7 | 스피커가 네 개로 늘어난 앰프 | 2×2 스피커가 보이는 큰 캐비닛 |
+| +8 | 노브마다 불이 들어오는 앰프 | 크롬 패널, 빛나는 노브 |
+| +9 | 전원을 안 꽂았는데 진공관이 켜진 앰프 | 빠진 플러그, 혼자 켜진 진공관, 푸른 빛 |
+
+### 멀티이펙터 — 건전지 장난감에서 무대 보드로
+
+| 단계 | 이름 | 그림 |
+|---|---|---|
+| +0 | 서랍 속에서 나온 건전지 멀티이펙터 | 작고 긁힌 몸체, 테이프로 붙인 건전지 뚜껑 |
+| +1 | 발판 하나가 눌린 채 안 올라오는 멀티이펙터 | 꺼진 발판, 붙어 있는 껌 |
+| +2 | 화면이 반만 나오는 멀티이펙터 | 반쯤 깨진 화면에 막대 몇 개 |
+| +3 | 발판마다 색깔 스티커를 붙인 멀티이펙터 | 빨강·초록·파랑 동그라미 스티커 |
+| +4 | 발로 밟는 페달이 달린 멀티이펙터 | 옆에 붙은 익스프레션 페달 |
+| +5 | 화면이 컬러가 된 멀티이펙터 | 컬러 화면에 파형 그림 |
+| +6 | 발판 불빛이 무지개로 도는 멀티이펙터 | 발판마다 무지개 LED 고리 |
+| +7 | 케이블이 문어발처럼 뻗은 멀티이펙터 | 사방으로 뻗은 케이블 다발 |
+| +8 | 보드가 두 배로 길어진 멀티이펙터 | 길어진 보드, 발판 두 줄 |
+| +9 | 아무도 안 밟았는데 혼자 프리셋이 바뀌는 멀티이펙터 | 혼자 켜지는 발판, 희미한 발자국 빛 |
+
+## 6. 프롬프트 — 앰프 (+0 ~ +9)
+
+```
+Same art style as the guitars in this chat (or the attached guitars): polished 2D mobile-game item illustration, bold clean dark outlines, flat colors with soft cel shading (2-3 tones), slightly chunky and charming, light from the top-left, easy to read when small on a phone.
+
+Make ONE image, landscape 1536x1024, transparent background: a sprite sheet of 10 guitar amplifiers for my mobile game "Guitar Upgrade" (cheap gear upgraded step by step), in a grid of 5 columns x 2 rows with lots of empty space between them. Order: top row left to right = amps 1-5, bottom row left to right = amps 6-10. Every amp stands on the bottom of its cell, seen from the front with a slight view of the top, centered, and all at about the SAME size (about 70% of the cell width) unless the description says it grows. Keep every effect inside its own cell.
+
+BASE AMP (same for all 10, only the described changes differ): a small practice combo guitar amp - a black textured box with a silver-grey grill cloth covering one speaker, a top-front control panel with a row of plain round knobs and one small red power light, and a carry handle on top.
+Original designs only: no logos, no brand plates, and NO text, letters or numbers anywhere (knobs have only small tick marks).
+
+1. Picked up from a junk shop: dusty, scuffed corners, a torn grill cloth, one knob missing.
+2. Crackles louder than it plays: jagged little static lightning lines popping out of the grill, a loose cable dangling from the input.
+3. Quilt grill: the grill cloth replaced with a cozy flowery patchwork quilt fabric.
+4. Rope handle: the handle broken off and replaced by a thick twine rope tied on top in a big knot.
+5. A tube peeking out: an orange-glowing vacuum tube visible through a vent slot on top, a warm glow on the panel.
+6. Rattles the windows: big round sound-wave rings coming out of the speaker, a small wooden window frame floating behind the amp shaking with motion lines.
+7. A head on top: a smaller matching amp head stacked on top, making a little stack, both with glowing power lights.
+8. Four speakers: the amp grown into a bigger cabinet with four speakers visible in a 2x2 layout behind a darker grill, still the same style.
+9. Glowing knobs: a polished chrome control panel, every knob glowing with a soft warm light, gold piping around the edges.
+10. Tubes on without power: the power plug lying UNPLUGGED beside the amp, yet glowing vacuum tubes visible through the top and a faint eerie blue glow around the amp - the first hint of something mysterious.
+```
+
+## 7. 프롬프트 — 멀티이펙터 (+0 ~ +9)
+
+```
+Same art style as before. Make ONE image, landscape 1536x1024, transparent background: a sprite sheet of 10 guitar floor multi-effects units for my mobile game "Guitar Upgrade", in a grid of 5 columns x 2 rows with lots of empty space between them. Order: top row left to right = units 1-5, bottom row left to right = units 6-10. Every unit is seen from the front and slightly above (so the top with the screen and footswitches is clearly visible), lying flat on the bottom of its cell, centered, all at about the SAME size (about 70% of the cell width) unless the description says it grows. Keep every effect inside its own cell.
+
+BASE UNIT (same for all 10, only the described changes differ): a compact black metal floor multi-effects pedal with a small rectangular screen at the top, a row of four round metal footswitches along the front, a few small plain knobs between the screen and the switches, and input/output jacks on the sides.
+Original designs only: no logos, and NO text, letters or numbers anywhere - the screen shows only simple bars, waveforms or light, never letters.
+
+1. Found in a drawer: small and cheap-looking, scratched, a cracked battery cover held on with tape, dust in the corners.
+2. A stuck footswitch: one footswitch pushed down and stuck, with a piece of pink chewing gum on it.
+3. Half a screen: the screen cracked with only the left half working, showing a few green bars.
+4. Colored stickers: a round colored dot sticker (red, green, blue, yellow) above each footswitch, a few extra stickers on the body.
+5. Expression pedal: a rocking foot pedal attached to the right side of the unit.
+6. Color screen: the screen upgraded to a bright color screen showing a smooth colorful waveform picture, the body now dark metallic blue.
+7. Rainbow lights: each footswitch surrounded by a glowing ring of rainbow LED light.
+8. Octopus cables: lots of patch cables sprouting from every side and curling like octopus arms.
+9. Twice as long: the board stretched to twice the length with two rows of footswitches and a bigger screen.
+10. Changes presets by itself: footswitches lighting up one after another by themselves, faint glowing footprints hovering above the switches, a subtle violet glow - the first hint of something mysterious.
+```
