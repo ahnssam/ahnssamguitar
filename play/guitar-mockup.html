@@ -720,6 +720,16 @@ const ARENAS = [
 ];
 const BENCHES = [
     { id: 'workshop', name: '밤의 기타 공방', desc: '처음 받는 기본 작업대. 양쪽 벽에 기타, 가운데 거치대', src: 'bg_workshop.webp', price: 0 },
+    // 2026-11-12 사용자가 뽑은 작업대 배경 9장 — 거치대 자리·크기가 기본 공방과 똑같다(1024×1024). 상점 미리보기는 bgt_<id>.webp(128px). 값은 싼 것부터
+    { id: 'rehearsal', name: '지하 합주실', desc: '검은 흡음재 벽, 드럼과 앰프 스택, 빨간 조명 띠', src: 'bg_rehearsal.webp', price: 60000 },
+    { id: 'vintage', name: '빈티지 기타 가게', desc: '벽에 걸린 할로우 바디, 유리 진열장, 체크무늬 바닥', src: 'bg_vintage.webp', price: 80000 },
+    { id: 'club', name: '라이브 클럽 무대', desc: '붉은 커튼, 분홍·청록 조명, 앰프와 모니터 스피커', src: 'bg_club.webp', price: 100000 },
+    { id: 'hanok', name: '한옥 공방', desc: '창호지 문과 나무 격자, 종이 등, 분재와 나무 공구', src: 'bg_hanok.webp', price: 160000 },
+    { id: 'cabin', name: '눈 내리는 통나무 오두막', desc: '타닥타닥 벽난로, 눈 오는 창, 담요 덮인 의자', src: 'bg_cabin.webp', price: 160000 },
+    { id: 'surf', name: '해질녘 해변 서핑숍', desc: '대나무 벽, 서핑보드와 우쿨렐레, 노을 지는 바다', src: 'bg_surf.webp', price: 200000 },
+    { id: 'neon', name: '네온 신스웨이브 공방', desc: '분홍·청록 네온, 레트로 노을 창, 빛나는 격자 바닥', src: 'bg_neon.webp', price: 300000 },
+    { id: 'concert', name: '대형 공연장 무대', desc: '거대한 조명 트러스, 무대 연기, 불빛 반짝이는 객석', src: 'bg_concert.webp', price: 500000 },
+    { id: 'shrine', name: '별빛 신전', desc: '대리석 기둥과 별빛 창, 초승달과 수정 구슬', src: 'bg_shrine.webp', price: 1000000 },
 ];
 const benchSkin = () => BENCHES.find(b => b.id === S.bskin) || BENCHES[0];
 function applyBench() { const B = benchSkin(); $('#stage').style.backgroundImage = `url(../images/play/gk/${B.src})`; }
@@ -2065,7 +2075,7 @@ function renderShop() {
         <button type="button" data-a="craft" ${S.shards >= CASE_SHARDS && S.cases < CASE_MAX ? '' : 'disabled'}>${S.cases >= CASE_MAX ? `가득 ${S.cases}/${CASE_MAX}` : S.shards >= CASE_SHARDS ? '만들기' : `조각 ${S.shards}/${CASE_SHARDS}`}</button></div>`;
     if (shopCat === 'bench') h += BENCHES.map(B => {
         const own = S.bskins.includes(B.id), use = S.bskin === B.id;
-        return `<div class="item"><span class="ic skin" style="background-image:url(../images/play/gk/${B.src})"></span><div class="it"><b>${B.name}</b><small>${B.desc}</small></div>
+        return `<div class="item"><span class="ic skin" style="background-image:url(../images/play/gk/${B.src.replace('bg_', 'bgt_')})"></span><div class="it"><b>${B.name}</b><small>${B.desc}</small></div>
             ${use ? '<span class="own">쓰는 중</span>' : own ? `<button type="button" data-a="bskin" data-id="${B.id}">바꾸기</button>` : `<button type="button" data-a="bskin" data-id="${B.id}" ${S.gold >= B.price ? '' : 'disabled'}>${gf(B.price)}</button>`}</div>`;
     }).join('') + (BENCHES.length < 2 ? '<p class="note2">작업대 스킨 10개는 그림을 뽑아 오면 여기에 더해요(낮 공방·합주실·빈티지 가게·클럽 무대·한옥·눈 오두막·네온·해변·공연장·별빛 신전).</p>' : '');
     if (shopCat === 'arena') h += ARENAS.map(A => {
