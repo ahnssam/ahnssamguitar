@@ -245,6 +245,52 @@ Great. Continue with 4 more skins using exactly the same rules and the same layo
 10. Space station: white and grey sci-fi panels with blue light strips, small round ceiling lights, metal clamp hangers, glowing blue plates, a round porthole showing stars and a planet at one edge.
 ```
 
+### 싸움터(배틀) 배경 7개 (2026-11-12 사용자: "싸움터 배경 프롬프트 — 약간 어두운 느낌, 싸움터 배경이라고 명시")
+
+배틀할 때 뜨는 창의 **싸움터 배경**이다. 상점 '싸움터' 칸에서 사서 바꾼다(기본 '비 오는 뒷골목'은 공짜).
+지금은 그림 없이 CSS로 그려 둔 임시 배경이다. 받으면 Claude가 `images/play/gk/arena_<이름>.webp`로 넣고 그 배경을 그림으로 바꾼다.
+- 배틀 창 싸움터는 **가로로 조금 긴 직사각형**(휴대폰 약 300×290, 넓은 화면 약 390×290)이다. 그래서 **가로 3:2(1536×1024)** 로 뽑고, 양옆이 조금 잘려도 되게 가운데에 중요한 것을 모은다.
+- 게임이 **왼쪽 1/3과 오른쪽 1/3 바닥 위에 기타 두 대를 세우고**, 두 기타의 넥이 **가운데에서 칼처럼 부딪친다**(불꽃). 맨 위 가운데에는 'VS' 글자, 맨 아래에는 이름표 두 개가 올라간다.
+- 기타 그림을 뽑은 대화에 붙여 넣으면 그림체가 맞는다(다른 대화면 `bg_workshop.webp`나 기타 그림을 같이 올린다).
+- 한 장씩 나온다. 다음 장은 "다음", 마음에 안 들면 "다시".
+
+| # | 이름 (목업 `ARENAS`) | 값 | 느낌 |
+|---|---|---|---|
+| 1 | 비 오는 뒷골목 `alley` | 기본 | 가로등 하나, 젖은 바닥에 번지는 불빛, 빗줄기 |
+| 2 | 지하 클럽 `club` | 6만 | 보랏빛·분홍 조명, 어둠 속 관객 실루엣 |
+| 3 | 폐공장 `factory` | 10만 | 녹슨 철골, 먼지 낀 주황 불빛 |
+| 4 | 한밤 옥상 `rooftop` | 20만 | 도시 불빛이 깔린 옥상, 큰 달 |
+| 5 | 용암 무대 `lava` | 40만 | 갈라진 바닥 틈의 용암, 불티 |
+| 6 | 네온 링 `neon` | 70만 | 분홍·청록 네온 줄을 두른 격투 링 |
+| 7 | 무중력 우주 `space` | 100만 | 별과 성운, 떠 있는 바위 무대 |
+
+```
+Make game BACKGROUNDS for a BATTLE ARENA (a fighting stage) in a mobile game where two electric guitars fight each other like swords - ONE image per reply.
+Same art style as the guitars in this chat (polished 2D mobile-game illustration with clean outlines), but as a background: lighter outlines and softer contrast than the game items so the fighters in front stand out.
+Layout for EVERY arena (keep it identical):
+- Landscape 3:2, 1536x1024. Front view at eye level, like a fighting-game stage.
+- This is a BATTLE ARENA background: the overall mood is DARK and moody (night, shadows, dramatic rim light), with only a few strong light sources.
+- The bottom 25% is an open, flat, empty floor/ground across the whole width - the game will stand one guitar on the LEFT third and one on the RIGHT third of this floor, facing each other.
+- The CENTER of the image (middle third, from the floor up to about two-thirds of the height) must stay open and uncluttered - that is where the two guitar necks clash with sparks. A soft light or glow behind the center is good.
+- Keep the TOP CENTER calm and darker (the game writes a big "VS" there) and keep the very bottom edge simple (name tags go there).
+- Put scenery details only on the far left and far right edges and in the distant background.
+- No guitars, no people, no characters, no weapons, no logos, and NO text, letters or numbers anywhere (no signs, no posters with writing, no neon words).
+
+Make arena 1 now. Each time I say "다음", make the next one.
+1. Rainy back alley at night: wet brick walls on both sides, one old street lamp casting a warm cone of light onto the middle, rain streaks, puddles on the asphalt reflecting the light, dumpsters and pipes in the shadows at the edges.
+2. Underground club: a dark basement club, magenta and violet spotlights crossing from the top corners, light haze, the dark silhouettes of a crowd far in the back (no faces), a scuffed black floor.
+3. Abandoned factory: rusty steel beams and girders, broken high windows letting in dusty orange light shafts, chains and hooks hanging at the edges, a cracked concrete floor with oil stains.
+4. City rooftop at midnight: a flat rooftop with a low wall and an old water tank on one side, a huge full moon behind the center, the glittering lights of a city skyline far below, a few antenna silhouettes.
+5. Lava stage: a dark volcanic rock arena, glowing orange lava rivers in cracks across the floor (not in the center fighting spots), floating embers, red glow from below, jagged rocks at the edges.
+6. Neon ring: a fighting ring in a dark hall, the ropes are glowing hot-pink and cyan neon tubes, corner posts with small lights, a glossy dark mat floor reflecting the neon, haze in the air.
+7. Zero-gravity space: a floating flat rock platform in deep space, purple and blue nebulas, scattered stars, a ringed planet far behind the center, small floating rocks at the edges, cool rim light on the platform.
+```
+
+마음에 안 들면 같은 대화에 이어서:
+- 너무 밝으면: `Make it darker and moodier - this is a battle arena at night. Keep only one main light behind the center.`
+- 가운데가 복잡하면: `The center is too busy. Keep the middle third open, only a soft glow there.`
+- 바닥이 좁으면: `Make the empty floor at the bottom wider and flatter - two fighters stand on its left and right thirds.`
+
 ## 6. 나중 계획 — 첫 기타 찾기는 랜덤
 
 - 사용자 결정(2026-11-12): 피크로 처음 '기타 찾기'를 할 때 스트랫이 나올지, 텔레가 나올지, **주전자 같은 아예 다른 물건**이 나올지 모른다. 지금은 개발 첫 단계라 스트랫만 한다.

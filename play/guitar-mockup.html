@@ -102,7 +102,7 @@
     /* +10부터 기타 뒤 아우라 (2026-11-12 사용자: 그 기타 색상의 오로라 같은 게 흔들흔들). 색은 그림에서 가장 많이 쓰인 선명한 색(--ah 색상각) */
     /* 2026-11-12 사용자: 아우라가 너무 크다, 기타 주변에서 더 빛나게 → 커튼은 기타 폭만큼 작게, 기타 테두리가 그 색으로 빛난다(.stage.glow #cv) */
     .stage { --ah: 45; }
-    .shopcat { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 4px 0 12px; background: #e6ede9; padding: 3px; border-radius: 12px; }
+    .shopcat { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin: 4px 0 12px; background: #e6ede9; padding: 3px; border-radius: 12px; }
     .shopcat button { padding: 8px 0; border-radius: 9px; font-weight: 800; font-size: 13px; color: #5a6b62; display: flex; align-items: center; justify-content: center; gap: 5px; }
     .shopcat button.on { background: #fff; color: var(--green-deep); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
     @media (max-width: 400px) { .shopcat button i { display: none; } .shopcat button { font-size: 12.5px; } }
@@ -334,6 +334,16 @@
     .grow .ga button { font-size: 12px; font-weight: 800; padding: 6px 9px; border-radius: 9px; border: 1.5px solid var(--line); background: #fff; white-space: nowrap; }
     .grow .ga button.pri { border-color: var(--green-mid); color: var(--green-deep); }
     .grow .ga button[disabled] { opacity: .45; }
+    .grow .ga button.sh { margin-left: auto; color: #555; }
+    .grow .ga button.sh i { margin-right: 4px; }
+    /* 컬렉션 목록 장비별 제목 (2026-11-12 사용자) */
+    .glist .gh { display: flex; align-items: baseline; gap: 6px; margin: 10px 2px 2px; font-size: 14px; font-weight: 900; color: var(--green-deep); }
+    .glist .gh:first-child { margin-top: 0; }
+    .glist .gh i { font-size: 13px; }
+    .glist .gh small { font-size: 12px; font-weight: 700; color: var(--sub); }
+    /* 작업대: 바닥 앰프·멀티 능력치 줄 */
+    .gline { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 6px 0 0; }
+    .gline span { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 800; color: #2f6b4a; background: #e8f5ee; border-radius: 99px; padding: 3px 10px; }
     .note2 { font-size: 12px; color: var(--sub); margin-top: 8px; }
 
     /* 배틀 */
@@ -398,14 +408,60 @@
     /* 배틀 창 */
     .gk-modal { position: fixed; inset: 0; z-index: 90; background: rgba(10, 18, 15, 0.84); display: flex; align-items: center; justify-content: center; padding: 16px; animation: fade .2s; }
     .gk-modal .in { background: #fff; border-radius: 18px; width: min(420px, 100%); padding: 16px; text-align: center; max-height: 94vh; overflow: auto; }
-    .arena { position: relative; display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 4px; background: radial-gradient(70% 80% at 50% 30%, #2f4a40, #0e1614); border-radius: 14px; padding: 14px 8px 10px; color: #fff; }
-    .arena .side { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
-    .arena canvas { width: 112px; height: 168px; }
-    .arena .side b { font-size: 12.5px; line-height: 1.3; }
-    .arena .side small { font-size: 11px; opacity: .75; }
-    .arena .vs { align-self: center; font: 900 26px 'Arial Black', sans-serif; color: #ffd23f; text-shadow: 0 3px 0 #000; }
-    .arena .side.lose canvas { filter: grayscale(.9) brightness(.6); transform: rotate(10deg) translateY(6px); transition: all .4s; }
-    .arena .side.win canvas { filter: drop-shadow(0 0 10px #ffe27a); }
+    /* 배틀 싸움터 (2026-11-12 사용자: 넥끼리 칼싸움 + 어두운 싸움터 배경, 상점에서 스킨) */
+    .arena { position: relative; height: 290px; border-radius: 14px; overflow: hidden; color: #fff; }
+    .arena .vs { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 3; font: 900 24px 'Arial Black', sans-serif; color: #ffd23f; text-shadow: 0 3px 0 #000, 0 0 14px rgba(255, 210, 63, 0.45); }
+    .arena .fighter { position: absolute; bottom: 58px; width: 132px; height: 198px; z-index: 2; }
+    .arena .fighter.me { left: calc(25% - 66px); }
+    .arena .fighter.op { right: calc(25% - 66px); }
+    .arena .fighter canvas { display: block; width: 132px; height: 198px; transform-origin: 50% 78%; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, 0.65)); }
+    .arena .fighter.me canvas { transform: rotate(52deg); }
+    .arena .fighter.op canvas { transform: rotate(-52deg); }
+    .arena .fighter.sq canvas { transform: none; }
+    .arena .fighter.lose canvas { filter: grayscale(.9) brightness(.55) drop-shadow(0 8px 6px rgba(0, 0, 0, 0.65)); transition: filter .4s; }
+    .arena .fighter.win canvas { filter: drop-shadow(0 0 12px #ffe27a) drop-shadow(0 8px 6px rgba(0, 0, 0, 0.65)); }
+    .arena .tags { position: absolute; left: 8px; right: 8px; bottom: 7px; z-index: 3; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .arena .tag { background: rgba(0, 0, 0, 0.55); border-radius: 10px; padding: 4px 8px; min-width: 0; }
+    .arena .tag b { display: block; font-size: 11.5px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .arena .tag small { font-size: 10.5px; opacity: .75; }
+    .spk { position: absolute; z-index: 4; width: 0; height: 0; pointer-events: none; }
+    .spk b { position: absolute; left: 0; top: 0; width: 38px; height: 38px; border-radius: 50%; transform: translate(-50%, -50%); background: radial-gradient(circle, #fff 0 18%, rgba(255, 232, 150, 0.9) 34%, rgba(255, 150, 40, 0) 70%); animation: spkFlash .32s ease-out forwards; }
+    .spk.big b { width: 96px; height: 96px; }
+    .spk i { position: absolute; left: 0; top: 0; width: 4px; height: 4px; border-radius: 2px; background: #fff3b0; box-shadow: 0 0 6px #ffb84d, 0 0 2px #fff; }
+    .spk.big i { width: 5px; height: 5px; }
+    @keyframes spkFlash { from { opacity: 1; transform: translate(-50%, -50%) scale(.4); } to { opacity: 0; transform: translate(-50%, -50%) scale(1.5); } }
+    /* 싸움터 스킨 — 그림 없이 그라디언트로. ::before = 뒤쪽 무늬, ::after = 바닥 */
+    .askin { position: relative; isolation: isolate; background-color: #0b0f0e; }
+    .askin::before, .askin::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+    .askin::after { top: auto; height: 30%; }
+    .ask-alley { background: radial-gradient(42% 62% at 50% -6%, rgba(255, 214, 140, 0.42), transparent 70%), repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.28) 0 2px, transparent 2px 17px), repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.2) 0 2px, transparent 2px 36px), linear-gradient(#1c252a, #0b1012); }
+    .ask-alley::before { background: repeating-linear-gradient(104deg, transparent 0 26px, rgba(190, 210, 230, 0.13) 26px 27px); background-size: 120% 120%; animation: askRain .45s linear infinite; }
+    .ask-alley::after { background: radial-gradient(30% 60% at 50% 0%, rgba(255, 214, 140, 0.22), transparent 70%), linear-gradient(#151c1f, #06090a); border-top: 1px solid rgba(255, 255, 255, 0.07); }
+    @keyframes askRain { from { background-position: 0 0; } to { background-position: -9px 34px; } }
+    .ask-club { background: radial-gradient(28% 75% at 18% -5%, rgba(255, 60, 170, 0.5), transparent 70%), radial-gradient(28% 75% at 82% -5%, rgba(120, 90, 255, 0.55), transparent 70%), linear-gradient(#1d0f2e, #0a0512); }
+    .ask-club::before { top: auto; bottom: 26%; height: 20%; background: radial-gradient(circle at 50% 100%, #07030c 0 12px, transparent 13px) 0 100% / 25px 100% repeat-x, radial-gradient(circle at 50% 100%, #0d0716 0 10px, transparent 11px) 12px 70% / 25px 80% repeat-x; }
+    .ask-club::after { background: linear-gradient(#0d0716, #040207); border-top: 2px solid rgba(255, 60, 170, 0.35); }
+    .ask-factory { background: radial-gradient(55% 50% at 50% 28%, rgba(255, 140, 50, 0.3), transparent 70%), repeating-linear-gradient(90deg, transparent 0 58px, rgba(0, 0, 0, 0.5) 58px 66px), linear-gradient(45deg, transparent 47%, rgba(0, 0, 0, 0.4) 47% 53%, transparent 53%) 0 0 / 66px 66px, linear-gradient(-45deg, transparent 47%, rgba(0, 0, 0, 0.4) 47% 53%, transparent 53%) 0 0 / 66px 66px, linear-gradient(#2b1a10, #110a06); }
+    .ask-factory::before { background: radial-gradient(1px 1px at 20% 30%, rgba(255, 200, 140, 0.6), transparent), radial-gradient(1px 1px at 70% 50%, rgba(255, 200, 140, 0.5), transparent), radial-gradient(1.5px 1.5px at 40% 65%, rgba(255, 200, 140, 0.5), transparent); }
+    .ask-factory::after { background: linear-gradient(#1d130b, #090503); border-top: 2px solid rgba(255, 140, 50, 0.3); }
+    .ask-rooftop { background: radial-gradient(circle at 80% 18%, #fff7d6 0 14px, rgba(255, 247, 214, 0.25) 15px, transparent 40px), linear-gradient(#0a1230, #1b1f44 60%, #3a2a4a); }
+    .ask-rooftop::before { top: auto; bottom: 26%; height: 34%; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 60' preserveAspectRatio='none'%3E%3Cpath d='M0 60V34h10V22h9v12h7V12h13v22h5V26h11v-8h8v42zM63 60V30h12V16h4V8h4v8h4v14h9v30zM100 60V24h14v8h6V18h12v42zM132 60V36h8V20h16v16h6V28h10v32zM172 60V14h12v10h6v12h10v24z' fill='%23050813'/%3E%3C/svg%3E") 0 100% / 100% 100% no-repeat, radial-gradient(1px 1px at 12% 70%, #ffd870, transparent) , radial-gradient(1px 1px at 47% 60%, #ffd870, transparent), radial-gradient(1px 1px at 77% 75%, #ffd870, transparent); }
+    .ask-rooftop::after { background: linear-gradient(#20222e, #0b0c12); border-top: 3px solid #2d3040; }
+    .ask-lava { background: radial-gradient(70% 45% at 50% 100%, rgba(255, 90, 20, 0.45), transparent 70%), linear-gradient(#170606, #2a0a05); }
+    .ask-lava::before { background: radial-gradient(2px 2px at 20% 60%, #ffb347, transparent), radial-gradient(2px 2px at 64% 40%, #ff7a1a, transparent), radial-gradient(1.5px 1.5px at 82% 66%, #ffd27a, transparent), radial-gradient(1.5px 1.5px at 36% 30%, #ff9a3a, transparent); animation: askEmber 3s linear infinite; }
+    .ask-lava::after { background: linear-gradient(115deg, transparent 30%, #ff6a00 31%, transparent 33%), linear-gradient(70deg, transparent 58%, #ffae00 59%, transparent 60.5%), linear-gradient(160deg, transparent 72%, #ff5200 73%, transparent 74.5%), linear-gradient(#1b0806, #080202); box-shadow: 0 -10px 30px rgba(255, 80, 0, 0.35); animation: askGlow 1.8s ease-in-out infinite alternate; }
+    @keyframes askEmber { from { transform: translateY(10%); opacity: .4; } 50% { opacity: 1; } to { transform: translateY(-20%); opacity: .3; } }
+    @keyframes askGlow { to { filter: brightness(1.35); } }
+    .ask-neon { background: radial-gradient(60% 60% at 50% 40%, rgba(80, 30, 120, 0.45), transparent 70%), linear-gradient(#07020d, #0c0618); }
+    .ask-neon::before { inset: 26% 4% 30%; border-top: 3px solid #ff4fd8; border-bottom: 3px solid #36f1ff; box-shadow: 0 -2px 14px rgba(255, 79, 216, 0.75), 0 2px 14px rgba(54, 241, 255, 0.7); background: linear-gradient(transparent 48%, rgba(255, 79, 216, 0.6) 48% 51%, transparent 51%); }
+    .ask-neon::after { background: linear-gradient(#120a20, #050209); border-top: 2px solid rgba(54, 241, 255, 0.5); }
+    .ask-space { background: radial-gradient(40% 50% at 25% 30%, rgba(140, 70, 220, 0.45), transparent 70%), radial-gradient(35% 45% at 80% 55%, rgba(40, 140, 220, 0.4), transparent 70%), linear-gradient(#03040c, #0a0a20); }
+    .ask-space::before { background: radial-gradient(1px 1px at 10% 20%, #fff, transparent), radial-gradient(1px 1px at 30% 70%, #fff, transparent), radial-gradient(1.5px 1.5px at 55% 15%, #fff, transparent), radial-gradient(1px 1px at 72% 40%, #cfe3ff, transparent), radial-gradient(1px 1px at 90% 80%, #fff, transparent), radial-gradient(1.5px 1.5px at 45% 50%, #ffe9c4, transparent), radial-gradient(1px 1px at 85% 12%, #fff, transparent), radial-gradient(1px 1px at 18% 85%, #cfe3ff, transparent); animation: askTwinkle 2.6s ease-in-out infinite alternate; }
+    .ask-space::after { height: 16%; background: radial-gradient(120% 100% at 50% 100%, #2a2f4a, #0c0e1c 70%, transparent 71%); }
+    @keyframes askTwinkle { to { opacity: .45; } }
+    /* 상점 미리보기 */
+    .item .ic.apv { position: relative; overflow: hidden; display: flex; align-items: flex-end; justify-content: space-around; padding-bottom: 6px; color: rgba(255, 255, 255, 0.85); font-size: 13px; }
+    .item .ic.apv i:first-child { transform: rotate(40deg); } .item .ic.apv i:last-child { transform: scaleX(-1) rotate(40deg); }
     .tug { position: relative; height: 16px; border-radius: 99px; overflow: hidden; margin: 12px 4px 4px; background: #e25555; }
     .tug i { position: absolute; left: 0; top: 0; bottom: 0; width: var(--p, 50%); background: #52a872; transition: width .18s ease-out; }
     .tug::after { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: rgba(255, 255, 255, 0.7); }
@@ -550,6 +606,24 @@ const FIRST_PICKS = 3;   // 2026-11-12 사용자: 50개 말고 3개(퀴즈·월�
 const FLOOR_EACH = 3;
 const isSq = g => !!(g && FAMS[g.f] && FAMS[g.f].sq);
 const floorRoom = (fl, g) => fl.filter(x => x.f === g.f).length < FLOOR_EACH;
+// 바닥에 놓은 앰프·멀티의 능력치 (2026-11-12 사용자: 앰프는 부서짐↓, 이펙터는 줄 끊김↓, 단계별로. 3개씩 놓을 수 있으니 너무 크지 않게)
+//   한 대에 단계 × 0.1%p (+10 = 1%p, +20 = 2%p), 바닥의 같은 종류끼리 더한다(3대 모두 +20이면 6%p).
+//   앰프가 줄인 부서짐은 줄 끊김으로, 멀티가 줄인 줄 끊김은 성공으로 간다. 작업대에서 강화 중인 앰프·멀티는 안 친다
+const GEAR_PER = 0.1, r1 = x => Math.round(x * 10) / 10;
+const gearCut = g => r1((g.lv | 0) * GEAR_PER);
+function gearBuff() {
+    const b = { amp: 0, multi: 0, nAmp: 0, nMulti: 0 };
+    S.floor.forEach(g => { if (g.f === 'amp') { b.amp += gearCut(g); b.nAmp++; } else if (g.f === 'multi') { b.multi += gearCut(g); b.nMulti++; } });
+    b.amp = r1(b.amp); b.multi = r1(b.multi);
+    return b;
+}
+// 이 단계의 실제 확률 [성공, 줄 끊김, 부서짐, 앰프가 줄인 몫, 멀티가 줄인 몫]
+function oddsFor(lv) {
+    let [sp, mp, dp] = ODDS[lv];
+    const b = gearBuff(), cd = Math.min(dp, b.amp); dp -= cd; mp += cd;
+    const cm = Math.min(mp, b.multi); mp -= cm; sp += cm;
+    return [r1(sp), r1(mp), r1(dp), r1(cd), r1(cm)];
+}
 const STORE_MAX = 30;   // 창고: 기록을 합칠 때 벽·작업대에 못 둔 기타가 들어간다
 // 단계별 이름 (2026-11-12 사용자와 정함): +0~+9 개그 → +10부터 신비한 느낌 → +20은 그 기타로 유명한 기타리스트 이름을 살짝 바꿔서.
 // 계열마다 이름표를 따로 둔다(레스폴 +20 은 '게리 무르의 레스폴' 예정). 아예 다른 물건(주전자 등)은 나중에 '첫 기타 찾기' 랜덤으로 (CLAUDE.md 11절)
@@ -630,6 +704,17 @@ const SLOT_PRICE = [6000, 20000, 60000, 200000];   // 2026-11-12 사용자: 상�
 // 진열 벽 스킨(상점에서 바꾼다). x = 걸이 가운데(가로 %), hook = 걸이(세로 %), foot = 기타 아래 끝, plate = 명판 — 그림마다 잰다
 // 작업대(강화 무대) 배경 스킨 (2026-11-12 사용자: 작업대 스킨도 10개). 그림은 프롬프트 문서 '작업대 배경 스킨 10개'로 뽑아 오면
 //   bg_<id>.webp 로 넣고 여기에 한 줄씩 더한다(가운데 거치대 자리를 기본 공방과 맞춰 뽑으므로 위치 조정은 필요 없음)
+// 싸움터(배틀 배경) 스킨 (2026-11-12 사용자: 어두운 싸움터 배경 + 상점에서 팔기). 그림 파일 없이 CSS로 그린다(.ask-<id>).
+//   GPT 그림을 뽑아 오면 bg 그림으로 바꿀 수 있다 — 프롬프트는 docs/기타키우기_GPT_부품_프롬프트.md '싸움터 배경'
+const ARENAS = [
+    { id: 'alley', name: '비 오는 뒷골목', desc: '가로등 하나, 젖은 바닥에 번지는 불빛', price: 0 },
+    { id: 'club', name: '지하 클럽', desc: '보랏빛 조명 아래 관객 그림자', price: 60000 },
+    { id: 'factory', name: '폐공장', desc: '녹슨 철골, 먼지 낀 주황 불빛', price: 100000 },
+    { id: 'rooftop', name: '한밤 옥상', desc: '도시 불빛이 깔린 옥상 위 달', price: 200000 },
+    { id: 'lava', name: '용암 무대', desc: '갈라진 바닥 틈으로 용암이 끓는다', price: 400000 },
+    { id: 'neon', name: '네온 링', desc: '분홍·청록 네온 줄을 두른 링', price: 700000 },
+    { id: 'space', name: '무중력 우주', desc: '별과 성운 사이에서 붙는다', price: 1000000 },
+];
 const BENCHES = [
     { id: 'workshop', name: '밤의 기타 공방', desc: '처음 받는 기본 작업대. 양쪽 벽에 기타, 가운데 거치대', src: 'bg_workshop.webp', price: 0 },
 ];
@@ -662,7 +747,7 @@ const rid = () => Math.random().toString(36).slice(2, 9);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ---------- 저장 (이 브라우저) ----------
-const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [null, null, null, null, null], floor: [], open: [false, false, true, false, false], skin: 'wood', skins: ['wood'], bskin: 'workshop', bskins: ['workshop'], dex: {}, store: [], rep: '', shards: 0, cases: 0, caseOn: false, tuner: 0, tuneOn: true, daily: '', nick: '', intro: false, first: false,
+const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [null, null, null, null, null], floor: [], open: [false, false, true, false, false], skin: 'wood', skins: ['wood'], bskin: 'workshop', bskins: ['workshop'], ask: 'alley', asks: ['alley'], dex: {}, store: [], rep: '', shards: 0, cases: 0, caseOn: false, tuner: 0, tuneOn: true, daily: '', nick: '', intro: false, first: false,
     bt: { day: '', n: 0, done: {} }, st: { tries: 0, ok: 0, keep: 0, boom: 0, saved: 0, sold: 0, earned: 0, best: 0, win: 0, lose: 0 } });
 const okG = g => g && typeof g === 'object' && Number.isInteger(g.lv) && g.lv >= 0 && g.lv <= MAX && typeof g.id === 'string';
 function load() {
@@ -696,6 +781,8 @@ function load() {
     });
     s.skins = (Array.isArray(s.skins) ? s.skins : []).filter(id => WALLS.some(w => w.id === id));
     s.bskins = (Array.isArray(s.bskins) ? s.bskins : []).filter(id => BENCHES.some(w => w.id === id)); if (!s.bskins.includes('workshop')) s.bskins.unshift('workshop');
+    s.asks = (Array.isArray(s.asks) ? s.asks : []).filter(id => ARENAS.some(w => w.id === id)); if (!s.asks.includes('alley')) s.asks.unshift('alley');
+    if (!s.asks.includes(s.ask)) s.ask = 'alley';
     if (!s.bskins.includes(s.bskin)) s.bskin = 'workshop';
     if (!s.skins.includes('wood')) s.skins.unshift('wood');
     if (!s.skins.includes(s.skin)) s.skin = 'wood';
@@ -770,7 +857,7 @@ function mergeSaves(here, acct) {
     }
     A.gold += H.gold; A.shards += H.shards; A.cases = Math.min(CASE_MAX, A.cases + H.cases);
     for (const [f, bits] of Object.entries(H.dex)) A.dex[f] = (A.dex[f] | 0) | (bits | 0);
-    A.skins = [...new Set([...A.skins, ...H.skins])]; A.bskins = [...new Set([...A.bskins, ...H.bskins])];
+    A.skins = [...new Set([...A.skins, ...H.skins])]; A.bskins = [...new Set([...A.bskins, ...H.bskins])]; A.asks = [...new Set([...A.asks, ...H.asks])];
     A.tuner = Math.max(A.tuner, H.tuner);
     for (const k of Object.keys(A.st)) A.st[k] = k === 'best' ? Math.max(A.st.best, H.st.best) : (A.st[k] | 0) + (H.st[k] | 0);
     A.first = A.first || H.first; A.rk = A.rk || H.rk; A.nick = A.nick || H.nick;
@@ -831,8 +918,9 @@ function cloudBtn() {
 function btDay() { if (S.bt.day !== today()) S.bt = { day: today(), n: 0, done: {} }; return S.bt; }
 // 대표 기타: 고른 것 → 벽의 가장 높은 것 → 작업대
 function rep() {
-    const hung = [...S.wall.filter(Boolean), ...S.floor], all = [...hung, ...(S.bench ? [S.bench] : [])];
-    return all.find(g => g.id === S.rep) || hung.slice().sort((a, b) => b.lv - a.lv)[0] || S.bench || null;
+    // 앰프·멀티는 대표가 될 수 없다 (2026-11-12 사용자) — 기타만
+    const hung = S.wall.filter(g => g && !isSq(g)), bench = S.bench && !isSq(S.bench) ? S.bench : null, all = [...hung, ...(bench ? [bench] : [])];
+    return all.find(g => g.id === S.rep) || hung.slice().sort((a, b) => b.lv - a.lv)[0] || bench || null;
 }
 
 // ---------- 효과음 (Web Audio로 만든 소리 — 음원 파일 없음) ----------
@@ -872,6 +960,8 @@ function sfx(kind, lv = 0, ms = 0) {
         else if (kind === 'win') { [523, 659, 784, 1047].forEach((f, i) => T(f, i * 0.09, 0.4, 'square', 0.09)); }
         else if (kind === 'lose') { [392, 370, 349, 294].forEach((f, i) => T(f, i * 0.16, 0.3, 'triangle', 0.18)); }
         else if (kind === 'tick') { T(1200, 0, 0.04, 'square', 0.05); }
+        else if (kind === 'clash') { T(2350 + Math.random() * 300, 0, 0.2, 'square', 0.05, 1700); T(3700, 0, 0.14, 'triangle', 0.08, 3000); T(5300, 0.01, 0.1, 'sine', 0.05); noise(t, 0.07, 0.35, out, 7000, 2500); }
+        else if (kind === 'smash') { noise(t, 0.4, 0.6, out, 3200, 160); T(130, 0, 0.32, 'sine', 0.5, 55); T(2500, 0, 0.25, 'square', 0.06, 1300); T(3900, 0.02, 0.18, 'triangle', 0.07); }
         else if (kind === 'charge') {   // 강화 기다림: 낮은 북이 점점 빨라지고, 올라가는 소리가 점점 커진다
             const dur = ms / 1000, b = 98 * Math.pow(2, lv / 30);
             const o = actx.createOscillator(), g = actx.createGain(), lp = actx.createBiquadFilter();
@@ -1248,9 +1338,10 @@ function renderBench() {
     let h = '';
     if (g.lv >= MAX) h += `<div class="maxed">🎸 최고 단계! 더는 강화할 수 없어요.<br><small>벽에 걸고 대표 기타로 배틀에 내보내요.</small></div>`;
     else {
-        const [s, m, d] = ODDS[g.lv], cost = COST[g.lv], safe = d > 0 && S.caseOn && S.cases > 0;
+        const [s, m, d, cd, cm] = oddsFor(g.lv), cost = COST[g.lv], safe = d > 0 && S.caseOn && S.cases > 0;
         h += `<div class="odds3"><span class="o">성공<b>${s}%</b></span><span class="k">줄 끊김<b>${m}%</b></span><span class="b ${safe ? 'safe' : ''}">${safe ? '부서짐 → 케이스' : '부서짐'}<b>${d}%</b></span></div>`;
-        if (T && m > 0) h += `<p class="tline">${T.name}로 딱 맞히면 성공 <b>${s + Math.min(T.bonus, m)}%</b> (+${Math.min(T.bonus, m)}%p, 줄 끊김에서)</p>`;
+        if (cd || cm) h += `<p class="gline">${cd ? `<span><i class="fas fa-volume-high"></i>앰프 부서짐 −${cd}%p</span>` : ''}${cm ? `<span><i class="fas fa-sliders"></i>멀티 줄 끊김 −${cm}%p</span>` : ''}</p>`;
+        if (T && m > 0) h += `<p class="tline">${T.name}로 딱 맞히면 성공 <b>${r1(s + Math.min(T.bonus, m))}%</b> (+${r1(Math.min(T.bonus, m))}%p, 줄 끊김에서)</p>`;
         if (S.gold < cost) h += `<p class="lack">골드가 ${gf(cost - S.gold)} 모자라요. 팔거나 출석 골드를 받아요.</p>`;
     }
     h += `<div class="acts"><button type="button" data-a="sell" ${g.lv ? '' : 'disabled'}><i class="fas fa-coins"></i>팔기 <b>${g.lv ? gf(SELL[g.lv]) : '0G'}</b></button>
@@ -1269,7 +1360,7 @@ function renderSact() {
     if (!show) return;
     const cost = COST[g.lv], can = g.lv < MAX;
     // 2026-11-12 사용자: 부서짐 확률이 생기는 단계(+7)부터 강화 단추 위에 하드케이스 ON/OFF. 다시 누르면 OFF. 케이스가 없으면 누르면 상점 케이스 칸
-    const risk = can && ODDS[g.lv][2] > 0, on = S.caseOn && S.cases > 0;
+    const risk = can && oddsFor(g.lv)[2] > 0, on = S.caseOn && S.cases > 0;
     el.classList.toggle('one', !can); el.classList.toggle('cs-on', risk);
     el.innerHTML = (risk ? (S.cases
         ? `<button type="button" class="cs ${on ? 'on' : ''}" data-a="case" aria-pressed="${on}"><i class="fas fa-briefcase"></i>하드케이스 <b>${on ? 'ON' : 'OFF'}</b><small>${S.cases}/${CASE_MAX}</small></button>`
@@ -1422,8 +1513,8 @@ async function enhance() {
     busy = true; talkClear(); renderSact();
     let bonus = 0;
     const T = TUNERS[S.tuner];
-    if (T && S.tuneOn && ODDS[g.lv][1] > 0) bonus = await tune(T);
-    const lv0 = g.lv, [s0, m0] = ODDS[lv0], b = Math.min(bonus, m0), s = s0 + b, m = m0 - b;
+    if (T && S.tuneOn && oddsFor(g.lv)[1] > 0) bonus = await tune(T);
+    const lv0 = g.lv, [s0, m0] = oddsFor(lv0), b = Math.min(bonus, m0), s = s0 + b, m = m0 - b;   // 바닥 앰프·멀티 능력치까지 넣은 확률
     const r = Math.random() * 100;
     let out = r < s ? 'ok' : r < s + m ? 'keep' : 'boom';
     if (out === 'boom' && S.caseOn && S.cases > 0) out = 'saved';
@@ -1612,9 +1703,10 @@ function storeBox() {
     const free = g => isSq(g) ? floorRoom(S.floor, g) : HANG_ORDER.some(i => S.open[i] && !S.wall[i]);
     return `<div class="storebox"><h4><i class="fas fa-box-archive"></i> 창고 <small>${S.store.length}대 · 기록을 합칠 때 벽에 못 건 기타</small></h4>${S.store.map(g => `<div class="grow" id="row-${g.id}">${gc(g.lv, '', 2, g.f)}
         <div class="gt"><b>${esc(full(g))}</b><small>창고 · 팔면 ${gf(SELL[g.lv])}</small></div>
-        <div class="ga"><button type="button" class="pri" data-a="stake" data-id="${g.id}">${S.bench ? '작업대와 바꾸기' : '작업대로'}</button>
+        <div class="ga"><button type="button" class="pri" data-a="stake" data-id="${g.id}">작업대로</button>
         <button type="button" data-a="shang" data-id="${g.id}" ${free(g) ? '' : 'disabled'}>${isSq(g) ? '바닥에 놓기' : '벽에 걸기'}</button>
-        <button type="button" data-a="ssell" data-id="${g.id}" ${g.lv ? '' : 'disabled'}>팔기</button></div></div>`).join('')}</div>`;
+        <button type="button" data-a="ssell" data-id="${g.id}" ${g.lv ? '' : 'disabled'}>팔기</button>
+        <button type="button" class="sh" data-a="gshare" data-id="${g.id}" aria-label="공유"><i class="fas fa-share-nodes"></i>공유</button></div></div>`).join('')}</div>`;
 }
 // 바닥 장비: 앰프는 오른쪽 아래 구석, 멀티이펙터는 그 왼쪽 바닥
 
@@ -1659,12 +1751,18 @@ function renderRoom(enter) {
             <span class="wp floor" style="left:${fl.x}%;top:${fl.bottom - 3.5}%">+${g.lv}</span>${isRep ? `<span class="wrep" style="left:${fl.x}%;top:${fl.bottom - fl.h2 * 0.42}%">대표</span>` : ''}`;
     }).join('');
     justOpened = -1;
-    const placed = [...S.wall.map((g, i) => g && [g, i]), ...S.floor.map(g => [g, -1])].filter(Boolean);
-    const rows = placed.map(([g, i]) => `<div class="grow ${g.id === selId ? 'sel' : ''}" id="row-${g.id}">${gc(g.lv, '', 2, g.f)}
-            <div class="gt"><b>${esc(full(g))}</b><small>${i < 0 ? '바닥' : i === MID ? '가운데 걸이' : i < MID ? `왼쪽 ${MID - i}번째 걸이` : `오른쪽 ${i - MID}번째 걸이`} · ${rp && g.id === rp.id ? '⭐ 대표 기타 · ' : ''}팔면 ${gf(SELL[g.lv])}</small></div>
-            <div class="ga"><button type="button" class="pri" data-a="setrep" data-id="${g.id}" ${rp && g.id === rp.id ? 'disabled' : ''}>대표로</button>
-            <button type="button" data-a="take" data-id="${g.id}">${S.bench ? '작업대와 바꾸기' : '작업대로'}</button>
-            <button type="button" data-a="wsell" data-id="${g.id}" ${g.lv ? '' : 'disabled'}>팔기</button></div></div>`);
+    // 목록은 장비별로 (2026-11-12 사용자): 기타(걸이) · 앰프 · 멀티이펙터(바닥). 악기마다 공유 단추, 작업대로 가는 단추는 '다시 작업대로'
+    const row = (g, i) => `<div class="grow ${g.id === selId ? 'sel' : ''}" id="row-${g.id}">${gc(g.lv, '', 2, g.f)}
+            <div class="gt"><b>${esc(full(g))}</b><small>${i < 0 ? `바닥 · 능력 ${g.f === 'amp' ? '부서짐' : '줄 끊김'} −${gearCut(g)}%p` : (i === MID ? '가운데 걸이' : i < MID ? `왼쪽 ${MID - i}번째 걸이` : `오른쪽 ${i - MID}번째 걸이`) + (rp && g.id === rp.id ? ' · ⭐ 대표 기타' : '')} · 팔면 ${gf(SELL[g.lv])}</small></div>
+            <div class="ga">${isSq(g) ? '' : `<button type="button" class="pri" data-a="setrep" data-id="${g.id}" ${rp && g.id === rp.id ? 'disabled' : ''}>대표로</button>`}
+            <button type="button" data-a="take" data-id="${g.id}">다시 작업대로</button>
+            <button type="button" data-a="wsell" data-id="${g.id}" ${g.lv ? '' : 'disabled'}>팔기</button>
+            <button type="button" class="sh" data-a="gshare" data-id="${g.id}" aria-label="공유"><i class="fas fa-share-nodes"></i>공유</button></div></div>`;
+    const grp = (icon, title, list, note) => list.length ? `<h4 class="gh"><i class="fas ${icon}"></i>${title}<small>${list.length}${note}</small></h4>` + list.map(([g, i]) => row(g, i)).join('') : '';
+    const wallG = S.wall.map((g, i) => g && [g, i]).filter(Boolean), amps = S.floor.filter(g => g.f === 'amp').map(g => [g, -1]), mults = S.floor.filter(g => g.f === 'multi').map(g => [g, -1]);
+    const rows = [grp('fa-guitar', '기타', wallG, `/${nOpen}대 · 걸이`)
+        + grp('fa-volume-high', '앰프', amps, `/${FLOOR_EACH}대 · 바닥 · 부서짐 −${gearBuff().amp}%p`)
+        + grp('fa-sliders', '멀티이펙터', mults, `/${FLOOR_EACH}대 · 바닥 · 줄 끊김 −${gearBuff().multi}%p`)].filter(Boolean);
     el.innerHTML = `<div class="wall5 ${enter ? 'enter' : ''}" style="aspect-ratio:${W.w} / ${W.h}">
         <img class="bg" src="../images/play/gk/${W.src}" alt="컬렉션 진열 벽">${slots}${floorHtml}</div>
         <p class="rinfo sel" ${selId ? '' : 'hidden'}><i class="fas fa-arrows-left-right"></i> 다른 기타를 누르면 서로 자리를 바꿔요${selWall ? ' · 빈 걸이를 누르면 그리로 옮겨요' : ''} · 다시 누르면 선택을 풀어요</p>
@@ -1832,6 +1930,63 @@ function setNick(v) {
     S.nick = n.slice(0, 12); save();
     return true;
 }
+// 배틀 연출 (2026-11-12 사용자: 기타 넥을 칼이라 생각하고 넥끼리 부딪치게). 기타는 몸통을 축으로 기울여 넥을 칼처럼 겨누고,
+//   몇 번 부딪친(불꽃·쨍) 뒤 마지막 한 방에 진 쪽이 튕겨 나간다. 앰프·멀티(sq)는 넥이 없어서 몸통 박치기
+const R0 = 52;
+async function duel(ar, win, bar) {
+    const F = { me: ar.querySelector('.fighter.me'), op: ar.querySelector('.fighter.op') };
+    const C = { me: F.me.querySelector('canvas'), op: F.op.querySelector('canvas') };
+    const sq = { me: F.me.classList.contains('sq'), op: F.op.classList.contains('sq') };
+    const W = ar.clientWidth, fw = F.me.offsetWidth, fh = F.me.offsetHeight;
+    const cx = { me: F.me.offsetLeft + fw / 2, op: W - (F.op.offsetLeft + fw / 2) };   // 가장자리에서 몸통 가운데까지
+    const pivotY = F.me.offsetTop + fh * 0.78, L = fh * 0.47, rad = d => d * Math.PI / 180;
+    const dir = k => k === 'me' ? 1 : -1;
+    const reach = k => sq[k] ? fw * 0.3 : L * Math.sin(rad(86));
+    const lunge = k => Math.max(0, W / 2 - cx[k] - reach(k) + 4);
+    const rot = (k, d) => sq[k] ? 'none' : `rotate(${dir(k) * d}deg)`;
+    const KF = (k, lg) => ({
+        c: [{ transform: rot(k, R0) }, { transform: rot(k, 22), offset: .38 }, { transform: rot(k, 86), offset: .62 }, { transform: rot(k, 70), offset: .8 }, { transform: rot(k, R0) }],
+        f: [{ transform: 'none' }, { transform: `translateX(${-dir(k) * 12}px)`, offset: .38 }, { transform: `translateX(${dir(k) * lg}px)`, offset: .62 }, { transform: `translateX(${dir(k) * lg * 0.35}px)`, offset: .8 }, { transform: 'none' }] });
+    const swing = (k, dur) => { const kf = KF(k, lunge(k)); C[k].animate(kf.c, { duration: dur, easing: 'ease-in-out' }); F[k].animate(kf.f, { duration: dur, easing: 'ease-in-out' }); };
+    const spark = big => {
+        const y = sq.me && sq.op ? pivotY - fh * 0.12 : pivotY - L * Math.cos(rad(86)) - 6;
+        const d = document.createElement('div');
+        d.className = 'spk' + (big ? ' big' : ''); d.style.left = W / 2 + 'px'; d.style.top = y + 'px';
+        d.innerHTML = '<b></b>' + '<i></i>'.repeat(big ? 18 : 10);
+        ar.appendChild(d);
+        d.querySelectorAll('i').forEach(q => {
+            const a = Math.random() * Math.PI * 2, r = (big ? 70 : 36) * (0.5 + Math.random() * 0.7);
+            q.animate([{ transform: 'translate(-50%, -50%)', opacity: 1 }, { transform: `translate(calc(-50% + ${Math.cos(a) * r}px), calc(-50% + ${Math.sin(a) * r}px)) scale(.3)`, opacity: 0 }],
+                { duration: 360 + Math.random() * 240, easing: 'cubic-bezier(.2, .7, .4, 1)', fill: 'forwards' });
+        });
+        setTimeout(() => d.remove(), 800);
+        ar.animate([{ transform: 'none' }, { transform: `translate(${big ? 6 : 3}px, ${big ? -4 : -2}px)` }, { transform: `translate(${big ? -5 : -2}px, ${big ? 3 : 1}px)` }, { transform: 'none' }], { duration: big ? 300 : 160 });
+    };
+    await sleep(350);
+    for (const dur of [560, 500, 460, 520]) {   // 칼싸움 네 합
+        swing('me', dur); swing('op', dur);
+        await sleep(dur * 0.62); spark(false); sfx('clash');
+        bar.style.setProperty('--p', (50 + (Math.random() - 0.5) * 60) + '%');
+        await sleep(dur * 0.38 + 70);
+    }
+    // 마지막 한 방: 둘 다 휘두르고, 부딪치는 순간 진 쪽이 튕겨 나간다
+    const w = win ? 'me' : 'op', l = win ? 'op' : 'me', dur = 620;
+    swing(w, dur); const lk = KF(l, lunge(l));
+    C[l].animate(lk.c.slice(0, 3), { duration: dur * 0.62, easing: 'ease-in-out', fill: 'forwards' });
+    F[l].animate(lk.f.slice(0, 3), { duration: dur * 0.62, easing: 'ease-in-out', fill: 'forwards' });
+    await sleep(dur * 0.62);
+    spark(true); sfx('smash'); bar.style.setProperty('--p', win ? '100%' : '0%');
+    [C[l], F[l]].forEach(e => e.getAnimations().forEach(a => a.cancel()));
+    C[l].animate([{ transform: rot(l, 86) }, { transform: rot(l, 150) }], { duration: 520, easing: 'cubic-bezier(.2, .8, .3, 1)', fill: 'forwards' });
+    F[l].animate([{ transform: `translateX(${dir(l) * lunge(l)}px)` }, { transform: `translate(${-dir(l) * 46}px, 16px)` }], { duration: 520, easing: 'cubic-bezier(.2, .8, .3, 1)', fill: 'forwards' });
+    F[l].classList.add('lose');
+    await sleep(dur * 0.38 + 60);
+    // 이긴 쪽: 칼(넥)을 들어 올린다
+    C[w].animate([{ transform: rot(w, R0) }, { transform: rot(w, -8) }], { duration: 380, easing: 'cubic-bezier(.3, 1.6, .5, 1)', fill: 'forwards' });
+    F[w].animate([{ transform: 'none' }, { transform: 'translateY(-14px)', offset: .5 }, { transform: 'none' }], { duration: 420 });
+    F[w].classList.add('win');
+    await sleep(420);
+}
 async function fight(id) {
     const o = [...(VS ? [VS] : []), ...(FIND ? [FIND] : []), ...NET.opps, ...OPPS].find(x => x.id === id), me = rep(), bt = btDay();
     if (!o || !me || busy || bt.done[o.id]) return;
@@ -1857,16 +2012,12 @@ async function fight(id) {
     const got = PLAY.picks.earn();
     const m = document.createElement('div');
     m.className = 'gk-modal';
-    m.innerHTML = `<div class="in"><div class="arena"><div class="side me">${gc(me.lv, 'live', 4, me.f)}<b>${esc(full(me))}</b><small>나</small></div><span class="vs">VS</span>
-        <div class="side op">${gc(o.lv, 'live', 4, o.f)}<b>${esc(full(o))}</b><small>${esc(o.nick)}</small></div></div>
-        <div class="tug"><i></i></div><div class="bres"><p>합주 배틀 중… 이길 확률 ${pct(p)}</p></div></div>`;
+    m.innerHTML = `<div class="in"><div class="arena askin ask-${S.ask}"><span class="vs">VS</span>
+        <div class="fighter me ${isSq(me) ? 'sq' : ''}">${gc(me.lv, 'live', 4, me.f)}</div><div class="fighter op ${isSq(o) ? 'sq' : ''}">${gc(o.lv, 'live', 4, o.f)}</div>
+        <div class="tags"><div class="tag"><b>${esc(full(me))}</b><small>나</small></div><div class="tag"><b>${esc(full(o))}</b><small>${esc(o.nick)}</small></div></div></div>
+        <div class="tug"><i></i></div><div class="bres"><p>배틀 중… 이길 확률 ${pct(p)}</p></div></div>`;
     document.body.appendChild(m);
-    const bar = m.querySelector('.tug i');
-    for (let i = 0; i < 9; i++) { bar.style.setProperty('--p', (50 + (Math.random() - 0.5) * 60) + '%'); sfx('tick'); await sleep(190); }
-    bar.style.setProperty('--p', win ? '100%' : '0%');
-    await sleep(300);
-    m.querySelector('.side.me').classList.add(win ? 'win' : 'lose');
-    m.querySelector('.side.op').classList.add(win ? 'lose' : 'win');
+    await duel(m.querySelector('.arena'), win, m.querySelector('.tug i'));
     sfx(win ? 'win' : 'lose');
     const say = win ? one([['minji', '이겼어요! 클립 따서 올릴게요.'], ['boss', '오늘 술은 내가 산다. …안주는 사 먹어라.'], ['oo', '……인정']]) : one([['boss', '진 날은 줄부터 갈아라.'], ['oo', 'ㅋ'], ['minji', '괜찮아요! 다음 판은 이겨요.']]);
     m.querySelector('.bres').innerHTML = `<h2 class="${win ? 'w' : 'l'}">${win ? '이겼다!' : '졌다…'}</h2>
@@ -1880,7 +2031,7 @@ async function fight(id) {
 // ---------- 상점 ----------
 // 상점: 카테고리 단추를 누르면 그 칸만 (2026-11-12 사용자: 아래로 쭉 늘어선 목록 말고)
 let shopCat = 'tuner';
-const SHOP_CATS = [['tuner', 'fa-gauge-high', '튜너'], ['case', 'fa-briefcase', '케이스'], ['bench', 'fa-screwdriver-wrench', '작업대'], ['skin', 'fa-image', '벽 스킨'], ['rec', 'fa-chart-simple', '기록']];
+const SHOP_CATS = [['tuner', 'fa-gauge-high', '튜너'], ['case', 'fa-briefcase', '케이스'], ['bench', 'fa-screwdriver-wrench', '작업대'], ['skin', 'fa-image', '벽 스킨'], ['arena', 'fa-shield-halved', '싸움터'], ['rec', 'fa-chart-simple', '기록']];
 function renderShop() {
     updBar();
     const el = $('#tab-shop'), st = S.st;
@@ -1898,6 +2049,11 @@ function renderShop() {
         return `<div class="item"><span class="ic skin" style="background-image:url(../images/play/gk/${B.src})"></span><div class="it"><b>${B.name}</b><small>${B.desc}</small></div>
             ${use ? '<span class="own">쓰는 중</span>' : own ? `<button type="button" data-a="bskin" data-id="${B.id}">바꾸기</button>` : `<button type="button" data-a="bskin" data-id="${B.id}" ${S.gold >= B.price ? '' : 'disabled'}>${gf(B.price)}</button>`}</div>`;
     }).join('') + (BENCHES.length < 2 ? '<p class="note2">작업대 스킨 10개는 그림을 뽑아 오면 여기에 더해요(낮 공방·합주실·빈티지 가게·클럽 무대·한옥·눈 오두막·네온·해변·공연장·별빛 신전).</p>' : '');
+    if (shopCat === 'arena') h += ARENAS.map(A => {
+        const own = S.asks.includes(A.id), use = S.ask === A.id;
+        return `<div class="item"><span class="ic apv askin ask-${A.id}"><i class="fas fa-guitar"></i><i class="fas fa-guitar"></i></span><div class="it"><b>${A.name}</b><small>${A.desc}</small></div>
+            ${use ? '<span class="own">쓰는 중</span>' : own ? `<button type="button" data-a="askin" data-id="${A.id}">바꾸기</button>` : `<button type="button" data-a="askin" data-id="${A.id}" ${S.gold >= A.price ? '' : 'disabled'}>${gf(A.price)}</button>`}</div>`;
+    }).join('') + '<p class="note2">배틀할 때 내 싸움터 배경이에요. 기타 넥끼리 칼처럼 부딪쳐요.</p>';
     if (shopCat === 'skin') h += WALLS.map(W => {
         const own = S.skins.includes(W.id), use = S.skin === W.id;
         return `<div class="item"><span class="ic skin" style="background-image:url(../images/play/gk/${W.src})"></span><div class="it"><b>${W.name}</b><small>${W.desc}</small></div>
@@ -1938,7 +2094,8 @@ $('#app').addEventListener('click', e => {
         if (id === selId) { selId = ''; renderRoom(); return; }
         swapSpots(selId, id || '', b.dataset.i != null ? +b.dataset.i : null);
     }
-    else if (a === 'setrep') { S.rep = id; save(); renderRoom(); toast('대표 기타로 정했어요'); }
+    else if (a === 'gshare') { const g = [...S.wall, ...S.floor, ...S.store].find(x => x && x.id === id); if (g) brag(g); }
+    else if (a === 'setrep') { const g = S.wall.find(x => x && x.id === id); if (!g || isSq(g)) { toast('앰프·멀티는 대표로 할 수 없어요'); return; } S.rep = id; save(); renderRoom(); toast('대표 기타로 정했어요'); }
     else if (a === 'take') {   // 작업대로(작업대 것은 제자리 → 다른 빈 자리 → 창고)
         const [g, i] = unplace(id); if (!g) return;
         const old = S.bench;
@@ -1983,6 +2140,10 @@ $('#app').addEventListener('click', e => {
         const W = WALLS.find(w => w.id === b.dataset.id); if (!W) return;
         if (!S.skins.includes(W.id)) { if (S.gold < W.price) return; S.gold -= W.price; S.skins.push(W.id); sfx('sell'); }
         S.skin = W.id; save(); renderShop(); toast(`진열 벽을 '${W.name}'(으)로 바꿨어요`);
+    } else if (a === 'askin') {
+        const A = ARENAS.find(w => w.id === b.dataset.id); if (!A) return;
+        if (!S.asks.includes(A.id)) { if (S.gold < A.price) return; S.gold -= A.price; S.asks.push(A.id); sfx('sell'); }
+        S.ask = A.id; save(); renderShop(); toast(`싸움터를 '${A.name}'(으)로 바꿨어요`);
     } else if (a === 'bskin') {
         const B = BENCHES.find(w => w.id === b.dataset.id); if (!B) return;
         if (!S.bskins.includes(B.id)) { if (S.gold < B.price) return; S.gold -= B.price; S.bskins.push(B.id); sfx('sell'); }
