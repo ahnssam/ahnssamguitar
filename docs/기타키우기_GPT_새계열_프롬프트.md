@@ -23,7 +23,7 @@
 | +3 | 픽업 커버 벗겼더니 얼룩말인 레스폴 | 흑백 얼룩말 험버커 |
 | +4 | 골드탑 칠하다 만 레스폴 | 반만 금색, 붓과 페인트 방울 |
 | +5 | 무늬가 너무 진해서 불타 보이는 레스폴 | 진한 불꽃 무늬 메이플 탑 |
-| +6 | 노브가 자꾸 늘어나는 레스폴 | 노브 열몇 개, 토글 스위치 두 개 |
+| +6 | 노브가 자꾸 커지는 레스폴 | 네 개 노브가 접시만 하게 커짐 (2026-11-12 바꿈: 노브가 많은 그림이 징그러워서) |
 | +7 | 체리 선버스트에 진짜 체리가 열린 레스폴 | 헤드와 혼에 매달린 체리 |
 | +8 | 무대 연기가 따라다니는 레스폴 | 발밑에서 피어오르는 무대 연기, 보랏빛 조명 |
 | +9 | 아무도 안 잡았는데 비브라토 걸리는 레스폴 | 혼자 떨리는 줄, 희미한 유령 손가락 빛 |
@@ -79,10 +79,17 @@ Original designs only: no logos, and NO text, letters or numbers anywhere.
 4. Zebra pickups: the pickup covers removed, showing black-and-cream striped "zebra" humbuckers, a tiny screwdriver tucked behind the strings.
 5. Half-painted gold top: the top half-painted in shiny gold over the sunburst, a paintbrush stuck on the body, a few gold paint drips.
 6. Burning flame top: a deep red-orange flame-maple pattern so strong the top looks like it is on fire (only the wood pattern, no real fire).
-7. Too many knobs: twelve or more knobs and two toggle switches crowded all over the lower body.
+7. Giant knobs: the usual four knobs grown comically huge, each as big as a small saucer, shiny gold with simple tick marks (no numbers), still only four knobs, neatly placed on the lower body.
 8. Real cherries: a cherry-red sunburst finish with real shiny cherries hanging from the headstock and the horn by their stems, a couple of green leaves.
 9. Stage smoke: thick white stage fog rolling around the bottom of the guitar, soft purple stage light from behind, a few sparkles.
 10. Plays its own vibrato: the strings trembling by themselves with faint glowing ghost-finger shapes pressing on them, a subtle eerie blue glow - the first hint of something mysterious.
+```
+
+레스폴 +6만 다시 뽑기 (2026-11-12 사용자: 노브 많은 그림이 징그러워서 '노브가 커지는'으로). 레스폴 시트를 뽑은 대화에 붙여 넣는다.
+
+```
+Redraw ONLY guitar 7 of the Les Paul-style sheet, as ONE image with the same style, the same guitar shape and size, transparent background, upright and seen from the front:
+Giant knobs: instead of many knobs, the usual four knobs have grown comically huge - each as big as a small saucer, shiny gold with simple tick marks (no numbers), still only four knobs and one toggle switch, neatly placed on the lower body. Deep wine-red finish. Cute and funny, not creepy. No logos, NO text, letters or numbers.
 ```
 
 ## 3. 프롬프트 — 텔레 (+0 ~ +9)
