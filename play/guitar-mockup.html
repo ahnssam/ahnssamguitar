@@ -346,6 +346,14 @@
     .sec-h { display: flex; align-items: baseline; gap: 8px; margin: 18px 2px 8px; }
     .sec-h h3 { font-size: 15px; font-weight: 900; }
     .sec-h small { font-size: 12px; color: var(--sub); }
+    /* 연습 상대 새로고침 (2026-11-12 사용자) */
+    .sec-h .rerank { margin-left: auto; align-self: center; flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 99px; border: 1.5px solid var(--line); background: #fff; font-size: 12.5px; font-weight: 800; color: var(--green-deep); }
+    .sec-h .rerank:active i { transform: rotate(180deg); }
+    .sec-h .rerank i { transition: transform .3s; }
+    .opps.fresh .opp { animation: oppIn .35s ease-out both; }
+    .opps.fresh .opp:nth-child(2) { animation-delay: .04s; } .opps.fresh .opp:nth-child(3) { animation-delay: .08s; } .opps.fresh .opp:nth-child(4) { animation-delay: .12s; }
+    .opps.fresh .opp:nth-child(5) { animation-delay: .16s; } .opps.fresh .opp:nth-child(n+6) { animation-delay: .2s; }
+    @keyframes oppIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
     .opp { display: flex; align-items: center; gap: 10px; background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 8px 10px; margin-bottom: 6px; }
     .opp canvas { width: 34px; height: 51px; flex: none; }
     .opp .ot { flex: 1; min-width: 0; }
@@ -372,6 +380,16 @@
     .rkr.me { background: #fff8e1; }
     .rkr.gap { display: block; text-align: center; color: var(--sub); padding: 0; }
     .sharebox { padding: 14px; margin-top: 16px; }
+    /* 배틀 탭 맨 위 '내 파이트 넘버' (2026-11-12 사용자) */
+    .fno { display: flex; align-items: center; gap: 8px; margin: 0 2px 10px; padding: 9px 12px; border-radius: 14px; background: #1d2a26; color: #fff; }
+    .fno .lb { font-size: 13px; font-weight: 800; color: #c9d8d1; }
+    .fno b { font: 900 20px/1 'Arial Black', sans-serif; color: #ffd76a; letter-spacing: .02em; }
+    .fno em { font-style: normal; font-size: 12.5px; color: #9fb2aa; }
+    .fno button { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 99px; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); color: #fff; font-size: 12.5px; font-weight: 800; }
+    .nobox { margin-top: 12px; }
+    .nobox .found { margin-top: 10px; }
+    .nobox .found .opp { margin-bottom: 0; }
+    .nobox .fmsg { margin: 8px 0 0; font-size: 12.5px; color: #a85a00; font-weight: 700; }
     .sharebox h3 { font-size: 15px; font-weight: 900; }
     .sharebox p { font-size: 12.5px; color: #666; margin: 4px 0 10px; }
     .sharebox .row { display: flex; gap: 6px; }
@@ -695,7 +713,11 @@ function load() {
     return s;
 }
 let S = load();
-const save = () => { mem.set('gk', S); cloudDirty(); };
+const save = () => { mem.set('gk', S); cloudDirty(); autoSync(); };
+// 대표 기타를 랭킹 서버에 저절로 올린다 (2026-11-12 사용자: 사람이 쌓이면 유저끼리 붙게 — 예전엔 배틀 탭을 열어야만 올라갔다).
+//   저장할 때마다 4초 모아서, 바뀌었거나 10분 지났을 때만 실제로 보낸다(syncMe). 30일 안 온 사람은 서버가 상대 목록에서 뺀다
+let syncT = 0;
+function autoSync() { clearTimeout(syncT); syncT = setTimeout(() => { if (rep()) syncMe().catch(() => {}); }, 4000); }
 // 랭킹·배틀에 쓰는 열쇠. 계정에 처음 올린 기기의 열쇠를 저장해 두고(S.rk) 다른 기기에서도 같은 줄로 이어진다
 const gkKey = () => S.rk || PLAY.myKey();
 
@@ -1680,14 +1702,16 @@ const NICKS = ['합주실 지박령', '피크 수집가', '카포 분실자', '�
     '줄 끊는 손', '6번 줄 담당', '베이스 아님', '레슨 땡땡이', '스트랩 짧게', '앰프 빌려 씀', '딜레이 과다', '셋업 맡김', '칼박 지망생', '반주만 3년'];
 function hashStr(s) { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
 function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+// 연습 상대: 날짜·내 단계·새로고침 횟수로 정해진다. 새로고침하면 다른 사람들로 (2026-11-12 사용자, 하루 배틀 10번은 그대로)
 function rankers() {
-    const me = rep(), m = me ? me.lv : 0, day = today();
-    const r = rng(hashStr(day + '|' + m + '|' + PLAY.myKey().slice(0, 8)));
+    const me = rep(), m = me ? me.lv : 0, day = today(), rr = btDay().rr | 0;
+    const r = rng(hashStr(day + '|' + m + '|' + PLAY.myKey().slice(0, 8) + (rr ? '|' + rr : '')));
     const names = NICKS.slice();
     return [6, 4, 3, 2, 1, 1, 0, 0, -1, -2].map(off => {
         const nick = names.splice(Math.floor(r() * names.length), 1)[0];
         const lv = Math.max(0, Math.min(MAX, m + off + (r() < 0.3 ? 1 : 0)));
-        return { id: 'r' + hashStr(day + nick), nick, lv, f: 'strat' };
+        const f = rr ? FIND_FAMS[Math.floor(r() * FIND_FAMS.length)] : 'strat';   // 새로고침한 상대는 악기도 여러 가지
+        return { id: 'r' + hashStr(day + (rr ? rr + '|' : '') + nick), nick, lv, f };
     }).sort((a, b) => b.lv - a.lv);
 }
 // ---------- 진짜 랭킹 (db/play_guitar_rank.sql, 2026-11-12 적용) — 안 닿거나 사람이 적으면 연습 상대로 채운다 ----------
@@ -1730,7 +1754,33 @@ function oppRow(o, cls = '') {
         <span class="pr">이길 확률 <em class="${p < 0.3 ? 'low' : ''}">${pct(p)}</em> · 이기면 +${gf(reward(o.lv))}</span></div>
         ${done ? `<span class="res3 ${done}">${done === 'w' ? '이김' : '졌음'}</span>` : `<button type="button" class="fight" data-a="fight" data-id="${o.id}" ${me && btDay().n < BT_DAY ? '' : 'disabled'}>도전</button>`}</div>`;
 }
-let OPPS = [];
+let OPPS = [], rerankAnim = false;
+// 파이트 넘버 (2026-11-12 사용자: 사람마다 아이디 같은 번호 — 붙여 넣으면 그 사람과 배틀). 번호 = 랭킹 줄 번호(play_guitar_players.id).
+//   로그인하면 계정에 저장된 열쇠(S.rk)로 이어져서 다른 기기에서도 같은 번호
+let FIND = null, findMsg = '', findQ = '', findBusy = false;
+const myNo = () => (NET.me && NET.me.id) || (mem.get('gk.sync', {}) || {}).id || 0;
+async function findNo(raw) {
+    findQ = String(raw || '').trim();
+    const m = findQ.match(/[?&]p=(\d+)/) || findQ.match(/(\d+)/);   // '#27', '27', 배틀 신청 링크 모두
+    if (!m) { toast('상대 파이트 넘버를 적어 주세요'); return; }
+    const id = +m[1];
+    if (id === myNo()) { FIND = null; findMsg = '내 파이트 넘버예요. 친구에게 알려 주세요!'; renderBattle(); return; }
+    if (findBusy) return;
+    findBusy = true; findMsg = '찾는 중…'; FIND = null; renderBattle();
+    try {
+        const r = (await PLAY.rpc('play_guitar_player', { p_id: id }))[0];
+        if (r) { FIND = { id: 'p' + r.id, pid: r.id, nick: r.nickname, lv: r.lv, f: r.fam, w: r.wins, l: r.losses }; findMsg = ''; }
+        else findMsg = `#${id} 파이트 넘버를 찾을 수 없어요`;
+    } catch (e) { findMsg = '연결이 안 돼요. 잠시 뒤에 다시 해 봐요'; }
+    findBusy = false;
+    if (tab === 'battle') renderBattle();
+}
+function copyNo() {
+    const t = '#' + myNo();
+    const done = () => toast(`내 파이트 넘버 ${t}를 복사했어요`);
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, () => toast(`내 파이트 넘버는 ${t}예요`));
+    else toast(`내 파이트 넘버는 ${t}예요`);
+}
 function renderBattle() {
     updBar();
     const el = $('#tab-battle'), me = rep(), bt = btDay();
@@ -1740,16 +1790,25 @@ function renderBattle() {
     const mine = NET.ok ? NET.top.find(r => r.me) : null, total = NET.ok && NET.top.length ? NET.top[0].players : 0;
     const rankLine = NET.ok === null ? '랭킹 불러오는 중…' : NET.ok === false ? '랭킹에 연결이 안 돼요 · 연습 상대와 붙어요'
         : NET.me && NET.me.hidden ? '운영 계정이라 랭킹에 안 보여요' : mine ? `랭킹 ${mine.pos}위 / ${total}명` : '';
-    let h = `<div class="card mycard">${me ? gc(me.lv, '', 2, me.f) : ''}<div class="mt"><small>내 대표 기타</small><b>${me ? esc(full(me)) : '아직 기타가 없어요'}</b>
+    const no = me ? myNo() : 0;
+    let h = `<div class="fno"><span class="lb">내 파이트 넘버 :</span>${no ? `<b>#${no}</b><button type="button" data-a="copyno"><i class="fas fa-copy"></i>복사</button>`
+        : `<em>${!me ? '대표 기타가 생기면 받아요' : NET.ok === false ? '연결되면 받아요' : '받는 중…'}</em>`}</div>`;
+    h += `<div class="card mycard">${me ? gc(me.lv, '', 2, me.f) : ''}<div class="mt"><small>내 대표 기타</small><b>${me ? esc(full(me)) : '아직 기타가 없어요'}</b>
         <div class="left">오늘 남은 배틀 ${BT_DAY - bt.n}/${BT_DAY} · ${S.st.win}승 ${S.st.lose}패</div>${rankLine ? `<div class="rkline">${rankLine}</div>` : ''}</div></div>`;
     if (VS) {
         const mineLink = [...S.wall.filter(Boolean), ...S.floor, ...(S.bench ? [S.bench] : [])].some(g => g.id === VS.mine) || (VS.p && NET.me && VS.p === NET.me.id);
         h += `<div class="sec-h"><h3>배틀 신청이 왔어요</h3><small>링크로 받은 기타</small></div>`;
         h += mineLink ? `<p class="note2">내가 보낸 신청 링크예요. 친구에게 보내 주세요!</p>` : oppRow(VS, 'vs');
     }
+    h += `<div class="card sharebox nobox"><h3><i class="fas fa-hashtag"></i> 파이트 넘버로 배틀</h3><p>친구의 파이트 넘버를 붙여 넣으면 그 사람과 붙어요.</p>
+        <div class="row"><input id="vsno" inputmode="numeric" maxlength="200" placeholder="상대 파이트 넘버 (예: #27)" value="${esc(findQ)}"><button class="btn" type="button" data-a="findno" ${findBusy ? 'disabled' : ''}>찾기</button></div>
+        ${FIND ? `<div class="found">${oppRow(FIND, 'vs')}</div>` : findMsg ? `<p class="fmsg">${esc(findMsg)}</p>` : ''}</div>`;
     if (NET.ok === null) h += `<p class="note2" style="text-align:center;padding:18px 0">상대를 불러오는 중…</p>`;
     if (real.length) h += `<div class="sec-h"><h3>오늘의 상대</h3><small>다른 사람들의 대표 기타</small></div>` + real.map(o => oppRow(o)).join('');
-    if (OPPS.length) h += `<div class="sec-h"><h3>${real.length ? '연습 상대' : '오늘의 상대'}</h3><small>${NET.ok ? '사람이 모일 때까지 채워 둔 가상 기타리스트' : '연습 상대예요'}</small></div>` + OPPS.map(o => oppRow(o)).join('');
+    if (OPPS.length) h += `<div class="sec-h"><h3>${real.length ? '연습 상대' : '오늘의 상대'}</h3><small>${NET.ok ? '사람이 모일 때까지 채워 둔 가상 기타리스트' : '연습 상대예요'}</small>
+        <button type="button" class="rerank" data-a="rerank" aria-label="연습 상대 새로고침"><i class="fas fa-rotate-right"></i>새로고침</button></div>`
+        + `<div class="opps ${rerankAnim ? 'fresh' : ''}">${OPPS.map(o => oppRow(o)).join('')}</div>`;
+    rerankAnim = false;
     h += `<p class="note2">단계가 같으면 50%, 한 단계 높으면 75%, 두 단계 87.5%… 높은 상대를 이길수록 보상이 커요. 지면 잃는 건 없어요. 배틀 한 번 끝낼 때마다 놀이터 피크 ${PLAY.PICK.per}(하루 ${PLAY.PICK.day}까지).</p>`;
     if (NET.ok && NET.top.length) {
         h += `<div class="sec-h"><h3>랭킹</h3><small>대표 기타 단계 순 · 같으면 먼저 닿은 사람</small></div><div class="card rk">`
@@ -1762,6 +1821,10 @@ function renderBattle() {
     paintAll(el);
     const ni = el.querySelector('#nick');
     ni.addEventListener('change', () => setNick(ni.value));
+    const vi = el.querySelector('#vsno');
+    vi.addEventListener('input', () => { findQ = vi.value; });
+    vi.addEventListener('keydown', e => { if (e.key === 'Enter') findNo(vi.value); });
+    vi.addEventListener('paste', () => setTimeout(() => findNo(vi.value), 0));   // 붙여 넣으면 바로 찾기
 }
 function setNick(v) {
     const n = String(v || '').replace(/\s+/g, ' ').trim();
@@ -1770,7 +1833,7 @@ function setNick(v) {
     return true;
 }
 async function fight(id) {
-    const o = [...(VS ? [VS] : []), ...NET.opps, ...OPPS].find(x => x.id === id), me = rep(), bt = btDay();
+    const o = [...(VS ? [VS] : []), ...(FIND ? [FIND] : []), ...NET.opps, ...OPPS].find(x => x.id === id), me = rep(), bt = btDay();
     if (!o || !me || busy || bt.done[o.id]) return;
     if (bt.n >= BT_DAY) { toast('오늘 배틀은 다 했어요. 내일 또!'); return; }
     busy = true;
@@ -1857,6 +1920,7 @@ $('#app').addEventListener('click', e => {
     const a = b.dataset.a, id = b.dataset.id;
     if (a === 'again') enhance();
     else if (a === 'shopcat') { shopCat = b.dataset.c; renderShop(); }
+    else if (a === 'rerank') { const bt = btDay(); bt.rr = (bt.rr | 0) + 1; save(); rerankAnim = true; sfx('drop'); renderBattle(); toast('새 연습 상대가 왔어요'); }
     else if (a === 'gocase') { talkClear(); shopCat = 'case'; setTab('shop'); }   // 위 줄 조각 → 하드케이스 칩
     else if (a === 'dex') toast(`+${b.dataset.lv} ${FAMS[b.dataset.f].names[+b.dataset.lv]}`);
     else if (a === 'new') findGuitar(false);
@@ -1902,6 +1966,8 @@ $('#app').addEventListener('click', e => {
         S.store.splice(i, 1); S.gold += SELL[g.lv]; S.st.sold++; S.st.earned += SELL[g.lv]; if (S.rep === g.id) S.rep = '';
         save(); sfx('sell'); renderRoom(); updBar(true); toast(`${full(g)}을(를) ${gf(SELL[g.lv])}에 팔았어요`);
     } else if (a === 'fight') fight(id);
+    else if (a === 'findno') findNo(($('#vsno') || {}).value);
+    else if (a === 'copyno') copyNo();
     else if (a === 'vslink') { const ni = $('#nick'); if (ni && !setNick(ni.value)) return; challengeLink(); }
     else if (a === 'buyT') {
         const n = +b.dataset.n, T = TUNERS[n];
@@ -1962,6 +2028,7 @@ addEventListener('pageshow', e => { if (e.persisted && !busy && tab === 'bench')
 document.addEventListener('visibilitychange', () => { if (!document.hidden && !busy && tab === 'bench' && !S.bench) renderBench(); });
 start();
 setTimeout(cloudSync, 1200);
+autoSync();   // 들어오면 한 번(마지막으로 온 날을 새로 해서 다른 사람의 상대 목록에 남게)
 </script>
 </body>
 </html>
