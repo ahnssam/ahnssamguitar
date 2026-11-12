@@ -206,7 +206,11 @@
     .talk img { width: 34px; height: 34px; border-radius: 8px; flex: none; object-fit: cover; }
     .talk b { display: block; font-size: 11.5px; color: #ffd76a; }
     .talk p { font-size: 12.5px; line-height: 1.4; }
-    #nm[hidden] ~ .talk { top: 12px; }
+    /* 이름표·대사 덩어리: 가운데 위에 같이 둥실. 대사는 이름표 꼬리(▼) 바로 아래에 붙는다 */
+    .nmhud { position: absolute; left: 50%; top: 14px; z-index: 6; width: calc(100% - 24px); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; animation: nmBob 2.8s ease-in-out infinite; }
+    .nmhud .nmtag { position: relative; left: auto; top: auto; transform: none; animation: none; max-width: 100%; pointer-events: auto; }
+    .nmhud .talk { position: relative; left: auto; right: auto; top: auto; margin-top: 11px; width: max-content; max-width: 100%; pointer-events: auto; }
+    .nmhud .nmtag[hidden] + .talk { margin-top: -2px; }
     .talk .more { position: absolute; right: 10px; bottom: 6px; font-size: 10px; opacity: .6; }
 
     /* 튜너 */
@@ -418,7 +422,7 @@
     .stats small { font-size: 11.5px; color: var(--sub); }
     .reset { display: block; margin: 16px auto 0; font-size: 12px; color: #999; text-decoration: underline; }
 
-    @media (prefers-reduced-motion: reduce) { .pop, .daily, .nmtag, .stage.shake, .stage.shake2, .wall5.enter, .wall5.enter .wg, .wall5 .wl.off { animation: none !important; } .wall5 .wl.off { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .pop, .daily, .nmtag, .nmhud, .stage.shake, .stage.shake2, .wall5.enter, .wall5.enter .wg, .wall5 .wl.off { animation: none !important; } .wall5 .wl.off { opacity: 0; } }
 </style>
 </head>
 <body>
@@ -454,10 +458,10 @@
             <div class="spots"><i></i><i></i><i></i></div>
             <div class="aura" id="aura"><i></i><i></i><i></i><i></i></div>
             <canvas id="cv" width="448" height="672"></canvas>
-            <div class="nmtag" id="nm"></div>
+            <!-- 이름표 + 바로 아래 작업자 대사를 한 덩어리로 (2026-11-12 사용자: 박 사장 멘트를 기타 이름 아래에 붙여) — 같이 둥실 -->
+            <div class="nmhud" id="nmhud"><div class="nmtag" id="nm"></div><div class="talk" id="talk" hidden></div></div>
             <div class="empty" id="empty" hidden></div>
             <div class="fx" id="fx"></div>
-            <div class="talk" id="talk" hidden></div>
             <div class="tuner" id="tuner" hidden></div>
             <div class="sact" id="sact" hidden></div>
         </div>
