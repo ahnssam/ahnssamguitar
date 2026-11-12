@@ -16,7 +16,7 @@ create table if not exists public.play_guitar_players (
     id bigint generated always as identity primary key,
     key_hash text not null unique check (key_hash ~ '^[0-9a-f]{64}$'),
     nickname text not null default '익명' check (char_length(nickname) between 1 and 12),
-    fam text not null default 'strat' check (fam in ('strat', 'tele', 'lespaul', 'superstrat', 'acoustic', 'amp')),
+    fam text not null default 'strat' check (fam in ('strat', 'tele', 'lespaul', 'superstrat', 'acoustic', 'bass', 'amp', 'multi')),
     lv smallint not null default 0 check (lv between 0 and 20),
     lv_at timestamptz not null default now(),          -- 지금 단계에 닿은 때. 같은 단계면 먼저 닿은 사람이 위
     best smallint not null default 0 check (best between 0 and 20),
@@ -73,7 +73,7 @@ declare
     v_hidden boolean;
 begin
     if v_hash is null then raise exception 'bad_key'; end if;
-    if coalesce(p_fam, '') not in ('strat', 'tele', 'lespaul', 'superstrat', 'acoustic', 'amp') then raise exception 'bad_fam'; end if;
+    if coalesce(p_fam, '') not in ('strat', 'tele', 'lespaul', 'superstrat', 'acoustic', 'bass', 'amp', 'multi') then raise exception 'bad_fam'; end if;
     if p_lv is null or p_lv not between 0 and 20 then raise exception 'bad_lv'; end if;
     if v_nick = '' then v_nick := '익명'; end if;
     if char_length(v_nick) > 12 then raise exception 'long'; end if;

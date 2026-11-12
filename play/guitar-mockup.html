@@ -388,7 +388,23 @@ const FAMS = { strat: { name: '스트랫', names: [
     '금빛 픽업에서 윙 소리 나는 스트랫', '넥이 하나 더 자란 스트랫', '반짝이 뿌려서 눈부신 스트랫', '밤마다 혼자 깜빡이는 스트랫', '아무도 안 꽂았는데 소리 나는 스트랫',
     '꺼지지 않는 불꽃의 스트랫', '세 개의 시간을 켜는 스트랫', '서리꽃이 핀 스트랫', '새벽빛 날개가 돋은 스트랫', '바람이 대신 줄을 튕기는 스트랫',
     '별자리가 새겨진 스트랫', '천 명의 목소리가 깃든 스트랫', '번개를 길들인 스트랫', '은하수를 건너온 스트랫', '오르페우스가 저승까지 들고 간 스트랫',
-    '지미 헨도릭스의 스트랫'] } };
+    '지미 헨도릭스의 스트랫'], art: 'strat', artMax: 20 },
+    // 통기타·베이스 (2026-11-12 사용자가 뽑은 +0~+9 그림 ac_00~09 · bs_00~09). +10~+20 이름은 Claude가 지은 것(바꿀 수 있음),
+    // 그 단계 그림이 아직 없어 +9 그림을 그대로 보여 준다 — 그림이 오면 artMax 만 올린다
+    acoustic: { name: '통기타', art: 'ac', artMax: 9, names: [
+    '교회 창고에서 나온 통기타', '줄이 너무 높아 손가락 아픈 통기타', '사운드홀에 거미가 사는 통기타', '캠핑장 모닥불 냄새 밴 통기타', '스트랩 대신 넥타이를 맨 통기타',
+    '사운드홀에서 꽃이 피어난 통기타', '카포가 세 개나 끼워진 통기타', '몸통이 두 배로 커진 점보 통기타', '줄이 열두 개로 늘어난 통기타', '사운드홀에서 별빛이 새어 나오는 통기타',
+    '모닥불 정령이 깃든 통기타', '달빛으로 줄을 감은 통기타', '숲의 노래를 기억하는 통기타', '비 오는 날만 우는 통기타', '사막 오아시스에서 건진 통기타',
+    '오로라를 담은 통기타', '천 개의 캠프파이어를 지나온 통기타', '고래가 따라 부르는 통기타', '첫눈 내리는 소리를 내는 통기타', '세상 끝 등대에서 울린 통기타',
+    '에릭 크랩튼의 통기타'] },
+    bass: { name: '베이스', art: 'bs', artMax: 9, names: [
+    '동아리방 구석에 버려진 베이스', '줄이 세 개뿐인 베이스', '슬랩 하다 엄지 자국 난 베이스', '아무도 소리를 못 듣는 베이스', '프렛이 사라진 베이스',
+    '줄이 다섯 개로 늘어난 베이스', '쿵쿵 울려서 컵이 떨리는 베이스', '넥이 길게 늘어난 베이스', '몸통이 고래처럼 생긴 베이스', '치면 땅이 울리는 베이스',
+    '심장 박동을 맞추는 베이스', '깊은 바다의 울림을 품은 베이스', '화산 속에서 단련된 베이스', '지구 반대편까지 울리는 베이스', '거인의 발걸음을 내는 베이스',
+    '블랙홀의 저음을 켜는 베이스', '대지의 맥박이 흐르는 베이스', '천둥보다 낮은 베이스', '행성을 공전시키는 베이스', '태초의 첫 음을 낸 베이스',
+    '자코 파스토리오의 베이스'] } };
+// 기타 찾기에서 나오는 계열 (2026-11-12 사용자: 통기타·베이스도 적용) — 지금은 셋 중 하나가 같은 확률로
+const FIND_FAMS = ['strat', 'acoustic', 'bass'];
 // 튜너: 바늘이 초록 칸에 있을 때 탭하면 성공 +%p (유지에서 가져오고 파괴는 그대로)
 const TUNERS = [null,
     { name: '클립 튜너', icon: 'fa-paperclip', price: 3000, bonus: 2, zone: 0.2, period: 1.6, desc: '헤드에 꽂는 작은 튜너. 초록 칸이 좁고 바늘이 빨라요' },
@@ -549,15 +565,16 @@ SPR.img.src = '../images/play/gk/item_strat.png';
 // 헤드 위 끝 = 26칸, 몸통 아래 끝 = 76칸, 넥 가운데 = 28칸 → 도트 기타와 같은 자리라 걸이·무대 위치를 안 바꿔도 된다.
 // +10~+19 = strat_10~19.webp (2026-11-12 두 번째 시트, 같은 틀로 맞춤).
 // +20 = strat_20.webp (따로 한 장, 마지막 단계라 10% 크게 — 몸통 아래 끝은 같은 자리). 그림을 못 불러오면 아래 임시 도트로 그린다.
-const ART_MAX = 20, ART = [];
-function art(lv) {
-    if (lv > ART_MAX) return null;
-    let a = ART[lv];
+// 통기타 = ac_NN, 베이스 = bs_NN (같은 틀, 몸통 아래 끝·넥 가운데가 스트랫과 같은 자리. 베이스는 7% 길게)
+const ART = {};
+function art(lv, f) {
+    const F = FAMS[f] || FAMS.strat, n = Math.min(Math.max(0, lv), F.artMax), key = F.art + n;
+    let a = ART[key];
     if (!a) {
-        a = ART[lv] = { img: new Image(), ok: false, bad: false };
+        a = ART[key] = { img: new Image(), ok: false, bad: false };
         a.img.onload = () => { a.ok = true; paintAll(document); };
         a.img.onerror = () => { a.bad = true; paintAll(document); };
-        a.img.src = `../images/play/gk/strat_${String(lv).padStart(2, '0')}.webp`;
+        a.img.src = `../images/play/gk/${F.art}_${String(n).padStart(2, '0')}.webp`;
     }
     return a.bad ? null : a;
 }
@@ -573,9 +590,9 @@ function snapLine(c, p) {   // 줄 끊김(그림 단계): 브리지에 붙은 �
     c.restore();
 }
 function drawGuitar(c, lv, t, o = {}) {
-    const a = art(lv);
+    const a = art(lv, o.f);
     if (a) {   // 그림 단계: 바뀐 게 없으면 다시 그리지 않는다(작업방 걸이는 매 프레임 불림)
-        const key = lv + (o.snap != null ? ':' + o.snap : '');
+        const key = (o.f || 'strat') + lv + (o.snap != null ? ':' + o.snap : '');
         if (!a.ok) { if (c.canvas._drawn != null) clearGuitar(c); return; }
         if (c.canvas._drawn === key) return;
         const K = c.canvas.width / 56;
@@ -693,16 +710,16 @@ function drawGuitar(c, lv, t, o = {}) {
     }
 }
 // 작은 그림(작업방 걸이·목록·배틀 상대)은 한 번만 그린다. .live 는 매 프레임
-function paintAll(root) { root.querySelectorAll('canvas.gkc').forEach(c => drawGuitar(c.getContext('2d'), +c.dataset.lv || 0, 0.9)); }
+function paintAll(root) { root.querySelectorAll('canvas.gkc').forEach(c => drawGuitar(c.getContext('2d'), +c.dataset.lv || 0, 0.9, { f: c.dataset.f })); }
 // 캔버스 속 크기 = 56×84 칸 × k (그림 단계는 부드럽게, 도트 단계는 k배 네모로)
-const gc = (lv, cls = '', k = 2) => `<canvas class="gkc ${cls}" width="${56 * k}" height="${84 * k}" data-lv="${lv}"></canvas>`;
+const gc = (lv, cls = '', k = 2, f = 'strat') => `<canvas class="gkc ${cls}" width="${56 * k}" height="${84 * k}" data-lv="${lv}" data-f="${f || 'strat'}"></canvas>`;
 
 let ghost = null, snapAt = 0;   // ghost: 부서지거나 팔려 나가는 중인 기타(연출이 끝날 때까지 보인다)
 function frame(now) {
     const t = now / 1000, g = ghost || S.bench;
     const sp = snapAt && now - snapAt < 750 ? (now - snapAt) / 750 : null;
-    if (g) drawGuitar(ctx, g.lv, t, { snap: sp }); else if (cv._drawn !== '') { clearGuitar(ctx); cv._drawn = ''; }
-    document.querySelectorAll('canvas.live').forEach(c => drawGuitar(c.getContext('2d'), +c.dataset.lv || 0, t));
+    if (g) drawGuitar(ctx, g.lv, t, { snap: sp, f: g.f }); else if (cv._drawn !== '') { clearGuitar(ctx); cv._drawn = ''; }
+    document.querySelectorAll('canvas.live').forEach(c => drawGuitar(c.getContext('2d'), +c.dataset.lv || 0, t, { f: c.dataset.f }));
     requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
@@ -1028,7 +1045,7 @@ async function enhance() {
 }
 
 // 기타 찾기: 강화처럼 두근두근 기다리다가 그림자에서 기타가 '탄생'한다 (2026-11-12 사용자 요청).
-// 첫 기타만 피크 FIRST_PICKS, 그다음부터 공짜. 지금은 늘 +0 스트랫 — 나중에 첫 찾기는 스트랫·텔레·주전자… 랜덤 (CLAUDE.md 11절)
+// 첫 기타만 피크 FIRST_PICKS, 그다음부터 공짜. 계열은 FIND_FAMS 중 하나(스트랫·통기타·베이스) — 나중에 텔레·주전자…도 (CLAUDE.md 11절)
 async function findGuitar(first) {
     if (S.bench || busy) return;
     if (first) {
@@ -1037,7 +1054,7 @@ async function findGuitar(first) {
         S.first = true;
     } else if (!S.first) return;
     busy = true; talkClear();
-    S.bench = { id: rid(), lv: 0, f: 'strat' };
+    S.bench = { id: rid(), lv: 0, f: one(FIND_FAMS) };
     save();   // 먼저 저장(새로고침해도 찾은 기타는 그대로)
     $('#empty').hidden = true; $('#bench').innerHTML = '';
     await suspense(4, { find: true, ms: first ? 1900 : 1100, txt: first ? '첫 기타를 찾는 중…' : '기타 찾는 중…', hush: first });
@@ -1128,12 +1145,12 @@ function renderRoom(enter) {
         const g = S.wall[i], lit = i === justOpened ? `<div class="wl off" style="left:${x}%"></div>` : '';
         if (!g) return lit;
         const isRep = rp && g.id === rp.id;
-        return `${lit}<canvas class="gkc wg live ${g.id === selId ? 'sel' : ''}" width="448" height="672" data-lv="${g.lv}" style="left:${x}%;top:${top}%;height:${hh}%;--d:${Math.abs(i - MID) * 0.1}s"></canvas>
+        return `${lit}<canvas class="gkc wg live ${g.id === selId ? 'sel' : ''}" width="448" height="672" data-lv="${g.lv}" data-f="${g.f || 'strat'}" style="left:${x}%;top:${top}%;height:${hh}%;--d:${Math.abs(i - MID) * 0.1}s"></canvas>
             <button type="button" class="wsb" data-a="slot" data-id="${g.id}" style="left:${x}%;${hit}" aria-label="${esc(full(g))}"></button>
             <span class="wp" style="left:${x}%;top:${W.plate}%">+${g.lv}</span>${isRep ? `<span class="wrep" style="left:${x}%;top:${Math.min(96, W.plate + 7.5)}%">대표</span>` : ''}`;
     }).join('');
     justOpened = -1;
-    const rows = S.wall.map((g, i) => g && `<div class="grow ${g.id === selId ? 'sel' : ''}" id="row-${g.id}">${gc(g.lv)}
+    const rows = S.wall.map((g, i) => g && `<div class="grow ${g.id === selId ? 'sel' : ''}" id="row-${g.id}">${gc(g.lv, '', 2, g.f)}
             <div class="gt"><b>${esc(full(g))}</b><small>${i === MID ? '가운데' : i < MID ? `왼쪽 ${MID - i}번째` : `오른쪽 ${i - MID}번째`} 걸이 · ${rp && g.id === rp.id ? '⭐ 대표 기타 · ' : ''}팔면 ${gf(SELL[g.lv])}</small></div>
             <div class="ga"><button type="button" class="pri" data-a="setrep" data-id="${g.id}" ${rp && g.id === rp.id ? 'disabled' : ''}>대표로</button>
             <button type="button" data-a="take" data-id="${g.id}">${S.bench ? '작업대와 바꾸기' : '작업대로'}</button>
@@ -1199,7 +1216,7 @@ async function loadNet() {
 function oppRow(o, cls = '') {
     const me = rep(), done = btDay().done[o.id];
     const p = me ? winP(me.lv, o.lv) : 0;
-    return `<div class="opp ${cls}">${gc(o.lv)}<div class="ot"><b>${esc(o.nick)}${o.pid && o.w != null ? `<span class="rec">${o.w}승 ${o.l}패</span>` : ''}</b><small>${esc(full(o))}</small>
+    return `<div class="opp ${cls}">${gc(o.lv, '', 2, o.f)}<div class="ot"><b>${esc(o.nick)}${o.pid && o.w != null ? `<span class="rec">${o.w}승 ${o.l}패</span>` : ''}</b><small>${esc(full(o))}</small>
         <span class="pr">이길 확률 <em class="${p < 0.3 ? 'low' : ''}">${pct(p)}</em> · 이기면 +${gf(reward(o.lv))}</span></div>
         ${done ? `<span class="res3 ${done}">${done === 'w' ? '이김' : '졌음'}</span>` : `<button type="button" class="fight" data-a="fight" data-id="${o.id}" ${me && btDay().n < BT_DAY ? '' : 'disabled'}>도전</button>`}</div>`;
 }
@@ -1213,7 +1230,7 @@ function renderBattle() {
     const mine = NET.ok ? NET.top.find(r => r.me) : null, total = NET.ok && NET.top.length ? NET.top[0].players : 0;
     const rankLine = NET.ok === null ? '랭킹 불러오는 중…' : NET.ok === false ? '랭킹에 연결이 안 돼요 · 연습 상대와 붙어요'
         : NET.me && NET.me.hidden ? '운영 계정이라 랭킹에 안 보여요' : mine ? `랭킹 ${mine.pos}위 / ${total}명` : '';
-    let h = `<div class="card mycard">${me ? gc(me.lv) : ''}<div class="mt"><small>내 대표 기타</small><b>${me ? esc(full(me)) : '아직 기타가 없어요'}</b>
+    let h = `<div class="card mycard">${me ? gc(me.lv, '', 2, me.f) : ''}<div class="mt"><small>내 대표 기타</small><b>${me ? esc(full(me)) : '아직 기타가 없어요'}</b>
         <div class="left">오늘 남은 배틀 ${BT_DAY - bt.n}/${BT_DAY} · ${S.st.win}승 ${S.st.lose}패</div>${rankLine ? `<div class="rkline">${rankLine}</div>` : ''}</div></div>`;
     if (VS) {
         const mineLink = [...S.wall.filter(Boolean), ...(S.bench ? [S.bench] : [])].some(g => g.id === VS.mine) || (VS.p && NET.me && VS.p === NET.me.id);
@@ -1267,8 +1284,8 @@ async function fight(id) {
     const got = PLAY.picks.earn();
     const m = document.createElement('div');
     m.className = 'gk-modal';
-    m.innerHTML = `<div class="in"><div class="arena"><div class="side me">${gc(me.lv, 'live', 4)}<b>${esc(full(me))}</b><small>나</small></div><span class="vs">VS</span>
-        <div class="side op">${gc(o.lv, 'live', 4)}<b>${esc(full(o))}</b><small>${esc(o.nick)}</small></div></div>
+    m.innerHTML = `<div class="in"><div class="arena"><div class="side me">${gc(me.lv, 'live', 4, me.f)}<b>${esc(full(me))}</b><small>나</small></div><span class="vs">VS</span>
+        <div class="side op">${gc(o.lv, 'live', 4, o.f)}<b>${esc(full(o))}</b><small>${esc(o.nick)}</small></div></div>
         <div class="tug"><i></i></div><div class="bres"><p>합주 배틀 중… 이길 확률 ${pct(p)}</p></div></div>`;
     document.body.appendChild(m);
     const bar = m.querySelector('.tug i');
