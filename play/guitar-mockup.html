@@ -8,10 +8,10 @@
      공개할 때: 이 파일을 guitar.html 로 복사하고 title 의 (목업)·mock-bar·toHome 주소만 되돌린다 -->
 <meta name="robots" content="noindex, nofollow">
 <title>기타 키우기 (목업) | 안쌤의 기타나무숲</title>
-<meta name="description" content="중고 스트랫을 강화해서 +20 라스트 스트랫까지! 줄이 끊기고, 가끔은 부서지고. 키운 기타는 작업방에 걸고 배틀에 내보내요.">
+<meta name="description" content="창고에서 찾은 기타를 강화해서 +20 전설의 기타까지! 줄이 끊기고, 가끔은 부서지고. 키운 기타는 작업방에 걸고 배틀에 내보내요.">
 <meta property="og:site_name" content="안쌤의 기타나무숲">
 <meta property="og:title" content="기타 키우기 | 안쌤의 기타나무숲">
-<meta property="og:description" content="중고 스트랫을 강화해서 +20 라스트 스트랫까지! 내 기타랑 붙어 볼래?">
+<meta property="og:description" content="창고에서 찾은 기타를 강화해서 +20 전설의 기타까지! 내 기타랑 붙어 볼래?">
 <meta property="og:url" content="https://ahnssamguitar.com/play/guitar.html">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://ahnssamguitar.com/og-image.jpg">
@@ -69,8 +69,9 @@
     .empty p { font-size: 15px; font-weight: 700; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
     .empty small { display: block; font-weight: 500; font-size: 12.5px; opacity: 0.85; margin-top: 4px; }
     .empty { padding-bottom: 92px; }   /* 아래 말풍선 자리를 비워 둔다 */
-    .empty .g1 { width: 34px; height: 90px; image-rendering: pixelated; filter: drop-shadow(0 5px 3px rgba(0, 0, 0, 0.5)); transform: rotate(-5deg); }
-    .empty .g1.dim { filter: grayscale(.6) brightness(.7); }
+    .empty .g1 { width: 34px; height: 90px; image-rendering: pixelated; filter: brightness(0) drop-shadow(0 0 8px rgba(255, 226, 122, 0.55)); animation: g1Bob 2.6s ease-in-out infinite; }
+    @keyframes g1Bob { 50% { transform: translateY(-6px); } }
+    .empty .btn small { display: inline-flex; align-items: center; gap: 3px; margin: 0; opacity: 1; font-size: 12.5px; font-weight: 900; background: rgba(0, 0, 0, 0.14); border-radius: 99px; padding: 2px 8px; }
     @media (max-width: 359px) { .empty .g1 { display: none; } }
     .empty p.big { font-size: 22px; font-weight: 900; }
     .empty p.big small { font-size: 13px; line-height: 1.55; margin-top: 6px; }
@@ -342,7 +343,7 @@
 <script>
 // ===== 기타 키우기 (2026-11-12 MVP — 스트랫 하나로 먼저) =====
 // 카톡 '검키우기' 구조: 강화 한 번 누를 때마다 성공 / 유지(줄 끊김) / 파괴(무대에서 내리찍기). 팔고, 걸고, 배틀한다.
-// 사용자 결정(2026-11-12): 능력치·상성 없이 단계만 / 게임 골드만 따로(배틀 한 번 끝내면 피크 10, 첫 기타만 피크 50개로 삼) / 스트랫만 / 기타+앰프 조합은 MVP에서 뺌.
+// 사용자 결정(2026-11-12): 능력치·상성 없이 단계만 / 게임 골드만 따로(배틀 한 번 끝내면 피크 10, 첫 기타 찾기만 피크 50개) / 스트랫만 / 기타+앰프 조합은 MVP에서 뺌.
 // 진행은 이 브라우저(localStorage 'play.gk')에만 저장한다. 배틀 상대는 지금은 브라우저 안 연습 상대(가짜 랭커).
 const { esc, mem, toast } = PLAY;
 const $ = s => document.querySelector(s);
@@ -358,12 +359,16 @@ const COST = [0, 10, 20, 40, 70, 120, 200, 300, 450, 700, 1000, 1400, 2000, 2800
 const SELL = [0, 30, 80, 180, 350, 700, 1300, 2400, 4200, 7500, 13000, 20000, 32000, 51000, 83000, 140000, 250000, 450000, 850000, 1700000, 3700000];
 const MAX = 20;
 const START_GOLD = 500, DAILY_GOLD = 1000, CASE_SHARDS = 50, BT_DAY = 10;
-// 맨 처음 기타만 놀이터 피크로 산다(2026-11-12 사용자 결정). 그다음부터 작업대가 비면 중고 스트랫은 공짜
+// 맨 처음 '기타 찾기'만 놀이터 피크로 한다(2026-11-12 사용자 결정). 그다음부터 작업대가 비면 기타 찾기는 공짜
 const FIRST_PICKS = 50;
-const ADJ = ['중고나라에서 온', '줄 녹슨', '줄 새로 간', '스티커 덕지덕지 붙인', '셋업 받은', '픽업 바꾼', '넥 하나 더 단', '반짝이 칠한', 'LED 박은', '앰프 내장된',
-    '불 뿜는', '넥 세 개 달린', '냉장고 문 달린', '날개 돋친', '전봇대만 한', '위성 신호 잡히는', '관객이 따라 부르는', '번개 맞은', '우주에서 돌아온', '전설이 된', '라스트'];
-// 계열마다 +5·+10·+15 고비에는 그 기타다운 꾸밈말 (스트랫 = 싱글 픽업 셋 + 트레몰로 암)
-const FAMS = { strat: { name: '스트랫', adj: { 5: '픽업 세 개 다 바꾼', 10: '암 흔들면 불 뿜는', 15: '암으로 위성 신호 잡는' } } };
+// 단계별 이름 (2026-11-12 사용자와 정함): +0~+9 개그 → +10부터 신비한 느낌 → +20은 그 기타로 유명한 기타리스트 이름을 살짝 바꿔서.
+// 계열마다 이름표를 따로 둔다(레스폴 +20 은 '게리 무르의 레스폴' 예정). 아예 다른 물건(주전자 등)은 나중에 '첫 기타 찾기' 랜덤으로 (CLAUDE.md 11절)
+const FAMS = { strat: { name: '스트랫', names: [
+    '중고나라에서 온 스트랫', '손끝까지 녹물 드는 스트랫', '줄 갈았더니 드디어 소리 나는 스트랫', '형준이 스티커가 안 떨어지는 스트랫', '박 사장이 한숨 쉬며 셋업한 스트랫',
+    '금빛 픽업에서 윙 소리 나는 스트랫', '넥이 하나 더 자란 스트랫', '반짝이 뿌려서 눈부신 스트랫', '밤마다 혼자 깜빡이는 스트랫', '아무도 안 꽂았는데 소리 나는 스트랫',
+    '꺼지지 않는 불꽃의 스트랫', '세 개의 시간을 켜는 스트랫', '서리꽃이 핀 스트랫', '새벽빛 날개가 돋은 스트랫', '바람이 대신 줄을 튕기는 스트랫',
+    '별자리가 새겨진 스트랫', '천 명의 목소리가 깃든 스트랫', '번개를 길들인 스트랫', '은하수를 건너온 스트랫', '오르페우스가 저승까지 들고 간 스트랫',
+    '지미 헨도릭스의 스트랫'] } };
 // 튜너: 바늘이 초록 칸에 있을 때 탭하면 성공 +%p (유지에서 가져오고 파괴는 그대로)
 const TUNERS = [null,
     { name: '클립 튜너', icon: 'fa-paperclip', price: 3000, bonus: 2, zone: 0.2, period: 1.6, desc: '헤드에 꽂는 작은 튜너. 초록 칸이 좁고 바늘이 빨라요' },
@@ -372,7 +377,7 @@ const TUNERS = [null,
 const ROOMS = [{ name: '원룸', slots: 3, price: 0 }, { name: '합주실', slots: 6, price: 30000 }, { name: '스튜디오', slots: 10, price: 300000 }];
 
 const fam = g => FAMS[g.f] || FAMS.strat;
-const gname = g => g.lv >= MAX ? `라스트 ${fam(g).name}` : `${fam(g).adj[g.lv] || ADJ[g.lv]} ${fam(g).name}`;
+const gname = g => fam(g).names[Math.min(MAX, Math.max(0, g.lv))];
 const full = g => `+${g.lv} ${gname(g)}`;
 const gf = n => (n >= 1e8 ? +(n / 1e8).toFixed(2) + '억' : n >= 1e6 ? +(n / 1e4).toFixed(1) + '만' : Math.round(n).toLocaleString()) + 'G';
 const winP = (me, op) => me === op ? 0.5 : me > op ? 1 - Math.pow(0.5, me - op + 1) : Math.pow(0.5, op - me + 1);   // 검키우기 공식
@@ -508,14 +513,7 @@ function drawGuitar(c, lv, t, o = {}) {
 
     // --- 뒤쪽 부품 ---
     if (lv >= 18) STARS.forEach(([x, y], i) => { const v = tw(i, 2.4); if (v > -0.3) { c.fillStyle = v > 0.7 ? '#ffffff' : 'rgba(210,230,255,.6)'; c.fillRect(x, y, 1, 1); } });
-    if (lv >= 14) {   // 전봇대만 한: 뒤에 전봇대 + 전깃줄
-        R(8, -26, 4, 84, '#6f7472'); R(8, -26, 1, 84, '#8f9592'); R(11, -26, 1, 84, '#565a59');
-        R(-12, -20, 44, 2, '#6b4a2f'); R(-12, -20, 44, 1, '#8a6240');
-        [-10, -3, 21, 28].forEach(x => R(x, -22, 2, 2, '#e8f0ec'));
-        c.fillStyle = '#1d2a26';
-        for (let x = 0; x < 56; x++) { const sag = Math.round(2 * Math.sin(x / 56 * Math.PI)); c.fillRect(x, GY - 23 + sag, 1, 1); c.fillRect(x, GY - 16 + sag, 1, 1); }
-    }
-    if (lv >= 19) {   // 전설: 몸 둘레 빛 (라스트는 무지개)
+    if (lv >= 19) {   // 전설: 몸 둘레 빛 (+20은 무지개)
         c.globalAlpha = 0.35 + 0.3 * Math.sin(t * 3);
         OUT.forEach(([x, y], i) => P(x, y, lv >= 20 ? `hsl(${(t * 140 + i * 9) % 360} 90% 65%)` : '#f5d36b'));
         c.globalAlpha = 1;
@@ -567,15 +565,18 @@ function drawGuitar(c, lv, t, o = {}) {
         }
         for (let k = 0; k < 3; k++) { const ph = (t * 1.3 + k / 3) % 1; P(9 + (k * 2) % 5, -6 - Math.floor(ph * 10), ph < 0.6 ? '#ffd76a' : '#e2552a'); }
     }
-    if (lv >= 12) {   // 냉장고 문
-        R(11, 30, 8, 18, '#8fa3a3'); R(12, 31, 6, 16, '#eef3f3'); R(12, 36, 6, 1, '#c9d4d4');
-        R(13, 32, 1, 3, '#6f7d7d'); R(13, 38, 1, 5, '#6f7d7d'); P(16, 33, '#c44034'); P(16, 41, '#2f7fbf');
+    if (lv >= 12) {   // 서리꽃: 테두리에 서리, 반짝이는 얼음 결정
+        EDGE.forEach(([x, y], i) => { if (i % 3 === 0) P(x, y, '#dff6ff'); });
+        [[2, 31], [15, 46], [12, 34], [4, 45]].forEach(([x, y], i) => { const hi = tw(i, 3) > 0.4; P(x, y, hi ? '#ffffff' : '#bfe9ff'); [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dx, dy]) => P(x + dx, y + dy, hi ? '#bfe9ff' : 'rgba(191,233,255,.5)')); });
     }
-    if (lv >= 15) {   // 위성 안테나 + 신호
-        R(15, -7, 5, 1, '#e3ebe9'); R(14, -6, 6, 1, '#cfd8d6'); R(15, -5, 4, 1, '#a9b5b2'); R(16, -4, 2, 1, '#8b9794');
-        P(16, -3, '#6b7472'); P(15, -2, '#6b7472'); P(14, -1, '#6b7472'); P(17, -8, '#c44034');
-        const ph = (t * 1.2) % 1.6;
-        for (let i = 0; i < 3; i++) { if (ph < i * 0.4) continue; const r = 3 + i * 2; for (let a = 0; a <= 6; a++) { const th = a / 6 * Math.PI / 2; P(18 + Math.round(r * Math.cos(th)), -8 - Math.round(r * Math.sin(th)), '#72c492'); } }
+    if (lv >= 14) for (let k = 0; k < 3; k++) {   // 바람이 줄을 튕긴다: 줄 위를 지나가는 바람 띠
+        const yb = 8 + k * 14, ph = t * 2.4 + k * 2.1;
+        for (let x = -10; x <= 30; x++) { const al = 0.6 * (1 - Math.abs(x - 10) / 21); if (al > 0.05) P(x, yb + Math.round(2 * Math.sin(x / 3.5 + ph)), `rgba(170,240,210,${al.toFixed(2)})`); }
+    }
+    if (lv >= 15) {   // 별자리: 몸통에 별을 잇는 선
+        const CON = [[3, 33], [7, 30], [12, 34], [9, 39], [14, 44], [5, 45]];
+        for (let i = 0; i < CON.length - 1; i++) line(CON[i][0], CON[i][1], CON[i + 1][0], CON[i + 1][1], 'rgba(255,236,170,.45)');
+        CON.forEach(([x, y], i) => P(x, y, tw(i, 3) > 0.3 ? '#ffffff' : '#ffe27a'));
     }
     if (lv >= 16) [[-9, 0], [23, 0.35], [27, 0.7]].forEach(([x, off], i) => {   // 관객이 따라 부르는: 음표가 올라간다
         const ph = (t / 3 + off) % 1; if (ph > 0.9) return;
@@ -675,10 +676,10 @@ const LINES = {
     up: {
         5: [['minji', '픽업 바꾸니까 소리가 달라요! …제 귀엔 똑같지만요.']],
         10: [['boss', '+10이면 우리 가게 벽에 걸어도 되겠다.'], ['boss', '…팔면 꽤 받겠는데. 그건 네가 정해라.']],
-        15: [['minji', '위성 신호 잡혀요! 팬카페 회원이 두 명 됐어요.']],
-        20: [['boss', '라스트 스트랫… 나는 거기까지 못 갔다.'], ['me', '……'], ['boss', '…줄은 네가 갈아라.']],
+        15: [['minji', '기타에 별자리가 떠요! …팬카페 회원이 두 명 됐어요.']],
+        20: [['boss', '헨도릭스의 스트랫… 나는 거기까지 못 갔다.'], ['me', '……'], ['boss', '…줄은 네가 갈아라.']],
     },
-    intro: [['boss', '형준이가 중고 스트랫 하나 넘겼다. 박스 없고 설명서도 없대.'], ['boss', `첫 기타는 피크 ${FIRST_PICKS}개다. 돈은 안 받는다.`], ['me', '……']],
+    intro: [['boss', '형준이가 창고에 기타를 잔뜩 맡기고 갔다. 뭐가 나올지는 나도 모른다.'], ['boss', `찾는 값은 피크 ${FIRST_PICKS}개다. 돈은 안 받는다.`], ['me', '……']],
     noPick: [['boss', '피크가 없다고? 놀이터 가서 퀴즈라도 한 판 풀고 와라. 한 판에 열 개다.']],
     bought: [['boss', '고쳐서 팔든, 벽에 걸든 네 마음이다.'], ['boss', '…부수지만 마라.'], ['me', '……']],
 };
@@ -712,12 +713,12 @@ function renderName() {
 }
 // 빈 작업대: 첫 기타는 피크로 사고, 그다음부터는 공짜로 받는다
 function emptyCard() {
-    const strat = cls => `<img class="g1 ${cls}" src="../images/play/gk/item_strat.png" alt="">`;
-    if (S.first) return `<p>작업대가 비었어요<small>중고나라에서 스트랫을 하나 더 받아 와요. 공짜예요.</small></p><button class="btn" type="button" data-a="new"><i class="fas fa-box-open"></i> 중고 스트랫 받기</button>`;
+    const sil = `<img class="g1" src="../images/play/gk/item_strat.png" alt="">`;   // 무슨 기타가 나올지 모르게 그림자만
+    if (S.first) return `<p>작업대가 비었어요<small>창고에서 새 기타를 찾아 와요. 이제부터는 공짜예요.</small></p><button class="btn" type="button" data-a="new"><i class="fas fa-magnifying-glass"></i> 기타 찾기</button>`;
     const bal = PLAY.picks.bal(), need = FIRST_PICKS - bal;
-    if (need <= 0) return `${strat('')}<p>중고 스트랫이 들어왔어요<small>첫 기타는 놀이터 피크 ${FIRST_PICKS}개로 사요. 지금 ${bal.toLocaleString()}피크 있어요.</small></p>
-        <button class="btn pick" type="button" data-a="buy1">${PLAY.pickIcon()} 피크 ${FIRST_PICKS}개로 사기</button>`;
-    return `${strat('dim')}<p class="big">피크가 ${bal ? '모자라다' : '없다'}구요?<small>첫 기타는 피크 ${FIRST_PICKS}개로 사요 (지금 ${bal}개).<br>놀이터 퀴즈쇼·월드컵 한 판마다 ${PLAY.PICK.per}개씩 모여요.</small></p>
+    if (need <= 0) return `${sil}<p>첫 기타를 찾아볼까요?<small>첫 기타는 놀이터 피크 ${FIRST_PICKS}개로 찾아요. 지금 ${bal.toLocaleString()}피크 있어요.</small></p>
+        <button class="btn pick" type="button" data-a="buy1"><i class="fas fa-magnifying-glass"></i> 기타 찾기 <small>${PLAY.pickIcon()} ${FIRST_PICKS}</small></button>`;
+    return `${sil}<p class="big">피크가 ${bal ? '모자라다' : '없다'}구요?<small>첫 기타는 피크 ${FIRST_PICKS}개로 찾아요 (지금 ${bal}개).<br>놀이터 퀴즈쇼·월드컵 한 판마다 ${PLAY.PICK.per}개씩 모여요.</small></p>
         <a class="btn pick" href="./"><i class="fas fa-gamepad"></i> 놀이터에서 피크 모으기</a>
         <div class="alt"><a href="quiz.html">퀴즈쇼</a> · <a href="worldcup.html">월드컵</a> 바로 가기</div>`;
 }
@@ -727,7 +728,7 @@ function renderBench() {
     em.hidden = !!(g || ghost);
     if (!em.hidden) em.innerHTML = emptyCard();
     renderTable();
-    if (!g) { box.innerHTML = `<p class="note2" style="text-align:center">${S.first ? '' : `첫 기타만 피크 ${FIRST_PICKS}개로 사요. 그다음부터는 `}작업대가 비면 중고 스트랫을 공짜로 다시 받아요. 걸어 둔 기타는 작업방에서 작업대로 가져올 수 있어요.</p>`; return; }
+    if (!g) { box.innerHTML = `<p class="note2" style="text-align:center">${S.first ? '작업대가 비면 기타 찾기는 공짜예요.' : `첫 기타만 피크 ${FIRST_PICKS}개로 찾아요. 그다음부터 기타 찾기는 공짜예요.`} 걸어 둔 기타는 작업방에서 작업대로 가져올 수 있어요.</p>`; return; }
     const T = TUNERS[S.tuner];
     let h = '';
     if (g.lv >= MAX) h += `<div class="maxed">🎸 최고 단계! 더는 강화할 수 없어요.<br><small>벽에 걸고 대표 기타로 배틀에 내보내요.</small></div>`;
@@ -813,8 +814,8 @@ function gather() {   // 빛 알갱이가 기타로 모인다
     d.animate([{ transform: `translate(calc(-50% + ${Math.round(Math.cos(a) * r)}px), calc(-50% + ${Math.round(Math.sin(a) * r)}px))`, opacity: 0 }, { opacity: 1, offset: 0.35 }, { transform: 'translate(-50%, -50%)', opacity: 0 }],
         { duration: 520 + Math.random() * 200, easing: 'cubic-bezier(.5,0,.9,.6)', fill: 'forwards' }).onfinish = () => d.remove();
 }
-async function suspense(lv) {
-    const ms = WAIT_MS(lv), st = $('#stage'), go = $('#go'), txt = WAIT_TXT(lv);
+async function suspense(lv, o = {}) {   // o.find: 기타 찾기(그림자에서 기타가 태어난다) · o.ms · o.txt · o.hush
+    const ms = o.ms || WAIT_MS(lv), st = $('#stage'), go = $('#go'), txt = o.txt || WAIT_TXT(lv);
     if (go) { go.classList.add('wait'); go.textContent = txt; }
     $('#bench').classList.add('wait');
     st.classList.add('charging');
@@ -828,15 +829,18 @@ async function suspense(lv) {
     const j = a => +((Math.random() * 2 - 1) * a).toFixed(1);
     for (let i = 0; i <= N; i++) {
         const k = i / N, a = amp * k * k;
-        kf.push({ transform: `${CVT} translate(${j(a)}px, ${j(a * 0.5)}px) rotate(${j(a * 0.4)}deg)`, filter: `brightness(${(1 + 0.8 * k * k).toFixed(2)}) drop-shadow(0 0 ${Math.round(14 * k)}px rgba(255, 226, 122, ${(0.85 * k).toFixed(2)}))` });
+        const glow = `drop-shadow(0 0 ${Math.round(4 + 14 * k)}px rgba(255, 226, 122, ${(0.3 + 0.6 * k).toFixed(2)}))`;
+        kf.push(o.find
+            ? { transform: `${CVT} translate(${j(a)}px, ${j(a * 0.5)}px) scale(${(0.9 + 0.1 * k).toFixed(3)})`, opacity: Math.min(1, k * 4), filter: `brightness(${(0.02 + 0.1 * k * k).toFixed(2)}) ${glow}` }
+            : { transform: `${CVT} translate(${j(a)}px, ${j(a * 0.5)}px) rotate(${j(a * 0.4)}deg)`, filter: `brightness(${(1 + 0.8 * k * k).toFixed(2)}) ${glow}` });
     }
     const an = cv.animate(kf, { duration: ms, easing: 'linear', fill: 'forwards' });
     const iv = setInterval(gather, lv >= 10 ? 45 : 70);
     await sleep(ms);
     clearInterval(iv);
     an.cancel();
-    if (lv >= 10) {   // 결과 직전 한 박자: 소리도 떨림도 멈춘다
-        cv.style.filter = 'brightness(1.6) drop-shadow(0 0 14px rgba(255, 226, 122, 0.85))';
+    if (lv >= 10 || o.hush) {   // 결과 직전 한 박자: 소리도 떨림도 멈춘다
+        cv.style.filter = o.find ? 'brightness(.12) drop-shadow(0 0 18px rgba(255, 226, 122, 0.9))' : 'brightness(1.6) drop-shadow(0 0 14px rgba(255, 226, 122, 0.85))';
         bar.querySelector('span').textContent = '……';
         await sleep(320);
         cv.style.filter = '';
@@ -912,20 +916,27 @@ async function enhance() {
     renderBench();
 }
 
-async function newGuitar(silent) {
-    if (S.bench || busy || !S.first) return;
+// 기타 찾기: 강화처럼 두근두근 기다리다가 그림자에서 기타가 '탄생'한다 (2026-11-12 사용자 요청).
+// 첫 기타만 피크 FIRST_PICKS, 그다음부터 공짜. 지금은 늘 +0 스트랫 — 나중에 첫 찾기는 스트랫·텔레·주전자… 랜덤 (CLAUDE.md 11절)
+async function findGuitar(first) {
+    if (S.bench || busy) return;
+    if (first) {
+        if (S.first) return;
+        if (!PLAY.picks.spend(FIRST_PICKS)) { toast(`피크가 모자라요 (${FIRST_PICKS}개 필요)`); renderBench(); return; }
+        S.first = true;
+    } else if (!S.first) return;
+    busy = true; talkClear();
     S.bench = { id: rid(), lv: 0, f: 'strat' };
-    save(); renderBench();
-    if (silent) return;
-    sfx('drop');
-    cv.animate([{ transform: `${CVT} translateY(-130%)` }, { transform: CVT, offset: 0.7 }, { transform: `${CVT} translateY(-4%)`, offset: 0.85 }, { transform: CVT }], { duration: 600, easing: 'ease-out' });
-}
-function buyFirst() {
-    if (S.first || S.bench || busy) return;
-    if (!PLAY.picks.spend(FIRST_PICKS)) { toast(`피크가 모자라요 (${FIRST_PICKS}개 필요)`); renderBench(); return; }
-    S.first = true; save(); talkClear();
-    newGuitar();
-    setTimeout(() => talk(LINES.bought), 650);
+    save();   // 먼저 저장(새로고침해도 찾은 기타는 그대로)
+    $('#empty').hidden = true; $('#bench').innerHTML = '';
+    await suspense(4, { find: true, ms: first ? 1900 : 1100, txt: first ? '첫 기타를 찾는 중…' : '기타 찾는 중…', hush: first });
+    flash(); sfx('ok', 6);
+    burst(first ? 22 : 14, ['#ffe27a', '#ffffff', '#72c492', '#f5b31e'], { y: 52, spread: 150, size: [4, 9], dur: 950, grav: false });
+    cv.animate([{ transform: `${CVT} scale(.9)`, filter: 'brightness(2.4)' }, { transform: `${CVT} scale(1.07)`, filter: 'brightness(1.3)', offset: 0.4 }, { transform: CVT, filter: 'brightness(1)' }], { duration: 650, easing: 'ease-out' });
+    pop(first ? '첫 기타 탄생!' : '기타 찾았다!', 'ok', 30);
+    busy = false; renderBench();
+    $('#nm').animate([{ opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1.15, offset: 0.6 }, { opacity: 1, scale: 1 }], { duration: 520, easing: 'ease-out' });
+    if (first) setTimeout(() => talk(LINES.bought), 1000);
 }
 async function sellBench() {
     const g = S.bench;
@@ -1194,8 +1205,8 @@ $('#app').addEventListener('click', e => {
     if (b.id === 'go') { if (!tuning) enhance(); return; }
     if (busy) return;
     const a = b.dataset.a, id = b.dataset.id;
-    if (a === 'new') newGuitar();
-    else if (a === 'buy1') buyFirst();
+    if (a === 'new') findGuitar(false);
+    else if (a === 'buy1') findGuitar(true);
     else if (a === 'sell') sellBench();
     else if (a === 'hang') hangBench();
     else if (a === 'brag') brag(S.bench);
