@@ -424,9 +424,9 @@ const START_GOLD = 500, DAILY_GOLD = 1000, DAILY_PICKS = 10,   // 출석: 골드
       CASE_SHARDS = 50, BT_DAY = 10;
 // 맨 처음 '기타 찾기'만 놀이터 피크로 한다(2026-11-12 사용자 결정). 그다음부터 작업대가 비면 기타 찾기는 공짜
 // 두 번째부터 '시작'(기타 찾기)은 골드 FIND_GOLD (2026-11-12: 사용자가 시작 값 보여 달라고 함 → Claude 추천 50G).
-//   +2에서 팔면(80G) 조금 남고 +1에서 팔면(30G) 손해. 골드가 모자라고 가진 기타(작업대·벽)도 없으면 공짜(막히지 않게)
+//   +2에서 팔면(80G) 조금 남고 +1에서 팔면(30G) 손해. 골드가 모자라면 공짜가 아니라 피크 FIRST_PICKS개로 시작한다
+//   (사용자: "골드 모자라면 다른 놀이터 게임 하고 와서 피크 벌어 오면 되지") — 피크도 없으면 놀이터·출석으로 안내
 const FIND_GOLD = 50;
-const findCost = () => (S.gold < FIND_GOLD && !S.wall.some(Boolean)) ? 0 : FIND_GOLD;
 const FIRST_PICKS = 3;   // 2026-11-12 사용자: 50개 말고 3개(퀴즈·월드컵 한 판이면 찾을 수 있게)
 // 단계별 이름 (2026-11-12 사용자와 정함): +0~+9 개그 → +10부터 신비한 느낌 → +20은 그 기타로 유명한 기타리스트 이름을 살짝 바꿔서.
 // 계열마다 이름표를 따로 둔다(레스폴 +20 은 '게리 무르의 레스폴' 예정). 아예 다른 물건(주전자 등)은 나중에 '첫 기타 찾기' 랜덤으로 (CLAUDE.md 11절)
@@ -917,17 +917,23 @@ function renderName() {
 // 빈 작업대: 첫 기타는 피크로 사고, 그다음부터는 공짜로 받는다
 function emptyCard() {
     const sil = `<img class="g1" src="../images/play/gk/item_strat.png" alt="">`;   // 무슨 기타가 나올지 모르게 그림자만
-    // 2026-11-12 사용자: 빈 작업대는 간단하게 위에 '기타 키우기', 아래 '시작'만
-    if (S.first) { const c = findCost();
-        return `<p class="big">기타 키우기</p><button class="btn" type="button" data-a="new" ${S.gold < c ? 'disabled' : ''}><i class="fas fa-play"></i> 시작</button>
-        <small class="cost">${c ? `<i class="fas fa-coins"></i> ${gf(c)}${S.gold < c ? ` · ${gf(c - S.gold)} 모자라요` : ''}` : `공짜 <span>(골드가 모자라 이번엔 공짜예요)</span>`}</small>`; }
-    const bal = PLAY.picks.bal(), need = FIRST_PICKS - bal;
-    if (need <= 0) return `${sil}<p class="big">기타 키우기</p>
-        <button class="btn pick" type="button" data-a="buy1"><i class="fas fa-play"></i> 시작</button>
-        <small class="cost">${PLAY.pickIcon()} 피크 ${FIRST_PICKS}개 <span>(지금 ${bal.toLocaleString()}개 · 첫 기타만, 다음부터는 ${gf(FIND_GOLD)})</span></small>`;
+    const bal = PLAY.picks.bal();
+    // 2026-11-12 사용자: 빈 작업대는 간단하게 위에 '기타 키우기', 아래 '시작'만 + 단추 아래에 값
+    const card = (a, cls, cost) => `${S.first ? '' : sil}<p class="big">기타 키우기</p><button class="btn ${cls}" type="button" data-a="${a}"><i class="fas fa-play"></i> 시작</button><small class="cost">${cost}</small>`;
+    const pk = note => `${PLAY.pickIcon()} 피크 ${FIRST_PICKS}개 <span>(${note})</span>`;
+    if (S.first) {
+        if (S.gold >= FIND_GOLD) return card('new', '', `<i class="fas fa-coins"></i> ${gf(FIND_GOLD)}`);
+        if (bal >= FIRST_PICKS) return card('newp', 'pick', pk(`골드가 모자라서 피크로 · 지금 ${bal.toLocaleString()}개`));
+        return lackCard(`골드가 ${gf(FIND_GOLD - S.gold)} 모자라요`, `시작은 ${gf(FIND_GOLD)}, 골드가 없으면 피크 ${FIRST_PICKS}개예요 (지금 피크 ${bal}개).`);
+    }
+    if (bal >= FIRST_PICKS) return card('buy1', 'pick', pk(`지금 ${bal.toLocaleString()}개 · 첫 기타만, 다음부터는 ${gf(FIND_GOLD)}`));
+    return lackCard(`피크가 ${bal ? '모자라다' : '없다'}구요?`, `첫 기타는 피크 ${FIRST_PICKS}개로 찾아요 (지금 ${bal}개).`);
+}
+// 골드·피크가 모자랄 때: 출석 → 놀이터 퀴즈쇼·월드컵으로
+function lackCard(title, why) {
     const dl = S.daily !== today();   // 오늘 출석 전이면 출석 단추가 먼저(말풍선에 안 가리게 놀이터 길은 한 줄 링크로)
-    return `${sil}<p class="big">피크가 ${bal ? '모자라다' : '없다'}구요?<small>첫 기타는 피크 ${FIRST_PICKS}개로 찾아요 (지금 ${bal}개).<br>${dl ? `출석하면 ${DAILY_PICKS}개, 놀이터 한 판에 ${PLAY.PICK.per}개.` : `놀이터 퀴즈쇼·월드컵 한 판마다 ${PLAY.PICK.per}개씩 모여요.`}</small></p>
-        ${dl ? `<button class="btn pick" type="button" data-a="daily"><i class="fas fa-gift"></i> 출석하고 피크 받기 <small>${PLAY.pickIcon()} ${DAILY_PICKS}</small></button>
+    return `<img class="g1" src="../images/play/gk/item_strat.png" alt=""><p class="big">${title}<small>${why}<br>${dl ? `출석하면 ${gf(DAILY_GOLD)} + 피크 ${DAILY_PICKS}개, 놀이터 한 판에 피크 ${PLAY.PICK.per}개.` : `놀이터 퀴즈쇼·월드컵 한 판마다 피크 ${PLAY.PICK.per}개씩 모여요.`}</small></p>
+        ${dl ? `<button class="btn pick" type="button" data-a="daily"><i class="fas fa-gift"></i> 출석하고 받기 <small>${PLAY.pickIcon()} ${DAILY_PICKS}</small></button>
         <div class="alt"><a href="./">놀이터</a> · <a href="quiz.html">퀴즈쇼</a> · <a href="worldcup.html">월드컵</a>에서도 모여요</div>`
         : `<a class="btn pick" href="./"><i class="fas fa-gamepad"></i> 놀이터에서 피크 모으기</a>
         <div class="alt"><a href="quiz.html">퀴즈쇼</a> · <a href="worldcup.html">월드컵</a> 바로 가기</div>`}`;
@@ -939,7 +945,7 @@ function renderBench() {
     if (!em.hidden) em.innerHTML = emptyCard();
     renderTable();
     renderSact();   // 빈 작업대('기타 키우기 / 시작')에는 강화·진열하기 단추가 없어야 한다 (2026-11-12 사용자)
-    if (!g) { box.innerHTML = `<p class="note2" style="text-align:center">${S.first ? `'시작'(기타 찾기)은 ${gf(FIND_GOLD)}예요. 골드가 모자라고 가진 기타가 없으면 공짜예요.` : `첫 기타만 피크 ${FIRST_PICKS}개로 찾아요. 그다음부터 '시작'은 ${gf(FIND_GOLD)}예요.`} 걸어 둔 기타는 작업방에서 작업대로 가져올 수 있어요.</p>`; return; }
+    if (!g) { box.innerHTML = `<p class="note2" style="text-align:center">${S.first ? `'시작'(기타 찾기)은 ${gf(FIND_GOLD)}예요. 골드가 모자라면 피크 ${FIRST_PICKS}개로 시작해요.` : `첫 기타만 피크 ${FIRST_PICKS}개로 찾아요. 그다음부터 '시작'은 ${gf(FIND_GOLD)}예요.`} 걸어 둔 기타는 작업방에서 작업대로 가져올 수 있어요.</p>`; return; }
     const T = TUNERS[S.tuner];
     let h = '';
     if (g.lv >= MAX) h += `<div class="maxed">🎸 최고 단계! 더는 강화할 수 없어요.<br><small>벽에 걸고 대표 기타로 배틀에 내보내요.</small></div>`;
@@ -1172,7 +1178,7 @@ async function enhance() {
 
 // 기타 찾기: 강화처럼 두근두근 기다리다가 그림자에서 기타가 '탄생'한다 (2026-11-12 사용자 요청).
 // 첫 기타만 피크 FIRST_PICKS, 그다음부터 공짜. 계열은 FIND_FAMS 중 하나(스트랫·통기타·베이스) — 나중에 텔레·주전자…도 (CLAUDE.md 11절)
-async function findGuitar(first) {
+async function findGuitar(first, byPick) {
     if (S.bench || busy) return;
     if (first) {
         if (S.first) return;
@@ -1180,9 +1186,9 @@ async function findGuitar(first) {
         S.first = true;
     } else {
         if (!S.first) return;
-        const c = findCost();
-        if (S.gold < c) { toast('골드가 모자라요'); return; }
-        S.gold -= c; updBar();
+        if (byPick) { if (S.gold >= FIND_GOLD || !PLAY.picks.spend(FIRST_PICKS)) { renderBench(); return; } }
+        else { if (S.gold < FIND_GOLD) { toast('골드가 모자라요'); renderBench(); return; } S.gold -= FIND_GOLD; }
+        updBar();
     }
     busy = true; talkClear();
     S.bench = { id: rid(), lv: 0, f: one(FIND_FAMS) };
@@ -1509,6 +1515,7 @@ $('#app').addEventListener('click', e => {
     else if (a === 'gearup') gearUp(b.dataset.k);
     else if (a === 'dex') toast(`+${b.dataset.lv} ${FAMS[b.dataset.f].names[+b.dataset.lv]}`);
     else if (a === 'new') findGuitar(false);
+    else if (a === 'newp') findGuitar(false, true);
     else if (a === 'buy1') findGuitar(true);
     else if (a === 'daily') $('#rDaily').click();
     else if (a === 'sell') sellBench();
