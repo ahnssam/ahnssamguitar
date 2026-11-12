@@ -72,7 +72,7 @@
     .empty .g1 { width: 34px; height: 90px; image-rendering: pixelated; filter: brightness(0) drop-shadow(0 0 8px rgba(255, 226, 122, 0.55)); animation: g1Bob 2.6s ease-in-out infinite; }
     @keyframes g1Bob { 50% { transform: translateY(-6px); } }
     .empty .btn small { display: inline-flex; align-items: center; gap: 3px; margin: 0; opacity: 1; font-size: 12.5px; font-weight: 900; background: rgba(0, 0, 0, 0.14); border-radius: 99px; padding: 2px 8px; }
-    @media (max-width: 359px) { .empty .g1 { display: none; } }
+    @media (max-width: 359px) { .empty .g1 { display: none; } .empty { gap: 9px; padding-top: 10px; padding-bottom: 112px; } }   /* 좁으면 말풍선이 세 줄이라 더 비운다 */
     .empty p.big { font-size: 22px; font-weight: 900; }
     .empty p.big small { font-size: 13px; line-height: 1.55; margin-top: 6px; }
     .empty .btn.pick { background: linear-gradient(#ffc24a, #f29a1f); color: #3a2400; font-weight: 900; box-shadow: 0 4px 0 #c9700a; }
@@ -312,7 +312,7 @@
         <span class="res shard" id="rShard" title="부서진 기타 조각 — 50개 모으면 하드케이스"><i class="fas fa-puzzle-piece"></i><span>0</span></span>
         <span class="res case" id="rCase" title="하드케이스 — 부서짐 1번 막아 줌"><i class="fas fa-briefcase"></i><span>0</span></span>
         <span class="sp"></span>
-        <button class="res daily" id="rDaily" type="button"><i class="fas fa-gift"></i><span>출석</span></button>
+        <button class="res daily" id="rDaily" type="button" title="하루 한 번: 1,000G + 피크 10"><i class="fas fa-gift"></i><span>출석</span></button>
         <button class="iconbtn" id="rSnd" type="button" aria-label="효과음 켜기/끄기"><i class="fas fa-volume-high"></i></button>
     </div>
     <nav class="gk-tabs" id="tabs">
@@ -366,7 +366,8 @@ const ODDS = [[100, 0, 0], [90, 10, 0], [80, 20, 0], [70, 28, 2], [60, 35, 5], [
 const COST = [0, 10, 20, 40, 70, 120, 200, 300, 450, 700, 1000, 1400, 2000, 2800, 3800, 5000, 6500, 8500, 11000, 14000];
 const SELL = [0, 30, 80, 180, 350, 700, 1300, 2400, 4200, 7500, 13000, 20000, 32000, 51000, 83000, 140000, 250000, 450000, 850000, 1700000, 3700000];
 const MAX = 20;
-const START_GOLD = 500, DAILY_GOLD = 1000, CASE_SHARDS = 50, BT_DAY = 10;
+const START_GOLD = 500, DAILY_GOLD = 1000, DAILY_PICKS = 10,   // 출석: 골드 + 놀이터 피크 10 (2026-11-12 사용자 요청, 피크 하루 200 한도 안에서)
+      CASE_SHARDS = 50, BT_DAY = 10;
 // 맨 처음 '기타 찾기'만 놀이터 피크로 한다(2026-11-12 사용자 결정). 그다음부터 작업대가 비면 기타 찾기는 공짜
 const FIRST_PICKS = 3;   // 2026-11-12 사용자: 50개 말고 3개(퀴즈·월드컵 한 판이면 찾을 수 있게)
 // 단계별 이름 (2026-11-12 사용자와 정함): +0~+9 개그 → +10부터 신비한 느낌 → +20은 그 기타로 유명한 기타리스트 이름을 살짝 바꿔서.
@@ -750,6 +751,7 @@ const LINES = {
     },
     intro: [['boss', '형준이가 창고에 기타를 잔뜩 맡기고 갔다. 뭐가 나올지는 나도 모른다.'], ['boss', `찾는 값은 피크 ${FIRST_PICKS}개다. 돈은 안 받는다.`], ['me', '……']],
     noPick: [['boss', '피크가 없다고? 놀이터 가서 퀴즈라도 한 판 풀고 와라. 한 판에 열 개다.']],
+    noPickDaily: [['boss', '피크가 없다고? 위에 출석부터 찍어라. 열 개 준다.']],
     bought: [['boss', '고쳐서 팔든, 벽에 걸든 네 마음이다.'], ['boss', '…부수지만 마라.'], ['me', '……']],
 };
 
@@ -787,9 +789,12 @@ function emptyCard() {
     const bal = PLAY.picks.bal(), need = FIRST_PICKS - bal;
     if (need <= 0) return `${sil}<p>첫 기타를 찾아볼까요?<small>첫 기타는 놀이터 피크 ${FIRST_PICKS}개로 찾아요. 지금 ${bal.toLocaleString()}피크 있어요.</small></p>
         <button class="btn pick" type="button" data-a="buy1"><i class="fas fa-magnifying-glass"></i> 기타 찾기 <small>${PLAY.pickIcon()} ${FIRST_PICKS}</small></button>`;
-    return `${sil}<p class="big">피크가 ${bal ? '모자라다' : '없다'}구요?<small>첫 기타는 피크 ${FIRST_PICKS}개로 찾아요 (지금 ${bal}개).<br>놀이터 퀴즈쇼·월드컵 한 판마다 ${PLAY.PICK.per}개씩 모여요.</small></p>
-        <a class="btn pick" href="./"><i class="fas fa-gamepad"></i> 놀이터에서 피크 모으기</a>
-        <div class="alt"><a href="quiz.html">퀴즈쇼</a> · <a href="worldcup.html">월드컵</a> 바로 가기</div>`;
+    const dl = S.daily !== today();   // 오늘 출석 전이면 출석 단추가 먼저(말풍선에 안 가리게 놀이터 길은 한 줄 링크로)
+    return `${sil}<p class="big">피크가 ${bal ? '모자라다' : '없다'}구요?<small>첫 기타는 피크 ${FIRST_PICKS}개로 찾아요 (지금 ${bal}개).<br>${dl ? `출석하면 ${DAILY_PICKS}개, 놀이터 한 판에 ${PLAY.PICK.per}개.` : `놀이터 퀴즈쇼·월드컵 한 판마다 ${PLAY.PICK.per}개씩 모여요.`}</small></p>
+        ${dl ? `<button class="btn pick" type="button" data-a="daily"><i class="fas fa-gift"></i> 출석하고 피크 받기 <small>${PLAY.pickIcon()} ${DAILY_PICKS}</small></button>
+        <div class="alt"><a href="./">놀이터</a> · <a href="quiz.html">퀴즈쇼</a> · <a href="worldcup.html">월드컵</a>에서도 모여요</div>`
+        : `<a class="btn pick" href="./"><i class="fas fa-gamepad"></i> 놀이터에서 피크 모으기</a>
+        <div class="alt"><a href="quiz.html">퀴즈쇼</a> · <a href="worldcup.html">월드컵</a> 바로 가기</div>`}`;
 }
 function renderBench() {
     updBar(); renderName();
@@ -1280,6 +1285,7 @@ $('#app').addEventListener('click', e => {
     const a = b.dataset.a, id = b.dataset.id;
     if (a === 'new') findGuitar(false);
     else if (a === 'buy1') findGuitar(true);
+    else if (a === 'daily') $('#rDaily').click();
     else if (a === 'sell') sellBench();
     else if (a === 'hang') hangBench();
     else if (a === 'brag') brag(S.bench);
@@ -1326,9 +1332,10 @@ $('#app').addEventListener('click', e => {
 });
 $('#rDaily').addEventListener('click', () => {
     if (busy) return;
-    if (S.daily === today()) { toast('오늘 출석 골드는 받았어요. 내일 또 와요!'); return; }
+    if (S.daily === today()) { toast('오늘 출석은 했어요. 내일 또 와요!'); return; }
     S.daily = today(); S.gold += DAILY_GOLD; save(); updBar(true); sfx('sell');
-    toast(`출석 골드 +${gf(DAILY_GOLD)}`);
+    const pk = PLAY.picks.earn(DAILY_PICKS);   // 놀이터 하루 200 한도를 넘으면 0
+    toast(`출석 +${gf(DAILY_GOLD)}${pk ? ` · 피크 +${pk}` : ' (피크는 오늘 한도를 다 받았어요)'}`);
     if (tab === 'bench') renderBench(); else if (tab === 'shop') renderShop();
 });
 $('#rSnd').addEventListener('click', () => { mem.set('gk.sound', !soundOn()); updBar(); if (soundOn()) sfx('hang'); });
@@ -1337,7 +1344,7 @@ $('#adw').innerHTML = PLAY.adSlot('wide');
 function start() {
     if (!S.intro) {
         S.intro = true; S.gold = Math.max(S.gold, START_GOLD); save();
-        setTimeout(() => talk(PLAY.picks.bal() >= FIRST_PICKS ? LINES.intro : [...LINES.intro, ...LINES.noPick]), 400);
+        setTimeout(() => talk(PLAY.picks.bal() >= FIRST_PICKS ? LINES.intro : [...LINES.intro, ...(S.daily !== today() ? LINES.noPickDaily : LINES.noPick)]), 400);
     }
     if (VS) setTab('battle'); else setTab('bench');
 }
