@@ -115,6 +115,10 @@
     .empty .btn.pick { background: linear-gradient(#ffc24a, #f29a1f); color: #3a2400; font-weight: 900; box-shadow: 0 4px 0 #c9700a; }
     .empty .btn.pick .pki path { fill: #fff3d6; stroke: #a85a00; }
     .empty .alt { font-size: 13px; font-weight: 700; }
+    .empty small.cost { display: inline-flex; align-items: center; justify-content: center; gap: 5px; margin-top: -2px; font-size: 13px; font-weight: 900; opacity: 1; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
+    .empty small.cost i { color: #ffd76a; }
+    .empty small.cost span { font-weight: 600; opacity: 0.8; font-size: 12px; }
+    .empty .btn[disabled] { opacity: .55; cursor: default; }
     .empty .alt a { color: #ffe27a; text-decoration: underline; text-underline-offset: 3px; }
 
     /* 강화 기다림: 무대가 어두워지고 기타가 점점 세게 떨리며 빛이 모인다 */
@@ -419,6 +423,10 @@ const MAX = 20;
 const START_GOLD = 500, DAILY_GOLD = 1000, DAILY_PICKS = 10,   // 출석: 골드 + 놀이터 피크 10 (2026-11-12 사용자 요청, 피크 하루 200 한도 안에서)
       CASE_SHARDS = 50, BT_DAY = 10;
 // 맨 처음 '기타 찾기'만 놀이터 피크로 한다(2026-11-12 사용자 결정). 그다음부터 작업대가 비면 기타 찾기는 공짜
+// 두 번째부터 '시작'(기타 찾기)은 골드 FIND_GOLD (2026-11-12: 사용자가 시작 값 보여 달라고 함 → Claude 추천 50G).
+//   +2에서 팔면(80G) 조금 남고 +1에서 팔면(30G) 손해. 골드가 모자라고 가진 기타(작업대·벽)도 없으면 공짜(막히지 않게)
+const FIND_GOLD = 50;
+const findCost = () => (S.gold < FIND_GOLD && !S.wall.some(Boolean)) ? 0 : FIND_GOLD;
 const FIRST_PICKS = 3;   // 2026-11-12 사용자: 50개 말고 3개(퀴즈·월드컵 한 판이면 찾을 수 있게)
 // 단계별 이름 (2026-11-12 사용자와 정함): +0~+9 개그 → +10부터 신비한 느낌 → +20은 그 기타로 유명한 기타리스트 이름을 살짝 바꿔서.
 // 계열마다 이름표를 따로 둔다(레스폴 +20 은 '게리 무르의 레스폴' 예정). 아예 다른 물건(주전자 등)은 나중에 '첫 기타 찾기' 랜덤으로 (CLAUDE.md 11절)
@@ -910,10 +918,13 @@ function renderName() {
 function emptyCard() {
     const sil = `<img class="g1" src="../images/play/gk/item_strat.png" alt="">`;   // 무슨 기타가 나올지 모르게 그림자만
     // 2026-11-12 사용자: 빈 작업대는 간단하게 위에 '기타 키우기', 아래 '시작'만
-    if (S.first) return `<p class="big">기타 키우기</p><button class="btn" type="button" data-a="new"><i class="fas fa-play"></i> 시작</button>`;
+    if (S.first) { const c = findCost();
+        return `<p class="big">기타 키우기</p><button class="btn" type="button" data-a="new" ${S.gold < c ? 'disabled' : ''}><i class="fas fa-play"></i> 시작</button>
+        <small class="cost">${c ? `<i class="fas fa-coins"></i> ${gf(c)}${S.gold < c ? ` · ${gf(c - S.gold)} 모자라요` : ''}` : `공짜 <span>(골드가 모자라 이번엔 공짜예요)</span>`}</small>`; }
     const bal = PLAY.picks.bal(), need = FIRST_PICKS - bal;
     if (need <= 0) return `${sil}<p class="big">기타 키우기</p>
-        <button class="btn pick" type="button" data-a="buy1"><i class="fas fa-play"></i> 시작 <small>${PLAY.pickIcon()} ${FIRST_PICKS}</small></button>`;
+        <button class="btn pick" type="button" data-a="buy1"><i class="fas fa-play"></i> 시작</button>
+        <small class="cost">${PLAY.pickIcon()} 피크 ${FIRST_PICKS}개 <span>(지금 ${bal.toLocaleString()}개 · 첫 기타만, 다음부터는 ${gf(FIND_GOLD)})</span></small>`;
     const dl = S.daily !== today();   // 오늘 출석 전이면 출석 단추가 먼저(말풍선에 안 가리게 놀이터 길은 한 줄 링크로)
     return `${sil}<p class="big">피크가 ${bal ? '모자라다' : '없다'}구요?<small>첫 기타는 피크 ${FIRST_PICKS}개로 찾아요 (지금 ${bal}개).<br>${dl ? `출석하면 ${DAILY_PICKS}개, 놀이터 한 판에 ${PLAY.PICK.per}개.` : `놀이터 퀴즈쇼·월드컵 한 판마다 ${PLAY.PICK.per}개씩 모여요.`}</small></p>
         ${dl ? `<button class="btn pick" type="button" data-a="daily"><i class="fas fa-gift"></i> 출석하고 피크 받기 <small>${PLAY.pickIcon()} ${DAILY_PICKS}</small></button>
@@ -928,7 +939,7 @@ function renderBench() {
     if (!em.hidden) em.innerHTML = emptyCard();
     renderTable();
     renderSact();   // 빈 작업대('기타 키우기 / 시작')에는 강화·진열하기 단추가 없어야 한다 (2026-11-12 사용자)
-    if (!g) { box.innerHTML = `<p class="note2" style="text-align:center">${S.first ? '작업대가 비면 기타 찾기는 공짜예요.' : `첫 기타만 피크 ${FIRST_PICKS}개로 찾아요. 그다음부터 기타 찾기는 공짜예요.`} 걸어 둔 기타는 작업방에서 작업대로 가져올 수 있어요.</p>`; return; }
+    if (!g) { box.innerHTML = `<p class="note2" style="text-align:center">${S.first ? `'시작'(기타 찾기)은 ${gf(FIND_GOLD)}예요. 골드가 모자라고 가진 기타가 없으면 공짜예요.` : `첫 기타만 피크 ${FIRST_PICKS}개로 찾아요. 그다음부터 '시작'은 ${gf(FIND_GOLD)}예요.`} 걸어 둔 기타는 작업방에서 작업대로 가져올 수 있어요.</p>`; return; }
     const T = TUNERS[S.tuner];
     let h = '';
     if (g.lv >= MAX) h += `<div class="maxed">🎸 최고 단계! 더는 강화할 수 없어요.<br><small>벽에 걸고 대표 기타로 배틀에 내보내요.</small></div>`;
@@ -1167,7 +1178,12 @@ async function findGuitar(first) {
         if (S.first) return;
         if (!PLAY.picks.spend(FIRST_PICKS)) { toast(`피크가 모자라요 (${FIRST_PICKS}개 필요)`); renderBench(); return; }
         S.first = true;
-    } else if (!S.first) return;
+    } else {
+        if (!S.first) return;
+        const c = findCost();
+        if (S.gold < c) { toast('골드가 모자라요'); return; }
+        S.gold -= c; updBar();
+    }
     busy = true; talkClear();
     S.bench = { id: rid(), lv: 0, f: one(FIND_FAMS) };
     dexAdd(S.bench.f, 0);
