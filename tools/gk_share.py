@@ -13,6 +13,7 @@ SITE = 'https://ahnssamguitar.com'
 FONT_B = 'C:/Windows/Fonts/malgunbd.ttf'
 FONT_R = 'C:/Windows/Fonts/malgun.ttf'
 W, H = 800, 420
+SHARE_V = 2   # 썸네일 그림을 바꾸면 올린다 — 카톡이 og:image 를 주소로 기억해서(2026-11-12 몸통 클로즈업으로 바꿈)
 
 src = open(os.path.join(ROOT, GAME), encoding='utf8').read()
 
@@ -70,12 +71,17 @@ for fam, F in FAMS.items():
         n = min(lv, F['artMax'])
         art = Image.open(os.path.join(ROOT, f"images/play/gk/{F['art']}_{n:02d}.webp")).convert('RGBA')
         # 그림 틀에서 기타(물건)가 있는 곳만: 기타 448×672 은 몸통+헤드가 y 208~608, 정사각형 448×448 은 바닥이 y 430
-        piece = art.crop((40, 120, 408, 652)) if not F['sq'] else art.crop((0, 10, 448, 442))
-        ph = 392 if not F['sq'] else 330
-        pw = round(piece.width * ph / piece.height)
+        #   2026-11-12 사용자: 카톡 썸네일에서 기타를 더 크게, 몸통 쪽으로 클로즈업 → 기타는 넥 가운데(y 280)부터 아래만 1.1배,
+        #   앰프·멀티는 1.05배. 몸통 아래 끝이 썸네일 y 400 에 온다(예전에는 헤드까지 다 보이게 0.74배)
+        cx, base = 225, H - 12
+        if not F['sq']:
+            piece = art.crop((60, 280, 388, 672)); k = 1.1; foot = 608 - 280
+        else:
+            piece = art.crop((34, 60, 414, 448)); k = 1.05; foot = 430 - 60
+        pw, ph = round(piece.width * k), round(piece.height * k)
         piece = piece.resize((pw, ph), Image.LANCZOS)
+        top = 400 - round(foot * k)
         im = bg.copy().convert('RGBA')
-        cx, base = 230, H - 12
         if lv >= 10:   # +10부터 그 색으로 빛나게(게임 속 아우라처럼)
             hue = hue_of(art)
             r, g, b = [int(v * 255) for v in colorsys.hls_to_rgb(hue, 0.6, 0.95)]
@@ -86,7 +92,7 @@ for fam, F in FAMS.items():
         sh = Image.new('RGBA', (W, H), (0, 0, 0, 0)); sd = ImageDraw.Draw(sh)
         sd.ellipse((cx - 95, base - 16, cx + 95, base + 10), fill=(0, 0, 0, 140))
         im = Image.alpha_composite(im, sh.filter(ImageFilter.GaussianBlur(8)))
-        im.alpha_composite(piece, (cx - pw // 2, base - ph))
+        layer = Image.new('RGBA', (W, H)); layer.paste(piece, (cx - pw // 2, top)); im = Image.alpha_composite(im, layer)
         d = ImageDraw.Draw(im)
         x0 = 430
         badge = f'+{lv}'
@@ -115,7 +121,7 @@ for fam, F in FAMS.items():
 <meta property="og:site_name" content="안쌤의 기타나무숲">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="안쌤 놀이터 '기타 키우기'에서 키운 {F['name']}. 나도 키워 보기 →">
-<meta property="og:image" content="{SITE}/images/play/gk/share/{out}.jpg">
+<meta property="og:image" content="{SITE}/images/play/gk/share/{out}.jpg?v={SHARE_V}">
 <meta property="og:image:width" content="{W}"><meta property="og:image:height" content="{H}">
 <meta property="og:url" content="{SITE}/play/gk/s/{out}.html">
 <meta name="twitter:card" content="summary_large_image">
