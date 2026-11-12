@@ -115,7 +115,7 @@
     .talk .more { position: absolute; right: 10px; bottom: 6px; font-size: 10px; opacity: .6; }
 
     /* 튜너 */
-    /* 강화가 끝나면 무대 안 아래에 '강화(넓게) | 진열하기' (2026-11-12 사용자 요청) — 말풍선은 그 위로 */
+    /* 무대 안 아래에 늘 '강화(넓게) | 진열하기' (2026-11-12 사용자 요청) — 말풍선은 그 위로 */
     .sact { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 5; display: grid; grid-template-columns: 2.4fr 1fr; gap: 8px; animation: fade .2s; }
     .sact.one { grid-template-columns: 1fr; }
     .sact button { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 12px 10px; border-radius: 14px; font-weight: 900; font-size: 16px; color: #fff; white-space: nowrap; }
@@ -858,7 +858,6 @@ function renderBench() {
         const [s, m, d] = ODDS[g.lv], cost = COST[g.lv], safe = d > 0 && S.caseOn && S.cases > 0;
         h += `<div class="odds3"><span class="o">성공<b>${s}%</b></span><span class="k">줄 끊김<b>${m}%</b></span><span class="b ${safe ? 'safe' : ''}">${safe ? '부서짐 → 케이스' : '부서짐'}<b>${d}%</b></span></div>`;
         if (T && m > 0) h += `<p class="tline">${T.name}로 딱 맞히면 성공 <b>${s + Math.min(T.bonus, m)}%</b> (+${Math.min(T.bonus, m)}%p, 줄 끊김에서)</p>`;
-        h += `<button class="go" id="go" type="button" ${S.gold < cost ? 'disabled' : ''}>강화하기 <small>${cost ? gf(cost) : '공짜'}</small></button>`;
         if (S.gold < cost) h += `<p class="lack">골드가 ${gf(cost - S.gold)} 모자라요. 팔거나 출석 골드를 받아요.</p>`;
     }
     h += `<div class="acts"><button type="button" data-a="sell" ${g.lv ? '' : 'disabled'}><i class="fas fa-coins"></i>팔기 <b>${g.lv ? gf(SELL[g.lv]) : '0G'}</b></button>
@@ -869,10 +868,10 @@ function renderBench() {
     box.innerHTML = h;
     renderSact();
 }
-// 무대 안 단추: 강화를 한 번 끝낸 뒤부터, 작업대에 기타가 있는 동안 (찾기·부서짐·팔기·걸기로 기타가 바뀌면 다시 숨김)
-let sactId = "";   // 강화를 끝낸 그 기타일 때만
+// 무대 안 단추: 작업대에 기타가 있는 동안 늘 (기다리는 동안·튜닝 중엔 숨김)
+// 2026-11-12 사용자: 강화·진열하기는 무대 안 아래에 늘 (아래 큰 '강화하기' 단추는 뺐다). 기다리는 동안·빈 작업대엔 숨김
 function renderSact() {
-    const el = $('#sact'), g = S.bench, show = !!g && g.id === sactId && !busy;
+    const el = $('#sact'), g = S.bench, show = !!g && !busy;
     el.hidden = !show; $('#stage').classList.toggle('has-act', !!show);
     if (!show) return;
     const cost = COST[g.lv], can = g.lv < MAX;
@@ -1048,7 +1047,6 @@ async function enhance() {
         talk(one(g.lv >= 10 ? LINES.bigBoom : LINES.boom));
     }
     busy = false;
-    sactId = S.bench ? S.bench.id : "";
     renderBench();
 }
 
