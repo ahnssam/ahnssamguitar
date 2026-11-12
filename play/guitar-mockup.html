@@ -93,7 +93,7 @@
     /* +10부터 기타 뒤 아우라 (2026-11-12 사용자: 그 기타 색상의 오로라 같은 게 흔들흔들). 색은 그림에서 가장 많이 쓰인 선명한 색(--ah 색상각) */
     /* 2026-11-12 사용자: 아우라가 너무 크다, 기타 주변에서 더 빛나게 → 커튼은 기타 폭만큼 작게, 기타 테두리가 그 색으로 빛난다(.stage.glow #cv) */
     .stage { --ah: 45; }
-    .shopcat { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 4px 0 12px; background: #e6ede9; padding: 3px; border-radius: 12px; }
+    .shopcat { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 4px 0 12px; background: #e6ede9; padding: 3px; border-radius: 12px; }
     .shopcat button { padding: 8px 0; border-radius: 9px; font-weight: 800; font-size: 13px; color: #5a6b62; display: flex; align-items: center; justify-content: center; gap: 5px; }
     .shopcat button.on { background: #fff; color: var(--green-deep); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
     @media (max-width: 400px) { .shopcat button i { display: none; } .shopcat button { font-size: 12.5px; } }
@@ -555,6 +555,13 @@ const TUNERS = [null,
 const WALL_N = 5, MID = 2, HANG_ORDER = [2, 1, 3, 0, 4];
 const SLOT_PRICE = [6000, 20000, 60000, 200000];   // 2026-11-12 사용자: 상점 값도 올리기 → 두 배 (예전 3천·1만·3만·10만)
 // 진열 벽 스킨(상점에서 바꾼다). x = 걸이 가운데(가로 %), hook = 걸이(세로 %), foot = 기타 아래 끝, plate = 명판 — 그림마다 잰다
+// 작업대(강화 무대) 배경 스킨 (2026-11-12 사용자: 작업대 스킨도 10개). 그림은 프롬프트 문서 '작업대 배경 스킨 10개'로 뽑아 오면
+//   bg_<id>.webp 로 넣고 여기에 한 줄씩 더한다(가운데 거치대 자리를 기본 공방과 맞춰 뽑으므로 위치 조정은 필요 없음)
+const BENCHES = [
+    { id: 'workshop', name: '밤의 기타 공방', desc: '처음 받는 기본 작업대. 양쪽 벽에 기타, 가운데 거치대', src: 'bg_workshop.webp', price: 0 },
+];
+const benchSkin = () => BENCHES.find(b => b.id === S.bskin) || BENCHES[0];
+function applyBench() { const B = benchSkin(); $('#stage').style.backgroundImage = `url(../images/play/gk/${B.src})`; }
 const WALLS = [
     { id: 'wood', name: '초록 나무 벽 작업실', desc: '처음 받는 기본 벽. 걸이마다 작은 조명', src: 'wall_wood.webp', w: 1672, h: 941, x: [17.55, 33.97, 50.03, 66.21, 82.48], hook: 27.5, foot: 79, plate: 85.1, price: 0 },
     // 2026-11-12 사용자가 뽑은 스킨들 — 걸이·명판 자리가 모두 기본 벽과 같다. 값은 싼 것부터
@@ -582,7 +589,7 @@ const rid = () => Math.random().toString(36).slice(2, 9);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ---------- 저장 (이 브라우저) ----------
-const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [null, null, null, null, null], open: [false, false, true, false, false], skin: 'wood', skins: ['wood'], dex: {}, store: [], rep: '', shards: 0, cases: 0, caseOn: false, tuner: 0, tuneOn: true, daily: '', nick: '', intro: false, first: false,
+const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [null, null, null, null, null], open: [false, false, true, false, false], skin: 'wood', skins: ['wood'], bskin: 'workshop', bskins: ['workshop'], dex: {}, store: [], rep: '', shards: 0, cases: 0, caseOn: false, tuner: 0, tuneOn: true, daily: '', nick: '', intro: false, first: false,
     bt: { day: '', n: 0, done: {} }, st: { tries: 0, ok: 0, keep: 0, boom: 0, saved: 0, sold: 0, earned: 0, best: 0, win: 0, lose: 0 } });
 const okG = g => g && typeof g === 'object' && Number.isInteger(g.lv) && g.lv >= 0 && g.lv <= MAX && typeof g.id === 'string';
 function load() {
@@ -607,6 +614,8 @@ function load() {
     }
     delete s.room;
     s.skins = (Array.isArray(s.skins) ? s.skins : []).filter(id => WALLS.some(w => w.id === id));
+    s.bskins = (Array.isArray(s.bskins) ? s.bskins : []).filter(id => BENCHES.some(w => w.id === id)); if (!s.bskins.includes('workshop')) s.bskins.unshift('workshop');
+    if (!s.bskins.includes(s.bskin)) s.bskin = 'workshop';
     if (!s.skins.includes('wood')) s.skins.unshift('wood');
     if (!s.skins.includes(s.skin)) s.skin = 'wood';
     ['gold', 'shards', 'cases'].forEach(k => { s[k] = Math.max(0, Math.floor(+s[k] || 0)); });
@@ -675,7 +684,7 @@ function mergeSaves(here, acct) {
     }
     A.gold += H.gold; A.shards += H.shards; A.cases += H.cases;
     for (const [f, bits] of Object.entries(H.dex)) A.dex[f] = (A.dex[f] | 0) | (bits | 0);
-    A.skins = [...new Set([...A.skins, ...H.skins])];
+    A.skins = [...new Set([...A.skins, ...H.skins])]; A.bskins = [...new Set([...A.bskins, ...H.bskins])];
     A.tuner = Math.max(A.tuner, H.tuner);
     for (const k of Object.keys(A.st)) A.st[k] = k === 'best' ? Math.max(A.st.best, H.st.best) : (A.st[k] | 0) + (H.st[k] | 0);
     A.first = A.first || H.first; A.rk = A.rk || H.rk; A.nick = A.nick || H.nick;
@@ -1463,13 +1472,17 @@ async function shareText(title, text, url) {
     try { await navigator.clipboard.writeText(`${text}\n${url}`); toast('링크를 복사했어요'); }
     catch (e) { prompt('이 링크를 복사해 주세요', url); }
 }
-function brag(g) { if (g) shareText('기타 키우기', `내 기타: ${full(g)} 🎸\n안쌤 놀이터 '기타 키우기'에서 키웠어요`, pageUrl()); }
+// 공유 주소: 그 기타의 공유용 페이지(tools/gk_share.py 가 만든 play/gk/s/<계열>-<단계>.html) — 카톡 미리보기에 그 기타 썸네일이 뜬다.
+//   목업에서는 mock=1 을 붙여 공유 페이지가 목업으로 돌려보낸다(공개하면 guitar.html)
+const IS_MOCK = /guitar-mockup/.test(location.pathname);
+const shareUrl = (g, q = '') => { const qs = [q, IS_MOCK ? 'mock=1' : ''].filter(Boolean).join('&'); return `${location.origin}/play/gk/s/${FAMS[g.f] ? g.f : 'strat'}-${g.lv}.html${qs ? '?' + qs : ''}`; };
+function brag(g) { if (g) shareText('기타 키우기', `내 기타: ${full(g)} 🎸\n안쌤 놀이터 '기타 키우기'에서 키웠어요`, shareUrl(g)); }
 const b64e = o => btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 function b64d(s) {
     try {
         const j = JSON.parse(decodeURIComponent(escape(atob(String(s).replace(/-/g, '+').replace(/_/g, '/')))));
         if (!Number.isInteger(j.l) || j.l < 0 || j.l > MAX) return null;
-        return { id: 'vs.' + String(j.i || '').replace(/[^\w.]/g, '').slice(0, 20), nick: String(j.n || '익명').slice(0, 12) || '익명', lv: j.l, f: 'strat', mine: String(j.i || '').split('.')[0],
+        return { id: 'vs.' + String(j.i || '').replace(/[^\w.]/g, '').slice(0, 20), nick: String(j.n || '익명').slice(0, 12) || '익명', lv: j.l, f: FAMS[j.f] ? j.f : 'strat', mine: String(j.i || '').split('.')[0],
             p: Number.isInteger(j.p) && j.p > 0 ? j.p : 0 };   // p = 랭킹 DB 번호(있으면 서버에서 지금 단계를 읽고 서버가 승패를 정함)
     } catch (e) { return null; }
 }
@@ -1480,7 +1493,7 @@ async function challengeLink() {
     const nick = myNick();
     let p = 0;
     try { const m = await syncMe(); p = (m && m.id) || 0; } catch (e) {}
-    const url = pageUrl() + '?vs=' + b64e({ n: nick, l: g.lv, i: g.id + '.' + g.lv, ...(p ? { p } : {}) });
+    const url = shareUrl(g, 'vs=' + b64e({ n: nick, l: g.lv, f: g.f, i: g.id + '.' + g.lv, ...(p ? { p } : {}) }));
     shareText('기타 키우기 배틀 신청', `${nick}의 ${full(g)}랑 붙어 볼래? 🎸⚡`, url);
 }
 
@@ -1513,7 +1526,9 @@ function renderRoom(enter) {
         const g = S.wall[i], lit = i === justOpened ? `<div class="wl off" style="left:${x}%"></div>` : '';
         if (!g) return lit;
         const isRep = rp && g.id === rp.id;
-        return `${lit}<canvas class="gkc wg live ${g.id === selId ? 'sel' : ''}" width="448" height="672" data-lv="${g.lv}" data-f="${g.f || 'strat'}" style="left:${x}%;top:${top}%;height:${hh}%;--d:${Math.abs(i - MID) * 0.1}s"></canvas>
+        // 앰프·멀티는 걸이에 걸지 않고 그 걸이 아래 바닥에 세운다 (2026-11-12 사용자: 이펙터니까 아래 깔려야지). 그림 바닥(75.75칸)이 벽 96%에 오게, 기타보다 작게
+        const sq = (FAMS[g.f] || {}).sq, h2 = sq ? hh * 0.58 : hh, t2 = sq ? 96.5 - h2 * 75.75 / 84 : top;
+        return `${lit}<canvas class="gkc wg live ${g.id === selId ? 'sel' : ''}" width="448" height="672" data-lv="${g.lv}" data-f="${g.f || 'strat'}" style="left:${x}%;top:${t2}%;height:${h2}%;--d:${Math.abs(i - MID) * 0.1}s"></canvas>
             <button type="button" class="wsb" data-a="slot" data-id="${g.id}" style="left:${x}%;${hit}" aria-label="${esc(full(g))}"></button>
             <span class="wp" style="left:${x}%;top:${W.plate}%">+${g.lv}</span>${isRep ? `<span class="wrep" style="left:${x}%;top:${Math.min(96, W.plate + 7.5)}%">대표</span>` : ''}`;
     }).join('');
@@ -1676,7 +1691,7 @@ async function fight(id) {
 // ---------- 상점 ----------
 // 상점: 카테고리 단추를 누르면 그 칸만 (2026-11-12 사용자: 아래로 쭉 늘어선 목록 말고)
 let shopCat = 'tuner';
-const SHOP_CATS = [['tuner', 'fa-gauge-high', '튜너'], ['case', 'fa-briefcase', '하드케이스'], ['skin', 'fa-image', '벽 스킨'], ['rec', 'fa-chart-simple', '내 기록']];
+const SHOP_CATS = [['tuner', 'fa-gauge-high', '튜너'], ['case', 'fa-briefcase', '케이스'], ['bench', 'fa-screwdriver-wrench', '작업대'], ['skin', 'fa-image', '벽 스킨'], ['rec', 'fa-chart-simple', '기록']];
 function renderShop() {
     updBar();
     const el = $('#tab-shop'), st = S.st;
@@ -1689,6 +1704,11 @@ function renderShop() {
     if (shopCat === 'case') h += `<div class="item"><span class="ic case"><i class="fas fa-briefcase"></i></span><div class="it"><b>하드케이스 만들기 (지금 ${S.cases}개)</b>
         <small>부서진 기타 조각 ${CASE_SHARDS}개 → 하드케이스 1개. 끼워 두면 부서짐을 한 번 막아 줘요.</small><div class="shardbar"><i style="width:${Math.min(100, S.shards / CASE_SHARDS * 100)}%"></i></div></div>
         <button type="button" data-a="craft" ${S.shards >= CASE_SHARDS ? '' : 'disabled'}>${S.shards >= CASE_SHARDS ? '만들기' : `조각 ${S.shards}/${CASE_SHARDS}`}</button></div>`;
+    if (shopCat === 'bench') h += BENCHES.map(B => {
+        const own = S.bskins.includes(B.id), use = S.bskin === B.id;
+        return `<div class="item"><span class="ic skin" style="background-image:url(../images/play/gk/${B.src})"></span><div class="it"><b>${B.name}</b><small>${B.desc}</small></div>
+            ${use ? '<span class="own">쓰는 중</span>' : own ? `<button type="button" data-a="bskin" data-id="${B.id}">바꾸기</button>` : `<button type="button" data-a="bskin" data-id="${B.id}" ${S.gold >= B.price ? '' : 'disabled'}>${gf(B.price)}</button>`}</div>`;
+    }).join('') + (BENCHES.length < 2 ? '<p class="note2">작업대 스킨 10개는 그림을 뽑아 오면 여기에 더해요(낮 공방·합주실·빈티지 가게·클럽 무대·한옥·눈 오두막·네온·해변·공연장·별빛 신전).</p>' : '');
     if (shopCat === 'skin') h += WALLS.map(W => {
         const own = S.skins.includes(W.id), use = S.skin === W.id;
         return `<div class="item"><span class="ic skin" style="background-image:url(../images/play/gk/${W.src})"></span><div class="it"><b>${W.name}</b><small>${W.desc}</small></div>
@@ -1764,6 +1784,10 @@ $('#app').addEventListener('click', e => {
         const W = WALLS.find(w => w.id === b.dataset.id); if (!W) return;
         if (!S.skins.includes(W.id)) { if (S.gold < W.price) return; S.gold -= W.price; S.skins.push(W.id); sfx('sell'); }
         S.skin = W.id; save(); renderShop(); toast(`진열 벽을 '${W.name}'(으)로 바꿨어요`);
+    } else if (a === 'bskin') {
+        const B = BENCHES.find(w => w.id === b.dataset.id); if (!B) return;
+        if (!S.bskins.includes(B.id)) { if (S.gold < B.price) return; S.gold -= B.price; S.bskins.push(B.id); sfx('sell'); }
+        S.bskin = B.id; save(); applyBench(); renderShop(); toast(`작업대를 '${B.name}'(으)로 바꿨어요`);
     } else if (a === 'craft') {
         if (S.shards < CASE_SHARDS) return;
         S.shards -= CASE_SHARDS; S.cases++; save(); sfx('case'); renderShop(); toast('하드케이스를 만들었어요. 작업대에서 끼워요');
@@ -1793,6 +1817,7 @@ $('#adw').innerHTML = PLAY.adSlot('wide');
 addEventListener('ahnssam-auth-settled', () => cloudSync());
 document.addEventListener('visibilitychange', () => { if (document.hidden && linked() && cloud.dirty) cloudPush(); });
 function start() {
+    applyBench();
     if (!S.intro) {
         S.intro = true; S.gold = Math.max(S.gold, START_GOLD); save();
         setTimeout(() => talk(PLAY.picks.bal() >= FIRST_PICKS ? LINES.intro : [...LINES.intro, ...(S.daily !== today() ? LINES.noPickDaily : LINES.noPick)]), 400);
