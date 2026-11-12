@@ -300,3 +300,138 @@ Original designs only: no logos, and NO text, letters or numbers anywhere.
 9. Whale body: the body shaped like a friendly cartoon whale with a tail-shaped horn, ocean-blue with a white belly.
 10. The ground shakes: cracks in a small patch of ground under it, glowing golden seismic rings spreading out, small pebbles floating - the first hint of something mysterious.
 ```
+
+
+---
+
+# +10 ~ +20 한 번에 (스트랫 빼고 7종 — 2026-11-12 사용자: "20까지 안 된 악기들, 악기당 11개")
+
+악기마다 아래 칸 하나씩. **그 악기 +0~+9를 뽑은 ChatGPT 대화**에 붙여 넣으면 먼저 +10~+19 열 개가 한 장으로 나오고, "다음"이라고 쓰면 +20이 따로 한 장(크게) 나온다.
+새 대화에서 쓸 때는 그 악기 +0~+9 시트 그림을 같이 올린다. 받은 그림은 Claude의 답이 끝난 뒤 새 메시지로 보낸다(작업 중에 붙인 그림은 파일로 안 남음).
+이름은 게임에 이미 들어가 있다(목업 `FAMS`·`GEAR`). +10부터는 장난이 아니라 신비하고 멋있게, 단계가 오를수록 더 화려하게.
+
+## 11. 텔레 +10 ~ +20
+
+```
+Continue this Telecaster-style series with the next 11 levels, keeping EXACTLY the same art style, the same base guitar shape (single-cutaway slab body, black pickguard, slanted bridge pickup in a metal plate, original headstock) and the same guitar size as the first sheet.
+First make ONE image, landscape 1536x1024, transparent background: 10 guitars (levels +10 to +19) in a grid of 5 columns x 2 rows with lots of empty space between them, top row left to right = 1-5, bottom row = 6-10. Every guitar upright, seen from the front, centered, about 85% of the cell height; keep every effect inside its own cell. From here they are MYSTERIOUS, MAGICAL and more impressive each level. No people, no logos, NO text, letters or numbers.
+1. Silver moon: a silvery moonlit body, a glowing crescent moon rising behind the headstock.
+2. The endless highway: the body painted with a long desert highway stretching to a dusk horizon, glowing road lines.
+3. Desert of falling stars: a deep night-blue body showing a desert at night, shooting stars streaking around the guitar.
+4. Thunder over the prairie: a storm-grey body, dark clouds swirling around the neck, a lightning bolt across the body.
+5. Galaxy train: a tiny glowing steam train circling the guitar on a track of stars.
+6. Under the aurora: green and violet aurora ribbons flowing behind it, the body reflecting the aurora light.
+7. Golden spurs: a body with gold trim, golden cowboy spurs hanging from the strap buttons, warm sparkles.
+8. Beyond the mirage: a shimmering half-transparent body like desert heat haze, wavy distortion around it, a pale sun disc.
+9. Cowboy who tamed the stars: a lasso of starlight looped around the guitar, catching a bright little star.
+10. Legend of the last saloon: antique dark wood body with golden inlays, the shape of swinging saloon doors glowing faintly behind, warm lantern light, a legendary aura.
+When I say "다음", make level +20 as ONE separate image, portrait 1024x1536, transparent background, the same guitar alone, upright, larger and more detailed: the ultimate legendary Telecaster - a worn golden butterscotch body with a glowing black pickguard, a halo of warm golden light, floating guitar picks orbiting it like planets, and a crown of light above the headstock. It should feel like the most famous Telecaster in rock history. No person, no logos, no text.
+```
+
+## 12. 레스폴 +10 ~ +20
+
+```
+Continue this Les Paul-style series with the next 11 levels, keeping EXACTLY the same art style, the same base guitar shape (single-cutaway carved top, cream binding, two humbuckers, four knobs, original three-a-side headstock) and the same guitar size as the first sheet.
+First make ONE image, landscape 1536x1024, transparent background: 10 guitars (levels +10 to +19) in a grid of 5 columns x 2 rows with lots of empty space between them, top row left to right = 1-5, bottom row = 6-10. Every guitar upright, seen from the front, centered, about 85% of the cell height; keep every effect inside its own cell. From here they are MYSTERIOUS, MAGICAL and more impressive each level. No people, no logos, NO text, letters or numbers.
+1. Lava flows: a black body with glowing orange lava rivers flowing through cracks.
+2. Remembers the golden age: a gold top glowing with warm sepia film light, small vinyl records floating around it.
+3. Swallowed the stage lights: beams of stage spotlight shining OUT of the body in all directions.
+4. Spirit of century-old mahogany: an ancient mahogany body with tree-ring patterns, small glowing forest-spirit wisps and leaves around it.
+5. Rang out in the storm: storm clouds and rain swirling around the guitar, lightning flickering in the clouds.
+6. Wearing a crown: a royal purple body with gold binding, a golden crown floating above the headstock.
+7. Holds the roar of ten thousand: countless tiny points of light rising around it like a cheering crowd's phone lights, glowing sound waves.
+8. Golden hour: a sunset-gradient body (orange to pink), golden rays fanning out behind it.
+9. Holds a shooting star: a night-sky body with a bright shooting star streaking across it, a trail of sparkles.
+10. Came down from the legendary stage: a white-and-gold body, a beam of holy light falling from above, glowing stage steps behind it.
+When I say "다음", make level +20 as ONE separate image, portrait 1024x1536, transparent background, the same guitar alone, upright, larger and more detailed: the ultimate legendary Les Paul - a deep cherry sunburst body glowing from within, a fiery aura of blues-rock flames in gold and red, floating golden notes, and a radiant halo above the headstock. It should feel like the most soulful Les Paul ever played. No person, no logos, no text.
+```
+
+## 13. 슈퍼스트랫 +10 ~ +20
+
+```
+Continue this super-strat shred-guitar series with the next 11 levels, keeping EXACTLY the same art style, the same base guitar shape (slim double-cutaway with sharp pointed horns, two humbuckers, locking tremolo, pointed original headstock) and the same guitar size as the first sheet.
+First make ONE image, landscape 1536x1024, transparent background: 10 guitars (levels +10 to +19) in a grid of 5 columns x 2 rows with lots of empty space between them, top row left to right = 1-5, bottom row = 6-10. Every guitar upright, seen from the front, centered, about 85% of the cell height; keep every effect inside its own cell. From here they are MYSTERIOUS, MAGICAL and more impressive each level. No people, no logos, NO text, letters or numbers.
+1. Broke the sound barrier: a white cone of a sonic boom ring around the body, speed lines streaming back.
+2. Dragon scales: the body covered in shimmering emerald dragon scales, a small horn-like spike on the headstock.
+3. Plasma flows: a dark body with glowing pink-purple plasma veins pulsing through it, plasma sparks.
+4. Plays ahead of time: clock gears and glowing clock hands floating around it, faint after-images of the guitar ahead of itself.
+5. Cuts a rift between worlds: a glowing vertical rift of light opening behind the guitar, shards of another dimension floating out.
+6. A supernova exploded: a burst of bright star light behind the body, glowing rings of the explosion.
+7. A million notes per second: thousands of tiny glowing notes streaming off the strings like a waterfall of light.
+8. Cyber angel: a chrome-white body with glowing cyan circuit lines and two mechanical light wings.
+9. Echoed to the end of the galaxy: a body painted with a spiral galaxy, glowing sound rings spreading into space.
+10. Touched by a god's fingers: a pearl-and-gold body, a beam of golden light touching the strings from above, a soft halo.
+When I say "다음", make level +20 as ONE separate image, portrait 1024x1536, transparent background, the same guitar alone, upright, larger and more detailed: the ultimate legendary shred guitar - a mirror-chrome body reflecting a cosmic sky, glowing neon-violet and gold edges, a storm of light trails from the fingerboard, and a radiant crown of lightning above the headstock. It should feel like the guitar of the greatest virtuoso who ever lived. No person, no logos, no text.
+```
+
+## 14. 통기타 +10 ~ +20
+
+```
+Continue this acoustic-guitar series with the next 11 levels, keeping EXACTLY the same art style, the same base guitar shape (dreadnought body, round soundhole with rosette, dark pickguard, original headstock) and the same guitar size as the first sheet.
+First make ONE image, landscape 1536x1024, transparent background: 10 guitars (levels +10 to +19) in a grid of 5 columns x 2 rows with lots of empty space between them, top row left to right = 1-5, bottom row = 6-10. Every guitar upright, seen from the front, centered, about 85% of the cell height; keep every effect inside its own cell. From here they are MYSTERIOUS, MAGICAL and more impressive each level. No people, no logos, NO text, letters or numbers.
+1. Campfire spirit: a small friendly flame spirit dancing out of the soundhole, warm ember sparks around.
+2. Strings wound with moonlight: strings glowing silver like moonbeams, a crescent moon reflected in the body.
+3. Remembers the forest's song: a body with living wood grain, vines and small glowing leaves curling around the neck, a tiny bird on the headstock.
+4. Cries only on rainy days: a misty blue body, gentle raindrops falling around it, a small rain cloud above.
+5. Found in a desert oasis: a sand-gold body, a tiny oasis with a palm tree and water reflected inside the soundhole.
+6. Holds the aurora: green and violet aurora light flowing out of the soundhole and around the body.
+7. Passed a thousand campfires: a warm-glowing body covered in faint ember patterns, many tiny floating campfire sparks.
+8. Whales sing along: a deep-ocean-blue body, a glowing translucent whale swimming around the guitar, bubbles.
+9. Sound of the first snow: a snow-white frosted body, soft snowflakes falling, a glowing snowflake in the soundhole.
+10. Rang from the lighthouse at the world's end: a white-and-navy body, a beam of lighthouse light sweeping from the soundhole across the sea.
+When I say "다음", make level +20 as ONE separate image, portrait 1024x1536, transparent background, the same guitar alone, upright, larger and more detailed: the ultimate legendary acoustic guitar - a warm honey body glowing from within, a soft golden halo, gentle streams of light and music notes flowing from the soundhole, and floating petals. It should feel like the most beloved unplugged acoustic guitar in history. No person, no logos, no text.
+```
+
+## 15. 베이스 +10 ~ +20
+
+```
+Continue this electric-bass series with the next 11 levels, keeping EXACTLY the same art style, the same base bass shape (offset double-cutaway body, tortoiseshell pickguard, long neck, four big tuners on an original headstock) and the same size as the first sheet.
+First make ONE image, landscape 1536x1024, transparent background: 10 basses (levels +10 to +19) in a grid of 5 columns x 2 rows with lots of empty space between them, top row left to right = 1-5, bottom row = 6-10. Every bass upright, seen from the front, centered, about 90% of the cell height; keep every effect inside its own cell. From here they are MYSTERIOUS, MAGICAL and more impressive each level. No people, no logos, NO text, letters or numbers.
+1. Keeps the heartbeat: a deep red body with a glowing heart-shaped pulse line beating across it.
+2. Echo of the deep sea: a dark-ocean body, glowing jellyfish and deep-sea light rings around it.
+3. Forged in a volcano: a black-rock body with glowing magma seams, small embers rising.
+4. Heard on the other side of the earth: a body painted like the globe, glowing low-sound rings wrapping around the planet.
+5. Footsteps of a giant: the ground under it cracked by huge glowing footprint shapes, dust shaking up.
+6. The low note of a black hole: a pitch-black body with a swirling black hole and a glowing accretion ring behind it.
+7. The earth's pulse: a stone-and-moss body with glowing green ley lines pulsing through it.
+8. Lower than thunder: a storm-dark body, deep purple thunder clouds rumbling below it, low glowing waves.
+9. Makes the planets orbit: small glowing planets orbiting around the bass on thin rings.
+10. Played the very first note: a pure white-gold body glowing at its core, a burst of the first light of the universe behind it.
+When I say "다음", make level +20 as ONE separate image, portrait 1024x1536, transparent background, the same bass alone, upright, larger and more detailed: the ultimate legendary bass - a worn sunburst body turned fretless with glowing inlay lines, rippling golden sound waves flowing from the strings, and a radiant halo. It should feel like the bass of the greatest bassist who ever lived. No person, no logos, no text.
+```
+
+## 16. 앰프 +10 ~ +20
+
+```
+Continue this guitar-amplifier series with the next 11 levels, keeping EXACTLY the same art style, the same base amp shape (black combo amp with grill cloth, top control panel with knobs, carry handle) and the same size as the first sheet.
+First make ONE image, landscape 1536x1024, transparent background: 10 amps (levels +10 to +19) in a grid of 5 columns x 2 rows with lots of empty space between them, top row left to right = 1-5, bottom row = 6-10. Every amp stands on the bottom of its cell, seen from the front with a slight view of the top, centered, about 70% of the cell width; keep every effect inside its own cell. From here they are MYSTERIOUS, MAGICAL and more impressive each level. No people, no logos, NO text, letters or numbers (knobs have only tick marks).
+1. Starlight leaks out: starlight and tiny stars spilling out through the grill cloth.
+2. Breathes out the aurora: green and violet aurora ribbons pouring out of the speaker.
+3. Holds thunder: a storm-grey cabinet with lightning crackling inside the grill.
+4. Dragon's breath: a dark red cabinet with dragon-scale texture, a burst of fire and smoke from the speaker.
+5. A tower to the sky: a tall stack of glowing amps piled up high (still inside the cell).
+6. Made of a meteorite: a cabinet of dark meteorite rock with glowing crystal veins.
+7. Rings through the galaxy: a cosmic purple cabinet, a spiral galaxy swirling in the grill.
+8. Stops time: floating clock hands and frozen droplets of light hanging still around it.
+9. Holds the sun: a golden cabinet with a small blazing sun glowing behind the grill.
+10. On the stage of the gods: a white-marble-and-gold cabinet on a small glowing pedestal, rays of holy light.
+When I say "다음", make level +20 as ONE separate image, square 1024x1024, transparent background, the same amp alone, larger and more detailed: the ultimate legendary amplifier stack - a full head on top of a speaker cabinet, black with gold piping, every tube glowing gold, a thunderous golden sound wave rolling out, and a crown of light above. It should feel like the most legendary rock amplifier ever made. No person, no logos, no text.
+```
+
+## 17. 멀티이펙터 +10 ~ +20
+
+```
+Continue this floor multi-effects series with the next 11 levels, keeping EXACTLY the same art style, the same base unit (compact black floor multi-effects with a screen, knobs and a row of footswitches) and the same size as the first sheet.
+First make ONE image, landscape 1536x1024, transparent background: 10 units (levels +10 to +19) in a grid of 5 columns x 2 rows with lots of empty space between them, top row left to right = 1-5, bottom row = 6-10. Every unit is seen from the front and slightly above, lying flat on the bottom of its cell, centered, about 70% of the cell width; keep every effect inside its own cell. From here they are MYSTERIOUS, MAGICAL and more impressive each level. No people, no logos, NO text, letters or numbers (screens show only waves, bars or light).
+1. Changes sound by thought: a glowing brain-wave pattern floating above it, connected to the screen by soft light.
+2. Hologram screen: a large holographic screen floating above the unit showing glowing waveforms.
+3. Receives signals from space: a small glowing antenna dish on top, signal rings coming down from the stars.
+4. Swallowed a hundred pedals: many tiny colorful stompboxes being pulled into it like a vortex.
+5. Rewinds time: glowing rewind spirals and clock hands swirling around it.
+6. Aurora waveforms: aurora-colored waveforms flowing out of the screen into the air.
+7. A map of the galaxy: the surface engraved with a glowing galaxy map, small stars on the footswitches.
+8. Opens a dimensional door: a glowing portal opening right above the screen.
+9. Picks presets by constellation: the footswitches connected by glowing constellation lines.
+10. Remembers every sound in the world: thousands of tiny glowing sound waves orbiting it like a sphere of light.
+When I say "다음", make level +20 as ONE separate image, landscape 1536x1024, transparent background, the same unit alone, larger and more detailed: the ultimate legendary effects board - a long gleaming board of chrome and gold with every switch glowing in a different color, shimmering echoing delay ripples spreading outward in rings, and a radiant halo of light. It should feel like the effects rig of the most famous effects-wizard guitarist. No person, no logos, no text.
+```
