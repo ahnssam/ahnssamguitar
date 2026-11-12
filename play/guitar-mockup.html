@@ -115,6 +115,16 @@
     .talk .more { position: absolute; right: 10px; bottom: 6px; font-size: 10px; opacity: .6; }
 
     /* 튜너 */
+    /* 강화가 끝나면 무대 안 아래에 '강화(넓게) | 진열하기' (2026-11-12 사용자 요청) — 말풍선은 그 위로 */
+    .sact { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 5; display: grid; grid-template-columns: 2.4fr 1fr; gap: 8px; animation: fade .2s; }
+    .sact.one { grid-template-columns: 1fr; }
+    .sact button { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 12px 10px; border-radius: 14px; font-weight: 900; font-size: 16px; color: #fff; white-space: nowrap; }
+    .sact .ag { background: linear-gradient(#ff8a3d, #f0592b); box-shadow: 0 4px 0 #b43c16, 0 8px 18px rgba(0, 0, 0, 0.35); }
+    .sact .ag small { font-size: 12px; font-weight: 800; background: rgba(0, 0, 0, 0.18); border-radius: 99px; padding: 2px 9px; }
+    .sact .ag[disabled] { background: #8d9692; box-shadow: 0 4px 0 #5f6864; cursor: default; }
+    .sact .hg { font-size: 14.5px; background: rgba(14, 22, 20, 0.86); border: 2px solid rgba(255, 255, 255, 0.28); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.45); }
+    .sact button:active { transform: translateY(3px); }
+    .stage.has-act .talk { bottom: 66px; }
     .tuner { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 7; border-radius: 14px; padding: 10px 12px 12px; background: #0e1614; border: 2px solid #3a4a45; color: #e8f0ec; cursor: pointer; animation: fade .15s; }
     .tuner .tn-top { display: flex; align-items: baseline; gap: 8px; font-size: 12.5px; }
     .tuner .tn-top b { color: #72c492; font-size: 13.5px; }
@@ -330,6 +340,7 @@
             <div class="fx" id="fx"></div>
             <div class="talk" id="talk" hidden></div>
             <div class="tuner" id="tuner" hidden></div>
+            <div class="sact" id="sact" hidden></div>
         </div>
         <div class="bench" id="bench"></div>
         <details class="table" id="otab"></details>
@@ -819,6 +830,18 @@ function renderBench() {
     h += `<div class="opts">${S.cases || S.caseOn ? `<button type="button" class="chip ${S.caseOn ? 'on' : ''}" data-a="case"><i class="fas fa-briefcase"></i>하드케이스 ${S.caseOn ? '끼움' : '안 끼움'} <small>${S.cases}개</small></button>` : `<span class="chip" title="상점에서 조각 ${CASE_SHARDS}개로 만들어요" style="cursor:default"><i class="fas fa-briefcase"></i>하드케이스 없음 <small>조각 ${S.shards}/${CASE_SHARDS}</small></span>`}
         ${T ? `<button type="button" class="chip ${S.tuneOn ? 'on' : ''}" data-a="tune"><i class="fas ${T.icon}"></i>${S.tuneOn ? '튜닝하고 강화' : '튜닝 건너뛰기'}</button>` : ''}</div>`;
     box.innerHTML = h;
+    renderSact();
+}
+// 무대 안 단추: 강화를 한 번 끝낸 뒤부터, 작업대에 기타가 있는 동안 (찾기·부서짐·팔기·걸기로 기타가 바뀌면 다시 숨김)
+let sactId = "";   // 강화를 끝낸 그 기타일 때만
+function renderSact() {
+    const el = $('#sact'), g = S.bench, show = !!g && g.id === sactId && !busy;
+    el.hidden = !show; $('#stage').classList.toggle('has-act', !!show);
+    if (!show) return;
+    const cost = COST[g.lv], can = g.lv < MAX;
+    el.classList.toggle('one', !can);
+    el.innerHTML = (can ? `<button type="button" class="ag" data-a="again" ${S.gold < cost ? 'disabled' : ''}><i class="fas fa-hammer"></i>강화 <small>${cost ? gf(cost) : '공짜'}</small></button>` : '')
+        + `<button type="button" class="hg" data-a="hang"><i class="fas fa-image"></i>진열하기</button>`;
 }
 function renderTable() {
     const el = $('#otab'), open = el.open, lv = S.bench ? S.bench.lv : -1;
@@ -877,8 +900,8 @@ addEventListener('keydown', e => {
 });
 
 // 강화 기다림(결과는 이미 정해져 저장됐다) — 두근두근하는 맛. 단계가 높을수록 길고, +10부터는 결과 직전에 한 박자 숨을 멈춘다
-//   2026-11-12 사용자: 너무 빠르다, 한 3초는 걸리게 → 기본 3초, 높은 단계는 조금 더 (예전 0.45 · 1 · 1.4 · 1.9 · 2.4초)
-const WAIT_MS = lv => lv < 5 ? 3000 : lv < 10 ? 3300 : lv < 15 ? 3600 : 4000;
+//   2026-11-12 사용자: 너무 빠르다 → 3초 → "좀 더 길어도" → 기본 4초, 높은 단계는 조금 더 (맨 처음 0.45 · 1 · 1.4 · 1.9 · 2.4초)
+const WAIT_MS = lv => lv < 5 ? 4000 : lv < 10 ? 4500 : lv < 15 ? 5000 : 5500;
 const WAIT_TXT = lv => lv < 5 ? '강화 중…' : lv < 10 ? '두근두근…' : lv < 15 ? '제발…' : '숨 참는 중…';
 function gather() {   // 빛 알갱이가 기타로 모인다
     const d = document.createElement('i'), sz = 3 + Math.round(Math.random() * 4);
@@ -928,7 +951,7 @@ async function enhance() {
     if (busy || !g || g.lv >= MAX) return;
     const cost = COST[g.lv];
     if (S.gold < cost) { toast('골드가 모자라요'); return; }
-    busy = true; talkClear();
+    busy = true; talkClear(); renderSact();
     let bonus = 0;
     const T = TUNERS[S.tuner];
     if (T && S.tuneOn && ODDS[g.lv][1] > 0) bonus = await tune(T);
@@ -988,6 +1011,7 @@ async function enhance() {
         talk(one(g.lv >= 10 ? LINES.bigBoom : LINES.boom));
     }
     busy = false;
+    sactId = S.bench ? S.bench.id : "";
     renderBench();
 }
 
@@ -1084,7 +1108,8 @@ function renderRoom(enter) {
     updBar();
     const W = wallSkin(), el = $('#tab-room'), rp = rep();
     // 기타 그림(56×84 칸, 몸통 19×50 이 26칸째부터)에서 넥 34칸째가 걸이에, 76칸째(몸통 끝)가 foot 에 오게
-    const u = (W.foot - W.hook) / 42, top = W.hook - 34 * u, hh = 84 * u, hit = `top:${W.hook - 4}%;height:${W.foot - W.hook + 8}%`;
+    //   2026-11-12 사용자: 벽에 걸면 살짝 작게 → 88% (걸이 자리는 그대로, 아래 끝만 조금 올라감)
+    const u = (W.foot - W.hook) / 42 * 0.88, top = W.hook - 34 * u, hh = 84 * u, hit = `top:${W.hook - 4}%;height:${W.foot - W.hook + 8}%`;
     const price = openPrice(), nOpen = S.open.filter(Boolean).length, hung = S.wall.filter(Boolean);
     const slots = W.x.map((x, i) => {
         if (!S.open[i]) return `<div class="wl" style="left:${x}%"></div><button type="button" class="wsb lock" data-a="wopen" data-i="${i}" style="left:${x}%;${hit}" aria-label="걸이 열기 ${gf(price)}"><i class="fas fa-lock"></i><span>${gs(price)}</span></button>`;
@@ -1284,7 +1309,8 @@ $('#app').addEventListener('click', e => {
     if (b.id === 'go') { if (!tuning) enhance(); return; }
     if (busy) return;
     const a = b.dataset.a, id = b.dataset.id;
-    if (a === 'new') findGuitar(false);
+    if (a === 'again') enhance();
+    else if (a === 'new') findGuitar(false);
     else if (a === 'buy1') findGuitar(true);
     else if (a === 'daily') $('#rDaily').click();
     else if (a === 'sell') sellBench();

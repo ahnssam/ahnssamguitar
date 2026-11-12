@@ -67,6 +67,41 @@ STYLE: polished 2D mobile-game item illustration, bold clean dark outlines, flat
 
 ## 3. 프롬프트 ② — +10 ~ +19 (한 장에 10대)
 
+11번째~20번째 기타(+10~+19). 2026-11-12 사용자: "11강부터 20강까지 하는 거 또 만들자".
+- ①을 뽑은 대화가 남아 있으면 아래 **② 같은 대화용**을 붙여 넣는다.
+- 새 대화면 **② 새 대화용**을 쓰고, ①에서 받은 기타 시트 그림(또는 `images/play/gk/strat_09.webp`)을 같이 올린다. 그래야 그림체·기타 모양·크기가 맞는다.
+- 21번째(+20)는 아래 ③으로 따로 한 대 크게.
+
+② 새 대화용 (참고 그림을 같이 올린다)
+
+```
+The attached image is the first sprite sheet of guitars for my mobile game "Guitar Upgrade" (a cheap used guitar upgraded step by step, levels +0 to +9). Make the NEXT sheet, levels +10 to +19, so it matches the attached sheet exactly:
+- SAME art style (polished 2D mobile-game item illustration, bold clean dark outlines, flat colors with soft cel shading, light from the top-left), SAME base guitar shape (double-cutaway solid body, three single-coil pickups, tremolo arm, six tuners in one line on the same ORIGINAL rounded headstock), SAME size and SAME position of the guitar inside each cell.
+- ONE image, landscape 1536x1024, transparent background, a grid of 5 columns x 2 rows with lots of empty space between the guitars. Order: top row left to right = guitars 1-5, bottom row left to right = guitars 6-10.
+- Every guitar stands perfectly upright (neck straight up), seen exactly from the front, centered in its cell, about 85% of the cell height. The guitar itself must stay the same size as in the attached sheet; glows, wings and other effects may go around it but must stay inside its own cell and must not hide the headstock or the bottom of the body.
+- No people, no logos, and NO text, letters or numbers anywhere.
+
+From here the guitars stop being jokes and become MYSTERIOUS and MAGICAL: elegant glowing light, mythic and slightly sacred mood, each one clearly more impressive than the one before. Body colors change as described.
+
+1. Eternal flame: body glowing like deep crimson embers with fine golden cracks, a calm, steady flame with a pale white-gold core burning above the headstock.
+2. Three times: three necks - the real neck in the middle, a translucent pale-blue ghost neck on the left (the past) and a translucent pale-gold ghost neck on the right (the future), a faint clock-dial pattern glowing on the body.
+3. Frost flowers: icy pale-blue body with white frost flowers blooming across it, small ice crystals along the edges, a cold misty glow.
+4. Dawn wings: a pair of luminous feathered wings in dawn colors (peach and pink fading to soft gold) spreading from both sides of the body, the feather tips glowing.
+5. The wind plays it: pale mint wind ribbons swirling around the body and across the strings, a few leaves caught in the wind, the strings slightly blurred as if strummed by the wind.
+6. Constellations: deep navy body with a glowing constellation pattern (tiny star points joined by thin golden lines), a few twinkles around the headstock.
+7. A thousand voices: pearl-white body with gold trim, softly glowing translucent music notes and small wisps of light rising around it like many voices singing.
+8. Tamed lightning: matte black body, a bolt of electric-blue lightning coiled calmly around the neck like a tamed snake, small sparks along the strings.
+9. Crossed the Milky Way: body painted like a galaxy (purple and blue nebula full of stars), a thin glowing planetary ring around the body at an angle, a small moon floating beside it.
+10. Carried into the underworld: antique white-and-gold body like old marble with a laurel-leaf pattern, a golden halo above the headstock, a faint ghostly lyre shape glowing behind the guitar, thin purple mist curling at the bottom.
+```
+
+마음에 안 들면 같은 대화에 이어서:
+- 기타 크기가 들쭉날쭉하면: `Make every guitar exactly the same size and position as in the first sheet; only the decorations differ.`
+- 효과가 칸 밖으로 넘치면: `Keep every effect inside its own cell, with clear empty space between cells.`
+- 덜 화려하면: `Make each guitar more magical and more impressive than the one before, especially 6-10.`
+
+② 같은 대화용 (①을 뽑은 대화에 이어서)
+
 ```
 Same style, same base guitar shape and same size as the previous sheet. Make ONE image, landscape 1536x1024, transparent background: 10 more guitars in a grid of 5 columns x 2 rows with lots of empty space between them. Order: top row left to right = guitars 1-5, bottom row left to right = guitars 6-10. Every guitar upright, seen from the front, centered in its cell, all the same size; keep every effect inside its own cell.
 
@@ -105,6 +140,27 @@ Same style. Make ONE image, landscape 1536x1024, transparent background, a grid 
 5. Three guitar tuners side by side: a small clip-on tuner, a stomp-box pedal tuner with a needle display, a larger strobe tuner with a striped display (displays show only a needle or light bars).
 No logos, NO text, letters or numbers.
 ```
+
+### 작업대 배경 — 멋있는 기타 공방 (2026-11-12 사용자 요청)
+
+강화하는 무대 뒤 배경(지금은 도트 `bg_studio.png`). 무대는 거의 정사각형(휴대폰 약 400×400, 넓은 화면 약 560×470)이고, **가운데 세로 띠에 강화할 기타가 서 있다**(무대 높이의 85% 정도, 바닥 가까이). 그래서 정사각형으로 뽑고 가운데는 비워 둔다.
+기타 그림을 뽑은 대화에 붙여 넣으면 그림체가 맞는다(다른 대화면 `strat_05.webp` 같은 기타 그림을 같이 올린다). 받으면 Claude가 `images/play/gk/bg_workshop.webp`로 넣고, 작업대 배경을 바꾼다(도트용 `pixelated`는 배경에서 뺌).
+
+```
+Same art style as the guitars in this chat, but as a BACKGROUND: make ONE image, square 1024x1024, no text.
+Scene: the inside of a stylish, high-end boutique guitar workshop (luthier's atelier) at night, seen from the front at eye level, warm and atmospheric - the kind of place where legendary guitars are made.
+- CENTER (most important): keep a clear, uncluttered vertical space in the middle (about 40% of the width, from the floor up to near the top) where the game will place one upright guitar. In that spot draw only a simple wooden guitar stand base on the floor at the bottom center (no guitar on it) and a soft warm spotlight pool on the floor. The wall behind the center should be calm and slightly darker so the guitar in front stands out.
+- LEFT and RIGHT sides: a back wall of dark walnut wood panels and exposed brick, with several finished guitars hanging on wall hangers (sunburst, black, natural wood, a pastel-blue one, an acoustic guitar, a bass) - original body shapes, no logos, slightly softer and less detailed than a game item so they stay in the background.
+- Workshop details around the edges: a heavy wooden workbench with clamps, chisels, files and a small vise; unfinished raw-wood guitar bodies and necks hanging from a rack; a pegboard with neatly hung tools; wood shavings on the bench; a small vintage tube amp with a glowing light; a coiled cable.
+- Lighting: warm amber pendant lamps and small spotlights, a little dust glowing in the light beams, gentle shadows in the corners, rich but not too saturated colors (deep browns, amber, a touch of dark green).
+- Keep the bottom 15% as a simple dark wooden floor.
+- Polished 2D mobile-game background illustration with clean outlines, lighter outlines and softer contrast than the guitar items. No people, no logos, NO text, letters or numbers anywhere (no signs, no labels).
+```
+
+마음에 안 들면 같은 대화에 이어서:
+- 더 어둡고 멋있게: `Make it darker and more dramatic, like a premium showroom at night, but keep the center space clear.`
+- 더 아늑하게: `Make it cozier and brighter, like a warm daytime workshop with sunlight from a window on the left.`
+- 가운데가 복잡하면: `The center is too busy. Keep only the empty guitar stand and the floor light in the middle 40%.`
 
 작업방 진열 벽 (가로 1536×1024) — 걸이만 그리고 기타는 비워 둔다(기타는 게임이 단계에 맞춰 그려 넣는다).
 
