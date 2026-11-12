@@ -467,12 +467,16 @@ const cv = $('#cv'), ctx = cv.getContext('2d');
 //   → +7 75/19/6 · +8 69/24/7 · +10 58/30/12 · +12 46/35/19 · +15 28/41/31 · +17 17/43/40 · +19 5/45/50
 const ODDS = [[100, 0, 0], [96, 4, 0], [92, 8, 0], [88, 12, 0], [84, 16, 0], [82, 18, 0], [78, 22, 0],
     ...Array.from({ length: 13 }, (_, k) => { const t = k / 12, sp = Math.round(75 - 70 * t), dp = Math.round(6 + 44 * Math.pow(t, 1.4)); return [sp, 100 - sp - dp, dp]; })];
-// 강화 비용(그 단계에서 한 번 누를 때)과 판매가. +10 에서 파는 게 누른 횟수당 가장 많이 남고(약 125G),
-// 그 위는 한 단계마다 기대값이 조금씩 손해인 도박이 되게 맞췄다(스트로보 튜너를 잘 맞히면 거의 본전).
+// 강화 비용(그 단계에서 한 번 누를 때). 판매가는 아래 SELL (2026-11-12 위로 갈수록 확 오르게 바꿈 — 예전 '+10에서 파는 게 가장 남게' 맞춘 균형은 없어짐)
 const COST = [0, 10, 20, 40, 70, 120, 200, 300, 450, 700, 1000, 1400, 2000, 2800, 3800, 5000, 6500, 8500, 11000, 14000];
-// 2026-11-12 사용자: 단계가 오를수록 판 값을 더 → 0.05 → 0.07 → '금액 단위를 단계 올라갈수록 더' → 예전 값 × 1.09^단계 (+10 2.4배 · +20 5.6배)
-const SELL = [0, 30, 80, 180, 350, 700, 1300, 2400, 4200, 7500, 13000, 20000, 32000, 51000, 83000, 140000, 250000, 450000, 850000, 1700000, 3700000]
-    .map((v, i) => { const x = v * Math.pow(1.09, i); return x < 1000 ? Math.round(x / 10) * 10 : x < 100000 ? Math.round(x / 100) * 100 : Math.round(x / 1000) * 1000; });
+// 2026-11-12 사용자: +20은 100억, 오르는 폭이 일정하지 않고 위로 갈수록 확 오르게 →
+//   판매가 = 30 × e^(a·(n−1) + b·(n−1)²) (n = 단계), +1→+2 가 2배, 그 뒤로 한 단계마다 배수가 조금씩 커져 +19→+20 은 약 3.9배. +20 = 100억이 되게 b 를 정한다.
+//   → +5 616 · +10 6.19만 · +15 1,570만 · +18 6.76억 · +19 25.5억 · +20 100억 (유효숫자 세 자리로 반올림)
+const SELL = (() => {
+    const A = 0.7, b = (Math.log(1e10 / 30) - 19 * A) / 342, a = A - b;
+    const r3 = x => { const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(x)) - 2)); return Math.round(x / p) * p; };
+    return Array.from({ length: 21 }, (_, n) => n ? r3(30 * Math.exp(a * (n - 1) + b * (n - 1) * (n - 1))) : 0);
+})();
 const MAX = 20;
 const START_GOLD = 500, DAILY_GOLD = 1000, DAILY_PICKS = 10,   // 출석: 골드 + 놀이터 피크 10 (2026-11-12 사용자 요청, 피크 하루 200 한도 안에서)
       CASE_SHARDS = 20, BT_DAY = 10;
@@ -1529,12 +1533,12 @@ function renderRoom(enter) {
     // 바닥 자리 (2026-11-12 사용자: 앰프는 지금보다 20% 크게 화면 오른쪽, 멀티는 그 바로 왼쪽에 살짝 작게):
     //   걸이와 상관없이 앰프부터 오른쪽 끝에서 왼쪽으로, 그다음 멀티. 그림 속 물건 폭은 틀 폭의 앰프 51% · 멀티 62%
     const floor = {}; let fx = 98.5;
-    const fh = { amp: hh * 0.96, multi: hh * 0.72 }, fw = { amp: 0.51, multi: 0.62 }, fb = { amp: 97, multi: 96.5 };
+    const fh = { amp: hh * 0.96, multi: hh * 0.64 }, fw = { amp: 0.51, multi: 0.62 }, fb = { amp: 97, multi: 96.5 };
     for (const f of ['amp', 'multi']) S.wall.forEach(g => {
         if (!g || g.f !== f) return;
         const h2 = fh[f], cw = h2 * (W.h / W.w) * (56 / 84), iw = cw * fw[f];
         floor[g.id] = { x: fx - iw / 2, h2, t2: fb[f] - h2 * 75.75 / 84, bottom: fb[f], iw };
-        fx -= iw + 0.8;
+        fx -= iw + (f === 'amp' ? 6 : 1.5);   // 2026-11-12 사용자: 멀티가 앰프에 너무 붙음 → 조금 떨어뜨림
     });
     const slots = W.x.map((x, i) => {
         if (!S.open[i]) return `<div class="wl" style="left:${x}%"></div><button type="button" class="wsb lock" data-a="wopen" data-i="${i}" style="left:${x}%;${hit}" aria-label="걸이 열기 ${gf(price)}"><i class="fas fa-lock"></i><span>${gs(price)}</span></button>`;
