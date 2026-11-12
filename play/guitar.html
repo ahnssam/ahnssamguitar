@@ -77,11 +77,11 @@
     .iconbtn { width: 34px; height: 34px; border-radius: 50%; background: #fff; border: 1.5px solid var(--line); display: grid; place-items: center; color: #555; flex: none; }
 
     /* 탭 */
-    .gk-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 0 0 10px; background: #e6ede9; padding: 4px; border-radius: 14px; }
+    .gk-tabs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin: 0 0 10px; background: #e6ede9; padding: 4px; border-radius: 14px; }
     .gk-tabs button { padding: 9px 0; border-radius: 10px; font-weight: 800; font-size: 13.5px; color: #5a6b62; display: flex; align-items: center; justify-content: center; gap: 6px; }
     .gk-tabs button.on { background: #fff; color: var(--green-deep); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
     .gk-tabs button .dot { width: 7px; height: 7px; border-radius: 50%; background: #e25555; }
-    @media (max-width: 400px) { .gk-tabs button i { display: none; } }
+    @media (max-width: 460px) { .gk-tabs button i { display: none; } }   /* 2026-11-13 랭킹 탭이 생겨 6칸 */
     @media (max-width: 380px) { .gk-tabs button { font-size: 12.5px; } }
     .storebox { margin-top: 12px; }
     .storebox h4 { margin: 0 2px 8px; font-size: 15px; }
@@ -408,6 +408,27 @@
     .rkr em { grid-column: 3; grid-row: 1 / span 2; font-style: normal; font-size: 12px; color: #666; white-space: nowrap; }
     .rkr.me { background: #fff8e1; }
     .rkr.gap { display: block; text-align: center; color: var(--sub); padding: 0; }
+    /* 랭킹 탭 (2026-11-13 사용자: 배틀 안 랭킹을 메뉴 맨 오른쪽으로 — 최고 무기 · 모은 돈) */
+    .rkseg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin: 0 0 10px; border-radius: 14px; background: #e6ede9; }
+    .rkseg button { padding: 9px 0; border-radius: 10px; font-weight: 800; font-size: 13.5px; color: #5a6b62; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .rkseg button.on { background: #fff; color: var(--green-deep); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
+    .mycard .coin { width: 56px; height: 56px; flex: none; border-radius: 14px; background: #fff3cf; color: #c08a00; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+    .mycard .mt b.gold { color: #a87000; }
+    .rkr em.lvb { font: 900 15px 'Arial Black', sans-serif; color: var(--green-deep); }
+    .rkr em.g { font-weight: 800; color: #a87000; }
+    .rknick { margin-top: 12px; }
+    #tab-rank .sec-h h3 { white-space: nowrap; }
+    /* 2026-11-13 사용자: '파이트 넘버로 배틀'과 '친구에게 배틀 신청'을 한 줄에 나란히 */
+    .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .duo .sharebox { margin-top: 0; padding: 12px; display: flex; flex-direction: column; min-width: 0; }
+    .duo .sharebox h3 { font-size: 14px; line-height: 1.35; }
+    .duo .sharebox p { font-size: 12px; margin: 3px 0 8px; flex: 1; }
+    .duo .sharebox .row { flex-direction: column; }
+    .duo .sharebox input { font-size: 13.5px; padding: 8px 10px; }
+    .duo .sharebox .btn { width: 100%; padding: 9px 12px; font-size: 14px; }
+    .duo-res { margin-top: 8px; }
+    .duo-res .opp { margin-bottom: 0; }
+    .duo-res .fmsg { margin: 0 2px; font-size: 12.5px; color: #a85a00; font-weight: 700; }
     .sharebox { padding: 14px; margin-top: 16px; }
     /* 배틀 탭 맨 위 '내 파이트 넘버' (2026-11-12 사용자) */
     .fno { display: flex; align-items: center; gap: 8px; margin: 0 2px 10px; padding: 9px 12px; border-radius: 14px; background: #1d2a26; color: #fff; }
@@ -552,6 +573,7 @@
         <button type="button" data-t="battle"><i class="fas fa-bolt"></i>배틀</button>
         <button type="button" data-t="shop"><i class="fas fa-store"></i>상점</button>
         <button type="button" data-t="dex"><i class="fas fa-book-open"></i>도감</button>
+        <button type="button" data-t="rank"><i class="fas fa-trophy"></i>랭킹</button>
     </nav>
     <!-- 2026-11-13 사용자: 돈 줄에는 골드만. 조각·하드케이스는 무대 왼쪽 위에 글로, 자랑하기는 무대 오른쪽 위 -->
     <div class="gk-bar">
@@ -586,6 +608,7 @@
     <section id="tab-battle" hidden></section>
     <section id="tab-shop" class="shop" hidden></section>
     <section id="tab-dex" class="dex" hidden></section>
+    <section id="tab-rank" hidden></section>
     <div id="adw"></div>
 </main>
 
@@ -815,7 +838,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ---------- 저장 (이 브라우저) ----------
 const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [null, null, null, null, null], floor: [], open: [false, false, true, false, false], skin: 'wood', skins: ['wood'], bskin: 'workshop', bskins: ['workshop'], ask: 'alley', asks: ['alley'], dex: {}, store: [], rep: '', shards: 0, cases: 0, caseOn: false, tuner: 0, tuneOn: true, daily: '', nick: '', intro: false, first: false,
-    bt: { day: '', n: 0, done: {} }, st: { tries: 0, ok: 0, keep: 0, boom: 0, saved: 0, sold: 0, earned: 0, best: 0, win: 0, lose: 0 } });
+    bt: { day: '', n: 0, done: {} }, st: { tries: 0, ok: 0, keep: 0, boom: 0, saved: 0, sold: 0, earned: 0, made: START_GOLD, best: 0, win: 0, lose: 0 } });
 const okG = g => g && typeof g === 'object' && Number.isInteger(g.lv) && g.lv >= 0 && g.lv <= MAX && typeof g.id === 'string';
 function load() {
     const raw = mem.get('gk', {}) || {};
@@ -824,6 +847,8 @@ function load() {
     if (typeof raw.first !== 'boolean') s.first = !!(raw.intro || raw.bench || (Array.isArray(raw.wall) && raw.wall.length));
     const f = fresh();
     s.st = Object.assign(f.st, s.st || {});
+    // 모은 돈(랭킹, 2026-11-13) 전에 시작한 사람: 지금 가진 돈과 (판 돈 + 시작 골드) 중 큰 쪽에서 센다
+    if (!raw.st || raw.st.made == null) s.st.made = Math.max(+s.gold || 0, (+s.st.earned || 0) + START_GOLD);
     s.bt = Object.assign(f.bt, s.bt || {});
     if (!okG(s.bench)) s.bench = null;
     s.store = (Array.isArray(s.store) ? s.store : []).filter(okG).slice(0, STORE_MAX);   // 창고(계정 합치기로 벽에 다 못 건 기타)
@@ -868,6 +893,8 @@ function load() {
 }
 let S = load();
 const save = () => { mem.set('gk', S); cloudDirty(); autoSync(); };
+// 골드가 들어올 때는 이걸로: 모은 돈(랭킹)에도 더한다
+const gain = n => { S.gold += n; S.st.made = (+S.st.made || 0) + n; };
 // 대표 기타를 랭킹 서버에 저절로 올린다 (2026-11-12 사용자: 사람이 쌓이면 유저끼리 붙게 — 예전엔 배틀 탭을 열어야만 올라갔다).
 //   저장할 때마다 4초 모아서, 바뀌었거나 10분 지났을 때만 실제로 보낸다(syncMe). 30일 안 온 사람은 서버가 상대 목록에서 뺀다
 let syncT = 0;
@@ -926,7 +953,7 @@ function mergeSaves(here, acct) {
     for (const [f, bits] of Object.entries(H.dex)) A.dex[f] = (A.dex[f] | 0) | (bits | 0);
     A.skins = [...new Set([...A.skins, ...H.skins])]; A.bskins = [...new Set([...A.bskins, ...H.bskins])]; A.asks = [...new Set([...A.asks, ...H.asks])];
     A.tuner = Math.max(A.tuner, H.tuner);
-    for (const k of Object.keys(A.st)) A.st[k] = k === 'best' ? Math.max(A.st.best, H.st.best) : (A.st[k] | 0) + (H.st[k] | 0);
+    for (const k of Object.keys(A.st)) A.st[k] = k === 'best' ? Math.max(A.st.best, H.st.best) : (+A.st[k] || 0) + (+H.st[k] || 0);
     A.first = A.first || H.first; A.rk = A.rk || H.rk; A.nick = A.nick || H.nick;
     if (H.daily === today()) A.daily = today();
     return A;
@@ -1592,12 +1619,13 @@ function renderDex() {
 function setTab(t) {
     tab = t; dexClose();
     document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
-    ['bench', 'room', 'battle', 'shop', 'dex'].forEach(k => { $('#tab-' + k).hidden = k !== t; });
+    ['bench', 'room', 'battle', 'shop', 'dex', 'rank'].forEach(k => { $('#tab-' + k).hidden = k !== t; });
     if (t === 'bench') renderBench();
     if (t === 'room') renderRoom(true);
     if (t === 'battle') renderBattle();
     if (t === 'shop') renderShop();
     if (t === 'dex') renderDex();
+    if (t === 'rank') renderRank();
 }
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b && !busy) { talkClear(); setTab(b.dataset.t); } });
 $('#toHome').addEventListener('click', e => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); if (!busy) setTab('bench'); });
@@ -1816,7 +1844,7 @@ async function sellBench() {
     if (busy || !g || !g.lv) return;
     busy = true; talkClear();
     const price = SELL[g.lv];
-    S.gold += price; S.st.sold++; S.st.earned += price;
+    gain(price); S.st.sold++; S.st.earned += price;
     ghost = g; S.bench = null; if (S.rep === g.id) S.rep = '';
     save(); updBar(true); renderSact(); $('#bench').innerHTML = '';
     sfx('sell'); pop('+' + gf(price), 'gold', 36);
@@ -1882,8 +1910,9 @@ async function challengeLink() {
     const nick = myNick();
     let p = 0;
     try { const m = await syncMe(); p = m && m.id != null ? m.id : null; } catch (e) {}   // 운영 계정은 0번이라 0도 번호
-    const url = shareUrl(g, 'vs=' + b64e({ n: nick, l: g.lv, f: g.f, i: g.id + '.' + g.lv, ...(p != null ? { p } : {}) }));
-    shareText('기타 키우기 배틀 신청', `${nick}의 ${full(g)}랑 붙어 볼래? 🎸⚡`, url);
+    const s = amHidden() ? { ...g, f: 'strat', lv: 10 } : g;   // 운영 계정(시험)은 남들에게 +10 스트랫 (2026-11-13 사용자)
+    const url = shareUrl(s, 'vs=' + b64e({ n: nick, l: s.lv, f: s.f, i: g.id + '.' + s.lv, ...(p != null ? { p } : {}) }));
+    shareText('기타 키우기 배틀 신청', `${nick}의 ${full(s)}랑 붙어 볼래? 🎸⚡`, url);
 }
 
 // ---------- 작업방 (진열 벽) ----------
@@ -2019,9 +2048,12 @@ const NORANK = mem.get('gk.norank', false) === true;
 async function syncMe(force) {
     const g = rep();
     if (!g || NORANK) return null;
-    const old = mem.get('gk.sync2', {}), sig = repSig(g) + '|' + S.st.best;
+    const t = topGuitar(), made = Math.floor(+S.st.made || 0);
+    const old = mem.get('gk.sync2', {}), sig = repSig(g) + '|' + S.st.best + '|' + (t ? t.f + t.lv : '-') + '|' + made;
     if (!force && old.sig === sig && old.id != null && Date.now() - (old.at || 0) < 10 * 60e3) return old;
-    const r = (await PLAY.rpc('play_guitar_save', { p_key: gkKey(), p_nick: myNick(), p_fam: g.f, p_lv: g.lv, p_best: S.st.best }, { auth: true }))[0];
+    // 최고 무기·모은 돈(2026-11-13 랭킹 탭). 운영 계정이면 서버가 무엇을 보내든 +10 스트랫으로 적는다(db/play_guitar_rank2.sql)
+    const r = (await PLAY.rpc('play_guitar_save', { p_key: gkKey(), p_nick: myNick(), p_fam: g.f, p_lv: g.lv, p_best: S.st.best,
+        p_top_fam: t ? t.f : null, p_top_lv: t ? t.lv : 0, p_gold: made }, { auth: true }))[0];
     const m = { sig, at: Date.now(), id: r.id, pos: r.pos, players: r.players, hidden: r.hidden };
     mem.set('gk.sync2', m);
     return m;
@@ -2084,9 +2116,9 @@ function renderBattle() {
     if ((!NET.at || Date.now() - NET.at > 5 * 60e3 || NET.sig !== repSig(me)) && !netBusy) loadNet().then(() => { if (tab === 'battle' && !busy) renderBattle(); });
     const real = NET.ok ? NET.opps : [];
     OPPS = NET.ok === null ? [] : rankers().slice(0, Math.max(0, 10 - real.length));
-    const mine = NET.ok ? NET.top.find(r => r.me) : null, total = NET.ok && NET.top.length ? NET.top[0].players : 0;
-    const rankLine = NORANK ? '시험 브라우저 · 랭킹에 안 올라가요' : NET.ok === null ? '랭킹 불러오는 중…' : NET.ok === false ? '랭킹에 연결이 안 돼요 · 연습 상대와 붙어요'
-        : NET.me && NET.me.hidden ? '운영 계정이라 랭킹에 안 보여요' : mine ? `랭킹 ${mine.pos}위 / ${total}명` : '';
+    // 랭킹은 2026-11-13 메뉴 맨 오른쪽 '랭킹' 탭으로 옮김(사용자). 여기는 상태만
+    const rankLine = NORANK ? '시험 브라우저 · 배틀 기록이 안 남아요' : amHidden() ? '운영 계정(시험) · 기록 안 남음 · 남들에겐 #000000 +10 스트랫'
+        : NET.ok === false ? '서버에 연결이 안 돼요 · 연습 상대와 붙어요' : '';
     const no = me ? myNo() : null;
     let h = `<div class="fno"><span class="lb">내 파이트 넘버 :</span>${no != null ? `<b>#${fmtNo(no)}</b><button type="button" data-a="copyno"><i class="fas fa-copy"></i>복사</button>`
         : `<em>${NORANK ? '시험 브라우저라 안 받아요' : !me ? '대표 기타가 생기면 받아요' : NET.ok === false ? '연결되면 받아요' : '받는 중…'}</em>`}</div>`;
@@ -2097,9 +2129,12 @@ function renderBattle() {
         h += `<div class="sec-h"><h3>배틀 신청이 왔어요</h3><small>링크로 받은 기타</small></div>`;
         h += mineLink ? `<p class="note2">내가 보낸 신청 링크예요. 친구에게 보내 주세요!</p>` : oppRow(VS, 'vs');
     }
-    h += `<div class="card sharebox nobox"><h3><i class="fas fa-hashtag"></i> 파이트 넘버로 배틀</h3><p>친구의 파이트 넘버를 붙여 넣으면 그 사람과 붙어요.</p>
-        <div class="row"><input id="vsno" inputmode="numeric" maxlength="200" placeholder="상대 파이트 넘버 (예: #482913)" value="${esc(findQ)}"><button class="btn" type="button" data-a="findno" ${findBusy ? 'disabled' : ''}>찾기</button></div>
-        ${FIND ? `<div class="found">${oppRow(FIND, 'vs')}</div>` : findMsg ? `<p class="fmsg">${esc(findMsg)}</p>` : ''}</div>`;
+    // 2026-11-13 사용자: '파이트 넘버로 배틀'과 '친구에게 배틀 신청'은 한 줄에 나란히. 찾은 상대는 그 아래 한 줄로
+    h += `<div class="duo"><div class="card sharebox"><h3><i class="fas fa-hashtag"></i> 파이트 넘버로 배틀</h3><p>친구의 파이트 넘버를 넣으면 그 사람과 붙어요.</p>
+        <div class="row"><input id="vsno" inputmode="numeric" maxlength="200" placeholder="예: #482913" value="${esc(findQ)}"><button class="btn" type="button" data-a="findno" ${findBusy ? 'disabled' : ''}>찾기</button></div></div>
+        <div class="card sharebox"><h3><i class="fas fa-paper-plane"></i> 친구에게 배틀 신청</h3><p>내 대표 기타를 링크로 보내요.</p>
+        <div class="row"><input id="nick" maxlength="12" placeholder="내 이름" title="비우면 익명" value="${esc(S.nick || '')}"><button class="btn" type="button" data-a="vslink" ${me ? '' : 'disabled'}>링크 보내기</button></div></div></div>
+        ${FIND ? `<div class="duo-res">${oppRow(FIND, 'vs')}</div>` : findMsg ? `<div class="duo-res"><p class="fmsg">${esc(findMsg)}</p></div>` : ''}`;
     if (NET.ok === null) h += `<p class="note2" style="text-align:center;padding:18px 0">상대를 불러오는 중…</p>`;
     if (real.length) h += `<div class="sec-h"><h3>오늘의 상대</h3><small>다른 사람들의 대표 기타</small></div>` + real.map(o => oppRow(o)).join('');
     if (OPPS.length) h += `<div class="sec-h"><h3>${real.length ? '연습 상대' : '오늘의 상대'}</h3><small>${NET.ok ? '사람이 모일 때까지 채워 둔 가상 기타리스트' : '연습 상대예요'}</small>
@@ -2107,13 +2142,6 @@ function renderBattle() {
         + `<div class="opps ${rerankAnim ? 'fresh' : ''}">${OPPS.map(o => oppRow(o)).join('')}</div>`;
     rerankAnim = false;
     h += `<p class="note2">단계가 같으면 50%, 한 단계 높으면 75%, 두 단계 87.5%… 높은 상대를 이길수록 보상이 커요. 지면 잃는 건 없어요. 배틀 한 번 끝낼 때마다 놀이터 피크 ${PLAY.PICK.per}(하루 ${PLAY.PICK.day}까지).</p>`;
-    if (NET.ok && NET.top.length) {
-        h += `<div class="sec-h"><h3>랭킹</h3><small>대표 기타 단계 순 · 같으면 먼저 닿은 사람</small></div><div class="card rk">`
-            + NET.top.map(r => `${r.pos > 20 ? '<div class="rkr gap">⋯</div>' : ''}<div class="rkr ${r.me ? 'me' : ''}"><b>${r.pos}</b><span class="nk">${esc(r.nickname)}${r.me ? ' (나)' : ''}</span>
-                <span class="gn">${esc(full({ lv: r.lv, f: r.fam }))}</span><em>${r.wins}승 ${r.losses}패</em></div>`).join('') + '</div>';
-    }
-    h += `<div class="card sharebox"><h3><i class="fas fa-paper-plane"></i> 친구에게 배틀 신청</h3><p>내 대표 기타를 링크로 보내요. 받은 사람은 자기 기타로 바로 붙어요.</p>
-        <div class="row"><input id="nick" maxlength="12" placeholder="내 이름 (비우면 익명)" value="${esc(S.nick || '')}"><button class="btn" type="button" data-a="vslink" ${me ? '' : 'disabled'}>링크 보내기</button></div></div>`;
     el.innerHTML = h;
     paintAll(el);
     const ni = el.querySelector('#nick');
@@ -2122,6 +2150,51 @@ function renderBattle() {
     vi.addEventListener('input', () => { findQ = vi.value; });
     vi.addEventListener('keydown', e => { if (e.key === 'Enter') findNo(vi.value); });
     vi.addEventListener('paste', () => setTimeout(() => findNo(vi.value), 0));   // 붙여 넣으면 바로 찾기
+}
+// ---------- 랭킹 탭 (2026-11-13 사용자: 배틀 안에 있던 랭킹을 메뉴 맨 오른쪽으로 — 가진 것 중 최고 무기 · 지금까지 모은 돈, db/play_guitar_rank2.sql) ----------
+//   최고 무기 = 지금 가진 기타(작업대·벽·창고) 중 가장 높은 단계(앰프·멀티 빼고). 같으면 먼저 닿은 사람이 위
+//   모은 돈 = 지금까지 번 골드(S.st.made — 시작 골드·판 돈·배틀·출석). 상점에서 써도 줄지 않는다
+//   운영 계정(시험)·시험 브라우저는 안 올라간다
+const topGuitar = () => [S.bench, ...S.wall, ...S.store].filter(g => g && !isSq(g)).sort((a, b) => b.lv - a.lv)[0] || null;
+const amHidden = () => !!((NET.me && NET.me.hidden) || (mem.get('gk.sync2', {}) || {}).hidden);
+let rkKind = mem.get('gk.rkKind', 'top') === 'gold' ? 'gold' : 'top';
+const RK = { top: null, gold: null }, rkAt = { top: 0, gold: 0 };
+let rkBusy = false, rkErr = false;
+async function loadRank(kind, force) {
+    rkBusy = true;
+    try {
+        try { await syncMe(force); } catch (e) {}
+        RK[kind] = (await PLAY.rpc('play_guitar_rank', { p_kind: kind, p_key: NORANK ? null : gkKey() })) || [];
+        rkErr = false;
+    } catch (e) { rkErr = true; }
+    rkAt[kind] = Date.now(); rkBusy = false;
+}
+function renderRank() {
+    updBar();
+    const el = $('#tab-rank'), kind = rkKind, rows = RK[kind], tg = topGuitar();
+    if ((!rkAt[kind] || Date.now() - rkAt[kind] > 60e3) && !rkBusy) loadRank(kind).then(() => { if (tab === 'rank') renderRank(); });
+    const mine = rows ? rows.find(r => r.me) : null, total = rows && rows.length ? rows[0].players : 0;
+    const status = NORANK ? '시험 브라우저 · 랭킹에 안 올라가요' : amHidden() ? '운영 계정(시험) · 랭킹에 안 보여요'
+        : rkErr ? '랭킹에 연결이 안 돼요' : !rows ? '불러오는 중…' : mine ? `${mine.pos}위 / ${total}명`
+        : !rep() ? '대표 기타가 생기면 올라가요' : kind === 'top' && !tg ? '기타가 생기면 올라가요' : '';
+    let h = `<div class="rkseg"><button type="button" data-a="rkkind" data-k="top" class="${kind === 'top' ? 'on' : ''}"><i class="fas fa-guitar"></i>최고 무기</button>
+        <button type="button" data-a="rkkind" data-k="gold" class="${kind === 'gold' ? 'on' : ''}"><i class="fas fa-coins"></i>모은 돈</button></div>`;
+    h += kind === 'top'
+        ? `<div class="card mycard">${tg ? gc(tg.lv, '', 2, tg.f) : ''}<div class="mt"><small>내가 가진 최고 무기</small><b>${tg ? esc(full(tg)) : '아직 기타가 없어요'}</b>${status ? `<div class="rkline">${status}</div>` : ''}</div></div>`
+        : `<div class="card mycard"><span class="coin"><i class="fas fa-coins"></i></span><div class="mt"><small>지금까지 모은 돈</small><b class="gold">${gf(+S.st.made || 0)}</b>
+            <div class="left">지금 가진 돈 ${gf(S.gold)}</div>${status ? `<div class="rkline">${status}</div>` : ''}</div></div>`;
+    h += `<div class="sec-h"><h3>${kind === 'top' ? '최고 무기 랭킹' : '모은 돈 랭킹'}</h3><small>${kind === 'top' ? '가진 기타 중 가장 높은 단계 · 같으면 먼저 닿은 사람' : '지금까지 번 골드 · 써도 안 줄어요'}</small>
+        <button type="button" class="rerank" data-a="rkload" aria-label="랭킹 새로고침"><i class="fas fa-rotate-right"></i>새로고침</button></div>`;
+    if (!rows) h += `<p class="note2" style="text-align:center;padding:18px 0">${rkErr ? '랭킹에 연결이 안 돼요. 잠시 뒤에 다시 와요' : '랭킹 불러오는 중…'}</p>`;
+    else if (!rows.length) h += `<p class="note2" style="text-align:center;padding:18px 0">아직 아무도 없어요. 첫 번째가 돼 봐요!</p>`;
+    else h += `<div class="card rk">` + rows.map(r => `${r.pos > 20 ? '<div class="rkr gap">⋯</div>' : ''}<div class="rkr ${r.me ? 'me' : ''}"><b>${r.pos}</b><span class="nk">${esc(r.nickname)}${r.me ? ' (나)' : ''}</span>
+        <span class="gn">${r.fam ? esc(full({ lv: r.lv, f: r.fam })) : '기타 없음'}</span>${kind === 'top' ? `<em class="lvb">+${r.lv}</em>` : `<em class="g">${gf(r.gold)}</em>`}</div>`).join('') + '</div>';
+    h += `<div class="card sharebox rknick"><h3><i class="fas fa-signature"></i> 랭킹에 보일 이름</h3><p>비우면 '익명'으로 보여요. 12자까지.</p>
+        <div class="row"><input id="rknick" maxlength="12" placeholder="내 이름 (비우면 익명)" value="${esc(S.nick || '')}"><button class="btn" type="button" data-a="rknick">바꾸기</button></div></div>`;
+    el.innerHTML = h;
+    paintAll(el);
+    const ni = el.querySelector('#rknick');
+    ni.addEventListener('keydown', e => { if (e.key === 'Enter') el.querySelector('[data-a="rknick"]').click(); });
 }
 function setNick(v) {
     const n = String(v || '').replace(/\s+/g, ' ').trim();
@@ -2192,7 +2265,7 @@ async function fight(id) {
     if (bt.n >= BT_DAY) { toast('오늘 배틀은 다 했어요. 내일 또!'); return; }
     busy = true;
     let p, win;
-    if (o.pid != null && !NORANK) {   // 진짜 상대: 서버가 두 사람의 저장된 단계로 승패를 정한다 (시험 브라우저는 아래 브라우저 안 배틀로)
+    if (o.pid != null && !NORANK && !amHidden()) {   // 진짜 상대: 서버가 두 사람의 저장된 단계로 승패를 정한다 (시험 브라우저·운영 계정은 아래 브라우저 안 배틀로 — 기록 안 남김)
         try {
             await syncMe();
             const go = () => PLAY.rpc('play_guitar_battle', { p_key: gkKey(), p_opp: o.pid });
@@ -2209,7 +2282,7 @@ async function fight(id) {
     } else { p = winP(me.lv, o.lv); win = Math.random() < p; }
     const rw = win ? reward(o.lv) : 0;
     bt.n++; bt.done[o.id] = win ? 'w' : 'l';
-    if (win) { S.st.win++; S.gold += rw; } else S.st.lose++;
+    if (win) { S.st.win++; gain(rw); } else S.st.lose++;
     save();
     const got = PLAY.picks.earn();
     const m = document.createElement('div');
@@ -2310,7 +2383,7 @@ $('#app').addEventListener('click', e => {
     } else if (a === 'wsell') {
         const g = S.wall.find(x => x && x.id === id) || S.floor.find(x => x.id === id); if (!g) return;
         if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = gf(SELL[g.lv]) + '에 팔기?'; return; }
-        unplace(id); S.gold += SELL[g.lv]; S.st.sold++; S.st.earned += SELL[g.lv];
+        unplace(id); gain(SELL[g.lv]); S.st.sold++; S.st.earned += SELL[g.lv];
         if (S.rep === g.id) S.rep = '';
         save(); sfx('sell'); renderRoom(); updBar(true); toast(`${full(g)}을(를) ${gf(SELL[g.lv])}에 팔았어요`);
     } else if (a === 'stake' || a === 'shang' || a === 'ssell') {   // 창고
@@ -2322,11 +2395,18 @@ $('#app').addEventListener('click', e => {
             S.store.splice(i, 1); save(); sfx('hang'); renderRoom(); toast(where === 'floor' ? '바닥에 놓았어요' : '벽에 걸었어요'); return;
         }
         if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = gf(SELL[g.lv]) + '에 팔기?'; return; }
-        S.store.splice(i, 1); S.gold += SELL[g.lv]; S.st.sold++; S.st.earned += SELL[g.lv]; if (S.rep === g.id) S.rep = '';
+        S.store.splice(i, 1); gain(SELL[g.lv]); S.st.sold++; S.st.earned += SELL[g.lv]; if (S.rep === g.id) S.rep = '';
         save(); sfx('sell'); renderRoom(); updBar(true); toast(`${full(g)}을(를) ${gf(SELL[g.lv])}에 팔았어요`);
     } else if (a === 'fight') fight(id);
     else if (a === 'findno') findNo(($('#vsno') || {}).value);
     else if (a === 'copyno') copyNo();
+    else if (a === 'rkkind') { rkKind = b.dataset.k === 'gold' ? 'gold' : 'top'; mem.set('gk.rkKind', rkKind); renderRank(); }
+    else if (a === 'rkload') { if (!rkBusy) { RK[rkKind] = null; rkAt[rkKind] = 0; renderRank(); } }
+    else if (a === 'rknick') {
+        const ni = $('#rknick'); if (!ni || !setNick(ni.value)) return;
+        toast('이름을 바꿨어요'); rkAt.top = rkAt.gold = 0;
+        if (!rkBusy) loadRank(rkKind, true).then(() => { if (tab === 'rank') renderRank(); });
+    }
     else if (a === 'vslink') { const ni = $('#nick'); if (ni && !setNick(ni.value)) return; challengeLink(); }
     else if (a === 'buyT') {
         const n = +b.dataset.n, T = TUNERS[n];
@@ -2362,7 +2442,7 @@ $('#app').addEventListener('click', e => {
 $('#rDaily').addEventListener('click', () => {
     if (busy) return;
     if (S.daily === today()) { toast('오늘 출석은 했어요. 내일 또 와요!'); return; }
-    S.daily = today(); S.gold += DAILY_GOLD; save(); updBar(true); sfx('sell');
+    S.daily = today(); gain(DAILY_GOLD); save(); updBar(true); sfx('sell');
     const pk = PLAY.picks.earn(DAILY_PICKS);   // 놀이터 하루 200 한도를 넘으면 0
     toast(`출석 +${gf(DAILY_GOLD)}${pk ? ` · 피크 +${pk}` : ' (피크는 오늘 한도를 다 받았어요)'}`);
     if (tab === 'bench') renderBench(); else if (tab === 'shop') renderShop();
