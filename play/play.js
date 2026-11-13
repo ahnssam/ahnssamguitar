@@ -249,12 +249,13 @@
         },
     };
     // 머리줄 오른쪽 피크 표시 (누르면 설명)
+    //   페이지에 .pk-slot 이 있으면 그 바로 뒤에(기타 키우기는 골드 줄, 2026-11-13), 없으면 머리줄 .sp 뒤에
     function paintPicks(added) {
-        let b = document.querySelector('.ph .pkb');
-        const sp = document.querySelector('.ph .sp');
+        let b = document.querySelector('.pkb');
+        const sp = document.querySelector('.pk-slot') || document.querySelector('.ph .sp');
         if (!b && sp) {
             sp.insertAdjacentHTML('afterend', `<button class="pkb" type="button" title="피크 — 놀이터에서 쓰는 포인트">${pickIcon()}<b></b><span>피크</span></button>`);
-            b = document.querySelector('.ph .pkb');
+            b = document.querySelector('.pkb');
             b.addEventListener('click', () => toast(`피크는 퀴즈·월드컵 한 판 끝낼 때마다 ${PICK.per}씩, 하루 ${PICK.day}까지 쌓여요. 퀴즈 찬스에 써요!`));
         }
         if (!b) return;

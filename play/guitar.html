@@ -25,11 +25,19 @@
     .gk { max-width: 560px; padding-top: 14px; }
     /* 2026-11-13 사용자(카카오 브라우저에서 보고): 내릴 때 '기타 키우기' 줄 말고 '안쌤의 기타나무숲 · 로그인' 줄이 위에 붙게. 사이트 메뉴가 없는 앱(TWA)에서는 예전처럼 놀이터 줄이 붙음 */
     body.has-site header.site-hd { position: sticky; top: 0; }
-    body.has-site .ph { position: static; }
+    body.has-site .ph { display: none; }   /* 2026-11-13 사용자: 놀이터 줄은 없애고 '기타 키우기'는 사이트 메뉴 로고 옆, 나머지는 골드 줄로 */
+    header.site-hd .ttl { display: flex; align-items: center; gap: 7px; margin-left: -6px; font-weight: 900; font-size: 17px; color: var(--green-deep); white-space: nowrap; }
+    header.site-hd .ttl i { font-size: 15px; }
+    @media (max-width: 900px) { header.site-hd .hd { gap: 14px; } header.site-hd .ttl { font-size: 16px; margin-left: -4px; } }
+    @media (max-width: 380px) { header.site-hd .hd { gap: 10px; padding: 0 12px; } header.site-hd .ttl { font-size: 15px; } header.site-hd .ttl i { display: none; } }
+    /* 골드 줄은 내려도 위에 붙는다(사이트 메뉴 아래 84px / 휴대폰 64px, 앱은 놀이터 줄 60px 아래) — 2026-11-13 사용자: 드래그하면 돈이 가려짐 */
+    .gk-bar { position: sticky; top: 60px; z-index: 15; background: var(--cream); padding: 6px 0; }
+    body.has-site .gk-bar { top: 84px; }
+    @media (max-width: 900px) { body.has-site .gk-bar { top: 64px; } }
     .gk [hidden] { display: none !important; }
 
     /* 메뉴 아래 줄: 골드·조각·하드케이스·출석·소리 — 휴대폰에서도 한 줄 (2026-11-13 사용자: 스피커가 아래로 내려가 두 줄이 됨, 구름 단추는 뺌) */
-    .gk-bar { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; margin-bottom: 12px; }
+    .gk-bar { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; margin: -6px 0 6px; }
     .res { display: inline-flex; align-items: center; gap: 5px; height: 34px; padding: 0 10px; border-radius: 999px; background: #fff; border: 1.5px solid var(--line); font-weight: 800; font-size: 13.5px; white-space: nowrap; }
     .res i { font-size: 13px; }
     .res.gold i { color: #e0a514; }
@@ -46,15 +54,29 @@
     .stage .brag i { font-size: 15px; }
     .stage .scbox:active, .stage .brag:active { transform: translateY(1px); }
     @media (max-width: 359px) { .stage .scbox { font-size: 10px; padding: 5px 6px; left: 6px; } .stage .scbox .h, .stage .scbox em { display: none; } .stage .scbox i { display: inline; } .stage .scbox .h + span { margin-bottom: 0; } .stage .brag { right: 6px; padding: 6px 6px 5px; font-size: 10px; } }   /* 좁은 폰: 기타 옆 자리가 더 좁아서 '조각 7/20 · 하케 1/3' 두 줄로 */
-    /* 맨 위 놀이터 줄: [피크] [스피커] [놀이터] (2026-11-13 사용자 — 출석 보상은 골드 줄로 내림) */
-    .ph .iconbtn { width: 32px; height: 32px; }
-    .ph .pkb { flex: none; }
-    @media (max-width: 560px) { .ph .wrap { gap: 6px; } .ph .ttl { margin-right: 2px; } }
-    @media (max-width: 345px) { .ph .wrap { gap: 4px; } .ph .ttl { font-size: 13.5px; } .ph .iconbtn { width: 30px; height: 30px; } }
-    /* 골드 줄 오른쪽 끝 출석 보상 (2026-11-13 사용자: 선물 상자만으론 뭔지 몰라서 '출석 보상' 글자를 늘 — 좁은 폰에서도) */
-    .gk-bar .res.daily { flex: none; font-size: 13.5px; }
+    /* 골드 줄: [골드] [피크] … [출석 보상] [스피커] [놀이터] (2026-11-13 사용자 — 예전 맨 위 놀이터 줄의 것을 모두 이 줄로)
+       출석은 선물 상자만으론 뭔지 몰라서 '출석 보상' 글자를 늘(좁은 폰에서도), 받은 뒤엔 회색 '출첵'만 */
+    .gk-bar > * { flex: none; }
+    .gk-bar #rDaily { margin-left: auto; }   /* 출석·스피커·놀이터는 오른쪽 끝으로 */
+    .gk-bar #rGold { flex: 0 1 auto; min-width: 0; overflow: hidden; } .gk-bar #rGold span { overflow: hidden; text-overflow: ellipsis; }   /* 아주 좁은 폰 + 아주 큰 돈이어도 줄이 안 넘치게 */
+    .gk-bar .pk-slot { display: none; }   /* play.js 가 피크 단추를 이 바로 뒤에 넣는다 */
+    .gk-bar .res.daily { font-size: 13.5px; }
     .gk-bar .res.daily i { font-size: 14px; }
-    @media (max-width: 345px) { .gk-bar .res.daily { padding: 0 8px; font-size: 12.5px; gap: 4px; } }
+    .gk-bar .res.daily.got i { display: none; }
+    .gk-bar .pkb { display: inline-flex; align-items: center; gap: 5px; height: 34px; padding: 0 11px; border-radius: 999px; border: 1.5px solid #f6d29a; background: #fff8ec; font-size: 13px; font-weight: 700; color: #a85a00; }
+    .gk-bar .pkb b { font-weight: 900; font-size: 14px; }
+    .gk-bar .pkb .pki { font-size: 16px; }
+    .gk-bar .pkb.bump { animation: pkBump .7s cubic-bezier(.3, 1.6, .5, 1); }
+    .gk-bar .lnk { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 999px; border: 1.5px solid var(--line); background: #fff; font-size: 13px; font-weight: 700; color: #555; }
+    .gk-bar .lnk:hover { border-color: var(--green-mid); color: var(--green-deep); }
+    @media (max-width: 560px) { .gk-bar .pkb span, .gk-bar .lnk span { display: none; } .gk-bar .pkb { padding: 0 9px; } .gk-bar .lnk { width: 34px; padding: 0; } }
+    @media (max-width: 380px) {   /* 좁은 폰: 한 줄에 다 들어가게 촘촘히 (골드가 크면 fitG 가 만·억으로 줄임) */
+        .gk-bar { gap: 4px; }
+        .gk-bar .res { padding: 0 7px; font-size: 12.5px; gap: 3px; }
+        .gk-bar .pkb { padding: 0 6px; gap: 3px; }
+        .gk-bar .iconbtn, .gk-bar .lnk { width: 30px; height: 30px; }
+        .gk-bar .res, .gk-bar .pkb { height: 30px; }
+    }
     .res.gold.bump { animation: pkBump .6s cubic-bezier(.3, 1.6, .5, 1); }
     .gk-bar .sp { flex: 1; }
     .daily { border-color: #f6d29a; background: #fff8ec; color: #a85a00; cursor: pointer; }
@@ -587,17 +609,19 @@
     <a class="logo" href="../"><img src="../images/logo-vertical.webp" alt="안쌤의 기타나무숲"></a>
     <a class="ttl" href="guitar.html" id="toHome" title="작업대로"><i class="fas fa-guitar"></i>기타 키우기</a>
     <span class="sp"></span>
-    <!-- 2026-11-13 사용자: 스피커는 피크 개수와 같은 줄로 (피크 단추는 play.js 가 .sp 바로 뒤에 넣는다). 출석 보상은 골드 줄로 내렸다 -->
-    <button class="iconbtn" id="rSnd" type="button" aria-label="효과음 켜기/끄기"><i class="fas fa-volume-high"></i></button>
-    <a class="lnk" href="./"><i class="fas fa-gamepad"></i><span>놀이터</span></a>
+    <!-- 2026-11-13 사용자: 페이지를 켜자마자 게임이 잘 보이게 이 줄은 없앴다 — '기타 키우기'는 위 사이트 메뉴 로고 오른쪽으로(스크립트가 옮김),
+         피크·출석·스피커·놀이터는 아래 골드 줄로. 사이트 메뉴가 없는 앱(TWA)에서만 이 줄(로고 + 기타 키우기)이 보인다 -->
 </div></header>
 
 <main class="wrap gk" id="app">
     <!-- 2026-11-13 사용자: 돈 줄에는 골드와 출석 보상(선물 상자 + '출석 보상' 글자, 휴대폰에서도 글자까지). 조각·하드케이스는 무대 왼쪽 위에 글로, 자랑하기는 무대 오른쪽 위 -->
+    <!-- 2026-11-13 사용자: 골드 줄 = [골드] [피크] … [출석 보상] [스피커] [놀이터]. 내려도 위 사이트 메뉴 바로 아래에 붙어 있어 돈이 안 가려진다 -->
     <div class="gk-bar">
         <span class="res gold" id="rGold" title="골드"><i class="fas fa-coins"></i><span>0G</span></span>
-        <span class="sp"></span>
+        <span class="pk-slot"></span>
         <button class="res daily" id="rDaily" type="button" title="하루 한 번: 1,000G + 피크 10"><i class="fas fa-gift"></i><span>출석 보상</span></button>
+        <button class="iconbtn" id="rSnd" type="button" aria-label="효과음 켜기/끄기"><i class="fas fa-volume-high"></i></button>
+        <a class="lnk" href="./" title="놀이터"><i class="fas fa-gamepad"></i><span>놀이터</span></a>
     </div>
 
     <section id="tab-bench">
@@ -648,7 +672,7 @@
     <div>© 2026 안쌤의 기타나무숲</div>
 </footer>
 
-<script src="play.js?v=2026111301"></script>
+<script src="play.js?v=2026111302"></script>
 <script>
 // ===== 기타 키우기 (2026-11-12 MVP — 스트랫 하나로 먼저) =====
 // 카톡 '검키우기' 구조: 강화 한 번 누를 때마다 성공 / 유지(줄 끊김) / 파괴(무대에서 내리찍기). 팔고, 걸고, 배틀한다.
@@ -1503,8 +1527,10 @@ function updBar(goldBump) {
     $('#rSC').classList.toggle('ready', S.shards >= CASE_SHARDS && S.cases < CASE_MAX);
     const got = S.daily === today();
     $('#rDaily').classList.toggle('got', got);
-    $('#rDaily span').textContent = got ? '출석 보상 받음' : '출석 보상';   // 2026-11-13 사용자: '출석' → '출석 보상'(골드 줄, 글자를 늘)
+    $('#rDaily span').textContent = got ? '출첵' : '출석 보상';   // 2026-11-13 사용자: 받기 전 '출석 보상', 받은 뒤엔 회색 '출첵'만
     $('#rSnd').innerHTML = `<i class="fas ${soundOn() ? 'fa-volume-high' : 'fa-volume-xmark'}"></i>`;
+    fitG($('#rGold span'), S.gold, $('.gk-bar'));   // 출석 글자가 바뀐 뒤 한 번 더 재기(줄이 넘칠 때만 만·억으로)
+    { const gs = $('#rGold span'); if (gs.scrollWidth > gs.clientWidth + 1) gs.textContent = gshort(S.gold); }   // 골드 칸이 좁아져 잘리면 만·억으로(2026-11-13, 골드 줄에 피크·출석·스피커·놀이터가 같이 들어감)
     const dot = $('#tabs [data-t="battle"] .dot'), left = BT_DAY - btDay().n;
     if (left > 0 && !dot) $('#tabs [data-t="battle"]').insertAdjacentHTML('beforeend', '<span class="dot" title="오늘 배틀 남음"></span>');
     if (left <= 0 && dot) dot.remove();
@@ -1690,7 +1716,10 @@ function setTab(t) {
     const nav = $('#tabs'), low = t === 'bench';
     if (low) $('#bench').after(nav); else $('.gk-bar').after(nav);
     nav.classList.toggle('low', low);
-    if (!low) { const top = $('#app').getBoundingClientRect().top; if (top < 0) window.scrollBy(0, top - 8); }   // 아래 메뉴로 넘어왔으면 새 탭 맨 위가 보이게
+    if (!low) {   // 아래 메뉴로 넘어왔으면 새 탭 맨 위가 보이게 (위에 붙는 사이트 메뉴 높이만큼 띄워서)
+        const hd = document.querySelector('header.site-hd') || document.querySelector('.ph'), top = $('#app').getBoundingClientRect().top - (hd ? hd.offsetHeight : 0);
+        if (top < 0) window.scrollBy(0, top);
+    }
     document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
     ['bench', 'room', 'battle', 'shop', 'dex', 'rank'].forEach(k => { $('#tab-' + k).hidden = k !== t; });
     if (t === 'bench') renderBench();
@@ -1701,6 +1730,8 @@ function setTab(t) {
     if (t === 'rank') renderRank();
 }
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b && !busy) { talkClear(); setTab(b.dataset.t); } });
+// 2026-11-13 사용자: '기타 키우기'를 위 사이트 메뉴의 안쌤의 기타나무숲 로고 오른쪽으로 (사이트 메뉴가 없는 앱에서는 놀이터 줄 그대로)
+{ const lg = document.querySelector('header.site-hd .hd > .logo'); if (lg) lg.after($('#toHome')); }
 $('#toHome').addEventListener('click', e => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); if (!busy) setTab('bench'); });
 
 // ---------- 강화 ----------
