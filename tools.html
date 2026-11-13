@@ -17073,12 +17073,20 @@
                         'transition:background .15s,color .15s}',
                         '#deckHandle:hover{background:rgba(42,107,74,.1)}',
                         '#deckHandle[hidden]{display:none}',
-                        // 좁은 화면에선 옆이 아니라 아래로
+                        '#deckHandle .dh-tx{display:none}',   // 넓은 화면은 얇은 탭이라 » 만
+                        // 좁은 화면(세로 모니터 포함)에선 옆이 아니라 악보 박스 위에 — 2026-11-13 사용자:
+                        //   '세로 모니터에서는 (오른쪽 손잡이가) 안 보인다, 그 화살표가 위에 있게'
+                        //   예전에는 패널 맨 아래 왼쪽 끝(마지막 자식)이라 한참 내려야 보였다.
                         '@media (max-width:1180px){#metronomePanel.tool-panel.active.deck-host{display:flex;',
                         'justify-content:flex-start}',
-                        '#metronomePanel.deck-host > #chartDeck{position:static;max-height:none}',
-                        '#deckHandle{position:static;width:auto;height:auto;padding:4px 10px;border-radius:9px;',
-                        'border-left:1px solid rgba(42,107,74,.16);align-self:flex-start;margin-bottom:.5rem}}',
+                        '#metronomePanel.deck-host > .tool-header{order:-2}',
+                        '#metronomePanel.deck-host > #chartDeck{position:static;max-height:none;align-self:center;',
+                        'scroll-margin-top:calc(var(--topbar-h) + 12px)}',
+                        '#deckHandle{order:-1;position:static;width:auto;height:auto;gap:7px;',
+                        'padding:5px 15px;border-radius:999px;font-size:.84rem;',
+                        'border-left:1px solid rgba(42,107,74,.16);align-self:center;margin:0 0 .55rem}',
+                        '#deckHandle .dh-tx{display:inline}',
+                        '#deckHandle .dh-ar{display:inline-block;transform:rotate(90deg)}}',   // » → ∨ / « → ∧
                         '#chartDeck .dk-head{display:flex;align-items:center;gap:8px;font-size:.92rem;font-weight:800;color:var(--green-deep);margin-bottom:.3rem}',
                         '#chartDeck .dk-head{flex-wrap:wrap}',
                         '#chartDeck .dk-head b{flex:1}',
@@ -17752,7 +17760,7 @@
                     btn.id = 'deckHandle';
                     btn.title = '코드악보 작업대 열기 — 다이어그램 · 리듬 패턴 · TAB · 송폼';
                     btn.setAttribute('aria-label', '코드악보 작업대 열기');
-                    btn.textContent = '»';
+                    btn.innerHTML = '<span class="dh-ar">»</span><span class="dh-tx">코드악보 작업대</span>';
                     btn.onclick = function() {
                         var host = _deckEnsure();
                         if (!host) return;
@@ -17760,13 +17768,15 @@
                         _deckWantOpen = open;
                         host.classList.toggle('open', open);
                         document.body.classList.toggle('deck-open', open);
-                        btn.textContent = open ? '«' : '»';
-                        btn.title = (open ? '작업대 닫기' : '코드악보 작업대 열기');
+                        _deckBtnFace(btn, open);
                         if (open) {
                             _deckRender();
                             _tabRender();
                             var ffi = document.getElementById('dkFfInput');
                             if (ffi) ffi.value = _deckFlow.join(' > ');
+                            // 손잡이가 악보 위로 올라간 좁은 화면(세로 모니터)에서는
+                            // 작업대가 아래에 열려 안 보일 수 있으니 거기까지 데려다준다.
+                            _deckScrollTo(host);
                         }
                     };
                     panel.appendChild(btn);
@@ -17779,16 +17789,36 @@
                 if (_deckWantOpen && host) {
                     host.classList.add('open');
                     document.body.classList.add('deck-open');
-                    btn.textContent = '«';
-                    btn.title = '작업대 닫기';
+                    _deckBtnFace(btn, true);
                 }
+            }
+            // 손잡이 얼굴 — 넓은 화면은 » / «, 좁은 화면은 CSS 가 90° 돌려 ∨ / ∧ 로 보인다
+            function _deckBtnFace(btn, open) {
+                if (!btn) return;
+                var ar = btn.querySelector('.dh-ar'), tx = btn.querySelector('.dh-tx');
+                if (ar) ar.textContent = open ? '«' : '»'; else btn.textContent = open ? '«' : '»';
+                if (tx) tx.textContent = open ? '작업대 닫기' : '코드악보 작업대';
+                btn.title = open ? '작업대 닫기' : '코드악보 작업대 열기 — 다이어그램 · 리듬 패턴 · TAB · 송폼';
+                btn.setAttribute('aria-label', open ? '코드악보 작업대 닫기' : '코드악보 작업대 열기');
+            }
+            // 좁은 화면에서 작업대를 열면 그 자리로 부드럽게 내려 준다 (이미 보이면 그대로)
+            function _deckScrollTo(host) {
+                if (!host || !window.matchMedia || !matchMedia('(max-width:1180px)').matches) return;
+                setTimeout(function() {
+                    var r = host.getBoundingClientRect();
+                    if (r.height && r.top >= 0 && r.top < innerHeight * 0.75) return;   // 이미 보임
+                    // 이 페이지는 body 가 스크롤 상자라 window.scrollTo 가 안 먹는다 →
+                    // scrollIntoView (가려지는 만큼은 CSS scroll-margin-top 이 비켜 준다)
+                    try { host.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+                    catch (e) { host.scrollIntoView(true); }
+                }, 60);
             }
             // 작업대·손잡이 치우기 (열려 있던 상태는 _deckWantOpen 에 남겨 둔다)
             function _deckHide() {
                 var panel = document.getElementById('metronomePanel');
                 var btn = document.getElementById('deckHandle');
                 var host = document.getElementById('chartDeck');
-                if (btn) { btn.setAttribute('hidden', ''); btn.textContent = '»'; }
+                if (btn) { btn.setAttribute('hidden', ''); _deckBtnFace(btn, false); }
                 if (host) host.classList.remove('open');
                 if (panel) panel.classList.remove('deck-host');
                 document.body.classList.remove('deck-open');
