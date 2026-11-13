@@ -216,6 +216,16 @@
     .pop.gold { color: #ffd23f; font-size: 30px; }
     .pop.sm { font-size: 17px; font-family: 'Noto Sans KR', sans-serif; }
     @keyframes popUp { 0% { opacity: 0; transform: translate(-50%, -30%) scale(.6); } 15% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); } 25% { transform: translate(-50%, -50%) scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -85%); } }
+    /* 광고 보고 되살리기 (2026-11-13 사용자) — 파괴 연출 뒤 무대 가운데에. 단추 바탕은 강화 단추처럼 그림(삼성 강제 다크모드) */
+    .revive { position: absolute; left: 50%; top: calc(var(--h0) * .5); transform: translate(-50%, -50%); z-index: 9; width: min(280px, 84%); padding: 16px 14px 11px; border-radius: 16px; background: rgba(18, 13, 9, 0.93); border: 1.5px solid rgba(255, 215, 106, 0.55); color: #fff; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); animation: rvIn .35s ease-out; }
+    .revive b { display: block; font-size: 15px; font-weight: 900; color: #ffd76a; line-height: 1.35; word-break: keep-all; }
+    .revive p { margin: 5px 0 12px; font-size: 13px; color: #e8ddd0; }
+    .revive button { display: block; width: 100%; border-radius: 12px; font-weight: 900; }
+    .revive .go { padding: 12px 8px 15px; background: #f0592b url(../images/play/gk/btn_up.jpg) center / 100% 100% no-repeat; color: #fff; font-size: 15.5px; }
+    .revive .no { margin-top: 6px; padding: 7px; background: transparent; color: #cbbfb2; font-size: 13px; font-weight: 700; text-decoration: underline; }
+    .revive small { display: block; margin-top: 4px; font-size: 11.5px; color: #a99c8e; }
+    .revive.wait { opacity: .6; pointer-events: none; }
+    @keyframes rvIn { from { opacity: 0; transform: translate(-50%, -42%) scale(.92); } }
     .flash { position: absolute; inset: 0; z-index: 5; background: #fff; pointer-events: none; animation: flash .35s ease-out forwards; }
     @keyframes flash { from { opacity: .85; } to { opacity: 0; } }
     .stage.shake { animation: shake .3s; }
@@ -627,7 +637,7 @@
     <div>© 2026 안쌤의 기타나무숲</div>
 </footer>
 
-<script src="play.js?v=2026111101"></script>
+<script src="play.js?v=2026111301"></script>
 <script>
 // ===== 기타 키우기 (2026-11-12 MVP — 스트랫 하나로 먼저) =====
 // 카톡 '검키우기' 구조: 강화 한 번 누를 때마다 성공 / 유지(줄 끊김) / 파괴(무대에서 내리찍기). 팔고, 걸고, 배틀한다.
@@ -663,6 +673,7 @@ const SELL = (() => {
 const MAX = 20;
 const START_GOLD = 500, DAILY_GOLD = 1000, DAILY_PICKS = 10,   // 출석: 골드 + 놀이터 피크 10 (2026-11-12 사용자 요청, 피크 하루 200 한도 안에서)
       CASE_SHARDS = 20, BT_DAY = 5;   // 하루 배틀 5번 (2026-11-13 사용자, 예전 10번)
+const REVIVE_DAY = 3;   // 광고 보고 되살리기는 하루 3번까지 (2026-11-13 — 끝없이 되살리면 파괴가 의미 없어서)
 const CASE_MAX = 3;   // 하드케이스는 3개까지 가질 수 있다 (2026-11-12 사용자)
 // 부서지면 나오는 조각: 1 ~ 단계 중 랜덤 (2026-11-12 사용자: +8이 깨지면 2개일 수도 7개일 수도)
 const shardDrop = lv => 1 + Math.floor(Math.random() * Math.max(1, lv));
@@ -852,7 +863,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ---------- 저장 (이 브라우저) ----------
 const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [null, null, null, null, null], floor: [], open: [false, false, true, false, false], skin: 'wood', skins: ['wood'], bskin: 'workshop', bskins: ['workshop'], ask: 'alley', asks: ['alley'], dex: {}, store: [], rep: '', shards: 0, cases: 0, caseOn: false, tuner: 0, tuneOn: true, daily: '', nick: '', intro: false, first: false,
-    bt: { day: '', n: 0, done: {} }, st: { tries: 0, ok: 0, keep: 0, boom: 0, saved: 0, sold: 0, earned: 0, made: START_GOLD, best: 0, win: 0, lose: 0 } });
+    bt: { day: '', n: 0, done: {} }, rv: { day: '', n: 0 }, st: { tries: 0, ok: 0, keep: 0, boom: 0, saved: 0, revive: 0, sold: 0, earned: 0, made: START_GOLD, best: 0, win: 0, lose: 0 } });
 const okG = g => g && typeof g === 'object' && Number.isInteger(g.lv) && g.lv >= 0 && g.lv <= MAX && typeof g.id === 'string';
 function load() {
     const raw = mem.get('gk', {}) || {};
@@ -864,6 +875,7 @@ function load() {
     // 모은 돈(랭킹, 2026-11-13) 전에 시작한 사람: 지금 가진 돈과 (판 돈 + 시작 골드) 중 큰 쪽에서 센다
     if (!raw.st || raw.st.made == null) s.st.made = Math.max(+s.gold || 0, (+s.st.earned || 0) + START_GOLD);
     s.bt = Object.assign(f.bt, s.bt || {});
+    s.rv = Object.assign(f.rv, s.rv || {});
     if (!okG(s.bench)) s.bench = null;
     s.store = (Array.isArray(s.store) ? s.store : []).filter(okG).slice(0, STORE_MAX);   // 창고(계정 합치기로 벽에 다 못 건 기타)
     if (Array.isArray(raw.open) && raw.open.length === WALL_N) {
@@ -1024,6 +1036,7 @@ function cloudBtn() {
     b.title = cloudOff ? '계정 저장은 곧 열려요' : on ? (cloud.dirty ? '계정에 저장하는 중…' : '계정에 저장돼요 — 다른 기기에서 로그인해도 이어서 해요') : acctId() ? '계정과 이어 붙이는 중…' : '로그인하면 이 기록을 계정에 저장해서 다른 기기에서도 이어서 해요';
 }
 function btDay() { if (S.bt.day !== today()) S.bt = { day: today(), n: 0, done: {} }; return S.bt; }
+function rvDay() { if (S.rv.day !== today()) S.rv = { day: today(), n: 0 }; return S.rv; }
 // 대표 기타: 고른 것 → 벽의 가장 높은 것 → 작업대
 function rep() {
     // 앰프·멀티는 대표가 될 수 없다 (2026-11-12 사용자) — 기타만
@@ -1444,6 +1457,13 @@ const LINES = {
         [['me', '……'], ['minji', '……'], ['minji', '…저 오늘은 영상 안 올릴게요.']],
         [['me', '……'], ['oo', '……'], ['oo', 'ㅋ']],
     ],
+    revive: [   // 광고 보고 되살렸을 때 (2026-11-13)
+        [['me', '휴… 십 년 감수했다.'], ['boss', '본드로 붙여 놨다. 다음엔 없다.']],
+        [['minji', '살아났어요! 조각이 도로 붙었어요!']],
+        [['boss', '조각 다 주워 왔냐? …용케 붙었네.']],
+        [['me', '없던 일로 하자. 아무도 못 봤지?'], ['oo', '봤음 ㅋ']],
+        [['minji', '아까 그 쾅 소리는 꿈이었던 걸로 해요.']],
+    ],
     saved: [
         [['boss', '케이스가 대신 맞았다. 케이스는 그러라고 있는 거다.']],
         [['minji', '케이스가 박살 났어요! 기타는 멀쩡해요!']],
@@ -1767,6 +1787,7 @@ async function enhance() {
     updBar();   // 기다리는 동안 위 줄은 골드만 줄어든다(조각·케이스 수가 결과를 먼저 알려 주지 않게)
     // 결과를 먼저 저장하고(새로고침으로 되돌리기 막기), 기다림·연출은 그다음. 기다리는 동안은 강화 전 기타·이름 그대로 보인다
     ghost = { ...g };
+    const wasRep = S.rep === g.id;   // 되살리면 대표도 그대로
     let gotSh = 0;   // 부서졌을 때 나온 조각 수
     if (out === 'ok') { g.lv++; S.st.ok++; S.st.best = Math.max(S.st.best, g.lv); dexAdd(g.f, g.lv); }
     else if (out === 'keep') S.st.keep++;
@@ -1823,12 +1844,50 @@ async function enhance() {
         // 2026-11-13 사용자: 악기가 부서지면 전면 광고(AdSense H5 게임 광고 adBreak 'next') — 첫 번째 파괴엔 띄우고, 두 번째는 건너뛰고, 세 번째는 띄우고…(홀수 번째만, S.st.boom 은 이 브라우저에서 부서진 횟수)
         // 부서진 것·조각 수를 다 보여 준 뒤에 띄우고, 실제로 뜰지는 구글이 정한다(안 띄우면 바로 넘어감). 하드케이스가 막은 건 안 부서졌으니 광고 없음
         await sleep(400);
-        if (S.st.boom % 2 === 1) await new Promise(res => PLAY.interstitial(res, '악기가 부서진 뒤 전면 광고', 'boom'));
-        const said = one(g.lv >= 10 ? LINES.bigBoom : LINES.boom);
-        talk([['me', one(LINES.sigh)], ...said.slice(1)]);   // 2026-11-13 사용자: '나'는 '……' 대신 신세한탄
+        if (await reviveOffer(g, gotSh, wasRep)) {   // 광고를 끝까지 보고 되살렸으면 파괴 광고·신세한탄 없이
+            updBar(); renderName();
+            sfx('ok', g.lv); flash();
+            cv.animate([{ transform: `${CVT} scale(.55)`, opacity: 0, filter: 'brightness(3)' }, { transform: `${CVT} scale(1.06)`, opacity: 1, filter: 'brightness(2)', offset: .6 }, { transform: CVT, opacity: 1, filter: 'brightness(1)' }], { duration: 800, easing: 'ease-out' });
+            burst(18, ['#ffe27a', '#ffffff', '#72c492'], { y: 50, spread: 130, size: [4, 9], dur: 900, grav: false });
+            pop(`+${g.lv} 부활!`, 'ok');
+            setTimeout(() => talk(one(LINES.revive)), 600);
+            await sleep(500);
+        } else {
+            if (S.st.boom % 2 === 1) await new Promise(res => PLAY.interstitial(res, '악기가 부서진 뒤 전면 광고', 'boom'));
+            const said = one(g.lv >= 10 ? LINES.bigBoom : LINES.boom);
+            talk([['me', one(LINES.sigh)], ...said.slice(1)]);   // 2026-11-13 사용자: '나'는 '……' 대신 신세한탄
+        }
     }
     busy = false;
     renderBench();
+}
+
+// ---------- 광고 보고 되살리기 (2026-11-13 사용자: 파괴될 때 광고를 보면 부활) ----------
+// 구글 보상형 광고(H5 게임 광고 adBreak 'reward')가 준비됐을 때만 묻는다 — 승인 전·광고가 없으면 묻지 않고 예전처럼 파괴(PLAY.rewarded).
+// 광고 길이·건너뛰기는 구글이 정하고, 끝까지 봐야(adViewed) 되살아난다. 하루 REVIVE_DAY 번.
+// 되살리면 같은 단계 그대로 작업대로 돌아오고, 파괴로 받은 조각은 도로 빼고 '부순 기타' 수도 하나 줄인다(안 부서진 셈).
+// 파괴 결과는 이미 저장돼 있어서, 묻는 동안 새로고침하면 그대로 파괴로 남는다.
+async function reviveOffer(g, sh, wasRep) {
+    const rv = rvDay();
+    if (rv.n >= REVIVE_DAY || S.bench) return false;
+    const box = document.createElement('div');
+    box.className = 'revive';
+    const r = await PLAY.rewarded('revive', (show, skip) => {
+        box.innerHTML = `<b>${esc(full(g))}</b><p>광고를 끝까지 보면 되살아나요</p>
+            <button type="button" class="go"><i class="fas fa-heart-pulse"></i> 광고 보고 되살리기</button>
+            <button type="button" class="no">그냥 보낼게요</button><small>오늘 ${REVIVE_DAY - rv.n}번 남음</small>`;
+        box.querySelector('.go').addEventListener('click', () => { box.classList.add('wait'); show(); });
+        box.querySelector('.no').addEventListener('click', skip);
+        $('#stage').appendChild(box);
+    }, '광고 보고 되살리기');
+    box.remove();
+    if (r !== 'viewed') { if (r === 'dismissed') toast('끝까지 봐야 되살아나요'); return false; }
+    rv.n++;
+    S.bench = g; S.shards = Math.max(0, S.shards - sh);
+    S.st.boom = Math.max(0, S.st.boom - 1); S.st.revive = (S.st.revive | 0) + 1;
+    if (wasRep) S.rep = g.id;
+    save();
+    return true;
 }
 
 // 기타 찾기: 강화처럼 두근두근 기다리다가 그림자에서 기타가 '탄생'한다 (2026-11-12 사용자 요청).

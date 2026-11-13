@@ -86,6 +86,46 @@
         x.addEventListener('click', () => { el.remove(); done(); });
     }
 
+    // 보상형 광고 = H5 게임 광고 adBreak({type:'reward'}) (2026-11-13 기타 키우기 '광고 보고 되살리기').
+    //   구글이 광고를 준비했을 때만 beforeReward 가 불린다 → 그때만 offer(show, skip)로 '광고 보고 …' 단추를 보인다.
+    //   준비가 안 됐으면(승인 전·광고 없음·차단) 아무것도 안 보이고 'none'. 광고 길이·건너뛰기는 구글이 정한다.
+    //   끝까지 보면 'viewed'(이때만 보상), 중간에 닫으면 'dismissed', 손님이 안 보기로 하면 'skip'.
+    //   ?ads=1 이면 회색 상자로 흉내(5초 다 보면 viewed)
+    function rewarded(name, offer, label = '보상형 광고') {
+        return new Promise(res => {
+            let over = false, ready = false, started = false;
+            const fin = v => { if (!over) { over = true; res(v); } };
+            const show = fn => () => { if (!over && !started) { started = true; fn(); } };
+            if (MOCK) { offer(show(() => mockReward(label, fin)), () => fin('skip')); return; }
+            if (!LIVE || !ADSENSE.games || adLib !== 'ok') return fin('none');
+            const guard = setTimeout(() => { if (!ready) fin('none'); }, 2000);   // 2초 안에 광고가 준비 안 되면 묻지 않고 넘어간다
+            try {
+                adsbygoogle.push({
+                    type: 'reward', name,
+                    beforeAd: () => {}, afterAd: () => {},
+                    beforeReward: showAdFn => { ready = true; clearTimeout(guard); if (!over) offer(show(showAdFn), () => fin('skip')); },
+                    adViewed: () => fin('viewed'),
+                    adDismissed: () => fin('dismissed'),
+                    adBreakDone: () => { clearTimeout(guard); if (!ready) fin('none'); else if (started) fin('dismissed'); },
+                });
+            } catch (e) { clearTimeout(guard); fin('none'); }
+        });
+    }
+    function mockReward(label, fin) {
+        const el = document.createElement('div');
+        el.className = 'inter';
+        el.innerHTML = `<div class="in"><div class="top"><span>${esc(label)} (목업)</span><button class="x">닫기</button></div>${adSlot('r300', '실제: AdSense 보상형 광고(adBreak reward)')}<p>끝까지 보면 보상 — <b>5</b>초 남음 · 중간에 닫으면 보상 없음</p></div>`;
+        document.body.appendChild(el);
+        const x = el.querySelector('.x'), b = el.querySelector('p b');
+        let n = 5;
+        const t = setInterval(() => {
+            n--; b.textContent = n;
+            if (n > 0) return;
+            clearInterval(t); x.textContent = '보상 받기 ✕';
+        }, 1000);
+        x.addEventListener('click', () => { clearInterval(t); el.remove(); fin(n <= 0 ? 'viewed' : 'dismissed'); });
+    }
+
     function toast(msg) {
         const t = document.createElement('div');
         t.className = 'toast'; t.textContent = msg;
@@ -282,5 +322,5 @@
             <span class="bulb"><i class="fas fa-lightbulb"></i></span>${opt.count ? `<span class="cnt">${opt.count}문제</span>` : ''}</div>`;
     }
 
-    window.PLAY = { hasLogin: () => !!userToken(), myKey, picks, PICK, pickIcon, pickLine, thumb, esc, shuffle, adSlot, interstitial, toast, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow, IS_APP };
+    window.PLAY = { hasLogin: () => !!userToken(), myKey, picks, PICK, pickIcon, pickLine, thumb, esc, shuffle, adSlot, interstitial, rewarded, toast, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow, IS_APP };
 })();
