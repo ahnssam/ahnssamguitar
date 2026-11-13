@@ -193,8 +193,15 @@
     .empty small.cost { display: inline-flex; align-items: center; justify-content: center; gap: 5px; margin-top: -2px; font-size: 13px; font-weight: 900; opacity: 1; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
     .empty small.cost i { color: #ffd76a; }
     .empty small.cost span { font-weight: 600; opacity: 0.8; font-size: 12px; }
+    .empty small.cost { flex-wrap: wrap; } .empty small.cost b { white-space: nowrap; }   /* 좁은 폰에서 '피크 3 / 개'로 끊기지 않게 */
     .empty .btn[disabled] { opacity: .55; cursor: default; }
     .empty .alt a { color: #ffe27a; text-decoration: underline; text-underline-offset: 3px; }
+    /* 2026-11-13 사용자: 처음 화면의 '시작' 단추를 크게, 그 아래에 게임 공유 단추 */
+    .empty .btn.start { font-size: 22px; font-weight: 900; padding: 15px 50px; min-width: 214px; gap: 10px; }
+    .empty .btn.start i { font-size: 18px; }
+    .empty .btn.gshare { margin-top: 2px; padding: 8px 18px; font-size: 13.5px; font-weight: 800; color: #fff; background: rgba(255, 255, 255, 0.14); border: 1.5px solid rgba(255, 255, 255, 0.5); box-shadow: none; }
+    .empty .btn.gshare:hover { background: rgba(255, 255, 255, 0.26); }
+    @media (max-width: 359px) { .empty .btn.start { font-size: 20px; padding: 13px 40px; min-width: 190px; } }
 
     /* 강화 기다림: 무대가 어두워지고 기타가 점점 세게 떨리며 빛이 모인다 */
     .stage::after { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(36% 40% at 50% 55%, rgba(255, 214, 110, 0.2), rgba(0, 0, 0, 0.66) 72%); opacity: 0; transition: opacity .35s; }
@@ -1511,12 +1518,14 @@ function renderName() {
     nmLv = g.lv;
 }
 // 빈 작업대: 첫 기타는 피크로 사고, 그다음부터는 공짜로 받는다
+// 처음 화면 맨 아래 '친구에게 공유' — 게임 주소(기타가 아직 없으니 게임 자체를 공유) (2026-11-13 사용자)
+const GSHARE = `<button class="btn gshare" type="button" data-a="gameshare"><i class="fas fa-share-nodes"></i> 친구에게 공유</button>`;
 function emptyCard() {
     const sil = `<img class="g1" src="../images/play/gk/sil_guitar.webp" alt="">`;   // 무슨 기타가 나올지 모르게 그림자만
     const bal = PLAY.picks.bal();
     // 2026-11-12 사용자: 빈 작업대는 간단하게 위에 '기타 키우기', 아래 '시작'만 + 단추 아래에 값
-    const card = (a, cls, cost) => `${S.first ? '' : sil}<p class="big">기타 키우기</p><button class="btn ${cls}" type="button" data-a="${a}"><i class="fas fa-play"></i> 시작</button><small class="cost">${cost}</small>`;
-    const pk = note => `${PLAY.pickIcon()} 피크 ${FIRST_PICKS}개 <span>(${note})</span>`;
+    const card = (a, cls, cost) => `${S.first ? '' : sil}<p class="big">기타 키우기</p><button class="btn start ${cls}" type="button" data-a="${a}"><i class="fas fa-play"></i> 시작</button><small class="cost">${cost}</small>${GSHARE}`;
+    const pk = note => `${PLAY.pickIcon()} <b>피크 ${FIRST_PICKS}개</b> <span>(${note})</span>`;
     if (S.first) {
         if (S.gold >= FIND_GOLD) return card('new', '', `<i class="fas fa-coins"></i> ${gf(FIND_GOLD)}`);
         if (bal >= FIRST_PICKS) return card('newp', 'pick', pk(`골드가 모자라서 피크로 · 지금 ${bal.toLocaleString()}개`));
@@ -1532,7 +1541,7 @@ function lackCard(title, why) {
         ${dl ? `<button class="btn pick" type="button" data-a="daily"><i class="fas fa-gift"></i> 출석하고 받기 <small>${PLAY.pickIcon()} ${DAILY_PICKS}</small></button>
         <div class="alt"><a href="./">놀이터</a> · <a href="quiz.html">퀴즈쇼</a> · <a href="worldcup.html">월드컵</a>에서도 모여요</div>`
         : `<a class="btn pick" href="./"><i class="fas fa-gamepad"></i> 놀이터에서 피크 모으기</a>
-        <div class="alt"><a href="quiz.html">퀴즈쇼</a> · <a href="worldcup.html">월드컵</a> 바로 가기</div>`}`;
+        <div class="alt"><a href="quiz.html">퀴즈쇼</a> · <a href="worldcup.html">월드컵</a> 바로 가기</div>`}${GSHARE}`;
 }
 function renderBench() {
     updBar(); renderName();
@@ -2457,6 +2466,7 @@ $('#app').addEventListener('click', e => {
     else if (a === 'toss') tossBench(b);
     else if (a === 'hang') hangBench();
     else if (a === 'brag') brag(S.bench);
+    else if (a === 'gameshare') shareText('기타 키우기', `안쌤 놀이터 '기타 키우기' 🎸\n기타를 강화해서 +20 전설의 기타를 만들어 봐요`, `${location.origin}/play/guitar.html`);
     else if (a === 'case') { S.caseOn = !S.caseOn && S.cases > 0; save(); renderBench(); }
     else if (a === 'tune') { S.tuneOn = !S.tuneOn; save(); renderBench(); }
     else if (a === 'slot') {   // 2026-11-12 사용자: 누르고 다른 기타를 누르면 자리 바꾸기, 다시 누르면 선택 풀기
