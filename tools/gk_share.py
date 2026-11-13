@@ -3,17 +3,22 @@
 #   그래서 계열 8 × 단계 21 = 168개의 작은 페이지(play/gk/s/<계열>-<단계>.html)와 썸네일(images/play/gk/share/<계열>-<단계>.jpg)을 미리 만든다.
 #   페이지는 열자마자 기타 키우기(play/guitar.html)로 넘어간다(주소 뒤 ?vs= 같은 것은 그대로 넘김).
 # 다시 만들기: 새 단계 그림이 오거나 이름이 바뀌면  python -X utf8 tools/gk_share.py
+#   맥에서도 된다(2026-11-13): Pillow만 있으면 됨 — python3 -m venv /tmp/gkv && /tmp/gkv/bin/pip install pillow && /tmp/gkv/bin/python -X utf8 tools/gk_share.py
+#   글꼴은 윈도우 = 맑은 고딕, 맥 = Apple SD Gothic Neo(시스템 글꼴)를 저절로 고른다.
 #   이름·그림 접두어는 play/guitar.html 의 FAMS·GEAR 에서 읽는다(2026-11-13 공개 — 그 전에는 guitar-mockup.html).
 import re, os, sys, colorsys
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageChops
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GAME = 'play/guitar.html'
 SITE = 'https://ahnssamguitar.com'
 FONT_B = 'C:/Windows/Fonts/malgunbd.ttf'
 FONT_R = 'C:/Windows/Fonts/malgun.ttf'
+IDX_B = IDX_R = 0
+if not os.path.exists(FONT_B):   # 맥: Apple SD Gothic Neo 묶음 글꼴(.ttc) 안의 Bold(6)·Regular(0)
+    FONT_B = FONT_R = '/System/Library/Fonts/AppleSDGothicNeo.ttc'; IDX_B, IDX_R = 6, 0
 W, H = 800, 420
-SHARE_V = 2   # 썸네일 그림을 바꾸면 올린다 — 카톡이 og:image 를 주소로 기억해서(2026-11-12 몸통 클로즈업으로 바꿈)
+SHARE_V = 3   # 썸네일 그림을 바꾸면 올린다 — 카톡이 og:image 를 주소로 기억해서(2026-11-12 몸통 클로즈업으로 바꿈 · 2026-11-13 헤드머신 V2 그림·맥에서 다시 만듦)
 
 src = open(os.path.join(ROOT, GAME), encoding='utf8').read()
 
@@ -49,6 +54,17 @@ def hue_of(img):
         bins[int(h * 24) % 24] += s * (1 if 0.15 < l < 0.9 else 0.3)
     return (bins.index(max(bins)) + 0.5) / 24 if max(bins) > 0 else 0.12
 
+def feather(piece, F=28):   # 2026-11-13: 클로즈업으로 자른 위·양옆 가장자리가 반듯하게 끊겨 보이지 않게 F픽셀 동안 흐려지게
+    w, h = piece.size
+    top = Image.new('L', (w, h), 255); d = ImageDraw.Draw(top)
+    side = Image.new('L', (w, h), 255); d2 = ImageDraw.Draw(side)
+    for i in range(F):
+        v = round(255 * i / F)
+        d.line([(0, i), (w, i)], fill=v)
+        d2.line([(i, 0), (i, h)], fill=v); d2.line([(w - 1 - i, 0), (w - 1 - i, h)], fill=v)
+    piece.putalpha(ImageChops.multiply(piece.getchannel('A'), ImageChops.darker(top, side)))
+    return piece
+
 def wrap(draw, text, font, maxw):
     words, lines, cur = text.split(' '), [], ''
     for w in words:
@@ -60,8 +76,8 @@ def wrap(draw, text, font, maxw):
     if cur: lines.append(cur)
     return lines
 
-fB = lambda n: ImageFont.truetype(FONT_B, n)
-fR = lambda n: ImageFont.truetype(FONT_R, n)
+fB = lambda n: ImageFont.truetype(FONT_B, n, index=IDX_B)
+fR = lambda n: ImageFont.truetype(FONT_R, n, index=IDX_R)
 os.makedirs(os.path.join(ROOT, 'images/play/gk/share'), exist_ok=True)
 os.makedirs(os.path.join(ROOT, 'play/gk/s'), exist_ok=True)
 
@@ -79,7 +95,7 @@ for fam, F in FAMS.items():
         else:
             piece = art.crop((34, 60, 414, 448)); k = 1.05; foot = 430 - 60
         pw, ph = round(piece.width * k), round(piece.height * k)
-        piece = piece.resize((pw, ph), Image.LANCZOS)
+        piece = feather(piece.resize((pw, ph), Image.LANCZOS))
         top = 400 - round(foot * k)
         im = bg.copy().convert('RGBA')
         if lv >= 10:   # +10부터 그 색으로 빛나게(게임 속 아우라처럼)
