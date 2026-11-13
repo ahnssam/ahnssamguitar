@@ -147,4 +147,69 @@ for fam, F in FAMS.items():
 '''
         open(os.path.join(ROOT, f'play/gk/s/{out}.html'), 'w', encoding='utf8', newline='\n').write(html)
         count += 1
-print('만든 수', count)
+# ---------- 게임 자체 공유 썸네일 (2026-11-13 사용자: 처음 화면 '친구에게 공유'를 카톡에 보내면 +20 레스폴·스트랫이 썸네일로) ----------
+#   images/play/gk/share/game.jpg + 공유 페이지 play/gk/s/game.html, 그리고 play/guitar.html 의 og:image 도 이 그림으로 바꾼다.
+#   그림을 바꾸면 GAME_V 를 올린다(카톡이 그림 주소로 기억해서).
+GAME_V = 1
+im = bg.copy().convert('RGBA')
+k, off = 0.72, -50            # 헤드·왕관까지 다 보이게 기타 전체를 0.72배, 틀을 50px 위로
+arts = []
+for fam, cx in (('lespaul', 130), ('strat', 670)):
+    F = FAMS[fam]
+    art = Image.open(os.path.join(ROOT, f"images/play/gk/{F['art']}_{min(20, F['artMax']):02d}.webp")).convert('RGBA')
+    r, g, b = [int(v * 255) for v in colorsys.hls_to_rgb(hue_of(art), 0.6, 0.95)]
+    glow = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(glow).ellipse((cx - 130, 40, cx + 130, 400), fill=(r, g, b, 170))
+    im = Image.alpha_composite(im, glow.filter(ImageFilter.GaussianBlur(50)))
+    arts.append((art, cx, F['name'], (r, g, b)))
+dk = Image.new('RGBA', (W, H), (0, 0, 0, 0))   # 가운데 글자가 읽히게 살짝 어둡게
+ImageDraw.Draw(dk).ellipse((W / 2 - 210, 40, W / 2 + 210, 380), fill=(0, 0, 0, 120))
+im = Image.alpha_composite(im, dk.filter(ImageFilter.GaussianBlur(40)))
+for art, cx, nm, col in arts:
+    aw, ah = round(art.width * k), round(art.height * k)
+    foot = round(608 * k) + off
+    sh = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(sh).ellipse((cx - 85, foot - 12, cx + 85, foot + 12), fill=(0, 0, 0, 130))
+    im = Image.alpha_composite(im, sh.filter(ImageFilter.GaussianBlur(8)))
+    layer = Image.new('RGBA', (W, H)); layer.paste(art.resize((aw, ah), Image.LANCZOS), (cx - aw // 2, off))
+    im = Image.alpha_composite(im, layer)
+d = ImageDraw.Draw(im)
+def ctext(y, s, font, **kw): d.text((W / 2 - d.textlength(s, font=font) / 2, y), s, font=font, **kw)
+ctext(94, '안쌤의 기타나무숲 놀이터', fR(19), fill=(235, 222, 196))
+ctext(126, '기타 키우기', fB(56), fill='white', stroke_width=4, stroke_fill=(30, 16, 6))
+bf, rf = fB(28), fB(24)
+bw_, rw = d.textlength('+20', font=bf), d.textlength('전설의 기타까지!', font=rf)
+x = W / 2 - (bw_ + 24 + 12 + rw) / 2; y = 222
+d.rounded_rectangle((x, y, x + bw_ + 24, y + 42), radius=21, fill=(140, 70, 220))
+d.text((x + 12, y + 2), '+20', font=bf, fill='white')
+d.text((x + bw_ + 36, y + 6), '전설의 기타까지!', font=rf, fill=(255, 226, 150), stroke_width=2, stroke_fill=(30, 16, 6))
+ctext(288, '강화 · 컬렉션 · 배틀', fR(20), fill=(230, 220, 200))
+for art, cx, nm, col in arts:   # 기타 아래 '+20 레스폴'·'+20 스트랫' 이름표
+    s = f'+20 {nm}'; f = fB(19); tw = d.textlength(s, font=f); y = H - 40
+    d.rounded_rectangle((cx - tw / 2 - 14, y, cx + tw / 2 + 14, y + 30), radius=15, fill=(20, 12, 6), outline=col, width=2)
+    d.text((cx - tw / 2, y + 2), s, font=f, fill='white')
+im.convert('RGB').save(os.path.join(ROOT, 'images/play/gk/share/game.jpg'), 'JPEG', quality=84, optimize=True, progressive=True)
+GIMG = f'{SITE}/images/play/gk/share/game.jpg?v={GAME_V}'
+open(os.path.join(ROOT, 'play/gk/s/game.html'), 'w', encoding='utf8', newline='\n').write(f'''<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>기타 키우기 | 안쌤의 기타나무숲</title>
+<meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="안쌤의 기타나무숲">
+<meta property="og:title" content="기타 키우기 | 안쌤의 기타나무숲">
+<meta property="og:description" content="창고에서 찾은 기타를 강화해서 +20 전설의 기타까지! 내 기타랑 붙어 볼래?">
+<meta property="og:image" content="{GIMG}">
+<meta property="og:image:width" content="{W}"><meta property="og:image:height" content="{H}">
+<meta property="og:url" content="{SITE}/play/gk/s/game.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta http-equiv="refresh" content="0;url=../../guitar.html">
+<script>location.replace('../../guitar.html' + location.search + location.hash);</script>
+</head><body><p><a href="../../guitar.html">기타 키우기로 가기</a></p></body></html>
+''')
+gp = os.path.join(ROOT, GAME)   # 게임 페이지 주소를 그대로 보내도 같은 썸네일이 뜨게
+g = open(gp, encoding='utf8', newline='').read()
+g2 = re.sub(r'<meta property="og:image" content="[^"]*">(?:<meta property="og:image:width"[^>]*><meta property="og:image:height"[^>]*>)?',
+            f'<meta property="og:image" content="{GIMG}"><meta property="og:image:width" content="{W}"><meta property="og:image:height" content="{H}">', g, count=1)
+if g2 != g: open(gp, 'w', encoding='utf8', newline='').write(g2)
+print('만든 수', count, '+ 게임 썸네일')
