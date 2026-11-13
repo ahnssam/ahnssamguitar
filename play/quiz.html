@@ -76,6 +76,12 @@
     .fb .x { flex: 1 1 260px; font-size: 13.5px; color: #333; }
     .fb .x a { color: var(--green-deep); font-weight: 700; text-decoration: underline; }
     .fb .btn { padding: 10px 18px; }
+    /* 악보 한 줄 소리 (TabForest 와 같은 소리) — 정답을 누르면 저절로 한 번, 단추로 다시 */
+    .fb .tsnd { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 999px; border: 1.5px solid var(--green-deep); background: #fff; color: var(--green-deep); font: inherit; font-size: 13.5px; font-weight: 800; cursor: pointer; }
+    .fb .tsnd.on { background: var(--green-deep); color: #fff; }
+    .fb .tsnd.on i { animation: tsndPulse 0.9s ease-in-out infinite; }
+    .fb .tsnd[disabled] { opacity: 0.55; cursor: default; }
+    @keyframes tsndPulse { 50% { transform: scale(1.25); } }
     .cover { width: 54px; height: 54px; border-radius: 8px; object-fit: cover; }
 
     /* 기타 상식 난이도 고르기 */
@@ -262,6 +268,7 @@
 <script src="play.js?v=2026111101"></script>
 <script src="trivia.js?v=2026110901"></script>
 <script src="songs.js?v=2026110801"></script>
+<script src="tabsnd.js?v=2026111301"></script>
 <script>
 const { esc, shuffle, adSlot, interstitial, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow, picks, PICK, pickIcon, pickLine, toast } = PLAY;
 const app = document.getElementById('app');
@@ -574,7 +581,7 @@ function ask() {
         <div class="chs" id="chs"></div>
         <div class="qbox card">${body}<div class="choices">${q.opts.map((o, k) => `<button data-o="${esc(o)}"><span class="k">${L[k]}</span>${esc(o)}</button>`).join('')}</div></div>
         <div id="fb"></div>`;
-    app.querySelectorAll('.choices button').forEach(b => b.addEventListener('click', () => answer(b.dataset.o)));
+    app.querySelectorAll('.choices button').forEach(b => b.addEventListener('click', () => { if (window.TabSnd && G.mode === 'tab') TabSnd.unlock(); answer(b.dataset.o); }));
     document.getElementById('snd').addEventListener('click', e => {
         mem.set('quiz.sound', !soundOn());
         e.currentTarget.innerHTML = `<i class="fas ${soundOn() ? 'fa-volume-high' : 'fa-volume-xmark'}"></i>`;
@@ -583,6 +590,7 @@ function ask() {
     q.hints = 0; q.ch = [];
     paintChances(q);
     if (G.mode === 'tab') {
+        if (window.TabSnd) TabSnd.prepare(q.song.id).catch(() => {});     // 답을 누르는 순간 바로 나오게 미리 받기
         const more = document.getElementById('more'), hint = document.getElementById('hint');
         if (more) more.addEventListener('click', () => { if (q.done || q.more) return; q.more = true; q.hints++; more.disabled = true; more.innerHTML = '<i class="fas fa-check"></i> 한 줄 더 봤어요'; showMore(q); });
         hint.addEventListener('click', () => { if (q.done || q.art) return; q.art = true; q.hints++; hint.disabled = true; hint.innerHTML = `<i class="fas fa-user"></i> ${esc(q.hint || '정보 없음')}`; });
@@ -665,6 +673,31 @@ function answer(o) {
     document.getElementById('next').addEventListener('click', next);
     document.getElementById('next').focus({ preventScroll: true });
     fxShow(ok, o, got);
+    if (G.mode === 'tab') tabSound(q, ok);
+}
+// 악보 한 줄을 TabForest 와 같은 소리로 — 맞혔든 틀렸든, 효과음이 끝난 뒤 저절로 한 번(효과음을 껐으면 단추만)
+function tabSound(q, ok) {
+    if (!window.TabSnd) return;
+    TabSnd.has(q.song.id).then(yes => {
+        if (!yes || q !== G.qs[G.i]) return;
+        const fb = document.querySelector('#fb .fb'), nx = document.getElementById('next');
+        if (!fb || !nx) return;
+        nx.insertAdjacentHTML('beforebegin', '<button class="tsnd" id="tsnd" disabled><i class="fas fa-spinner fa-spin"></i> 소리 준비 중</button>');
+        const b = document.getElementById('tsnd');
+        const idle = () => { if (!b.isConnected) return; b.disabled = false; b.classList.remove('on'); b.innerHTML = '<i class="fas fa-play"></i> 이 줄 소리로 듣기'; };
+        const go = () => {
+            if (TabSnd.playing()) return TabSnd.stop();
+            TabSnd.unlock();
+            b.classList.add('on'); b.innerHTML = '<i class="fas fa-music"></i> 멈추기';
+            TabSnd.play(q.song.id, q.an.pick, idle).catch(idle);
+        };
+        b.addEventListener('click', go);
+        TabSnd.prepare(q.song.id).then(() => {
+            if (q !== G.qs[G.i]) return;
+            idle();
+            if (soundOn()) setTimeout(() => { if (q === G.qs[G.i] && b.isConnected && !TabSnd.playing()) go(); }, ok ? 700 : 1900);
+        }).catch(() => b.remove());
+    });
 }
 
 // ---------- 정답·오답 연출 ----------
@@ -739,6 +772,7 @@ function fxShow(ok, o, got) {
     fxSound(ok);
 }
 function next() {
+    if (window.TabSnd) TabSnd.stop();
     G.i++;
     if (G.i < G.qs.length) return ask();
     interstitial(result);

@@ -192,9 +192,8 @@
     @media (prefers-reduced-motion: reduce) { .stage .aura i, #cv, .stage.glow #cv { animation: none; } }
     .stage canvas { position: absolute; z-index: 1; left: 50%; top: calc(var(--h0) * 0.46); width: calc(56px * var(--s)); height: calc(84px * var(--s)); transform: translate(-50%, -50%); image-rendering: auto; }
     /* 이름표: 기타 머리 위에 둥실 떠 있다 (2026-11-12 사용자: 검키우기처럼 단계마다 바뀌는 이름이 기타 위에) */
-    .nmtag { position: absolute; left: 50%; top: 14px; z-index: 2; display: flex; align-items: center; gap: 8px; width: max-content; max-width: calc(100% - 24px); padding: 5px 15px 5px 5px; border-radius: 999px; background: rgba(8, 14, 12, 0.74); border: 2px solid rgba(255, 255, 255, 0.2); color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); transform: translateX(-50%); animation: nmBob 2.8s ease-in-out infinite; }
+    .nmtag { position: absolute; left: 50%; top: 14px; z-index: 2; display: flex; align-items: center; gap: 8px; width: max-content; max-width: calc(100% - 24px); padding: 5px 15px 5px 5px; border-radius: 999px; background: rgba(8, 14, 12, 0.74); border: 2px solid rgba(255, 255, 255, 0.2); color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); transform: translateX(-50%); }
     .nmtag::after { content: ''; position: absolute; left: 50%; bottom: -10px; margin-left: -8px; border: 8px solid transparent; border-bottom: 0; border-top-color: rgba(8, 14, 12, 0.74); }
-    @keyframes nmBob { 50% { transform: translate(-50%, -5px); } }
     .nmtag .lvb { flex: none; font: 900 21px/1 'Arial Black', sans-serif; padding: 6px 10px 5px; border-radius: 99px; background: #f5b31e; color: #3a2400; text-shadow: none; box-shadow: 0 3px 0 #b97f00; }
     .nmtag b { font-size: 16px; font-weight: 900; letter-spacing: -0.02em; line-height: 1.25; word-break: keep-all; }
     .nmtag.l10 { border-color: rgba(255, 122, 61, 0.9); box-shadow: 0 0 16px rgba(255, 122, 61, 0.45); }
@@ -273,7 +272,7 @@
     .talk b { display: block; font-size: 11.5px; color: #ffd76a; }
     .talk p { font-size: 12.5px; line-height: 1.4; }
     /* 이름표·대사 덩어리: 가운데 위에 같이 둥실. 대사는 이름표 꼬리(▼) 바로 아래에 붙는다 */
-    .nmhud { position: absolute; left: 50%; top: 14px; z-index: 6; width: calc(100% - 24px); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; animation: nmBob 2.8s ease-in-out infinite; }
+    .nmhud { position: absolute; left: 50%; top: 14px; z-index: 6; width: calc(100% - 24px); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }   /* 2026-11-13 사용자: 기타 이름표는 안 움직이게(기타만 둥실) */
     .nmhud .nmtag { position: relative; left: auto; top: auto; transform: none; animation: none; max-width: 100%; pointer-events: auto; }
     .nmhud .talk { position: relative; left: auto; right: auto; top: auto; margin-top: 11px; width: max-content; max-width: 100%; pointer-events: auto; }
     .nmhud .nmtag[hidden] + .talk { margin-top: -2px; }
@@ -291,8 +290,6 @@
     .sact .sl { min-width: 0; font-size: 14.5px; background: rgba(14, 22, 20, 0.86); border: 2px solid rgba(255, 255, 255, 0.28); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.45); }
     .sact .sl b { color: #ffd76a; font-weight: 900; }
     .sact .sl[disabled] { opacity: .55; cursor: default; }
-    .sact .sl.sure { background: #b3261e; border-color: #ffd0cc; animation: slSure .5s cubic-bezier(.3, 1.5, .5, 1); }   /* 팔기는 한 번 더 눌러야 (2026-11-13 사용자) */
-    @keyframes slSure { from { transform: scale(.92); } }
     .sact button:active { transform: translateY(3px); }
     .tuner { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 7; border-radius: 14px; padding: 10px 12px 12px; background: #0e1614; border: 2px solid #3a4a45; color: #e8f0ec; cursor: pointer; animation: fade .15s; }
     .tuner .tn-top { display: flex; align-items: baseline; gap: 8px; font-size: 12.5px; }
@@ -491,6 +488,19 @@
     /* 배틀 창 */
     .gk-modal { position: fixed; inset: 0; z-index: 90; background: rgba(10, 18, 15, 0.84); display: flex; align-items: center; justify-content: center; padding: 16px; animation: fade .2s; }
     .gk-modal .in { background: #fff; border-radius: 18px; width: min(420px, 100%); padding: 16px; text-align: center; max-height: 94vh; overflow: auto; }
+    /* 팔기 확인 미니 팝업 (2026-11-13 사용자: '파시겠습니까? 예 아니오') */
+    .askbox { max-width: 300px; animation: askIn .22s cubic-bezier(.3, 1.4, .5, 1); }
+    @keyframes askIn { from { opacity: 0; transform: scale(.82); } }
+    .askbox .q { font-size: 18px; font-weight: 900; color: var(--ink); }
+    .askbox .g1 { margin-top: 9px; font-size: 14px; font-weight: 800; color: #444; line-height: 1.4; word-break: keep-all; }
+    .askbox .g1 .lvb { display: inline-block; margin-right: 6px; padding: 1px 9px; border-radius: 99px; background: #f5b31e; color: #3a2400; font-size: 13px; font-weight: 900; }
+    .askbox .pr { margin-top: 6px; font-size: 21px; font-weight: 900; color: #b8913f; }
+    .askbox .yn { display: grid; grid-template-columns: 1fr 1.3fr; gap: 8px; margin-top: 16px; }
+    .askbox .yn button { padding: 12px 8px; border-radius: 12px; font-size: 15px; font-weight: 800; }
+    .askbox .no { background: #eef1ef; color: #555; }
+    .askbox .yes { background: var(--green-deep); color: #fff; box-shadow: 0 4px 0 #1d4f36; }
+    .askbox .yn button:active { transform: translateY(2px); }
+    @media (prefers-reduced-motion: reduce) { .askbox { animation: none; } }
     /* 광고 보고 골드 (2026-11-13 사용자) — 구글이 광고를 준비했을 때만 뜬다 */
     .adbox { max-width: 320px; }
     .adbox .ic { display: grid; place-items: center; width: 54px; height: 54px; margin: 2px auto 8px; border-radius: 50%; background: #fff3df; color: #e0a63c; font-size: 24px; }
@@ -2027,6 +2037,25 @@ async function findGuitar(first) {
     $('#nm').animate([{ opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1.15, offset: 0.6 }, { opacity: 1, scale: 1 }], { duration: 520, easing: 'ease-out' });
     if (first) setTimeout(() => talk(LINES.bought), 1000);
 }
+// 팔기 전에 작은 창으로 한 번 더 묻는다 (2026-11-13 사용자: '팔기 버튼 누르면 중간에 미니 팝업, 파시겠습니까? 예 아니오')
+function askSell() {
+    const g = S.bench;
+    if (busy || !g || !g.lv) return;
+    const m = document.createElement('div');
+    m.className = 'gk-modal';
+    m.innerHTML = `<div class="in askbox"><p class="q">파시겠습니까?</p>
+        <p class="g1"><span class="lvb">+${g.lv}</span>${esc(gname(g))}</p>
+        <p class="pr"><i class="fas fa-coins"></i> ${gf(SELL[g.lv])}</p>
+        <div class="yn"><button type="button" class="no">아니오</button><button type="button" class="yes">예, 팔게요</button></div></div>`;
+    document.body.appendChild(m);
+    const close = () => m.remove();
+    m.querySelector('.no').addEventListener('click', close);
+    m.addEventListener('click', e => { if (e.target === m) close(); });
+    m.querySelector('.yes').addEventListener('click', () => { close(); sellBench(); });
+    m.querySelector('.yes').focus();
+    const esckey = e => { if (e.key === 'Escape') { close(); removeEventListener('keydown', esckey); } };
+    addEventListener('keydown', esckey);
+}
 async function sellBench() {
     const g = S.bench;
     if (busy || !g || !g.lv) return;
@@ -2577,13 +2606,7 @@ $('#app').addEventListener('click', e => {
     else if (a === 'adgold') goldAd();
     else if (a === 'daily') $('#rDaily').click();
     // 2026-11-13 사용자: 팔기는 한 번 더 눌러야 팔린다. 3초 동안 안 누르면 원래대로
-    else if (a === 'sell') {
-        if (b.dataset.sure === '1') { sellBench(); return; }
-        b.dataset.sure = '1'; b.classList.add('sure');
-        b.innerHTML = `<i class="fas fa-coins"></i>진짜 <b>${gf(SELL[S.bench.lv])}</b>에?`;
-        fitG(b.querySelector('b'), SELL[S.bench.lv]);
-        setTimeout(() => { if (b.isConnected && b.dataset.sure === '1' && !busy) renderSact(); }, 3000);
-    }
+    else if (a === 'sell') askSell();
     else if (a === 'hang') hangBench();
     else if (a === 'brag') brag(S.bench);
     // 2026-11-13 사용자: 카톡 미리보기에 +20 레스폴·스트랫 썸네일(images/play/gk/share/game.jpg) — 카톡이 예전 guitar.html 미리보기를 기억하고 있을 수 있어서 새 공유 페이지 주소로
