@@ -57,7 +57,7 @@
         gen.generate();
         const look = gen.tickLookup, mb = score.masterBars;
         const start = i => (i < mb.length ? look.getMasterBarStart(mb[i]) : null);
-        return { midi, start, bars: mb.length };
+        return { midi, start, bars: mb.length, tempo: score.tempo || 120 };
     }
 
     // 이 악보에 소리가 있는지 (목록만 보고)
@@ -99,7 +99,9 @@
         if (ctx && ctx.state === 'suspended') try { await ctx.resume(); } catch (e) {}
         s.loadMidiFile(d.midi);
         const st = d.start(b0), en = d.start(b1);
-        s.playbackRange = { startTick: st, endTick: en == null ? 1e9 : en };
+        // 도돌이로 한 마디를 여러 번 도는 줄도 있어서(예: 인트로 ×8) 길어도 15초까지만
+        const cap = st + Math.round(15 * d.tempo / 60 * 960);
+        s.playbackRange = { startTick: st, endTick: Math.min(en == null ? 1e9 : en, cap) };
         s.tickPosition = st;
         cur = { id, onEnd };
         s.play();

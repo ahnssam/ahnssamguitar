@@ -488,19 +488,21 @@
     /* 배틀 창 */
     .gk-modal { position: fixed; inset: 0; z-index: 90; background: rgba(10, 18, 15, 0.84); display: flex; align-items: center; justify-content: center; padding: 16px; animation: fade .2s; }
     .gk-modal .in { background: #fff; border-radius: 18px; width: min(420px, 100%); padding: 16px; text-align: center; max-height: 94vh; overflow: auto; }
-    /* 팔기 확인 미니 팝업 (2026-11-13 사용자: '파시겠습니까? 예 아니오') */
-    .askbox { max-width: 300px; animation: askIn .22s cubic-bezier(.3, 1.4, .5, 1); }
+    /* 팔기 확인 미니 팝업 (2026-11-13 사용자: '파시겠습니까? 예 아니오' → 같은 날 '페이지 전체 말고 작업대 박스 안에서만')
+       무대(.stage) 안에만 깔린다. 가운데는 그림 자리 기준(아래 검은 칸 --t 만큼 빼고) */
+    .askwrap { position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; padding: 12px 12px calc(12px + var(--t)); background: rgba(8, 6, 4, 0.72); animation: fade .18s; }
+    .askbox { width: min(290px, 94%); padding: 16px 14px 14px; border-radius: 16px; background: rgba(18, 13, 9, 0.95); border: 1.5px solid rgba(255, 215, 106, 0.5); color: #fff; text-align: center; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55); animation: askIn .22s cubic-bezier(.3, 1.4, .5, 1); }
     @keyframes askIn { from { opacity: 0; transform: scale(.82); } }
-    .askbox .q { font-size: 18px; font-weight: 900; color: var(--ink); }
-    .askbox .g1 { margin-top: 9px; font-size: 14px; font-weight: 800; color: #444; line-height: 1.4; word-break: keep-all; }
-    .askbox .g1 .lvb { display: inline-block; margin-right: 6px; padding: 1px 9px; border-radius: 99px; background: #f5b31e; color: #3a2400; font-size: 13px; font-weight: 900; }
-    .askbox .pr { margin-top: 6px; font-size: 21px; font-weight: 900; color: #b8913f; }
-    .askbox .yn { display: grid; grid-template-columns: 1fr 1.3fr; gap: 8px; margin-top: 16px; }
-    .askbox .yn button { padding: 12px 8px; border-radius: 12px; font-size: 15px; font-weight: 800; }
-    .askbox .no { background: #eef1ef; color: #555; }
-    .askbox .yes { background: var(--green-deep); color: #fff; box-shadow: 0 4px 0 #1d4f36; }
+    .askbox .q { font-size: 17px; font-weight: 900; color: #fff; }
+    .askbox .g1 { margin-top: 8px; font-size: 13.5px; font-weight: 800; color: #e8ddd0; line-height: 1.4; word-break: keep-all; }
+    .askbox .g1 .lvb { display: inline-block; margin-right: 5px; padding: 1px 8px; border-radius: 99px; background: #f5b31e; color: #3a2400; font-size: 12.5px; font-weight: 900; }
+    .askbox .pr { margin-top: 5px; font-size: 20px; font-weight: 900; color: #ffd76a; }
+    .askbox .yn { display: grid; grid-template-columns: 1fr 1.3fr; gap: 8px; margin-top: 14px; }
+    .askbox .yn button { padding: 11px 8px; border-radius: 12px; font-size: 14.5px; font-weight: 800; }
+    .askbox .no { background: rgba(255, 255, 255, 0.12); border: 1.5px solid rgba(255, 255, 255, 0.22); color: #cbbfb2; }
+    .askbox .yes { background: linear-gradient(#3fb877, #23935a); color: #fff; box-shadow: 0 4px 0 #16683e; }
     .askbox .yn button:active { transform: translateY(2px); }
-    @media (prefers-reduced-motion: reduce) { .askbox { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .askwrap, .askbox { animation: none; } }
     /* 광고 보고 골드 (2026-11-13 사용자) — 구글이 광고를 준비했을 때만 뜬다 */
     .adbox { max-width: 320px; }
     .adbox .ic { display: grid; place-items: center; width: 54px; height: 54px; margin: 2px auto 8px; border-radius: 50%; background: #fff3df; color: #e0a63c; font-size: 24px; }
@@ -1754,6 +1756,7 @@ function renderDex() {
 
 function setTab(t) {
     tab = t; dexClose();
+    document.querySelectorAll('.askwrap').forEach(e => e.remove());   // 팔기 확인 창은 탭을 옮기면 닫는다
     // 2026-11-13 사용자: 메뉴는 작업대에서는 확률(#bench) 아래, 다른 탭에서는 골드 줄 바로 아래(그 탭 내용 위)
     const nav = $('#tabs'), low = t === 'bench';
     if (low) $('#bench').after(nav); else $('.gk-bar').after(nav);
@@ -2038,16 +2041,17 @@ async function findGuitar(first) {
     if (first) setTimeout(() => talk(LINES.bought), 1000);
 }
 // 팔기 전에 작은 창으로 한 번 더 묻는다 (2026-11-13 사용자: '팔기 버튼 누르면 중간에 미니 팝업, 파시겠습니까? 예 아니오')
+//   같은 날 사용자: '페이지 전체 말고 이 스킨·작업대 박스 안에서만' → 무대(#stage) 안에만 깔린다
 function askSell() {
     const g = S.bench;
     if (busy || !g || !g.lv) return;
     const m = document.createElement('div');
-    m.className = 'gk-modal';
-    m.innerHTML = `<div class="in askbox"><p class="q">파시겠습니까?</p>
+    m.className = 'askwrap';
+    m.innerHTML = `<div class="askbox"><p class="q">파시겠습니까?</p>
         <p class="g1"><span class="lvb">+${g.lv}</span>${esc(gname(g))}</p>
         <p class="pr"><i class="fas fa-coins"></i> ${gf(SELL[g.lv])}</p>
         <div class="yn"><button type="button" class="no">아니오</button><button type="button" class="yes">예, 팔게요</button></div></div>`;
-    document.body.appendChild(m);
+    $('#stage').appendChild(m);
     const close = () => m.remove();
     m.querySelector('.no').addEventListener('click', close);
     m.addEventListener('click', e => { if (e.target === m) close(); });
