@@ -148,7 +148,7 @@
     /* +10부터 기타 뒤 아우라 (2026-11-12 사용자: 그 기타 색상의 오로라 같은 게 흔들흔들). 색은 그림에서 가장 많이 쓰인 선명한 색(--ah 색상각) */
     /* 2026-11-12 사용자: 아우라가 너무 크다, 기타 주변에서 더 빛나게 → 커튼은 기타 폭만큼 작게, 기타 테두리가 그 색으로 빛난다(.stage.glow #cv) */
     .stage { --ah: 45; }
-    .shopcat { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin: 4px 0 12px; background: #e6ede9; padding: 3px; border-radius: 12px; }
+    .shopcat { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 4px 0 12px; background: #e6ede9; padding: 3px; border-radius: 12px; }
     .shopcat button { padding: 8px 0; border-radius: 9px; font-weight: 800; font-size: 13px; color: #5a6b62; display: flex; align-items: center; justify-content: center; gap: 5px; }
     .shopcat button.on { background: #fff; color: var(--green-deep); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
     @media (max-width: 400px) { .shopcat button i { display: none; } .shopcat button { font-size: 12.5px; } }
@@ -450,7 +450,9 @@
     .rkr.gap { display: block; text-align: center; color: var(--sub); padding: 0; }
     /* 랭킹 탭 (2026-11-13 사용자: 배틀 안 랭킹을 메뉴 맨 오른쪽으로 — 최고 무기 · 모은 돈) */
     .rkseg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin: 0 0 10px; border-radius: 14px; background: #e6ede9; }
+    .rkseg.three { grid-template-columns: 1fr 1fr 1fr; }   /* 최고 무기 · 모은 돈 · 내 기록 (2026-11-13 사용자) */
     .rkseg button { padding: 9px 0; border-radius: 10px; font-weight: 800; font-size: 13.5px; color: #5a6b62; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    @media (max-width: 400px) { .rkseg.three button { font-size: 12.5px; gap: 4px; } .rkseg.three button i { display: none; } }
     .rkseg button.on { background: #fff; color: var(--green-deep); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
     .mycard .coin { width: 56px; height: 56px; flex: none; border-radius: 14px; background: #fff3cf; color: #c08a00; display: flex; align-items: center; justify-content: center; font-size: 26px; }
     .mycard .mt b.gold { color: #a87000; }
@@ -2180,7 +2182,7 @@ function renderRoom(enter) {
         const isRep = rp && g.id === rp.id;
         return `${lit}<canvas class="gkc wg live ${g.id === selId ? 'sel' : ''}" width="448" height="672" data-lv="${g.lv}" data-f="${g.f || 'strat'}" style="left:${x}%;top:${top}%;height:${hh}%;--d:${Math.abs(i - MID) * 0.1}s"></canvas>
             <button type="button" class="wsb" data-a="slot" data-id="${g.id}" style="left:${x}%;${hit}" aria-label="${esc(full(g))}"></button>
-            <span class="wp" style="left:${x}%;top:${W.plate}%">+${g.lv}</span>${isRep ? `<span class="wrep" style="left:${x}%;top:${Math.min(96, W.plate + 7.5)}%">대표</span>` : ''}`;
+            <span class="wp" style="left:${x}%;top:${W.plate}%">+${g.lv}</span>${isRep ? `<span class="wrep" style="left:${x}%;top:${Math.max(3, W.hook - 8 * u - 4.5)}%">대표</span>` : ''}`;
     }).join('');
     // 바닥 물건(앰프·멀티): 걸이와 상관없이 오른쪽 끝부터
     // 빈 발판: 앰프는 오른쪽, 멀티는 왼쪽. 물건 그림 아래 끝(바닥)에 맞춘 점선 상자
@@ -2192,7 +2194,7 @@ function renderRoom(enter) {
         const fl = floor[g.id], isRep = rp && g.id === rp.id;
         return `<canvas class="gkc wg live ${g.id === selId ? 'sel' : ''}" width="448" height="672" data-lv="${g.lv}" data-f="${g.f}" style="left:${fl.x}%;top:${fl.t2}%;height:${fl.h2}%;--d:${0.2 + k * 0.1}s"></canvas>
             <button type="button" class="wsb" data-a="slot" data-id="${g.id}" style="left:${fl.x}%;width:${fl.iw}%;top:${fl.bottom - fl.h2 * 0.4}%;height:${fl.h2 * 0.4}%" aria-label="${esc(full(g))}"></button>
-            <span class="wp floor" style="left:${fl.x}%;top:${fl.bottom - 3.5}%">+${g.lv}</span>${isRep ? `<span class="wrep" style="left:${fl.x}%;top:${fl.bottom - fl.h2 * 0.42}%">대표</span>` : ''}`;
+            <span class="wp floor" style="left:${fl.x}%;top:${fl.bottom - 3.5}%">+${g.lv}</span>${isRep ? `<span class="wrep" style="left:${fl.x}%;top:${Math.max(3, fl.t2 - 3)}%">대표</span>` : ''}`;
     }).join('');
     justOpened = -1;
     // 목록은 장비별로 (2026-11-12 사용자): 기타(걸이) · 앰프 · 멀티이펙터(바닥). 악기마다 공유 단추, 작업대로 가는 단추는 '다시 작업대로'
@@ -2379,7 +2381,7 @@ function renderBattle() {
 //   운영 계정(시험)·시험 브라우저는 안 올라간다
 const topGuitar = () => [S.bench, ...S.wall, ...S.store].filter(g => g && !isSq(g)).sort((a, b) => b.lv - a.lv)[0] || null;
 const amHidden = () => !!((NET.me && NET.me.hidden) || (mem.get('gk.sync2', {}) || {}).hidden);
-let rkKind = mem.get('gk.rkKind', 'top') === 'gold' ? 'gold' : 'top';
+let rkKind = ['gold', 'rec'].includes(mem.get('gk.rkKind', 'top')) ? mem.get('gk.rkKind', 'top') : 'top';
 const RK = { top: null, gold: null }, rkAt = { top: 0, gold: 0 };
 let rkBusy = false, rkErr = false;
 async function loadRank(kind, force) {
@@ -2394,13 +2396,26 @@ async function loadRank(kind, force) {
 function renderRank() {
     updBar();
     const el = $('#tab-rank'), kind = rkKind, rows = RK[kind], tg = topGuitar();
-    if ((!rkAt[kind] || Date.now() - rkAt[kind] > 60e3) && !rkBusy) loadRank(kind).then(() => { if (tab === 'rank') renderRank(); });
+    if (kind !== 'rec' && (!rkAt[kind] || Date.now() - rkAt[kind] > 60e3) && !rkBusy) loadRank(kind).then(() => { if (tab === 'rank') renderRank(); });
     const mine = rows ? rows.find(r => r.me) : null, total = rows && rows.length ? rows[0].players : 0;
     const status = NORANK ? '시험 브라우저 · 랭킹에 안 올라가요' : amHidden() ? '운영 계정(시험) · 랭킹에 안 보여요'
         : rkErr ? '랭킹에 연결이 안 돼요' : !rows ? '불러오는 중…' : mine ? `${mine.pos}위 / ${total}명`
         : !rep() ? '대표 기타가 생기면 올라가요' : kind === 'top' && !tg ? '기타가 생기면 올라가요' : '';
-    let h = `<div class="rkseg"><button type="button" data-a="rkkind" data-k="top" class="${kind === 'top' ? 'on' : ''}"><i class="fas fa-guitar"></i>최고 무기</button>
-        <button type="button" data-a="rkkind" data-k="gold" class="${kind === 'gold' ? 'on' : ''}"><i class="fas fa-coins"></i>모은 돈</button></div>`;
+    let h = `<div class="rkseg three"><button type="button" data-a="rkkind" data-k="top" class="${kind === 'top' ? 'on' : ''}"><i class="fas fa-guitar"></i>최고 무기</button>
+        <button type="button" data-a="rkkind" data-k="gold" class="${kind === 'gold' ? 'on' : ''}"><i class="fas fa-coins"></i>모은 돈</button>
+        <button type="button" data-a="rkkind" data-k="rec" class="${kind === 'rec' ? 'on' : ''}"><i class="fas fa-chart-simple"></i>내 기록</button></div>`;
+    // '내 기록' — 상점에 있던 기록 칸을 여기로 옮겼다 (2026-11-13 사용자: '상점 안에 있는 기록은 랭킹 안으로', '최고 무기 모은 돈 그리고 내 기록으로')
+    if (kind === 'rec') {
+        const st = S.st;
+        h += `<div class="stats">
+            <div><b>+${st.best}</b><small>최고 단계</small></div><div><b>${st.tries.toLocaleString()}</b><small>강화</small></div><div><b>${st.boom.toLocaleString()}</b><small>부순 기타</small></div>
+            <div><b>${st.keep.toLocaleString()}</b><small>끊은 줄</small></div><div><b>${st.saved.toLocaleString()}</b><small>케이스로 막음</small></div><div><b>${gf(st.earned)}</b><small>판 돈 (${st.sold}대)</small></div></div>
+            <p class="note2">진행은 이 브라우저에 저장되고, 로그인하면 계정에도 저장돼서 다른 기기에서도 이어서 해요(맨 위 로그인).</p>
+            <button type="button" class="reset" data-a="reset">기록 지우고 처음부터</button>`;
+        el.innerHTML = h;
+        paintAll(el);
+        return;
+    }
     h += kind === 'top'
         ? `<div class="card mycard">${tg ? gc(tg.lv, '', 2, tg.f) : ''}<div class="mt"><small>내가 가진 최고 무기</small><b>${tg ? esc(full(tg)) : '아직 기타가 없어요'}</b>${status ? `<div class="rkline">${status}</div>` : ''}</div></div>`
         : `<div class="card mycard"><span class="coin"><i class="fas fa-coins"></i></span><div class="mt"><small>지금까지 모은 돈</small><b class="gold">${gf(+S.st.made || 0)}</b>
@@ -2556,10 +2571,10 @@ async function fight(id) {
 // ---------- 상점 ----------
 // 상점: 카테고리 단추를 누르면 그 칸만 (2026-11-12 사용자: 아래로 쭉 늘어선 목록 말고)
 let shopCat = 'tuner';
-const SHOP_CATS = [['tuner', 'fa-gauge-high', '튜너'], ['case', 'fa-briefcase', '케이스'], ['bench', 'fa-screwdriver-wrench', '작업대'], ['skin', 'fa-image', '벽 스킨'], ['arena', 'fa-shield-halved', '싸움터'], ['rec', 'fa-chart-simple', '기록']];
+const SHOP_CATS = [['tuner', 'fa-gauge-high', '튜너'], ['case', 'fa-briefcase', '케이스'], ['bench', 'fa-screwdriver-wrench', '작업대'], ['skin', 'fa-image', '벽 스킨'], ['arena', 'fa-shield-halved', '싸움터']];   // '기록'은 2026-11-13 랭킹 탭 '내 기록'으로 옮겼다 (사용자)
 function renderShop() {
     updBar();
-    const el = $('#tab-shop'), st = S.st;
+    const el = $('#tab-shop');
     let h = `<div class="shopcat">${SHOP_CATS.map(([k, ic, t]) => `<button type="button" data-a="shopcat" data-c="${k}" class="${shopCat === k ? 'on' : ''}"><i class="fas ${ic}"></i>${t}</button>`).join('')}</div>`;
     if (shopCat === 'tuner') h += TUNERS.slice(1).map((T, i) => {
         const n = i + 1, own = S.tuner >= n;
@@ -2584,11 +2599,6 @@ function renderShop() {
         return `<div class="item"><span class="ic skin" style="background-image:url(../images/play/gk/${W.src})"></span><div class="it"><b>${W.name}${cut ? ` · 파괴 −${cut}%p` : ''}</b><small>${W.desc}</small></div>
             ${use ? '<span class="own">쓰는 중</span>' : own ? `<button type="button" data-a="skin" data-id="${W.id}">바꾸기</button>` : `<button type="button" data-a="skin" data-id="${W.id}" ${S.gold >= W.price ? '' : 'disabled'}>${gf(W.price)}</button>`}</div>`;
     }).join('') + `<p class="note2">좋은 벽에 모셔 두면 강화할 때 파괴가 아주 조금 줄어요. 지금 쓰는 벽 −${wallCut()}%p · 걸이는 컬렉션에서 잠긴 걸이를 눌러 열어요.</p>`;
-    if (shopCat === 'rec') h += `<div class="stats">
-        <div><b>+${st.best}</b><small>최고 단계</small></div><div><b>${st.tries.toLocaleString()}</b><small>강화</small></div><div><b>${st.boom.toLocaleString()}</b><small>부순 기타</small></div>
-        <div><b>${st.keep.toLocaleString()}</b><small>끊은 줄</small></div><div><b>${st.saved.toLocaleString()}</b><small>케이스로 막음</small></div><div><b>${gf(st.earned)}</b><small>판 돈 (${st.sold}대)</small></div></div>
-        <p class="note2">진행은 이 브라우저에 저장되고, 로그인하면 계정에도 저장돼서 다른 기기에서도 이어서 해요(맨 위 로그인). 놀이터 피크와 골드는 따로예요.</p>
-        <button type="button" class="reset" data-a="reset">기록 지우고 처음부터</button>`;
     el.innerHTML = h;
 }
 
@@ -2653,8 +2663,8 @@ $('#app').addEventListener('click', e => {
     } else if (a === 'fight') fight(id);
     else if (a === 'findno') findNo(($('#vsno') || {}).value);
     else if (a === 'copyno') copyNo();
-    else if (a === 'rkkind') { rkKind = b.dataset.k === 'gold' ? 'gold' : 'top'; mem.set('gk.rkKind', rkKind); renderRank(); }
-    else if (a === 'rkload') { if (!rkBusy) { RK[rkKind] = null; rkAt[rkKind] = 0; renderRank(); } }
+    else if (a === 'rkkind') { rkKind = ['gold', 'rec'].includes(b.dataset.k) ? b.dataset.k : 'top'; mem.set('gk.rkKind', rkKind); renderRank(); }
+    else if (a === 'rkload') { if (!rkBusy && rkKind !== 'rec') { RK[rkKind] = null; rkAt[rkKind] = 0; renderRank(); } }
     else if (a === 'rknick') {
         const ni = $('#rknick'); if (!ni || !setNick(ni.value)) return;
         toast('이름을 바꿨어요'); rkAt.top = rkAt.gold = 0;
