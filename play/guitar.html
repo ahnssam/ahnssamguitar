@@ -106,6 +106,11 @@
     .dex .cell.no span { background: none; color: #9aa8a1; }
     .dex .cell.hi { box-shadow: inset 0 0 0 2px #f5c542; }
     .dex .note2 { margin-top: 4px; }
+    /* 운영 계정 도감 (2026-11-13 사용자: 헤드머신 숫자가 안 맞는 그림을 직접 고치려고 — 168칸 모두, 자르지 않은 전체 그림으로) */
+    .dex .dx-admin { display: flex; align-items: center; gap: 8px; margin: -4px 2px 12px; padding: 8px 10px; border-radius: 10px; background: #fff3cf; font-size: 12.5px; font-weight: 800; color: #7a5200; }
+    .dex .dx-admin button { margin-left: auto; padding: 5px 11px; border-radius: 99px; border: 1.5px solid #e0b64a; background: #fff; font-size: 12px; font-weight: 800; color: #7a5200; }
+    .dex.whole .cell img, .dex.whole .cell.sq img { width: 100%; left: 0; top: 0; }
+    .dex.whole .cell.mine::after { content: ''; position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: #72c492; }
 
     /* 작업대 무대 */
     /* 2026-11-13 사용자: 어느 단추도 기타를 가리면 안 됨 + "작업대 아래에 검은 공간이 있어야지 위로 있으면 안 됨, 만나는 면은 얇게 페더"
@@ -456,6 +461,9 @@
     .dexpop.sq .art img { width: 120%; left: -10%; top: 2%; }
     .dexpop.hi .art { box-shadow: inset 0 0 0 2px #f5c542; }
     .dexpop .nm { margin-top: 7px; font-size: 12.5px; font-weight: 800; line-height: 1.35; word-break: keep-all; }
+    .dexpop.whole .art img, .dexpop.whole.sq .art img { width: 100%; left: 0; top: 0; }
+    .dexpop .fn { margin-top: 5px; font-size: 11.5px; color: #c9d8d1; font-family: ui-monospace, Menlo, monospace; }
+    .dexpop .fn a { color: #ffd76a; font-family: inherit; text-decoration: underline; }
     .dexpop .nm .lvb { display: inline-block; margin-right: 5px; padding: 0 7px; border-radius: 99px; background: #ffd23f; color: #3a2400; font-size: 11.5px; font-weight: 900; }
     @media (prefers-reduced-motion: reduce) { .dexpop { animation: none; } }
     /* 배틀 싸움터 (2026-11-12 사용자: 넥끼리 칼싸움 + 어두운 싸움터 배경, 상점에서 스킨) */
@@ -1583,11 +1591,13 @@ function dexClose() { if (dexPop) { dexPop.remove(); dexPop = null; } }
 function dexZoom(f, lv, cell) {
     dexClose();
     const F = FAMS[f]; if (!F || !cell) return;
-    const r = cell.getBoundingClientRect(), artW = Math.round(r.width * 2.1), w = Math.max(artW + 14, 150);
+    const whole = dexWhole();   // 운영 계정 전체 그림: 자르지 않고 크게 + 파일 이름 + 원본 열기
+    const r = cell.getBoundingClientRect(), artW = whole ? Math.min(innerWidth - 40, 300) : Math.round(r.width * 2.1), w = Math.max(artW + 14, 150);
     const el = document.createElement('div');
-    el.className = `dexpop ${F.sq ? 'sq' : ''} ${lv >= 10 ? 'hi' : ''}`;
+    el.className = `dexpop ${F.sq ? 'sq' : ''} ${lv >= 10 ? 'hi' : ''} ${whole ? 'whole' : ''}`;
     el.style.width = w + 'px';
-    el.innerHTML = `<div class="art" style="width:${artW}px"><img src="${artSrc(f, lv)}" alt=""></div><p class="nm"><span class="lvb">+${lv}</span>${esc(F.names[lv])}</p>`;
+    el.innerHTML = `<div class="art" style="width:${artW}px"><img src="${artSrc(f, lv)}" alt=""></div><p class="nm"><span class="lvb">+${lv}</span>${esc(F.names[lv])}</p>`
+        + (whole ? `<p class="fn">${artFile(f, lv)} · <a href="${artSrc(f, lv)}" target="_blank" rel="noopener">원본 열기</a></p>` : '');
     document.body.appendChild(el);
     const h = el.offsetHeight;
     let cx = r.left + r.width / 2, cy = r.top + r.height / 2;
@@ -1601,17 +1611,36 @@ addEventListener('pointerdown', e => { if (dexPop && !e.target.closest('.dexpop'
 addEventListener('scroll', dexClose, { passive: true });
 addEventListener('resize', dexClose);
 addEventListener('keydown', e => { if (e.key === 'Escape') dexClose(); });
+// 운영 계정 도감 (2026-11-13 사용자: "헤드머신 숫자 안 맞는 거 내가 고칠 거야 — 관리자 계정으로 들어가면 도감에 기타 그림 전체를 볼 수 있게")
+//   운영 계정으로 로그인해 있으면 168칸을 모두 열고, 칸·크게 보기 모두 자르지 않은 전체 그림(헤드까지)으로 보여 준다.
+//   크게 보기에 파일 이름(strat_07.webp 등)과 '원본 열기'. 내 도감 기록(S.dex)은 그대로 두고, 위 단추로 '내 도감만 보기'와 오간다.
+//   운영 계정인지는 서버 is_site_admin()에 묻는다(로그인한 계정이 바뀌면 다시 물음)
+var ADMIN = false, adminUid = null, dexAll = mem.get('gk.dexAll', true) !== false;   // var: setTab 이 이 줄보다 먼저 불려도 괜찮게
+function checkAdmin() {
+    const uid = acctId();
+    if (uid === adminUid) return;
+    adminUid = uid; ADMIN = false;
+    if (!uid) return;
+    PLAY.rpc('is_site_admin', {}, { auth: true })
+        .then(v => { if (adminUid === uid) { ADMIN = v === true; if (ADMIN && tab === 'dex') renderDex(); } })
+        .catch(() => {});
+}
+function dexWhole() { return !!(ADMIN && dexAll); }
+function artFile(f, lv) { const F = FAMS[f] || FAMS.strat, n = F.extra && F.extra.includes(lv) ? lv : Math.min(lv, F.artMax); return `${F.art}_${String(n).padStart(2, '0')}.webp`; }
 function renderDex() {
-    S.dexNew = false; save(); dexDot();
+    S.dexNew = false; save(); dexDot(); checkAdmin();
+    const whole = dexWhole();
     const N = MAX + 1, cnt = f => Array.from({ length: N }, (_, i) => dexHas(f, i)).filter(Boolean).length;
     const total = DEX_FAMS.reduce((n, f) => n + cnt(f), 0), all = DEX_FAMS.length * N;
-    const cur = S.bench ? S.bench.id : '';
-    $('#tab-dex').innerHTML = `<div class="dx-top"><b>기타 도감 ${total} / ${all}</b><small>찾거나 강화해서 닿은 단계가 모여요</small></div>
+    const el = $('#tab-dex');
+    el.classList.toggle('whole', whole);
+    el.innerHTML = `<div class="dx-top"><b>기타 도감 ${total} / ${all}</b><small>찾거나 강화해서 닿은 단계가 모여요</small></div>
         <div class="dx-bar"><i style="width:${(total / all * 100).toFixed(1)}%"></i></div>
+        ${ADMIN ? `<div class="dx-admin"><i class="fas fa-user-gear"></i>${whole ? '운영 계정 · 전체 그림 (초록 점 = 내가 닿은 칸)' : '운영 계정 · 내 도감'}<button type="button" data-a="dexall">${whole ? '내 도감만 보기' : '전체 그림 보기'}</button></div>` : ''}
         ${DEX_FAMS.map(f => { const F = FAMS[f], c = cnt(f);
             return `<div class="fam"><h4>${esc(F.name)}<small class="${c === N ? 'full' : ''}">${c === N ? '완성! ' : ''}${c} / ${N}</small></h4><div class="grid">${
-                Array.from({ length: N }, (_, i) => dexHas(f, i)
-                    ? `<button type="button" class="cell ${i >= 10 ? 'hi' : ''} ${F.sq ? 'sq' : ''}" data-a="dex" data-f="${f}" data-lv="${i}" title="+${i} ${esc(F.names[i])}"><img src="${artSrc(f, i)}" alt="" loading="lazy"><span>+${i}</span></button>`
+                Array.from({ length: N }, (_, i) => whole || dexHas(f, i)
+                    ? `<button type="button" class="cell ${i >= 10 ? 'hi' : ''} ${F.sq ? 'sq' : ''} ${whole && dexHas(f, i) ? 'mine' : ''}" data-a="dex" data-f="${f}" data-lv="${i}" title="+${i} ${esc(F.names[i])}${whole ? ' · ' + artFile(f, i) : ''}"><img src="${artSrc(f, i)}" alt="" loading="lazy"><span>+${i}</span></button>`
                     : `<div class="cell no" title="아직 못 닿은 단계"><span>+${i}</span></div>`).join('')}</div></div>`; }).join('')}
         <p class="note2">칸을 누르면 그 단계 이름이 보여요. 부서지거나 팔아도 한 번 닿은 단계는 도감에 남아요.</p>`;
 }
@@ -2353,6 +2382,7 @@ $('#app').addEventListener('click', e => {
     else if (a === 'shopcat') { shopCat = b.dataset.c; renderShop(); }
     else if (a === 'rerank') { const bt = btDay(); bt.rr = (bt.rr | 0) + 1; save(); rerankAnim = true; sfx('drop'); renderBattle(); toast('새 연습 상대가 왔어요'); }
     else if (a === 'gocase') { talkClear(); shopCat = 'case'; setTab('shop'); }   // 위 줄 조각 → 하드케이스 칩
+    else if (a === 'dexall') { dexAll = !dexAll; mem.set('gk.dexAll', dexAll); dexClose(); renderDex(); }
     else if (a === 'dex') dexZoom(b.dataset.f, +b.dataset.lv, b);   // 2026-11-13 사용자: 도감에서 모은 기타를 누르면 그 자리 근처에 두 배쯤
     else if (a === 'new') findGuitar(false);
     else if (a === 'newp') findGuitar(false, true);
