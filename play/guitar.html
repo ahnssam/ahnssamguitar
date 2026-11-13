@@ -59,23 +59,22 @@
     .gk-bar > * { flex: none; }
     .gk-bar #rDaily { margin-left: auto; }   /* 출석·스피커·놀이터는 오른쪽 끝으로 */
     .gk-bar #rGold { flex: 0 1 auto; min-width: 0; overflow: hidden; } .gk-bar #rGold span { overflow: hidden; text-overflow: ellipsis; }   /* 아주 좁은 폰 + 아주 큰 돈이어도 줄이 안 넘치게 */
-    .gk-bar .pk-slot { display: none; }   /* play.js 가 피크 단추를 이 바로 뒤에 넣는다 */
+    /* 골드 받기(보상형 광고) — 골드가 모자랄 때만 보인다 (2026-11-13 사용자: 피크 자리에) */
+    .gk-bar .res.adg { border-color: #f6d29a; background: #fff8ec; color: #a85a00; animation: adgIn .3s; }
+    .gk-bar .res.adg i { color: #e0a63c; }
+    @keyframes adgIn { from { opacity: 0; transform: scale(.8); } }
     .gk-bar .res.daily { font-size: 13.5px; }
     .gk-bar .res.daily i { font-size: 14px; }
     .gk-bar .res.daily.got i { display: none; }
-    .gk-bar .pkb { display: inline-flex; align-items: center; gap: 5px; height: 34px; padding: 0 11px; border-radius: 999px; border: 1.5px solid #f6d29a; background: #fff8ec; font-size: 13px; font-weight: 700; color: #a85a00; }
-    .gk-bar .pkb b { font-weight: 900; font-size: 14px; }
-    .gk-bar .pkb .pki { font-size: 16px; }
-    .gk-bar .pkb.bump { animation: pkBump .7s cubic-bezier(.3, 1.6, .5, 1); }
     .gk-bar .lnk { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 999px; border: 1.5px solid var(--line); background: #fff; font-size: 13px; font-weight: 700; color: #555; }
     .gk-bar .lnk:hover { border-color: var(--green-mid); color: var(--green-deep); }
-    @media (max-width: 560px) { .gk-bar .pkb span, .gk-bar .lnk span { display: none; } .gk-bar .pkb { padding: 0 9px; } .gk-bar .lnk { width: 34px; padding: 0; } }
+    @media (max-width: 560px) { .gk-bar .lnk span { display: none; } .gk-bar .lnk { width: 34px; padding: 0; } }
     @media (max-width: 380px) {   /* 좁은 폰: 한 줄에 다 들어가게 촘촘히 (골드가 크면 fitG 가 만·억으로 줄임) */
         .gk-bar { gap: 4px; }
         .gk-bar .res { padding: 0 7px; font-size: 12.5px; gap: 3px; }
-        .gk-bar .pkb { padding: 0 6px; gap: 3px; }
         .gk-bar .iconbtn, .gk-bar .lnk { width: 30px; height: 30px; }
-        .gk-bar .res, .gk-bar .pkb { height: 30px; }
+        .gk-bar .res { height: 30px; }
+        .gk-bar .res.adg span { display: none; }   /* 아주 좁은 폰에선 동전 아이콘만 */
     }
     .res.gold.bump { animation: pkBump .6s cubic-bezier(.3, 1.6, .5, 1); }
     .gk-bar .sp { flex: 1; }
@@ -172,8 +171,11 @@
     @keyframes spotSweep { 0% { transform: rotate(-32deg); } 100% { transform: rotate(32deg); } }
     @keyframes spotFloor { 0% { opacity: .55; transform: translateX(-50%) scaleX(.9); } 100% { opacity: 1; transform: translateX(-50%) scaleX(1.1); } }
     @media (prefers-reduced-motion: reduce) { .stage .spots i, .stage .spots::after { animation: none; } }
-    .stage.glow #cv { animation: cvGlow 2.6s ease-in-out infinite; }
-    .stage.glow.g20 #cv { animation-name: cvGlow20; }
+    /* 2026-11-13 사용자: 가운데 악기가 아주 천천히, 작은 폭으로 위아래로 둥실— 강화 중에는 그쪽 움직임이 이긴다(WAAPI) */
+    #cv { animation: cvBob 5.2s ease-in-out infinite; }
+    @keyframes cvBob { 0%, 100% { transform: translate(-50%, -50%); } 50% { transform: translate(-50%, calc(-50% - 7px)); } }
+    .stage.glow #cv { animation: cvGlow 2.6s ease-in-out infinite, cvBob 5.2s ease-in-out infinite; }
+    .stage.glow.g20 #cv { animation-name: cvGlow20, cvBob; }
     @keyframes cvGlow { 0%, 100% { filter: drop-shadow(0 0 3px hsla(var(--ah), 95%, 65%, 0.95)) drop-shadow(0 0 10px hsla(var(--ah), 95%, 60%, 0.6)); }
         50% { filter: drop-shadow(0 0 6px hsla(var(--ah), 100%, 72%, 1)) drop-shadow(0 0 18px hsla(var(--ah), 95%, 60%, 0.85)); } }
     @keyframes cvGlow20 { 0%, 100% { filter: drop-shadow(0 0 4px hsla(var(--ah), 100%, 72%, 1)) drop-shadow(0 0 14px hsla(var(--ah), 100%, 62%, 0.8)) drop-shadow(0 0 26px hsla(calc(var(--ah) + 50), 100%, 65%, 0.5)); }
@@ -187,7 +189,7 @@
     .stage .aura i:nth-child(4) { left: 65%; animation-duration: 4.9s; animation-delay: -0.6s; }
     .stage .aura.l20 i { background: linear-gradient(to top, hsla(var(--ah), 100%, 62%, 0) 0%, hsla(var(--ah), 100%, 64%, 0.95) 38%, hsla(calc(var(--ah) + 60), 100%, 72%, 0.7) 68%, hsla(calc(var(--ah) + 120), 100%, 80%, 0) 100%); }
     @keyframes auSway { 0% { transform: skewX(-16deg) scaleY(.88); opacity: .55; } 50% { transform: skewX(6deg) scaleY(1.04); opacity: 1; } 100% { transform: skewX(18deg) scaleY(.94); opacity: .7; } }
-    @media (prefers-reduced-motion: reduce) { .stage .aura i, .stage.glow #cv { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .stage .aura i, #cv, .stage.glow #cv { animation: none; } }
     .stage canvas { position: absolute; z-index: 1; left: 50%; top: calc(var(--h0) * 0.46); width: calc(56px * var(--s)); height: calc(84px * var(--s)); transform: translate(-50%, -50%); image-rendering: auto; }
     /* 이름표: 기타 머리 위에 둥실 떠 있다 (2026-11-12 사용자: 검키우기처럼 단계마다 바뀌는 이름이 기타 위에) */
     .nmtag { position: absolute; left: 50%; top: 14px; z-index: 2; display: flex; align-items: center; gap: 8px; width: max-content; max-width: calc(100% - 24px); padding: 5px 15px 5px 5px; border-radius: 999px; background: rgba(8, 14, 12, 0.74); border: 2px solid rgba(255, 255, 255, 0.2); color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); transform: translateX(-50%); animation: nmBob 2.8s ease-in-out infinite; }
@@ -235,7 +237,6 @@
     .cast em { display: block; height: 10px; margin-top: 7px; border-radius: 99px; background: rgba(0, 0, 0, 0.55); border: 1.5px solid rgba(255, 255, 255, 0.25); overflow: hidden; }
     .cast i { display: block; height: 100%; background: linear-gradient(90deg, #ffe27a, #ffb238); transform-origin: left; transform: scaleX(0); box-shadow: 0 0 10px rgba(255, 226, 122, 0.8); }
     .go.wait { background: linear-gradient(#6b7a74, #4c5a55); box-shadow: 0 5px 0 #34403c; }
-    .bench.wait .odds3 { opacity: .5; }
 
     /* 연출 */
     .fx { position: absolute; left: 0; right: 0; top: 0; bottom: var(--t); z-index: 4; pointer-events: none; overflow: hidden; }   /* 효과 위치(%)는 그림 자리 기준 */
@@ -280,7 +281,7 @@
 
     /* 튜너 */
     /* 무대 안 아래에 늘 '강화(넓게) | 진열하기' (2026-11-12 사용자 요청) — 말풍선은 그 위로 */
-    .sact { position: absolute; left: 10px; right: 10px; bottom: 6px; z-index: 5; display: grid; grid-template-columns: 1.6fr 1fr; gap: 8px; animation: fade .2s; }
+    .sact { position: absolute; left: 10px; right: 10px; bottom: 6px; z-index: 5; display: grid; grid-template-columns: 1fr 1.6fr; gap: 8px; animation: fade .2s; }   /* [팔기] [강화] — 2026-11-13 사용자 */
     .sact.one { grid-template-columns: 1fr; }
     .sact button { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 12px 10px; border-radius: 14px; font-weight: 900; font-size: 16px; color: #fff; white-space: nowrap; }
     /* 2026-11-13 사용자: 삼성 인터넷 강제 다크모드에서 주황이 어둡게 칠해짐 → 바탕을 그림(btn_up.jpg, 아래 입술 그늘까지 그림 안에)으로. 다크모드는 사진 같은 그림은 대부분 그대로 둔다 */
@@ -290,6 +291,8 @@
     .sact .sl { min-width: 0; font-size: 14.5px; background: rgba(14, 22, 20, 0.86); border: 2px solid rgba(255, 255, 255, 0.28); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.45); }
     .sact .sl b { color: #ffd76a; font-weight: 900; }
     .sact .sl[disabled] { opacity: .55; cursor: default; }
+    .sact .sl.sure { background: #b3261e; border-color: #ffd0cc; animation: slSure .5s cubic-bezier(.3, 1.5, .5, 1); }   /* 팔기는 한 번 더 눌러야 (2026-11-13 사용자) */
+    @keyframes slSure { from { transform: scale(.92); } }
     .sact button:active { transform: translateY(3px); }
     .tuner { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 7; border-radius: 14px; padding: 10px 12px 12px; background: #0e1614; border: 2px solid #3a4a45; color: #e8f0ec; cursor: pointer; animation: fade .15s; }
     .tuner .tn-top { display: flex; align-items: baseline; gap: 8px; font-size: 12.5px; }
@@ -311,13 +314,6 @@
 
     /* 작업대 아래 */
     .bench { margin-top: 12px; }
-    .odds3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-    .odds3 span { text-align: center; border-radius: 10px; padding: 7px 4px 6px; font-size: 12px; font-weight: 700; line-height: 1.25; }
-    .odds3 span b { display: block; font-size: 18px; font-weight: 900; }
-    .odds3 .o { background: #e2f5ea; color: #1f6b44; }
-    .odds3 .k { background: #fff3df; color: #8a5300; }
-    .odds3 .b { background: #ffe6e3; color: #b3261e; }
-    .odds3 .b.safe { background: #eceff3; color: #475260; }
     .go { width: 100%; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 16px; border-radius: 16px; font-size: 19px; font-weight: 900; background: linear-gradient(#ff8a3d, #f0592b); color: #fff; box-shadow: 0 5px 0 #b43c16, 0 10px 22px rgba(240, 89, 43, 0.25); }
     .go small { font-size: 13px; font-weight: 800; background: rgba(0, 0, 0, 0.18); border-radius: 99px; padding: 3px 10px; }
     .go:active { transform: translateY(3px); box-shadow: 0 2px 0 #b43c16; }
@@ -495,19 +491,31 @@
     /* 배틀 창 */
     .gk-modal { position: fixed; inset: 0; z-index: 90; background: rgba(10, 18, 15, 0.84); display: flex; align-items: center; justify-content: center; padding: 16px; animation: fade .2s; }
     .gk-modal .in { background: #fff; border-radius: 18px; width: min(420px, 100%); padding: 16px; text-align: center; max-height: 94vh; overflow: auto; }
-    /* 도감 크게 보기 (2026-11-13 사용자: 누른 칸 자리에서 화면 가운데 쪽으로 살짝, 두 배쯤, 아래에 이름이 계속 보이게) */
-    .dexpop { position: fixed; z-index: 95; padding: 7px 7px 9px; border-radius: 14px; background: #15110d; color: #fff; text-align: center; border: 1.5px solid rgba(255, 255, 255, 0.2); box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5); transform-origin: var(--ox, 50%) var(--oy, 50%); animation: dexPop .22s cubic-bezier(.3, 1.4, .5, 1); }
-    @keyframes dexPop { from { opacity: 0; transform: scale(.5); } }
+    /* 광고 보고 골드 (2026-11-13 사용자) — 구글이 광고를 준비했을 때만 뜬다 */
+    .adbox { max-width: 320px; }
+    .adbox .ic { display: grid; place-items: center; width: 54px; height: 54px; margin: 2px auto 8px; border-radius: 50%; background: #fff3df; color: #e0a63c; font-size: 24px; }
+    .adbox b { display: block; font-size: 26px; font-weight: 900; color: #b8913f; }
+    .adbox p { margin: 6px 0 12px; font-size: 13.5px; color: #555; }
+    .adbox .go { width: 100%; }
+    .adbox .no { display: block; width: 100%; margin-top: 8px; padding: 8px; font-size: 13px; font-weight: 700; color: #888; }
+    .adbox small { display: block; margin-top: 4px; font-size: 12px; color: #aaa; }
+    .adwrap.wait .in { opacity: .45; pointer-events: none; }
+    /* 도감 크게 보기 (2026-11-13 사용자: '약간 전체화면으로' — 화면 가운데에 크게, 뒤는 어둡게, 아래에 이름과 공유) */
+    .dexwrap { position: fixed; inset: 0; z-index: 95; display: flex; align-items: center; justify-content: center; padding: 14px; background: rgba(8, 14, 12, 0.72); animation: fade .18s; }
+    .dexpop { padding: 10px 10px 12px; border-radius: 16px; background: #15110d; color: #fff; text-align: center; border: 1.5px solid rgba(255, 255, 255, 0.2); box-shadow: 0 18px 44px rgba(0, 0, 0, 0.6); transform-origin: var(--ox, 50%) var(--oy, 50%); animation: dexPop .24s cubic-bezier(.3, 1.4, .5, 1); }
+    @keyframes dexPop { from { opacity: 0; transform: scale(.35); } }
+    .dexpop .dxsh { display: inline-flex; align-items: center; gap: 6px; margin-top: 9px; padding: 7px 18px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); border: 1.5px solid rgba(255, 255, 255, 0.28); color: #fff; font-size: 13px; font-weight: 800; }
+    .dexpop .dxsh:hover { background: rgba(255, 255, 255, 0.2); }
     .dexpop .art { position: relative; margin: 0 auto; aspect-ratio: 2 / 3; border-radius: 10px; overflow: hidden; background: #1c2a25; }
     .dexpop .art img { position: absolute; width: 150%; left: -25%; top: -41%; }
-    .dexpop.sq .art img { width: 120%; left: -10%; top: 2%; }
-    .dexpop.hi .art { box-shadow: inset 0 0 0 2px #f5c542; }
-    .dexpop .nm { margin-top: 7px; font-size: 12.5px; font-weight: 800; line-height: 1.35; word-break: keep-all; }
-    .dexpop.whole .art img, .dexpop.whole.sq .art img { width: 100%; left: 0; top: 0; }
+    .dexwrap.sq .art img { width: 120%; left: -10%; top: 2%; }
+    .dexwrap.hi .art { box-shadow: inset 0 0 0 2px #f5c542; }
+    .dexpop .nm { margin-top: 9px; font-size: 14.5px; font-weight: 800; line-height: 1.35; word-break: keep-all; }
+    .dexwrap.whole .art img, .dexwrap.whole.sq .art img { width: 100%; left: 0; top: 0; }
     .dexpop .fn { margin-top: 5px; font-size: 11.5px; color: #c9d8d1; font-family: ui-monospace, Menlo, monospace; }
     .dexpop .fn a { color: #ffd76a; font-family: inherit; text-decoration: underline; }
-    .dexpop .nm .lvb { display: inline-block; margin-right: 5px; padding: 0 7px; border-radius: 99px; background: #ffd23f; color: #3a2400; font-size: 11.5px; font-weight: 900; }
-    @media (prefers-reduced-motion: reduce) { .dexpop { animation: none; } }
+    .dexpop .nm .lvb { display: inline-block; margin-right: 6px; padding: 1px 9px; border-radius: 99px; background: #ffd23f; color: #3a2400; font-size: 13px; font-weight: 900; }
+    @media (prefers-reduced-motion: reduce) { .dexpop, .dexwrap { animation: none; } }
     /* 배틀 싸움터 (2026-11-12 사용자: 넥끼리 칼싸움 + 어두운 싸움터 배경, 상점에서 스킨) */
     .arena { position: relative; height: 290px; border-radius: 14px; overflow: hidden; color: #fff; }
     .arena .vs { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); z-index: 3; font: 900 24px 'Arial Black', sans-serif; color: #ffd23f; text-shadow: 0 3px 0 #000, 0 0 14px rgba(255, 210, 63, 0.45); }
@@ -574,7 +582,6 @@
     .bres p { font-size: 13.5px; color: #555; margin-top: 2px; }
     .bres h2 { letter-spacing: .02em; }
     .bres p.gain { font-size: 20px; font-weight: 900; color: #b07800; margin-top: 4px; }
-    .bres p.pk { font-size: 12px; font-weight: 800; color: #a85a00; margin-top: 2px; }
     .bres .say { display: flex; gap: 8px; align-items: center; text-align: left; margin-top: 10px; background: #f4f7f5; border-radius: 12px; padding: 8px 10px; }
     .bres .say img { width: 36px; height: 36px; border-radius: 8px; flex: none; }
     .bres .say span { font-size: 13px; }
@@ -618,8 +625,9 @@
     <!-- 2026-11-13 사용자: 골드 줄 = [골드] [피크] … [출석 보상] [스피커] [놀이터]. 내려도 위 사이트 메뉴 바로 아래에 붙어 있어 돈이 안 가려진다 -->
     <div class="gk-bar">
         <span class="res gold" id="rGold" title="골드"><i class="fas fa-coins"></i><span>0G</span></span>
-        <span class="pk-slot"></span>
-        <button class="res daily" id="rDaily" type="button" title="하루 한 번: 1,000G + 피크 10"><i class="fas fa-gift"></i><span>출석 보상</span></button>
+        <!-- 2026-11-13 사용자: 피크 자리에 '골드 받기'(보상형 광고). 골드가 모자랄 때만 보인다 -->
+        <button class="res adg" id="rAdG" type="button" hidden title="골드 받기"><i class="fas fa-coins"></i><span>골드 받기</span></button>
+        <button class="res daily" id="rDaily" type="button" title="하루 한 번: 1,000G"><i class="fas fa-gift"></i><span>출석 보상</span></button>
         <button class="iconbtn" id="rSnd" type="button" aria-label="효과음 켜기/끄기"><i class="fas fa-volume-high"></i></button>
         <a class="lnk" href="./" title="놀이터"><i class="fas fa-gamepad"></i><span>놀이터</span></a>
     </div>
@@ -714,18 +722,20 @@ const COST = (() => {
     return Array.from({ length: 20 }, (_, k) => k < 5 ? [0, 10, 20, 40, 70][k] : r2(SELL[k] * (0.11 + 0.24 * Math.min(1, (k - 4) / 6))));
 })();
 const MAX = 20;
-const START_GOLD = 500, DAILY_GOLD = 1000, DAILY_PICKS = 10,   // 출석: 골드 + 놀이터 피크 10 (2026-11-12 사용자 요청, 피크 하루 200 한도 안에서)
+// 2026-11-13 사용자: 기타 키우기에서는 놀이터 피크를 안 쓴다('피크 시스템은 빼자 여기선'). 출석은 골드만, 첫 기타는 공짜
+const START_GOLD = 500, DAILY_GOLD = 1000,
       CASE_SHARDS = 20, BT_DAY = 5;   // 하루 배틀 5번 (2026-11-13 사용자, 예전 10번)
 const REVIVE_DAY = 5;   // 광고 보고 되살리기는 하루 5번까지 (2026-11-13 사용자, 처음 3번 — 끝없이 되살리면 파괴가 의미 없어서)
+// 골드가 모자랄 때 보상형 광고를 보면 골드 (2026-11-13 사용자: '돈 없을 땐 광고 보고 돈 채우는 거, 피크 자리에').
+//   금액·횟수는 사용자가 고른 값 — 출석과 같은 1,000G, 하루 5번(초반에 막혔을 때만 풀어 주고 경제는 안 망가지게)
+const AD_GOLD = 1000, AD_GOLD_DAY = 5;
 const CASE_MAX = 3;   // 하드케이스는 3개까지 가질 수 있다 (2026-11-12 사용자)
 // 부서지면 나오는 조각: 1 ~ 단계 중 랜덤 (2026-11-12 사용자: +8이 깨지면 2개일 수도 7개일 수도)
 const shardDrop = lv => 1 + Math.floor(Math.random() * Math.max(1, lv));
-// 맨 처음 '기타 찾기'만 놀이터 피크로 한다(2026-11-12 사용자 결정). 그다음부터 작업대가 비면 기타 찾기는 공짜
-// 두 번째부터 '시작'(기타 찾기)은 골드 FIND_GOLD (2026-11-12 사용자: 50G는 싸다 → 300G).
-//   +4에서 팔면(350G) 손해, +5(700G)는 가야 남는다. 출석 1,000G면 세 번. 골드가 모자라면 공짜가 아니라 피크 FIRST_PICKS개로 시작한다
-//   (사용자: "골드 모자라면 다른 놀이터 게임 하고 와서 피크 벌어 오면 되지") — 피크도 없으면 놀이터·출석으로 안내
+// 맨 처음 '기타 찾기'는 공짜(2026-11-13 사용자: 피크 빼기 — 그 전에는 피크 3개였다). 그다음부터 '시작'은 골드 FIND_GOLD
+//   (2026-11-12 사용자: 50G는 싸다 → 300G). +4에서 팔면(350G) 손해, +5(700G)는 가야 남는다. 출석 1,000G면 세 번.
+//   골드가 모자라면 출석하거나 광고를 보고 골드를 받는다(AD_GOLD)
 const FIND_GOLD = 300;
-const FIRST_PICKS = 3;   // 2026-11-12 사용자: 50개 말고 3개(퀴즈·월드컵 한 판이면 찾을 수 있게)
 // 컬렉션 바닥(앰프·멀티): 걸이와 따로 (2026-11-12 사용자: 앰프·멀티가 걸이 칸을 차지해서, 걸이가 비어 보이는데 걸 수 없다고 나옴)
 //   2026-11-12 사용자: 앰프는 오른쪽에 쭈루룩, 이펙터(멀티)는 왼쪽에 쭈루룩, 각각 3개까지
 const FLOOR_EACH = 3;
@@ -754,11 +764,19 @@ function gearBuff() {
     b.amp = r1(b.amp); b.multi = r1(b.multi);
     return b;
 }
-// 이 단계의 실제 확률 [성공, 줄 끊김, 부서짐, 앰프가 줄인 몫, 멀티가 줄인 몫]
+// 스킨 능력치 (2026-11-13 사용자: '각 앰프별로, 이펙터별로, 배경별로, 작업대별로 업글해주는 능력치, 확률 업 느낌, 아주 조금씩')
+//   쓰고 있는 스킨이 상점 목록에서 몇 번째냐(= 비쌀수록)로 정한다. 작업대 = 성공↑, 진열 벽 = 파괴↓, 싸움터 = 배틀 보상↑
+//   작업대 최대 +0.9%p · 벽 최대 −1%p · 싸움터 최대 +12% (앰프 3대 +6%p, 멀티 3대 +6%p 에 비하면 아주 작다)
+const SKIN_UP = 0.1, WALL_CUT = 0.1, ARENA_RW = 0.02;
+const skinTier = (arr, id) => Math.max(0, arr.findIndex(x => x.id === id));
+const benchUp = () => r1(skinTier(BENCHES, S.bskin) * SKIN_UP);      // 작업대 스킨: 줄 끊김 → 성공
+const wallCut = () => r1(skinTier(WALLS, S.skin) * WALL_CUT);        // 진열 벽: 파괴 → 줄 끊김
+const arenaUp = () => skinTier(ARENAS, S.ask) * ARENA_RW;            // 싸움터: 배틀에서 이기면 받는 돈
+// 이 단계의 실제 확률 [성공, 줄 끊김, 부서짐, 파괴를 줄인 몫(앰프+벽), 줄 끊김을 줄인 몫(멀티+작업대)]
 function oddsFor(lv) {
     let [sp, mp, dp] = ODDS[lv];
-    const b = gearBuff(), cd = Math.min(dp, b.amp); dp -= cd; mp += cd;
-    const cm = Math.min(mp, b.multi); mp -= cm; sp += cm;
+    const b = gearBuff(), cd = Math.min(dp, r1(b.amp + wallCut())); dp -= cd; mp += cd;
+    const cm = Math.min(mp, r1(b.multi + benchUp())); mp -= cm; sp += cm;
     return [r1(sp), r1(mp), r1(dp), r1(cd), r1(cm)];
 }
 const STORE_MAX = 30;   // 창고: 기록을 합칠 때 벽·작업대에 못 둔 기타가 들어간다
@@ -899,14 +917,15 @@ function fitG(el, n, box) {   // 숫자 그대로 넣어 보고, 상자가 넘�
 }
 const winP = (me, op) => me === op ? 0.5 : me > op ? 1 - Math.pow(0.5, me - op + 1) : Math.pow(0.5, op - me + 1);   // 검키우기 공식
 const pct = p => p * 100 < 0.1 ? '0.1% 미만' : Math.round(p * 1000) / 10 + '%';
-const reward = lv =>Math.max(20, Math.round(SELL[lv] * 0.2 / 10) * 10);   // 상대 단계가 오를수록 거의 두 배씩
+// 상대 단계가 오를수록 거의 두 배씩. 싸움터 스킨이 좋을수록 조금 더 받는다 (2026-11-13 사용자, arenaUp — 최대 +12%)
+const reward = lv => Math.max(20, Math.round(SELL[lv] * 0.2 * (1 + arenaUp()) / 10) * 10);
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 const rid = () => Math.random().toString(36).slice(2, 9);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ---------- 저장 (이 브라우저) ----------
 const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [null, null, null, null, null], floor: [], open: [false, false, true, false, false], skin: 'wood', skins: ['wood'], bskin: 'workshop', bskins: ['workshop'], ask: 'alley', asks: ['alley'], dex: {}, store: [], rep: '', shards: 0, cases: 0, caseOn: false, tuner: 0, tuneOn: true, daily: '', nick: '', intro: false, first: false,
-    bt: { day: '', n: 0, done: {} }, rv: { day: '', n: 0 }, st: { tries: 0, ok: 0, keep: 0, boom: 0, saved: 0, revive: 0, sold: 0, earned: 0, made: START_GOLD, best: 0, win: 0, lose: 0 } });
+    bt: { day: '', n: 0, done: {} }, rv: { day: '', n: 0 }, ad: { day: '', n: 0 }, st: { tries: 0, ok: 0, keep: 0, boom: 0, saved: 0, revive: 0, sold: 0, earned: 0, made: START_GOLD, best: 0, win: 0, lose: 0 } });
 const okG = g => g && typeof g === 'object' && Number.isInteger(g.lv) && g.lv >= 0 && g.lv <= MAX && typeof g.id === 'string';
 function load() {
     const raw = mem.get('gk', {}) || {};
@@ -1080,6 +1099,7 @@ function cloudBtn() {
 }
 function btDay() { if (S.bt.day !== today()) S.bt = { day: today(), n: 0, done: {} }; return S.bt; }
 function rvDay() { if (S.rv.day !== today()) S.rv = { day: today(), n: 0 }; return S.rv; }
+function adDay() { if (!S.ad || S.ad.day !== today()) S.ad = { day: today(), n: 0 }; return S.ad; }   // 광고 보고 골드: 하루 AD_GOLD_DAY 번
 // 대표 기타: 고른 것 → 벽의 가장 높은 것 → 작업대
 function rep() {
     // 앰프·멀티는 대표가 될 수 없다 (2026-11-12 사용자) — 기타만
@@ -1517,9 +1537,7 @@ const LINES = {
         15: [['minji', '기타에 별자리가 떠요! …팬카페 회원이 두 명 됐어요.']],
         20: [['boss', '헨도릭스의 스트랫… 나는 거기까지 못 갔다.'], ['me', '……'], ['boss', '…줄은 네가 갈아라.']],
     },
-    intro: [['boss', '형준이가 창고에 기타를 잔뜩 맡기고 갔다. 뭐가 나올지는 나도 모른다.'], ['boss', `찾는 값은 피크 ${FIRST_PICKS}개다. 돈은 안 받는다.`], ['me', '……']],
-    noPick: [['boss', '피크가 없다고? 놀이터 가서 퀴즈라도 한 판 풀고 와라. 한 판에 열 개다.']],
-    noPickDaily: [['boss', '피크가 없다고? 위에 출석부터 찍어라. 열 개 준다.']],
+    intro: [['boss', '형준이가 창고에 기타를 잔뜩 맡기고 갔다. 뭐가 나올지는 나도 모른다.'], ['boss', `첫 기타는 그냥 가져가라. 다음부터는 한 대에 ${gf(FIND_GOLD)}다.`], ['me', '……']],
     bought: [['boss', '고쳐서 팔든, 벽에 걸든 네 마음이다.'], ['boss', '…부수지만 마라.'], ['me', '……']],
 };
 
@@ -1533,6 +1551,10 @@ function updBar(goldBump) {
     $('#rCase span').textContent = `${S.cases}/${CASE_MAX}`;
     $('#rCase').classList.toggle('full', S.cases >= CASE_MAX);
     $('#rSC').classList.toggle('ready', S.shards >= CASE_SHARDS && S.cases < CASE_MAX);
+    // 골드 받기(광고): 지금 하려는 것(강화·기타 찾기)에 골드가 모자랄 때만, 오늘 횟수가 남았을 때만 (2026-11-13 사용자)
+    { const need = S.bench ? (S.bench.lv < MAX ? COST[S.bench.lv] : 0) : S.first ? FIND_GOLD : 0;   // 첫 기타는 공짜라 그땐 안 보인다
+      $('#rAdG').hidden = !(need > 0 && S.gold < need && adDay().n < AD_GOLD_DAY);
+      $('#rAdG').title = `골드 받기 — 오늘 ${AD_GOLD_DAY - adDay().n}번 남음`; }
     const got = S.daily === today();
     $('#rDaily').classList.toggle('got', got);
     $('#rDaily span').textContent = got ? '출첵' : '출석 보상';   // 2026-11-13 사용자: 받기 전 '출석 보상', 받은 뒤엔 회색 '출첵'만
@@ -1555,31 +1577,25 @@ function renderName() {
     if (nmLv >= 0 && g.lv > nmLv) el.animate([{ scale: 1 }, { scale: 1.2, offset: 0.35 }, { scale: 1 }], { duration: 520, easing: 'ease-out' });
     nmLv = g.lv;
 }
-// 빈 작업대: 첫 기타는 피크로 사고, 그다음부터는 공짜로 받는다
+// 빈 작업대: 첫 기타는 공짜, 그다음부터는 FIND_GOLD (2026-11-13 사용자: 피크 시스템은 여기서 뺀다)
 // 처음 화면 맨 아래 '친구에게 공유' — 게임 주소(기타가 아직 없으니 게임 자체를 공유) (2026-11-13 사용자)
 const GSHARE = `<button class="btn gshare" type="button" data-a="gameshare"><i class="fas fa-share-nodes"></i> 친구에게 공유</button>`;
 function emptyCard() {
     const sil = `<img class="g1" src="../images/play/gk/sil_guitar.webp" alt="">`;   // 무슨 기타가 나올지 모르게 그림자만
-    const bal = PLAY.picks.bal();
     // 2026-11-12 사용자: 빈 작업대는 간단하게 위에 '기타 키우기', 아래 '시작'만 + 단추 아래에 값
     const card = (a, cls, cost) => `${S.first ? '' : sil}<p class="big">기타 키우기</p><button class="btn start ${cls}" type="button" data-a="${a}"><i class="fas fa-play"></i> 시작</button><small class="cost">${cost}</small>${GSHARE}`;
-    const pk = note => `${PLAY.pickIcon()} <b>피크 ${FIRST_PICKS}개</b> <span>(${note})</span>`;
-    if (S.first) {
-        if (S.gold >= FIND_GOLD) return card('new', '', `<i class="fas fa-coins"></i> ${gf(FIND_GOLD)}`);
-        if (bal >= FIRST_PICKS) return card('newp', 'pick', pk(`골드가 모자라서 피크로 · 지금 ${bal.toLocaleString()}개`));
-        return lackCard(`골드가 ${gf(FIND_GOLD - S.gold)} 모자라요`, `시작은 ${gf(FIND_GOLD)}, 골드가 없으면 피크 ${FIRST_PICKS}개예요 (지금 피크 ${bal}개).`);
-    }
-    if (bal >= FIRST_PICKS) return card('buy1', 'pick', pk(`지금 ${bal.toLocaleString()}개 · 첫 기타만, 다음부터는 ${gf(FIND_GOLD)}`));
-    return lackCard(`피크가 ${bal ? '모자라다' : '없다'}구요?`, `첫 기타는 피크 ${FIRST_PICKS}개로 찾아요 (지금 ${bal}개).`);
+    if (!S.first) return card('buy1', 'pick', '<i class="fas fa-gift"></i> 첫 기타는 공짜');
+    if (S.gold >= FIND_GOLD) return card('new', '', `<i class="fas fa-coins"></i> ${gf(FIND_GOLD)}`);
+    return lackCard(`골드가 ${gf(FIND_GOLD - S.gold)} 모자라요`, `기타 한 대 찾는 값이 ${gf(FIND_GOLD)}예요.`);
 }
-// 골드·피크가 모자랄 때: 출석 → 놀이터 퀴즈쇼·월드컵으로
+// 골드가 모자랄 때: 출석 → 광고 보고 골드 (2026-11-13 사용자: 피크·놀이터 안내 대신)
+//   '광고 보고 …' 문구는 구글이 보상형 광고를 준비했다고 알려 줄 때만 보여야 해서(CLAUDE.md 9절), 여기 단추는 '골드 받기'
 function lackCard(title, why) {
-    const dl = S.daily !== today();   // 오늘 출석 전이면 출석 단추가 먼저(말풍선에 안 가리게 놀이터 길은 한 줄 링크로)
-    return `<img class="g1" src="../images/play/gk/sil_guitar.webp" alt=""><p class="big">${title}<small>${why}<br>${dl ? `출석하면 ${gf(DAILY_GOLD)} + 피크 ${DAILY_PICKS}개, 놀이터 한 판에 피크 ${PLAY.PICK.per}개.` : `놀이터 퀴즈쇼·월드컵 한 판마다 피크 ${PLAY.PICK.per}개씩 모여요.`}</small></p>
-        ${dl ? `<button class="btn pick" type="button" data-a="daily"><i class="fas fa-gift"></i> 출석하고 받기 <small>${PLAY.pickIcon()} ${DAILY_PICKS}</small></button>
-        <div class="alt"><a href="./">놀이터</a> · <a href="quiz.html">퀴즈쇼</a> · <a href="worldcup.html">월드컵</a>에서도 모여요</div>`
-        : `<a class="btn pick" href="./"><i class="fas fa-gamepad"></i> 놀이터에서 피크 모으기</a>
-        <div class="alt"><a href="quiz.html">퀴즈쇼</a> · <a href="worldcup.html">월드컵</a> 바로 가기</div>`}${GSHARE}`;
+    const dl = S.daily !== today(), ad = adDay().n < AD_GOLD_DAY;
+    return `<img class="g1" src="../images/play/gk/sil_guitar.webp" alt=""><p class="big">${title}<small>${why}<br>${dl ? `출석하면 ${gf(DAILY_GOLD)}을 받아요.` : `기타를 팔거나, 아래에서 골드를 더 받아요.`}</small></p>
+        ${dl ? `<button class="btn pick" type="button" data-a="daily"><i class="fas fa-gift"></i> 출석하고 받기 <small>${gf(DAILY_GOLD)}</small></button>`
+        : ad ? `<button class="btn pick" type="button" data-a="adgold"><i class="fas fa-coins"></i> 골드 받기 <small>오늘 ${AD_GOLD_DAY - adDay().n}번</small></button>` : ''}
+        ${GSHARE}`;
 }
 function renderBench() {
     updBar(); renderName();
@@ -1592,9 +1608,13 @@ function renderBench() {
     let h = '';
     if (g.lv >= MAX) h += `<div class="maxed">🎸 최고 단계! 더는 강화할 수 없어요.<br><small>벽에 걸고 대표 기타로 배틀에 내보내요.</small></div>`;
     else {
-        const [s, m, d, cd, cm] = oddsFor(g.lv), cost = COST[g.lv], safe = d > 0 && S.caseOn && S.cases > 0;
-        h += `<div class="odds3"><span class="o">성공<b>${s}%</b></span><span class="k">${keepWord(g)}<b>${m}%</b></span><span class="b ${safe ? 'safe' : ''}">${safe ? '파괴 → 케이스' : '파괴'}<b>${d}%</b></span></div>`;
-        if (cd || cm) h += `<p class="gline">${cd ? `<span><i class="fas fa-volume-high"></i>앰프 파괴 −${cd}%p</span>` : ''}${cm ? `<span><i class="fas fa-sliders"></i>멀티 ${keepWord(g)} −${cm}%p</span>` : ''}</p>`;
+        // 2026-11-13 사용자: 확률(성공·줄 끊김·파괴 신호등)은 안 보이게. 궁금하면 아래 '강화 확률표'를 열어 본다
+        const cost = COST[g.lv];
+        // 장비·스킨 보너스는 실제로 깎을 게 있을 때만 (파괴 0%인 단계에서 '파괴 −1%p'라고 하면 거짓말)
+        const amp = gearBuff(), [, , , cd, cm] = oddsFor(g.lv), wc = wallCut(), bu = benchUp();
+        const tip = [cd && amp.amp ? `<span><i class="fas fa-volume-high"></i>앰프 파괴 −${amp.amp}%p</span>` : '', cd && wc ? `<span><i class="fas fa-image"></i>벽 파괴 −${wc}%p</span>` : '',
+            cm && amp.multi ? `<span><i class="fas fa-sliders"></i>멀티 ${keepWord(g)} −${amp.multi}%p</span>` : '', cm && bu ? `<span><i class="fas fa-screwdriver-wrench"></i>작업대 성공 +${bu}%p</span>` : ''].join('');
+        if (tip) h += `<p class="gline">${tip}</p>`;
         if (S.gold < cost) h += `<p class="lack">골드가 ${gf(cost - S.gold)} 모자라요. 팔거나 출석 골드를 받아요.</p>`;
     }
     box.innerHTML = h;
@@ -1608,14 +1628,14 @@ function renderSact() {
     renderBand();
     if (!show) return;
     const cost = COST[g.lv], can = g.lv < MAX;
-    // 2026-11-13 사용자: 그림 위 아래 줄은 [강화] [팔기] (팔기 ↔ 진열하기 자리 바꿈). 하드케이스 ON/OFF 는 검은 칸 튜닝 오른쪽('하케 ON')
+    // 2026-11-13 사용자: [팔기] [강화] — 강화를 오른쪽으로 보내고 팔기와 자리 바꿈. 하드케이스 ON/OFF 는 검은 칸 튜닝 오른쪽('하케 ON')
     el.classList.toggle('one', !can);
-    el.innerHTML = (can ? `<button type="button" class="ag" data-a="again" ${S.gold < cost ? 'disabled' : ''}><i class="fas fa-hammer"></i>강화 <small>${cost ? gf(cost) : '공짜'}</small></button>` : '')
-        + `<button type="button" class="sl" data-a="sell" ${g.lv ? '' : 'disabled'}><i class="fas fa-coins"></i>팔기 <b>${g.lv ? gf(SELL[g.lv]) : '0G'}</b></button>`;
+    el.innerHTML = `<button type="button" class="sl" data-a="sell" ${g.lv ? '' : 'disabled'}><i class="fas fa-coins"></i>팔기 <b>${g.lv ? gf(SELL[g.lv]) : '0G'}</b></button>`
+        + (can ? `<button type="button" class="ag" data-a="again" ${S.gold < cost ? 'disabled' : ''}><i class="fas fa-hammer"></i>강화 <small>${cost ? gf(cost) : '공짜'}</small></button>` : '');
     if (g.lv) fitG(el.querySelector('.sl b'), SELL[g.lv]);
     if (can && cost) fitG(el.querySelector('.ag small'), cost);   // 2026-11-13 비용이 커져서(+19는 25억) 칸이 넘치면 만·억으로
 }
-// 무대 아래 검은 칸: [튜닝 +n%p] [하케 ON] [진열하기] [버리기] 한 줄 — 작업대에 기타가 있으면 늘
+// 무대 아래 검은 칸: [튜닝 +n%p] [하케 ON] [진열하기] 한 줄 — 작업대에 기타가 있으면 늘 (2026-11-13 사용자: 버리기 뺌)
 // 2026-11-13 사용자: 튜닝 단추 안에는 확률이 오르는 것만 짧게, 하드케이스는 튜닝 오른쪽 '하케 ON'(+7부터), 진열하기는 팔기와 자리 바꿈.
 //   강화하는 동안엔 무대 안 단추가 모두 안 보인다(검은 칸은 높이만 남김, 조각 상자·자랑하기도 숨김)
 function renderBand() {
@@ -1631,8 +1651,7 @@ function renderBand() {
         + (risk ? (S.cases
             ? `<button type="button" class="hk ${on ? 'on' : ''}" data-a="case" aria-pressed="${on}" title="하드케이스 ${on ? '끼움' : '안 끼움'} — 끼우면 파괴를 한 번 막아 줘요 (${S.cases}/${CASE_MAX}개)"><i class="fas fa-briefcase"></i>하케 ${on ? 'ON' : 'OFF'}</button>`
             : `<button type="button" class="hk none" data-a="gocase" title="하드케이스가 없어요 — 조각 ${S.shards}/${CASE_SHARDS}"><i class="fas fa-briefcase"></i>하케 없음</button>`) : '')
-        + `<button type="button" class="hg" data-a="hang"><i class="fas fa-image"></i>진열하기</button>
-        <button type="button" class="ts" data-a="toss"><i class="fas fa-trash-can"></i>버리기</button>`;
+        + `<button type="button" class="hg" data-a="hang"><i class="fas fa-image"></i>진열하기</button>`;   // 2026-11-13 사용자: 버리기는 뺐다(+0은 공짜로 강화해서 팔면 된다)
 }
 function renderTable() {
     const el = $('#otab'), open = el.open, lv = S.bench ? S.bench.lv : -1;
@@ -1658,30 +1677,34 @@ function dexDot() {
     if ((!S.dexNew || tab === 'dex') && dot) dot.remove();
 }
 const artSrc = (f, lv) => { const F = FAMS[f] || FAMS.strat, n = F.extra && F.extra.includes(lv) ? lv : Math.min(lv, F.artMax); return `../images/play/gk/${F.art}_${String(n).padStart(2, '0')}.webp${artV(F.art, n)}`; };
-// 도감 크게 보기 (2026-11-13 사용자: 누른 칸 자리에서 화면 가운데 쪽으로 살짝 옮겨 두 배쯤, 그림 아래에 이름이 계속 보이게)
-//   다른 곳을 누르거나 스크롤·Esc 하면 닫힌다. 다른 칸을 누르면 그 칸으로 바뀐다
+// 도감 크게 보기 (2026-11-13 사용자: '악기 클릭하면 약간 전체화면으로' — 화면 가운데에 크게, 뒤는 어둡게.
+//   그 전에는 누른 칸 옆에 두 배쯤이었다). 아래에 이름과 '공유' 단추(사용자 요청: 도감 공유 기능).
+//   바깥을 누르거나 스크롤·Esc 하면 닫힌다. 다른 칸을 누르면 그 칸으로 바뀐다
 var dexPop = null;   // var: setTab 이 이 줄보다 먼저 불려도 괜찮게
 function dexClose() { if (dexPop) { dexPop.remove(); dexPop = null; } }
 function dexZoom(f, lv, cell) {
     dexClose();
     const F = FAMS[f]; if (!F || !cell) return;
     const whole = dexWhole();   // 운영 계정 전체 그림: 자르지 않고 크게 + 파일 이름 + 원본 열기
-    const r = cell.getBoundingClientRect(), artW = whole ? Math.min(innerWidth - 40, 300) : Math.round(r.width * 2.1), w = Math.max(artW + 14, 150);
+    // 그림 비율은 2:3 — 화면 높이의 62%쯤 쓰게(이름·단추 자리를 빼고), 폭은 화면에서 넘치지 않게
+    const artW = Math.round(Math.min(innerWidth - 48, innerHeight * 0.62 / 1.5, 380));
     const el = document.createElement('div');
-    el.className = `dexpop ${F.sq ? 'sq' : ''} ${lv >= 10 ? 'hi' : ''} ${whole ? 'whole' : ''}`;
-    el.style.width = w + 'px';
-    el.innerHTML = `<div class="art" style="width:${artW}px"><img src="${artSrc(f, lv)}" alt=""></div><p class="nm"><span class="lvb">+${lv}</span>${esc(F.names[lv])}</p>`
-        + (whole ? `<p class="fn">${artFile(f, lv)} · <a href="${artSrc(f, lv)}" target="_blank" rel="noopener">원본 열기</a></p>` : '');
+    el.className = `dexwrap ${F.sq ? 'sq' : ''} ${lv >= 10 ? 'hi' : ''} ${whole ? 'whole' : ''}`;
+    el.innerHTML = `<div class="dexpop" style="width:${artW + 20}px">
+        <div class="art" style="width:${artW}px"><img src="${artSrc(f, lv)}" alt=""></div>
+        <p class="nm"><span class="lvb">+${lv}</span>${esc(F.names[lv])}</p>`
+        + (whole ? `<p class="fn">${artFile(f, lv)} · <a href="${artSrc(f, lv)}" target="_blank" rel="noopener">원본 열기</a></p>` : '')
+        + `<button type="button" class="dxsh" data-a="dexshare" data-f="${f}" data-lv="${lv}"><i class="fas fa-share-nodes"></i> 공유</button></div>`;
     document.body.appendChild(el);
-    const h = el.offsetHeight;
-    let cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-    cx += (innerWidth / 2 - cx) * 0.4; cy += (innerHeight / 2 - cy) * 0.4;   // 누른 칸에서 화면 가운데 쪽으로 40%만
-    const left = Math.min(Math.max(8, cx - w / 2), innerWidth - w - 8), top = Math.min(Math.max(8, cy - h / 2), innerHeight - h - 8);
-    el.style.left = left + 'px'; el.style.top = top + 'px';
-    el.style.setProperty('--ox', (r.left + r.width / 2 - left) + 'px'); el.style.setProperty('--oy', (r.top + r.height / 2 - top) + 'px');   // 누른 칸에서 커져 나오게
+    const r = cell.getBoundingClientRect(), box = el.querySelector('.dexpop').getBoundingClientRect();   // 누른 칸에서 커져 나오게
+    el.style.setProperty('--ox', (r.left + r.width / 2 - box.left) + 'px');
+    el.style.setProperty('--oy', (r.top + r.height / 2 - box.top) + 'px');
+    el.addEventListener('click', e => { if (!e.target.closest('.dexpop')) dexClose(); });
+    // 도감 공유 (2026-11-13 사용자) — 그 단계의 공유 페이지(카톡 미리보기에 그 기타 썸네일)
+    el.querySelector('.dxsh').addEventListener('click', () => shareText('기타 도감', `${full({ f, lv })} 🎸\n안쌤 놀이터 '기타 키우기' 도감에서 봤어요`, shareUrl({ f, lv })));
     dexPop = el;
 }
-addEventListener('pointerdown', e => { if (dexPop && !e.target.closest('.dexpop') && !e.target.closest('[data-a="dex"]')) dexClose(); }, true);
+addEventListener('pointerdown', e => { if (dexPop && !e.target.closest('.dexwrap') && !e.target.closest('[data-a="dex"]')) dexClose(); }, true);
 addEventListener('scroll', dexClose, { passive: true });
 addEventListener('resize', dexClose);
 addEventListener('keydown', e => { if (e.key === 'Escape') dexClose(); });
@@ -1947,19 +1970,47 @@ async function reviveOffer(g, sh, wasRep) {
     save();
     return true;
 }
+// 골드가 모자랄 때 보상형 광고를 보면 골드 (2026-11-13 사용자, 1,000G · 하루 5번).
+//   되살리기와 같은 방식 — 구글이 광고를 준비했을 때만 '광고를 끝까지 보면' 안내가 뜬다(승인 전·광고 없으면 그냥 알려 주고 끝)
+let adBusy = false;
+async function goldAd() {
+    if (adBusy) return;
+    const d = adDay();
+    if (d.n >= AD_GOLD_DAY) { toast(`오늘은 다 받았어요. 내일 또 ${AD_GOLD_DAY}번 받을 수 있어요`); return; }
+    adBusy = true;
+    const box = document.createElement('div');
+    box.className = 'gk-modal adwrap';
+    const r = await PLAY.rewarded('gold', (show, skip) => {
+        box.innerHTML = `<div class="in adbox"><span class="ic"><i class="fas fa-coins"></i></span><b>+${gf(AD_GOLD)}</b>
+            <p>광고를 끝까지 보면 골드를 받아요</p>
+            <button type="button" class="btn go"><i class="fas fa-circle-play"></i> 광고 보고 골드 받기</button>
+            <button type="button" class="no">나중에</button><small>오늘 ${AD_GOLD_DAY - d.n}번 남음</small></div>`;
+        box.querySelector('.go').addEventListener('click', () => { box.classList.add('wait'); show(); });
+        box.querySelector('.no').addEventListener('click', skip);
+        box.addEventListener('click', e => { if (e.target === box) skip(); });
+        document.body.appendChild(box);
+    }, '골드 받기');
+    box.remove();
+    adBusy = false;
+    if (r === 'viewed') {
+        d.n++; gain(AD_GOLD); save(); updBar(true); sfx('sell');
+        toast(`골드 +${gf(AD_GOLD)} · 오늘 ${AD_GOLD_DAY - d.n}번 남음`);
+        if (tab === 'bench') renderBench(); else if (tab === 'shop') renderShop();
+    } else if (r === 'dismissed') toast('끝까지 봐야 골드를 받아요');
+    else if (r === 'none') toast('지금은 볼 수 있는 광고가 없어요. 잠시 뒤에 다시 해 봐요');
+}
 
 // 기타 찾기: 강화처럼 두근두근 기다리다가 그림자에서 기타가 '탄생'한다 (2026-11-12 사용자 요청).
-// 첫 기타만 피크 FIRST_PICKS, 그다음부터 공짜. 계열은 FIND_FAMS 중 하나(스트랫·통기타·베이스) — 나중에 텔레·주전자…도 (CLAUDE.md 11절)
-async function findGuitar(first, byPick) {
+// 첫 기타는 공짜, 그다음부터 FIND_GOLD. 계열은 FIND_FAMS 중 하나(스트랫·통기타·베이스) — 나중에 텔레·주전자…도 (CLAUDE.md 11절)
+async function findGuitar(first) {
     if (S.bench || busy) return;
     if (first) {
         if (S.first) return;
-        if (!PLAY.picks.spend(FIRST_PICKS)) { toast(`피크가 모자라요 (${FIRST_PICKS}개 필요)`); renderBench(); return; }
-        S.first = true;
+        S.first = true;   // 첫 기타는 공짜 (2026-11-13 사용자: 피크 빼기)
     } else {
         if (!S.first) return;
-        if (byPick) { if (S.gold >= FIND_GOLD || !PLAY.picks.spend(FIRST_PICKS)) { renderBench(); return; } }
-        else { if (S.gold < FIND_GOLD) { toast('골드가 모자라요'); renderBench(); return; } S.gold -= FIND_GOLD; }
+        if (S.gold < FIND_GOLD) { toast('골드가 모자라요'); renderBench(); return; }
+        S.gold -= FIND_GOLD;
         updBar();
     }
     busy = true; talkClear();
@@ -1975,21 +2026,6 @@ async function findGuitar(first, byPick) {
     busy = false; renderBench();
     $('#nm').animate([{ opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1.15, offset: 0.6 }, { opacity: 1, scale: 1 }], { duration: 520, easing: 'ease-out' });
     if (first) setTimeout(() => talk(LINES.bought), 1000);
-}
-// 버리기: 골드 없이 작업대를 비운다(+0처럼 못 파는 기타를 치울 때). 한 번 더 눌러야 버린다
-async function tossBench(btn) {
-    const g = S.bench;
-    if (busy || !g) return;
-    if (btn && btn.dataset.sure !== '1') { btn.dataset.sure = '1'; btn.innerHTML = '<i class="fas fa-trash-can"></i>정말요?'; return; }   // 한 줄에 들어가게 짧게 (2026-11-13)
-    busy = true; talkClear();
-    ghost = g; S.bench = null; if (S.rep === g.id) S.rep = '';
-    save(); renderSact(); $('#bench').innerHTML = '';
-    sfx('drop');
-    const a = cv.animate([{ transform: CVT, opacity: 1 }, { transform: `${CVT} translateY(40%) rotate(-25deg)`, opacity: 0 }], { duration: 520, easing: 'ease-in', fill: 'forwards' });
-    await sleep(540);
-    a.cancel(); ghost = null; busy = false;
-    toast('기타를 버렸어요');
-    renderBench();
 }
 async function sellBench() {
     const g = S.bench;
@@ -2288,12 +2324,13 @@ function renderBattle() {
         <div class="row"><input id="nick" maxlength="12" placeholder="내 이름" title="비우면 익명" value="${esc(S.nick || '')}"><button class="btn" type="button" data-a="vslink" ${me ? '' : 'disabled'}>링크 보내기</button></div></div></div>
         ${FIND ? `<div class="duo-res">${oppRow(FIND, 'vs')}</div>` : findMsg ? `<div class="duo-res"><p class="fmsg">${esc(findMsg)}</p></div>` : ''}`;
     if (NET.ok === null) h += `<p class="note2" style="text-align:center;padding:18px 0">상대를 불러오는 중…</p>`;
-    if (real.length) h += `<div class="sec-h"><h3>오늘의 상대</h3><small>다른 사람들의 대표 기타</small></div>` + real.map(o => oppRow(o)).join('');
-    if (OPPS.length) h += `<div class="sec-h"><h3>${real.length ? '연습 상대' : '오늘의 상대'}</h3><small>${NET.ok ? '사람이 모일 때까지 채워 둔 가상 기타리스트' : '연습 상대예요'}</small>
-        <button type="button" class="rerank" data-a="rerank" aria-label="연습 상대 새로고침"><i class="fas fa-rotate-right"></i>새로고침</button></div>`
+    // 2026-11-13 사용자: 상대 새로고침은 광고를 봐야 — 단추는 첫 상대 칸 머리글에 하나만
+    const rrBtn = `<button type="button" class="rerank" data-a="rerank" aria-label="상대 새로고침" ${oppBusy || netBusy ? 'disabled' : ''}><i class="fas fa-rotate-right"></i>상대 새로고침</button>`;
+    if (real.length) h += `<div class="sec-h"><h3>오늘의 상대</h3><small>다른 사람들의 대표 기타</small>${rrBtn}</div>` + real.map(o => oppRow(o)).join('');
+    if (OPPS.length) h += `<div class="sec-h"><h3>${real.length ? '연습 상대' : '오늘의 상대'}</h3><small>${NET.ok ? '사람이 모일 때까지 채워 둔 가상 기타리스트' : '연습 상대예요'}</small>${real.length ? '' : rrBtn}</div>`
         + `<div class="opps ${rerankAnim ? 'fresh' : ''}">${OPPS.map(o => oppRow(o)).join('')}</div>`;
     rerankAnim = false;
-    h += `<p class="note2">단계가 같으면 50%, 한 단계 높으면 75%, 두 단계 87.5%… 높은 상대를 이길수록 보상이 커요. 지면 잃는 건 없어요. 배틀 한 번 끝낼 때마다 놀이터 피크 ${PLAY.PICK.per}(하루 ${PLAY.PICK.day}까지).</p>`;
+    h += `<p class="note2">단계가 같으면 50%, 한 단계 높으면 75%, 두 단계 87.5%… 높은 상대를 이길수록 보상이 커요. 지면 잃는 건 없어요.${arenaUp() ? ` 지금 싸움터 덕분에 이기면 받는 돈이 +${Math.round(arenaUp() * 100)}% 더 올라요.` : ''}</p>`;
     el.innerHTML = h;
     paintAll(el);
     const ni = el.querySelector('#nick');
@@ -2347,6 +2384,35 @@ function renderRank() {
     paintAll(el);
     const ni = el.querySelector('#rknick');
     ni.addEventListener('keydown', e => { if (e.key === 'Enter') el.querySelector('[data-a="rknick"]').click(); });
+}
+// 상대 새로고침 (2026-11-13 사용자: '배틀 상대 업데이트 하는 기능, 업뎃 하려면 광고 보기')
+//   보상형 광고를 끝까지 보면 진짜 상대(서버)와 연습 상대를 모두 새로 불러온다.
+//   구글이 광고를 준비 못 했으면(승인 전·광고 없음) 그냥 새로고침해 준다 — 광고가 없다고 못 쓰게 하지는 않는다
+let oppBusy = false;
+async function oppRefresh() {
+    if (oppBusy || netBusy) return;
+    oppBusy = true;
+    const box = document.createElement('div');
+    box.className = 'gk-modal adwrap';
+    const r = await PLAY.rewarded('opps', (show, skip) => {
+        box.innerHTML = `<div class="in adbox"><span class="ic"><i class="fas fa-users"></i></span><b>새 상대</b>
+            <p>광고를 끝까지 보면 오늘의 상대를 새로 불러와요</p>
+            <button type="button" class="btn go"><i class="fas fa-circle-play"></i> 광고 보고 새 상대 보기</button>
+            <button type="button" class="no">나중에</button></div>`;
+        box.querySelector('.go').addEventListener('click', () => { box.classList.add('wait'); show(); });
+        box.querySelector('.no').addEventListener('click', skip);
+        box.addEventListener('click', e => { if (e.target === box) skip(); });
+        document.body.appendChild(box);
+    }, '상대 새로고침');
+    box.remove();
+    oppBusy = false;
+    if (r === 'skip') return;
+    if (r === 'dismissed') { toast('끝까지 봐야 새 상대가 와요'); return; }
+    const bt = btDay(); bt.rr = (bt.rr | 0) + 1; save();   // 연습 상대(가상 기타리스트)도 새로
+    rerankAnim = true; sfx('drop');
+    NET.at = 0;   // 진짜 상대도 서버에서 다시
+    renderBattle();
+    toast('새 상대가 왔어요');
 }
 function setNick(v) {
     const n = String(v || '').replace(/\s+/g, ' ').trim();
@@ -2436,7 +2502,6 @@ async function fight(id) {
     bt.n++; bt.done[o.id] = win ? 'w' : 'l';
     if (win) { S.st.win++; gain(rw); } else S.st.lose++;
     save();
-    const got = PLAY.picks.earn();
     const m = document.createElement('div');
     m.className = 'gk-modal';
     m.innerHTML = `<div class="in"><div ${arenaAttr(S.ask)}><span class="vs">VS</span>
@@ -2448,7 +2513,7 @@ async function fight(id) {
     sfx(win ? 'win' : 'lose');
     const say = ['me', one(win ? LINES.win : LINES.lose)];   // 2026-11-13 사용자: 배틀 뒤 대사는 '나'가, 이김·짐 20가지씩 무작위
     m.querySelector('.bres').innerHTML = `<h2 class="${win ? 'w' : 'l'}">${win ? 'WIN !' : 'LOSE...'}</h2>
-        ${win ? `<p class="gain">+${gf(rw)}</p>` : ''}${got ? `<p class="pk">+${got} 피크</p>` : ''}
+        ${win ? `<p class="gain">+${gf(rw)}</p>` : ''}
         <div class="say"><img src="../images/play/gk/${WHO[say[0]][1]}.jpg" alt=""><span><b>${WHO[say[0]][0]}</b>${esc(say[1])}</span></div>
         <div class="btns" style="margin-top:14px"><button class="btn" type="button" data-x>확인</button></div>`;
     m.querySelector('[data-x]').addEventListener('click', () => { m.remove(); busy = false; renderBattle(); });
@@ -2471,21 +2536,21 @@ function renderShop() {
     if (shopCat === 'case') h += `<div class="item"><span class="ic case"><i class="fas fa-briefcase"></i></span><div class="it"><b>하드케이스 만들기 (지금 ${S.cases}/${CASE_MAX}개)</b>
         <small>부서진 기타 조각 ${CASE_SHARDS}개 → 하드케이스 1개. 끼워 두면 파괴를 한 번 막아 줘요. ${CASE_MAX}개까지 가질 수 있어요(조각은 따로 계속 모여요).</small><div class="shardbar"><i style="width:${Math.min(100, S.shards / CASE_SHARDS * 100)}%"></i></div></div>
         <button type="button" data-a="craft" ${S.shards >= CASE_SHARDS && S.cases < CASE_MAX ? '' : 'disabled'}>${S.cases >= CASE_MAX ? `가득 ${S.cases}/${CASE_MAX}` : S.shards >= CASE_SHARDS ? '만들기' : `조각 ${S.shards}/${CASE_SHARDS}`}</button></div>`;
-    if (shopCat === 'bench') h += BENCHES.map(B => {
-        const own = S.bskins.includes(B.id), use = S.bskin === B.id;
-        return `<div class="item"><span class="ic skin" style="background-image:url(../images/play/gk/${B.src.replace('bg_', 'bgt_')})"></span><div class="it"><b>${B.name}</b><small>${B.desc}</small></div>
+    if (shopCat === 'bench') h += BENCHES.map((B, i) => {
+        const own = S.bskins.includes(B.id), use = S.bskin === B.id, up = r1(i * SKIN_UP);
+        return `<div class="item"><span class="ic skin" style="background-image:url(../images/play/gk/${B.src.replace('bg_', 'bgt_')})"></span><div class="it"><b>${B.name}${up ? ` · 강화 성공 +${up}%p` : ''}</b><small>${B.desc}</small></div>
             ${use ? '<span class="own">쓰는 중</span>' : own ? `<button type="button" data-a="bskin" data-id="${B.id}">바꾸기</button>` : `<button type="button" data-a="bskin" data-id="${B.id}" ${S.gold >= B.price ? '' : 'disabled'}>${gf(B.price)}</button>`}</div>`;
-    }).join('') + (BENCHES.length < 2 ? '<p class="note2">작업대 스킨 10개는 그림을 뽑아 오면 여기에 더해요(낮 공방·합주실·빈티지 가게·클럽 무대·한옥·눈 오두막·네온·해변·공연장·별빛 신전).</p>' : '');
-    if (shopCat === 'arena') h += ARENAS.map(A => {
-        const own = S.asks.includes(A.id), use = S.ask === A.id;
-        return `<div class="item"><span class="ic apv ${A.img ? '' : `askin ask-${A.id}`}" ${A.img ? `style="background:#111 url(../images/play/gk/${A.img.replace('arena_', 'arenat_')}) center / cover"` : ''}><i class="fas fa-guitar"></i><i class="fas fa-guitar"></i></span><div class="it"><b>${A.name}</b><small>${A.desc}</small></div>
+    }).join('') + `<p class="note2">작업대는 좋은 것일수록 강화 성공이 아주 조금씩 올라요(올라간 몫은 '${keepWord(S.bench)}'에서 가져와요). 지금 쓰는 작업대 +${benchUp()}%p.</p>`;
+    if (shopCat === 'arena') h += ARENAS.map((A, i) => {
+        const own = S.asks.includes(A.id), use = S.ask === A.id, up = Math.round(i * ARENA_RW * 100);
+        return `<div class="item"><span class="ic apv ${A.img ? '' : `askin ask-${A.id}`}" ${A.img ? `style="background:#111 url(../images/play/gk/${A.img.replace('arena_', 'arenat_')}) center / cover"` : ''}><i class="fas fa-guitar"></i><i class="fas fa-guitar"></i></span><div class="it"><b>${A.name}${up ? ` · 배틀 보상 +${up}%` : ''}</b><small>${A.desc}</small></div>
             ${use ? '<span class="own">쓰는 중</span>' : own ? `<button type="button" data-a="askin" data-id="${A.id}">바꾸기</button>` : `<button type="button" data-a="askin" data-id="${A.id}" ${S.gold >= A.price ? '' : 'disabled'}>${gf(A.price)}</button>`}</div>`;
-    }).join('') + '<p class="note2">배틀할 때 내 싸움터 배경이에요. 기타 넥끼리 칼처럼 부딪쳐요.</p>';
-    if (shopCat === 'skin') h += WALLS.map(W => {
-        const own = S.skins.includes(W.id), use = S.skin === W.id;
-        return `<div class="item"><span class="ic skin" style="background-image:url(../images/play/gk/${W.src})"></span><div class="it"><b>${W.name}</b><small>${W.desc}</small></div>
+    }).join('') + `<p class="note2">배틀할 때 내 싸움터 배경이에요. 기타 넥끼리 칼처럼 부딪쳐요. 좋은 싸움터일수록 이기면 받는 돈이 조금 더 많아요 (지금 +${Math.round(arenaUp() * 100)}%).</p>`;
+    if (shopCat === 'skin') h += WALLS.map((W, i) => {
+        const own = S.skins.includes(W.id), use = S.skin === W.id, cut = r1(i * WALL_CUT);
+        return `<div class="item"><span class="ic skin" style="background-image:url(../images/play/gk/${W.src})"></span><div class="it"><b>${W.name}${cut ? ` · 파괴 −${cut}%p` : ''}</b><small>${W.desc}</small></div>
             ${use ? '<span class="own">쓰는 중</span>' : own ? `<button type="button" data-a="skin" data-id="${W.id}">바꾸기</button>` : `<button type="button" data-a="skin" data-id="${W.id}" ${S.gold >= W.price ? '' : 'disabled'}>${gf(W.price)}</button>`}</div>`;
-    }).join('') + (WALLS.length < 2 ? '<p class="note2">다른 스킨은 그림이 생기면 더해요. 걸이는 컬렉션에서 잠긴 걸이를 눌러 열어요.</p>' : '');
+    }).join('') + `<p class="note2">좋은 벽에 모셔 두면 강화할 때 파괴가 아주 조금 줄어요. 지금 쓰는 벽 −${wallCut()}%p · 걸이는 컬렉션에서 잠긴 걸이를 눌러 열어요.</p>`;
     if (shopCat === 'rec') h += `<div class="stats">
         <div><b>+${st.best}</b><small>최고 단계</small></div><div><b>${st.tries.toLocaleString()}</b><small>강화</small></div><div><b>${st.boom.toLocaleString()}</b><small>부순 기타</small></div>
         <div><b>${st.keep.toLocaleString()}</b><small>끊은 줄</small></div><div><b>${st.saved.toLocaleString()}</b><small>케이스로 막음</small></div><div><b>${gf(st.earned)}</b><small>판 돈 (${st.sold}대)</small></div></div>
@@ -2503,16 +2568,22 @@ $('#app').addEventListener('click', e => {
     const a = b.dataset.a, id = b.dataset.id;
     if (a === 'again') enhance();
     else if (a === 'shopcat') { shopCat = b.dataset.c; renderShop(); }
-    else if (a === 'rerank') { const bt = btDay(); bt.rr = (bt.rr | 0) + 1; save(); rerankAnim = true; sfx('drop'); renderBattle(); toast('새 연습 상대가 왔어요'); }
+    else if (a === 'rerank') oppRefresh();
     else if (a === 'gocase') { talkClear(); shopCat = 'case'; setTab('shop'); }   // 위 줄 조각 → 하드케이스 칩
     else if (a === 'dexall') { dexAll = !dexAll; mem.set('gk.dexAll', dexAll); dexClose(); renderDex(); }
     else if (a === 'dex') dexZoom(b.dataset.f, +b.dataset.lv, b);   // 2026-11-13 사용자: 도감에서 모은 기타를 누르면 그 자리 근처에 두 배쯤
     else if (a === 'new') findGuitar(false);
-    else if (a === 'newp') findGuitar(false, true);
     else if (a === 'buy1') findGuitar(true);
+    else if (a === 'adgold') goldAd();
     else if (a === 'daily') $('#rDaily').click();
-    else if (a === 'sell') sellBench();
-    else if (a === 'toss') tossBench(b);
+    // 2026-11-13 사용자: 팔기는 한 번 더 눌러야 팔린다. 3초 동안 안 누르면 원래대로
+    else if (a === 'sell') {
+        if (b.dataset.sure === '1') { sellBench(); return; }
+        b.dataset.sure = '1'; b.classList.add('sure');
+        b.innerHTML = `<i class="fas fa-coins"></i>진짜 <b>${gf(SELL[S.bench.lv])}</b>에?`;
+        fitG(b.querySelector('b'), SELL[S.bench.lv]);
+        setTimeout(() => { if (b.isConnected && b.dataset.sure === '1' && !busy) renderSact(); }, 3000);
+    }
     else if (a === 'hang') hangBench();
     else if (a === 'brag') brag(S.bench);
     // 2026-11-13 사용자: 카톡 미리보기에 +20 레스폴·스트랫 썸네일(images/play/gk/share/game.jpg) — 카톡이 예전 guitar.html 미리보기를 기억하고 있을 수 있어서 새 공유 페이지 주소로
@@ -2598,10 +2669,10 @@ $('#rDaily').addEventListener('click', () => {
     if (busy) return;
     if (S.daily === today()) { toast('오늘 출석은 했어요. 내일 또 와요!'); return; }
     S.daily = today(); gain(DAILY_GOLD); save(); updBar(true); sfx('sell');
-    const pk = PLAY.picks.earn(DAILY_PICKS);   // 놀이터 하루 200 한도를 넘으면 0
-    toast(`출석 +${gf(DAILY_GOLD)}${pk ? ` · 피크 +${pk}` : ' (피크는 오늘 한도를 다 받았어요)'}`);
+    toast(`출석 +${gf(DAILY_GOLD)}`);   // 2026-11-13 사용자: 여기선 피크 안 준다
     if (tab === 'bench') renderBench(); else if (tab === 'shop') renderShop();
 });
+$('#rAdG').addEventListener('click', () => { if (!busy) goldAd(); });   // 2026-11-13 사용자: 골드가 모자랄 때 광고 보고 골드
 $('#rSnd').addEventListener('click', () => { mem.set('gk.sound', !soundOn()); updBar(); if (soundOn()) sfx('hang'); });
 $('#rShare').addEventListener('click', () => {   // 2026-11-13 사용자: 무대 오른쪽 위 '자랑하기' — 작업대 기타, 없으면 대표 기타
     const g = S.bench || rep();
@@ -2613,9 +2684,10 @@ addEventListener('ahnssam-auth-settled', () => cloudSync());
 document.addEventListener('visibilitychange', () => { if (document.hidden && linked() && cloud.dirty) cloudPush(); });
 function start() {
     applyBench();
+    document.querySelectorAll('.pkb').forEach(b => b.remove());   // 2026-11-13 사용자: 여기선 피크를 안 쓴다(play.js 가 넣어 둔 피크 단추를 치운다)
     if (!S.intro) {
         S.intro = true; S.gold = Math.max(S.gold, START_GOLD); save();
-        setTimeout(() => talk(PLAY.picks.bal() >= FIRST_PICKS ? LINES.intro : [...LINES.intro, ...(S.daily !== today() ? LINES.noPickDaily : LINES.noPick)]), 400);
+        setTimeout(() => talk(LINES.intro), 400);
     }
     if (VS) setTab('battle'); else setTab('bench');
 }
