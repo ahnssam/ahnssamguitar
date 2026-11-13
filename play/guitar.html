@@ -46,13 +46,15 @@
     .stage .brag i { font-size: 15px; }
     .stage .scbox:active, .stage .brag:active { transform: translateY(1px); }
     @media (max-width: 359px) { .stage .scbox { font-size: 10px; padding: 5px 6px; left: 6px; } .stage .scbox .h, .stage .scbox em { display: none; } .stage .scbox i { display: inline; } .stage .scbox .h + span { margin-bottom: 0; } .stage .brag { right: 6px; padding: 6px 6px 5px; font-size: 10px; } }   /* 좁은 폰: 기타 옆 자리가 더 좁아서 '조각 7/20 · 하케 1/3' 두 줄로 */
-    /* 맨 위 놀이터 줄: [피크] [출석] [스피커] [공유] [놀이터] (2026-11-13 사용자) */
-    .ph .res.daily { height: 32px; padding: 0 10px; font-size: 13px; flex: none; }
+    /* 맨 위 놀이터 줄: [피크] [스피커] [놀이터] (2026-11-13 사용자 — 출석 보상은 골드 줄로 내림) */
     .ph .iconbtn { width: 32px; height: 32px; }
     .ph .pkb { flex: none; }
     @media (max-width: 560px) { .ph .wrap { gap: 6px; } .ph .ttl { margin-right: 2px; } }
-    @media (max-width: 400px) { .ph .res.daily span { display: none; } .ph .res.daily { width: 32px; padding: 0; justify-content: center; } }   /* 좁은 폰: 출석은 선물 아이콘만(받기 전엔 반짝, 받으면 회색) */
-    @media (max-width: 345px) { .ph .wrap { gap: 4px; } .ph .ttl { font-size: 13.5px; } .ph .iconbtn, .ph .res.daily { width: 30px; height: 30px; } }
+    @media (max-width: 345px) { .ph .wrap { gap: 4px; } .ph .ttl { font-size: 13.5px; } .ph .iconbtn { width: 30px; height: 30px; } }
+    /* 골드 줄 오른쪽 끝 출석 보상 (2026-11-13 사용자: 선물 상자만으론 뭔지 몰라서 '출석 보상' 글자를 늘 — 좁은 폰에서도) */
+    .gk-bar .res.daily { flex: none; font-size: 13.5px; }
+    .gk-bar .res.daily i { font-size: 14px; }
+    @media (max-width: 345px) { .gk-bar .res.daily { padding: 0 8px; font-size: 12.5px; gap: 4px; } }
     .res.gold.bump { animation: pkBump .6s cubic-bezier(.3, 1.6, .5, 1); }
     .gk-bar .sp { flex: 1; }
     .daily { border-color: #f6d29a; background: #fff8ec; color: #a85a00; cursor: pointer; }
@@ -78,6 +80,7 @@
 
     /* 탭 */
     .gk-tabs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin: 0 0 10px; background: #e6ede9; padding: 4px; border-radius: 14px; }
+    .gk-tabs.low { margin: 12px 0 10px; }   /* 작업대에서는 확률 아래 (2026-11-13 사용자) */
     .gk-tabs button { padding: 9px 0; border-radius: 10px; font-weight: 800; font-size: 13.5px; color: #5a6b62; display: flex; align-items: center; justify-content: center; gap: 6px; }
     .gk-tabs button.on { background: #fff; color: var(--green-deep); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
     .gk-tabs button .dot { width: 7px; height: 7px; border-radius: 50%; background: #e25555; }
@@ -584,25 +587,17 @@
     <a class="logo" href="../"><img src="../images/logo-vertical.webp" alt="안쌤의 기타나무숲"></a>
     <a class="ttl" href="guitar.html" id="toHome" title="작업대로"><i class="fas fa-guitar"></i>기타 키우기</a>
     <span class="sp"></span>
-    <!-- 2026-11-13 사용자: 출석·스피커는 피크 개수와 같은 줄로 (피크 단추는 play.js 가 .sp 바로 뒤에 넣는다). 공유는 돈 정보 줄 오른쪽 끝 -->
-    <button class="res daily" id="rDaily" type="button" title="하루 한 번: 1,000G + 피크 10"><i class="fas fa-gift"></i><span>출석보상</span></button>
+    <!-- 2026-11-13 사용자: 스피커는 피크 개수와 같은 줄로 (피크 단추는 play.js 가 .sp 바로 뒤에 넣는다). 출석 보상은 골드 줄로 내렸다 -->
     <button class="iconbtn" id="rSnd" type="button" aria-label="효과음 켜기/끄기"><i class="fas fa-volume-high"></i></button>
     <a class="lnk" href="./"><i class="fas fa-gamepad"></i><span>놀이터</span></a>
 </div></header>
 
 <main class="wrap gk" id="app">
-    <!-- 2026-11-13 사용자: 메뉴(작업대·컬렉션…)를 돈 정보 위로 -->
-    <nav class="gk-tabs" id="tabs">
-        <button type="button" data-t="bench" class="on"><i class="fas fa-screwdriver-wrench"></i>작업대</button>
-        <button type="button" data-t="room"><i class="fas fa-house"></i>컬렉션</button>
-        <button type="button" data-t="battle"><i class="fas fa-bolt"></i>배틀</button>
-        <button type="button" data-t="shop"><i class="fas fa-store"></i>상점</button>
-        <button type="button" data-t="dex"><i class="fas fa-book-open"></i>도감</button>
-        <button type="button" data-t="rank"><i class="fas fa-trophy"></i>랭킹</button>
-    </nav>
-    <!-- 2026-11-13 사용자: 돈 줄에는 골드만. 조각·하드케이스는 무대 왼쪽 위에 글로, 자랑하기는 무대 오른쪽 위 -->
+    <!-- 2026-11-13 사용자: 돈 줄에는 골드와 출석 보상(선물 상자 + '출석 보상' 글자, 휴대폰에서도 글자까지). 조각·하드케이스는 무대 왼쪽 위에 글로, 자랑하기는 무대 오른쪽 위 -->
     <div class="gk-bar">
         <span class="res gold" id="rGold" title="골드"><i class="fas fa-coins"></i><span>0G</span></span>
+        <span class="sp"></span>
+        <button class="res daily" id="rDaily" type="button" title="하루 한 번: 1,000G + 피크 10"><i class="fas fa-gift"></i><span>출석 보상</span></button>
     </div>
 
     <section id="tab-bench">
@@ -627,6 +622,15 @@
         <!-- 2026-11-13 사용자: 작업 박스 아래를 검은 칸으로 늘려서 튜닝·팔기·버리기를 강화 아래로 -->
         <div class="sband" id="sband" hidden></div>
         <div class="bench" id="bench"></div>
+        <!-- 2026-11-13 사용자: 메뉴(작업대·컬렉션…)는 작업대에서는 확률 아래로. 다른 탭에서는 setTab()이 골드 줄 바로 아래로 옮긴다 -->
+        <nav class="gk-tabs low" id="tabs">
+            <button type="button" data-t="bench" class="on"><i class="fas fa-screwdriver-wrench"></i>작업대</button>
+            <button type="button" data-t="room"><i class="fas fa-house"></i>컬렉션</button>
+            <button type="button" data-t="battle"><i class="fas fa-bolt"></i>배틀</button>
+            <button type="button" data-t="shop"><i class="fas fa-store"></i>상점</button>
+            <button type="button" data-t="dex"><i class="fas fa-book-open"></i>도감</button>
+            <button type="button" data-t="rank"><i class="fas fa-trophy"></i>랭킹</button>
+        </nav>
         <details class="table" id="otab"></details>
     </section>
     <section id="tab-room" hidden></section>
@@ -1499,7 +1503,7 @@ function updBar(goldBump) {
     $('#rSC').classList.toggle('ready', S.shards >= CASE_SHARDS && S.cases < CASE_MAX);
     const got = S.daily === today();
     $('#rDaily').classList.toggle('got', got);
-    $('#rDaily span').textContent = got ? '보상 받음' : '출석보상';   // 2026-11-13 사용자: '출석' → '출석보상'
+    $('#rDaily span').textContent = got ? '출석 보상 받음' : '출석 보상';   // 2026-11-13 사용자: '출석' → '출석 보상'(골드 줄, 글자를 늘)
     $('#rSnd').innerHTML = `<i class="fas ${soundOn() ? 'fa-volume-high' : 'fa-volume-xmark'}"></i>`;
     const dot = $('#tabs [data-t="battle"] .dot'), left = BT_DAY - btDay().n;
     if (left > 0 && !dot) $('#tabs [data-t="battle"]').insertAdjacentHTML('beforeend', '<span class="dot" title="오늘 배틀 남음"></span>');
@@ -1682,6 +1686,11 @@ function renderDex() {
 
 function setTab(t) {
     tab = t; dexClose();
+    // 2026-11-13 사용자: 메뉴는 작업대에서는 확률(#bench) 아래, 다른 탭에서는 골드 줄 바로 아래(그 탭 내용 위)
+    const nav = $('#tabs'), low = t === 'bench';
+    if (low) $('#bench').after(nav); else $('.gk-bar').after(nav);
+    nav.classList.toggle('low', low);
+    if (!low) { const top = $('#app').getBoundingClientRect().top; if (top < 0) window.scrollBy(0, top - 8); }   // 아래 메뉴로 넘어왔으면 새 탭 맨 위가 보이게
     document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
     ['bench', 'room', 'battle', 'shop', 'dex', 'rank'].forEach(k => { $('#tab-' + k).hidden = k !== t; });
     if (t === 'bench') renderBench();
