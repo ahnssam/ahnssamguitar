@@ -18,7 +18,7 @@ IDX_B = IDX_R = 0
 if not os.path.exists(FONT_B):   # 맥: Apple SD Gothic Neo 묶음 글꼴(.ttc) 안의 Bold(6)·Regular(0)
     FONT_B = FONT_R = '/System/Library/Fonts/AppleSDGothicNeo.ttc'; IDX_B, IDX_R = 6, 0
 W, H = 800, 420
-SHARE_V = 7   # 썸네일 그림을 바꾸면 올린다 — 카톡이 og:image 를 주소로 기억해서(2026-11-12 몸통 클로즈업으로 바꿈 · 2026-11-13 헤드머신 V2 그림·맥에서 다시 만듦 · 같은 날 텔레 +0~19·슈퍼스트랫 +0~9·+11·+14·+16)
+SHARE_V = 8   # 썸네일 그림을 바꾸면 올린다 — 카톡이 og:image 를 주소로 기억해서(2026-11-12 몸통 클로즈업으로 바꿈 · 2026-11-13 헤드머신 V2 그림·맥에서 다시 만듦 · 같은 날 텔레 +0~19·슈퍼스트랫 +0~9·+11·+14·+16 · 스트랫 +10~19)
 
 src = open(os.path.join(ROOT, GAME), encoding='utf8').read()
 
