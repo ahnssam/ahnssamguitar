@@ -242,6 +242,9 @@
     /* 강화 기다림: 무대가 어두워지고 기타가 점점 세게 떨리며 빛이 모인다 */
     .stage::after { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(36% 40% at 50% 55%, rgba(255, 214, 110, 0.2), rgba(0, 0, 0, 0.66) 72%); opacity: 0; transition: opacity .35s; }
     .stage.charging::after { opacity: 1; }
+    .sband { position: relative; }
+    .sband::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: rgba(0, 0, 0, 0.66); opacity: 0; transition: opacity .35s; }   /* 기다리는 동안 아래 검은 칸도 그림 칸과 같이 어둡게 */
+    .stage.charging + .sband::after { opacity: 1; }
     .cast { position: absolute; left: 50%; bottom: 22px; z-index: 6; width: min(240px, 72%); transform: translateX(-50%); text-align: center; color: #fff; font-weight: 900; font-size: 15px; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55); animation: fade .2s; }
     .cast em { display: block; height: 10px; margin-top: 7px; border-radius: 99px; background: rgba(0, 0, 0, 0.55); border: 1.5px solid rgba(255, 255, 255, 0.25); overflow: hidden; }
     .cast i { display: block; height: 100%; background: linear-gradient(90deg, #ffe27a, #ffb238); transform-origin: left; transform: scaleX(0); box-shadow: 0 0 10px rgba(255, 226, 122, 0.8); }
@@ -270,8 +273,9 @@
     @keyframes rvIn { from { opacity: 0; transform: translate(-50%, -42%) scale(.92); } }
     .flash { position: absolute; inset: 0; z-index: 5; background: #fff; pointer-events: none; animation: flash .35s ease-out forwards; }
     @keyframes flash { from { opacity: .85; } to { opacity: 0; } }
-    .stage.shake { animation: shake .3s; }
-    .stage.shake2 { animation: shake2 .55s; }
+    .stbox { position: relative; border-radius: 18px; overflow: hidden; }
+    .stbox.shake { animation: shake .3s; }
+    .stbox.shake2 { animation: shake2 .55s; }
     @keyframes shake { 25% { transform: translateX(-4px); } 50% { transform: translateX(4px); } 75% { transform: translateX(-2px); } }
     @keyframes shake2 { 10% { transform: translate(-9px, 4px); } 25% { transform: translate(8px, -5px); } 40% { transform: translate(-6px, 3px); } 55% { transform: translate(5px, -2px); } 75% { transform: translate(-2px, 1px); } }
 
@@ -657,6 +661,8 @@
     </div>
 
     <section id="tab-bench">
+        <!-- 2026-11-15 사용자: 파괴될 때 박스 아래쪽에 선이 생김 — 그림 칸(stage)만 흔들리고·번쩍이고·어두워져서 아래 검은 칸과 사이가 벌어졌다. 둘을 한 덩어리(stbox)로 -->
+        <div class="stbox" id="stbox">
         <div class="stage" id="stage">
             <div class="botfade"></div>
             <div class="spots"><i></i><i></i><i></i></div>
@@ -665,7 +671,7 @@
             <!-- 이름표 + 바로 아래 작업자 대사를 한 덩어리로 (2026-11-12 사용자: 박 사장 멘트를 기타 이름 아래에 붙여) — 같이 둥실 -->
             <div class="nmhud" id="nmhud"><div class="nmtag" id="nm"></div><div class="talk" id="talk" hidden></div></div>
             <!-- 2026-11-13 사용자: 조각 정보는 도형만으론 뜻을 모르니 무대 왼쪽 위(기타 이름 아래)에 글로. 누르면 상점 케이스 칸 -->
-            <button type="button" class="scbox" id="rSC" data-a="gocase" hidden title="파괴되면 부서진 기타 조각이 나와요. 조각 20개 → 하드케이스 1개(3개까지, 끼우면 파괴 1번 막음)">
+            <button type="button" class="scbox" id="rSC" data-a="gocase" hidden title="파괴되면 부서진 기타 조각이 나와요. 조각 20개가 모이면 하드케이스가 저절로 1개(3개까지, 끼우면 파괴 1번 막음)">
                 <span class="h">파괴 시 조각</span><span><em>획득</em><i>조각</i> <b id="rShard"><span>0/20</span></b></span>
                 <span class="h">→ 하드케이스로</span><span><em>파괴 방지</em><i>하케</i> <b id="rCase"><span>0/3</span></b></span>
             </button>
@@ -677,6 +683,7 @@
         </div>
         <!-- 2026-11-13 사용자: 작업 박스 아래를 검은 칸으로 늘려서 튜닝·팔기·버리기를 강화 아래로 -->
         <div class="sband" id="sband" hidden></div>
+        </div>
         <div class="bench" id="bench"></div>
         <!-- 2026-11-13 사용자: 메뉴(작업대·컬렉션…)는 작업대에서는 확률 아래로. 다른 탭에서는 setTab()이 골드 줄 바로 아래로 옮긴다 -->
         <nav class="gk-tabs low" id="tabs">
@@ -992,6 +999,7 @@ function load() {
     if (!s.skins.includes(s.skin)) s.skin = 'wood';
     ['gold', 'shards', 'cases'].forEach(k => { s[k] = Math.max(0, Math.floor(+s[k] || 0)); });
     s.cases = Math.min(CASE_MAX, s.cases);
+    while (s.shards >= CASE_SHARDS && s.cases < CASE_MAX) { s.shards -= CASE_SHARDS; s.cases++; }   // 하드케이스는 저절로 (2026-11-15)
     s.tuner = Math.min(3, Math.max(0, s.tuner | 0));
     // 예전(2026-11-12 잠깐) 따로 키우던 앰프·멀티는 창고에 물건으로 옮긴다
     if (raw.gear && typeof raw.gear === 'object') [['amp', 'amp'], ['fx', 'multi']].forEach(([k, f]) => { const lv = Math.min(MAX, Math.max(0, raw.gear[k] | 0)); if (lv > 0 && s.store.length < STORE_MAX) s.store.push({ id: rid(), lv, f }); });
@@ -1062,6 +1070,7 @@ function mergeSaves(here, acct) {
         if (A.store.length < STORE_MAX) A.store.push(g); else A.gold += SELL[g.lv];   // 창고도 꽉 차면 판 값으로
     }
     A.gold += H.gold; A.shards += H.shards; A.cases = Math.min(CASE_MAX, A.cases + H.cases);
+    while (A.shards >= CASE_SHARDS && A.cases < CASE_MAX) { A.shards -= CASE_SHARDS; A.cases++; }
     for (const [f, bits] of Object.entries(H.dex)) A.dex[f] = (A.dex[f] | 0) | (bits | 0);
     A.skins = [...new Set([...A.skins, ...H.skins])]; A.bskins = [...new Set([...A.bskins, ...H.bskins])]; A.asks = [...new Set([...A.asks, ...H.asks])];
     A.tuner = Math.max(A.tuner, H.tuner);
@@ -1439,8 +1448,12 @@ function btnCap() {
     d.animate([{ transform: 'translate(-50%, -50%) rotate(0deg)', opacity: 1 }, { transform: `translate(calc(-50% + ${side * 60}px), calc(-50% - 95px)) rotate(${side * 300}deg)`, opacity: 1, offset: .45 },
         { transform: `translate(calc(-50% + ${side * 115}px), calc(-50% + 70px)) rotate(${side * 620}deg)`, opacity: 0 }], { duration: 900, easing: 'cubic-bezier(.25, .6, .45, 1)', fill: 'forwards' }).onfinish = () => d.remove();
 }
-function shake(big) { const el = $('#stage'); el.classList.remove('shake', 'shake2'); void el.offsetWidth; el.classList.add(big ? 'shake2' : 'shake'); }
-function flash() { const d = document.createElement('div'); d.className = 'flash'; $('#stage').appendChild(d); setTimeout(() => d.remove(), 400); }
+// 하드케이스는 조각이 CASE_SHARDS 개 모이면 저절로 만들어진다 (2026-11-15 사용자, 예전엔 상점에서 '만들기').
+//   가득(CASE_MAX)이면 조각은 모아 두었다가, 케이스를 하나 쓰면 바로 만든다. 만든 개수를 돌려준다
+function autoCase() { let n = 0; while (S.shards >= CASE_SHARDS && S.cases < CASE_MAX) { S.shards -= CASE_SHARDS; S.cases++; n++; } return n; }
+function caseNote(n) { if (!n) return; sfx('case'); toast(`조각 ${CASE_SHARDS}개로 하드케이스를 만들었어요 (${S.cases}/${CASE_MAX})`); }
+function shake(big) { const el = $('#stbox'); el.classList.remove('shake', 'shake2'); void el.offsetWidth; el.classList.add(big ? 'shake2' : 'shake'); }
+function flash() { const d = document.createElement('div'); d.className = 'flash'; $('#stbox').appendChild(d); setTimeout(() => d.remove(), 400); }
 
 // 말풍선: [누가, 말] 을 차례로. 누르면 넘어간다
 const WHO = { me: ['나', 'face_me'], boss: ['박 사장', 'face_boss'], minji: ['민지', 'face_minji'], oo: ['ㅇㅇ', 'face_troll'] };
@@ -1897,9 +1910,10 @@ async function enhance() {
     ghost = { ...g };
     const wasRep = S.rep === g.id;   // 되살리면 대표도 그대로
     let gotSh = 0;   // 부서졌을 때 나온 조각 수
+    let caseMade = 0;   // 하드케이스를 쓰고 바로 새로 만든 개수
     if (out === 'ok') { g.lv++; S.st.ok++; S.st.best = Math.max(S.st.best, g.lv); dexAdd(g.f, g.lv); }
     else if (out === 'keep') S.st.keep++;
-    else if (out === 'saved') { S.st.saved++; S.cases--; if (!S.cases) S.caseOn = false; }
+    else if (out === 'saved') { S.st.saved++; S.cases--; caseMade = autoCase(); if (!S.cases) S.caseOn = false; }
     else { gotSh = shardDrop(g.lv); S.st.boom++; S.shards += gotSh; S.bench = null; if (S.rep === g.id) S.rep = ''; }
     save();
     await suspense(lv0);
@@ -1931,6 +1945,7 @@ async function enhance() {
         burst(18, ['#2b2f2e', '#4a504e', '#7d8481', '#c9a64a'], { y: 55, spread: 140, size: [5, 11], dur: 1000 });
         cv.animate([{ transform: CVT }, { transform: `${CVT} rotate(-8deg)` }, { transform: `${CVT} rotate(6deg)` }, { transform: CVT }], { duration: 420 });
         setTimeout(() => talk(one(LINES.saved)), 600);
+        if (caseMade) setTimeout(() => caseNote(caseMade), 1400);
         await sleep(600);
     } else {
         $('#bench').innerHTML = '';
@@ -1961,6 +1976,8 @@ async function enhance() {
             setTimeout(() => talk(one(LINES.revive)), 600);
             await sleep(500);
         } else {
+            const made = autoCase();
+            if (made) { save(); updBar(); caseNote(made); await sleep(700); }
             if (S.st.boom % 2 === 1) await new Promise(res => PLAY.interstitial(res, '악기가 부서진 뒤 전면 광고', 'boom'));
             const said = one(g.lv >= 10 ? LINES.bigBoom : LINES.boom);
             talk([['me', one(LINES.sigh)], ...said.slice(1)]);   // 2026-11-13 사용자: '나'는 '……' 대신 신세한탄
@@ -2593,9 +2610,9 @@ function renderShop() {
         return `<div class="item"><span class="ic t${n}"><i class="fas ${T.icon}"></i></span><div class="it"><b>${T.name} · 성공 +${T.bonus}%p</b><small>${T.desc}</small></div>
             ${own ? `<span class="own">${S.tuner === n ? '쓰는 중' : '더 좋은 걸 써요'}</span>` : `<button type="button" data-a="buyT" data-n="${n}" ${S.gold >= T.price ? '' : 'disabled'}>${gf(T.price)}</button>`}</div>`;
     }).join('') + `<p class="note2">튜너가 있으면 강화할 때 바늘을 맞춰요. 성공률은 '줄 끊김'에서 가져오고 '파괴'는 그대로예요. 작업대에서 튜닝을 건너뛸 수도 있어요.</p>`;
-    if (shopCat === 'case') h += `<div class="item"><span class="ic case"><i class="fas fa-briefcase"></i></span><div class="it"><b>하드케이스 만들기 (지금 ${S.cases}/${CASE_MAX}개)</b>
-        <small>부서진 기타 조각 ${CASE_SHARDS}개 → 하드케이스 1개. 끼워 두면 파괴를 한 번 막아 줘요. ${CASE_MAX}개까지 가질 수 있어요(조각은 따로 계속 모여요).</small><div class="shardbar"><i style="width:${Math.min(100, S.shards / CASE_SHARDS * 100)}%"></i></div></div>
-        <button type="button" data-a="craft" ${S.shards >= CASE_SHARDS && S.cases < CASE_MAX ? '' : 'disabled'}>${S.cases >= CASE_MAX ? `가득 ${S.cases}/${CASE_MAX}` : S.shards >= CASE_SHARDS ? '만들기' : `조각 ${S.shards}/${CASE_SHARDS}`}</button></div>`;
+    if (shopCat === 'case') h += `<div class="item"><span class="ic case"><i class="fas fa-briefcase"></i></span><div class="it"><b>하드케이스 (지금 ${S.cases}/${CASE_MAX}개)</b>
+        <small>부서진 기타 조각이 ${CASE_SHARDS}개 모이면 하드케이스가 저절로 만들어져요. 끼워 두면 파괴를 한 번 막아 줘요. ${CASE_MAX}개까지 가질 수 있고, 가득 차 있으면 조각은 모아 뒀다가 하나 쓰면 바로 만들어져요.</small><div class="shardbar"><i style="width:${Math.min(100, S.shards / CASE_SHARDS * 100)}%"></i></div></div>
+        <button type="button" disabled>${S.cases >= CASE_MAX ? `가득 ${S.cases}/${CASE_MAX}` : `조각 ${S.shards}/${CASE_SHARDS}`}</button></div>`;
     if (shopCat === 'bench') h += BENCHES.map((B, i) => {
         const own = S.bskins.includes(B.id), use = S.bskin === B.id, up = r1(i * SKIN_UP);
         return `<div class="item"><span class="ic skin" style="background-image:url(../images/play/gk/${B.src.replace('bg_', 'bgt_')})"></span><div class="it"><b>${B.name}${up ? ` · 강화 성공 +${up}%p` : ''}</b><small>${B.desc}</small></div>
@@ -2705,10 +2722,6 @@ $('#app').addEventListener('click', e => {
         const B = BENCHES.find(w => w.id === b.dataset.id); if (!B) return;
         if (!S.bskins.includes(B.id)) { if (S.gold < B.price) return; S.gold -= B.price; S.bskins.push(B.id); sfx('sell'); }
         S.bskin = B.id; save(); applyBench(); renderShop(); toast(`작업대를 '${B.name}'(으)로 바꿨어요`);
-    } else if (a === 'craft') {
-        if (S.shards < CASE_SHARDS) return;
-        if (S.cases >= CASE_MAX) { toast(`하드케이스는 ${CASE_MAX}개까지예요`); return; }
-        S.shards -= CASE_SHARDS; S.cases++; save(); sfx('case'); renderShop(); toast('하드케이스를 만들었어요. 작업대에서 끼워요');
     } else if (a === 'reset') {
         if (!confirm('골드·기타·기록을 모두 지우고 처음부터 할까요? 되돌릴 수 없어요.')) return;
         S = fresh(); save(); setTab('bench'); start();
