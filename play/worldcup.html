@@ -68,13 +68,14 @@
     .soonlist span { font-size: 12.5px; padding: 4px 10px; border-radius: 999px; background: #f1f4f2; color: #666; }
 
     /* 대결 */
-    .round { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 0 4px; flex-wrap: wrap; }
+    .round { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 14px 0 2px; flex-wrap: wrap; }
+    #app > .vs:first-child { margin-top: 14px; }   /* 대결 화면은 카드가 맨 위 */
     .round b { font-size: 22px; font-weight: 900; }
     .round .bar { width: min(320px, 60vw); height: 6px; background: #dfe7e2; border-radius: 99px; overflow: hidden; }
     .round .bar i { display: block; height: 100%; background: var(--green-mid); transition: width .3s; }
     .round .undo { font-size: 13px; color: #666; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: #fff; }
     .round .undo[disabled] { opacity: .4; cursor: default; }
-    .q { text-align: center; color: var(--sub); font-size: 13.5px; margin-bottom: 12px; }
+    .q { text-align: center; color: var(--sub); font-size: 13.5px; margin: 2px 0 6px; }
     #app { overflow-x: clip; }   /* 안 고른 기타가 바깥으로 빠질 때 가로 스크롤이 생기지 않게 */
     .vs { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .vs .mark { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); z-index: 2; width: 56px; height: 56px; border-radius: 50%; background: var(--ink); color: #fff; font-weight: 900; font-size: 18px; display: grid; place-items: center; box-shadow: 0 0 0 5px var(--cream); font-family: 'Arial Black', sans-serif; pointer-events: none; }
@@ -983,11 +984,12 @@ function match() {
         <span class="ph-img"><img src="${imgSrc(it)}" alt="${esc(it.n)}"></span>
         <span class="nm"><b>${esc(it.n)}</b><small>${esc(it.ko)} · ${esc(it.y)}</small><span>${esc(it.d)}</span></span></button>`;
     app.classList.remove('wide');
-    app.innerHTML = `<div class="round"><b>${roundName(n)}${n > 2 ? ` <small style="font-size:15px;color:var(--sub)">${S.i / 2 + 1} / ${n / 2}</small>` : ''}</b>
+    // 2026-11-14 사용자: 진행 막대·제목이 위에 있는 것보다 아래에 있고, 고르는 카드가 위에 있는 게 보기 편함
+    app.innerHTML = `<div class="vs${S.theme.song ? ' song' : ''}">${card(a, 0)}<span class="mark">VS</span>${card(b, 1)}</div>
+        <div class="round"><b>${roundName(n)}${n > 2 ? ` <small style="font-size:15px;color:var(--sub)">${S.i / 2 + 1} / ${n / 2}</small>` : ''}</b>
             <span class="bar"><i style="width:${done / total * 100}%"></i></span>
             <button class="undo" ${S.hist.length ? '' : 'disabled'}><i class="fas fa-rotate-left"></i> 되돌리기</button></div>
         <p class="q">${esc(S.theme.q)}</p>
-        <div class="vs${S.theme.song ? ' song' : ''}">${card(a, 0)}<span class="mark">VS</span>${card(b, 1)}</div>
         <p class="keys">키보드 ← → 로도 고를 수 있어요</p>`;
     app.querySelectorAll(S.theme.song ? '.choose' : '.pick').forEach(p => p.addEventListener('click', () => choose(+p.dataset.side)));
     // 리프곡: 썸네일을 누르면 그 자리에서 영상 재생 (다른 쪽 영상은 멈춤 = 썸네일로 되돌림)
@@ -1172,18 +1174,19 @@ function comments(s, w) {
         st.more = r.length === 20;
         paint();
     };
+    // 2026-11-14 사용자: 한마디는 한 판에 한 번만 — 남기면 쓰는 칸을 없앤다(s.commented, 같은 판 결과 화면을 다시 그려도 안 나옴)
     box.innerHTML = `<h3><i class="fas fa-comment-dots" style="color:var(--green-mid)"></i>한마디 남기기 <small id="cm-n"></small></h3>
-        <form class="cm-form card" id="cm-form">
+        ${s.commented ? '' : `<form class="cm-form card" id="cm-form">
             <div class="cm-me"><img src="${imgSrc(w)}" alt=""><span><small>내 우승</small><b>${esc(w.ko || w.n)}</b></span></div>
             <input id="cm-nick" maxlength="12" placeholder="닉네임 (비우면 익명)" autocomplete="nickname" value="${esc(mem.get('wc.nick', ''))}">
             <textarea id="cm-body" maxlength="200" rows="2" placeholder="이걸 고른 이유, 아깝게 떨어진 후보… 한마디 남겨 주세요"></textarea>
             <div class="cm-row"><span class="cm-cnt" id="cm-cnt">0 / 200</span><button class="btn" id="cm-send"><i class="fas fa-pen"></i>남기기</button></div>
-        </form>
+        </form>`}
         <ul class="cm-list" id="cm-list"><li class="cm-empty">불러오는 중…</li></ul>
         <button type="button" class="btn ghost cm-more" id="cm-more" hidden>더 보기</button>`;
     const body = document.getElementById('cm-body');
-    body.addEventListener('input', () => { document.getElementById('cm-cnt').textContent = `${body.value.length} / 200`; });
-    document.getElementById('cm-form').addEventListener('submit', async e => {
+    if (body) body.addEventListener('input', () => { document.getElementById('cm-cnt').textContent = `${body.value.length} / 200`; });
+    if (!s.commented) document.getElementById('cm-form').addEventListener('submit', async e => {
         e.preventDefault();
         const nick = document.getElementById('cm-nick').value.trim(), text = body.value.trim(), btn = document.getElementById('cm-send');
         if (!text) return PLAY.toast(C_ERR.empty);
@@ -1191,9 +1194,11 @@ function comments(s, w) {
         try {
             await rpc('play_wc_comment_add', { p_theme: key, p_pick: w.k, p_nick: nick, p_body: text, p_key: ckey() });
             mem.set('wc.nick', nick);
-            body.value = ''; document.getElementById('cm-cnt').textContent = '0 / 200';
-            await load(true);
+            s.commented = true;
+            document.getElementById('cm-form').remove();   // 한 판에 한 번 — 남기면 쓰는 칸은 사라지고 내 글은 목록 맨 위에
             PLAY.toast('한마디를 남겼어요');
+            load(true).catch(() => {});   // 목록만 다시 — 여기서 실패해도 '남기지 못했어요'가 뜨면 안 됨
+            return;
         } catch (err) { PLAY.toast(C_ERR[err.code] || '남기지 못했어요. 잠시 뒤에 다시 해 주세요.'); }
         btn.disabled = false;
     });
