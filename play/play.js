@@ -220,6 +220,22 @@
     // 뒤로 가기 처리(route)가 먼저 받으면 결과 화면에서 새 판이 시작될 수 있다 — 그래서 여기서 먼저 받아 넘긴다.
     addEventListener('popstate', e => { if (window.__ahnAuthPop && window.__ahnAuthPop(e)) e.stopImmediatePropagation(); });
     siteHeader();
+    // 2026-11-14 사용자: 퀴즈쇼·월드컵도 기타 키우기처럼 놀이터 줄(.ph)을 없애고 제목은 사이트 메뉴 로고 옆으로(그만큼 화면이 위로).
+    //   피크는 퀴즈 찬스 줄에 이미 보이니 빼고, 놀이터·다른 게임 단추는 게임 안 아래 줄로(sideLinks). <body data-ttl-up> 인 페이지만.
+    //   사이트 메뉴가 없는 앱(TWA)은 예전처럼 놀이터 줄 그대로.
+    (function titleUp() {
+        if (!document.body.hasAttribute('data-ttl-up')) return;
+        const lg = document.querySelector('header.site-hd .hd > .logo'), t = document.querySelector('header.ph .ttl');
+        if (!lg || !t) return;
+        lg.after(t);
+        document.body.classList.add('ttl-up');
+    })();
+    // 놀이터·다른 게임 단추 — 사이트 메뉴로 제목을 올린 페이지에서만 보인다(앱은 놀이터 줄에 있음, play.css 의 .slk)
+    //   other = [주소, 아이콘, 이름], text = 글자까지(목록 화면) / 없으면 동그란 아이콘만(게임 줄)
+    function sideLinks(other, text) {
+        const a = (h, ic, nm) => `<a href="${h}" title="${nm}" aria-label="${nm}"><i class="fas ${ic}"></i>${text ? `<span>${nm}</span>` : ''}</a>`;
+        return `<span class="slk${text ? '' : ' ic'}">${a('./', 'fa-gamepad', '놀이터')}${a(...other)}</span>`;
+    }
 
     // ---------- 피크 (놀이터 포인트) ----------
     // 2026-11-10 사용자 결정: 놀이터 안에서만 쓰는 포인트. 퀴즈·월드컵 한 판 끝낼 때마다 10, 하루 200까지.
@@ -326,5 +342,5 @@
             <span class="bulb"><i class="fas fa-lightbulb"></i></span>${opt.count ? `<span class="cnt">${opt.count}문제</span>` : ''}</div>`;
     }
 
-    window.PLAY = { hasLogin: () => !!userToken(), myKey, picks, PICK, pickIcon, pickLine, thumb, esc, shuffle, adSlot, interstitial, rewarded, toast, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow, IS_APP };
+    window.PLAY = { hasLogin: () => !!userToken(), myKey, sideLinks, picks, PICK, pickIcon, pickLine, thumb, esc, shuffle, adSlot, interstitial, rewarded, toast, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow, IS_APP };
 })();

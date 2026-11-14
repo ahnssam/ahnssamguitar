@@ -17,7 +17,7 @@
 <link rel="icon" href="../images/favicon.ico" type="image/x-icon">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="play.css?v=2026111101">
+<link rel="stylesheet" href="play.css?v=2026111408">
 <style>
     .hero { text-align: center; padding: 34px 0 6px; }
     .hero h1 { font-size: clamp(24px, 4.4vw, 36px); font-weight: 900; letter-spacing: -0.02em; }
@@ -105,6 +105,11 @@
         .lv .stars { grid-area: st; }
         .lv small { grid-area: sm; } .lv .ex { grid-area: ex; } .lv .go { grid-area: go; margin-top: 2px; }
     }
+    /* 2026-11-14 사용자(휴대폰 화면을 보고): 퀴즈 위에 퀴즈와 상관없는 것이 너무 많은 자리를 차지함 —
+       놀이터 줄을 없애고, 효과음·놀이터·월드컵 단추는 시간 막대 오른쪽 한 줄로, 찬스 단추 두 개도 한 줄로 */
+    .trow { display: flex; align-items: center; gap: 10px; }
+    .trow .timer { flex: 1; }
+    .qtools { display: inline-flex; align-items: center; gap: 6px; flex: none; }
     .snd { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: #fff; color: #667; font-size: 13px; display: grid; place-items: center; }
 
     /* 정답·오답 연출 (연습도구 '코드 진행 청음'과 같은 느낌) — 정답: 팡! 튀어오르며 초록 빛 / 오답: 부들부들 흔들리고 축 처짐 */
@@ -242,12 +247,17 @@
     .ch[disabled]:not(.used) { opacity: .45; cursor: default; }
     .timer.paused i { background: #6fa8dc; }
     .choices button.gone { opacity: .3; text-decoration: line-through; }
-    @media (max-width: 640px) { .ch { font-size: 12.5px; padding: 6px 10px; } }
+    @media (max-width: 640px) {
+        .ch { font-size: 12.5px; padding: 5px 9px; gap: 3px; white-space: nowrap; } .ch .lg, .chs .chl .lg { display: none; }
+        .chs { flex-wrap: nowrap; gap: 6px; margin-top: 8px; } .chs .chl { font-size: 12px; white-space: nowrap; }
+        .qhd { padding-top: 12px; }
+        .qtools { gap: 5px; } .qtools .snd, .qtools .slk a { width: 30px; height: 30px; }
+    }
     .ph a.ttl { text-decoration: none; cursor: pointer; }
     .ph a.ttl:hover { opacity: .8; }
 </style>
 </head>
-<body>
+<body data-ttl-up>
 <header class="ph"><div class="wrap">
     <a class="logo" href="../"><img src="../images/logo-vertical.webp" alt="안쌤의 기타나무숲"></a>
     <a class="ttl" href="quiz.html" id="toList" title="퀴즈 목록"><i class="fas fa-circle-question"></i>기타 퀴즈쇼</a>
@@ -265,7 +275,7 @@
     <div>© 2026 안쌤의 기타나무숲</div>
 </footer>
 
-<script src="play.js?v=2026111402"></script>
+<script src="play.js?v=2026111403"></script>
 <script src="trivia.js?v=2026110901"></script>
 <script src="songs.js?v=2026110801"></script>
 <script src="tabsnd.js?v=2026111301"></script>
@@ -305,7 +315,7 @@ const RANK = [
 function start() {
     G = null; nav++; cancelAnimationFrame(timer);
     history.replaceState(null, '', location.pathname);
-    app.innerHTML = `<section class="hero"><h1>안쌤의 <em>기타 퀴즈쇼</em></h1><p>10문제로 알아보는 내 기타 레벨. 친구랑 점수 내기 해 보세요!</p></section>
+    app.innerHTML = `<section class="hero"><h1>안쌤의 <em>기타 퀴즈쇼</em></h1><p>10문제로 알아보는 내 기타 레벨. 친구랑 점수 내기 해 보세요!</p>${PLAY.sideLinks(['worldcup.html', 'fa-trophy', '이상형 월드컵'], true)}</section>
         <div class="modes">${Object.entries(MODES).map(([k, m]) => `<button class="mode card" data-m="${k}">
             <span class="mthumb">${PLAY.thumb(k, { count: k === 'trivia' ? TRIVIA.length : 0 })}</span>
             <h2>${esc(m.name)}</h2><p>${esc(m.desc)}</p>
@@ -318,7 +328,7 @@ function start() {
 function pickLevel() {
     G = null; nav++; cancelAnimationFrame(timer);
     history.replaceState(null, '', '?m=trivia');
-    app.innerHTML = `<section class="hero"><h1>기타 상식 <em>퀴즈</em></h1><p>내 실력에 맞는 난이도를 골라요. 10문제 · 15초</p></section>
+    app.innerHTML = `<section class="hero"><h1>기타 상식 <em>퀴즈</em></h1><p>내 실력에 맞는 난이도를 골라요. 10문제 · 15초</p>${PLAY.sideLinks(['worldcup.html', 'fa-trophy', '이상형 월드컵'], true)}</section>
         <div class="lvs">${[1, 2, 3].map(l => `<button class="lv card" data-lv="${l}" style="--c:${LV[l].c}">
             <span class="em">${LV[l].em}</span><span class="stars">${'★'.repeat(l)}<i>${'★'.repeat(3 - l)}</i></span>
             <b>${LV[l].name}</b><small>${esc(LV[l].who)}</small><span class="ex">${esc(LV[l].ex)}</span>
@@ -575,9 +585,9 @@ function ask() {
     } else if (G.mode === 'artist') body = `<span class="chip">${esc(q.chip)}</span><div class="song">「${esc(q.title)}」</div><div class="ask" style="font-size:17px;color:#555;font-weight:700">누구 노래일까?</div>`;
     else body = `<div class="ask">${esc(q.ask)}</div>`;
     app.innerHTML = `<div class="qhd"><span class="md"><i class="fas ${G.m.icon}"></i> ${esc(G.m.name)}${G.lv ? ` <span class="lvtag" style="--c:${LV[G.lv].c}">${LV[G.lv].em} ${LV[G.lv].name}</span>` : ''}</span><span class="no">${G.i + 1} / ${G.qs.length}</span>
-            <span class="sp"></span>${G.streak >= 2 ? `<span class="streak">🔥 ${G.streak}연속</span>` : ''}<span class="ok">맞힘 ${G.score}</span><span class="sc"><b>${G.pts.toLocaleString()}</b>점</span>
-            <button class="snd" id="snd" aria-label="효과음 켜고 끄기" title="효과음 켜고 끄기"><i class="fas ${soundOn() ? 'fa-volume-high' : 'fa-volume-xmark'}"></i></button></div>
-        <div class="timer" id="tm"><i></i></div>
+            <span class="sp"></span>${G.streak >= 2 ? `<span class="streak">🔥 ${G.streak}연속</span>` : ''}<span class="ok">맞힘 ${G.score}</span><span class="sc"><b>${G.pts.toLocaleString()}</b>점</span></div>
+        <div class="trow"><div class="timer" id="tm"><i></i></div>
+            <span class="qtools"><button class="snd" id="snd" aria-label="효과음 켜고 끄기" title="효과음 켜고 끄기"><i class="fas ${soundOn() ? 'fa-volume-high' : 'fa-volume-xmark'}"></i></button>${PLAY.sideLinks(['worldcup.html', 'fa-trophy', '이상형 월드컵'])}</span></div>
         <div class="chs" id="chs"></div>
         <div class="qbox card">${body}<div class="choices">${q.opts.map((o, k) => `<button data-o="${esc(o)}"><span class="k">${L[k]}</span>${esc(o)}</button>`).join('')}</div></div>
         <div id="fb"></div>`;
@@ -612,12 +622,13 @@ function ask() {
 }
 // ---------- 피크 찬스 ----------
 const CH_MAX = 2;   // 한 판에 찬스 2번까지 (찬스로만 풀면 순위가 의미 없어져서)
-const CH = { stop: ['⏸', '시간 멈추기', '시간 멈춤!'], cut: ['✂️', '오답 2개 지우기', '오답 지웠어요'] };
+// 휴대폰에서는 .lg 를 숨겨 '멈추기'·'2개 지우기'로 짧게 — 찬스 단추 두 개가 한 줄에 들어가게(2026-11-14)
+const CH = { stop: ['⏸', '<span class="lg">시간 </span>멈추기', '<span class="lg">시간 </span>멈춤!'], cut: ['✂️', '<span class="lg">오답 </span>2개 지우기', '<span class="lg">오답 </span>지웠어요'] };
 function paintChances(q) {
     const box = document.getElementById('chs');
     if (!box) return;
     const left = CH_MAX - G.ch, poor = picks.bal() < PICK.chance;
-    box.innerHTML = `<span class="chl">찬스 <b>${left}</b>/${CH_MAX} · ${pickIcon()} ${picks.bal().toLocaleString()}피크</span>`
+    box.innerHTML = `<span class="chl">찬스 <b>${left}</b>/${CH_MAX} · ${pickIcon()} ${picks.bal().toLocaleString()}<span class="lg">피크</span></span>`
         + Object.entries(CH).map(([id, [ic, label, done]]) => {
             const used = q.ch.includes(id);
             return `<button class="ch${used ? ' used' : poor ? ' poor' : ''}" data-ch="${id}"${used || q.done || left <= 0 ? ' disabled' : ''}>${ic} ${used ? done : `${label} <small>${pickIcon()}${PICK.chance}</small>`}</button>`;
@@ -653,12 +664,8 @@ function answer(o) {
     });
     app.querySelectorAll('.hint').forEach(h => { h.disabled = true; });
     paintChances(q);
-    if (G.mode === 'tab') {                      // 정답 공개: 첫 칸을 같은 높이 그대로 그림 맨 위(전체 폭)로 바꿔 악보 제목·가수가 보이게
-        const img = app.querySelector('.tabcrop .strip img');
-        if (img) Object.assign(img.style, { width: '100%', marginLeft: '0%', marginTop: '0%' });
-        const lbl = app.querySelector('.tabcrop .lbl');
-        if (lbl) lbl.remove();
-    }
+    // 악보 퀴즈: 답한 뒤에도 문제로 낸 악보 줄을 그대로 둔다(2026-11-14 사용자 — 예전엔 그림 맨 위 제목·가수로 바꿨음).
+    //   곡 이름·가수는 아래 정답 칸에 나온다
     const sc = app.querySelector('.qhd');
     sc.querySelector('.ok').textContent = `맞힘 ${G.score}`;
     sc.querySelector('.sc b').textContent = G.pts.toLocaleString();
