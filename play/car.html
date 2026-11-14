@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#8fd3ff">
+<title>부릉부릉 출동! | 안쌤의 기타 놀이터</title>
+<link rel="icon" href="../images/favicon.ico" type="image/x-icon">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="play.css?v=2026111101">
+<style>
+    [hidden] { display: none !important; }
+    html.mash-on, html.mash-on body { overflow: hidden; }
+    .gate { margin-top: 40px; padding: 34px 22px; text-align: center; }
+    .gate h1 { font-size: 22px; font-weight: 900; }
+    .gate p { color: #666; margin: 8px 0 16px; }
+    .stage { position: relative; margin-top: 18px; height: clamp(360px, 66vh, 620px); border-radius: 18px; overflow: hidden; background: #bfe6ff;
+        touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; box-shadow: 0 14px 40px rgba(40, 110, 160, .18); }
+    .stage.playing { position: fixed; inset: 0; z-index: 9999; margin: 0; height: auto; border-radius: 0; cursor: none; }
+    .stage:fullscreen { width: 100%; height: 100%; border-radius: 0; }
+    .stage:-webkit-full-screen { width: 100%; height: 100%; border-radius: 0; }
+    .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .ov { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 8px; padding: 5% 20px 20px; text-align: center; }
+    .stage.playing .ov { display: none; }
+    .ov h1 { font-size: clamp(34px, 7vw, 68px); font-weight: 900; letter-spacing: -.02em; line-height: 1.1; color: #fff; -webkit-text-stroke: 2px #2f6fb0; paint-order: stroke fill;
+        text-shadow: 0 4px 0 #2f6fb0, 0 8px 18px rgba(30, 80, 140, .3); }
+    .ov .sub { font-size: clamp(14px, 2.2vw, 18px); font-weight: 700; color: #24507c; background: rgba(255, 255, 255, .7); padding: 4px 14px; border-radius: 999px; }
+    .go { margin-top: 6px; padding: 15px 44px; border-radius: 999px; font-size: clamp(18px, 3vw, 24px); font-weight: 900; color: #fff;
+        background: linear-gradient(180deg, #ffb13d, #ff7a2f); box-shadow: 0 6px 0 #c4541a, 0 10px 24px rgba(200, 90, 30, .3); animation: goPulse 1.8s ease-in-out infinite; }
+    .go:active { transform: translateY(4px); box-shadow: 0 2px 0 #c4541a; }
+    @keyframes goPulse { 50% { transform: scale(1.05); } }
+    .ov .st { font-size: 13px; font-weight: 700; color: #24507c; background: rgba(255, 255, 255, .78); padding: 5px 13px; border-radius: 999px; }
+    .escchip { position: absolute; right: 14px; bottom: 12px; display: none; align-items: center; gap: 8px; padding: 6px 11px; border-radius: 999px; cursor: pointer;
+        font-size: 11.5px; font-weight: 700; color: rgba(40, 60, 80, .5); background: rgba(255, 255, 255, .4); transition: color .15s, background .15s, transform .15s; }
+    .stage.playing .escchip { display: inline-flex; }
+    .escchip.hot { color: #fff; background: rgba(226, 85, 85, .9); transform: scale(1.08); }
+    .escchip i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: rgba(40, 60, 80, .22); }
+    .escchip.hot i { background: rgba(255, 255, 255, .4); }
+    .escchip i.on { background: #fff; }
+    /* 엄마 아빠 설정 */
+    .set { margin-top: 18px; padding: 18px 20px; font-size: 14px; color: #333; }
+    .set h3 { font-size: 16px; font-weight: 900; margin-bottom: 10px; }
+    .set .r { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); }
+    .set .r > b { width: 118px; flex: none; }
+    .set .r small { color: #888; flex-basis: 100%; margin-left: 128px; margin-top: -4px; line-height: 1.6; }
+    .set .mini { padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--green-deep); color: #fff; }
+    .set .mini.gh { background: #fff; color: #555; border: 1.5px solid var(--line); }
+    .set label { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; }
+    .set input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--green-deep); }
+    .set select { font: inherit; padding: 7px 10px; border-radius: 10px; border: 1.5px solid var(--line); background: #fff; }
+    .set input[type=range] { width: 180px; accent-color: var(--green-deep); }
+    .set ul { flex-basis: 100%; margin: 0 0 0 146px; color: #666; font-size: 13px; line-height: 1.8; }
+    .set kbd { display: inline-block; padding: 0 6px; border-radius: 5px; background: #f1f4f2; border: 1px solid #d5dcd8; font: 700 12px/1.6 'Noto Sans KR', sans-serif; }
+    @media (max-width: 560px) { .set .r > b { width: 100%; } .set .r small { margin-left: 0; } .set ul { margin-left: 18px; } .stage { height: 58vh; } }
+</style>
+</head>
+<body>
+<header class="ph"><div class="wrap">
+    <a class="logo" href="../"><img src="../images/logo-vertical.webp" alt="안쌤의 기타나무숲"></a>
+    <a class="ttl" href="./"><i class="fas fa-gamepad"></i>기타 놀이터</a>
+    <span class="sp"></span>
+    <a class="lnk" href="./"><i class="fas fa-gamepad"></i><span>놀이터</span></a>
+</div></header>
+
+<main class="wrap">
+    <div class="gate card" id="gate" hidden>
+        <h1>안쌤 전용 놀이예요</h1>
+        <p id="gateMsg">운영 계정으로 로그인하면 열려요.</p>
+        <div class="btns"><button type="button" class="btn" id="gateLogin">로그인</button><a class="btn ghost" href="./">놀이터로</a></div>
+    </div>
+    <div id="app" hidden>
+        <div class="stage" id="stage">
+            <canvas id="cv"></canvas>
+            <div class="ov" id="ov">
+                <h1>부릉부릉 출동!</h1>
+                <p class="sub" id="sub">아무 키나 마구 누르면 자동차가 달려요</p>
+                <button type="button" class="go" id="go">시작</button>
+                <span class="st" id="st"></span>
+            </div>
+            <span class="escchip" id="esc"></span>
+        </div>
+        <div class="set card">
+            <h3>엄마 아빠 설정</h3>
+            <div class="r"><b>노래</b>
+                <span id="songName">노래 파일이 없어요</span>
+                <button type="button" class="mini" id="songPick">노래 파일 고르기</button>
+                <button type="button" class="mini gh" id="songDel" hidden>지우기</button>
+                <input type="file" id="songFile" accept="audio/*,.mp3,.m4a,.wav,.ogg" hidden>
+                <small>고른 파일은 <b>이 컴퓨터의 이 브라우저 안에만</b> 저장돼요(사이트·서버에 올라가지 않아요). 한 번 고르면 다음부터는 그대로 나와요. 파일이 없으면 누를 때마다 실로폰 소리가 나요.</small>
+            </div>
+            <div class="r"><b>노래 크기</b><input type="range" id="vol" min="0" max="100" step="5"><span id="volN"></span></div>
+            <div class="r"><b>노래 나오는 때</b>
+                <label><input type="checkbox" id="hold">키를 누르는 동안만 (멈추면 노래도 스르르 멈춤)</label>
+            </div>
+            <div class="r"><b>이름 읽어 주기</b>
+                <label><input type="checkbox" id="tts">새 탈것이 나올 때 "소방차!" 하고 읽어 줘요</label>
+            </div>
+            <div class="r"><b>놀이 시간</b>
+                <select id="limit"><option value="0">끝없이</option><option value="5">5분</option><option value="10">10분</option><option value="15">15분</option><option value="20">20분</option></select>
+                <small>시간이 다 되면 밤이 되고 자동차가 코 자요. 눌러도 달리지 않아요.</small>
+            </div>
+            <div class="r"><b>끄는 법</b>
+                <span><kbd>ESC</kbd>를 <b>연속으로 다섯 번</b></span>
+                <ul>
+                    <li>크롬·엣지에서 가장 잘 막아 줘요. 사파리는 ESC 한 번에 전체화면이 풀리지만, 다음 키를 누르면 다시 전체화면이 돼요.</li>
+                    <li>ESC를 2초쯤 꾹 누르기, 창 닫기(<kbd>⌘W</kbd>)·앱 바꾸기(<kbd>⌘Tab</kbd>)는 브라우저가 못 막아요. 창을 닫으려 하면 한 번 물어봐요.</li>
+                    <li><kbd>Space</kbd>·<kbd>Enter</kbd>는 빵빵! 경적이에요.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</main>
+<script src="play.js?v=2026111402"></script>
+<script src="mash.js?v=2026111401"></script>
+<script>
+// 부릉부릉 출동! (2026-11-14 사용자: 30개월 아들용 — 키보드를 마구 눌러야 진행되는 놀이, 자동차·탈것, '용감한 자동차' 노래가 키를 누르면 나오게.
+//   우주 펑펑은 자극적이라 따로 순하게. 안쌤 계정 전용 비공개)
+//   - 누를 때마다 탈것이 부릉 달리고 별·하트·음표가 퐁퐁. NEED 번 누르면 "출동!" 하고 다음 탈것으로 바뀐다(이름을 크게 보여 주고 읽어 줌).
+//   - 번쩍임·흔들림·큰 소리 없음. 색은 파스텔, 소리는 작고 둥글게.
+//   - 노래 파일은 저작권이 있어 저장소·사이트에 올리지 않는다. 사용자가 자기 컴퓨터에서 고른 파일을 이 브라우저(IndexedDB 'play-car')에만 둔다.
+//   - 탈것 그림은 지금 이모지. GPT로 뽑은 그림을 images/play/car/<id>.webp 로 넣고 아래 ART 에 적으면 그림으로 바뀐다(docs/부릉부릉_GPT_프롬프트.md).
+//   - 운영 계정 확인(is_site_admin)은 화면을 가리는 용도다(파일 자체는 공개 저장소에 있음). 한 번 확인된 브라우저는 기억한다(play.car.ok).
+(function () {
+const $ = s => document.querySelector(s);
+const mem = PLAY.mem;
+const rnd = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const TAU = Math.PI * 2;
+const backOut = t => { const c = 1.7; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+const hs = (i, k) => { const x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); };
+
+// ---------- 운영 계정만 ----------
+const gate = $('#gate'), app = $('#app');
+let shown = false;
+function showApp() { gate.hidden = true; app.hidden = false; if (!shown) { shown = true; boot(); } }
+function showGate(msg) { app.hidden = true; gate.hidden = false; if (msg) $('#gateMsg').textContent = msg; if (window.MASH && MASH.on) MASH.stop(); }
+function check() {
+    if (!PLAY.hasLogin()) { if (!mem.get('car.ok', false)) showGate('운영 계정으로 로그인하면 열려요.'); return; }
+    PLAY.rpc('is_site_admin', {}, { auth: true }).then(v => {
+        if (v === true) { mem.set('car.ok', true); showApp(); }
+        else { mem.set('car.ok', false); showGate('이 계정으로는 열 수 없어요. 운영 계정으로 로그인해 주세요.'); }
+    }).catch(() => { if (!mem.get('car.ok', false)) showGate('확인하지 못했어요. 잠시 뒤 다시 열어 주세요.'); });
+}
+$('#gateLogin').addEventListener('click', () => { if (window.ahnssamAuth && ahnssamAuth.openLogin) ahnssamAuth.openLogin(); });
+addEventListener('ahnssam-auth-settled', check);
+
+// ---------- 탈것 ----------
+// e = 이모지(왼쪽을 보는 그림이라 뒤집어 쓴다), rot = 그리기 전에 돌릴 각도(비행기·로켓은 오른쪽 위를 봄), fly = 달리면 하늘로 뜬다,
+// say = 말풍선, horn = 경적 소리. e 가 없는 탈것은 그림(ART)이 있을 때만 나온다
+const CARS = [
+    { id: 'police', name: '경찰차', e: '🚓', say: '삐용삐용!', horn: 'siren' },
+    { id: 'fire', name: '소방차', e: '🚒', say: '삐뽀삐뽀!', horn: 'siren2' },
+    { id: 'amb', name: '구급차', e: '🚑', say: '삐뽀삐뽀!', horn: 'siren2' },
+    { id: 'tow', name: '견인차', say: '영차영차!', horn: 'low' },
+    { id: 'car', name: '자동차', e: '🚗', say: '빵빵!', horn: 'beep' },
+    { id: 'bus', name: '버스', e: '🚌', say: '부릉부릉!', horn: 'low', k: 1.08 },
+    { id: 'taxi', name: '택시', e: '🚕', say: '빵빵!', horn: 'beep' },
+    { id: 'truck', name: '트럭', e: '🚚', say: '부우웅!', horn: 'low', k: 1.05 },
+    { id: 'excavator', name: '굴착기', say: '영차영차!', horn: 'low' },
+    { id: 'dump', name: '덤프트럭', say: '쿠르릉!', horn: 'low' },
+    { id: 'mixer', name: '레미콘', say: '빙글빙글!', horn: 'low' },
+    { id: 'tractor', name: '트랙터', e: '🚜', say: '털털털!', horn: 'low' },
+    { id: 'garbage', name: '청소차', say: '쓱싹쓱싹!', horn: 'beep' },
+    { id: 'train', name: '기차', e: '🚂', say: '칙칙폭폭!', horn: 'whistle', k: 1.05 },
+    { id: 'heli', name: '헬리콥터', e: '🚁', say: '두두두두!', horn: 'whoosh', fly: true },
+    { id: 'plane', name: '비행기', e: '✈️', rot: 45, right: true, say: '슈웅~!', horn: 'whoosh', fly: true, k: 0.8 },
+    { id: 'rocket', name: '로켓', e: '🚀', rot: 45, right: true, say: '슈우웅!', horn: 'whoosh', fly: true, k: 0.8 },
+];
+// 그림이 준비된 탈것: id → 파일 이름 뒤에 붙일 판 번호. 예) { fire: 1 } → images/play/car/fire.webp?v=1 (오른쪽을 보는 옆모습, 투명 배경)
+const ART = {};
+const NEED = 36;               // 이만큼 누르면 다음 탈것
+const MAXV = 640, PUSH = 88;   // 가장 빠른 속도, 한 번 누를 때 붙는 속도(px/초)
+const HOLD = 2.4;              // 노래: 마지막으로 누른 뒤 이만큼(초) 지나면 스르르 멈춤
+
+function boot() {
+const stage = $('#stage'), cv = $('#cv'), g = cv.getContext('2d');
+const TOUCH = matchMedia('(pointer: coarse)').matches;
+const opt = { vol: mem.get('car.vol', 80), hold: mem.get('car.hold', true) !== false, tts: mem.get('car.tts', true) !== false, limit: mem.get('car.limit', 0) };
+let W = 0, H = 0, DPR = 1, now = 0, U = 1;      // U = 화면 크기에 맞춘 배율(세로로 긴 휴대폰에서는 너비 기준)
+let playing = false, sleeping = false, playT = 0;
+let dist = 0, speed = 0, hopY = 0, hopV = 0, alt = 0, tilt = 0, squash = 0;
+let idx = 0, prog = 0, done = 0, presses = 0, lastPress = -99, state = 'drive', stT = 0, slide = 0, themeI = 0, beat = 0;
+let pops = [], puffs = [], conf = [], friends = [], banner = null, bubble = null, friendAt = 4;
+
+// --- 탈것 그림 준비 ---
+const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Twemoji Mozilla",sans-serif';
+function trim(c) {
+    const x = c.getContext('2d', { willReadFrequently: true }), w = c.width, h = c.height;
+    let d; try { d = x.getImageData(0, 0, w, h).data; } catch (e) { return { cv: c, bx: 0, by: 0, bw: w, bh: h }; }
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let yy = 0; yy < h; yy += 2) for (let xx = 0; xx < w; xx += 2) if (d[(yy * w + xx) * 4 + 3] > 40) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; }
+    if (x1 < 0) return null;
+    return { cv: c, bx: x0, by: y0, bw: x1 - x0 + 2, bh: y1 - y0 + 2 };
+}
+function emojiSprite(ch, rot) {
+    const c = document.createElement('canvas'); c.width = c.height = 360;
+    const x = c.getContext('2d');
+    x.translate(180, 180); if (rot) x.rotate(rot * Math.PI / 180);
+    x.font = `230px ${EMOJI_FONT}`; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillText(ch, 0, 14);
+    return trim(c);
+}
+// 이모지가 안 나오는 기기: 동글동글한 자동차를 직접 그린다
+function shapeSprite(hue) {
+    const c = document.createElement('canvas'); c.width = 360; c.height = 220;
+    const x = c.getContext('2d');
+    x.fillStyle = `hsl(${hue}, 80%, 62%)`; x.beginPath(); x.roundRect(20, 80, 320, 90, 34); x.fill();
+    x.beginPath(); x.roundRect(90, 24, 170, 90, 36); x.fill();
+    x.fillStyle = '#dff4ff'; x.beginPath(); x.roundRect(108, 40, 62, 48, 14); x.fill(); x.beginPath(); x.roundRect(182, 40, 62, 48, 14); x.fill();
+    for (const wx of [96, 264]) { x.fillStyle = '#3b4252'; x.beginPath(); x.arc(wx, 172, 38, 0, TAU); x.fill(); x.fillStyle = '#e5e9f0'; x.beginPath(); x.arc(wx, 172, 16, 0, TAU); x.fill(); }
+    x.fillStyle = '#fff3a8'; x.beginPath(); x.arc(332, 118, 10, 0, TAU); x.fill();
+    return trim(c);
+}
+let list = [];
+function buildCars() {
+    list = [];
+    CARS.forEach((c, i) => {
+        if (!c.e && !ART[c.id]) return;
+        const o = Object.assign({ k: 1 }, c);
+        if (c.e) { o.sp = emojiSprite(c.e, c.rot); o.left = !c.right; }
+        if (!o.sp) { o.sp = shapeSprite((i * 47) % 360); o.left = false; }
+        if (ART[c.id]) { const img = new Image(); img.onload = () => { const cc = document.createElement('canvas'); cc.width = img.width; cc.height = img.height; cc.getContext('2d').drawImage(img, 0, 0); const sp = trim(cc); if (sp) { o.sp = sp; o.left = false; } }; img.src = `../images/play/car/${c.id}.webp?v=${ART[c.id]}`; }
+        list.push(o);
+    });
+}
+buildCars();
+const car = () => list[idx % list.length];
+
+// --- 하늘·땅 색(탈것이 바뀔 때마다 천천히 바뀐다) ---
+const THEMES = [
+    { top: [143, 211, 255], bot: [232, 248, 255], far: [176, 220, 200], near: [134, 206, 150], field: [158, 220, 138], sun: 1 },
+    { top: [112, 196, 255], bot: [218, 242, 255], far: [158, 210, 206], near: [118, 196, 158], field: [146, 214, 128], sun: 1 },
+    { top: [255, 186, 148], bot: [255, 234, 206], far: [222, 180, 178], near: [170, 190, 140], field: [178, 208, 128], sun: 1 },
+    { top: [168, 156, 255], bot: [255, 214, 234], far: [180, 170, 216], near: [140, 170, 178], field: [140, 190, 150], sun: 1 },
+    { top: [52, 68, 138], bot: [124, 140, 206], far: [84, 104, 164], near: [72, 122, 134], field: [82, 144, 122], sun: 0 },
+];
+const T = JSON.parse(JSON.stringify(THEMES[0]));
+const rgb = (c, m) => `rgb(${(c[0] * (m || 1)) | 0},${(c[1] * (m || 1)) | 0},${(c[2] * (m || 1)) | 0})`;
+function themeStep(dt) {
+    const to = sleeping ? THEMES[4] : THEMES[themeI % THEMES.length], k = Math.min(1, dt * 1.1);
+    for (const key of ['top', 'bot', 'far', 'near', 'field']) for (let i = 0; i < 3; i++) T[key][i] += (to[key][i] - T[key][i]) * k;
+    T.sun += (to.sun - T.sun) * k;
+}
+const PASTEL = ['#ff9aa2', '#ffb7b2', '#ffdac1', '#fff1a8', '#b5ead7', '#a8d8ff', '#c7ceea', '#f6c1ff'];
+
+function resize() {
+    const r = stage.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = r.width; H = r.height; U = clamp(Math.min(H, W * 0.85) / 700, 0.5, 1.7);
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+}
+new ResizeObserver(resize).observe(stage);
+
+// ---------- 소리 (작고 둥글게) ----------
+const snd = {
+    ac: null, out: null, noise: null, step: 0,
+    init() {
+        try {
+            if (!this.ac) {
+                const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+                const ac = this.ac = new AC();
+                this.out = ac.createGain(); this.out.gain.value = 0.55; this.out.connect(ac.destination);
+                const b = this.noise = ac.createBuffer(1, ac.sampleRate, ac.sampleRate), d = b.getChannelData(0);
+                for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+            }
+            if (this.ac.state === 'suspended') this.ac.resume();
+        } catch (e) { this.ac = null; }
+    },
+    tone(f, t0, len, type, lv, f2) {
+        const ac = this.ac, t = ac.currentTime + (t0 || 0), o = ac.createOscillator(), gg = ac.createGain();
+        o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + len);
+        gg.gain.setValueAtTime(0.0001, t); gg.gain.exponentialRampToValueAtTime(lv, t + 0.012); gg.gain.exponentialRampToValueAtTime(0.0006, t + len);
+        const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200;
+        o.connect(lp); lp.connect(gg); gg.connect(this.out); o.start(t); o.stop(t + len + 0.05);
+    },
+    pop() { if (this.ac) this.tone(rnd(520, 700), 0, 0.1, 'sine', 0.16, 300); },      // 뽁 (노래가 나올 때는 음 없는 소리만)
+    // 노래 파일이 없을 때: 누를 때마다 실로폰으로 한 음씩(직접 지은 가락)
+    note() {
+        if (!this.ac) return;
+        const MEL = [60, 64, 67, 72, 69, 67, 64, 67, 62, 65, 69, 74, 72, 69, 67, 64, 60, 64, 67, 64, 65, 69, 72, 69, 67, 71, 74, 71, 72, 67, 64, 60];
+        const f = 440 * Math.pow(2, (MEL[this.step++ % MEL.length] - 69) / 12);
+        this.tone(f, 0, 0.5, 'sine', 0.22); this.tone(f * 4, 0, 0.12, 'sine', 0.05);
+    },
+    horn(kind) {
+        if (!this.ac) return;
+        if (kind === 'siren') { for (let i = 0; i < 4; i++) this.tone(i % 2 ? 660 : 880, i * 0.17, 0.17, 'sine', 0.11); }
+        else if (kind === 'siren2') { for (let i = 0; i < 4; i++) this.tone(i % 2 ? 587 : 784, i * 0.2, 0.2, 'triangle', 0.12); }
+        else if (kind === 'whistle') { this.tone(880, 0, 0.7, 'sine', 0.1); this.tone(1108, 0, 0.7, 'sine', 0.07); }
+        else if (kind === 'low') { for (let i = 0; i < 2; i++) { this.tone(196, i * 0.26, 0.2, 'square', 0.07); this.tone(247, i * 0.26, 0.2, 'square', 0.05); } }
+        else if (kind === 'whoosh') {
+            const ac = this.ac, t = ac.currentTime, n = ac.createBufferSource(); n.buffer = this.noise;
+            const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.2; bp.frequency.setValueAtTime(400, t); bp.frequency.exponentialRampToValueAtTime(1800, t + 0.5);
+            const gg = ac.createGain(); gg.gain.setValueAtTime(0.0001, t); gg.gain.exponentialRampToValueAtTime(0.12, t + 0.25); gg.gain.exponentialRampToValueAtTime(0.0006, t + 0.7);
+            n.connect(bp); bp.connect(gg); gg.connect(this.out); n.start(t); n.stop(t + 0.75);
+        } else { for (let i = 0; i < 2; i++) { this.tone(392, i * 0.22, 0.16, 'square', 0.07); this.tone(494, i * 0.22, 0.16, 'square', 0.05); } }
+    },
+    chime() { if (this.ac) [523, 659, 784, 1047].forEach((f, i) => { this.tone(f, i * 0.11, 0.55, 'triangle', 0.14); }); },
+};
+function speak(t) {
+    if (!opt.tts || !window.speechSynthesis) return;
+    try {
+        const u = new SpeechSynthesisUtterance(t); u.lang = 'ko-KR'; u.rate = 0.85; u.pitch = 1.15;
+        const v = speechSynthesis.getVoices().find(v => /^ko/i.test(v.lang)); if (v) u.voice = v;
+        speechSynthesis.cancel(); speechSynthesis.speak(u); song.duck = 1.4;
+    } catch (e) {}
+}
+
+// ---------- 노래 (이 브라우저에만 저장한 파일) ----------
+const song = { el: null, node: null, gain: null, an: null, bins: null, name: '', dur: 0, cur: 0, duck: 0 };
+function idb() { return new Promise((res, rej) => { const r = indexedDB.open('play-car', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+function kv(mode, fn) { return idb().then(db => new Promise((res, rej) => { const tx = db.transaction('kv', mode), q = fn(tx.objectStore('kv')); tx.oncomplete = () => res(q.result); tx.onerror = () => rej(tx.error); })); }
+function songSet(blob, name) {
+    if (song.el) { try { song.el.pause(); URL.revokeObjectURL(song.el.src); } catch (e) {} }
+    song.el = null; song.node = null; song.name = ''; song.dur = 0; song.cur = 0;
+    if (blob) {
+        const a = new Audio(URL.createObjectURL(blob)); a.loop = true; a.preload = 'auto';
+        a.addEventListener('loadedmetadata', () => { song.dur = a.duration || 0; songPaint(); });
+        a.addEventListener('error', () => { if (song.el === a) { song.el = null; song.name = ''; songPaint('이 파일은 틀 수 없어요. 다른 파일을 골라 주세요.'); } });
+        song.el = a; song.name = name || '노래';
+    }
+    songPaint();
+}
+function songWire() {       // 시작 단추를 누른 뒤(소리를 낼 수 있게 된 뒤)에 잇는다
+    if (!song.el || song.node || !snd.ac) return;
+    try {
+        const ac = snd.ac;
+        song.node = ac.createMediaElementSource(song.el);
+        song.an = ac.createAnalyser(); song.an.fftSize = 64; song.bins = new Uint8Array(song.an.frequencyBinCount);
+        song.gain = ac.createGain(); song.gain.gain.value = 0;
+        song.node.connect(song.an); song.an.connect(song.gain); song.gain.connect(ac.destination);
+    } catch (e) { song.node = null; }
+}
+function songStep(dt) {
+    const a = song.el; if (!a) { beat *= Math.exp(-6 * dt); return; }
+    const want = playing && !sleeping && (!opt.hold || now - lastPress < HOLD) ? opt.vol / 100 : 0;
+    song.duck = Math.max(0, song.duck - dt);
+    const tgt = want * (song.duck > 0 ? 0.35 : 1);
+    song.cur += (tgt - song.cur) * Math.min(1, dt * (tgt > song.cur ? 5 : 2.6));
+    if (song.gain) song.gain.gain.value = song.cur; else a.volume = clamp(song.cur, 0, 1);
+    if (want > 0 && a.paused) { const p = a.play(); if (p && p.catch) p.catch(() => {}); }
+    if (want === 0 && song.cur < 0.012 && !a.paused) a.pause();
+    if (song.an && !a.paused) { song.an.getByteFrequencyData(song.bins); let s = 0; for (let i = 1; i < 7; i++) s += song.bins[i]; const lv = s / 6 / 255; beat += (lv - beat) * Math.min(1, dt * 14); }
+    else beat *= Math.exp(-6 * dt);
+}
+function fmtDur(s) { return s ? ` · ${Math.floor(s / 60)}분 ${Math.round(s % 60)}초` : ''; }
+function songPaint(err) {
+    $('#songName').textContent = err || (song.el ? `${song.name}${fmtDur(song.dur)}` : '노래 파일이 없어요');
+    $('#songDel').hidden = !song.el;
+    $('#songPick').textContent = song.el ? '다른 파일 고르기' : '노래 파일 고르기';
+    $('#st').textContent = song.el ? '🎵 노래 준비됨 — 누르면 나와요' : '🎵 노래 파일 없음 (아래 설정에서 고르기)';
+}
+$('#songPick').addEventListener('click', () => $('#songFile').click());
+$('#songFile').addEventListener('change', e => {
+    const f = e.target.files && e.target.files[0]; e.target.value = '';
+    if (!f) return;
+    if (f.size > 40 * 1024 * 1024) { songPaint('파일이 너무 커요(40MB까지).'); return; }
+    songSet(f, f.name.replace(/\.[a-z0-9]+$/i, ''));
+    kv('readwrite', s => s.put({ blob: f, name: f.name.replace(/\.[a-z0-9]+$/i, '') }, 'song')).catch(() => songPaint('저장하지 못했어요. 이번에는 나오지만 다음에 다시 골라야 해요.'));
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e2) {}
+});
+$('#songDel').addEventListener('click', () => { songSet(null); kv('readwrite', s => s.delete('song')).catch(() => {}); });
+kv('readonly', s => s.get('song')).then(v => { if (v && v.blob) songSet(v.blob, v.name); else songPaint(); }).catch(() => songPaint());
+
+// ---------- 설정 ----------
+const volEl = $('#vol');
+volEl.value = opt.vol; $('#volN').textContent = opt.vol;
+volEl.addEventListener('input', () => { opt.vol = +volEl.value; $('#volN').textContent = opt.vol; mem.set('car.vol', opt.vol); });
+[['hold', 'hold'], ['tts', 'tts']].forEach(([id, k]) => { const el = $('#' + id); el.checked = opt[k]; el.addEventListener('change', () => { opt[k] = el.checked; mem.set('car.' + k, opt[k]); }); });
+$('#limit').value = String(opt.limit);
+$('#limit').addEventListener('change', e => { opt.limit = +e.target.value; mem.set('car.limit', opt.limit); });
+
+// ---------- 누르기 ----------
+function vehH() { return clamp(Math.min(H * 0.25, W * 0.3), 80, 300); }
+function carPos() {
+    const roadTop = H * 0.7, roadH = H * 0.2;
+    return { x: W * 0.36 + slide, base: roadTop + roadH * 0.6, h: vehH() * car().k, roadTop, roadH };
+}
+function emit(kind) {
+    const p = carPos(), c = car();
+    const t = kind || ['star', 'heart', 'note', 'bubble', 'star'][(Math.random() * 5) | 0];
+    pops.push({ k: t, x: p.x + rnd(-p.h * 0.5, p.h * 0.5), y: p.base - p.h * 0.75 - alt + rnd(-10, 10), vx: rnd(-34, 34), vy: rnd(-150, -80), t: 0, life: rnd(1.2, 1.8), s: rnd(18, 32) * U, c: PASTEL[(Math.random() * PASTEL.length) | 0], ph: rnd(0, TAU) });
+    if (!c.fly || alt < 20) puffs.push({ x: p.x - p.h * 0.72, y: p.base - p.h * 0.16 - alt, t: 0, life: 0.8, s: p.h * 0.1 });
+}
+function honk() {
+    const c = car();
+    bubble = { s: c.say, t: 0, life: 1.3 };
+    snd.horn(c.horn);
+}
+function press(kind) {
+    lastPress = now; presses++;
+    if (sleeping) { if (pops.length < 6) emit('zzz'); return; }
+    speed = Math.min(MAXV, speed + PUSH);
+    if (hopY > -4) hopV = -clamp(H * 0.34, 170, 300);
+    squash = 1;
+    emit(); if (presses % 3 === 0) emit();
+    if (song.el) snd.pop(); else snd.note();
+    if (kind === 'horn' || (presses % 14 === 0 && !banner)) honk();
+    if (state === 'drive') { prog++; if (prog >= NEED) arrive(); }
+}
+function arrive() {
+    state = 'out'; stT = 0; done++;
+    snd.chime();
+    for (let i = 0; i < 34 && conf.length < 60; i++) conf.push({ x: rnd(0, W), y: rnd(-H * 0.4, -10), vy: rnd(60, 130), ph: rnd(0, TAU), s: rnd(8, 15) * U, c: PASTEL[(Math.random() * PASTEL.length) | 0], rot: rnd(0, TAU), t: 0 });
+}
+function nextCar() {
+    idx = (idx + 1) % list.length; prog = 0;
+    if (done % 2 === 0) themeI++;
+    state = 'in'; stT = 0;
+    const c = car();
+    banner = { s: c.name, sub: '출동!', t: 0, life: 2.6 };
+    speak(c.name + ' 출동!');
+}
+function onKey(e) {
+    if (e.repeat) { if (performance.now() - (onKey.at || 0) < 160) return; }      // 꾹 누르고 있으면 천천히만
+    onKey.at = performance.now();
+    press(e.code === 'Space' || e.code === 'Enter' || e.code === 'NumpadEnter' ? 'horn' : '');
+}
+stage.addEventListener('pointerdown', e => {
+    if (!MASH.on || e.target.closest('.escchip')) return;
+    e.preventDefault(); MASH.tap();
+    const r = stage.getBoundingClientRect(), p = carPos(), x = e.clientX - r.left, y = e.clientY - r.top;
+    press(Math.abs(x - p.x) < p.h * 0.8 && Math.abs(y - (p.base - p.h * 0.5 - alt)) < p.h * 0.7 ? 'horn' : '');
+});
+
+// ---------- 그리기 ----------
+function sprite(sp, left, cx, baseY, h, right, rot, sx, sy) {
+    const w = h * sp.bw / sp.bh;
+    g.save(); g.translate(cx, baseY); if (rot) g.rotate(rot);
+    g.scale((left === right ? -1 : 1) * (sx || 1), sy || 1);
+    g.drawImage(sp.cv, sp.bx, sp.by, sp.bw, sp.bh, -w / 2, -h, w, h);
+    g.restore();
+    return w;
+}
+function hills(off, base, amp, f, col) {
+    g.fillStyle = col; g.beginPath(); g.moveTo(0, H);
+    for (let x = 0; x <= W + 24; x += 24) { const wx = x + off; g.lineTo(x, base - amp * (0.5 + 0.5 * Math.sin(wx * f)) - amp * 0.3 * Math.sin(wx * f * 2.3 + 1.7)); }
+    g.lineTo(W, H); g.closePath(); g.fill();
+}
+function cloud(x, y, s) {
+    g.beginPath(); g.arc(x, y, s * 0.5, 0, TAU); g.arc(x + s * 0.5, y - s * 0.18, s * 0.42, 0, TAU); g.arc(x + s, y, s * 0.46, 0, TAU); g.arc(x + s * 0.5, y + s * 0.14, s * 0.5, 0, TAU); g.fill();
+}
+function star(x, y, r, rot) {
+    g.beginPath();
+    for (let i = 0; i < 10; i++) { const a = rot + i * Math.PI / 5 - Math.PI / 2, rr = i % 2 ? r * 0.48 : r; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+    g.closePath(); g.fill();
+}
+function heart(x, y, r) {
+    g.beginPath(); g.moveTo(x, y + r * 0.9);
+    g.bezierCurveTo(x - r * 1.4, y - r * 0.1, x - r * 0.7, y - r * 1.1, x, y - r * 0.35);
+    g.bezierCurveTo(x + r * 0.7, y - r * 1.1, x + r * 1.4, y - r * 0.1, x, y + r * 0.9); g.fill();
+}
+function noteShape(x, y, r) {
+    g.beginPath(); g.ellipse(x - r * 0.2, y + r * 0.55, r * 0.42, r * 0.32, -0.4, 0, TAU); g.fill();
+    g.fillRect(x + r * 0.12, y - r * 0.9, r * 0.14, r * 1.45);
+    g.beginPath(); g.moveTo(x + r * 0.12, y - r * 0.9); g.quadraticCurveTo(x + r * 0.9, y - r * 0.7, x + r * 0.7, y - r * 0.1); g.quadraticCurveTo(x + r * 0.6, y - r * 0.5, x + r * 0.12, y - r * 0.55); g.fill();
+}
+// 길가 풍경: 자리(i)마다 늘 같은 것이 나오게 hs(i, k) 로 정한다
+function decor(par, gap, y, kind) {
+    const off = dist * par, i0 = Math.floor((off - 260) / gap), i1 = Math.floor((off + W + 260) / gap), u = U;
+    for (let i = i0; i <= i1; i++) {
+        const x = i * gap + hs(i, kind) * gap * 0.6 - off, r = hs(i, kind + 9), col = PASTEL[(hs(i, kind + 3) * PASTEL.length) | 0];
+        if (kind === 1) {            // 먼 쪽: 집 · 나무 · 높은 집
+            if (r < 0.38) { const s = (46 + hs(i, 5) * 34) * u; g.fillStyle = '#b98a62'; g.fillRect(x - s * 0.08, y - s * 0.7, s * 0.16, s * 0.7); g.fillStyle = rgb([96, 178, 112], 0.7 + T.sun * 0.3); g.beginPath(); g.arc(x, y - s * 0.95, s * 0.48, 0, TAU); g.arc(x - s * 0.3, y - s * 0.7, s * 0.34, 0, TAU); g.arc(x + s * 0.3, y - s * 0.7, s * 0.34, 0, TAU); g.fill(); }
+            else if (r < 0.74) { const s = (58 + hs(i, 6) * 30) * u; g.fillStyle = col; g.beginPath(); g.roundRect(x - s * 0.5, y - s * 0.62, s, s * 0.62, 5); g.fill(); g.fillStyle = '#ff8f7a'; g.beginPath(); g.moveTo(x - s * 0.62, y - s * 0.6); g.lineTo(x, y - s * 1.08); g.lineTo(x + s * 0.62, y - s * 0.6); g.closePath(); g.fill(); g.fillStyle = T.sun < 0.5 ? '#fff2a8' : '#fff'; g.fillRect(x - s * 0.32, y - s * 0.45, s * 0.22, s * 0.22); g.fillStyle = '#9b6a4a'; g.fillRect(x + s * 0.08, y - s * 0.38, s * 0.2, s * 0.38); }
+            else { const s = (50 + hs(i, 7) * 24) * u, hh = s * (1.5 + hs(i, 8)); g.fillStyle = col; g.beginPath(); g.roundRect(x - s * 0.42, y - hh, s * 0.84, hh, 6); g.fill(); g.fillStyle = T.sun < 0.5 ? '#fff2a8' : 'rgba(255,255,255,.85)'; for (let wy = y - hh + s * 0.2; wy < y - s * 0.3; wy += s * 0.36) { g.fillRect(x - s * 0.28, wy, s * 0.2, s * 0.2); g.fillRect(x + s * 0.08, wy, s * 0.2, s * 0.2); } }
+        } else if (kind === 2) {     // 길 바로 옆: 꽃 · 가로등 · 표지판
+            if (r < 0.5) { const s = 9 * u; for (let k = 0; k < 3; k++) { const fx = x + (k - 1) * s * 2.6, fy = y - s * (1.4 + hs(i, 20 + k)); g.strokeStyle = '#5fae6a'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(fx, y); g.lineTo(fx, fy); g.stroke(); g.fillStyle = PASTEL[(hs(i, 30 + k) * 4) | 0]; for (let q = 0; q < 5; q++) { g.beginPath(); g.arc(fx + Math.cos(q * 1.257) * s * 0.55, fy + Math.sin(q * 1.257) * s * 0.55, s * 0.42, 0, TAU); g.fill(); } g.fillStyle = '#fff6b0'; g.beginPath(); g.arc(fx, fy, s * 0.34, 0, TAU); g.fill(); } }
+            else if (r < 0.8) { const s = 70 * u; g.fillStyle = '#8a93a6'; g.fillRect(x - 3, y - s, 6, s); g.beginPath(); g.roundRect(x - 3, y - s - 5, s * 0.34, 8, 4); g.fill(); g.fillStyle = T.sun < 0.5 ? '#fff2a8' : '#fdfdfd'; g.beginPath(); g.arc(x + s * 0.3, y - s + 5, 8 * u, 0, TAU); g.fill(); if (T.sun < 0.5) { g.fillStyle = 'rgba(255,242,168,.16)'; g.beginPath(); g.arc(x + s * 0.3, y - s + 5, 34 * u, 0, TAU); g.fill(); } }
+            else { const s = 56 * u; g.fillStyle = '#8a93a6'; g.fillRect(x - 3, y - s, 6, s); g.fillStyle = col; g.beginPath(); g.arc(x, y - s, s * 0.3, 0, TAU); g.fill(); g.fillStyle = '#fff'; star(x, y - s, s * 0.17, 0); }
+        } else {                     // 맨 앞 풀숲
+            const s = (26 + hs(i, 40) * 22) * u; g.fillStyle = rgb([84, 170, 104], 0.6 + T.sun * 0.4); g.beginPath(); g.arc(x, y, s, Math.PI, 0); g.arc(x + s * 1.1, y, s * 0.75, Math.PI, 0); g.arc(x - s * 1.0, y, s * 0.7, Math.PI, 0); g.fill();
+        }
+    }
+}
+let last = 0;
+function frame(ts) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(0.05, (ts - last) / 1000 || 0.016); last = ts; now += dt;
+    if (!W || !list.length) return;
+    const c = car();
+    // --- 움직임 ---
+    if (playing && !sleeping) { playT += dt; if (opt.limit && playT > opt.limit * 60) { sleeping = true; banner = { s: '코~ 잘 시간', sub: '자동차도 쿨쿨', t: 0, life: 5 }; } }
+    if (!playing) speed += (90 - speed) * Math.min(1, dt * 2);            // 시작 전: 천천히 구경
+    else if (sleeping) speed *= Math.exp(-2.4 * dt);
+    else speed *= Math.exp(-0.62 * dt);
+    dist += speed * dt;
+    hopV += 1500 * dt; hopY += hopV * dt; if (hopY > 0) { hopY = 0; hopV = 0; }
+    squash *= Math.exp(-9 * dt);
+    const altTo = c.fly && !sleeping ? clamp(speed / 420, 0, 1) * H * 0.34 : 0;
+    alt += (altTo - alt) * Math.min(1, dt * 2.2);
+    tilt += ((c.fly ? -clamp(speed / MAXV, 0, 1) * 0.12 : 0) - tilt) * Math.min(1, dt * 4);
+    if (state === 'out') { stT += dt; const k = clamp(stT / 0.9, 0, 1); slide = k * k * W * 0.95; if (k >= 1) nextCar(); }
+    else if (state === 'in') { stT += dt; const k = clamp(stT / 0.9, 0, 1); slide = -(1 - (1 - Math.pow(1 - k, 3))) * W * 0.7; if (k >= 1) { state = 'drive'; slide = 0; } }
+    themeStep(dt); songStep(dt);
+    if (sleeping && Math.random() < dt * 0.7 && pops.length < 5) emit('zzz');
+    const pulse = 1 + beat * 0.16 + squash * 0.04;
+    // --- 하늘 ---
+    g.setTransform(DPR, 0, 0, DPR, 0, 0);
+    g.globalAlpha = 1;
+    const sky = g.createLinearGradient(0, 0, 0, H * 0.66); sky.addColorStop(0, rgb(T.top)); sky.addColorStop(1, rgb(T.bot));
+    g.fillStyle = sky; g.fillRect(0, 0, W, H);
+    if (T.sun < 0.6) { g.fillStyle = '#fff'; for (let i = 0; i < 46; i++) { g.globalAlpha = (1 - T.sun / 0.6) * (0.45 + 0.4 * Math.sin(now * 1.5 + i * 2.1)); g.beginPath(); g.arc(hs(i, 50) * W, hs(i, 51) * H * 0.5, 1.2 + hs(i, 52) * 1.8, 0, TAU); g.fill(); } g.globalAlpha = 1; }
+    // 해(웃는 얼굴) 또는 달
+    const sx = W * 0.84, sy = H * 0.17, sr = clamp(Math.min(H, W * 0.85) * 0.085, 30, 82) * pulse;
+    if (T.sun > 0.05) {
+        g.globalAlpha = T.sun;
+        g.fillStyle = 'rgba(255, 226, 120, .32)'; g.beginPath(); g.arc(sx, sy, sr * 1.55, 0, TAU); g.fill();
+        g.strokeStyle = '#ffd95c'; g.lineWidth = sr * 0.13; g.lineCap = 'round';
+        for (let i = 0; i < 10; i++) { const a = now * 0.35 + i * TAU / 10; g.beginPath(); g.moveTo(sx + Math.cos(a) * sr * 1.2, sy + Math.sin(a) * sr * 1.2); g.lineTo(sx + Math.cos(a) * sr * 1.48, sy + Math.sin(a) * sr * 1.48); g.stroke(); }
+        g.fillStyle = '#ffdf6b'; g.beginPath(); g.arc(sx, sy, sr, 0, TAU); g.fill();
+        g.fillStyle = '#7a4a1e'; g.beginPath(); g.arc(sx - sr * 0.32, sy - sr * 0.12, sr * 0.09, 0, TAU); g.arc(sx + sr * 0.32, sy - sr * 0.12, sr * 0.09, 0, TAU); g.fill();
+        g.strokeStyle = '#7a4a1e'; g.lineWidth = sr * 0.08; g.beginPath(); g.arc(sx, sy + sr * 0.08, sr * 0.38, 0.15 * Math.PI, 0.85 * Math.PI); g.stroke();
+        g.fillStyle = 'rgba(255, 150, 130, .55)'; g.beginPath(); g.arc(sx - sr * 0.55, sy + sr * 0.2, sr * 0.14, 0, TAU); g.arc(sx + sr * 0.55, sy + sr * 0.2, sr * 0.14, 0, TAU); g.fill();
+    }
+    if (T.sun < 0.95) {
+        g.globalAlpha = 1 - T.sun;
+        g.fillStyle = 'rgba(255, 248, 210, .22)'; g.beginPath(); g.arc(sx, sy, sr * 1.5, 0, TAU); g.fill();
+        g.fillStyle = '#fff6cf'; g.beginPath(); g.arc(sx, sy, sr, 0, TAU); g.fill();
+        g.fillStyle = 'rgba(210, 200, 160, .5)'; g.beginPath(); g.arc(sx - sr * 0.3, sy - sr * 0.3, sr * 0.16, 0, TAU); g.arc(sx + sr * 0.35, sy + sr * 0.2, sr * 0.12, 0, TAU); g.fill();
+        g.strokeStyle = '#8a7a4a'; g.lineWidth = sr * 0.07; g.lineCap = 'round';      // 감은 눈 · 작은 입
+        g.beginPath(); g.arc(sx - sr * 0.3, sy - sr * 0.02, sr * 0.14, 0.1 * Math.PI, 0.9 * Math.PI); g.stroke();
+        g.beginPath(); g.arc(sx + sr * 0.3, sy - sr * 0.02, sr * 0.14, 0.1 * Math.PI, 0.9 * Math.PI); g.stroke();
+        g.beginPath(); g.arc(sx, sy + sr * 0.3, sr * 0.1, 0.1 * Math.PI, 0.9 * Math.PI); g.stroke();
+    }
+    g.globalAlpha = 1;
+    // 구름
+    g.fillStyle = `rgba(255,255,255,${0.55 + T.sun * 0.37})`;
+    { const gap = 440, off = dist * 0.05 + now * 9, i0 = Math.floor((off - 300) / gap), i1 = Math.floor((off + W + 300) / gap);
+        for (let i = i0; i <= i1; i++) cloud(i * gap + hs(i, 60) * gap * 0.7 - off, H * (0.07 + hs(i, 61) * 0.26), (58 + hs(i, 62) * 62) * U); }
+    // --- 언덕 · 들판 · 집 ---
+    const roadTop = H * 0.7, roadH = H * 0.2;
+    hills(dist * 0.1, H * 0.6, H * 0.15, 0.0042, rgb(T.far));
+    hills(dist * 0.24 + 500, H * 0.66, H * 0.1, 0.0068, rgb(T.near));
+    g.fillStyle = rgb(T.field); g.fillRect(0, roadTop - H * 0.045, W, H);
+    decor(0.52, 310, roadTop - H * 0.03, 1);
+    // --- 길 ---
+    const dim = 0.62 + T.sun * 0.38;
+    g.fillStyle = rgb([126, 134, 152], dim); g.fillRect(0, roadTop, W, roadH);
+    g.fillStyle = rgb([236, 240, 246], dim); g.fillRect(0, roadTop, W, 5); g.fillRect(0, roadTop + roadH - 5, W, 5);
+    { const per = clamp(W * 0.11, 90, 170), dl = per * 0.5, off = dist % per; g.fillStyle = rgb([255, 244, 190], dim);
+        for (let x = -off - per; x < W + per; x += per) { g.beginPath(); g.roundRect(x, roadTop + roadH * 0.36, dl, roadH * 0.055, 4); g.fill(); } }
+    decor(1, 520, roadTop - 1, 2);
+    // --- 맞은편에서 오는 친구 ---
+    if (playing && !sleeping && speed > 120 && now >= friendAt) {
+        friendAt = now + rnd(5, 10);
+        const pool = list.filter(o => !o.fly && o !== c); if (pool.length) friends.push({ o: pool[(Math.random() * pool.length) | 0], x: W + 200, hi: 0 });
+    }
+    for (let i = friends.length - 1; i >= 0; i--) {
+        const f = friends[i]; f.x -= (speed * 0.7 + 190) * dt;
+        const fh = vehH() * 0.56 * f.o.k, fy = roadTop + roadH * 0.3;
+        g.fillStyle = 'rgba(40,50,70,.16)'; g.beginPath(); g.ellipse(f.x, fy, fh * 0.6, fh * 0.07, 0, 0, TAU); g.fill();
+        sprite(f.o.sp, f.o.left, f.x, fy + Math.sin(now * 14 + i) * 1.5, fh, false);
+        if (f.x < -260) friends.splice(i, 1);
+    }
+    // --- 내 탈것 ---
+    const p = carPos(), cx = p.x, vh = p.h, baseY = p.base;
+    const bob = c.fly && alt > 6 ? Math.sin(now * 3) * vh * 0.035 : speed > 30 ? Math.sin(now * 22) * 1.3 : 0;
+    const sh = clamp(1 - alt / (H * 0.5), 0.35, 1);
+    g.fillStyle = `rgba(40,50,70,${0.2 * sh})`; g.beginPath(); g.ellipse(cx, baseY + vh * 0.02, vh * 0.72 * sh, vh * 0.085 * sh, 0, 0, TAU); g.fill();
+    if (T.sun < 0.5 && !c.fly && !sleeping) { const a = (0.5 - T.sun) * 0.5; const gr = g.createLinearGradient(cx + vh * 0.5, 0, cx + vh * 2.6, 0); gr.addColorStop(0, `rgba(255,244,170,${a})`); gr.addColorStop(1, 'rgba(255,244,170,0)'); g.fillStyle = gr; g.beginPath(); g.moveTo(cx + vh * 0.55, baseY - vh * 0.34); g.lineTo(cx + vh * 2.6, baseY - vh * 0.75); g.lineTo(cx + vh * 2.6, baseY + vh * 0.05); g.closePath(); g.fill(); }
+    for (let i = puffs.length - 1; i >= 0; i--) { const q = puffs[i]; q.t += dt; if (q.t > q.life) { puffs.splice(i, 1); continue; } const k = q.t / q.life; q.x -= (60 + speed * 0.25) * dt; q.y -= 18 * dt; g.fillStyle = `rgba(255,255,255,${0.75 * (1 - k)})`; g.beginPath(); g.arc(q.x, q.y, q.s * (0.6 + k * 1.5), 0, TAU); g.fill(); }
+    const sq = squash * 0.07, land = hopY === 0 ? sq : 0;
+    sprite(c.sp, c.left, cx, baseY + hopY + bob - alt, vh, true, tilt + (sleeping ? 0 : -hopV * 0.00009), 1 + land, 1 - land);
+    // --- 말풍선(빵빵!) ---
+    if (bubble) {
+        bubble.t += dt; if (bubble.t > bubble.life) bubble = null; else {
+            const k = bubble.t / bubble.life, sc = backOut(Math.min(1, bubble.t / 0.22)) * (k > 0.8 ? 1 - (k - 0.8) / 0.2 : 1), fs = clamp(H * 0.055, 22, 52);
+            g.save(); g.translate(cx + vh * 0.55, baseY - vh * 1.12 - alt + hopY); g.scale(sc, sc); g.rotate(-0.06);
+            g.font = `900 ${fs}px "Noto Sans KR", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+            const tw = g.measureText(bubble.s).width + fs * 1.1;
+            g.fillStyle = '#fff'; g.strokeStyle = '#ffb347'; g.lineWidth = 5; g.beginPath(); g.roundRect(-tw / 2, -fs * 0.85, tw, fs * 1.7, fs * 0.8); g.fill(); g.stroke();
+            g.beginPath(); g.moveTo(-tw * 0.22, fs * 0.8); g.lineTo(-tw * 0.34, fs * 1.4); g.lineTo(-tw * 0.06, fs * 0.8); g.fill();
+            g.fillStyle = '#ff7a2f'; g.fillText(bubble.s, 0, 2);
+            g.restore();
+        }
+    }
+    // --- 퐁퐁(별 · 하트 · 음표 · 방울) ---
+    for (let i = pops.length - 1; i >= 0; i--) {
+        const q = pops[i]; q.t += dt; if (q.t > q.life) { pops.splice(i, 1); continue; }
+        const k = q.t / q.life; q.vy += 40 * dt; q.x += (q.vx + Math.sin(now * 3 + q.ph) * 26) * dt - speed * 0.12 * dt; q.y += q.vy * dt;
+        const sc = backOut(Math.min(1, q.t / 0.18)); g.globalAlpha = k < 0.65 ? 1 : 1 - (k - 0.65) / 0.35; g.fillStyle = q.c;
+        const r = q.s * sc * 0.6;
+        if (q.k === 'star') star(q.x, q.y, r, Math.sin(now * 2 + q.ph) * 0.4);
+        else if (q.k === 'heart') heart(q.x, q.y, r * 0.8);
+        else if (q.k === 'note') noteShape(q.x, q.y, r);
+        else if (q.k === 'zzz') { g.fillStyle = '#fff'; g.font = `900 ${q.s * 1.1}px "Noto Sans KR", sans-serif`; g.textAlign = 'center'; g.fillText('Z', q.x, q.y); }
+        else { g.strokeStyle = '#fff'; g.lineWidth = 2.5; g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.arc(q.x, q.y, r * 0.8, 0, TAU); g.fill(); g.stroke(); }
+    }
+    g.globalAlpha = 1;
+    decor(1.3, 400, H + 8, 3);
+    // --- 색종이(출동!) ---
+    for (let i = conf.length - 1; i >= 0; i--) {
+        const q = conf[i]; q.t += dt; q.y += q.vy * dt; q.rot += dt * 2;
+        if (q.y > H + 30) { conf.splice(i, 1); continue; }
+        g.fillStyle = q.c; g.save(); g.translate(q.x + Math.sin(now * 2 + q.ph) * 30, q.y); g.rotate(q.rot); g.beginPath(); g.roundRect(-q.s / 2, -q.s * 0.3, q.s, q.s * 0.6, 3); g.fill(); g.restore();
+    }
+    // --- 위쪽: 모은 별 · 얼마나 왔나 ---
+    if (playing) {
+        const u = U, sr2 = 15 * u;
+        g.fillStyle = '#ffd43b'; g.strokeStyle = '#fff'; g.lineWidth = 3; g.lineJoin = 'round';
+        const shownStars = Math.min(done, 8);
+        for (let i = 0; i < shownStars; i++) { star(20 + sr2 + i * sr2 * 2.2, 18 + sr2, sr2, 0); g.stroke(); }
+        if (done > 8) { g.font = `900 ${sr2 * 1.3}px "Noto Sans KR", sans-serif`; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillStyle = '#fff'; g.strokeStyle = '#e0a800'; g.lineWidth = 4; g.strokeText('+' + (done - 8), 26 + sr2 * 2.2 * 8, 18 + sr2); g.fillText('+' + (done - 8), 26 + sr2 * 2.2 * 8, 18 + sr2); }
+        if (!sleeping) {
+            const bw = clamp(W * 0.34, 180, 520), bx = (W - bw) / 2, by = 24 * u, bh = 16 * u, k = state === 'drive' ? prog / NEED : state === 'out' ? 1 : 0;
+            g.fillStyle = 'rgba(255,255,255,.6)'; g.beginPath(); g.roundRect(bx, by, bw, bh, bh / 2); g.fill();
+            g.fillStyle = '#ffd43b'; g.beginPath(); g.roundRect(bx, by, Math.max(bh, bw * k), bh, bh / 2); g.fill();
+            g.fillStyle = '#ff7a2f'; star(bx + bw + bh * 0.9, by + bh / 2, bh * 0.95, now);
+            sprite(c.sp, c.left, bx + bw * k, by + bh * 1.5, bh * 2.4, true);
+        }
+        if (presses === 0) {
+            g.globalAlpha = 0.7 + 0.3 * Math.sin(now * 4); g.textAlign = 'center'; g.textBaseline = 'middle';
+            g.font = `900 ${clamp(W * 0.05, 24, 64)}px "Noto Sans KR", sans-serif`; g.lineWidth = 10; g.lineJoin = 'round'; g.strokeStyle = '#2f6fb0'; g.fillStyle = '#fff';
+            const s = TOUCH ? '화면을 콩콩 두드려 봐!' : '아무 키나 눌러 봐!';
+            g.strokeText(s, W / 2, H * 0.36); g.fillText(s, W / 2, H * 0.36); g.globalAlpha = 1;
+        }
+    }
+    // --- 이름(소방차 출동!) ---
+    if (banner) {
+        banner.t += dt; if (banner.t > banner.life) banner = null; else {
+            const k = banner.t / banner.life, sc = backOut(Math.min(1, banner.t / 0.35)), fs = clamp(W * 0.1, 44, 150);
+            g.save(); g.translate(W / 2, H * 0.3); g.scale(sc, sc); g.globalAlpha = k < 0.8 ? 1 : 1 - (k - 0.8) / 0.2;
+            g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+            g.font = `900 ${fs}px "Noto Sans KR", sans-serif`; g.lineWidth = fs * 0.2; g.strokeStyle = '#ff7a2f'; g.fillStyle = '#fff';
+            g.strokeText(banner.s, 0, 0); g.fillText(banner.s, 0, 0);
+            g.font = `900 ${fs * 0.42}px "Noto Sans KR", sans-serif`; g.lineWidth = fs * 0.1; g.strokeStyle = '#2f6fb0';
+            g.strokeText(banner.sub, 0, fs * 0.82); g.fillText(banner.sub, 0, fs * 0.82);
+            g.restore(); g.globalAlpha = 1;
+        }
+    }
+}
+
+// ---------- 시작 · 끝 ----------
+const escEl = $('#esc');
+function escPaint(n) {
+    escEl.classList.toggle('hot', n > 0);
+    escEl.innerHTML = `${TOUCH ? '여기를 5번 = 끝' : 'ESC 5번 = 끝'} ${Array.from({ length: MASH.ESC_N }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}`;
+}
+escEl.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); MASH.escTap(); });
+function start() {
+    snd.init(); songWire();
+    try { if (window.speechSynthesis) speechSynthesis.getVoices(); } catch (e) {}
+    playing = true; sleeping = false; playT = 0; presses = 0; prog = 0; done = 0; idx = 0; themeI = 0; speed = 0; lastPress = -99;
+    pops = []; conf = []; friends = []; bubble = null; state = 'in'; stT = 0; friendAt = now + 4;
+    banner = { s: car().name, sub: '출동!', t: 0, life: 2.4 };
+    escPaint(0);
+    MASH.start({ el: stage, onKey, onEsc: escPaint, onExit: end, guard: true });
+    speak(car().name + ' 출동!');
+}
+function end() {
+    playing = false; sleeping = false; state = 'drive'; slide = 0; banner = null; bubble = null;
+    if (song.el) { try { song.el.pause(); } catch (e) {} } song.cur = 0; if (song.gain) song.gain.gain.value = 0;
+    try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
+    $('#sub').textContent = done ? `오늘 탈것 ${done}대 출동! 잘했어요` : '아무 키나 마구 누르면 자동차가 달려요';
+    $('#go').textContent = done || presses ? '한 번 더' : '시작';
+}
+$('#go').addEventListener('click', start);
+escPaint(0); resize();
+requestAnimationFrame(frame);
+}
+// 맨 끝에서 연다(위의 탈것 목록·설정 값이 다 준비된 뒤)
+if (mem.get('car.ok', false)) showApp();
+check();
+})();
+</script>
+
+<footer>
+    <div class="links"><a href="../">TAB악보</a><a href="../requests.html">악보요청</a><a href="../tools.html">연습도구</a><a href="../legal/terms.html">이용약관</a><a href="../legal/privacy.html">개인정보 처리방침</a></div>
+    <span>상호: 안쌤의기타나무숲</span><span>대표: 안규호</span><span>사업자등록번호: 453-22-00905</span><span>통신판매업 신고번호: 제2026-서울강남-06306호</span><br>
+    <span>주소: 서울특별시 강남구 영동대로 210, 지하1층 3호(대치동, 쌍용대치종합상가)</span><span>고객센터: 0507-1334-9804</span><span>이메일: ahnssamguitar@gmail.com</span><span>호스팅: GitHub</span>
+    <div>© 2026 안쌤의 기타나무숲</div>
+</footer>
+</body>
+</html>
