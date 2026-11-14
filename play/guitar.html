@@ -223,11 +223,19 @@
     .empty .btn[disabled] { opacity: .55; cursor: default; }
     .empty .alt a { color: #ffe27a; text-decoration: underline; text-underline-offset: 3px; }
     /* 2026-11-13 사용자: 처음 화면의 '시작' 단추를 크게, 그 아래에 게임 공유 단추 */
-    .empty .btn.start { font-size: 22px; font-weight: 900; padding: 15px 50px; min-width: 214px; gap: 10px; }
-    .empty .btn.start i { font-size: 18px; }
+    /* '기타 찾기' 단추 (2026-11-14 사용자: 시작할 때 딱 강화하는 느낌으로) — 바탕은 강화 단추와 같은 그림(삼성 인터넷 다크모드에도 주황 그대로) */
+    .empty .btn.start, .empty .btn.start:hover { position: relative; overflow: hidden; isolation: isolate; color: #fff; font-size: 22px; font-weight: 900; letter-spacing: -.01em; padding: 15px 44px 19px; min-width: 230px; gap: 10px; border-radius: 16px;
+        background: #f0592b url(../images/play/gk/btn_up.jpg) center / 100% 100% no-repeat; text-shadow: 0 2px 0 rgba(110, 30, 0, 0.45); animation: findPulse 1.8s ease-in-out infinite; }
+    .empty .btn.start i { font-size: 19px; }
+    .empty .btn.start::after { content: ''; position: absolute; z-index: -1; top: 0; bottom: 0; left: -60%; width: 42%; transform: skewX(-20deg); pointer-events: none;
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0)); animation: findShine 2.6s ease-in-out infinite; }
+    .empty .btn.start:active { animation: none; transform: translateY(3px) scale(.98); }
+    @keyframes findPulse { 0%, 100% { transform: scale(1); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4), 0 0 0 0 rgba(255, 170, 80, 0.6); } 50% { transform: scale(1.045); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4), 0 0 0 12px rgba(255, 170, 80, 0); } }
+    @keyframes findShine { 0% { left: -60%; } 55%, 100% { left: 130%; } }
+    @media (prefers-reduced-motion: reduce) { .empty .btn.start, .empty .btn.start::after { animation: none; } }
     .empty .btn.gshare { margin-top: 2px; padding: 8px 18px; font-size: 13.5px; font-weight: 800; color: #fff; background: rgba(255, 255, 255, 0.14); border: 1.5px solid rgba(255, 255, 255, 0.5); box-shadow: none; }
     .empty .btn.gshare:hover { background: rgba(255, 255, 255, 0.26); }
-    @media (max-width: 359px) { .empty .btn.start { font-size: 20px; padding: 13px 40px; min-width: 190px; } }
+    @media (max-width: 359px) { .empty .btn.start, .empty .btn.start:hover { font-size: 20px; padding: 13px 34px 17px; min-width: 200px; } }
 
     /* 강화 기다림: 무대가 어두워지고 기타가 점점 세게 떨리며 빛이 모인다 */
     .stage::after { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(36% 40% at 50% 55%, rgba(255, 214, 110, 0.2), rgba(0, 0, 0, 0.66) 72%); opacity: 0; transition: opacity .35s; }
@@ -1597,8 +1605,9 @@ const GSHARE = `<button class="btn gshare" type="button" data-a="gameshare"><i c
 function emptyCard() {
     const sil = `<img class="g1" src="../images/play/gk/sil_guitar.webp" alt="">`;   // 무슨 기타가 나올지 모르게 그림자만
     // 2026-11-12 사용자: 빈 작업대는 간단하게 위에 '기타 키우기', 아래 '시작'만 + 단추 아래에 값
-    const card = (a, cls, cost) => `${S.first ? '' : sil}<p class="big">기타 키우기</p><button class="btn start ${cls}" type="button" data-a="${a}"><i class="fas fa-play"></i> 시작</button><small class="cost">${cost}</small>${GSHARE}`;
-    if (!S.first) return card('buy1', 'pick', '<i class="fas fa-gift"></i> 첫 기타는 공짜');
+    // 2026-11-14 사용자: '시작' → '기타 찾기', 강화하는 느낌이 드는 단추로(강화 단추와 같은 주황 그림 바탕 + 반짝 지나가는 빛 + 숨 쉬듯 커졌다 작아짐). 위 '기타 키우기' 글자는 사용자가 글꼴 그림으로 바꿀 예정이라 그대로
+    const card = (a, cls, cost) => `${S.first ? '' : sil}<p class="big">기타 키우기</p><button class="btn start ${cls}" type="button" data-a="${a}"><i class="fas fa-magnifying-glass"></i>기타 찾기</button><small class="cost">${cost}</small>${GSHARE}`;
+    if (!S.first) return card('buy1', '', '<i class="fas fa-gift"></i> 첫 기타는 공짜');
     if (S.gold >= FIND_GOLD) return card('new', '', `<i class="fas fa-coins"></i> ${gf(FIND_GOLD)}`);
     return lackCard(`골드가 ${gf(FIND_GOLD - S.gold)} 모자라요`, `기타 한 대 찾는 값이 ${gf(FIND_GOLD)}예요.`);
 }
@@ -1617,7 +1626,7 @@ function renderBench() {
     em.hidden = !!(g || ghost);
     if (!em.hidden) em.innerHTML = emptyCard();
     renderTable();
-    renderSact();   // 빈 작업대('기타 키우기 / 시작')에는 강화·진열하기 단추가 없어야 한다 (2026-11-12 사용자)
+    renderSact();   // 빈 작업대('기타 키우기 / 기타 찾기')에는 강화·진열하기 단추가 없어야 한다 (2026-11-12 사용자)
     if (!g) { box.innerHTML = ''; return; }   // 2026-11-13 사용자: "'시작'은 300G예요, 골드가 모자라면…" 설명은 뺌
     let h = '';
     if (g.lv >= MAX) h += `<div class="maxed">🎸 최고 단계! 더는 강화할 수 없어요.<br><small>벽에 걸고 대표 기타로 배틀에 내보내요.</small></div>`;
