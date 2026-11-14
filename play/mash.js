@@ -1,17 +1,17 @@
 /* 마구 누르기 놀이 공통 (2026-11-14 사용자: 시작하면 키보드를 마아아악 눌러도 괜찮은 놀이 — 기타 펑펑 · 부릉부릉 출동)
    - 시작하면 그 칸을 전체화면으로 띄우고, 누르는 키가 브라우저(새로고침·뒤로 가기·찾기 등)로 새지 않게 막는다.
-   - 끄기 = ESC 를 연속으로 다섯 번 (2026-11-14 사용자). 사이에 다른 키를 누르거나 2초 넘게 쉬면 처음부터 다시 센다.
+   - 끄기 = ESC 를 연속으로 세 번 (2026-11-15 사용자, 처음 2026-11-14 엔 다섯 번). 사이에 다른 키를 누르거나 2초 넘게 쉬면 처음부터 다시 센다.
      크롬·엣지는 전체화면에서 ESC 를 페이지가 받게 잠글 수 있다(Keyboard Lock). 사파리·파이어폭스는 ESC 한 번에
      전체화면이 풀리는데, 놀이는 계속되고 다음에 아무 키나 누르면 다시 전체화면이 된다.
    - 브라우저가 끝내 못 막게 하는 것: ESC 를 2초쯤 꾹 누르기(크롬), 창 닫기(Cmd+W)·앱 바꾸기(Cmd+Tab) 같은 운영체제 단축키.
-   - 휴대폰·태블릿: **뒤로 가기를 연속으로 다섯 번** (2026-11-14 사용자). 시작할 때 방문 기록을 다섯 칸 넣어 두고, 뒤로 가기로
+   - 휴대폰·태블릿: **뒤로 가기를 연속으로 세 번**(2026-11-15, 처음엔 다섯 번). 시작할 때 방문 기록을 세 칸 넣어 두고, 뒤로 가기로
      한 칸씩 빠질 때마다 센다. 화면을 두드리면(= 다른 키) 처음부터 다시 세고 빠진 칸을 도로 채운다.
      · 칸은 꼭 누른 직후(사용자 동작 안)에만 넣는다. 크롬은 동작 없이 넣은 칸을 뒤로 가기에서 건너뛰어 페이지를 떠나 버린다.
      · 안드로이드는 전체화면에서 첫 뒤로 가기가 전체화면만 푼다(기록은 그대로) — 그것도 한 번으로 센다.
      · 뒤로 가기는 2초 규칙 없이 '사이에 화면을 안 두드리면' 연속으로 친다(전체화면이 풀리는 첫 번이 느려서).
-     구석의 끝내기 표시를 다섯 번 두드려도 꺼진다(MASH.escTap). */
+     구석의 끝내기 표시를 세 번 두드려도 꺼진다(MASH.escTap). */
 window.MASH = (function () {
-    const ESC_N = 5, ESC_GAP = 2000;
+    const ESC_N = 3, ESC_GAP = 2000;
     let on = false, el = null, opt = {}, esc = 0, escAt = 0;
     let hist = 0, popSkipUntil = 0, viaBack = false, escKeyAt = -1e9, fsExitAt = -1e9;
     const COARSE = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
@@ -36,7 +36,7 @@ window.MASH = (function () {
         if (esc >= ESC_N) stop();
     }
     function escReset() { viaBack = false; if (esc) { esc = 0; if (opt.onEsc) opt.onEsc(0, ESC_N); } }
-    // 방문 기록 다섯 칸(뒤로 가기 다섯 번 몫). 누른 직후에만 부른다
+    // 방문 기록 ESC_N 칸(뒤로 가기 ESC_N 번 몫). 누른 직후에만 부른다
     function histFill() { if (!on) return; try { while (hist < ESC_N) { history.pushState({ mash: hist + 1 }, ''); hist++; } } catch (e) {} }
     function backPress(fromHistory) {
         if (fromHistory) hist = Math.max(0, hist - 1);
