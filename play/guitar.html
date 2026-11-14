@@ -2477,11 +2477,21 @@ function copyNo() {
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, () => toast(`내 파이트 넘버는 ${t}예요`));
     else toast(`내 파이트 넘버는 ${t}예요`);
 }
+// 오늘의 상대 (2026-11-15 사용자): 내 대표 기타보다 조금 낮은 3명 + 조금 높은 2명 — 둘 다 가까운 단계부터.
+//   서버가 내 단계에 가까운 20명을 준다(같은 거리면 무작위). 한쪽이 모자라면 같은 단계 → 남은 사람 중 가까운 순으로 5명까지 채운다
+function pickToday(list, myLv) {
+    const dist = o => Math.abs(o.lv - myLv), near = a => a.slice().sort((x, y) => dist(x) - dist(y));
+    const low = near(list.filter(o => o.lv < myLv)), high = near(list.filter(o => o.lv > myLv)), same = list.filter(o => o.lv === myLv);
+    const pick = [...low.splice(0, 3), ...high.splice(0, 2)];
+    const rest = [...same, ...near([...low, ...high])];
+    while (pick.length < 5 && rest.length) pick.push(rest.shift());
+    return pick.sort((a, b) => b.lv - a.lv);
+}
 function renderBattle() {
     updBar();
     const el = $('#tab-battle'), me = rep(), bt = btDay();
     if ((!NET.at || Date.now() - NET.at > 5 * 60e3 || NET.sig !== repSig(me)) && !netBusy) loadNet().then(() => { if (tab === 'battle' && !busy) renderBattle(); });
-    const real = NET.ok ? NET.opps : [];
+    const real = NET.ok ? pickToday(NET.opps, me ? me.lv : 0) : [];
     OPPS = NET.ok === null ? [] : rankers().slice(0, Math.max(0, 10 - real.length));
     // 랭킹은 2026-11-13 메뉴 맨 오른쪽 '랭킹' 탭으로 옮김(사용자). 여기는 상태만
     const rankLine = NORANK ? '시험 브라우저 · 배틀 기록이 안 남아요' : amHidden() ? '운영 계정(시험) · 기록 안 남음 · 남들에겐 #000000 +10 스트랫'
