@@ -161,6 +161,18 @@
             return s && s.access_token && (s.expires_at || 0) * 1000 > Date.now() + 10000 ? s.access_token : '';
         } catch (e) { return ''; }
     }
+    // 로그인한 사람의 사이트 닉네임(profiles.nickname — 사이트 가입 때 정한 것). 로그인 안 했거나 못 읽으면 ''
+    //   2026-11-15 사용자: 기타 키우기에서 닉네임을 따로 묻지 말고 이 닉네임으로
+    async function myProfileNick() {
+        try {
+            const s = JSON.parse(localStorage.getItem('sb-qpcbrqgqylxkgdwoflku-auth-token') || 'null'), tok = userToken();
+            if (!s || !s.user || !s.user.id || !tok) return '';
+            const r = await fetch(SB_URL + '/rest/v1/profiles?select=nickname&id=eq.' + encodeURIComponent(s.user.id), { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + tok } });
+            if (!r.ok) return '';
+            const rows = await r.json();
+            return String((rows[0] && rows[0].nickname) || '').replace(/\s+/g, ' ').trim();
+        } catch (e) { return ''; }
+    }
     // 실패하면 err.code 에 서버가 보낸 짧은 코드(예: 'fast', 'link')
     async function rpc(name, body, opt = {}) {
         const headers = { apikey: SB_KEY, 'Content-Type': 'application/json' };
@@ -342,5 +354,5 @@
             <span class="bulb"><i class="fas fa-lightbulb"></i></span>${opt.count ? `<span class="cnt">${opt.count}문제</span>` : ''}</div>`;
     }
 
-    window.PLAY = { hasLogin: () => !!userToken(), myKey, sideLinks, picks, PICK, pickIcon, pickLine, thumb, esc, shuffle, adSlot, interstitial, rewarded, toast, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow, IS_APP };
+    window.PLAY = { hasLogin: () => !!userToken(), myProfileNick, myKey, sideLinks, picks, PICK, pickIcon, pickLine, thumb, esc, shuffle, adSlot, interstitial, rewarded, toast, share, catalog, previews, rpc, mem, pvUrl, cvUrl, STYLE, baseTitle, recRow, IS_APP };
 })();
