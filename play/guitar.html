@@ -1254,7 +1254,7 @@ function snapLine(c, p) {   // 줄 끊김(그림 단계): 브리지에 붙은 �
 function drawGuitar(c, lv, t, o = {}) {
     const a = art(lv, o.f);
     if (a) {   // 그림 단계: 바뀐 게 없으면 다시 그리지 않는다(작업방 걸이는 매 프레임 불림)
-        const key = (o.f || 'strat') + lv + (o.snap != null ? ':' + o.snap : '');
+        const key = (o.f || 'strat') + lv + (o.snap != null ? ':' + o.snap : '') + (o.red ? '~' + o.red : '');
         if (!a.ok) { if (c.canvas._drawn != null) clearGuitar(c); return; }
         if (c.canvas._drawn === key) return;
         const K = c.canvas.width / 56;
@@ -1263,6 +1263,10 @@ function drawGuitar(c, lv, t, o = {}) {
         if (a.sq) c.drawImage(a.img, 0, 22, 56, 56);   // 앰프·멀티: 바닥이 기타 몸통 아래 끝(76칸)에 오게
         else c.drawImage(a.img, 0, 0, 56, 84);
         if (o.snap != null && !a.sq) snapLine(c, o.snap);
+        if (o.red) {   // 파괴될 때 악기가 사알짝 벌게진다 (2026-11-15 사용자) — 악기 모양 위에만 빨강을 얇게
+            c.save(); c.globalCompositeOperation = 'source-atop';
+            c.fillStyle = `rgba(255, 38, 22, ${(0.4 * o.red).toFixed(3)})`; c.fillRect(0, 0, 56, 84); c.restore();
+        }
         c.canvas._drawn = key;
         return;
     }
@@ -1409,12 +1413,13 @@ function updAura() {
     const st = $('#stage'); st.classList.toggle('glow', !!key); st.classList.toggle('g20', !!key && g.lv >= 20);
     if (key) st.style.setProperty('--ah', auraHue(a));
 }
-let auraT = 0;
+let auraT = 0, redAt = 0;   // redAt: 파괴 연출에서 악기가 벌게지기 시작한 때
 function frame(now) {
     if (now - auraT > 250) { auraT = now; updAura(); }
     const t = now / 1000, g = ghost || S.bench;
     const sp = snapAt && now - snapAt < 750 ? (now - snapAt) / 750 : null;
-    if (g) drawGuitar(ctx, g.lv, t, { snap: sp, f: g.f }); else if (cv._drawn !== '') { clearGuitar(ctx); cv._drawn = ''; }
+    const red = redAt ? Math.round(Math.min(1, (now - redAt) / 380) * 10) / 10 : 0;   // 0.38초 동안 0 → 1, 열 걸음
+    if (g) drawGuitar(ctx, g.lv, t, { snap: sp, f: g.f, red }); else if (cv._drawn !== '') { clearGuitar(ctx); cv._drawn = ''; }
     document.querySelectorAll('canvas.live').forEach(c => drawGuitar(c.getContext('2d'), +c.dataset.lv || 0, t, { f: c.dataset.f }));
     requestAnimationFrame(frame);
 }
@@ -1949,12 +1954,14 @@ async function enhance() {
         await sleep(600);
     } else {
         $('#bench').innerHTML = '';
+        redAt = performance.now();   // 들어 올리는 동안 사알짝 벌게지고(캔버스) 붉은 빛이 번진다(filter)
+        const RG = 'drop-shadow(0 0 12px rgba(255, 45, 25, 0.55))', RG0 = 'drop-shadow(0 0 0 rgba(255, 45, 25, 0))';
         const a = cv.animate([
-            { transform: CVT, opacity: 1 },
-            { transform: `${CVT} translateY(-12%) rotate(-32deg)`, opacity: 1, offset: 0.45 },
-            { transform: `${CVT} translateY(16%) rotate(78deg)`, opacity: 1, offset: 0.62 },
-            { transform: `${CVT} translateY(20%) rotate(84deg)`, opacity: 1, offset: 0.7 },
-            { transform: `${CVT} translateY(20%) rotate(84deg)`, opacity: 0 },
+            { transform: CVT, opacity: 1, filter: RG0 },
+            { transform: `${CVT} translateY(-12%) rotate(-32deg)`, opacity: 1, filter: RG, offset: 0.45 },
+            { transform: `${CVT} translateY(16%) rotate(78deg)`, opacity: 1, filter: RG, offset: 0.62 },
+            { transform: `${CVT} translateY(20%) rotate(84deg)`, opacity: 1, filter: RG, offset: 0.7 },
+            { transform: `${CVT} translateY(20%) rotate(84deg)`, opacity: 0, filter: RG },
         ], { duration: 950, easing: 'ease-in', fill: 'forwards' });
         await sleep(580);
         sfx('boom'); shake(true); flash();
@@ -1963,7 +1970,7 @@ async function enhance() {
         await sleep(450);
         pop(`부서진 기타 조각 +${gotSh}`, 'sm', 22);
         await sleep(450);
-        a.cancel(); ghost = null; renderName();
+        a.cancel(); ghost = null; redAt = 0; renderName();
         // 2026-11-13 사용자: 악기가 부서지면 전면 광고(AdSense H5 게임 광고 adBreak 'next') — 첫 번째 파괴엔 띄우고, 두 번째는 건너뛰고, 세 번째는 띄우고…(홀수 번째만, S.st.boom 은 이 브라우저에서 부서진 횟수)
         // 부서진 것·조각 수를 다 보여 준 뒤에 띄우고, 실제로 뜰지는 구글이 정한다(안 띄우면 바로 넘어감). 하드케이스가 막은 건 안 부서졌으니 광고 없음
         await sleep(400);
