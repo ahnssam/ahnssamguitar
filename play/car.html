@@ -103,6 +103,9 @@
             <div class="r"><b>이름 읽어 주기</b>
                 <label><input type="checkbox" id="tts">새 탈것이 나올 때 "소방차!" 하고 읽어 줘요</label>
             </div>
+            <div class="r"><b>탈것 크기</b><input type="range" id="size" min="30" max="100" step="5"><span id="sizeN"></span>
+                <small>작게 하면 카메라가 뒤로 물러나서 길이 더 많이 보여요. 왼쪽 끝이 가장 작고 오른쪽 끝이 처음 만들었을 때 크기예요.</small>
+            </div>
             <div class="r"><b>놀이 시간</b>
                 <select id="limit"><option value="0">끝없이</option><option value="5">5분</option><option value="10">10분</option><option value="15">15분</option><option value="20">20분</option></select>
                 <small>시간이 다 되면 밤이 되고 자동차가 코 자요. 눌러도 달리지 않아요.</small>
@@ -254,15 +257,27 @@ const ART = { excavator: 1, bulldozer: 1, loader: 1, dump: 1, mixer: 1, crane: 1
 const NEED = 36;                  // 이만큼 누르면 다음 탈것
 const HOLD = 2.4;                 // 노래: 마지막으로 누른 뒤 이만큼(초) 지나면 스르르 멈춤
 // 길(뒤에서 따라가는 3D): 길 조각 하나의 길이·길 너비의 반·카메라 높이·보이는 조각 수
-const SEG = 200, RUMBLE = 3, ROADW = 1900, DRAW = 150, CAMH = 1250, FOV = 100, CARW = 640;
-const CAMD = 1 / Math.tan(FOV / 2 * Math.PI / 180), PZ = CAMH * CAMD;      // PZ = 카메라에서 내 탈것까지
+const SEG = 200, RUMBLE = 3, ROADW = 1900, DRAW0 = 150, CAMH0 = 1250, FOV = 100, CARW0 = 640;      // 뒤의 0 = '탈것 크기 100%'일 때의 값
+const CAMD = 1 / Math.tan(FOV / 2 * Math.PI / 180);
 const MAXV = 7000, PUSH = 950;    // 가장 빠른 속도, 한 번 누를 때 붙는 속도(1초에 가는 거리 — 조각 35개쯤)
 const LANEX = [-0.64, 0, 0.64];   // 세 차선의 자리(-1 = 왼쪽 끝, 1 = 오른쪽 끝)
 
 function boot() {
 const stage = $('#stage'), cv = $('#cv'), g = cv.getContext('2d');
 const TOUCH = matchMedia('(pointer: coarse)').matches;
-const opt = { vol: mem.get('car.vol', 80), hold: mem.get('car.hold', true) !== false, tts: mem.get('car.tts', true) !== false, limit: mem.get('car.limit', 0) };
+const opt = { vol: mem.get('car.vol', 80), hold: mem.get('car.hold', true) !== false, tts: mem.get('car.tts', true) !== false, limit: mem.get('car.limit', 0), size: clamp(+mem.get('car.size', 30) || 30, 30, 100) };
+// 탈것 크기 (2026-11-14 사용자: 차가 지금보다 70%쯤 작아도 좋겠다 → 처음 값 30%, 설정에서 30~100%로 바꿈).
+//   차만 줄이면 넓은 길에 장난감 차처럼 보여서, 카메라를 뒤·위로 빼고(CAMH·PZ ↑ — 길도 같이 작아져 더 많이 보임) 차 자체도 조금 줄인다.
+//   카메라 높이와 거리를 같은 비율로 바꾸므로 내 탈것이 서는 자리(화면 아래쪽)는 그대로다.
+let CAMH = CAMH0, PZ = CAMH0 * CAMD, CARW = CARW0, DRAW = DRAW0;      // PZ = 카메라에서 내 탈것까지
+let sizeK = 1;      // 말풍선·퐁퐁도 탈것 크기를 따라 조금 작게
+function applySize() {
+    let k = opt.size / 100;
+    if (W && W < H * 0.8) k = Math.pow(k, 0.7);      // 세로로 긴 화면(휴대폰)은 원래 작게 보여서 덜 줄인다(30% → 약 43%)
+    sizeK = 0.5 + 0.5 * k;
+    CAMH = CAMH0 / Math.pow(k, 0.6); PZ = CAMH * CAMD; CARW = CARW0 * Math.pow(k, 0.4);
+    DRAW = Math.round(clamp(DRAW0 * Math.pow(CAMH / CAMH0, 0.8), DRAW0, 280));      // 카메라가 높아지면 더 멀리까지 그린다
+}      // 처음 계산은 화면 크기를 잰 뒤 resize() 가 부른다(W·H 를 쓰므로)
 let W = 0, H = 0, DPR = 1, now = 0, U = 1, HY = 0, xs = 1, ys = 1;      // HY = 지평선 높이, xs·ys = 화면에 옮길 때 배율
 let playing = false, sleeping = false, playT = 0;
 let pos = 0, speed = 0, px = 0, lane = 1, bgX = 0, hopY = 0, hopV = 0, alt = 0, tilt = 0, squash = 0;
@@ -499,7 +514,7 @@ function resize() {
     if (!r.width || !r.height) return;
     DPR = Math.min(window.devicePixelRatio || 1, 2);
     W = r.width; H = r.height; U = clamp(Math.min(H, W * 0.85) / 700, 0.5, 1.7);
-    HY = Math.round(H * 0.44); ys = Math.min(H / 2, W * 0.82); xs = Math.max(W / 2, ys * 0.72);      // 세로로 긴 화면에서는 차가 더 아래·더 크게
+    HY = Math.round(H * 0.44); ys = Math.min(H / 2, W * 0.82); xs = Math.max(W / 2, ys * 0.72); applySize();      // 세로로 긴 화면에서는 차가 더 아래·더 크게
     cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
 }
 new ResizeObserver(resize).observe(stage);
@@ -619,6 +634,9 @@ const volEl = $('#vol');
 volEl.value = opt.vol; $('#volN').textContent = opt.vol;
 volEl.addEventListener('input', () => { opt.vol = +volEl.value; $('#volN').textContent = opt.vol; mem.set('car.vol', opt.vol); });
 [['hold', 'hold'], ['tts', 'tts']].forEach(([id, k]) => { const el = $('#' + id); el.checked = opt[k]; el.addEventListener('change', () => { opt[k] = el.checked; mem.set('car.' + k, opt[k]); }); });
+const sizeEl = $('#size');
+sizeEl.value = opt.size; $('#sizeN').textContent = opt.size + '%';
+sizeEl.addEventListener('input', () => { opt.size = +sizeEl.value; $('#sizeN').textContent = opt.size + '%'; mem.set('car.size', opt.size); applySize(); });
 $('#limit').value = String(opt.limit);
 $('#limit').addEventListener('change', e => { opt.limit = +e.target.value; mem.set('car.limit', opt.limit); });
 
@@ -634,7 +652,7 @@ function carBox() {
 function emit(kind) {
     const b = carBox();
     const t = kind || ['star', 'heart', 'note', 'bubble', 'star'][(Math.random() * 5) | 0];
-    pops.push({ k: t, x: b.x + rnd(-b.w * 0.42, b.w * 0.42), y: b.top + rnd(0, b.h * 0.25), vx: rnd(-50, 50), vy: rnd(-170, -90), t: 0, life: rnd(1.2, 1.8), s: rnd(20, 34) * U, c: PASTEL[(Math.random() * PASTEL.length) | 0], ph: rnd(0, TAU) });
+    pops.push({ k: t, x: b.x + rnd(-b.w * 0.42, b.w * 0.42), y: b.top + rnd(0, b.h * 0.25), vx: rnd(-50, 50), vy: rnd(-170, -90), t: 0, life: rnd(1.2, 1.8), s: rnd(20, 34) * U * sizeK, c: PASTEL[(Math.random() * PASTEL.length) | 0], ph: rnd(0, TAU) });
     if (!kind && b.lift < 12) for (const sx of [-1, 1]) puffs.push({ x: b.x + sx * b.w * 0.46, y: b.base - b.w * 0.02, t: 0, life: 0.6, s: b.w * 0.03, vx: sx * 50 });
 }
 function honk() { const c = car(); bubble = { s: c.say, t: 0, life: 1.3 }; snd.horn(c.horn); }
@@ -860,7 +878,7 @@ function frame(ts) {
     // --- 말풍선(빵빵!) ---
     if (bubble) {
         bubble.t += dt; if (bubble.t > bubble.life) bubble = null; else {
-            const k = bubble.t / bubble.life, sc = backOut(Math.min(1, bubble.t / 0.22)) * (k > 0.8 ? 1 - (k - 0.8) / 0.2 : 1), fs = clamp(Math.min(H * 0.055, W * 0.07), 20, 52);
+            const k = bubble.t / bubble.life, sc = backOut(Math.min(1, bubble.t / 0.22)) * (k > 0.8 ? 1 - (k - 0.8) / 0.2 : 1), fs = clamp(Math.min(H * 0.055, W * 0.07), 20, 52) * sizeK;
             g.save(); g.translate(clamp(b.x + b.w * 0.42, 60, W - fs * 3), Math.max(fs * 2.4, b.top - fs * 0.9)); g.scale(sc, sc); g.rotate(-0.06);
             g.font = `900 ${fs}px "Noto Sans KR", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
             const tw = g.measureText(bubble.s).width + fs * 1.1;
