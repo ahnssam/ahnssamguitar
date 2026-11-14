@@ -2618,8 +2618,11 @@ async function oppRefresh(k = 'real') {
     toast('새 상대가 왔어요');
 }
 // 닉네임 (2026-11-15 사용자: 로그인하면 맨 처음에 닉네임부터 — 꼭 정하게. 랭킹·배틀에 이 이름으로 보인다)
-//   상스러운 말은 막는다(BAD_NICK — 띄어쓰기·숫자·기호를 빼고 본다. 서버에서도 막을지는 사용자와 정하는 중)
-const BAD_NICK = /시발|씨발|씨빨|ㅅㅂ|ㅆㅂ|시바|씨바|병신|븅신|ㅂㅅ|좆|존나|졸라|개새|개색|개세|새끼|섹스|섹시|보지|자지|창녀|걸레|미친년|미친놈|니미|느금|애미|애비|엠창|썅|fuck|shit|bitch|sex|porn|admin|운영자|관리자|안쌤/i;
+//   상스러운 말은 막는다 — 띄어쓰기·숫자·기호를 빼고 본다. 서버(db/play_nick_filter.sql, 2026-11-15 적용)도 같은 목록으로 '익명'으로 바꿔 저장
+//   안쌤·운영자처럼 보이는 이름(RESERVED_NICK)은 운영 계정만 쓸 수 있다(2026-11-15 사용자: 안쌤 본인이 '안쌤'을 못 써서)
+const BAD_NICK = /시발|씨발|씨빨|씨바|쓰발|쉬발|슈발|ㅅㅂ|ㅆㅂ|병신|븅신|빙신|ㅂㅅ|좆|존나|ㅈㄴ|지랄|ㅈㄹ|개새|개색|개세끼|개쉐|썅|염병|엠창|니미|느금|니애미|애미|애비|미친년|미친놈|또라이|호로|섹스|보지|자지|창녀|걸레|후장|강간|야동|자위|딸딸이|fuck|fuk|shit|bitch|sex|porn|dick|pussy|nigger|nigga/i;
+const RESERVED_NICK = /안쌤|기타나무숲|운영자|운영진|관리자|admin/i;
+const RESERVED_MSG = '안쌤·운영자처럼 보이는 이름은 쓸 수 없어요';
 function nickErr(v) {
     const n = String(v || '').replace(/\s+/g, ' ').trim(), flat = n.replace(/[\s\d_\-.·,!?~*^]+/g, '');
     if (n.length < 2) return '2자 이상으로 정해 주세요';
@@ -2627,6 +2630,7 @@ function nickErr(v) {
     if (n === '익명') return "'익명' 말고 다른 이름으로 정해 주세요";
     if (LINK_RE.test(n)) return '이름에 링크는 쓸 수 없어요';
     if (BAD_NICK.test(flat)) return '쓸 수 없는 말이 들어 있어요';
+    if (RESERVED_NICK.test(flat) && !ADMIN) return RESERVED_MSG;
     return '';
 }
 function setNick(v) {
@@ -2637,6 +2641,7 @@ function setNick(v) {
 }
 function nickAsk(must) {
     if (document.querySelector('.nickask')) return;
+    checkAdmin();   // 운영 계정이면 '안쌤' 같은 이름도 쓸 수 있게 미리 물어 둔다
     const m = document.createElement('div');
     m.className = 'gk-modal nickask';
     m.innerHTML = `<div class="in"><span class="ic"><i class="fas fa-signature"></i></span><h3>닉네임을 정해 주세요</h3>
@@ -2645,8 +2650,12 @@ function nickAsk(must) {
         <button type="button" class="btn go">정하기</button>${must ? '' : '<button type="button" class="no">닫기</button>'}</div>`;
     document.body.appendChild(m);
     const inp = m.querySelector('#nkIn'), err = m.querySelector('.err');
-    const go = () => {
-        const e = nickErr(inp.value);
+    const go = async () => {
+        let e = nickErr(inp.value);
+        if (e === RESERVED_MSG && acctId()) {   // 운영 계정인지 아직 모르면 서버에 물어보고 다시
+            try { ADMIN = (await PLAY.rpc('is_site_admin', {}, { auth: true })) === true; adminUid = acctId(); } catch (x) {}
+            e = nickErr(inp.value);
+        }
         if (e) { err.textContent = e; err.hidden = false; inp.focus(); return; }
         setNick(inp.value); m.remove(); toast(`'${S.nick}'(으)로 정했어요`);
         try { syncMe(true); } catch (x) {}
