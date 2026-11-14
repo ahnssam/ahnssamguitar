@@ -29,15 +29,30 @@
     header.site-hd .ttl { display: flex; align-items: center; gap: 7px; margin-left: -6px; font-weight: 900; font-size: 17px; color: var(--green-deep); white-space: nowrap; }
     header.site-hd .ttl i { font-size: 15px; }
     @media (max-width: 900px) { header.site-hd .hd { gap: 14px; } header.site-hd .ttl { font-size: 16px; margin-left: -4px; } }
-    @media (max-width: 380px) { header.site-hd .hd { gap: 10px; padding: 0 12px; } header.site-hd .ttl { font-size: 15px; } header.site-hd .ttl i { display: none; } }
+    @media (max-width: 380px) { body header.site-hd .hd, body.ttl-up header.site-hd .hd { gap: 10px; padding: 0 12px; } body.ttl-up header.site-hd .ttl, header.site-hd .ttl { font-size: 15px; } header.site-hd .ttl i, body.ttl-up header.site-hd .ttl i { display: none; } }   /* play.css 의 body.ttl-up 규칙보다 세게(2026-11-15: 320px 에서 ≡ 단추가 10px 넘쳤음) */
     /* 골드 줄은 내려도 위에 붙는다(사이트 메뉴 아래 84px / 휴대폰 64px, 앱은 놀이터 줄 60px 아래) — 2026-11-13 사용자: 드래그하면 돈이 가려짐 */
-    .gk-bar { position: sticky; top: 60px; z-index: 15; background: var(--cream); padding: 6px 0; }
-    body.has-site .gk-bar { top: 84px; }
-    @media (max-width: 900px) { body.has-site .gk-bar { top: 64px; } }
+    .gk-top { position: sticky; top: 60px; z-index: 15; background: var(--cream); padding: 6px 0; margin: -6px 0 6px; }
+    body.has-site .gk-top { top: 84px; }
+    @media (max-width: 900px) { body.has-site .gk-top { top: 64px; } }
     .gk [hidden] { display: none !important; }
 
     /* 메뉴 아래 줄: 골드·조각·하드케이스·출석·소리 — 휴대폰에서도 한 줄 (2026-11-13 사용자: 스피커가 아래로 내려가 두 줄이 됨, 구름 단추는 뺌) */
-    .gk-bar { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; margin: -6px 0 6px; }
+    .gk-bar { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: nowrap; margin-top: 6px; }
+    .gk-bar[hidden] { display: none; }
+    .gL, .gR { display: flex; align-items: center; gap: 6px; min-width: 0; } .gR { flex: none; }
+    .gL #rGold { flex: 0 1 auto; min-width: 0; overflow: hidden; } .gL #rGold span { overflow: hidden; text-overflow: ellipsis; }
+    /* 작업대: 무대 왼쪽 위 = 골드(+ 골드 받기), 오른쪽 위 = 출석·소리 (2026-11-15 사용자) */
+    .stage > .gL, .stage > .gR { position: absolute; top: 8px; z-index: 7; gap: 5px; }
+    .stage > .gL { left: 8px; max-width: calc(100% - 140px); }   /* 넘치면 fitGold 가 만·억으로 */
+    .stage > .gR { right: 8px; }
+    .stage .res, .stage .iconbtn { height: 32px; background: rgba(8, 14, 12, 0.74); border-color: rgba(255, 255, 255, 0.22); color: #fff; }
+    .stage .iconbtn { width: 32px; }
+    .stage .res.gold i { color: #ffcf3f; }
+    .stage .res.daily:not(.got), .stage .res.adg { background: #fff3dc; color: #a85a00; border-color: #f6d29a; }
+    .stage .res.adg i { color: #e0a63c; }
+    .stage .res.daily.got { background: rgba(8, 14, 12, 0.6); color: #b9c2bd; }
+    .stage .res.daily.got i { display: none; }
+    @media (max-width: 380px) { .stage > .gL, .stage > .gR { top: 6px; gap: 4px; } .stage > .gL { left: 6px; } .stage > .gR { right: 6px; } .stage .res { height: 30px; padding: 0 8px; font-size: 12.5px; gap: 4px; } .stage .iconbtn { width: 30px; height: 30px; } .stage .res.adg span { display: none; } }
     .res { display: inline-flex; align-items: center; gap: 5px; height: 34px; padding: 0 10px; border-radius: 999px; background: #fff; border: 1.5px solid var(--line); font-weight: 800; font-size: 13.5px; white-space: nowrap; }
     .res i { font-size: 13px; }
     .res.gold i { color: #e0a514; }
@@ -56,9 +71,6 @@
     @media (max-width: 359px) { .stage .scbox { font-size: 10px; padding: 5px 6px; left: 6px; } .stage .scbox .h, .stage .scbox em { display: none; } .stage .scbox i { display: inline; } .stage .scbox .h + span { margin-bottom: 0; } .stage .brag { right: 6px; padding: 6px 6px 5px; font-size: 10px; } }   /* 좁은 폰: 기타 옆 자리가 더 좁아서 '조각 7/20 · 하케 1/3' 두 줄로 */
     /* 골드 줄: [골드] [피크] … [출석 보상] [스피커] [놀이터] (2026-11-13 사용자 — 예전 맨 위 놀이터 줄의 것을 모두 이 줄로)
        출석은 선물 상자만으론 뭔지 몰라서 '출석 보상' 글자를 늘(좁은 폰에서도), 받은 뒤엔 회색 '출첵'만 */
-    .gk-bar > * { flex: none; }
-    .gk-bar #rDaily { margin-left: auto; }   /* 출석·스피커·놀이터는 오른쪽 끝으로 */
-    .gk-bar #rGold { flex: 0 1 auto; min-width: 0; overflow: hidden; } .gk-bar #rGold span { overflow: hidden; text-overflow: ellipsis; }   /* 아주 좁은 폰 + 아주 큰 돈이어도 줄이 안 넘치게 */
     /* 골드 받기(보상형 광고) — 골드가 모자랄 때만 보인다 (2026-11-13 사용자: 피크 자리에) */
     .gk-bar .res.adg { border-color: #f6d29a; background: #fff8ec; color: #a85a00; animation: adgIn .3s; }
     .gk-bar .res.adg i { color: #e0a63c; }
@@ -100,8 +112,7 @@
     .iconbtn { width: 34px; height: 34px; border-radius: 50%; background: #fff; border: 1.5px solid var(--line); display: grid; place-items: center; color: #555; flex: none; }
 
     /* 탭 */
-    .gk-tabs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin: 0 0 10px; background: #e6ede9; padding: 4px; border-radius: 14px; }
-    .gk-tabs.low { margin: 12px 0 10px; }   /* 작업대에서는 확률 아래 (2026-11-13 사용자) */
+    .gk-tabs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin: 0; background: #e6ede9; padding: 4px; border-radius: 14px; }
     .gk-tabs button { padding: 9px 0; border-radius: 10px; font-weight: 800; font-size: 13.5px; color: #5a6b62; display: flex; align-items: center; justify-content: center; gap: 6px; }
     .gk-tabs button.on { background: #fff; color: var(--green-deep); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
     .gk-tabs button .dot { width: 7px; height: 7px; border-radius: 50%; background: #e25555; }
@@ -286,10 +297,11 @@
     .talk b { display: block; font-size: 11.5px; color: #ffd76a; }
     .talk p { font-size: 12.5px; line-height: 1.4; }
     /* 이름표·대사 덩어리: 가운데 위에 같이 둥실. 대사는 이름표 꼬리(▼) 바로 아래에 붙는다 */
-    .nmhud { position: absolute; left: 50%; top: 14px; z-index: 6; width: calc(100% - 24px); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }   /* 2026-11-13 사용자: 기타 이름표는 안 움직이게(기타만 둥실) */
+    .nmhud { position: absolute; left: 50%; top: 50px; z-index: 6; width: calc(100% - 24px); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }   /* 2026-11-13 사용자: 기타 이름표는 안 움직이게(기타만 둥실) */
     .nmhud .nmtag { position: relative; left: auto; top: auto; transform: none; animation: none; max-width: 100%; pointer-events: auto; }
     .nmhud .talk { position: relative; left: auto; right: auto; top: auto; margin-top: 11px; width: max-content; max-width: 100%; pointer-events: auto; }
     .nmhud .nmtag[hidden] + .talk { margin-top: -2px; }
+    @media (max-width: 380px) { .nmhud { top: 44px; } }   /* 2026-11-15 이름표를 골드·출석 줄 아래로 */
     .talk .more { position: absolute; right: 10px; bottom: 6px; font-size: 10px; opacity: .6; }
 
     /* 튜너 */
@@ -356,6 +368,7 @@
     details.table summary small { font-weight: 500; color: var(--sub); }
     .otab { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px; text-align: right; }
     .otab th, .otab td { padding: 4px 6px; border-bottom: 1px solid #f0f3f1; white-space: nowrap; }
+    @media (max-width: 380px) { details.table { padding: 10px 10px; } .otab { font-size: 11.5px; } .otab th, .otab td { padding: 4px 3px; } }   /* 2026-11-15: 320px 폰에서 표가 화면보다 10px 넓었음 */
     .otab th { color: var(--sub); font-weight: 700; }
     .otab td:first-child, .otab th:first-child { text-align: left; }
     .otab tr.me td { background: #fff8e1; font-weight: 800; }
@@ -513,6 +526,15 @@
     .askbox .g1 { margin-top: 8px; font-size: 13.5px; font-weight: 800; color: #e8ddd0; line-height: 1.4; word-break: keep-all; }
     .askbox .g1 .lvb { display: inline-block; margin-right: 5px; padding: 1px 8px; border-radius: 99px; background: #f5b31e; color: #3a2400; font-size: 12.5px; font-weight: 900; }
     .askbox .pr { margin-top: 5px; font-size: 20px; font-weight: 900; color: #ffd76a; }
+    .askbox .pr.tos { font-size: 14px; font-weight: 700; color: #c9d2ce; }
+    .sact .sl.tos i { color: #c9d2ce; }
+    /* 강화 단추 바로 위 스위치 [하케] [튜너] (2026-11-15 사용자) — 강화 단추 폭(sact 의 1.6fr)에 맞춘다 */
+    .sopt { position: absolute; right: 10px; bottom: calc(var(--t) + 4px); z-index: 5; width: calc((100% - 28px) * 1.6 / 2.6); display: grid; grid-template-columns: 1fr 1fr; gap: 6px; animation: fade .2s; }
+    .sopt[hidden] { display: none; }
+    .sopt button { display: flex; align-items: center; justify-content: center; gap: 5px; height: 32px; padding: 0 6px; border-radius: 999px; font-size: 12.5px; font-weight: 800; color: #c9d2ce; background: rgba(8, 14, 12, 0.8); border: 1.5px solid rgba(255, 255, 255, 0.24); white-space: nowrap; min-width: 0; }
+    .sopt button.on { color: #fff; background: linear-gradient(#3fb877, #23935a); border-color: #b9f5d2; box-shadow: 0 2px 0 #16683e, 0 0 10px rgba(80, 230, 150, 0.45); }
+    .sopt button.none { color: #a9b3ae; }
+    @media (max-width: 345px) { .sopt button { font-size: 11.5px; gap: 3px; padding: 0 4px; } .sopt button i { display: none; } }
     .askbox .yn { display: grid; grid-template-columns: 1fr 1.3fr; gap: 8px; margin-top: 14px; }
     .askbox .yn button { padding: 11px 8px; border-radius: 12px; font-size: 14.5px; font-weight: 800; }
     .askbox .no { background: rgba(255, 255, 255, 0.12); border: 1.5px solid rgba(255, 255, 255, 0.22); color: #cbbfb2; }
@@ -649,15 +671,24 @@
 </div></header>
 
 <main class="wrap gk" id="app">
-    <!-- 2026-11-13 사용자: 돈 줄에는 골드와 출석 보상(선물 상자 + '출석 보상' 글자, 휴대폰에서도 글자까지). 조각·하드케이스는 무대 왼쪽 위에 글로, 자랑하기는 무대 오른쪽 위 -->
-    <!-- 2026-11-13 사용자: 골드 줄 = [골드] [피크] … [출석 보상] [스피커] [놀이터]. 내려도 위 사이트 메뉴 바로 아래에 붙어 있어 돈이 안 가려진다 -->
-    <div class="gk-bar">
-        <span class="res gold" id="rGold" title="골드"><i class="fas fa-coins"></i><span>0G</span></span>
-        <!-- 2026-11-13 사용자: 피크 자리에 '골드 받기'(보상형 광고). 골드가 모자랄 때만 보인다 -->
-        <button class="res adg" id="rAdG" type="button" hidden title="골드 받기"><i class="fas fa-coins"></i><span>골드 받기</span></button>
-        <button class="res daily" id="rDaily" type="button" title="하루 한 번: 1,000G"><i class="fas fa-gift"></i><span>출석 보상</span></button>
-        <button class="iconbtn" id="rSnd" type="button" aria-label="효과음 켜기/끄기"><i class="fas fa-volume-high"></i></button>
-        <a class="lnk" href="./" title="놀이터"><i class="fas fa-gamepad"></i><span>놀이터</span></a>
+    <!-- 2026-11-15 사용자: 돈은 작업대 박스 왼쪽 위, 출석·소리는 오른쪽 위로(놀이터 단추는 뺌) → 비게 된 돈 줄 자리로 메뉴 줄을 올림.
+         맨 위(사이트 메뉴 바로 아래에 붙음) = 메뉴 줄. 작업대 말고 다른 탭(상점 등)에서는 그 아래 골드 줄에 골드·출석·소리가 보인다(setTab 이 옮김) -->
+    <div class="gk-top" id="gkTop">
+        <nav class="gk-tabs" id="tabs">
+            <button type="button" data-t="bench" class="on"><i class="fas fa-screwdriver-wrench"></i>작업대</button>
+            <button type="button" data-t="room"><i class="fas fa-house"></i>컬렉션</button>
+            <button type="button" data-t="battle"><i class="fas fa-bolt"></i>배틀</button>
+            <button type="button" data-t="shop"><i class="fas fa-store"></i>상점</button>
+            <button type="button" data-t="dex"><i class="fas fa-book-open"></i>도감</button>
+            <button type="button" data-t="rank"><i class="fas fa-trophy"></i>랭킹</button>
+        </nav>
+        <div class="gk-bar" id="gkBar" hidden>
+            <span class="gL" id="gL"><span class="res gold" id="rGold" title="골드"><i class="fas fa-coins"></i><span>0G</span></span>
+                <!-- 2026-11-13 사용자: '골드 받기'(보상형 광고). 골드가 모자랄 때만 보인다 -->
+                <button class="res adg" id="rAdG" type="button" hidden title="골드 받기"><i class="fas fa-coins"></i><span>골드 받기</span></button></span>
+            <span class="gR" id="gR"><button class="res daily" id="rDaily" type="button" title="하루 한 번: 1,000G"><i class="fas fa-gift"></i><span>출석 보상</span></button>
+                <button class="iconbtn" id="rSnd" type="button" aria-label="효과음 켜기/끄기"><i class="fas fa-volume-high"></i></button></span>
+        </div>
     </div>
 
     <section id="tab-bench">
@@ -670,7 +701,7 @@
             <canvas id="cv" width="448" height="672"></canvas>
             <!-- 이름표 + 바로 아래 작업자 대사를 한 덩어리로 (2026-11-12 사용자: 박 사장 멘트를 기타 이름 아래에 붙여) — 같이 둥실 -->
             <div class="nmhud" id="nmhud"><div class="nmtag" id="nm"></div><div class="talk" id="talk" hidden></div></div>
-            <!-- 2026-11-13 사용자: 조각 정보는 도형만으론 뜻을 모르니 무대 왼쪽 위(기타 이름 아래)에 글로. 누르면 상점 케이스 칸 -->
+            <!-- 2026-11-13 사용자: 조각 정보는 도형만으론 뜻을 모르니 무대 왼쪽 위(기타 이름 아래)에 글로. 누르면 안내(2026-11-15 상점 케이스 칸은 지움) -->
             <button type="button" class="scbox" id="rSC" data-a="gocase" hidden title="파괴되면 부서진 기타 조각이 나와요. 조각 20개가 모이면 하드케이스가 저절로 1개(3개까지, 끼우면 파괴 1번 막음)">
                 <span class="h">파괴 시 조각</span><span><em>획득</em><i>조각</i> <b id="rShard"><span>0/20</span></b></span>
                 <span class="h">→ 하드케이스로</span><span><em>파괴 방지</em><i>하케</i> <b id="rCase"><span>0/3</span></b></span>
@@ -680,20 +711,13 @@
             <div class="fx" id="fx"></div>
             <div class="tuner" id="tuner" hidden></div>
             <div class="sact" id="sact" hidden></div>
+            <!-- 2026-11-15 사용자: 강화 단추 바로 위에 [하케 OFF] [튜너 OFF] — 파괴 확률이 생기는 단계(+7)부터, 누르면 ON -->
+            <div class="sopt" id="sopt" hidden></div>
         </div>
         <!-- 2026-11-13 사용자: 작업 박스 아래를 검은 칸으로 늘려서 튜닝·팔기·버리기를 강화 아래로 -->
         <div class="sband" id="sband" hidden></div>
         </div>
         <div class="bench" id="bench"></div>
-        <!-- 2026-11-13 사용자: 메뉴(작업대·컬렉션…)는 작업대에서는 확률 아래로. 다른 탭에서는 setTab()이 골드 줄 바로 아래로 옮긴다 -->
-        <nav class="gk-tabs low" id="tabs">
-            <button type="button" data-t="bench" class="on"><i class="fas fa-screwdriver-wrench"></i>작업대</button>
-            <button type="button" data-t="room"><i class="fas fa-house"></i>컬렉션</button>
-            <button type="button" data-t="battle"><i class="fas fa-bolt"></i>배틀</button>
-            <button type="button" data-t="shop"><i class="fas fa-store"></i>상점</button>
-            <button type="button" data-t="dex"><i class="fas fa-book-open"></i>도감</button>
-            <button type="button" data-t="rank"><i class="fas fa-trophy"></i>랭킹</button>
-        </nav>
         <details class="table" id="otab"></details>
     </section>
     <section id="tab-room" hidden></section>
@@ -879,10 +903,11 @@ FAMS.multi = { name: '멀티이펙터', art: 'fx', artMax: 20, sq: true, names: 
 // '시작'에서 나오는 것: 기타 6종 + 앰프 + 멀티, 같은 확률
 const FIND_FAMS = ['strat', 'tele', 'lespaul', 'superstrat', 'acoustic', 'bass', 'amp', 'multi'];
 // 튜너: 바늘이 초록 칸에 있을 때 탭하면 성공 +%p (유지에서 가져오고 파괴는 그대로)
+// 2026-11-15 사용자: 성공 보너스가 너무 뛴다 — +2·+4·+6 → +1·+3·+5%p
 const TUNERS = [null,
-    { name: '클립 튜너', icon: 'fa-paperclip', price: 6000, bonus: 2, zone: 0.2, period: 1.6, desc: '헤드에 꽂는 작은 튜너. 초록 칸이 좁고 바늘이 빨라요' },
-    { name: '페달 튜너', icon: 'fa-gauge-high', price: 60000, bonus: 4, zone: 0.28, period: 2.0, desc: '발로 밟는 튜너. 칸이 넓어지고 바늘이 느려요' },
-    { name: '스트로보 튜너', icon: 'fa-wave-square', price: 400000, bonus: 6, zone: 0.36, period: 2.4, desc: '칸이 가장 넓고 바늘이 가장 느려요' }];
+    { name: '클립 튜너', icon: 'fa-paperclip', price: 6000, bonus: 1, zone: 0.2, period: 1.6, desc: '헤드에 꽂는 작은 튜너. 초록 칸이 좁고 바늘이 빨라요' },
+    { name: '페달 튜너', icon: 'fa-gauge-high', price: 60000, bonus: 3, zone: 0.28, period: 2.0, desc: '발로 밟는 튜너. 칸이 넓어지고 바늘이 느려요' },
+    { name: '스트로보 튜너', icon: 'fa-wave-square', price: 400000, bonus: 5, zone: 0.36, period: 2.4, desc: '칸이 가장 넓고 바늘이 가장 느려요' }];
 // 작업방 = 진열 벽 하나, 걸이 5개 (2026-11-12 사용자: 가운데는 처음부터, 양쪽 둘씩 넷은 골드로 연다).
 // 처음 거는 기타는 가운데, 그다음은 가운데에서 가까운 열린 걸이부터. 걸이 값은 어느 칸이든 몇 번째로 여느냐로 정한다
 const WALL_N = 5, MID = 2, HANG_ORDER = [2, 1, 3, 0, 4];
@@ -943,7 +968,7 @@ const gshort = n => (n >= 1e8 ? +(n / 1e8).toFixed(2) + '억' : n >= 1e4 ? +(n /
 function fitG(el, n, box) {   // 숫자 그대로 넣어 보고, 상자가 넘치면 줄인 모양으로
     if (!el) return;
     el.textContent = gf(n);
-    box = box || el.closest('button, .gk-bar');
+    box = box || el.closest('button');
     if (box && box.offsetWidth && box.scrollWidth > box.clientWidth + 1) el.textContent = gshort(n);
 }
 const winP = (me, op) => me === op ? 0.5 : me > op ? 1 - Math.pow(0.5, me - op + 1) : Math.pow(0.5, op - me + 1);   // 검키우기 공식
@@ -1585,8 +1610,18 @@ const LINES = {
 
 // ---------- 화면 ----------
 let busy = false, tuning = null, tab = 'bench', selId = '';
+// 골드는 숫자 그대로, 자리가 모자라면(무대 위에선 오른쪽 출석·소리와 닿으면, 골드 줄에선 줄이 넘치면) 만·억으로
+function fitGold() {
+    const el = $('#rGold span'), L = $('#gL'), R = $('#gR');
+    el.textContent = gf(S.gold);
+    if (!L.offsetWidth) return;
+    const bar = L.parentElement;
+    const over = bar.id === 'gkBar' ? bar.scrollWidth > bar.clientWidth + 1 || el.scrollWidth > el.clientWidth + 1
+        : L.getBoundingClientRect().right + 6 > R.getBoundingClientRect().left || el.scrollWidth > el.clientWidth + 1;
+    if (over) el.textContent = gshort(S.gold);
+}
 function updBar(goldBump) {
-    fitG($('#rGold span'), S.gold, $('.gk-bar'));   // 숫자 그대로, 위 줄이 넘치면 그때만 만·억으로
+    fitGold();
     $('#rGold').title = '골드 ' + S.gold.toLocaleString() + 'G';
     if (goldBump) { const g = $('#rGold'); g.classList.remove('bump'); void g.offsetWidth; g.classList.add('bump'); }
     $('#rShard span').textContent = `${S.shards}/${CASE_SHARDS}`;
@@ -1601,8 +1636,7 @@ function updBar(goldBump) {
     $('#rDaily').classList.toggle('got', got);
     $('#rDaily span').textContent = got ? '출첵' : '출석 보상';   // 2026-11-13 사용자: 받기 전 '출석 보상', 받은 뒤엔 회색 '출첵'만
     $('#rSnd').innerHTML = `<i class="fas ${soundOn() ? 'fa-volume-high' : 'fa-volume-xmark'}"></i>`;
-    fitG($('#rGold span'), S.gold, $('.gk-bar'));   // 출석 글자가 바뀐 뒤 한 번 더 재기(줄이 넘칠 때만 만·억으로)
-    { const gs = $('#rGold span'); if (gs.scrollWidth > gs.clientWidth + 1) gs.textContent = gshort(S.gold); }   // 골드 칸이 좁아져 잘리면 만·억으로(2026-11-13, 골드 줄에 피크·출석·스피커·놀이터가 같이 들어감)
+    fitGold();   // 출석 글자·골드 받기가 바뀐 뒤 한 번 더 재기
     const dot = $('#tabs [data-t="battle"] .dot'), left = BT_DAY - btDay().n;
     if (left > 0 && !dot) $('#tabs [data-t="battle"]').insertAdjacentHTML('beforeend', '<span class="dot" title="오늘 배틀 남음"></span>');
     if (left <= 0 && dot) dot.remove();
@@ -1614,7 +1648,7 @@ function renderName() {
     const cls = g.lv >= 20 ? 'l20' : g.lv >= 15 ? 'l15' : g.lv >= 10 ? 'l10' : '';
     el.hidden = false; el.className = 'nmtag ' + cls;
     el.innerHTML = `<span class="lvb ${cls}">+${g.lv}</span><b>${esc(gname(g))}</b>`;
-    $('#stage').style.setProperty('--nmb', (14 + el.offsetHeight) + 'px');   // 조각 상자·자랑하기는 이름표 바로 아래 (이름이 두 줄이 되어도)
+    $('#stage').style.setProperty('--nmb', ((parseFloat(getComputedStyle($('#nmhud')).top) || 14) + el.offsetHeight) + 'px');   // 조각 상자·자랑하기는 이름표 바로 아래 (이름이 두 줄이 되어도)
     // 단계가 오르면 이름표가 한 번 통 튄다
     if (nmLv >= 0 && g.lv > nmLv) el.animate([{ scale: 1 }, { scale: 1.2, offset: 0.35 }, { scale: 1 }], { duration: 520, easing: 'ease-out' });
     nmLv = g.lv;
@@ -1670,32 +1704,44 @@ function renderSact() {
     const el = $('#sact'), g = S.bench, show = !!g && !busy;
     el.hidden = !show; $('#stage').classList.toggle('has-act', !!show);
     renderBand();
-    if (!show) return;
+    if (!show) { $('#sopt').hidden = true; return; }
     const cost = COST[g.lv], can = g.lv < MAX;
     // 2026-11-13 사용자: [팔기] [강화] — 강화를 오른쪽으로 보내고 팔기와 자리 바꿈. 하드케이스 ON/OFF 는 검은 칸 튜닝 오른쪽('하케 ON')
     el.classList.toggle('one', !can);
-    el.innerHTML = `<button type="button" class="sl" data-a="sell" ${g.lv ? '' : 'disabled'}><i class="fas fa-coins"></i>팔기 <b>${g.lv ? gf(SELL[g.lv]) : '0G'}</b></button>`
+    // 2026-11-15 사용자: 처음(+0)엔 팔 수 없으니 그 자리는 '버리기'
+    el.innerHTML = (g.lv ? `<button type="button" class="sl" data-a="sell"><i class="fas fa-coins"></i>팔기 <b>${gf(SELL[g.lv])}</b></button>`
+        : `<button type="button" class="sl tos" data-a="toss"><i class="fas fa-trash-can"></i>버리기</button>`)
         + (can ? `<button type="button" class="ag" data-a="again" ${S.gold < cost ? 'disabled' : ''}><i class="fas fa-hammer"></i>강화 <small>${cost ? gf(cost) : '공짜'}</small></button>` : '');
     if (g.lv) fitG(el.querySelector('.sl b'), SELL[g.lv]);
+    renderOpt();
     if (can && cost) fitG(el.querySelector('.ag small'), cost);   // 2026-11-13 비용이 커져서(+19는 25억) 칸이 넘치면 만·억으로
 }
 // 무대 아래 검은 칸: [튜닝 +n%p] [하케 ON] [진열하기] 한 줄 — 작업대에 기타가 있으면 늘 (2026-11-13 사용자: 버리기 뺌)
 // 2026-11-13 사용자: 튜닝 단추 안에는 확률이 오르는 것만 짧게, 하드케이스는 튜닝 오른쪽 '하케 ON'(+7부터), 진열하기는 팔기와 자리 바꿈.
 //   강화하는 동안엔 무대 안 단추가 모두 안 보인다(검은 칸은 높이만 남김, 조각 상자·자랑하기도 숨김)
+// 강화 단추 위 [하케] [튜너] 스위치 — 파괴 확률이 생기는 단계(ODDS 의 파괴 > 0, +7)부터. 없으면 '없음'(누르면 상점 그 칸)
+//   2026-11-15 사용자. 튜닝도 이 단계부터만 한다(그 아래는 스위치가 없으니 튜닝 없이 바로 강화)
+const optStage = g => !!g && g.lv < MAX && ODDS[g.lv][2] > 0;
+function renderOpt() {
+    const el = $('#sopt'), g = S.bench, show = optStage(g) && !busy;
+    el.hidden = !show;
+    if (!show) { el.innerHTML = ''; return; }
+    const T = TUNERS[S.tuner], cOn = S.caseOn && S.cases > 0, up = T ? r1(Math.min(T.bonus, oddsFor(g.lv)[1])) : 0;
+    el.innerHTML = (S.cases
+        ? `<button type="button" class="hk ${cOn ? 'on' : ''}" data-a="case" aria-pressed="${cOn}" title="하드케이스 ${cOn ? '끼움' : '안 끼움'} — 끼우면 파괴를 한 번 막아 줘요 (${S.cases}/${CASE_MAX}개)"><i class="fas fa-briefcase"></i>하케 ${cOn ? 'ON' : 'OFF'}</button>`
+        : `<button type="button" class="hk none" data-a="gocase" title="하드케이스가 없어요 — 조각 ${S.shards}/${CASE_SHARDS}"><i class="fas fa-briefcase"></i>하케 없음</button>`)
+        + (T
+        ? `<button type="button" class="tn ${S.tuneOn ? 'on' : ''}" data-a="tune" aria-pressed="${S.tuneOn}" title="${S.tuneOn ? `튜닝하고 강화 — 바늘을 맞히면 성공 +${up}%p` : '튜닝 안 함'}"><i class="fas ${T.icon}"></i>튜너 ${S.tuneOn ? 'ON' : 'OFF'}</button>`
+        : `<button type="button" class="tn none" data-a="gotuner" title="튜너가 없어요 — 상점에서 사요"><i class="fas fa-sliders"></i>튜너 없음</button>`);
+}
 function renderBand() {
     const el = $('#sband'), g = S.bench;
     el.hidden = !g; $('#stage').classList.toggle('has-band', !!g);
     $('#rSC').hidden = $('#rShare').hidden = !g || busy;   // 무대 안 조각 상자·자랑하기도 기타가 있을 때만, 강화 중엔 숨김
     if (!g) { el.innerHTML = ''; return; }
     el.classList.toggle('wait', busy);
-    const T = TUNERS[S.tuner], m = g.lv < MAX ? oddsFor(g.lv)[1] : 0, up = T ? r1(Math.min(T.bonus, m)) : 0;
-    const risk = g.lv < MAX && oddsFor(g.lv)[2] > 0, on = S.caseOn && S.cases > 0;
-    el.innerHTML = (T && g.lv < MAX
-        ? `<button type="button" class="tn ${S.tuneOn ? 'on' : ''}" data-a="tune" aria-pressed="${S.tuneOn}" title="${S.tuneOn ? `튜닝하고 강화 — 바늘을 맞히면 성공 +${up}%p` : '튜닝 건너뛰기'}"><i class="fas ${T.icon}"></i>${S.tuneOn ? `튜닝${up > 0 ? ` <small>+${up}%p</small>` : ''}` : '튜닝 끔'}</button>` : '')
-        + (risk ? (S.cases
-            ? `<button type="button" class="hk ${on ? 'on' : ''}" data-a="case" aria-pressed="${on}" title="하드케이스 ${on ? '끼움' : '안 끼움'} — 끼우면 파괴를 한 번 막아 줘요 (${S.cases}/${CASE_MAX}개)"><i class="fas fa-briefcase"></i>하케 ${on ? 'ON' : 'OFF'}</button>`
-            : `<button type="button" class="hk none" data-a="gocase" title="하드케이스가 없어요 — 조각 ${S.shards}/${CASE_SHARDS}"><i class="fas fa-briefcase"></i>하케 없음</button>`) : '')
-        + `<button type="button" class="hg" data-a="hang"><i class="fas fa-image"></i>진열하기</button>`;   // 2026-11-13 사용자: 버리기는 뺐다(+0은 공짜로 강화해서 팔면 된다)
+    // 2026-11-15 사용자: 튜닝·하케는 강화 단추 위 스위치(renderOpt)로 옮겼다 — 여기는 컬렉션에 진열만
+    el.innerHTML = `<button type="button" class="hg" data-a="hang"><i class="fas fa-image"></i>컬렉션에 진열</button>`;   // 2026-11-15 사용자: '진열하기' → '컬렉션에 진열'   // 2026-11-13 사용자: 버리기는 뺐다(+0은 공짜로 강화해서 팔면 된다)
 }
 function renderTable() {
     const el = $('#otab'), open = el.open, lv = S.bench ? S.bench.lv : -1;
@@ -1790,16 +1836,18 @@ function setTab(t) {
     tab = t; dexClose();
     document.querySelectorAll('.askwrap').forEach(e => e.remove());   // 팔기 확인 창은 탭을 옮기면 닫는다
     // 2026-11-13 사용자: 메뉴는 작업대에서는 확률(#bench) 아래, 다른 탭에서는 골드 줄 바로 아래(그 탭 내용 위)
-    const nav = $('#tabs'), low = t === 'bench';
-    if (low) $('#bench').after(nav); else $('.gk-bar').after(nav);
-    nav.classList.toggle('low', low);
-    if (!low) {   // 아래 메뉴로 넘어왔으면 새 탭 맨 위가 보이게 (위에 붙는 사이트 메뉴 높이만큼 띄워서)
+    // 2026-11-15 사용자: 메뉴 줄은 늘 맨 위(사이트 메뉴 바로 아래에 붙음). 골드·출석·소리는 작업대에선 무대 위 양쪽, 다른 탭에선 메뉴 아래 골드 줄
+    const onBench = t === 'bench';
+    if (onBench) $('#stage').append($('#gL'), $('#gR')); else $('#gkBar').append($('#gL'), $('#gR'));
+    $('#gkBar').hidden = onBench;
+    {   // 내려 보던 중이면 새 탭 맨 위가 보이게 (위에 붙는 사이트 메뉴 높이만큼 띄워서)
         const hd = document.querySelector('header.site-hd') || document.querySelector('.ph'), top = $('#app').getBoundingClientRect().top - (hd ? hd.offsetHeight : 0);
         if (top < 0) window.scrollBy(0, top);
     }
     document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
     ['bench', 'room', 'battle', 'shop', 'dex', 'rank'].forEach(k => { $('#tab-' + k).hidden = k !== t; });
     if (t === 'bench') renderBench();
+    updBar();   // 골드 칸 자리가 바뀌었으니 다시 재기
     if (t === 'room') renderRoom(true);
     if (t === 'battle') renderBattle();
     if (t === 'shop') renderShop();
@@ -1904,7 +1952,7 @@ async function enhance() {
     busy = true; talkClear(); renderSact();
     let bonus = 0;
     const T = TUNERS[S.tuner];
-    if (T && S.tuneOn && oddsFor(g.lv)[1] > 0) bonus = await tune(T);
+    if (T && S.tuneOn && optStage(g) && oddsFor(g.lv)[1] > 0) bonus = await tune(T);   // 튜닝은 스위치가 보이는 단계(+7)부터
     const lv0 = g.lv, [s0, m0] = oddsFor(lv0), b = Math.min(bonus, m0), s = s0 + b, m = m0 - b;   // 바닥 앰프·멀티 능력치까지 넣은 확률
     const r = Math.random() * 100;
     let out = r < s ? 'ok' : r < s + m ? 'keep' : 'boom';
@@ -2080,20 +2128,20 @@ async function findGuitar(first) {
 }
 // 팔기 전에 작은 창으로 한 번 더 묻는다 (2026-11-13 사용자: '팔기 버튼 누르면 중간에 미니 팝업, 파시겠습니까? 예 아니오')
 //   같은 날 사용자: '페이지 전체 말고 이 스킨·작업대 박스 안에서만' → 무대(#stage) 안에만 깔린다
-function askSell() {
+function askSell(toss) {   // toss: +0 버리기 (2026-11-15) — 골드 없이 작업대를 비운다
     const g = S.bench;
-    if (busy || !g || !g.lv) return;
+    if (busy || !g || (!toss && !g.lv) || (toss && g.lv)) return;
     const m = document.createElement('div');
     m.className = 'askwrap';
-    m.innerHTML = `<div class="askbox"><p class="q">파시겠습니까?</p>
+    m.innerHTML = `<div class="askbox"><p class="q">${toss ? '버리시겠습니까?' : '파시겠습니까?'}</p>
         <p class="g1"><span class="lvb">+${g.lv}</span>${esc(gname(g))}</p>
-        <p class="pr"><i class="fas fa-coins"></i> ${gf(SELL[g.lv])}</p>
-        <div class="yn"><button type="button" class="no">아니오</button><button type="button" class="yes">예, 팔게요</button></div></div>`;
+        ${toss ? '<p class="pr tos">골드는 받지 않아요</p>' : `<p class="pr"><i class="fas fa-coins"></i> ${gf(SELL[g.lv])}</p>`}
+        <div class="yn"><button type="button" class="no">아니오</button><button type="button" class="yes">${toss ? '예, 버릴게요' : '예, 팔게요'}</button></div></div>`;
     $('#stage').appendChild(m);
     const close = () => m.remove();
     m.querySelector('.no').addEventListener('click', close);
     m.addEventListener('click', e => { if (e.target === m) close(); });
-    m.querySelector('.yes').addEventListener('click', () => { close(); sellBench(); });
+    m.querySelector('.yes').addEventListener('click', () => { close(); toss ? tossBench() : sellBench(); });
     m.querySelector('.yes').focus();
     const esckey = e => { if (e.key === 'Escape') { close(); removeEventListener('keydown', esckey); } };
     addEventListener('keydown', esckey);
@@ -2112,6 +2160,19 @@ async function sellBench() {
     await sleep(540);
     a.cancel(); ghost = null; busy = false;
     if (g.lv >= 10) talk([['boss', one(['좋은 값이다. 형준이가 또 하나 넘긴다더라.', '팔 때를 아는 것도 실력이다.', '…아깝지? 그게 장사다.'])]]);
+    renderBench();
+}
+// +0 버리기: 골드 없이 작업대를 비운다(쓰레기통으로 쏙)
+async function tossBench() {
+    const g = S.bench;
+    if (busy || !g || g.lv) return;
+    busy = true; talkClear();
+    ghost = g; S.bench = null; if (S.rep === g.id) S.rep = '';
+    save(); updBar(); renderSact(); $('#bench').innerHTML = '';
+    sfx('snap'); pop('버렸어요', 'sm', 40);
+    const a = cv.animate([{ transform: CVT, opacity: 1 }, { transform: `${CVT} translateY(18%) rotate(-14deg) scale(.7)`, opacity: 0 }], { duration: 480, easing: 'ease-in', fill: 'forwards' });
+    await sleep(500);
+    a.cancel(); ghost = null; busy = false;
     renderBench();
 }
 // 진열할 자리에 놓기: 기타는 빈 걸이(prefer 걸이가 비었으면 거기), 앰프·멀티는 바닥. 놓으면 'wall'·'floor', 자리가 없으면 ''
@@ -2607,7 +2668,8 @@ async function fight(id) {
 // ---------- 상점 ----------
 // 상점: 카테고리 단추를 누르면 그 칸만 (2026-11-12 사용자: 아래로 쭉 늘어선 목록 말고)
 let shopCat = 'tuner';
-const SHOP_CATS = [['tuner', 'fa-gauge-high', '튜너'], ['case', 'fa-briefcase', '케이스'], ['bench', 'fa-screwdriver-wrench', '작업대'], ['skin', 'fa-image', '벽 스킨'], ['arena', 'fa-shield-halved', '싸움터']];   // '기록'은 2026-11-13 랭킹 탭 '내 기록'으로 옮겼다 (사용자)
+// 2026-11-15 사용자: '케이스' 칸은 지웠다(하드케이스는 조각 20개면 저절로 만들어져서)
+const SHOP_CATS = [['tuner', 'fa-gauge-high', '튜너'], ['bench', 'fa-screwdriver-wrench', '작업대'], ['skin', 'fa-image', '벽 스킨'], ['arena', 'fa-shield-halved', '싸움터']];   // '기록'은 2026-11-13 랭킹 탭 '내 기록'으로 옮겼다 (사용자)
 function renderShop() {
     updBar();
     const el = $('#tab-shop');
@@ -2616,10 +2678,7 @@ function renderShop() {
         const n = i + 1, own = S.tuner >= n;
         return `<div class="item"><span class="ic t${n}"><i class="fas ${T.icon}"></i></span><div class="it"><b>${T.name} · 성공 +${T.bonus}%p</b><small>${T.desc}</small></div>
             ${own ? `<span class="own">${S.tuner === n ? '쓰는 중' : '더 좋은 걸 써요'}</span>` : `<button type="button" data-a="buyT" data-n="${n}" ${S.gold >= T.price ? '' : 'disabled'}>${gf(T.price)}</button>`}</div>`;
-    }).join('') + `<p class="note2">튜너가 있으면 강화할 때 바늘을 맞춰요. 성공률은 '줄 끊김'에서 가져오고 '파괴'는 그대로예요. 작업대에서 튜닝을 건너뛸 수도 있어요.</p>`;
-    if (shopCat === 'case') h += `<div class="item"><span class="ic case"><i class="fas fa-briefcase"></i></span><div class="it"><b>하드케이스 (지금 ${S.cases}/${CASE_MAX}개)</b>
-        <small>부서진 기타 조각이 ${CASE_SHARDS}개 모이면 하드케이스가 저절로 만들어져요. 끼워 두면 파괴를 한 번 막아 줘요. ${CASE_MAX}개까지 가질 수 있고, 가득 차 있으면 조각은 모아 뒀다가 하나 쓰면 바로 만들어져요.</small><div class="shardbar"><i style="width:${Math.min(100, S.shards / CASE_SHARDS * 100)}%"></i></div></div>
-        <button type="button" disabled>${S.cases >= CASE_MAX ? `가득 ${S.cases}/${CASE_MAX}` : `조각 ${S.shards}/${CASE_SHARDS}`}</button></div>`;
+    }).join('') + `<p class="note2">튜너가 있으면 강화할 때 바늘을 맞춰요. 성공률은 '줄 끊김'에서 가져오고 '파괴'는 그대로예요. 파괴 확률이 생기는 +7부터 강화 단추 위 '튜너' 스위치로 켜고 꺼요.</p>`;
     if (shopCat === 'bench') h += BENCHES.map((B, i) => {
         const own = S.bskins.includes(B.id), use = S.bskin === B.id, up = r1(i * SKIN_UP);
         return `<div class="item"><span class="ic skin" style="background-image:url(../images/play/gk/${B.src.replace('bg_', 'bgt_')})"></span><div class="it"><b>${B.name}${up ? ` · 강화 성공 +${up}%p` : ''}</b><small>${B.desc}</small></div>
@@ -2648,7 +2707,7 @@ $('#app').addEventListener('click', e => {
     if (a === 'again') enhance();
     else if (a === 'shopcat') { shopCat = b.dataset.c; renderShop(); }
     else if (a === 'rerank') oppRefresh();
-    else if (a === 'gocase') { talkClear(); shopCat = 'case'; setTab('shop'); }   // 위 줄 조각 → 하드케이스 칩
+    else if (a === 'gocase') toast(`파괴되면 부서진 기타 조각이 나와요. ${CASE_SHARDS}개 모이면 하드케이스가 저절로 만들어져요 (조각 ${S.shards}/${CASE_SHARDS} · 하케 ${S.cases}/${CASE_MAX})`);   // 2026-11-15 상점 케이스 칸을 지워서 안내만
     else if (a === 'dexall') { dexAll = !dexAll; mem.set('gk.dexAll', dexAll); dexClose(); renderDex(); }
     else if (a === 'dex') dexZoom(b.dataset.f, +b.dataset.lv, b);   // 2026-11-13 사용자: 도감에서 모은 기타를 누르면 그 자리 근처에 두 배쯤
     else if (a === 'new') findGuitar(false);
@@ -2657,12 +2716,14 @@ $('#app').addEventListener('click', e => {
     else if (a === 'daily') $('#rDaily').click();
     // 2026-11-13 사용자: 팔기는 한 번 더 눌러야 팔린다. 3초 동안 안 누르면 원래대로
     else if (a === 'sell') askSell();
+    else if (a === 'toss') askSell(true);
     else if (a === 'hang') hangBench();
     else if (a === 'brag') brag(S.bench);
     // 2026-11-13 사용자: 카톡 미리보기에 +20 레스폴·스트랫 썸네일(images/play/gk/share/game.jpg) — 카톡이 예전 guitar.html 미리보기를 기억하고 있을 수 있어서 새 공유 페이지 주소로
     else if (a === 'gameshare') shareText('기타 키우기', `안쌤 놀이터 '기타 키우기' 🎸\n기타를 강화해서 +20 전설의 기타를 만들어 봐요`, `${location.origin}/play/gk/s/game.html`);
     else if (a === 'case') { S.caseOn = !S.caseOn && S.cases > 0; save(); renderBench(); }
     else if (a === 'tune') { S.tuneOn = !S.tuneOn; save(); renderBench(); }
+    else if (a === 'gotuner') { talkClear(); shopCat = 'tuner'; setTab('shop'); }
     else if (a === 'slot') {   // 2026-11-12 사용자: 누르고 다른 기타를 누르면 자리 바꾸기, 다시 누르면 선택 풀기
         if (!selId || !id && b.dataset.i == null) { if (id) { selId = id; renderRoom(); } return; }
         if (id === selId) { selId = ''; renderRoom(); return; }
