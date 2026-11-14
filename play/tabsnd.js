@@ -57,7 +57,12 @@
         gen.generate();
         const look = gen.tickLookup, mb = score.masterBars;
         const start = i => (i < mb.length ? look.getMasterBarStart(mb[i]) : null);
-        return { midi, start, bars: mb.length, tempo: score.tempo || 120 };
+        // 마디마다 '진짜 음'(뮤트 x·쉼표가 아닌 음)이 있는지 — 줄 앞쪽의 뮤트·쉼표만 있는 마디는 건너뛰고 들려준다
+        const real = mb.map((m, i) => score.tracks.some(t => t.staves.some(st => {
+            const bar = st.bars[i];
+            return bar && bar.voices.some(v => v.beats.some(b => !b.isRest && b.notes && b.notes.some(n => !n.isDead)));
+        })));
+        return { midi, start, real, bars: mb.length, tempo: score.tempo || 120 };
     }
 
     // 이 악보에 소리가 있는지 (목록만 보고)
@@ -94,11 +99,16 @@
         let b0 = 0;
         for (let i = 0; i < k; i++) b0 += sys[i];
         const b1 = b0 + sys[k];
+        // 2026-11-15 사용자: 첫 마디가 뮤트(x)로만 된 곡(Back in Black 등)은 진짜 음이 나오는 마디부터. 쉼표만 있는 마디도 건너뜀.
+        //   줄 전체에 진짜 음이 없으면 그대로 처음부터
+        let s0 = b0;
+        while (s0 < b1 && d.real && !d.real[s0]) s0++;
+        if (s0 >= b1) s0 = b0;
         stop();
         const s = synth();
         if (ctx && ctx.state === 'suspended') try { await ctx.resume(); } catch (e) {}
         s.loadMidiFile(d.midi);
-        const st = d.start(b0), en = d.start(b1);
+        const st = d.start(s0), en = d.start(b1);
         // 도돌이로 한 마디를 여러 번 도는 줄도 있어서(예: 인트로 ×8) 길어도 15초까지만
         const cap = st + Math.round(15 * d.tempo / 60 * 960);
         s.playbackRange = { startTick: st, endTick: Math.min(en == null ? 1e9 : en, cap) };
