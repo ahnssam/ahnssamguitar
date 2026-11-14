@@ -16,21 +16,27 @@
     .gate { margin-top: 40px; padding: 34px 22px; text-align: center; }
     .gate h1 { font-size: 22px; font-weight: 900; }
     .gate p { color: #666; margin: 8px 0 16px; }
-    .stage { position: relative; margin-top: 18px; height: clamp(360px, 66vh, 620px); border-radius: 18px; overflow: hidden; background: #bfe6ff;
+    .stage { position: relative; margin-top: 18px; height: clamp(430px, 72vh, 680px); border-radius: 18px; overflow: hidden; background: #bfe6ff;
         touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; box-shadow: 0 14px 40px rgba(40, 110, 160, .18); }
     .stage.playing { position: fixed; inset: 0; z-index: 9999; margin: 0; height: auto; border-radius: 0; cursor: none; }
     .stage:fullscreen { width: 100%; height: 100%; border-radius: 0; }
     .stage:-webkit-full-screen { width: 100%; height: 100%; border-radius: 0; }
     .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-    .ov { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 8px; padding: 5% 20px 20px; text-align: center; }
+    .ov { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 8px; padding: 3% 14px 14px; text-align: center; overflow: auto; }
     .stage.playing .ov { display: none; }
-    .ov h1 { font-size: clamp(34px, 7vw, 68px); font-weight: 900; letter-spacing: -.02em; line-height: 1.1; color: #fff; -webkit-text-stroke: 2px #2f6fb0; paint-order: stroke fill;
+    .ov h1 { font-size: clamp(28px, 5.4vw, 54px); font-weight: 900; letter-spacing: -.02em; line-height: 1.1; color: #fff; -webkit-text-stroke: 2px #2f6fb0; paint-order: stroke fill;
         text-shadow: 0 4px 0 #2f6fb0, 0 8px 18px rgba(30, 80, 140, .3); }
     .ov .sub { font-size: clamp(14px, 2.2vw, 18px); font-weight: 700; color: #24507c; background: rgba(255, 255, 255, .7); padding: 4px 14px; border-radius: 999px; }
-    .go { margin-top: 6px; padding: 15px 44px; border-radius: 999px; font-size: clamp(18px, 3vw, 24px); font-weight: 900; color: #fff;
-        background: linear-gradient(180deg, #ffb13d, #ff7a2f); box-shadow: 0 6px 0 #c4541a, 0 10px 24px rgba(200, 90, 30, .3); animation: goPulse 1.8s ease-in-out infinite; }
-    .go:active { transform: translateY(4px); box-shadow: 0 2px 0 #c4541a; }
-    @keyframes goPulse { 50% { transform: scale(1.05); } }
+    /* 종류 고르기 (2026-11-14 사용자: 처음에 차 종류를 고르고, 마지막 칸은 전부 다 섞기) */
+    .cats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; width: min(780px, 100%); margin-top: 4px; }
+    .cat { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 6px 9px; border-radius: 16px; background: rgba(255, 255, 255, .92);
+        box-shadow: 0 5px 0 rgba(47, 111, 176, .28), 0 10px 22px rgba(30, 80, 140, .14); color: #24507c; transition: transform .12s; }
+    .cat:hover { transform: translateY(-3px); }
+    .cat:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(47, 111, 176, .28); }
+    .cat canvas { position: static; width: 100%; max-width: 132px; height: auto; aspect-ratio: 24 / 17; }
+    .cat b { font-size: clamp(11.5px, 1.5vw, 16px); font-weight: 900; white-space: nowrap; }
+    .cat.all { background: linear-gradient(180deg, #fff6d0, #ffd98a); color: #9a5a00; box-shadow: 0 5px 0 rgba(196, 122, 26, .45), 0 10px 22px rgba(160, 100, 20, .16); }
+    @media (max-width: 560px) { .cats { gap: 6px; } .cat { padding: 6px 2px 7px; border-radius: 12px; } .cat b { font-size: 10.5px; letter-spacing: -.03em; } }
     .ov .st { font-size: 13px; font-weight: 700; color: #24507c; background: rgba(255, 255, 255, .78); padding: 5px 13px; border-radius: 999px; }
     .escchip { position: absolute; right: 14px; bottom: 12px; display: none; align-items: center; gap: 8px; padding: 6px 11px; border-radius: 999px; cursor: pointer;
         font-size: 11.5px; font-weight: 700; color: rgba(40, 60, 80, .5); background: rgba(255, 255, 255, .4); transition: color .15s, background .15s, transform .15s; }
@@ -53,7 +59,7 @@
     .set input[type=range] { width: 180px; accent-color: var(--green-deep); }
     .set ul { flex-basis: 100%; margin: 0 0 0 146px; color: #666; font-size: 13px; line-height: 1.8; }
     .set kbd { display: inline-block; padding: 0 6px; border-radius: 5px; background: #f1f4f2; border: 1px solid #d5dcd8; font: 700 12px/1.6 'Noto Sans KR', sans-serif; }
-    @media (max-width: 560px) { .set .r > b { width: 100%; } .set .r small { margin-left: 0; } .set ul { margin-left: 18px; } .stage { height: 58vh; } }
+    @media (max-width: 560px) { .set .r > b { width: 100%; } .set .r small { margin-left: 0; } .set ul { margin-left: 18px; } .stage { height: 66vh; } }
 </style>
 </head>
 <body>
@@ -75,8 +81,8 @@
             <canvas id="cv"></canvas>
             <div class="ov" id="ov">
                 <h1>부릉부릉 출동!</h1>
-                <p class="sub" id="sub">아무 키나 마구 누르면 자동차가 달려요</p>
-                <button type="button" class="go" id="go">시작</button>
+                <p class="sub" id="sub">어떤 탈것을 탈까요? 고르면 바로 출발!</p>
+                <div class="cats" id="cats"></div>
                 <span class="st" id="st"></span>
             </div>
             <span class="escchip" id="esc"></span>
@@ -151,25 +157,77 @@ $('#gateLogin').addEventListener('click', () => { if (window.ahnssamAuth && ahns
 addEventListener('ahnssam-auth-settled', check);
 
 // ---------- 탈것 ----------
-// shape·col·top·mark = 코드로 그리는 뒷모습(그림이 오기 전까지), fly = 달리면 떠오른다, say = 말풍선, horn = 경적 소리, k = 크기
+// 2026-11-14 사용자: 처음에 차 종류를 고르고, 마지막 칸은 전부 다 섞기. 종류 = 그림 시트 일곱 장과 같다(docs/부릉부릉_GPT_프롬프트.md)
+// cat = 종류, shape·col·top·mark = 코드로 그리는 뒷모습(그림이 오기 전까지), fly = 달리면 떠오른다, say = 말풍선, horn = 경적 소리, k = 크기
+const CATS = [
+    { id: 'rescue', name: '출동 구조대', pick: 'fire' }, { id: 'cars', name: '승용차', pick: 'car' }, { id: 'big', name: '버스·큰 차', pick: 'bus' },
+    { id: 'build', name: '공사장', pick: 'excavator' }, { id: 'work', name: '일하는 차', pick: 'garbage' }, { id: 'special', name: '특별한 차', pick: 'tank' },
+    { id: 'sky', name: '기차·하늘', pick: 'plane' }, { id: 'all', name: '전부 다 섞기', pick: null },
+];
 const CARS = [
-    { id: 'police', name: '경찰차', say: '삐용삐용!', horn: 'siren', shape: 'car', col: '#f4f6fb', col2: '#3b6fd4', top: 'bar' },
-    { id: 'fire', name: '소방차', say: '삐뽀삐뽀!', horn: 'siren2', shape: 'van', col: '#f0483e', top: 'ladder', mark: 'doors', k: 1.1 },
-    { id: 'amb', name: '구급차', say: '삐뽀삐뽀!', horn: 'siren2', shape: 'van', col: '#ffffff', top: 'bar', mark: 'cross', k: 1.05 },
-    { id: 'tow', name: '견인차', say: '영차영차!', horn: 'low', shape: 'car', col: '#ffc93c', top: 'hook' },
-    { id: 'car', name: '자동차', say: '빵빵!', horn: 'beep', shape: 'car', col: '#ff6b6b' },
-    { id: 'bus', name: '버스', say: '부릉부릉!', horn: 'low', shape: 'van', col: '#ffc93c', win: true, mark: 'stripe', k: 1.14 },
-    { id: 'taxi', name: '택시', say: '빵빵!', horn: 'beep', shape: 'car', col: '#ff9f43', top: 'sign' },
-    { id: 'truck', name: '트럭', say: '부우웅!', horn: 'low', shape: 'van', col: '#4d96ff', mark: 'doors', k: 1.1 },
-    { id: 'excavator', name: '굴착기', say: '영차영차!', horn: 'low', shape: 'digger', col: '#ffc93c', k: 1.1 },
-    { id: 'dump', name: '덤프트럭', say: '쿠르릉!', horn: 'low', shape: 'van', col: '#ff9f43', mark: 'slats', k: 1.12 },
-    { id: 'mixer', name: '레미콘', say: '빙글빙글!', horn: 'low', shape: 'van', col: '#74c0fc', mark: 'drum', k: 1.1 },
-    { id: 'tractor', name: '트랙터', say: '털털털!', horn: 'low', shape: 'tractor', col: '#56c271' },
-    { id: 'garbage', name: '청소차', say: '쓱싹쓱싹!', horn: 'beep', shape: 'van', col: '#56c271', mark: 'hopper', k: 1.1 },
-    { id: 'train', name: '기차', say: '칙칙폭폭!', horn: 'whistle', shape: 'train', col: '#e85d75', k: 1.1 },
-    { id: 'heli', name: '헬리콥터', say: '두두두두!', horn: 'whoosh', shape: 'heli', col: '#ffd43b', fly: true, k: 1.1 },
-    { id: 'plane', name: '비행기', say: '슈웅~!', horn: 'whoosh', shape: 'plane', col: '#74c0fc', fly: true, k: 1.5 },
-    { id: 'rocket', name: '로켓', say: '슈우웅!', horn: 'whoosh', shape: 'rocket', col: '#f4f6fb', fly: true, k: 0.82 },
+    // 출동 구조대
+    { cat: 'rescue', id: 'police', name: '경찰차', say: '삐용삐용!', horn: 'siren', shape: 'car', col: '#f4f6fb', col2: '#3b6fd4', top: 'bar' },
+    { cat: 'rescue', id: 'fire', name: '소방차', say: '삐뽀삐뽀!', horn: 'siren2', shape: 'van', col: '#f0483e', top: 'ladder', mark: 'doors', k: 1.1 },
+    { cat: 'rescue', id: 'amb', name: '구급차', say: '삐뽀삐뽀!', horn: 'siren2', shape: 'van', col: '#ffffff', top: 'bar', mark: 'cross', k: 1.05 },
+    { cat: 'rescue', id: 'tow', name: '견인차', say: '영차영차!', horn: 'low', shape: 'car', col: '#ffc93c', top: 'hook' },
+    { cat: 'rescue', id: 'pumper', name: '소방 물탱크차', say: '쏴아아!', horn: 'siren2', shape: 'van', col: '#f0483e', mark: 'drum', k: 1.1 },
+    { cat: 'rescue', id: 'policebike', name: '경찰 오토바이', say: '부아앙!', horn: 'siren', shape: 'bike', col: '#f4f6fb', col2: '#3b6fd4', bags: true, k: 0.62 },
+    { cat: 'rescue', id: 'rescue', name: '구조대 트럭', say: '출동!', horn: 'siren2', shape: 'van', col: '#ff922b', top: 'ladder', mark: 'doors', k: 1.08 },
+    { cat: 'rescue', id: 'firechief', name: '소방 지휘차', say: '삐뽀삐뽀!', horn: 'siren2', shape: 'van', col: '#f0483e', win: true, top: 'bar', k: 0.95 },
+    // 승용차
+    { cat: 'cars', id: 'car', name: '자동차', say: '빵빵!', horn: 'beep', shape: 'car', col: '#ff6b6b' },
+    { cat: 'cars', id: 'sedan', name: '승용차', say: '빵빵!', horn: 'beep', shape: 'car', col: '#4d96ff' },
+    { cat: 'cars', id: 'suv', name: 'SUV', say: '부웅!', horn: 'low', shape: 'van', col: '#56c271', win: true, k: 0.95 },
+    { cat: 'cars', id: 'sports', name: '스포츠카', say: '부아앙!', horn: 'beep', shape: 'car', col: '#ffd43b', top: 'wing' },
+    { cat: 'cars', id: 'taxi', name: '택시', say: '빵빵!', horn: 'beep', shape: 'car', col: '#ff9f43', top: 'sign' },
+    { cat: 'cars', id: 'jeep', name: '지프', say: '덜컹덜컹!', horn: 'low', shape: 'van', col: '#a3a86b', win: true, mark: 'spare', k: 0.95 },
+    { cat: 'cars', id: 'van', name: '승합차', say: '부릉부릉!', horn: 'beep', shape: 'van', col: '#74c0fc', win: true },
+    { cat: 'cars', id: 'pickup', name: '픽업트럭', say: '부우웅!', horn: 'low', shape: 'car', col: '#3b5bdb', bed: true },
+    // 버스·큰 차
+    { cat: 'big', id: 'bus', name: '버스', say: '부릉부릉!', horn: 'low', shape: 'van', col: '#4d96ff', win: true, mark: 'stripe', k: 1.14 },
+    { cat: 'big', id: 'schoolbus', name: '통학버스', say: '빵빵!', horn: 'beep', shape: 'van', col: '#ffc93c', win: true, mark: 'stripe', k: 1.12 },
+    { cat: 'big', id: 'doubledecker', name: '이층 버스', say: '부릉부릉!', horn: 'low', shape: 'van', col: '#f0483e', mark: 'double', k: 1.22 },
+    { cat: 'big', id: 'camper', name: '캠핑카', say: '룰루랄라!', horn: 'beep', shape: 'van', col: '#e6fcf5', win: true, mark: 'stripe2', k: 1.1 },
+    { cat: 'big', id: 'truck', name: '트럭', say: '부우웅!', horn: 'low', shape: 'van', col: '#4d96ff', mark: 'doors', k: 1.1 },
+    { cat: 'big', id: 'delivery', name: '택배차', say: '띵동!', horn: 'beep', shape: 'van', col: '#ffffff', mark: 'doors' },
+    { cat: 'big', id: 'trailer', name: '트레일러', say: '부우웅!', horn: 'low', shape: 'van', col: '#e85d75', mark: 'slats', k: 1.2 },
+    { cat: 'big', id: 'tanker', name: '유조차', say: '출렁출렁!', horn: 'low', shape: 'van', col: '#ced4da', mark: 'drum', k: 1.12 },
+    // 공사장
+    { cat: 'build', id: 'excavator', name: '굴착기', say: '영차영차!', horn: 'low', shape: 'digger', col: '#ffc93c', k: 1.1 },
+    { cat: 'build', id: 'bulldozer', name: '불도저', say: '밀어밀어!', horn: 'low', shape: 'digger', col: '#ffc93c', arm: false, blade: true, k: 1.05 },
+    { cat: 'build', id: 'loader', name: '로더', say: '으쌰으쌰!', horn: 'low', shape: 'tractor', col: '#ffc93c', top: 'bucket', k: 1.08 },
+    { cat: 'build', id: 'dump', name: '덤프트럭', say: '쿠르릉!', horn: 'low', shape: 'van', col: '#ff9f43', mark: 'slats', k: 1.12 },
+    { cat: 'build', id: 'mixer', name: '레미콘', say: '빙글빙글!', horn: 'low', shape: 'van', col: '#74c0fc', mark: 'drum', k: 1.1 },
+    { cat: 'build', id: 'crane', name: '크레인', say: '영차!', horn: 'low', shape: 'van', col: '#ffc93c', top: 'crane', mark: 'doors', k: 1.08 },
+    { cat: 'build', id: 'forklift', name: '지게차', say: '삐삐삐!', horn: 'beep', shape: 'tractor', col: '#ff922b', top: 'mast', k: 0.85 },
+    { cat: 'build', id: 'roller', name: '로드롤러', say: '꾹꾹!', horn: 'low', shape: 'digger', col: '#ffc93c', arm: false, drum: true },
+    // 일하는 차
+    { cat: 'work', id: 'garbage', name: '청소차', say: '쓱싹쓱싹!', horn: 'beep', shape: 'van', col: '#56c271', mark: 'hopper', k: 1.1 },
+    { cat: 'work', id: 'sweeper', name: '도로 청소차', say: '쓱쓱!', horn: 'beep', shape: 'van', col: '#ff922b', win: true, top: 'light', k: 0.9 },
+    { cat: 'work', id: 'tractor', name: '트랙터', say: '털털털!', horn: 'low', shape: 'tractor', col: '#56c271' },
+    { cat: 'work', id: 'ladder', name: '사다리차', say: '쭈욱!', horn: 'low', shape: 'van', col: '#4d96ff', top: 'ladder', mark: 'doors', k: 1.08 },
+    { cat: 'work', id: 'carrier', name: '자동차 운반차', say: '영차영차!', horn: 'low', shape: 'van', col: '#868e96', mark: 'cars', k: 1.15 },
+    { cat: 'work', id: 'icecream', name: '아이스크림 트럭', say: '딸랑딸랑!', horn: 'beep', shape: 'van', col: '#ffc9de', win: true, top: 'cone' },
+    { cat: 'work', id: 'mail', name: '우체국 차', say: '편지 왔어요!', horn: 'beep', shape: 'van', col: '#f0483e', mark: 'doors', k: 0.95 },
+    { cat: 'work', id: 'snowplow', name: '제설차', say: '쓱싹쓱싹!', horn: 'low', shape: 'van', col: '#ff922b', top: 'light', mark: 'slats', k: 1.08 },
+    // 특별한 차
+    { cat: 'special', id: 'tank', name: '탱크', say: '쿠르릉!', horn: 'low', shape: 'tank', col: '#69a35b', k: 1.1 },
+    { cat: 'special', id: 'armytruck', name: '군용 트럭', say: '부릉!', horn: 'low', shape: 'van', col: '#8f9a5b', mark: 'slats', k: 1.1 },
+    { cat: 'special', id: 'monster', name: '몬스터 트럭', say: '쿵쾅쿵쾅!', horn: 'low', shape: 'car', col: '#9775fa', big: true, k: 1.15 },
+    { cat: 'special', id: 'racecar', name: '레이싱카', say: '부아아앙!', horn: 'beep', shape: 'car', col: '#f0483e', top: 'wing', k: 0.95 },
+    { cat: 'special', id: 'motorbike', name: '오토바이', say: '부릉부릉!', horn: 'beep', shape: 'bike', col: '#343a40', col2: '#f0483e', k: 0.6 },
+    { cat: 'special', id: 'scooter', name: '스쿠터', say: '붕붕!', horn: 'beep', shape: 'bike', col: '#63e6be', box: true, k: 0.58 },
+    { cat: 'special', id: 'atv', name: '사륜 오토바이', say: '부다다다!', horn: 'beep', shape: 'car', col: '#ff922b', big: true, bed: true, k: 0.85 },
+    { cat: 'special', id: 'kart', name: '고카트', say: '쌩쌩!', horn: 'beep', shape: 'car', col: '#4d96ff', bed: true, k: 0.75 },
+    // 기차·하늘
+    { cat: 'sky', id: 'train', name: '기차', say: '칙칙폭폭!', horn: 'whistle', shape: 'train', col: '#e85d75', k: 1.1 },
+    { cat: 'sky', id: 'bullet', name: '고속열차', say: '슈웅~!', horn: 'whoosh', shape: 'train', col: '#f4f6fb', col2: '#3b6fd4', chim: false, k: 1.1 },
+    { cat: 'sky', id: 'tram', name: '트램', say: '땡땡!', horn: 'whistle', shape: 'train', col: '#56c271', chim: false, top: 'panto', k: 1.08 },
+    { cat: 'sky', id: 'heli', name: '헬리콥터', say: '두두두두!', horn: 'whoosh', shape: 'heli', col: '#ffd43b', fly: true, k: 1.1 },
+    { cat: 'sky', id: 'plane', name: '비행기', say: '슈웅~!', horn: 'whoosh', shape: 'plane', col: '#74c0fc', fly: true, k: 1.5 },
+    { cat: 'sky', id: 'jet', name: '전투기', say: '쌔애앵!', horn: 'whoosh', shape: 'plane', col: '#adb5bd', jet: true, fly: true, k: 1.3 },
+    { cat: 'sky', id: 'rocket', name: '로켓', say: '슈우웅!', horn: 'whoosh', shape: 'rocket', col: '#f4f6fb', fly: true, k: 0.82 },
+    { cat: 'sky', id: 'ufo', name: '비행접시', say: '삐리삐리!', horn: 'whoosh', shape: 'ufo', col: '#ced4da', fly: true, k: 1.15 },
 ];
 // 그림이 준비된 것: id → 판 번호. 예) { fire: 1, tree: 1 } → images/play/car/fire.webp?v=1
 //   탈것 = 뒤에서 본 모습(투명 배경), 길가 = tree·pine·house·tower·sign·light·balloon·flower (앞에서 본 모습, 투명 배경)
@@ -211,60 +269,96 @@ function board(w, h, draw) {
     return trim(c);
 }
 const WH = '#3a4150', GL = '#cfeeff', RED = '#ff5a5a', GREY = '#8a93a6';
-// 탈것의 뒷모습(그림이 오기 전까지 쓰는 것): 둥글둥글, 큰 바퀴, 빨간 꼬리등
+// 탈것의 뒷모습(그림이 오기 전까지 쓰는 것): 둥글둥글, 큰 바퀴, 빨간 꼬리등. 56대를 몇 가지 틀(shape)에 색·지붕(top)·무늬(mark)만 바꿔 그린다
 function rearSprite(o) {
     const col = o.col, dk = shade(col, 0.76), ln = shade(col, 0.55);
     return board(400, 400, (x, R, C, P) => {
         const tail = (y, s) => { R(54, y, s, 30, 12, RED); R(346 - s, y, s, 30, 12, RED); R(54, y, 18, 30, 9, '#ffb84d'); R(328, y, 18, 30, 9, '#ffb84d'); };
         const bar = y => { R(138, y, 124, 28, 12, '#dfe6f0'); R(143, y + 4, 54, 20, 9, RED); R(203, y + 4, 54, 20, 9, '#4d8dff'); };
+        const ladder = y => { R(84, y, 232, 12, 6, '#c9d1dc'); R(84, y + 24, 232, 12, 6, '#c9d1dc'); for (let i = 0; i < 6; i++) R(98 + i * 40, y, 10, 36, 4, '#c9d1dc'); };
+        const arm = (pts, w) => { x.strokeStyle = GREY; x.lineWidth = w; x.lineCap = 'round'; x.lineJoin = 'round'; x.beginPath(); pts.forEach((q, i) => i ? x.lineTo(q[0], q[1]) : x.moveTo(q[0], q[1])); x.stroke(); };
+        const hookAt = (hx, hy) => { arm([[hx, hy], [hx, hy + 50]], 7); x.beginPath(); x.arc(hx - 12, hy + 62, 14, -0.3, Math.PI); x.stroke(); };
         if (o.shape === 'car') {
-            R(44, 318, 62, 72, 16, WH); R(294, 318, 62, 72, 16, WH);
-            if (o.top === 'hook') { x.strokeStyle = GREY; x.lineWidth = 16; x.lineCap = 'round'; x.beginPath(); x.moveTo(200, 200); x.lineTo(200, 44); x.lineTo(262, 44); x.stroke(); x.lineWidth = 7; x.beginPath(); x.moveTo(262, 44); x.lineTo(262, 96); x.stroke(); x.beginPath(); x.arc(250, 108, 14, -0.3, Math.PI); x.stroke(); }
-            P([[96, 214], [124, 116], [140, 100], [260, 100], [276, 116], [304, 214]], col);
-            P([[120, 200], [140, 124], [260, 124], [280, 200]], GL);
+            if (o.big) { R(10, 250, 110, 142, 34, WH); R(280, 250, 110, 142, 34, WH); for (let i = 0; i < 3; i++) { R(20, 272 + i * 40, 90, 12, 6, '#566074'); R(290, 272 + i * 40, 90, 12, 6, '#566074'); } }
+            else { R(44, 318, 62, 72, 16, WH); R(294, 318, 62, 72, 16, WH); }
+            if (o.top === 'hook') { arm([[200, 200], [200, 44], [262, 44]], 16); hookAt(262, 44); }
+            if (o.top === 'wing') { R(118, 62, 14, 70, 5, dk); R(268, 62, 14, 70, 5, dk); R(60, 50, 280, 26, 13, dk); }
+            if (!o.bed) { P([[96, 214], [124, 116], [140, 100], [260, 100], [276, 116], [304, 214]], col); P([[120, 200], [140, 124], [260, 124], [280, 200]], GL); }
+            else { R(120, 130, 160, 80, 24, col); R(138, 144, 124, 44, 12, GL); }
             R(36, 190, 328, 152, 46, col);
             if (o.col2) R(36, 248, 328, 36, 0, o.col2);
-            tail(210, 58);
+            if (o.bed) R(64, 204, 272, 34, 12, dk);
+            tail(o.bed ? 250 : 210, 58);
             R(40, 316, 320, 34, 16, dk);
             R(158, 292, 84, 34, 7, '#fff');
             if (o.top === 'bar') bar(76);
             if (o.top === 'sign') { R(166, 64, 68, 38, 10, '#ffe066'); R(182, 76, 36, 12, 5, '#3a4150'); }
         } else if (o.shape === 'van') {
             R(50, 326, 64, 66, 16, WH); R(286, 326, 64, 66, 16, WH);
-            if (o.top === 'ladder') { R(84, 34, 232, 12, 6, '#c9d1dc'); R(84, 58, 232, 12, 6, '#c9d1dc'); for (let i = 0; i < 6; i++) R(98 + i * 40, 34, 10, 36, 4, '#c9d1dc'); }
+            if (o.top === 'ladder') ladder(34);
+            if (o.top === 'crane') { arm([[130, 120], [310, 18]], 20); hookAt(310, 18); }
+            if (o.top === 'cone') { P([[176, 40], [224, 40], [200, 82]], '#e8b06a'); C(200, 30, 26, '#fff'); C(190, 22, 8, '#ff8fab'); }
             R(44, 72, 312, 280, 34, col);
             if (o.win) R(78, 100, 244, 92, 18, GL);
+            if (o.mark === 'double') { R(78, 92, 244, 60, 14, GL); R(78, 166, 244, 60, 14, GL); }
             if (o.mark === 'stripe') R(44, 214, 312, 30, 0, '#fff');
+            if (o.mark === 'stripe2') R(44, 214, 312, 30, 0, '#63e6be');
             if (o.mark === 'doors') { x.strokeStyle = ln; x.lineWidth = 5; x.beginPath(); x.moveTo(200, 92); x.lineTo(200, 304); x.stroke(); R(170, 190, 20, 12, 5, ln); R(210, 190, 20, 12, 5, ln); R(44, 224, 312, 22, 0, '#ffe066'); }
             if (o.mark === 'cross') { R(176, 124, 48, 124, 8, RED); R(138, 162, 124, 48, 8, RED); }
             if (o.mark === 'slats') { for (const yy of [104, 142, 180, 218]) R(70, yy, 260, 16, 8, dk); }
-            if (o.mark === 'drum') { C(200, 190, 108, '#f1f3f5'); x.strokeStyle = col; x.lineWidth = 16; for (let i = 0; i < 4; i++) { x.beginPath(); x.arc(200, 190, 34 + i * 20, i * 0.9, i * 0.9 + 2.4); x.stroke(); } C(200, 190, 16, dk); }
+            if (o.mark === 'drum') { C(200, 190, 108, '#f1f3f5'); x.strokeStyle = dk; x.lineWidth = 16; x.lineCap = 'round'; for (let i = 0; i < 4; i++) { x.beginPath(); x.arc(200, 190, 34 + i * 20, i * 0.9, i * 0.9 + 2.4); x.stroke(); } C(200, 190, 16, dk); }
             if (o.mark === 'hopper') { R(64, 176, 272, 120, 20, dk); R(88, 196, 224, 22, 11, ln); R(64, 104, 272, 14, 7, dk); }
+            if (o.mark === 'spare') { C(200, 250, 62, WH); C(200, 250, 26, GREY); }
+            if (o.mark === 'cars') { R(64, 196, 272, 10, 5, ln); for (const [cx, cc] of [[84, '#ff6b6b'], [216, '#4d96ff']]) { R(cx, 128, 100, 66, 22, cc); R(cx + 16, 138, 68, 26, 9, GL); R(cx + 6, 232, 100 - 12, 0, 0, cc); } R(84, 214, 100, 60, 20, '#ffd43b'); R(100, 224, 68, 22, 8, GL); R(216, 214, 100, 60, 20, '#69db7c'); R(232, 224, 68, 22, 8, GL); }
             R(56, 266, 46, 46, 12, RED); R(298, 266, 46, 46, 12, RED);
             R(38, 322, 324, 32, 14, dk);
             if (o.top === 'bar') bar(48);
-            if (o.top === 'ladder') { R(178, 52, 44, 26, 10, RED); }
+            if (o.top === 'ladder') R(178, 52, 44, 26, 10, RED);
+            if (o.top === 'light') R(176, 50, 48, 28, 12, '#ffd43b');
         } else if (o.shape === 'tractor') {
-            R(256, 22, 16, 70, 8, GREY);
+            if (o.top === 'bucket') { arm([[120, 150], [110, 50]], 16); arm([[280, 150], [290, 50]], 16); R(70, 10, 260, 62, 18, dk); }
+            else if (o.top === 'mast') { R(140, 6, 14, 110, 5, GREY); R(246, 6, 14, 110, 5, GREY); R(140, 30, 120, 10, 5, GREY); }
+            else R(256, 22, 16, 70, 8, GREY);
             R(24, 164, 104, 226, 36, WH); R(272, 164, 104, 226, 36, WH);
             for (let i = 0; i < 5; i++) { R(34, 186 + i * 40, 84, 12, 6, '#566074'); R(282, 186 + i * 40, 84, 12, 6, '#566074'); }
             R(116, 196, 168, 150, 22, col);
             R(126, 60, 148, 150, 24, col); R(144, 80, 112, 86, 14, GL);
             R(130, 300, 30, 26, 8, RED); R(240, 300, 30, 26, 8, RED);
         } else if (o.shape === 'digger') {
-            x.strokeStyle = dk; x.lineWidth = 34; x.lineCap = 'round'; x.lineJoin = 'round'; x.beginPath(); x.moveTo(268, 200); x.lineTo(318, 56); x.lineTo(362, 150); x.stroke();
-            P([[336, 138], [392, 150], [380, 208], [334, 196]], WH);
-            R(34, 318, 332, 72, 34, WH); for (let i = 0; i < 6; i++) C(70 + i * 52, 354, 15, '#566074');
+            if (o.arm !== false) { x.strokeStyle = dk; x.lineWidth = 34; x.lineCap = 'round'; x.lineJoin = 'round'; x.beginPath(); x.moveTo(268, 200); x.lineTo(318, 56); x.lineTo(362, 150); x.stroke(); P([[336, 138], [392, 150], [380, 208], [334, 196]], WH); }
+            if (o.blade) { R(4, 286, 40, 96, 10, GREY); R(356, 286, 40, 96, 10, GREY); }
+            if (o.drum) { R(26, 312, 348, 78, 38, GREY); R(46, 326, 308, 14, 7, '#aab2c0'); }
+            else { R(34, 318, 332, 72, 34, WH); for (let i = 0; i < 6; i++) C(70 + i * 52, 354, 15, '#566074'); }
             R(60, 196, 280, 140, 26, col);
-            R(76, 76, 156, 140, 22, col); R(94, 96, 120, 80, 14, GL);
+            R(o.arm !== false ? 76 : 122, 76, 156, 140, 22, col); R(o.arm !== false ? 94 : 140, 96, 120, 80, 14, GL);
             R(80, 286, 40, 26, 8, RED); R(280, 286, 40, 26, 8, RED);
+        } else if (o.shape === 'tank') {
+            R(184, 30, 32, 170, 12, dk); R(176, 24, 48, 26, 10, ln);
+            R(26, 236, 100, 156, 34, WH); R(274, 236, 100, 156, 34, WH);
+            for (let i = 0; i < 4; i++) { R(36, 256 + i * 34, 80, 12, 6, '#566074'); R(284, 256 + i * 34, 80, 12, 6, '#566074'); }
+            R(64, 224, 272, 140, 28, col);
+            x.fillStyle = dk; x.beginPath(); x.ellipse(200, 196, 104, 76, 0, 0, TAU); x.fill();
+            x.fillStyle = col; x.beginPath(); x.ellipse(200, 186, 92, 64, 0, 0, TAU); x.fill();
+            C(232, 170, 22, dk); R(90, 316, 40, 24, 8, RED); R(270, 316, 40, 24, 8, RED);
+        } else if (o.shape === 'bike') {
+            R(168, 232, 64, 160, 28, WH); R(184, 250, 32, 124, 14, '#566074');
+            arm([[112, 122], [288, 122]], 12); C(108, 108, 16, GREY); C(292, 108, 16, GREY);
+            if (o.bags) { R(92, 214, 70, 84, 16, col); R(238, 214, 70, 84, 16, col); R(92, 244, 70, 16, 0, o.col2 || dk); R(238, 244, 70, 16, 0, o.col2 || dk); }
+            x.fillStyle = col; x.beginPath(); x.ellipse(200, 196, 70, 92, 0, 0, TAU); x.fill();
+            R(150, 134, 100, 44, 20, WH);
+            if (o.col2 && !o.bags) R(150, 206, 100, 18, 9, o.col2);
+            if (o.box) R(140, 120, 120, 96, 16, '#fff');
+            R(176, 252, 48, 24, 10, RED);
+            if (o.bags) { R(186, 96, 28, 34, 10, '#4d8dff'); }
         } else if (o.shape === 'train') {
-            R(176, 22, 48, 74, 12, WH); C(200, 24, 26, '#fff'); C(232, 6, 18, '#fff');
+            if (o.chim !== false) { R(176, 22, 48, 74, 12, WH); C(200, 24, 26, '#fff'); C(232, 6, 18, '#fff'); }
+            if (o.top === 'panto') { arm([[150, 92], [200, 30], [250, 92]], 8); arm([[150, 30], [250, 30]], 8); }
             R(58, 330, 66, 60, 16, WH); R(276, 330, 66, 60, 16, WH);
-            R(64, 112, 272, 240, 26, col);
+            R(64, 112, 272, 240, o.chim === false ? 54 : 26, col);
             R(46, 88, 308, 46, 18, dk);
+            if (o.col2) R(64, 250, 272, 30, 0, o.col2);
             R(94, 156, 92, 84, 14, GL); R(214, 156, 92, 84, 14, GL);
-            C(200, 292, 22, '#ffe066');
+            C(200, 300, 20, '#ffe066');
             R(50, 328, 300, 28, 12, GREY);
         } else if (o.shape === 'heli') {
             x.fillStyle = 'rgba(120,130,150,.42)'; x.beginPath(); x.ellipse(200, 60, 194, 18, 0, 0, TAU); x.fill();
@@ -276,12 +370,20 @@ function rearSprite(o) {
             R(116, 226, 168, 20, 10, dk); R(188, 126, 24, 124, 10, dk); C(200, 238, 34, dk);
             C(200, 238, 12, RED);
         } else if (o.shape === 'plane') {
-            R(4, 220, 392, 38, 19, dk);
-            for (const ex of [92, 308]) { C(ex, 262, 30, GREY); C(ex, 262, 15, WH); }
-            P([[200, 44], [178, 214], [222, 214]], dk);
-            R(104, 148, 192, 24, 12, dk);
-            C(200, 222, 88, col);
-            C(200, 222, 30, shade(col, 0.88)); R(84, 232, 16, 18, 6, RED); R(300, 232, 16, 18, 6, '#69db7c');
+            if (o.jet) { P([[200, 226], [10, 286], [26, 300], [200, 262], [374, 300], [390, 286]], dk); P([[150, 60], [136, 214], [176, 214]], dk); P([[250, 60], [264, 214], [224, 214]], dk); C(200, 226, 76, col); C(170, 240, 30, WH); C(230, 240, 30, WH); C(170, 240, 16, '#ff9f43'); C(230, 240, 16, '#ff9f43'); }
+            else {
+                R(4, 220, 392, 38, 19, dk);
+                for (const ex of [92, 308]) { C(ex, 262, 30, GREY); C(ex, 262, 15, WH); }
+                P([[200, 44], [178, 214], [222, 214]], dk);
+                R(104, 148, 192, 24, 12, dk);
+                C(200, 222, 88, col);
+                C(200, 222, 30, shade(col, 0.88)); R(84, 232, 16, 18, 6, RED); R(300, 232, 16, 18, 6, '#69db7c');
+            }
+        } else if (o.shape === 'ufo') {
+            x.fillStyle = GL; x.beginPath(); x.ellipse(200, 190, 96, 86, 0, Math.PI, 0); x.fill();
+            x.fillStyle = dk; x.beginPath(); x.ellipse(200, 232, 190, 62, 0, 0, TAU); x.fill();
+            x.fillStyle = col; x.beginPath(); x.ellipse(200, 216, 190, 56, 0, 0, TAU); x.fill();
+            for (let i = 0; i < 6; i++) C(64 + i * 54.4, 236 + (i === 0 || i === 5 ? -10 : i === 1 || i === 4 ? 4 : 10), 13, '#ffe066');
         } else {      // 로켓: 위로 솟는 옛날 그림책 로켓
             x.fillStyle = '#ff9f43'; x.beginPath(); x.ellipse(200, 352, 44, 46, 0, 0, TAU); x.fill();
             x.fillStyle = '#ffe066'; x.beginPath(); x.ellipse(200, 342, 24, 30, 0, 0, TAU); x.fill();
@@ -317,7 +419,8 @@ function artLoad(id, onto) {
     img.onload = () => { const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; c.getContext('2d').drawImage(img, 0, 0); onto(trim(c)); };
     img.src = `../images/play/car/${id}.webp?v=${ART[id]}`;
 }
-const list = CARS.map(c => { const o = Object.assign({ k: 1 }, c); o.sp = rearSprite(c); artLoad(c.id, sp => { o.sp = sp; }); return o; });
+const list = CARS.map(c => { const o = Object.assign({ k: 1 }, c); o.sp = rearSprite(c); artLoad(c.id, sp => { o.sp = sp; paintCats(); }); return o; });
+let pool = list.map((_, i) => i), cat = 'all';      // pool = 이번 판에 나올 탈것(고른 종류), '전부 다 섞기'는 56대를 섞어서
 const PROPS = {};
 Object.keys(PROP_DEF).forEach(k => { const [ww, n] = PROP_DEF[k]; PROPS[k] = { ww, sp: Array.from({ length: n || 1 }, (_, v) => propSprite(k, v)) }; artLoad(k, sp => { PROPS[k].sp = [sp]; }); });
 const STAR = board(200, 200, (x) => {
@@ -326,7 +429,7 @@ const STAR = board(200, 200, (x) => {
     for (let i = 0; i < 10; i++) { const a = i * Math.PI / 5 - Math.PI / 2, rr = i % 2 ? 38 : 80; x.lineTo(100 + Math.cos(a) * rr, 104 + Math.sin(a) * rr); }
     x.closePath(); x.stroke(); x.fill();
 });
-const car = () => list[idx % list.length];
+const car = () => list[pool[idx % pool.length]];
 
 // ---------- 길 만들기 ----------
 // 굽은 길과 언덕을 이어 붙인 한 바퀴(약 1,200조각). 끝이 처음과 이어진다. 아이가 보는 것이라 굽이·언덕은 완만하게
@@ -354,7 +457,7 @@ for (let n = 0; n < N; n += 4) for (const side of [-1, 1]) {
 // 길 위의 별: 한 차선에 세 개씩 줄지어
 for (let n = 24; n < N - 12; n += 15) { const ln = (hs(n, 21) * 3) | 0; for (let k = 0; k < 3; k++) segs[n + k * 4].star = { lane: ln, got: false }; }
 // 앞에서 가는 친구들
-const traffic = Array.from({ length: 8 }, (_, i) => ({ z: TRACK * (i + 0.55) / 8, lane: i % 3, v: (0.2 + hs(i, 31) * 0.2) * MAXV, o: list[(hs(i, 33) * 13) | 0], rel: 1e9 }));
+const traffic = Array.from({ length: 8 }, (_, i) => ({ z: TRACK * (i + 0.55) / 8, lane: i % 3, v: (0.2 + hs(i, 31) * 0.2) * MAXV, o: list[(hs(i, 33) * list.length) | 0], rel: 1e9 }));
 
 // ---------- 하늘·땅 색(탈것이 두 대 바뀔 때마다 천천히 바뀐다) ----------
 const THEMES = [
@@ -534,7 +637,7 @@ function arrive() {
     for (let i = 0; i < 34 && conf.length < 60; i++) conf.push({ x: rnd(0, W), y: rnd(-H * 0.4, -10), vy: rnd(60, 130), ph: rnd(0, TAU), s: rnd(8, 15) * U, c: PASTEL[(Math.random() * PASTEL.length) | 0], rot: rnd(0, TAU), t: 0 });
 }
 function nextCar() {
-    idx = (idx + 1) % list.length; prog = 0; ghost = null;
+    idx = (idx + 1) % pool.length; prog = 0; ghost = null;
     if (done % 2 === 0) themeI++;
     state = 'in'; stT = 0;
     const c = car();
@@ -709,7 +812,7 @@ function frame(ts) {
         const s = segs[(base.i + n) % N], p1 = s.p1, p2 = s.p2;
         if (s.vis) {
             for (const q of s.props) billboard(q.p.sp[q.v % q.p.sp.length], q.p.ww, p1.sc, p1.sx + p1.sw * q.off, p1.sy, s.clip);
-            if (s.star && !s.star.got) billboard(STAR, 300, p1.sc, p1.sx + p1.sw * LANEX[s.star.lane], p1.sy, s.clip, 190 + Math.sin(now * 4 + s.i) * 50);
+            if (s.star && !s.star.got) billboard(STAR, 240, p1.sc, p1.sx + p1.sw * LANEX[s.star.lane], p1.sy, s.clip, 190 + Math.sin(now * 4 + s.i) * 50);
             for (const t of s.cars) {
                 const k = (t.z % SEG) / SEG, sc = p1.sc + (p2.sc - p1.sc) * k, sx = p1.sx + (p2.sx - p1.sx) * k + (p1.sw + (p2.sw - p1.sw) * k) * LANEX[t.lane], sy = p1.sy + (p2.sy - p1.sy) * k, w = CARW * t.o.k * sc * xs;
                 if (sy < s.clip + 2) { g.fillStyle = 'rgba(40,50,70,.18)'; g.beginPath(); g.ellipse(sx, sy, w * 0.52, w * 0.07, 0, 0, TAU); g.fill(); }
@@ -810,7 +913,27 @@ function escPaint(n) {
     escEl.innerHTML = `${TOUCH ? '뒤로 가기 5번 = 끝' : 'ESC 5번 = 끝'} ${Array.from({ length: MASH.ESC_N }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}`;
 }
 escEl.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); MASH.escTap(); });
-function start() {
+// 시작 화면의 종류 카드(일곱 종류 + 전부 다 섞기). 누르면 그 종류로 바로 출발
+const catsEl = $('#cats');
+function paintCats() {
+    catsEl.querySelectorAll('canvas').forEach(cvs => {
+        const x = cvs.getContext('2d'), w = cvs.width, h = cvs.height, ids = cvs.dataset.ids.split(',');
+        x.clearRect(0, 0, w, h);
+        ids.forEach((id, i) => {
+            const o = list.find(q => q.id === id); if (!o) return;
+            const sp = o.sp, n = ids.length, bw = n > 1 ? w * 0.5 : w * 0.86, sc = Math.min(bw / sp.bw, h * (n > 1 ? 0.66 : 0.92) / sp.bh), dw = sp.bw * sc, dh = sp.bh * sc;
+            const cx = n > 1 ? w * (0.22 + 0.28 * i) : w / 2, by = n > 1 ? h * (i === 1 ? 0.98 : 0.8) : h * 0.97;
+            x.drawImage(sp.cv, sp.bx, sp.by, sp.bw, sp.bh, cx - dw / 2, by - dh, dw, dh);
+        });
+    });
+}
+catsEl.innerHTML = CATS.map(c => `<button type="button" class="cat${c.id === 'all' ? ' all' : ''}" data-cat="${c.id}"><canvas width="240" height="170" data-ids="${c.pick || 'police,excavator,rocket'}"></canvas><b>${c.name}</b></button>`).join('');
+catsEl.addEventListener('click', e => { const b = e.target.closest('.cat'); if (b) start(b.dataset.cat); });
+paintCats();
+function start(c) {
+    cat = c || 'all';
+    pool = list.map((q, i) => i).filter(i => cat === 'all' || list[i].cat === cat);
+    if (cat === 'all') for (let i = pool.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [pool[i], pool[j]] = [pool[j], pool[i]]; }
     snd.init(); songWire();
     try { if (window.speechSynthesis) speechSynthesis.getVoices(); } catch (e) {}
     playing = true; sleeping = false; playT = 0; presses = 0; prog = 0; done = 0; stars = 0; idx = 0; themeI = 0; speed = 0; lastPress = -99;
@@ -825,10 +948,8 @@ function end() {
     playing = false; sleeping = false; state = 'drive'; ghost = null; banner = null; bubble = null;
     if (song.el) { try { song.el.pause(); } catch (e) {} } song.cur = 0; if (song.gain) song.gain.gain.value = 0;
     try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
-    $('#sub').textContent = done || stars ? `오늘 탈것 ${done + 1}대 · 별 ${stars}개! 잘했어요` : '아무 키나 마구 누르면 자동차가 달려요';
-    $('#go').textContent = done || presses ? '한 번 더' : '시작';
+    $('#sub').textContent = done || stars ? `탈것 ${done + 1}대 · 별 ${stars}개! 잘했어요 — 또 뭘 탈까요?` : '어떤 탈것을 탈까요? 고르면 바로 출발!';
 }
-$('#go').addEventListener('click', start);
 escPaint(0); resize();
 requestAnimationFrame(frame);
 }
