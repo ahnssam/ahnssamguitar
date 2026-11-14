@@ -91,7 +91,8 @@
         <ul>
             <li>'시작'을 누르면 화면 가득 우주가 펼쳐져요. <b>키보드 아무 키나</b> 누를 때마다 기타가 하나씩 터져요(휴대폰은 화면을 두드리기).</li>
             <li>왼쪽 키는 왼쪽 기타, 오른쪽 키는 오른쪽 기타를 노려요. <kbd>Space</kbd>·<kbd>Enter</kbd>는 한 번에 세 개!</li>
-            <li>쉬지 않고 누르면 콤보가 쌓이고, 30콤보마다 <b>슈퍼노바</b>로 화면의 기타가 한꺼번에 터져요.</li>
+            <li>40번 누를 때마다 <b>슈퍼노바</b>로 화면의 기타가 한꺼번에 터지고, 쉬지 않고 누르면 색이 무지개처럼 변해요.</li>
+            <li><b>500개, 1000개…</b> 500개를 넘길 때마다 화면 가운데에 큰 숫자와 축하 폭죽이 터져요.</li>
             <li>끝내려면 <kbd>ESC</kbd>를 <b>연속으로 다섯 번</b> 누르세요(휴대폰은 <b>뒤로 가기 다섯 번</b>). 소리가 나니 볼륨을 확인해 주세요.</li>
         </ul>
     </div>
@@ -112,13 +113,15 @@ const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const backOut = t => { const c = 1.9; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
 const TAU = Math.PI * 2;
-const SUPER = 30;                      // 30콤보마다 슈퍼노바
+const SUPER = 40;                      // 40번 누를 때마다 슈퍼노바(화면에는 개수만 보인다 — 콤보 표시는 2026-11-14 사용자 요청으로 뺌)
 const COMBO_GAP = 0.9;                 // 이만큼(초) 쉬면 콤보가 끊긴다
+const MILE = 500;                      // 2026-11-14 사용자: 500개를 넘길 때마다 화면 가운데에 '500 !' '1000 !' 과 큰 효과
 const WORDS = ['펑!', '쾅!', '팡!', '콰광!', '퍼엉!', '빵!', '쿠궁!'];
 let W = 0, H = 0, DPR = 1, now = 0, unit = 200;
-let playing = false, count = 0, combo = 0, comboAt = -9, maxCombo = 0, novas = 0, comboPulse = 0, countPulse = 0;
+let playing = false, count = 0, hits = 0, combo = 0, comboAt = -9, maxCombo = 0, novas = 0, comboPulse = 0, countPulse = 0;
 let shake = 0, boost = 0, whiteout = 0, lastKey = 0, hintT = 0;
 let floaters = [], sparks = [], shards = [], fx = [], words = [], pending = [], shoots = [];
+let bombs = [], glits = [], bolts = [], rays = [], edge = 0, edgeHue = 40, crackAt = 0, avgDt = 0.016, lowQ = false;   // 2026-11-14 사용자: 효과를 더 화려하게
 let best = mem.get('boom.best', { n: 0, combo: 0 });
 
 // ---------- 그림 ----------
@@ -229,7 +232,7 @@ function resize() {
     if (!r.width || !r.height) return;
     const ow = W, oh = H;
     DPR = Math.min(window.devicePixelRatio || 1, 2);
-    W = r.width; H = r.height; unit = clamp(Math.min(H, W * 1.15) * 0.3, 105, 300);
+    W = r.width; H = r.height; unit = clamp(Math.min(H, W * 1.15) * 0.215, 84, 215);   // 2026-11-14 사용자: 기타는 조금 작게(예전 0.3)
     cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
     nebA = makeNebula(nebSeed); nebB = null; nebMix = 1;
     if (ow && oh) for (const f of floaters) { f.x *= W / ow; f.y *= H / oh; }
@@ -287,6 +290,26 @@ const snd = {
         const gg = ac.createGain(); gg.gain.setValueAtTime(0.0001, t); gg.gain.exponentialRampToValueAtTime(long ? 0.2 : 0.15, t + 0.005); gg.gain.exponentialRampToValueAtTime(0.0008, t + len);
         pre.connect(ws); ws.connect(lp); lp.connect(gg); gg.connect(this.pan(p || 0));
     },
+    // 500개 축하: 쿵 + 기타로 올라가는 팡파르
+    fanfare() {
+        if (!this.on || !this.ac) return;
+        this.boom(2.2, 0);
+        [0, 2, 3, 5, 7, 10].forEach((n, i) => setTimeout(() => this.pluck(n, (i - 2.5) * 0.25, i === 5), 90 * i));
+        setTimeout(() => { this.pluck(5, -0.3, true); this.pluck(7, 0, true); this.pluck(10, 0.3, true); }, 620);
+    },
+    // 폭죽이 한 번 더 터지는 작은 소리(타닥)
+    crack(p) {
+        if (!this.on || !this.ac) return;
+        const ac = this.ac, t = ac.currentTime;
+        if (t - crackAt < 0.055) return; crackAt = t;
+        const n = ac.createBufferSource(); n.buffer = this.noise; n.playbackRate.value = rnd(1.2, 2);
+        const hp = ac.createBiquadFilter(); hp.type = 'bandpass'; hp.frequency.value = rnd(2600, 5200); hp.Q.value = 0.8;
+        const gg = ac.createGain(); gg.gain.setValueAtTime(0.0001, t); gg.gain.exponentialRampToValueAtTime(0.085, t + 0.004); gg.gain.exponentialRampToValueAtTime(0.0006, t + 0.11);
+        n.connect(hp); hp.connect(gg); gg.connect(this.pan(p || 0)); n.start(t, rnd(0, 1)); n.stop(t + 0.13);
+        const o = ac.createOscillator(), go = ac.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(rnd(1500, 2600), t); o.frequency.exponentialRampToValueAtTime(700, t + 0.09);
+        go.gain.setValueAtTime(0.0001, t); go.gain.exponentialRampToValueAtTime(0.035, t + 0.004); go.gain.exponentialRampToValueAtTime(0.0005, t + 0.1);
+        o.connect(go); go.connect(this.out); o.start(t); o.stop(t + 0.12);
+    },
     // 슈퍼노바: 올라갔다가 크게 터지는 소리
     nova() {
         if (!this.on || !this.ac) return;
@@ -300,7 +323,7 @@ const snd = {
 };
 
 // ---------- 떠다니는 기타 ----------
-function target() { return clamp(Math.round(W * H / 52000), 8, 26); }
+function target() { return clamp(Math.round(W * H / 40000), 10, 32); }   // 작아진 만큼 더 많이
 function spawn(mode, at) {
     if (!sprites.length) return null;
     const sp = sprites[(Math.random() * sprites.length) | 0], v = rnd(26, 82);
@@ -325,16 +348,31 @@ function explode(f, o) {
     o = o || {};
     const i = floaters.indexOf(f); if (i < 0) return;
     floaters.splice(i, 1);
-    const sp = f.sp, hue = sp.hue, P = o.power || 1, [gw, gh] = sizeOf(f), R = Math.max(gw, gh * 0.6), x = f.x, y = f.y;
-    fx.push({ k: 'flash', x, y, r: R * 1.5 * P, t: 0, life: 0.42, hue });
-    fx.push({ k: 'ring', x, y, r0: R * 0.25, r1: R * 1.9 * P, t: 0, life: 0.55, hue, w: 8 });
-    fx.push({ k: 'ring', x, y, r0: R * 0.1, r1: R * 1.25 * P, t: -0.09, life: 0.5, hue: hue + 45, w: 4 });
-    fx.push({ k: 'glow', x, y, r: R * 1.2, t: 0, life: 1.3, hue });
-    const n = sparks.length > 650 ? 12 : sparks.length > 350 ? 24 : 44;
+    // 기타가 작아져도 폭발은 크게(R 을 키움). 콤보가 쌓이면 색이 무지개처럼 돌아간다
+    const sp = f.sp, P = o.power || 1, [gw, gh] = sizeOf(f), R = Math.max(gw, gh * 0.6) * 1.45, x = f.x, y = f.y;
+    const hue = (sp.hue + (combo >= 10 ? combo * 9 : 0)) % 360, lite = !!o.lite, busy = lite || lowQ || sparks.length > 520;   // lite = 한꺼번에 터질 때(슈퍼노바·시작)는 가볍게
+    fx.push({ k: 'flash', x, y, r: R * 1.6 * P, t: 0, life: 0.45, hue });
+    if (!lite) fx.push({ k: 'flare', x, y, r: R * 2.8 * P, t: 0, life: 0.4, hue, rot: rnd(-0.3, 0.3) });
+    fx.push({ k: 'ring', x, y, r0: R * 0.25, r1: R * 2.0 * P, t: 0, life: 0.58, hue, w: 9 });
+    fx.push({ k: 'ring', x, y, r0: R * 0.1, r1: R * 1.35 * P, t: -0.08, life: 0.5, hue: hue + 50, w: 5 });
+    fx.push({ k: 'ring', x, y, r0: R * 0.1, r1: R * 2.7 * P, t: -0.16, life: 0.7, hue: hue + 180, w: 2.5 });
+    fx.push({ k: 'glow', x, y, r: R * 1.2, t: 0, life: 1.4, hue });
+    if (!lite) for (let j = 0; j < 3; j++) { const a = rnd(0, TAU), d = R * rnd(0.3, 0.7); fx.push({ k: 'glow', x: x + Math.cos(a) * d, y: y + Math.sin(a) * d, r: R * rnd(0.5, 0.9), t: 0, life: rnd(1.1, 1.9), hue: hue + rnd(-70, 70), vx: Math.cos(a) * 40, vy: Math.sin(a) * 40 }); }
+    const n = sparks.length > 700 ? 12 : busy ? 26 : 50;
     for (let j = 0; j < n; j++) {
-        const a = rnd(0, TAU), v = rnd(140, 760) * P * (Math.random() < 0.2 ? 1.5 : 1);
-        sparks.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: rnd(0.45, 1.15), hue: hue + rnd(-38, 38), l: rnd(58, 88), w: rnd(1.4, 3.6) });
+        const a = rnd(0, TAU), v = rnd(140, 780) * P * (Math.random() < 0.2 ? 1.5 : 1);
+        sparks.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: rnd(0.45, 1.15), hue: hue + rnd(-42, 42), l: rnd(58, 88), w: rnd(1.4, 3.8) });
     }
+    // 폭죽: 불씨가 꼬리를 끌며 날아가다 한 번 더 터진다
+    for (let j = 0, m = lite ? 1 : busy ? 2 : 5; j < m; j++) { const a = rnd(0, TAU), v = rnd(250, 520) * P; bombs.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, fuse: rnd(0.2, 0.48), hue: hue + rnd(-80, 80) }); }
+    // 반짝이: 천천히 흩어지며 깜빡깜빡
+    if (glits.length < 420) for (let j = 0, m = busy ? 8 : 18; j < m; j++) { const a = rnd(0, TAU), v = rnd(30, 300) * P; glits.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: rnd(0.9, 2.0), hue: hue + rnd(-60, 60), ph: rnd(0, TAU), r: rnd(2, 4.4) }); }
+    // 번개: 가까운 기타 둘에게 찌릿
+    if (!lite && bolts.length < 14) floaters.map(q => [Math.hypot(q.x - x, q.y - y), q]).filter(q => q[0] < unit * 3.6).sort((a, b) => a[0] - b[0]).slice(0, 2).forEach(([, q]) => {
+        bolts.push({ x1: x, y1: y, x2: q.x, y2: q.y, t: 0, life: 0.24, hue });
+        fx.push({ k: 'flash', x: q.x, y: q.y, r: unit * 0.5, t: 0, life: 0.25, hue }); q.vr += rnd(-2.5, 2.5);
+    });
+    edge = Math.min(1, edge + 0.22 * P); edgeHue = hue;
     const cs = Math.cos(f.rot), sn = Math.sin(f.rot);
     for (const c of sp.cells) {
         const lx = c.u * gw, ly = c.v * gh, ox = lx * cs - ly * sn, oy = lx * sn + ly * cs, d = Math.hypot(ox, oy) || 1, v = rnd(160, 520) * P, ja = rnd(-0.5, 0.5);
@@ -360,20 +398,47 @@ function hit(pt, note) {
     if (note != null) snd.pluck(note, px);
     score(1);
 }
-function score(n) {
+// 터뜨린 수를 올린다. 500 단위를 넘기면 큰 축하
+function addCount(n) {
+    const a = Math.floor(count / MILE);
     count += n; countPulse = 1;
+    const b = Math.floor(count / MILE);
+    if (playing && b > a) milestone(b * MILE);
+}
+function milestone(m) {
+    const cx = W / 2, cy = H * 0.4, D = Math.hypot(W, H);
+    words.push({ x: cx, y: cy, s: m.toLocaleString() + ' !', t: 0, life: 2.6, hue: 45, size: clamp(W * 0.17, 72, 280), rot: 0, mile: true });
+    for (let j = 0; j < 4; j++) fx.push({ k: 'ring', x: cx, y: cy, r0: 10, r1: D * 0.7, t: -j * 0.16, life: 1.1, hue: 45 + j * 70, w: 18 - j * 3 });
+    fx.push({ k: 'flash', x: cx, y: cy, r: Math.max(W, H) * 0.6, t: 0, life: 0.9, hue: 45 });
+    fx.push({ k: 'flare', x: cx, y: cy, r: D * 0.6, t: 0, life: 0.9, hue: 45, rot: 0 });
+    for (let j = 0; j < 22; j++) rays.push({ a: j * TAU / 22 + rnd(-0.06, 0.06), w: rnd(0.04, 0.1), t: 0, life: rnd(1.8, 2.6), hue: 30 + (j % 3) * 14, sp: (j % 2 ? 1 : -1) * rnd(0.15, 0.4) });
+    // 아래에서 쏘아 올리는 큰 폭죽 열두 발(차례로)
+    for (let j = 0; j < 12; j++) pending.push({ at: now + 0.12 + j * 0.13, fn: () => {
+        const x0 = W * (0.12 + 0.76 * ((j * 5) % 12) / 11), a = -Math.PI / 2 + rnd(-0.28, 0.28), v = rnd(0.9, 1.25) * H * 1.15;
+        bombs.push({ x: x0, y: H + 10, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, fuse: rnd(0.55, 0.85), hue: (j * 47) % 360, big: true });
+    } });
+    // 금빛 반짝이 비
+    for (let j = 0; j < 110; j++) glits.push({ x: rnd(0, W), y: rnd(-H * 0.5, 0), vx: rnd(-30, 30), vy: rnd(260, 620), t: 0, life: rnd(1.8, 3.2), hue: rnd(35, 55), ph: rnd(0, TAU), r: rnd(2.4, 5.5), rain: true });
+    whiteout = REDUCE ? 0.15 : 0.38; boost = 9; edge = 1; edgeHue = 45; if (!REDUCE) shake = 18;
+    snd.fanfare();
+}
+function score(n) {
+    addCount(n);
     combo = now - comboAt <= COMBO_GAP ? combo + n : n;
     comboAt = now; comboPulse = 1;
     if (combo > maxCombo) maxCombo = combo;
-    if (Math.floor(combo / SUPER) > Math.floor((combo - n) / SUPER)) supernova();
+    hits += n; if (Math.floor(hits / SUPER) > Math.floor((hits - n) / SUPER)) supernova();
 }
 function supernova() {
     novas++;
     const cx = W / 2, cy = H / 2;
     [...floaters].sort((a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy)).forEach((f, i) => pending.push({ at: now + 0.3 + i * 0.045, f }));
-    fx.push({ k: 'ring', x: cx, y: cy, r0: 10, r1: Math.hypot(W, H) * 0.7, t: -0.3, life: 0.9, hue: 45, w: 16 });
+    for (let j = 0; j < 3; j++) fx.push({ k: 'ring', x: cx, y: cy, r0: 10, r1: Math.hypot(W, H) * 0.7, t: -0.3 - j * 0.13, life: 0.95, hue: 45 + j * 110, w: 16 - j * 4 });
+    for (let j = 0; j < 16; j++) rays.push({ a: j * TAU / 16 + rnd(-0.08, 0.08), w: rnd(0.05, 0.13), t: -0.3, life: rnd(1.1, 1.7), hue: j * 22.5, sp: rnd(-0.5, 0.5) });
+    pending.push({ at: now + 0.3, fn: () => { for (let j = 0; j < 130; j++) { const a = rnd(0, TAU), v = rnd(300, 1500); sparks.push({ x: cx, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: rnd(0.7, 1.6), hue: a * 57.3, l: rnd(60, 85), w: rnd(2, 4.5) }); }
+        for (let j = 0; j < 60; j++) { const a = rnd(0, TAU), v = rnd(60, 620); glits.push({ x: cx, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: rnd(1.2, 2.4), hue: rnd(0, 360), ph: rnd(0, TAU), r: rnd(2.4, 5) }); } edge = 1; } });
     fx.push({ k: 'flash', x: cx, y: cy, r: Math.max(W, H) * 0.7, t: -0.3, life: 0.8, hue: 40 });
-    words.push({ x: cx, y: cy, s: 'SUPERNOVA!', t: -0.3, life: 1.5, hue: 45, size: clamp(W * 0.09, 44, 150), rot: 0, big: true });
+    words.push({ x: cx, y: H * 0.62, s: 'SUPERNOVA!', t: -0.3, life: 1.5, hue: 45, size: clamp(W * 0.09, 44, 150), rot: 0, big: true });
     pending.push({ at: now + 0.3, fn: () => { whiteout = REDUCE ? 0.25 : 0.55; boost = 14; if (!REDUCE) shake = 26; nebSeed = (nebSeed + 1 + ((Math.random() * 3) | 0)) % 100000; nebB = makeNebula(nebSeed); nebMix = 0; } });
     snd.nova();
 }
@@ -408,9 +473,10 @@ function frame(ts) {
     requestAnimationFrame(frame);
     const dt = Math.min(0.05, (ts - last) / 1000 || 0.016); last = ts; now += dt;
     if (!W) return;
+    avgDt += (dt - avgDt) * 0.04; lowQ = avgDt > 0.027;      // 느린 컴퓨터(1초에 37장 아래)에서는 효과를 줄인다
     // --- 움직임 ---
     if (combo && now - comboAt > COMBO_GAP) combo = 0;
-    for (let i = pending.length - 1; i >= 0; i--) if (now >= pending[i].at) { const p = pending[i]; pending.splice(i, 1); if (p.fn) p.fn(); else if (floaters.includes(p.f)) { explode(p.f, { power: 1.25, sound: Math.random() < 0.3, word: false }); count++; countPulse = 1; } }
+    for (let i = pending.length - 1; i >= 0; i--) if (now >= pending[i].at) { const p = pending[i]; pending.splice(i, 1); if (p.fn) p.fn(); else if (floaters.includes(p.f)) { explode(p.f, { power: 1.25, sound: Math.random() < 0.3, word: false, lite: true }); addCount(1); } }
     if (floaters.length < target() && now >= spawnAt) { spawn(playing ? 'warp' : now < 1.5 ? 'still' : 'edge'); spawnAt = now + (playing ? 0.07 : now < 1.5 ? 0 : 0.5); }
     if (!playing && floaters.length > 3 && now >= autoAt) {      // 시작 전: 가끔 하나씩 조용히 터지며 어떤 놀이인지 보여 준다
         autoAt = now + rnd(1.1, 1.9);
@@ -454,6 +520,7 @@ function frame(ts) {
     // --- 잔광(기타 뒤) ---
     g.globalCompositeOperation = 'lighter';
     for (const e of fx) if (e.k === 'glow') {
+        if (e.vx) { e.x += e.vx * dt; e.y += e.vy * dt; }
         const k = e.t / e.life, r = e.r * (1 + k * 0.7), gr = g.createRadialGradient(e.x, e.y, 0, e.x, e.y, r);
         gr.addColorStop(0, `hsla(${e.hue}, 95%, 60%, ${0.34 * (1 - k)})`); gr.addColorStop(1, 'hsla(0,0%,0%,0)');
         g.fillStyle = gr; g.beginPath(); g.arc(e.x, e.y, r, 0, TAU); g.fill();
@@ -488,10 +555,75 @@ function frame(ts) {
             gr.addColorStop(0, `rgba(255,255,255,${a})`); gr.addColorStop(0.25, `hsla(${e.hue}, 100%, 72%, ${a * 0.85})`); gr.addColorStop(0.6, `hsla(${e.hue + 20}, 100%, 50%, ${a * 0.3})`); gr.addColorStop(1, 'hsla(0,0%,0%,0)');
             g.fillStyle = gr; g.beginPath(); g.arc(e.x, e.y, r, 0, TAU); g.fill();
         } else if (e.k === 'ring') {
-            const q = 1 - Math.pow(1 - k, 3), r = e.r0 + (e.r1 - e.r0) * q;
-            g.strokeStyle = `hsla(${e.hue}, 100%, 75%, ${(1 - k) * 0.9})`; g.lineWidth = Math.max(0.5, e.w * (1 - k));
-            g.beginPath(); g.arc(e.x, e.y, Math.max(1, r), 0, TAU); g.stroke();
+            const q = 1 - Math.pow(1 - k, 3), r = Math.max(1, e.r0 + (e.r1 - e.r0) * q), lw = Math.max(0.5, e.w * (1 - k));
+            g.strokeStyle = `hsla(${e.hue}, 100%, 60%, ${(1 - k) * 0.3})`; g.lineWidth = lw * 3.2;      // 번지는 빛
+            g.beginPath(); g.arc(e.x, e.y, r, 0, TAU); g.stroke();
+            g.strokeStyle = `hsla(${e.hue}, 100%, 80%, ${(1 - k) * 0.95})`; g.lineWidth = lw;
+            g.beginPath(); g.arc(e.x, e.y, r, 0, TAU); g.stroke();
+        } else if (e.k === 'flare') {      // 십자 빛줄기(카메라 렌즈에 번지는 빛처럼)
+            const a = (1 - k) * (REDUCE ? 0.45 : 0.95), L = e.r * (0.5 + 0.5 * Math.sqrt(k)), wd = Math.max(1.5, e.r * 0.035 * (1 - k));
+            g.save(); g.translate(e.x, e.y); g.rotate(e.rot);
+            for (let j = 0; j < 4; j++) {
+                const len = j % 2 ? L * 0.5 : L;
+                g.fillStyle = j % 2 ? `hsla(${e.hue}, 100%, 80%, ${a * 0.7})` : `rgba(255,255,255,${a})`;
+                g.beginPath(); g.moveTo(-len, 0); g.lineTo(0, -wd); g.lineTo(len, 0); g.lineTo(0, wd); g.closePath(); g.fill();
+                g.rotate(Math.PI / 4);
+            }
+            g.restore();
         }
+    }
+    // 슈퍼노바 빛살(가운데에서 뻗어 천천히 도는 부채꼴)
+    for (let i = rays.length - 1; i >= 0; i--) {
+        const r = rays[i]; r.t += dt; if (r.t > r.life) { rays.splice(i, 1); continue; }
+        if (r.t < 0) continue;
+        const k = r.t / r.life, a = r.a + r.sp * r.t, L = Math.hypot(W, H) * 0.75, al = Math.sin(Math.PI * Math.min(1, k * 1.15)) * (REDUCE ? 0.14 : 0.3);
+        const gr = g.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, L);
+        gr.addColorStop(0, `hsla(${r.hue}, 100%, 85%, ${al})`); gr.addColorStop(1, `hsla(${r.hue}, 100%, 60%, 0)`);
+        g.fillStyle = gr; g.beginPath(); g.moveTo(W / 2, H / 2); g.lineTo(W / 2 + Math.cos(a - r.w) * L, H / 2 + Math.sin(a - r.w) * L); g.lineTo(W / 2 + Math.cos(a + r.w) * L, H / 2 + Math.sin(a + r.w) * L); g.closePath(); g.fill();
+    }
+    // 번개(프레임마다 다시 꺾여서 지지직)
+    for (let i = bolts.length - 1; i >= 0; i--) {
+        const b = bolts[i]; b.t += dt; if (b.t > b.life) { bolts.splice(i, 1); continue; }
+        const al = 1 - b.t / b.life, dx = b.x2 - b.x1, dy = b.y2 - b.y1, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len, N = 8;
+        g.beginPath(); g.moveTo(b.x1, b.y1);
+        for (let j = 1; j < N; j++) { const q = j / N, o = rnd(-1, 1) * len * 0.09 * Math.sin(q * Math.PI); g.lineTo(b.x1 + dx * q + nx * o, b.y1 + dy * q + ny * o); }
+        g.lineTo(b.x2, b.y2);
+        g.strokeStyle = `hsla(${b.hue}, 100%, 65%, ${al * 0.45})`; g.lineWidth = 9; g.stroke();
+        g.strokeStyle = `rgba(255,255,255,${al})`; g.lineWidth = 2.4; g.stroke();
+    }
+    // 폭죽 불씨
+    for (let i = bombs.length - 1; i >= 0; i--) {
+        const b = bombs[i]; b.t += dt;
+        const dr = Math.exp(-1.6 * dt); b.vx *= dr; b.vy *= dr; b.x += b.vx * dt; b.y += b.vy * dt;
+        if (b.t >= b.fuse) {
+            bombs.splice(i, 1);
+            if (b.big) {      // 500개 축하 폭죽: 크게 한 송이
+                const R = Math.min(W, H) * 0.24;
+                fx.push({ k: 'flash', x: b.x, y: b.y, r: R * 1.3, t: 0, life: 0.5, hue: b.hue });
+                fx.push({ k: 'flare', x: b.x, y: b.y, r: R * 1.6, t: 0, life: 0.45, hue: b.hue, rot: rnd(-0.3, 0.3) });
+                fx.push({ k: 'ring', x: b.x, y: b.y, r0: 6, r1: R * 1.25, t: 0, life: 0.7, hue: b.hue, w: 6 });
+                for (let j = 0, m = lowQ ? 28 : 64; j < m; j++) { const a = j / m * TAU + rnd(-0.06, 0.06), v = (j % 2 ? 1 : 0.62) * rnd(0.92, 1.08) * R * 3.4; sparks.push({ x: b.x, y: b.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: rnd(0.9, 1.5), hue: b.hue + (j % 2 ? 0 : 40), l: rnd(62, 86), w: rnd(2, 4) }); }
+                for (let j = 0, m = lowQ ? 10 : 26; j < m; j++) { const a = rnd(0, TAU), v = rnd(40, R * 2.2); glits.push({ x: b.x, y: b.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: rnd(1.2, 2.4), hue: b.hue + rnd(-30, 30), ph: rnd(0, TAU), r: rnd(2.4, 5) }); }
+                snd.boom(1.3, (b.x / W) * 2 - 1);
+                continue;
+            }
+            fx.push({ k: 'flash', x: b.x, y: b.y, r: unit * 0.55, t: 0, life: 0.3, hue: b.hue });
+            fx.push({ k: 'ring', x: b.x, y: b.y, r0: 4, r1: unit * 0.55, t: 0, life: 0.4, hue: b.hue, w: 3 });
+            for (let j = 0, m = sparks.length > 600 ? 6 : 16; j < m; j++) { const a = j / m * TAU + rnd(-0.2, 0.2), v = rnd(110, 400); sparks.push({ x: b.x, y: b.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: rnd(0.35, 0.8), hue: b.hue + rnd(-20, 20), l: rnd(62, 88), w: rnd(1.2, 2.6) }); }
+            if (playing) snd.crack((b.x / W) * 2 - 1);
+            continue;
+        }
+        g.fillStyle = `hsla(${b.hue}, 100%, 82%, 1)`; g.beginPath(); g.arc(b.x, b.y, 3.2, 0, TAU); g.fill();
+        g.strokeStyle = `hsla(${b.hue}, 100%, 70%, .7)`; g.lineWidth = 2.4; g.beginPath(); g.moveTo(b.x - b.vx * 0.07, b.y - b.vy * 0.07); g.lineTo(b.x, b.y); g.stroke();
+    }
+    // 반짝이
+    for (let i = glits.length - 1; i >= 0; i--) {
+        const q = glits[i]; q.t += dt; if (q.t > q.life) { glits.splice(i, 1); continue; }
+        const dr = q.rain ? 1 : Math.exp(-1.4 * dt); q.vx *= dr; q.vy *= dr; q.x += q.vx * dt; q.y += q.vy * dt;
+        const k = q.t / q.life, tw = 0.5 + 0.5 * Math.sin(now * 26 + q.ph), a = (1 - k) * (0.25 + 0.75 * tw), r = q.r * (0.6 + 0.7 * tw);
+        g.fillStyle = `hsla(${q.hue}, 100%, 82%, ${a})`;
+        g.fillRect(q.x - r * 1.7, q.y - r * 0.22, r * 3.4, r * 0.44); g.fillRect(q.x - r * 0.22, q.y - r * 1.7, r * 0.44, r * 3.4);
+        g.fillRect(q.x - r * 0.5, q.y - r * 0.5, r, r);
     }
     for (let i = sparks.length - 1; i >= 0; i--) {
         const s = sparks[i]; s.t += dt; if (s.t > s.life) { sparks.splice(i, 1); continue; }
@@ -506,10 +638,18 @@ function frame(ts) {
     for (let i = words.length - 1; i >= 0; i--) {
         const w = words[i]; w.t += dt; if (w.t > w.life) { words.splice(i, 1); continue; }
         if (w.t < 0) continue;
-        const k = w.t / w.life, sc = 0.5 + 0.6 * backOut(Math.min(1, w.t / 0.2)) + (w.big ? k * 0.25 : 0);
-        g.save(); g.translate(w.x, w.y - (w.big ? 0 : k * 30)); g.rotate(w.rot); g.scale(sc, sc);
-        g.globalAlpha = k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4;
+        const k = w.t / w.life, sc = w.mile ? 0.2 + 0.8 * backOut(Math.min(1, w.t / 0.35)) + k * 0.12 : 0.5 + 0.6 * backOut(Math.min(1, w.t / 0.2)) + (w.big ? k * 0.25 : 0);
+        g.save(); g.translate(w.x, w.y - (w.big || w.mile ? 0 : k * 30)); g.rotate(w.rot); g.scale(sc, sc);
+        g.globalAlpha = w.mile ? (k < 0.82 ? 1 : 1 - (k - 0.82) / 0.18) : k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4;
         g.font = `900 ${w.size}px "Noto Sans KR", sans-serif`;
+        if (w.mile) {      // 500 ! 1000 ! — 금빛 글자가 두근두근, 테두리는 무지개로 돈다
+            const pu = 1 + 0.05 * Math.sin(w.t * 14); g.scale(pu, pu);
+            g.lineWidth = w.size * 0.2; g.strokeStyle = `hsl(${(w.t * 240) % 360}, 95%, 45%)`; g.strokeText(w.s, 0, 0);
+            g.lineWidth = w.size * 0.1; g.strokeStyle = '#5a2a00'; g.strokeText(w.s, 0, 0);
+            const gr = g.createLinearGradient(0, -w.size * 0.5, 0, w.size * 0.5); gr.addColorStop(0, '#fffbe0'); gr.addColorStop(0.5, '#ffd43b'); gr.addColorStop(1, '#ff922b');
+            g.fillStyle = gr; g.fillText(w.s, 0, 0);
+            g.restore(); continue;
+        }
         g.lineWidth = w.size * 0.16; g.strokeStyle = `hsl(${w.hue}, 90%, 22%)`; g.strokeText(w.s, 0, 0);
         g.fillStyle = w.big ? '#fff3b0' : '#fff'; g.fillText(w.s, 0, 0);
         g.restore();
@@ -517,30 +657,22 @@ function frame(ts) {
     g.globalAlpha = 1;
     g.setTransform(DPR, 0, 0, DPR, 0, 0);
     if (whiteout > 0.01) { g.fillStyle = `rgba(255, 244, 220, ${whiteout})`; g.fillRect(0, 0, W, H); }
-    // --- 점수 ---
+    edge *= Math.exp(-2.4 * dt);
+    if (edge > 0.02 && !REDUCE) {
+        const M = Math.max(W, H), gr = g.createRadialGradient(W / 2, H / 2, M * 0.32, W / 2, H / 2, M * 0.72), a = Math.min(0.42, edge * (0.14 + Math.min(combo, 60) * 0.006));
+        gr.addColorStop(0, 'hsla(0,0%,0%,0)'); gr.addColorStop(1, `hsla(${edgeHue}, 100%, 58%, ${a})`);
+        g.globalCompositeOperation = 'lighter'; g.fillStyle = gr; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'source-over';
+    }
+    // --- 점수: 부순 개수만 (2026-11-14 사용자: 콤보는 필요 없고 몇 개 부쉈는지만) ---
     if (playing) {
-        const fs = clamp(H * 0.06, 26, 54);
-        g.textAlign = 'left'; g.textBaseline = 'top';
-        g.font = `900 ${fs * (1 + countPulse * 0.25)}px "Noto Sans KR", sans-serif`;
-        g.lineWidth = 6; g.strokeStyle = 'rgba(5,3,15,.7)'; g.fillStyle = '#fff';
-        const txt = count.toLocaleString();
-        g.strokeText(txt, 18, 14); g.fillText(txt, 18, 14);
-        const tw = g.measureText(txt).width;
-        g.font = `700 ${fs * 0.42}px "Noto Sans KR", sans-serif`; g.fillStyle = '#ffd76a';
-        g.strokeText('펑!', 26 + tw, 14 + fs * 0.45); g.fillText('펑!', 26 + tw, 14 + fs * 0.45);
-        if (novas) { g.fillStyle = '#c9c2ff'; g.strokeText(`슈퍼노바 ${novas}`, 18, 20 + fs * 1.15); g.fillText(`슈퍼노바 ${novas}`, 18, 20 + fs * 1.15); }
-        if (combo >= 5) {
-            const left = 1 - clamp((now - comboAt) / COMBO_GAP, 0, 1), cs = clamp(Math.min(H * 0.075, W * 0.085), 26, 70) * (1 + comboPulse * 0.3), hue = (48 - Math.min(combo, 120) * 0.4 + 360) % 360;
-            const cy = W < 640 ? fs * 1.5 + (novas ? fs * 0.6 : 0) : 0;
-            g.textAlign = 'center';
-            g.font = `900 ${cs}px "Noto Sans KR", sans-serif`; g.lineWidth = 8; g.strokeStyle = 'rgba(5,3,15,.75)'; g.fillStyle = `hsl(${hue}, 100%, 62%)`;
-            g.strokeText(`${combo} COMBO`, W / 2, 14 + cy); g.fillText(`${combo} COMBO`, W / 2, 14 + cy);
-            const bw = clamp(W * 0.2, 120, 260), nx = SUPER - (combo % SUPER);
-            g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(W / 2 - bw / 2, 22 + cs + cy, bw, 5);
-            g.fillStyle = `hsl(${hue}, 100%, 62%)`; g.fillRect(W / 2 - bw / 2, 22 + cs + cy, bw * left, 5);
-            g.font = `700 ${clamp(H * 0.022, 11, 15)}px "Noto Sans KR", sans-serif`; g.fillStyle = 'rgba(255,255,255,.75)';
-            g.fillText(`슈퍼노바까지 ${nx}`, W / 2, 32 + cs + cy);
-        }
+        const fs = clamp(Math.min(H * 0.1, W * 0.12), 40, 92) * (1 + countPulse * 0.14), txt = count.toLocaleString();
+        g.textAlign = 'center'; g.textBaseline = 'top'; g.lineJoin = 'round';
+        g.font = `900 ${fs}px "Noto Sans KR", sans-serif`;
+        const tw = g.measureText(txt).width, sub = fs * 0.36;
+        g.lineWidth = fs * 0.14; g.strokeStyle = 'rgba(5,3,15,.75)'; g.fillStyle = '#fff';
+        g.strokeText(txt, W / 2 - sub * 0.5, 12); g.fillText(txt, W / 2 - sub * 0.5, 12);
+        g.textAlign = 'left'; g.font = `900 ${sub}px "Noto Sans KR", sans-serif`; g.lineWidth = sub * 0.3; g.fillStyle = '#ffd76a';
+        g.strokeText('개', W / 2 - sub * 0.5 + tw / 2 + sub * 0.25, 12 + fs * 0.5); g.fillText('개', W / 2 - sub * 0.5 + tw / 2 + sub * 0.25, 12 + fs * 0.5);
         if (hintT < 1) {       // 처음 누르기 전: 무엇을 하면 되는지
             g.textAlign = 'center'; g.textBaseline = 'middle';
             g.globalAlpha = 0.65 + 0.35 * Math.sin(now * 5);
@@ -564,28 +696,28 @@ sndBtn.addEventListener('click', () => { snd.on = !snd.on; mem.set('boom.snd', s
 function bestPaint() {
     const b = $('#best');
     b.hidden = !best.n;
-    if (best.n) b.innerHTML = `<i class="fas fa-trophy"></i>최고 ${best.n.toLocaleString()}개 · ${best.combo}콤보`;
+    if (best.n) b.innerHTML = `<i class="fas fa-trophy"></i>최고 ${best.n.toLocaleString()}개`;
 }
 function start() {
     snd.init();
-    count = 0; combo = 0; maxCombo = 0; novas = 0; hintT = 0; comboAt = -9; pending = [];
+    count = 0; hits = 0; combo = 0; maxCombo = 0; novas = 0; hintT = 0; comboAt = -9; pending = []; bombs = []; bolts = []; rays = []; edge = 0;
     playing = true; escPaint(0);
     MASH.start({ el: stage, onKey, onEsc: escPaint, onExit: end });
-    for (const f of [...floaters]) explode(f, { sound: false, word: false });      // 시작하자마자 한 번 싹 터지고 새로 모인다
+    for (const f of [...floaters]) explode(f, { sound: false, word: false, lite: true });      // 시작하자마자 한 번 싹 터지고 새로 모인다
     snd.boom(1.6, 0);
 }
 function end() {
     playing = false; pending = [];
-    if (count > best.n || maxCombo > best.combo) { best = { n: Math.max(best.n, count), combo: Math.max(best.combo, maxCombo) }; mem.set('boom.best', best); }
+    if (count > best.n) { best = { n: count }; mem.set('boom.best', best); }
     const res = $('#res');
     res.hidden = !count;
-    res.innerHTML = `기타 <b>${count.toLocaleString()}</b>개 펑! · 최고 <b>${maxCombo}</b>콤보${novas ? ` · 슈퍼노바 ${novas}번` : ''}`;
+    res.innerHTML = `기타 <b>${count.toLocaleString()}</b>개 펑!`;
     $('#sub').hidden = !!count; $('#shr').hidden = !count;
     $('#go').innerHTML = count ? '<i class="fas fa-rotate-right"></i> 한 번 더' : '<i class="fas fa-rocket"></i> 시작';
     bestPaint();
 }
 $('#go').addEventListener('click', start);
-$('#shr').addEventListener('click', () => PLAY.share('기타 펑펑', `기타 펑펑에서 기타 ${count.toLocaleString()}개를 터뜨렸어요! 최고 ${maxCombo}콤보`));
+$('#shr').addEventListener('click', () => PLAY.share('기타 펑펑', `기타 펑펑에서 기타 ${count.toLocaleString()}개를 터뜨렸어요!`));
 $('#tip').innerHTML = TOUCH ? '화면을 두드려요 · 끝내기: 뒤로 가기 연속 다섯 번' : '끝내기: <kbd>ESC</kbd> 연속 다섯 번 · 소리가 나요';
 sndPaint(); bestPaint(); escPaint(0);
 resize(); loadSprites();
