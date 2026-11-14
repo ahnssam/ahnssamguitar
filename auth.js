@@ -135,9 +135,11 @@ nav.scrolled .auth-btn:hover {
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     display: none;
-    align-items: center; justify-content: center;
+    /* 위에 붙여 둔다 — 회원가입 탭이 더 길어서, 가운데 정렬이면 탭을 바꿀 때 구글 단추·탭이 들썩였다 (2026-11-14) */
+    align-items: flex-start; justify-content: center;
     z-index: 10000;
-    padding: 1rem;
+    padding: max(1rem, 7vh) 1rem 1rem;
+    overflow-y: auto;
 }
 .auth-overlay.open { display: flex; }
 .auth-modal {
@@ -177,9 +179,11 @@ nav.scrolled .auth-btn:hover {
     line-height: 1.4;
 }
 
+/* 2026-11-14 사용자: 휴대폰에서 이메일 칸이 먼저 보이고 키보드가 바로 떠서 →
+   맨 위 구글 → '또는' → 이메일 로그인 | 회원가입 탭 → 입력칸 순서로 */
 .auth-tabs {
     display: flex;
-    margin: 1rem 1.6rem 0;
+    margin: 0 0 1rem;
     background: var(--green-faint, #e2f5ea);
     border-radius: 10px;
     padding: 4px;
@@ -200,11 +204,10 @@ nav.scrolled .auth-btn:hover {
     box-shadow: 0 2px 6px rgba(42,107,74,0.14);
 }
 
-.auth-body { padding: 1.2rem 1.6rem 1.6rem; min-height: 370px; }
+.auth-body { padding: 0.5rem 1.6rem 1.6rem; }
 
 .auth-oauth {
     display: grid; grid-template-columns: 1fr; gap: 0.6rem;
-    margin-bottom: 0.4rem;
 }
 .auth-oauth-btn {
     display: flex; align-items: center; justify-content: center; gap: 0.5rem;
@@ -310,9 +313,6 @@ nav.scrolled .auth-btn:hover {
 @media (max-width: 480px) {
     .auth-modal { max-width: 100%; }
     .auth-oauth { grid-template-columns: 1fr; }
-    /* On narrow screens OAuth stacks vertically, making login taller.
-       Bump body min-height so signup matches login and the modal stays put. */
-    .auth-body { min-height: 425px; }
 }
 
 /* ===== DARK MODE ===== */
@@ -396,11 +396,23 @@ nav.scrolled .auth-btn:hover {
                 <div class="auth-modal-sub">앞으로 로그인할 때 쓸 비밀번호를 새로 정해 주세요.</div>
             </div>
         </div>
-        <div class="auth-tabs" role="tablist">
-            <button class="auth-tab active" data-auth-tab="login" role="tab">로그인</button>
-            <button class="auth-tab" data-auth-tab="signup" role="tab">회원가입</button>
-        </div>
         <div class="auth-body">
+            <div class="auth-oauth">
+                <button class="auth-oauth-btn google" data-auth-action="oauth-google" type="button">
+                    <svg class="auth-oauth-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                    </svg>
+                    <span>Google로 계속하기</span>
+                </button>
+            </div>
+            <div class="auth-divider">또는</div>
+            <div class="auth-tabs" role="tablist">
+                <button class="auth-tab active" data-auth-tab="login" role="tab">이메일 로그인</button>
+                <button class="auth-tab" data-auth-tab="signup" role="tab">회원가입</button>
+            </div>
             <form class="auth-form" id="authForm">
                 <div class="auth-field">
                     <label class="auth-label" for="authEmail">이메일</label>
@@ -425,18 +437,6 @@ nav.scrolled .auth-btn:hover {
                 <div class="auth-msg" id="authMsg"></div>
                 <button class="auth-footer-link" type="button" data-auth-action="reset-password">비밀번호를 잊으셨나요?</button>
             </form>
-            <div class="auth-divider">또는</div>
-            <div class="auth-oauth">
-                <button class="auth-oauth-btn google" data-auth-action="oauth-google" type="button">
-                    <svg class="auth-oauth-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                    </svg>
-                    <span>Google로 계속하기</span>
-                </button>
-            </div>
         </div>
     </div>
 </div>
@@ -689,16 +689,17 @@ nav.scrolled .auth-btn:hover {
     // ------------------------------------------------------------
     // Modal
     // ------------------------------------------------------------
-    // 터치 전용 기기(모바일·태블릿) 감지 — input 자동 포커스를 주면 가상
-    // 키보드가 즉시 튀어 올라와 화면이 위로 밀리고, OAuth(구글/카카오) 같은
-    // 다른 로그인 옵션 사용자에게 거슬리는 동작이 됨. 데스크톱(마우스)에서만
-    // 편의상 자동 포커스 유지.
-    function _isTouchOnlyDevice() {
+    // 터치 화면이 있는 기기인지 — 입력칸에 커서를 넣으면 화면 키보드가 바로 튀어 올라온다.
+    // 예전엔 '(hover: none) and (pointer: coarse)' 하나로만 봤는데, 일부 폰(삼성 인터넷·S펜 기기 등)은
+    // 마우스가 있는 것처럼 대답해서 휴대폰에서도 키보드가 떴다(2026-11-14 사용자). 여러 신호 중 하나라도
+    // 터치면 터치 기기로 본다.
+    function _hasTouch() {
         try {
-            return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-        } catch (e) {
-            return ('ontouchstart' in window);
-        }
+            if (navigator.maxTouchPoints > 0) return true;
+            if (window.matchMedia('(any-pointer: coarse)').matches) return true;
+            if (window.matchMedia('(hover: none)').matches) return true;
+        } catch (e) {}
+        return ('ontouchstart' in window);
     }
 
     function openModal(mode) {
@@ -706,11 +707,12 @@ nav.scrolled .auth-btn:hover {
         updateModalMode();
         clearMsg();
         document.getElementById('authOverlay').classList.add('open');
-        // 모바일/터치 기기에선 자동 포커스 스킵 — 사용자가 직접 input 을 탭할
-        // 때만 키보드가 올라오도록.
-        if (_isTouchOnlyDevice()) return;
+        // 로그인·회원가입 창은 어느 기기에서도 입력칸에 커서를 미리 넣지 않는다(2026-11-14 사용자:
+        // 휴대폰에서 키보드가 저절로 뜸). 맨 위가 구글 단추라, 이메일로 할 사람만 칸을 눌러 쓴다.
+        // '새 비밀번호 정하기'는 칠 것밖에 없는 창이라 컴퓨터(터치 없음)에서만 바로 커서를 넣는다.
+        if (currentMode !== 'recovery' || _hasTouch()) return;
         setTimeout(() => {
-            const first = document.getElementById(currentMode === 'recovery' ? 'authPassword' : 'authEmail');
+            const first = document.getElementById('authPassword');
             if (first) first.focus();
         }, 60);
     }
@@ -763,11 +765,12 @@ nav.scrolled .auth-btn:hover {
         document.getElementById('authPwRules').style.display = newPw ? '' : 'none';
         document.getElementById('authPassword2').required = isRecovery;
         updatePwRules();
-        // Hide OAuth buttons + "또는" divider in signup mode — email+password only
+        // 구글 단추와 '또는'은 맨 위라 로그인·회원가입 모두 보인다(탭을 바꿔도 창이 들썩이지 않게,
+        // 구글로 처음 들어오면 그게 곧 가입). 새 비밀번호 정하기 창에서만 숨긴다.
         const oauth = document.querySelector('.auth-oauth');
         const divider = document.querySelector('.auth-divider');
-        if (oauth) oauth.style.display = newPw ? 'none' : '';
-        if (divider) divider.style.display = newPw ? 'none' : '';
+        if (oauth) oauth.style.display = isRecovery ? 'none' : '';
+        if (divider) divider.style.display = isRecovery ? 'none' : '';
         const forgotLink = document.querySelector('[data-auth-action="reset-password"]');
         if (forgotLink) forgotLink.style.display = newPw ? 'none' : '';
     }
