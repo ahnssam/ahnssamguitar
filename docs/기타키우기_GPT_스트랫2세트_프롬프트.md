@@ -11,7 +11,8 @@
   - **+5~+9**: 고물상 아저씨가 고친 이상한 개조 기타
   - **+10~+19**: 먹물 한 방울에서 시작해 한국 전설로 커 가는 기타
   - **+20**: 길에서 만 번 연주한 전설의 선버스트. +0의 부서진 선버스트가 돌고 돌아 전설이 된다.
-- 그림이 오면 Claude가 잘라서 `images/play/gk/strat2_00`~`20.webp`(가칭)로 넣는다. 게임에 '세트'를 넣는 방법은 그때 같이 정한다(예: 스트랫을 찾을 때 세트도 무작위, 도감은 세트별).
+- **2026-11-15 받아서 넣었다**(구글 드라이브 `기타 키우기/strat2_final_00-20`, 21장 1024×1536 흰 배경 → 가장자리부터 흰색을 오려 1세트와 같은 틀 448×672로 `images/play/gk/strat2_00`~`20.webp`). 게임에서는 스트랫을 찾으면 반반으로 1세트·2세트, 도감은 '스트랫 2' 줄이 따로.
+- **+19만 줄 감는 기둥이 5개**(헤드머신은 6개)라 아래 '+19 다시 뽑기'로 고쳐 오면 바꿔 넣는다.
 
 ## 1. 단계별 이름과 그림 (2세트)
 
@@ -114,3 +115,13 @@ The legendary blues hero's guitar: a heavily road-worn three-tone sunburst body,
 - 배경이 뿌여면: `The background is foggy. Make it completely transparent (or flat white) with nothing between the guitars.`
 - 기타 뒤에 아우라·빛 번짐이 있으면: `Remove the glow / aura / soft light around the guitars. Effects must be solid shapes with clear outlines and hard edges, easy to cut out.`
 - 글자가 들어갔으면: `Remove all text, letters and numbers - labels and tags must be blank.`
+
+## +19 다시 뽑기 (2026-11-15 — 헤드 앞면의 줄 감는 기둥이 5개)
+
+`strat2_19.png`를 첨부해서 붙여 넣는다.
+
+```
+Edit the attached image. Keep EVERYTHING exactly the same: the same guitar, colors, decorations (the gold ring, the palace-roof ornament, the clouds, the sun-moon-and-peaks painting), size, position and art style, portrait 1024x1536, plain white background.
+Fix ONLY the headstock: it has six tuning keys on the side, but only FIVE round string posts on the face of the headstock. Add the missing sixth post so there are exactly SIX posts in one diagonal line, one for each key, and exactly SIX strings, each running from the nut to its own post.
+Before finishing, count: 6 tuning keys, 6 posts, 6 strings. No glow, no fog, no text.
+```

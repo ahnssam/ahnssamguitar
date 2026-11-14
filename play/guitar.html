@@ -830,6 +830,9 @@ const FIND_GOLD = 300;
 // 컬렉션 바닥(앰프·멀티): 걸이와 따로 (2026-11-12 사용자: 앰프·멀티가 걸이 칸을 차지해서, 걸이가 비어 보이는데 걸 수 없다고 나옴)
 //   2026-11-12 사용자: 앰프는 오른쪽에 쭈루룩, 이펙터(멀티)는 왼쪽에 쭈루룩, 각각 3개까지
 const FLOOR_EACH = 3;
+// 바닥 물건 그림이 틀(정사각형) 폭에서 실제로 차지하는 비율 — 넓은 것만(나머지 앰프 0.51 · 멀티 0.63). 그림을 바꾸면 다시 잰다(2026-11-15)
+const FLOOR_ART_W = { amp: { 5: 0.60, 9: 0.60, 10: 0.55, 13: 0.54, 14: 0.53, 19: 0.60, 20: 0.68 },
+    multi: { 0: 0.67, 2: 0.66, 3: 0.67, 4: 0.82, 7: 0.65, 8: 0.70, 9: 0.85, 19: 0.64, 20: 0.82 } };
 const isSq = g => !!(g && FAMS[g.f] && FAMS[g.f].sq);
 const floorRoom = (fl, g) => fl.filter(x => x.f === g.f).length < FLOOR_EACH;
 // 바닥에 놓은 앰프·멀티의 능력치 (2026-11-12 사용자: 앰프는 부서짐↓, 이펙터는 줄 끊김↓, 단계별로. 3개씩 놓을 수 있으니 너무 크지 않게)
@@ -879,6 +882,14 @@ const FAMS = { strat: { name: '스트랫', names: [
     '꺼지지 않는 불꽃의 스트랫', '세 개의 시간을 켜는 스트랫', '서리꽃이 핀 스트랫', '새벽빛 날개가 돋은 스트랫', '바람이 대신 줄을 튕기는 스트랫',
     '별자리가 새겨진 스트랫', '천 명의 목소리가 깃든 스트랫', '번개를 길들인 스트랫', '은하수를 건너온 스트랫', '오르페우스가 저승까지 들고 간 스트랫',
     '지미 헨도릭스의 스트랫'], art: 'strat', artMax: 20 },
+    // 스트랫 2세트 (2026-11-15 사용자가 GPT로 뽑은 21장 — docs/기타키우기_GPT_스트랫2세트_프롬프트.md). 3톤 선버스트: 고물 → 개조 → 한국 전설 → 전설의 선버스트.
+    //   찾을 때 스트랫이 나오면 반반으로 1세트·2세트(pickFam). 서버는 아직 'strat2' 를 모르면 'strat' 로 올린다(srvFam, db/play_guitar_fam_strat2.sql 적용 전)
+    strat2: { name: '스트랫', dexName: '스트랫 2', art: 'strat2', artMax: 20, srv: 'strat', names: [
+    '반토막 난 걸 박스 테이프로 붙인 스트랫', '지하실에서 버섯이 자라난 스트랫', '넥이 바나나처럼 휜 스트랫', '옆집 개가 물어뜯은 스트랫', '줄 대신 낚싯줄을 맨 스트랫',
+    '고물상 아저씨가 용접해 준 스트랫', '부품이 전부 짝짝이인 스트랫', '몸통에 금붕어가 사는 스트랫', '카세트테이프가 돌아가는 스트랫', '먹물이 스며드는 스트랫',
+    '수묵화에서 걸어 나온 스트랫', '청자빛으로 구워 낸 스트랫', '단청 옷을 입은 스트랫', '달토끼가 방아 찧는 스트랫', '까치호랑이가 지키는 스트랫',
+    '천년 은행나무가 품은 스트랫', '선녀의 날개옷을 두른 스트랫', '아홉 꼬리 구미호가 감싼 스트랫', '여의주를 문 청룡의 스트랫', '옥황상제가 하늘에서 내린 스트랫',
+    '스티비 레이 반의 스트랫'] },
     // 통기타·베이스 (2026-11-12 사용자가 뽑은 +0~+9 그림 ac_00~09 · bs_00~09). +10~+20 이름은 Claude가 지은 것(바꿀 수 있음),
     // 그 단계 그림이 아직 없어 +9 그림을 그대로 보여 준다 — 그림이 오면 artMax 만 올린다
     acoustic: { name: '통기타', art: 'ac', artMax: 20, names: [
@@ -938,6 +949,9 @@ FAMS.amp = { name: '앰프', art: 'amp', artMax: 20, sq: true, names: GEAR.amp.n
 FAMS.multi = { name: '멀티이펙터', art: 'fx', artMax: 20, sq: true, names: GEAR.fx.names };   // 2026-11-12 +0~+19도 받음(+0~+9는 색을 입혀 다시 뽑은 것)
 // '시작'에서 나오는 것: 기타 6종 + 앰프 + 멀티, 같은 확률
 const FIND_FAMS = ['strat', 'tele', 'lespaul', 'superstrat', 'acoustic', 'bass', 'amp', 'multi'];
+// 찾기: 여덟 가지 중 하나, 스트랫이면 반반으로 1세트·2세트(2026-11-15 스트랫 2세트 — 스트랫이 나올 확률은 그대로 1/8)
+const pickFam = () => { const f = one(FIND_FAMS); return f === 'strat' && Math.random() < 0.5 ? 'strat2' : f; };
+const srvFam = f => (FAMS[f] && FAMS[f].srv) || f;   // 서버가 아직 모르는 계열은 비슷한 계열 이름으로
 // 튜너: 바늘이 초록 칸에 있을 때 탭하면 성공 +%p (유지에서 가져오고 파괴는 그대로)
 // 2026-11-15 사용자: 성공 보너스가 너무 뛴다 — +2·+4·+6 → +1·+3·+5%p
 const TUNERS = [null,
@@ -1795,7 +1809,7 @@ function renderTable() {
 }
 
 // ---------- 도감 ----------
-const DEX_FAMS = ['strat', 'tele', 'lespaul', 'superstrat', 'acoustic', 'bass', 'amp', 'multi'];
+const DEX_FAMS = ['strat', 'strat2', 'tele', 'lespaul', 'superstrat', 'acoustic', 'bass', 'amp', 'multi'];
 const dexHas = (f, lv) => !!((S.dex[f] | 0) & (1 << lv));
 function dexAdd(f, lv) {
     f = FAMS[f] ? f : 'strat';
@@ -1825,7 +1839,7 @@ function dexZoom(f, lv, cell) {
     el.innerHTML = `<div class="dexpop" style="width:${artW + 20}px">
         <div class="art" style="width:${artW}px"><img src="${artSrc(f, lv)}" alt=""></div>
         <p class="nm"><span class="lvb">+${lv}</span>${esc(F.names[lv])}</p>`
-        + (whole ? `<p class="fn">${artFile(f, lv)} · <a href="${artSrc(f, lv)}" target="_blank" rel="noopener">원본 열기</a></p>` : '')
+        // 파일 이름·'원본 열기'는 운영 계정에서도 안 보인다 (2026-11-15 사용자)
         + `<button type="button" class="dxsh" data-a="dexshare" data-f="${f}" data-lv="${lv}"><i class="fas fa-share-nodes"></i> 공유</button></div>`;
     document.body.appendChild(el);
     const r = cell.getBoundingClientRect(), box = el.querySelector('.dexpop').getBoundingClientRect();   // 누른 칸에서 커져 나오게
@@ -1867,9 +1881,9 @@ function renderDex() {
         <div class="dx-bar"><i style="width:${(total / all * 100).toFixed(1)}%"></i></div>
         ${ADMIN ? `<div class="dx-admin"><i class="fas fa-user-gear"></i>${whole ? '운영 계정 · 전체 그림 (초록 점 = 내가 닿은 칸)' : '운영 계정 · 내 도감'}<button type="button" data-a="dexall">${whole ? '내 도감만 보기' : '전체 그림 보기'}</button></div>` : ''}
         ${DEX_FAMS.map(f => { const F = FAMS[f], c = cnt(f);
-            return `<div class="fam"><h4>${esc(F.name)}<small class="${c === N ? 'full' : ''}">${c === N ? '완성! ' : ''}${c} / ${N}</small></h4><div class="grid">${
+            return `<div class="fam"><h4>${esc(F.dexName || F.name)}<small class="${c === N ? 'full' : ''}">${c === N ? '완성! ' : ''}${c} / ${N}</small></h4><div class="grid">${
                 Array.from({ length: N }, (_, i) => whole || dexHas(f, i)
-                    ? `<button type="button" class="cell ${i >= 10 ? 'hi' : ''} ${F.sq ? 'sq' : ''} ${whole && dexHas(f, i) ? 'mine' : ''}" data-a="dex" data-f="${f}" data-lv="${i}" title="+${i} ${esc(F.names[i])}${whole ? ' · ' + artFile(f, i) : ''}"><img src="${artSrc(f, i)}" alt="" loading="lazy"><span>+${i}</span></button>`
+                    ? `<button type="button" class="cell ${i >= 10 ? 'hi' : ''} ${F.sq ? 'sq' : ''} ${whole && dexHas(f, i) ? 'mine' : ''}" data-a="dex" data-f="${f}" data-lv="${i}" title="+${i} ${esc(F.names[i])}"><img src="${artSrc(f, i)}" alt="" loading="lazy"><span>+${i}</span></button>`
                     : `<div class="cell no" title="아직 못 닿은 단계"><span>+${i}</span></div>`).join('')}</div></div>`; }).join('')}
         <p class="note2">칸을 누르면 그 단계 이름이 보여요. 부서지거나 팔아도 한 번 닿은 단계는 도감에 남아요.</p>`;
 }
@@ -2161,7 +2175,7 @@ async function findGuitar(first) {
         updBar();
     }
     busy = true; talkClear();
-    S.bench = { id: rid(), lv: 0, f: one(FIND_FAMS) };
+    S.bench = { id: rid(), lv: 0, f: pickFam() };
     dexAdd(S.bench.f, 0);
     save();   // 먼저 저장(새로고침해도 찾은 기타는 그대로)
     $('#empty').hidden = true; $('#bench').innerHTML = '';
@@ -2312,11 +2326,21 @@ function renderRoom(enter) {
     //   걸이와 상관없이. 그림 속 물건 폭은 틀 폭의 앰프 51% · 멀티 62%
     //   자리는 종류마다 3칸으로 정해 두고(살 필요 없음), 빈 자리는 점선 발판으로 보인다 (2026-11-12 사용자)
     const floor = {}, fpos = {}, dir = { amp: -1, multi: 1 }, edge = { amp: 98.5, multi: 1.5 };
-    const fh = { amp: hh * 0.96, multi: hh * 0.64 }, fw = { amp: 0.51, multi: 0.62 }, fb = { amp: 97, multi: 96.5 };
+    // 2026-11-15 사용자: 멀티 두 개가 겹침 — 몇몇 그림(멀티 +4·+9·+20, 앰프 +19·+20 등)은 틀의 80% 넘게 넓어서 자리 폭(fw)을 넘었다.
+    //   자리를 조금 넓히고(fw), 그보다 넓은 그림은 그 비율만큼 작게 그린다(아래 끝은 그대로)
+    const fh = { amp: hh * 0.96, multi: hh * 0.64 }, fw = { amp: 0.56, multi: 0.68 }, fb = { amp: 97, multi: 96.5 };
+    const wideOf = g => ((FLOOR_ART_W[g.f] || {})[Math.min(20, g.lv)] || (g.f === 'amp' ? 0.51 : 0.63));
+    {   // 앰프 3 + 멀티 3 자리가 바닥 폭에 다 안 들어가면(좁은 벽 그림·휴대폰) 둘 다 같은 비율로 작게
+        const iwOf = f => fh[f] * (W.h / W.w) * (56 / 84) * fw[f], items = FLOOR_EACH * (iwOf('amp') + iwOf('multi')), fixed = 2 * (FLOOR_EACH - 1) + 3 + 2;
+        if (items + fixed > 100) { const k = (100 - fixed) / items; fh.amp *= k; fh.multi *= k; }
+    }
     for (const f of ['amp', 'multi']) {
         const h2 = fh[f], cw = h2 * (W.h / W.w) * (56 / 84), iw = cw * fw[f];
         fpos[f] = Array.from({ length: FLOOR_EACH }, (_, k) => ({ x: edge[f] + dir[f] * (iw / 2 + k * (iw + 1)), h2, t2: fb[f] - h2 * 75.75 / 84, bottom: fb[f], iw }));
-        S.floor.filter(g => g.f === f).forEach((g, k) => { floor[g.id] = fpos[f][k]; });
+        S.floor.filter(g => g.f === f).forEach((g, k) => {
+            const P = fpos[f][k], sc = Math.min(1, fw[f] / wideOf(g)), h = P.h2 * sc;
+            floor[g.id] = { ...P, h2: h, t2: P.bottom - h * 75.75 / 84, iw: P.iw * Math.min(1, wideOf(g) / fw[f]) * sc };
+        });
     }
     if (selId && !S.wall.some(g => g && g.id === selId) && !S.floor.some(g => g.id === selId)) selId = '';
     const selWall = !!selId && wallFind(selId) >= 0;
@@ -2420,8 +2444,14 @@ async function syncMe(force) {
     const old = mem.get('gk.sync2', {}), sig = repSig(g) + '|' + S.st.best + '|' + (t ? t.f + t.lv : '-') + '|' + made;
     if (!force && old.sig === sig && old.id != null && Date.now() - (old.at || 0) < 10 * 60e3) return old;
     // 최고 무기·모은 돈(2026-11-13 랭킹 탭). 운영 계정이면 서버가 무엇을 보내든 +10 스트랫으로 적는다(db/play_guitar_rank2.sql)
-    const r = (await PLAY.rpc('play_guitar_save', { p_key: gkKey(), p_nick: myNick(), p_fam: g.f, p_lv: g.lv, p_best: S.st.best,
-        p_top_fam: t ? t.f : null, p_top_lv: t ? t.lv : 0, p_gold: made }, { auth: true }))[0];
+    const save = (fam, tf) => PLAY.rpc('play_guitar_save', { p_key: gkKey(), p_nick: myNick(), p_fam: fam, p_lv: g.lv, p_best: S.st.best,
+        p_top_fam: tf, p_top_lv: t ? t.lv : 0, p_gold: made }, { auth: true });
+    let r;
+    try { r = (await save(g.f, t ? t.f : null))[0]; }
+    catch (e) {   // 서버가 아직 새 계열(strat2)을 모르면 'strat' 로 (db/play_guitar_fam_strat2.sql 적용 전)
+        if (!/bad_fam/.test(e.code || '') || (srvFam(g.f) === g.f && (!t || srvFam(t.f) === t.f))) throw e;
+        r = (await save(srvFam(g.f), t ? srvFam(t.f) : null))[0];
+    }
     const m = { sig, at: Date.now(), id: r.id, pos: r.pos, players: r.players, hidden: r.hidden };
     mem.set('gk.sync2', m);
     return m;
