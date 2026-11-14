@@ -523,6 +523,7 @@
     .bmeta .bf button { display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 99px; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); color: #fff; font-size: 12px; font-weight: 800; }
     @media (max-width: 400px) { .bmeta { padding: 9px 10px; } .bmeta .bf b { font-size: 15.5px; } .bmeta .bf button span { display: none; } .bmeta .bg { font-size: 13px; } .btop .mycard canvas { width: 36px; height: 54px; } }
     .sec-h .rerank[disabled] { opacity: .55; }
+    .sec-h .rerank.cd span { font-variant-numeric: tabular-nums; min-width: 3.2em; text-align: left; }   /* 숫자가 바뀌어도 단추 폭이 안 흔들리게 */
     .fno { display: flex; align-items: center; gap: 8px; margin: 0 2px 10px; padding: 9px 12px; border-radius: 14px; background: #1d2a26; color: #fff; }
     .fno .lb { font-size: 13px; font-weight: 800; color: #c9d8d1; }
     .fno b { font: 900 20px/1 'Arial Black', sans-serif; color: #ffd76a; letter-spacing: .02em; }
@@ -2094,7 +2095,7 @@ async function reviveOffer(g, sh, wasRep) {
     if (S.bench) return false;
     const left = rvLeft();
     if (left > 0) {   // 쉬는 중 — 한 번이라도 불러 본 사람에게만 알려 준다(광고가 열리기 전엔 이 기능이 안 보이니까)
-        toast(`넥뿌의 요정은 쉬는 중이에요 · ${Math.ceil(left / 60000)}분 뒤에 다시 부를 수 있어요`);
+        toast(`넥뿌의 요정은 쉬는 중이에요 · ${mmss(left)} 뒤에 다시 부를 수 있어요`);
         return false;
     }
     const box = document.createElement('div');
@@ -2593,14 +2594,16 @@ function renderRank() {
 let oppBusy = false;
 const RR_CD = 15 * 60 * 1000;   // 상대 새로고침 쿨타임 15분 (2026-11-15 사용자: 광고 승인 전이라)
 const rrLeft = k => Math.max(0, (+S.rr[k] || 0) + RR_CD - Date.now());
-const rrBtn = k => { const left = rrLeft(k); return `<button type="button" class="rerank" data-a="rerank" data-k="${k}" aria-label="${k === 'real' ? '오늘의 상대' : '연습 상대'} 새로고침" ${oppBusy || netBusy || left ? 'disabled' : ''}><i class="fas fa-clapperboard"></i><span>${left ? `${Math.ceil(left / 60000)}분 뒤` : '상대 새로고침'}</span></button>`; };
-setInterval(() => {   // 쿨타임 글자만 바꾼다(다 지나면 단추가 다시 켜짐)
+// 남은 쿨타임을 '14:54'처럼 분:초로 (2026-11-15 사용자: 'n분 뒤' 말고 정확한 초까지)
+const mmss = ms => { const t = Math.ceil(ms / 1000); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
+const rrBtn = k => { const left = rrLeft(k); return `<button type="button" class="rerank${left ? ' cd' : ''}" data-a="rerank" data-k="${k}" aria-label="${k === 'real' ? '오늘의 상대' : '연습 상대'} 새로고침" ${oppBusy || netBusy || left ? 'disabled' : ''}><i class="fas fa-clapperboard"></i><span>${left ? mmss(left) : '상대 새로고침'}</span></button>`; };
+setInterval(() => {   // 1초마다 남은 시간을 줄이고, 다 지나면 단추를 다시 켠다
     if (tab !== 'battle') return;
-    document.querySelectorAll('#tab-battle .rerank[data-k]').forEach(b => { const left = rrLeft(b.dataset.k); b.disabled = !!left || oppBusy || netBusy; b.querySelector('span').textContent = left ? `${Math.ceil(left / 60000)}분 뒤` : '상대 새로고침'; });
-}, 20000);
+    document.querySelectorAll('#tab-battle .rerank[data-k]').forEach(b => { const left = rrLeft(b.dataset.k); b.disabled = !!left || oppBusy || netBusy; b.classList.toggle('cd', !!left); b.querySelector('span').textContent = left ? mmss(left) : '상대 새로고침'; });
+}, 1000);
 async function oppRefresh(k = 'real') {
     if (oppBusy || netBusy) return;
-    if (rrLeft(k)) { toast(`${Math.ceil(rrLeft(k) / 60000)}분 뒤에 다시 새로고침할 수 있어요`); return; }
+    if (rrLeft(k)) { toast(`${mmss(rrLeft(k))} 뒤에 다시 새로고침할 수 있어요`); return; }
     oppBusy = true;
     const box = document.createElement('div');
     box.className = 'gk-modal adwrap';
