@@ -702,11 +702,65 @@ nav.scrolled .auth-btn:hover {
         return ('ontouchstart' in window);
     }
 
+    // ---- 뒤로 가기 = 창 닫기 (2026-11-14 사용자: 휴대폰에서 로그인 창이 떠 있을 때 뒤로 가기를 누르면
+    // 창이 아니라 페이지가 뒤로 갔다) ----
+    // 창을 열 때 주소는 그대로 두고 방문 기록을 한 칸 넣는다. 뒤로 가기를 누르면 그 칸이 빠지면서 창만 닫힌다.
+    // X·바깥·Esc·로그인 성공으로 닫을 때는 넣은 칸을 우리가 빼 준다(안 빼면 다음 뒤로 가기가 헛돈다).
+    // 주소가 그대로라, 이 칸 때문에 생긴 popstate 는 다른 페이지 라우터(악보요청·월드컵·연습도구)가
+    // 모르게 먼저 받아서 막는다(capture).
+    let _histOn = false;    // 창을 열며 넣은 기록 칸이 지금 맨 위에 있음
+    let _histSkip = 0;      // 우리가 부른 history.back() 이 만들 popstate — 삼킨다
+    let _histDone = null;   // 그 popstate 를 기다리는 쪽
+    function _histPush() {
+        if (_histOn) return;
+        try {
+            window.history.pushState({ ahnAuthModal: 1 }, '');
+            _histOn = true;
+        } catch (e) {}
+    }
+    // 넣었던 기록 칸을 뺀다. 다 빠지면(또는 0.5초 안에 소식이 없으면) 끝나는 Promise.
+    function _histPop() {
+        if (!_histOn) return Promise.resolve();
+        _histOn = false;
+        const st = window.history.state;
+        if (!st || !st.ahnAuthModal) return Promise.resolve();   // 그사이 다른 기록이 위에 올라감 — 건드리지 않음
+        return new Promise((resolve) => {
+            let done = false;
+            const finish = () => { if (done) return; done = true; _histDone = null; resolve(); };
+            _histSkip++;
+            _histDone = finish;
+            setTimeout(() => { if (!done) { _histSkip = 0; finish(); } }, 500);
+            try { window.history.back(); } catch (e) { _histSkip = 0; finish(); }
+        });
+    }
+    // 이 popstate 가 로그인 창 몫이면 처리하고 true. window 의 popstate 는 capture 로 걸어도 먼저 걸린
+    // 리스너가 먼저 받는다(Chrome 확인) — 그래서 auth.js 를 늦게 부르는 놀이터는 play.js 가 맨 먼저
+    // 리스너를 걸어 두고 window.__ahnAuthPop 으로 넘겨준다(월드컵 결과 화면에서 새 판이 시작되지 않게).
+    function _onPop(e) {
+        if (_histSkip > 0) {
+            _histSkip--;
+            if (_histDone) _histDone();
+            return true;
+        }
+        if (_histOn) {
+            // 창이 떠 있을 때 누른 뒤로 가기 — 페이지는 그대로, 창만 닫는다
+            _histOn = false;
+            closeModal(true);
+            return true;
+        }
+        return false;
+    }
+    window.__ahnAuthPop = _onPop;
+    window.addEventListener('popstate', (e) => {
+        if (_onPop(e)) e.stopImmediatePropagation();
+    }, true);
+
     function openModal(mode) {
         currentMode = mode || 'login';
         updateModalMode();
         clearMsg();
         document.getElementById('authOverlay').classList.add('open');
+        _histPush();
         // 로그인·회원가입 창은 어느 기기에서도 입력칸에 커서를 미리 넣지 않는다(2026-11-14 사용자:
         // 휴대폰에서 키보드가 저절로 뜸). 맨 위가 구글 단추라, 이메일로 할 사람만 칸을 눌러 쓴다.
         // '새 비밀번호 정하기'는 칠 것밖에 없는 창이라 컴퓨터(터치 없음)에서만 바로 커서를 넣는다.
@@ -717,7 +771,8 @@ nav.scrolled .auth-btn:hover {
         }, 60);
     }
 
-    function closeModal() {
+    // fromBack = 뒤로 가기로 닫힘(기록 칸은 이미 빠짐). 그 밖에는 넣었던 칸을 빼고, 다 빠지면 끝나는 Promise.
+    function closeModal(fromBack) {
         const ov = document.getElementById('authOverlay');
         if (ov) ov.classList.remove('open');
         // '새 비밀번호 정하기'는 한 번 닫으면 끝 — 다음에 열 때는 보통 로그인 창
@@ -726,6 +781,7 @@ nav.scrolled .auth-btn:hover {
             updateModalMode();
             clearMsg();
         }
+        return fromBack === true ? Promise.resolve() : _histPop();
     }
 
     // 비밀번호 재설정 메일 링크로 돌아온 사람에게 '새 비밀번호 정하기' 창을 띄운다 (2026-11-11).
@@ -899,6 +955,9 @@ nav.scrolled .auth-btn:hover {
                            window.location.pathname +
                            (window.location.search || '');
         debugLog('oauth(' + provider + ') redirectTo=' + redirectTo);
+        // 구글로 넘어가기 전에 창이 넣은 기록 칸을 뺀다(창은 그대로 보임). 안 빼면 돌아온 뒤
+        // 뒤로 가기를 할 때 같은 페이지가 한 번 더 나온다.
+        await _histPop();
         try {
             const { data, error } = await sb.auth.signInWithOAuth({
                 provider,
@@ -911,13 +970,20 @@ nav.scrolled .auth-btn:hover {
             if (error) {
                 debugLog('signInWithOAuth error: ' + error.message);
                 setMsg(humanError(error), 'error');
+                _histReopen();
             } else {
                 debugLog('OAuth redirect URL: ' + (data && data.url ? data.url.slice(0, 120) : '(none)'));
             }
         } catch (err) {
             debugLog('oauth() threw: ' + (err && err.message));
             setMsg(humanError(err), 'error');
+            _histReopen();
         }
+    }
+    // 구글로 못 넘어가서 창이 그대로 남았으면, 뒤로 가기로 다시 닫히게 기록 칸을 도로 넣는다
+    function _histReopen() {
+        const ov = document.getElementById('authOverlay');
+        if (ov && ov.classList.contains('open')) _histPush();
     }
 
     async function resetPassword() {
@@ -1324,9 +1390,11 @@ nav.scrolled .auth-btn:hover {
                     currentProfile = null;
                 }
                 renderSlot();
-                // 재설정 창은 SIGNED_IN(링크로 로그인됨·탭 다시 보기)으로 닫지 않는다
-                if (event === 'SIGNED_IN' && currentMode !== 'recovery') closeModal();
-                if (event === 'SIGNED_OUT' && currentMode === 'recovery') closeModal();
+                // 재설정 창은 SIGNED_IN(링크로 로그인됨·탭 다시 보기)으로 닫지 않는다.
+                // 창이 넣은 기록 칸이 다 빠진 뒤에 알린다 — 알림을 받고 새로고침하는 페이지(구매 내역)가
+                // 빠지기 전의 칸에서 새로고침하면 뒤로 가기가 한 번 헛돌아서.
+                if (event === 'SIGNED_IN' && currentMode !== 'recovery') await closeModal();
+                if (event === 'SIGNED_OUT' && currentMode === 'recovery') await closeModal();
                 try {
                     window.dispatchEvent(new CustomEvent('ahnssam-auth-settled', {
                         detail: { user: session ? session.user : null, event: event }

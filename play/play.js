@@ -212,10 +212,13 @@
         m.addEventListener('click', e => { if (e.target.closest('a')) set(false); });
         if (!document.querySelector('script[src*="auth.js"]')) {
             const s = document.createElement('script');
-            s.src = '../auth.js?v=2026111401'; s.defer = true;
+            s.src = '../auth.js?v=2026111402'; s.defer = true;
             document.head.appendChild(s);
         }
     }
+    // 로그인 창이 떠 있을 때 뒤로 가기 = 창만 닫기(2026-11-14). auth.js 는 늦게 불러와서, 월드컵 같은 페이지의
+    // 뒤로 가기 처리(route)가 먼저 받으면 결과 화면에서 새 판이 시작될 수 있다 — 그래서 여기서 먼저 받아 넘긴다.
+    addEventListener('popstate', e => { if (window.__ahnAuthPop && window.__ahnAuthPop(e)) e.stopImmediatePropagation(); });
     siteHeader();
 
     // ---------- 피크 (놀이터 포인트) ----------
