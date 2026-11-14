@@ -122,7 +122,7 @@
 (function () {
     const card = document.getElementById('carCard'), show = v => { card.hidden = !v; };
     show(PLAY.mem.get('car.ok', false) === true);
-    const ask = () => { if (PLAY.hasLogin()) PLAY.rpc('is_site_admin', {}, { auth: true }).then(v => { PLAY.mem.set('car.ok', v === true); show(v === true); }).catch(() => {}); };
+    const ask = () => { if (PLAY.hasLogin()) PLAY.rpc('is_site_admin', {}, { auth: true }).then(v => { const ok = v === true || PLAY.mem.get('car.key', false) === true; PLAY.mem.set('car.ok', ok); show(ok); }).catch(() => {}); };   // car.key = 주소 열쇠로 연 브라우저
     ask(); addEventListener('ahnssam-auth-settled', ask);
 })();
 document.querySelectorAll('[data-thumb]').forEach(el => { el.innerHTML = PLAY.thumb(el.dataset.thumb); });

@@ -146,10 +146,28 @@ const gate = $('#gate'), app = $('#app');
 let shown = false;
 function showApp() { gate.hidden = true; app.hidden = false; if (!shown) { shown = true; boot(); } }
 function showGate(msg) { app.hidden = true; gate.hidden = false; if (msg) $('#gateMsg').textContent = msg; if (window.MASH && MASH.on) MASH.stop(); }
+// 주소 열쇠 (2026-11-14 사용자: 다른 컴퓨터에서 로그인 없이 주소만 입력해도 되게 — 로그인으로 여는 것은 그대로):
+//   car.html?k=열쇠 (또는 #k=열쇠)로 들어오면 그 브라우저를 기억한다(play.car.ok · play.car.key). 주소의 열쇠는 바로 지운다.
+//   열쇠 글자는 이 저장소(공개)에 없고 SHA-256 만 있다. 열쇠를 바꾸려면 새 열쇠의 SHA-256 으로 KEY_HASH 를 바꾼다.
+const KEY_HASH = 'b2dcf67f0fedad36e2b898042eb7bb1e4478e8e4a36aecad4c2c66679d562d56';
+async function urlKey() {
+    const m = (location.search + '&' + location.hash.replace('#', '&')).match(/[?&]k=([^&#]+)/);
+    if (!m || !window.crypto || !crypto.subtle) return false;
+    let hex = '';
+    try {
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(decodeURIComponent(m[1]).trim().toLowerCase()));
+        hex = [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (e) { return false; }
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    if (hex !== KEY_HASH) return false;
+    mem.set('car.ok', true); mem.set('car.key', true);
+    return true;
+}
 function check() {
     if (!PLAY.hasLogin()) { if (!mem.get('car.ok', false)) showGate('운영 계정으로 로그인하면 열려요.'); return; }
     PLAY.rpc('is_site_admin', {}, { auth: true }).then(v => {
         if (v === true) { mem.set('car.ok', true); showApp(); }
+        else if (mem.get('car.key', false)) { /* 주소 열쇠로 연 브라우저는 다른 계정으로 로그인해도 그대로 */ }
         else { mem.set('car.ok', false); showGate('이 계정으로는 열 수 없어요. 운영 계정으로 로그인해 주세요.'); }
     }).catch(() => { if (!mem.get('car.ok', false)) showGate('확인하지 못했어요. 잠시 뒤 다시 열어 주세요.'); });
 }
@@ -171,7 +189,7 @@ const CARS = [
     { cat: 'rescue', id: 'amb', name: '구급차', say: '삐뽀삐뽀!', horn: 'siren2', shape: 'van', col: '#ffffff', top: 'bar', mark: 'cross', k: 1.05 },
     { cat: 'rescue', id: 'tow', name: '견인차', say: '영차영차!', horn: 'low', shape: 'car', col: '#ffc93c', top: 'hook' },
     { cat: 'rescue', id: 'pumper', name: '소방 물탱크차', say: '쏴아아!', horn: 'siren2', shape: 'van', col: '#f0483e', mark: 'drum', k: 1.1 },
-    { cat: 'rescue', id: 'policebike', name: '경찰 오토바이', say: '부아앙!', horn: 'siren', shape: 'bike', col: '#f4f6fb', col2: '#3b6fd4', bags: true, k: 0.62 },
+    { cat: 'rescue', id: 'policebike', name: '경찰 오토바이', say: '부아앙!', horn: 'siren', shape: 'bike', col: '#f4f6fb', col2: '#3b6fd4', bags: true, k: 0.72 },
     { cat: 'rescue', id: 'rescue', name: '구조대 트럭', say: '출동!', horn: 'siren2', shape: 'van', col: '#ff922b', top: 'ladder', mark: 'doors', k: 1.08 },
     { cat: 'rescue', id: 'firechief', name: '소방 지휘차', say: '삐뽀삐뽀!', horn: 'siren2', shape: 'van', col: '#f0483e', win: true, top: 'bar', k: 0.95 },
     // 승용차
@@ -194,22 +212,22 @@ const CARS = [
     { cat: 'big', id: 'tanker', name: '유조차', say: '출렁출렁!', horn: 'low', shape: 'van', col: '#ced4da', mark: 'drum', k: 1.12 },
     // 공사장
     { cat: 'build', id: 'excavator', name: '굴착기', say: '영차영차!', horn: 'low', shape: 'digger', col: '#ffc93c', k: 1.1 },
-    { cat: 'build', id: 'bulldozer', name: '불도저', say: '밀어밀어!', horn: 'low', shape: 'digger', col: '#ffc93c', arm: false, blade: true, k: 1.05 },
+    { cat: 'build', id: 'bulldozer', name: '불도저', say: '밀어밀어!', horn: 'low', shape: 'digger', col: '#ffc93c', arm: false, blade: true, k: 1.18 },
     { cat: 'build', id: 'loader', name: '로더', say: '으쌰으쌰!', horn: 'low', shape: 'tractor', col: '#ffc93c', top: 'bucket', k: 1.08 },
     { cat: 'build', id: 'dump', name: '덤프트럭', say: '쿠르릉!', horn: 'low', shape: 'van', col: '#ff9f43', mark: 'slats', k: 1.12 },
     { cat: 'build', id: 'mixer', name: '레미콘', say: '빙글빙글!', horn: 'low', shape: 'van', col: '#74c0fc', mark: 'drum', k: 1.1 },
     { cat: 'build', id: 'crane', name: '크레인', say: '영차!', horn: 'low', shape: 'van', col: '#ffc93c', top: 'crane', mark: 'doors', k: 1.08 },
-    { cat: 'build', id: 'forklift', name: '지게차', say: '삐삐삐!', horn: 'beep', shape: 'tractor', col: '#ff922b', top: 'mast', k: 0.85 },
+    { cat: 'build', id: 'forklift', name: '지게차', say: '삐삐삐!', horn: 'beep', shape: 'tractor', col: '#ff922b', top: 'mast', k: 0.95 },
     { cat: 'build', id: 'roller', name: '로드롤러', say: '꾹꾹!', horn: 'low', shape: 'digger', col: '#ffc93c', arm: false, drum: true },
     // 일하는 차
     { cat: 'work', id: 'garbage', name: '청소차', say: '쓱싹쓱싹!', horn: 'beep', shape: 'van', col: '#56c271', mark: 'hopper', k: 1.1 },
-    { cat: 'work', id: 'sweeper', name: '도로 청소차', say: '쓱쓱!', horn: 'beep', shape: 'van', col: '#ff922b', win: true, top: 'light', k: 0.9 },
+    { cat: 'work', id: 'sweeper', name: '도로 청소차', say: '쓱쓱!', horn: 'beep', shape: 'van', col: '#ff922b', win: true, top: 'light', k: 1.08 },
     { cat: 'work', id: 'tractor', name: '트랙터', say: '털털털!', horn: 'low', shape: 'tractor', col: '#56c271' },
     { cat: 'work', id: 'ladder', name: '사다리차', say: '쭈욱!', horn: 'low', shape: 'van', col: '#4d96ff', top: 'ladder', mark: 'doors', k: 1.08 },
     { cat: 'work', id: 'carrier', name: '자동차 운반차', say: '영차영차!', horn: 'low', shape: 'van', col: '#868e96', mark: 'cars', k: 1.15 },
     { cat: 'work', id: 'icecream', name: '아이스크림 트럭', say: '딸랑딸랑!', horn: 'beep', shape: 'van', col: '#ffc9de', win: true, top: 'cone' },
     { cat: 'work', id: 'mail', name: '우체국 차', say: '편지 왔어요!', horn: 'beep', shape: 'van', col: '#f0483e', mark: 'doors', k: 0.95 },
-    { cat: 'work', id: 'snowplow', name: '제설차', say: '쓱싹쓱싹!', horn: 'low', shape: 'van', col: '#ff922b', top: 'light', mark: 'slats', k: 1.08 },
+    { cat: 'work', id: 'snowplow', name: '제설차', say: '쓱싹쓱싹!', horn: 'low', shape: 'van', col: '#ff922b', top: 'light', mark: 'slats', k: 1.2 },
     // 특별한 차
     { cat: 'special', id: 'tank', name: '탱크', say: '쿠르릉!', horn: 'low', shape: 'tank', col: '#69a35b', k: 1.1 },
     { cat: 'special', id: 'armytruck', name: '군용 트럭', say: '부릉!', horn: 'low', shape: 'van', col: '#8f9a5b', mark: 'slats', k: 1.1 },
@@ -231,7 +249,8 @@ const CARS = [
 ];
 // 그림이 준비된 것: id → 판 번호. 예) { fire: 1, tree: 1 } → images/play/car/fire.webp?v=1
 //   탈것 = 뒤에서 본 모습(투명 배경), 길가 = tree·pine·house·tower·sign·light·balloon·flower (앞에서 본 모습, 투명 배경)
-const ART = {};
+// 2026-11-14 사용자가 GPT로 뽑은 시트 다섯 장(구조대·승용차·버스와 큰 차·공사장·일하는 차) 40대를 넣음. 특별한 차·기차와 하늘·길가는 아직 코드 그림
+const ART = { excavator: 1, bulldozer: 1, loader: 1, dump: 1, mixer: 1, crane: 1, forklift: 1, roller: 1, garbage: 1, sweeper: 1, tractor: 1, ladder: 1, carrier: 1, icecream: 1, mail: 1, snowplow: 1, bus: 1, schoolbus: 1, doubledecker: 1, camper: 1, truck: 1, delivery: 1, trailer: 1, tanker: 1, police: 1, fire: 1, amb: 1, tow: 1, pumper: 1, policebike: 1, rescue: 1, firechief: 1, car: 1, sedan: 1, suv: 1, sports: 1, taxi: 1, jeep: 1, van: 1, pickup: 1 };
 const NEED = 36;                  // 이만큼 누르면 다음 탈것
 const HOLD = 2.4;                 // 노래: 마지막으로 누른 뒤 이만큼(초) 지나면 스르르 멈춤
 // 길(뒤에서 따라가는 3D): 길 조각 하나의 길이·길 너비의 반·카메라 높이·보이는 조각 수
@@ -741,7 +760,7 @@ function frame(ts) {
     squash *= Math.exp(-9 * dt); starPulse *= Math.exp(-7 * dt);
     const altTo = c.fly && !sleeping && state !== 'in' ? clamp(speed / (MAXV * 0.6), 0, 1) * 950 : 0;
     alt += (altTo - alt) * Math.min(1, dt * 2.2);
-    tilt += (clamp(steer * 0.14 + pseg.curve * 0.01 * v01, -0.09, 0.09) - tilt) * Math.min(1, dt * 5);
+    tilt += (clamp(steer * 0.07 + pseg.curve * 0.006 * v01, -0.045, 0.045) - tilt) * Math.min(1, dt * 5);      // 그림이 들어온 뒤로는 살짝만 기울인다
     if (state === 'out') { stT += dt; const k = clamp(stT / 1.05, 0, 1); ghost.z = k * k * 27000; if (k >= 1) nextCar(); }
     else if (state === 'in') { stT += dt; if (stT >= 0.9) state = 'drive'; }
     themeStep(dt); songStep(dt);
@@ -954,8 +973,7 @@ escPaint(0); resize();
 requestAnimationFrame(frame);
 }
 // 맨 끝에서 연다(위의 탈것 목록·설정 값이 다 준비된 뒤)
-if (mem.get('car.ok', false)) showApp();
-check();
+urlKey().then(() => { if (mem.get('car.ok', false)) showApp(); check(); });
 })();
 </script>
 
