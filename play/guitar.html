@@ -275,6 +275,10 @@
     /* 광고 보고 되살리기 (2026-11-13 사용자) — 파괴 연출 뒤 무대 가운데에. 단추 바탕은 강화 단추처럼 그림(삼성 강제 다크모드) */
     .revive { position: absolute; left: 50%; top: calc(var(--h0) * .5); transform: translate(-50%, -50%); z-index: 9; width: min(280px, 84%); padding: 16px 14px 11px; border-radius: 16px; background: rgba(18, 13, 9, 0.93); border: 1.5px solid rgba(255, 215, 106, 0.55); color: #fff; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); animation: rvIn .35s ease-out; }
     .revive b { display: block; font-size: 15px; font-weight: 900; color: #ffd76a; line-height: 1.35; word-break: keep-all; }
+    .revive .fy { display: block; font-size: 30px; line-height: 1; margin: -4px 0 6px; animation: fyBob 1.6s ease-in-out infinite; }
+    @keyframes fyBob { 50% { transform: translateY(-5px) rotate(-6deg); } }
+    .revive p .ad { display: inline-block; margin-top: 3px; font-size: 11.5px; color: #a99c8e; }
+    .revive .go i { margin-right: 2px; }
     .revive p { margin: 5px 0 12px; font-size: 13px; color: #e8ddd0; }
     .revive button { display: block; width: 100%; border-radius: 12px; font-weight: 900; }
     .revive .go { padding: 12px 8px 15px; background: #f0592b url(../images/play/gk/btn_up.jpg) center / 100% 100% no-repeat; color: #fff; font-size: 15.5px; }
@@ -658,7 +662,7 @@
     .stats small { font-size: 11.5px; color: var(--sub); }
     .reset { display: block; margin: 16px auto 0; font-size: 12px; color: #999; text-decoration: underline; }
 
-    @media (prefers-reduced-motion: reduce) { .pop, .daily, .nmtag, .nmhud, .stage.shake, .stage.shake2, .wall5.enter, .wall5.enter .wg, .wall5 .wl.off { animation: none !important; } .wall5 .wl.off { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .pop, .daily, .nmtag, .nmhud, .revive .fy, .stage.shake, .stage.shake2, .wall5.enter, .wall5.enter .wg, .wall5 .wl.off { animation: none !important; } .wall5 .wl.off { opacity: 0; } }
 </style>
 </head>
 <body data-ttl-up="gk">
@@ -780,7 +784,8 @@ const MAX = 20;
 // 2026-11-13 사용자: 기타 키우기에서는 놀이터 피크를 안 쓴다('피크 시스템은 빼자 여기선'). 출석은 골드만, 첫 기타는 공짜
 const START_GOLD = 500, DAILY_GOLD = 1000,
       CASE_SHARDS = 20, BT_DAY = 5;   // 하루 배틀 5번 (2026-11-13 사용자, 예전 10번)
-const REVIVE_DAY = 5;   // 광고 보고 되살리기는 하루 5번까지 (2026-11-13 사용자, 처음 3번 — 끝없이 되살리면 파괴가 의미 없어서)
+// 넥뿌의 요정 소환(광고 보고 되살리기)은 한 번 부르면 15분 쉰다 (2026-11-15 사용자, 예전엔 하루 5번 — 끝없이 되살리면 파괴가 의미 없어서)
+const REVIVE_CD = 15 * 60 * 1000;
 // 골드가 모자랄 때 보상형 광고를 보면 골드 (2026-11-13 사용자: '돈 없을 땐 광고 보고 돈 채우는 거, 피크 자리에').
 //   금액·횟수는 사용자가 고른 값 — 출석과 같은 1,000G, 하루 5번(초반에 막혔을 때만 풀어 주고 경제는 안 망가지게)
 const AD_GOLD = 1000, AD_GOLD_DAY = 5;
@@ -981,7 +986,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ---------- 저장 (이 브라우저) ----------
 const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [null, null, null, null, null], floor: [], open: [false, false, true, false, false], skin: 'wood', skins: ['wood'], bskin: 'workshop', bskins: ['workshop'], ask: 'alley', asks: ['alley'], dex: {}, store: [], rep: '', shards: 0, cases: 0, caseOn: false, tuner: 0, tuneOn: true, daily: '', nick: '', intro: false, first: false,
-    bt: { day: '', n: 0, done: {} }, rv: { day: '', n: 0 }, ad: { day: '', n: 0 }, st: { tries: 0, ok: 0, keep: 0, boom: 0, saved: 0, revive: 0, sold: 0, earned: 0, made: START_GOLD, best: 0, win: 0, lose: 0 } });
+    bt: { day: '', n: 0, done: {} }, rv: { at: 0 }, ad: { day: '', n: 0 }, st: { tries: 0, ok: 0, keep: 0, boom: 0, saved: 0, revive: 0, sold: 0, earned: 0, made: START_GOLD, best: 0, win: 0, lose: 0 } });
 const okG = g => g && typeof g === 'object' && Number.isInteger(g.lv) && g.lv >= 0 && g.lv <= MAX && typeof g.id === 'string';
 function load() {
     const raw = mem.get('gk', {}) || {};
@@ -1156,7 +1161,7 @@ function cloudBtn() {
     b.title = cloudOff ? '계정 저장은 곧 열려요' : on ? (cloud.dirty ? '계정에 저장하는 중…' : '계정에 저장돼요 — 다른 기기에서 로그인해도 이어서 해요') : acctId() ? '계정과 이어 붙이는 중…' : '로그인하면 이 기록을 계정에 저장해서 다른 기기에서도 이어서 해요';
 }
 function btDay() { if (S.bt.day !== today()) S.bt = { day: today(), n: 0, done: {} }; return S.bt; }
-function rvDay() { if (S.rv.day !== today()) S.rv = { day: today(), n: 0 }; return S.rv; }
+const rvLeft = () => Math.max(0, (+S.rv.at || 0) + REVIVE_CD - Date.now());   // 넥뿌의 요정이 다시 올 때까지 남은 시간(ms)
 function adDay() { if (!S.ad || S.ad.day !== today()) S.ad = { day: today(), n: 0 }; return S.ad; }   // 광고 보고 골드: 하루 AD_GOLD_DAY 번
 // 대표 기타: 고른 것 → 벽의 가장 높은 것 → 작업대
 function rep() {
@@ -2026,7 +2031,8 @@ async function enhance() {
             updBar(); renderName();
             sfx('ok', g.lv); flash();
             cv.animate([{ transform: `${CVT} scale(.55)`, opacity: 0, filter: 'brightness(3)' }, { transform: `${CVT} scale(1.06)`, opacity: 1, filter: 'brightness(2)', offset: .6 }, { transform: CVT, opacity: 1, filter: 'brightness(1)' }], { duration: 800, easing: 'ease-out' });
-            burst(18, ['#ffe27a', '#ffffff', '#72c492'], { y: 50, spread: 130, size: [4, 9], dur: 900, grav: false });
+            burst(22, ['#ffe27a', '#ffffff', '#ffb3e6', '#b9a6ff', '#72c492'], { y: 50, spread: 140, size: [4, 9], dur: 1000, grav: false });   // 요정 가루
+            pop('🧚 넥뿌의 요정이 고쳐 줬어요!', 'sm', 26);
             pop(`+${g.lv} 부활!`, 'ok');
             setTimeout(() => talk(one(LINES.revive)), 600);
             await sleep(500);
@@ -2044,25 +2050,30 @@ async function enhance() {
 
 // ---------- 광고 보고 되살리기 (2026-11-13 사용자: 파괴될 때 광고를 보면 부활) ----------
 // 구글 보상형 광고(H5 게임 광고 adBreak 'reward')가 준비됐을 때만 묻는다 — 승인 전·광고가 없으면 묻지 않고 예전처럼 파괴(PLAY.rewarded).
-// 광고 길이·건너뛰기는 구글이 정하고, 끝까지 봐야(adViewed) 되살아난다. 하루 REVIVE_DAY 번.
+// 광고 길이·건너뛰기는 구글이 정하고, 끝까지 봐야(adViewed) 되살아난다. 한 번 되살리면 15분(REVIVE_CD) 쉰다.
+// 2026-11-15 사용자: 이름은 '넥뿌의 요정 소환'(넥뿌 = 넥 부러짐), 단추 글자 앞에 광고 표시로 영화 슬레이트(🎬 fa-clapperboard) 아이콘
 // 되살리면 같은 단계 그대로 작업대로 돌아오고, 파괴로 받은 조각은 도로 빼고 '부순 기타' 수도 하나 줄인다(안 부서진 셈).
 // 파괴 결과는 이미 저장돼 있어서, 묻는 동안 새로고침하면 그대로 파괴로 남는다.
 async function reviveOffer(g, sh, wasRep) {
-    const rv = rvDay();
-    if (rv.n >= REVIVE_DAY || S.bench) return false;
+    if (S.bench) return false;
+    const left = rvLeft();
+    if (left > 0) {   // 쉬는 중 — 한 번이라도 불러 본 사람에게만 알려 준다(광고가 열리기 전엔 이 기능이 안 보이니까)
+        toast(`넥뿌의 요정은 쉬는 중이에요 · ${Math.ceil(left / 60000)}분 뒤에 다시 부를 수 있어요`);
+        return false;
+    }
     const box = document.createElement('div');
     box.className = 'revive';
     const r = await PLAY.rewarded('revive', (show, skip) => {
-        box.innerHTML = `<b>${esc(full(g))}</b><p>광고를 끝까지 보면 되살아나요</p>
-            <button type="button" class="go"><i class="fas fa-heart-pulse"></i> 광고 보고 되살리기</button>
-            <button type="button" class="no">그냥 보낼게요</button><small>오늘 ${REVIVE_DAY - rv.n}번 남음</small>`;
+        box.innerHTML = `<span class="fy" aria-hidden="true">🧚</span><b>${esc(full(g))}</b><p>넥뿌의 요정을 부르면 부서진 기타를 되살려 줘요<br><span class="ad">광고를 끝까지 보면 와요</span></p>
+            <button type="button" class="go"><i class="fas fa-clapperboard"></i> 넥뿌의 요정 소환</button>
+            <button type="button" class="no">그냥 보낼게요</button><small>한 번 부르면 15분 쉬어요</small>`;
         box.querySelector('.go').addEventListener('click', () => { box.classList.add('wait'); show(); });
         box.querySelector('.no').addEventListener('click', skip);
         $('#stage').appendChild(box);
-    }, '광고 보고 되살리기');
+    }, '넥뿌의 요정 소환');
     box.remove();
-    if (r !== 'viewed') { if (r === 'dismissed') toast('끝까지 봐야 되살아나요'); return false; }
-    rv.n++;
+    if (r !== 'viewed') { if (r === 'dismissed') toast('끝까지 봐야 넥뿌의 요정이 와요'); return false; }
+    S.rv = { at: Date.now() };
     S.bench = g; S.shards = Math.max(0, S.shards - sh);
     S.st.boom = Math.max(0, S.st.boom - 1); S.st.revive = (S.st.revive | 0) + 1;
     if (wasRep) S.rep = g.id;
