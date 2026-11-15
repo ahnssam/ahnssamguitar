@@ -23,7 +23,7 @@
     html.mash-on, html.mash-on body { overflow: hidden; }
     .stage { position: relative; margin-top: 18px; height: clamp(380px, 68vh, 640px); border-radius: 18px; overflow: hidden; background: #05030f;
         touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; box-shadow: 0 14px 40px rgba(10, 6, 24, .28); }
-    .stage.playing { position: fixed; inset: 0; z-index: 9999; margin: 0; height: auto; border-radius: 0; cursor: none; }
+    .stage.playing { position: fixed; inset: 0; z-index: 9999; margin: 0; height: auto; border-radius: 0; }   /* 2026-11-15 사용자: 놀이 중에도 마우스 커서가 보이게(예전 cursor: none) */
     .stage:fullscreen { width: 100%; height: 100%; border-radius: 0; }
     .stage:-webkit-full-screen { width: 100%; height: 100%; border-radius: 0; }
     .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -68,6 +68,34 @@
     .rsov kbd { display: inline-block; padding: 1px 8px; border-radius: 6px; background: rgba(255, 255, 255, .18); border: 1px solid rgba(255, 255, 255, .35); font: 800 0.85em/1.5 'Noto Sans KR', sans-serif; color: #fff; }
     .rsov .go kbd { background: rgba(58, 21, 0, .15); border-color: rgba(58, 21, 0, .3); color: #3a1500; margin-left: 4px; }
     .escchip i.on { background: #fff; }
+    /* 랭킹 (2026-11-15 사용자: 첫 화면 '1분 최고' 오른쪽에) */
+    button.chip.rk { color: #ffe9a8; border-color: rgba(255, 215, 106, .45); background: rgba(255, 215, 106, .12); }
+    button.chip.rk i { color: #ffd76a; }
+    .rkp { position: absolute; inset: 0; z-index: 7; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(5, 3, 15, .62); animation: rsIn .25s ease-out; }
+    .rkp .rkin { position: relative; width: min(380px, 100%); max-height: 100%; overflow: auto; padding: 18px 16px 14px; border-radius: 18px; color: #fff;
+        background: linear-gradient(180deg, #1d1640, #120d2a); border: 1px solid rgba(255, 255, 255, .18); box-shadow: 0 18px 50px rgba(0, 0, 0, .5); }
+    .rkp h3 { font-size: 18px; font-weight: 900; color: #ffd76a; text-align: center; margin-bottom: 10px; }
+    .rkp .x { position: absolute; right: 10px; top: 8px; width: 34px; height: 34px; border-radius: 50%; font-size: 22px; line-height: 1; color: #c9c3ea; }
+    .rkp .x:hover { background: rgba(255, 255, 255, .1); color: #fff; }
+    .rkp ol { list-style: none; margin: 0; padding: 0; }
+    .rkp li { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 10px; font-size: 14.5px; }
+    .rkp li:nth-child(odd) { background: rgba(255, 255, 255, .05); }
+    .rkp li .p { width: 28px; flex: none; text-align: center; font-weight: 900; color: #c9c3ea; }
+    .rkp li:nth-child(-n+3) .p { color: #ffd76a; }
+    .rkp li .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+    .rkp li b { font-weight: 900; font-variant-numeric: tabular-nums; }
+    .rkp li.me { background: rgba(125, 255, 176, .16); box-shadow: inset 0 0 0 1.5px rgba(125, 255, 176, .55); }
+    .rkp li.gap { justify-content: center; padding: 2px; background: none; color: #8a84ad; }
+    .rkp .rkn { margin-top: 10px; font-size: 12.5px; color: #a9a3cc; text-align: center; line-height: 1.6; }
+    /* 최근 기록 (2026-11-15 사용자: 두 판 넘게 연달아 하면 최근 5번을 오른쪽 위에 글자로) — 개수 바로 아래 */
+    .recent { position: absolute; z-index: 6; right: 18px; top: 120px; display: none; text-align: right; color: #fff; pointer-events: none;
+        font-size: clamp(14px, 1.9vw, 22px); font-weight: 700; line-height: 1.5; text-shadow: 0 1px 3px rgba(5, 3, 15, .95), 0 0 8px rgba(5, 3, 15, .8); }
+    .stage.playing .recent:not([hidden]) { display: block; }
+    .recent small { display: block; font-size: .82em; color: #c9c3ea; letter-spacing: .02em; }
+    .recent div { opacity: .82; font-variant-numeric: tabular-nums; }
+    .recent div b { font-weight: 900; }
+    .recent div.top b { color: #ffd76a; }
+    .recent div.now { opacity: 1; color: #7dffb0; }
     .how { margin-top: 18px; padding: 16px 20px; font-size: 13.5px; color: #444; line-height: 1.75; }
     .how h3 { font-size: 15px; margin-bottom: 4px; }
     .how li { margin-left: 18px; }
@@ -95,6 +123,7 @@
                 <button type="button" class="chip" id="snd"></button>
                 <button type="button" class="chip" id="shr" hidden><i class="fas fa-share-nodes"></i>자랑하기</button>
                 <span class="chip" id="best" hidden></span>
+                <button type="button" class="chip rk" id="rkc"><i class="fas fa-ranking-star"></i><span>랭킹</span></button>
             </div>
             <p class="tip" id="tip"></p>
         </div>
@@ -105,6 +134,13 @@
             <button type="button" class="go" id="again"><i class="fas fa-rotate-right"></i> 다시 하기<kbd id="againK">Enter</kbd></button>
             <p class="rq" id="rsQ"></p>
         </div>
+        <div class="recent" id="recent" hidden></div>
+        <div class="rkp" id="rkp" hidden><div class="rkin" role="dialog" aria-label="기타 펑펑 랭킹">
+            <button type="button" class="x" id="rkx" aria-label="닫기">×</button>
+            <h3><i class="fas fa-ranking-star"></i> 1분 랭킹</h3>
+            <ol id="rkl"></ol>
+            <p class="rkn" id="rkn"></p>
+        </div></div>
         <span class="escchip" id="esc"></span>
     </div>
     <div class="how card">
@@ -124,7 +160,7 @@
 <script>
 // 기타 펑펑 (2026-11-14 사용자: 우주 같은 멋진 공간에 기타들이 떠다니고, 키보드를 누르면 행성 터지듯 펑펑 — 멋진 이펙트·효과음)
 //   그림은 기타 키우기의 단계별 그림(images/play/gk/<계열>_<단계>.webp)을 그대로 쓴다. 효과음은 Web Audio 로 만든 소리(음원 파일 없음).
-//   광고·피크·랭킹은 없다(마구 누르는 놀이라 광고를 잘못 누르기 쉬움). 기록은 이 브라우저에만(play.boom.best).
+//   광고·피크는 없다(마구 누르는 놀이라 광고를 잘못 누르기 쉬움). 1분 최고 기록은 이 브라우저(play.boom.best60)와 랭킹(db/play_boom_rank.sql, 2026-11-15)에.
 (function () {
 const $ = s => document.querySelector(s);
 const stage = $('#stage'), cv = $('#cv'), g = cv.getContext('2d');
@@ -263,6 +299,7 @@ function resize() {
     nebA = makeNebula(nebSeed); nebB = null; nebMix = 1;
     if (ow && oh) for (const f of floaters) { f.x *= W / ow; f.y *= H / oh; }
     makeStars();
+    if (phase !== 'idle') try { recentPaint(); } catch (e) {}   // 최근 기록 자리(개수 바로 아래)도 화면 크기에 맞춰
 }
 new ResizeObserver(resize).observe(stage);
 
@@ -767,6 +804,7 @@ function bestPaint() {
     if (best.n) b.innerHTML = `<i class="fas fa-trophy"></i>1분 최고 ${best.n.toLocaleString()}개`;
 }
 function start() {
+    rkClose();
     snd.init();
     escPaint(0);
     MASH.start({ el: stage, onKey, onEsc: escPaint, onExit: end });
@@ -777,6 +815,7 @@ function begin() {
     count = 0; hits = 0; combo = 0; maxCombo = 0; novas = 0; hintT = 0; comboAt = -9; pending = []; bombs = []; bolts = []; rays = []; edge = 0;
     phase = 'play'; playing = true; tEnd = rt() + GAME_SEC; lastSec = 99;
     $('#rsov').hidden = true;
+    recentPaint();
     for (const f of [...floaters]) explode(f, { sound: false, word: false, lite: true });      // 시작하자마자 한 번 싹 터지고, 새 기타가 화면 밖에서 날아온다
     snd.init(); snd.boom(1.6, 0);
 }
@@ -792,6 +831,8 @@ function finish() {
     $('#rsQ').innerHTML = TOUCH ? `끝내기: 뒤로 가기 ${MASH.ESC_N}번` : `<kbd>Enter</kbd> 다시 하기 · <kbd>ESC</kbd> ${MASH.ESC_N}번 끝내기`;
     $('#rsov').hidden = false;
     snd.fanfare();
+    runs.push({ i: runs.length + 1, n: count }); recentPaint();
+    if (count > (+mem.get('boom.sent', 0) || 0)) submitBest(count);
 }
 function end() {
     const was = phase;
@@ -804,11 +845,60 @@ function end() {
     $('#go').innerHTML = count ? '<i class="fas fa-rotate-right"></i> 한 번 더' : '<i class="fas fa-rocket"></i> 시작';
     bestPaint();
 }
+// ---------- 최근 기록 (2026-11-15 사용자: 두 판 넘게 연달아 하면 최근 5번의 기록을 오른쪽 위에 글자로) ----------
+//   이 페이지를 연 뒤 끝까지(1분) 한 판들. 두 번째 판부터 개수 바로 아래에 보인다 — 결과 화면에서는 방금 판을 초록으로
+const runs = [];
+function recentPaint() {
+    const el = $('#recent'), done = phase === 'result';
+    el.hidden = runs.length < (done ? 2 : 1) || phase === 'idle';
+    if (el.hidden) return;
+    const fs = clamp(Math.min(H * 0.1, W * 0.12), 40, 92), pad = clamp(W * 0.025, 14, 30), top = Math.max(...runs.map(r => r.n));
+    el.style.top = Math.round(12 + fs * 1.2 + 6) + 'px'; el.style.right = Math.round(pad) + 'px';
+    el.innerHTML = `<small>최근 기록</small>` + runs.slice(-5).reverse().map((r, k) =>
+        `<div class="${done && k === 0 ? 'now' : ''}${r.n === top && r.n > 0 ? ' top' : ''}">${r.i}판 <b>${r.n.toLocaleString()}</b>개</div>`).join('');
+}
+// ---------- 랭킹 (2026-11-15 사용자: 첫 화면 '1분 최고' 오른쪽에 랭킹) ----------
+//   1분 판을 끝까지 하면 최고 기록을 서버에 올린다(db/play_boom_rank.sql). 닉네임은 사이트에 로그인한 닉네임, 아니면 '익명'
+//   운영 계정으로 로그인해 있으면 서버가 숨김(랭킹에 안 보임). 시험 브라우저는 localStorage play.boom.norank = true 면 안 올린다
+const NORANK = mem.get('boom.norank', false) === true;
+let RK = null, rkErr = false;
+async function submitBest(n) {
+    if (NORANK || GAME_SEC !== 60 || !(n > 0)) return;
+    try {
+        const nick = (await PLAY.myProfileNick()) || '익명';
+        await PLAY.rpc('play_boom_submit', { p_key: PLAY.myKey(), p_nick: nick, p_n: n }, { auth: true });
+        mem.set('boom.sent', n);
+        await loadRank();
+    } catch (e) {}
+}
+async function loadRank() {
+    try { RK = (await PLAY.rpc('play_boom_rank', { p_key: NORANK ? null : PLAY.myKey() })) || []; rkErr = false; }
+    catch (e) { rkErr = true; }
+    rkPaint();
+}
+function rkPaint() {
+    const mine = RK && RK.find(r => r.me);
+    $('#rkc span').textContent = mine ? `랭킹 ${mine.pos.toLocaleString()}위` : '랭킹';
+    if ($('#rkp').hidden) return;
+    const esc = PLAY.esc, l = $('#rkl'), n = $('#rkn');
+    if (rkErr) { l.innerHTML = ''; n.textContent = '랭킹은 곧 열려요'; return; }
+    if (!RK) { l.innerHTML = ''; n.textContent = '불러오는 중…'; return; }
+    if (!RK.length) { l.innerHTML = ''; n.textContent = '아직 기록이 없어요. 1분 판을 끝까지 하면 첫 번째로 올라가요!'; return; }
+    l.innerHTML = RK.map((r, k) => `${k && r.pos > RK[k - 1].pos + 1 ? '<li class="gap">⋯</li>' : ''}<li class="${r.me ? 'me' : ''}"><span class="p">${r.pos}</span><span class="n">${esc(r.nickname)}${r.me ? ' (나)' : ''}</span><b>${r.best.toLocaleString()}개</b></li>`).join('');
+    n.innerHTML = `${RK[0].players.toLocaleString()}명 중 · 1분 판을 끝까지 하면 최고 기록이 올라가요<br>${NORANK ? '시험 브라우저라 내 기록은 안 올라가요' : '이름은 사이트에 로그인한 닉네임(로그인 안 하면 익명)'}`;
+}
+function rkOpen() { $('#rkp').hidden = false; rkPaint(); loadRank(); }
+function rkClose() { $('#rkp').hidden = true; }
+$('#rkc').addEventListener('click', rkOpen);
+$('#rkx').addEventListener('click', rkClose);
+$('#rkp').addEventListener('click', e => { if (e.target.id === 'rkp') rkClose(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#rkp').hidden && !MASH.on) rkClose(); });
 $('#again').addEventListener('click', e => { e.stopPropagation(); if (phase === 'result' && rt() - resultAt > 0.4) begin(); });
 $('#go').addEventListener('click', start);
 $('#shr').addEventListener('click', () => PLAY.share('기타 펑펑', `기타 펑펑에서 1분 안에 기타 ${count.toLocaleString()}개를 터뜨렸어요!`));
 $('#tip').innerHTML = TOUCH ? `1분 동안 화면을 두드려요 · 끝내기: 뒤로 가기 연속 ${MASH.ESC_N}번` : `1분 동안 마구 눌러요 · 끝내기: <kbd>ESC</kbd> 연속 ${MASH.ESC_N}번 · 소리가 나요`;
 sndPaint(); bestPaint(); escPaint(0);
+if (best.n > (+mem.get('boom.sent', 0) || 0)) submitBest(best.n); else loadRank();   // 랭킹 전에 세운 최고 기록도 한 번 올린다
 resize(); loadSprites();
 requestAnimationFrame(frame);
 })();
