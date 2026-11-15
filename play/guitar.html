@@ -298,10 +298,9 @@
     @keyframes shake { 25% { transform: translateX(-4px); } 50% { transform: translateX(4px); } 75% { transform: translateX(-2px); } }
     @keyframes shake2 { 10% { transform: translate(-9px, 4px); } 25% { transform: translate(8px, -5px); } 40% { transform: translate(-6px, 3px); } 55% { transform: translate(5px, -2px); } 75% { transform: translate(-2px, 1px); } }
 
-    /* 말풍선 (박 사장·민지·ㅇㅇ) */
+    /* 말풍선 — 2026-11-15 사용자: 인물은 '나' 하나뿐(박 사장·민지·ㅇㅇ는 지움), 얼굴 그림도 없음 */
     /* 작업자 대사: 기타 이름표 바로 아래에 작게 (2026-11-12 사용자: 아래에 뜨면 기타 몸통을 가림). 이름표가 없으면(빈 작업대) 맨 위 */
     .talk { position: absolute; left: 12px; right: 12px; top: 62px; z-index: 6; display: flex; gap: 8px; align-items: flex-start; background: rgba(14, 22, 20, 0.88); border: 2px solid rgba(255, 255, 255, 0.14); border-radius: 14px; padding: 7px 10px; color: #fff; cursor: pointer; animation: fade .2s; }
-    .talk img { width: 34px; height: 34px; border-radius: 8px; flex: none; object-fit: cover; }
     .talk b { display: block; font-size: 11.5px; color: #ffd76a; }
     .talk p { font-size: 12.5px; line-height: 1.4; }
     /* 이름표·대사 덩어리: 가운데 위에 같이 둥실. 대사는 이름표 꼬리(▼) 바로 아래에 붙는다 */
@@ -675,7 +674,6 @@
     .bres h2 { letter-spacing: .02em; }
     .bres p.gain { font-size: 20px; font-weight: 900; color: #b07800; margin-top: 4px; }
     .bres .say { display: flex; gap: 8px; align-items: center; text-align: left; margin-top: 10px; background: #f4f7f5; border-radius: 12px; padding: 8px 10px; }
-    .bres .say img { width: 36px; height: 36px; border-radius: 8px; flex: none; }
     .bres .say span { font-size: 13px; }
     .bres .say span b { color: var(--green-deep); margin-right: 4px; }
 
@@ -741,7 +739,7 @@
             <div class="spots"><i></i><i></i><i></i></div>
             <div class="aura" id="aura"><i></i><i></i><i></i><i></i></div>
             <canvas id="cv" width="448" height="672"></canvas>
-            <!-- 이름표 + 바로 아래 작업자 대사를 한 덩어리로 (2026-11-12 사용자: 박 사장 멘트를 기타 이름 아래에 붙여) — 같이 둥실 -->
+            <!-- 이름표 + 바로 아래 작업자 대사를 한 덩어리로 (2026-11-12 사용자: 작업자 멘트를 기타 이름 아래에 붙여) — 같이 둥실 -->
             <div class="nmhud" id="nmhud"><div class="nmtag" id="nm"></div><div class="talk" id="talk" hidden></div></div>
             <!-- 2026-11-13 사용자: 조각 정보는 도형만으론 뜻을 모르니 무대 왼쪽 위(기타 이름 아래)에 글로. 누르면 안내(2026-11-15 상점 케이스 칸은 지움) -->
             <button type="button" class="scbox" id="rSC" data-a="gocase" hidden title="파괴되면 부서진 기타 조각이 나와요. 조각 20개가 모이면 하드케이스가 저절로 1개(3개까지, 끼우면 파괴 1번 막음)">
@@ -884,7 +882,7 @@ const STORE_MAX = 30;   // 창고: 기록을 합칠 때 벽·작업대에 못 �
 // 단계별 이름 (2026-11-12 사용자와 정함): +0~+9 개그 → +10부터 신비한 느낌 → +20은 그 기타로 유명한 기타리스트 이름을 살짝 바꿔서.
 // 계열마다 이름표를 따로 둔다(레스폴 +20 은 '게리 무르의 레스폴' 예정). 아예 다른 물건(주전자 등)은 나중에 '첫 기타 찾기' 랜덤으로 (CLAUDE.md 11절)
 const FAMS = { strat: { name: '스트랫', names: [
-    '중고나라에서 온 스트랫', '손끝까지 녹물 드는 스트랫', '줄 갈았더니 드디어 소리 나는 스트랫', '형준이 스티커가 안 떨어지는 스트랫', '박 사장이 한숨 쉬며 셋업한 스트랫',
+    '중고나라에서 온 스트랫', '손끝까지 녹물 드는 스트랫', '줄 갈았더니 드디어 소리 나는 스트랫', '스티커가 안 떨어지는 스트랫', '한숨 쉬며 셋업한 스트랫',
     '금빛 픽업에서 윙 소리 나는 스트랫', '넥이 하나 더 자란 스트랫', '반짝이 뿌려서 눈부신 스트랫', '밤마다 혼자 깜빡이는 스트랫', '아무도 안 꽂았는데 소리 나는 스트랫',
     '꺼지지 않는 불꽃의 스트랫', '세 개의 시간을 켜는 스트랫', '서리꽃이 핀 스트랫', '새벽빛 날개가 돋은 스트랫', '바람이 대신 줄을 튕기는 스트랫',
     '별자리가 새겨진 스트랫', '천 명의 목소리가 깃든 스트랫', '번개를 길들인 스트랫', '은하수를 건너온 스트랫', '오르페우스가 저승까지 들고 간 스트랫',
@@ -1548,16 +1546,17 @@ function shake(big) { const el = $('#stbox'); el.classList.remove('shake', 'shak
 function flash() { const d = document.createElement('div'); d.className = 'flash'; $('#stbox').appendChild(d); setTimeout(() => d.remove(), 400); }
 
 // 말풍선: [누가, 말] 을 차례로. 누르면 넘어간다
-const WHO = { me: ['나', 'face_me'], boss: ['박 사장', 'face_boss'], minji: ['민지', 'face_minji'], oo: ['ㅇㅇ', 'face_troll'] };
+//   2026-11-15 사용자: 이 게임의 인물은 '나' 하나뿐 — 박 사장·민지·ㅇㅇ와 얼굴 그림은 지웠다
+const WHO = { me: '나' };
 let talkQ = [], talkT = 0;
 function talk(lines) { talkQ = lines.slice(); nextTalk(); }
 function nextTalk() {
     clearTimeout(talkT);
     const el = $('#talk'), l = talkQ.shift();
     if (!l) { el.hidden = true; return; }
-    const [who, text] = l, [name, img] = WHO[who];
+    const [who, text] = l, name = WHO[who];
     el.hidden = false;
-    el.innerHTML = `<img src="../images/play/gk/${img}.jpg" alt=""><div><b>${name}</b><p>${esc(text)}</p></div>${talkQ.length ? '<span class="more">▼</span>' : ''}`;
+    el.innerHTML = `<div><b>${name}</b><p>${esc(text)}</p></div>${talkQ.length ? '<span class="more">▼</span>' : ''}`;
     talkT = setTimeout(nextTalk, Math.max(1800, text.length * 95));
 }
 function talkClear() { talkQ = []; clearTimeout(talkT); $('#talk').hidden = true; }
@@ -1586,7 +1585,7 @@ const LINES = {
         '괜찮아. 소리는 결국 손에서 나는 거니까. …아마도.',
         '내일부터 진짜 연습만 한다. 진짜로.',
         '강화 버튼 누르던 손으로 코드 연습이나 할걸.',
-        '박 사장님… 혹시 할부 되나요?',
+        '이거 할부도 아직 안 끝났는데…',
         '나 같은 게 무슨 전설의 기타야. 기본기나 하자.',
     ],
     // 2026-11-13 사용자: 배틀 뒤 '나' 대사 — 이겼을 때 20가지, 졌을 때 20가지 무작위
@@ -1596,7 +1595,7 @@ const LINES = {
         '오늘 내 기타 컨디션 최고다.',
         '이 정도면 버스킹 나가도 되겠는데?',
         '상대 기타도 좋았어. 근데 내 게 조금 더 좋았지.',
-        '박 사장님한테 자랑하러 가야겠다.',
+        '단톡방에 자랑하러 가야겠다.',
         '이긴 날은 줄 소리도 더 맑게 들려.',
         '메트로놈 160으로 달린 보람이 있네.',
         '한 판 더? …아니, 오늘은 여기까지가 멋있지.',
@@ -1622,7 +1621,7 @@ const LINES = {
         '졌지만 소리는 내가 더 좋았어. 진짜로.',
         '피크를 떨어뜨려서 그래. 핑계지만.',
         '집에 가서 크로매틱 100번.',
-        '박 사장님한테는 비밀로 해 주세요.',
+        '오늘 일은 아무한테도 말하지 말자.',
         '오늘 운세에 \'현악기 조심\'이라더니.',
         '다음엔 튜닝부터 똑바로 하고 온다.',
         '넥이 휘었나? …내 마음이 휘었나.',
@@ -1634,40 +1633,34 @@ const LINES = {
         '손에 땀이 나서 미끄러졌어…',
         '오늘은 관객 모드로 배웠다 치자.',
     ],
-    boom: [
-        [['me', '……'], ['boss', '무대에서 부수는 건 록이다. 작업대에서 부수는 건 그냥 손해다.']],
-        [['me', '……'], ['boss', '나도 옛날에 하나 부쉈다. …할부는 아직 남았다.']],
-        [['me', '……'], ['boss', '조각은 버리지 마라. 모으면 케이스 값은 나온다.']],
-        [['me', '……'], ['minji', '방금 거 찍었어요! …조회수는 잘 나올 것 같아요.']],
-        [['me', '……'], ['minji', '팬카페에 \'기타 부순 날\' 게시판 만들었어요. 글은 아직 이거 하나예요.']],
-        [['me', '……'], ['minji', '괜찮아요! 조각은 제가 주워 둘게요. …손 조심하세요.']],
-        [['me', '……'], ['oo', 'ㅋ']],
-        [['me', '……'], ['oo', 'ㅋㅋ 또 부숨']],
-    ],
-    bigBoom: [   // +10 넘게 키운 걸 부쉈을 때
-        [['me', '……'], ['boss', '그만큼 키운 걸… …그래, 그게 전설이지.'], ['boss', '…청소는 네가 해라.']],
-        [['me', '……'], ['minji', '……'], ['minji', '…저 오늘은 영상 안 올릴게요.']],
-        [['me', '……'], ['oo', '……'], ['oo', 'ㅋ']],
+    // +10 넘게 키운 걸 부쉈을 때는 이쪽에서 (2026-11-15 인물을 지우면서 박 사장·민지·ㅇㅇ 대사 대신)
+    bigSigh: [
+        '거기까지 키웠는데… …그래, 그게 록이지.',
+        '……청소는 내가 해야겠지.',
+        '……오늘은 아무것도 안 올릴래.',
+        '이 정도면 동네에서 전설이었는데…',
+        '손이 아직도 떨린다. 이건 설렘이 아니야.',
+        '괜찮아. 한 번 키워 봤으니 또 키울 수 있어. …아마도.',
     ],
     revive: [   // 광고 보고 되살렸을 때 (2026-11-13)
-        [['me', '휴… 십 년 감수했다.'], ['boss', '본드로 붙여 놨다. 다음엔 없다.']],
-        [['minji', '살아났어요! 조각이 도로 붙었어요!']],
-        [['boss', '조각 다 주워 왔냐? …용케 붙었네.']],
-        [['me', '없던 일로 하자. 아무도 못 봤지?'], ['oo', '봤음 ㅋ']],
-        [['minji', '아까 그 쾅 소리는 꿈이었던 걸로 해요.']],
+        [['me', '휴… 십 년 감수했다.']],
+        [['me', '살았다! 조각이 도로 붙었어!']],
+        [['me', '없던 일로 하자. 아무도 못 봤지?']],
+        [['me', '아까 그 쾅 소리는 꿈이었던 걸로 하자.']],
+        [['me', '요정님 감사합니다… 다음엔 진짜 조심할게요.']],
     ],
     saved: [
-        [['boss', '케이스가 대신 맞았다. 케이스는 그러라고 있는 거다.']],
-        [['minji', '케이스가 박살 났어요! 기타는 멀쩡해요!']],
+        [['me', '케이스가 대신 맞았다. 케이스는 그러라고 있는 거지.']],
+        [['me', '케이스가 박살 났다! 기타는 멀쩡해!']],
     ],
     up: {
-        5: [['minji', '픽업 바꾸니까 소리가 달라요! …제 귀엔 똑같지만요.']],
-        10: [['boss', '+10이면 우리 가게 벽에 걸어도 되겠다.'], ['boss', '…팔면 꽤 받겠는데. 그건 네가 정해라.']],
-        15: [['minji', '기타에 별자리가 떠요! …팬카페 회원이 두 명 됐어요.']],
-        20: [['boss', '헨도릭스의 스트랫… 나는 거기까지 못 갔다.'], ['me', '……'], ['boss', '…줄은 네가 갈아라.']],
+        5: [['me', '픽업 바꾸니까 소리가 달라졌다! …기분 탓인가.']],
+        10: [['me', '+10이면 어디 걸어 놔도 안 꿀리겠다.'], ['me', '…팔까? 아니, 조금만 더.']],
+        15: [['me', '기타에 별자리가 뜬다…!']],
+        20: [['me', '전설의 기타… 내 손으로 만들었다.'], ['me', '……'], ['me', '…줄은 내가 갈아야지.']],
     },
-    intro: [['boss', '형준이가 창고에 기타를 잔뜩 맡기고 갔다. 뭐가 나올지는 나도 모른다.'], ['boss', `첫 기타는 그냥 가져가라. 다음부터는 한 대에 ${gf(FIND_GOLD)}다.`], ['me', '……']],
-    bought: [['boss', '고쳐서 팔든, 벽에 걸든 네 마음이다.'], ['boss', '…부수지만 마라.'], ['me', '……']],
+    intro: [['me', '창고에 기타가 잔뜩 쌓여 있다. 뭐가 나올지는 나도 모른다.'], ['me', `첫 한 대는 공짜. 다음부터는 한 대에 ${gf(FIND_GOLD)}.`]],
+    bought: [['me', '고쳐서 팔든, 벽에 걸든 내 마음이다.'], ['me', '…부수지만 말자.']],
 };
 
 // ---------- 화면 ----------
@@ -2047,14 +2040,12 @@ async function enhance() {
         pop('툭!', 'keep', 30);
         setTimeout(() => pop('버튼 빠짐 — 다시 끼움', 'sm', 46), 120);
         cv.animate([{ transform: CVT }, { transform: `${CVT} translateY(4px)` }, { transform: `${CVT} rotate(-2deg)` }, { transform: CVT }], { duration: 300 });
-        if (Math.random() < 0.06) setTimeout(() => talk([['oo', 'ㅋ']]), 500);
         await sleep(300);
     } else if (out === 'keep') {
         sfx('snap'); snapAt = performance.now();
         pop('팅!', 'keep', 30);
         setTimeout(() => pop('줄 끊김 — 갈고 다시', 'sm', 46), 120);
         cv.animate([{ transform: CVT }, { transform: `${CVT} rotate(-4deg)` }, { transform: `${CVT} rotate(3deg)` }, { transform: CVT }], { duration: 300 });
-        if (Math.random() < 0.06) setTimeout(() => talk([['oo', 'ㅋ']]), 500);
         await sleep(300);
     } else if (out === 'saved') {
         sfx('case'); shake(); pop('하드케이스가 막았다!', 'case', 34);
@@ -2098,8 +2089,7 @@ async function enhance() {
             const made = autoCase();
             if (made) { save(); updBar(); caseNote(made); await sleep(700); }
             if (S.st.boom % 2 === 1) await new Promise(res => PLAY.interstitial(res, '악기가 부서진 뒤 전면 광고', 'boom'));
-            const said = one(g.lv >= 10 ? LINES.bigBoom : LINES.boom);
-            talk([['me', one(LINES.sigh)], ...said.slice(1)]);   // 2026-11-13 사용자: '나'는 '……' 대신 신세한탄
+            talk([['me', one(g.lv >= 10 ? LINES.bigSigh : LINES.sigh)]]);   // 2026-11-13 사용자: '나'의 신세한탄 (2026-11-15 다른 인물의 한마디는 지움)
         }
     }
     busy = false;
@@ -2228,7 +2218,7 @@ async function sellBench() {
     const a = cv.animate([{ transform: CVT, opacity: 1 }, { transform: `${CVT} translateX(120%) rotate(12deg)`, opacity: 0 }], { duration: 520, easing: 'ease-in', fill: 'forwards' });
     await sleep(540);
     a.cancel(); ghost = null; busy = false;
-    if (g.lv >= 10) talk([['boss', one(['좋은 값이다. 형준이가 또 하나 넘긴다더라.', '팔 때를 아는 것도 실력이다.', '…아깝지? 그게 장사다.'])]]);
+    if (g.lv >= 10) talk([['me', one(['좋은 값이다.', '팔 때를 아는 것도 실력이지.', '…아깝다. 그래도 장사는 장사.'])]]);
     renderBench();
 }
 // +0 버리기: 골드 없이 작업대를 비운다(쓰레기통으로 쏙)
@@ -2873,7 +2863,7 @@ async function fight(id) {
     const say = ['me', one(win ? LINES.win : LINES.lose)];   // 2026-11-13 사용자: 배틀 뒤 대사는 '나'가, 이김·짐 20가지씩 무작위
     m.querySelector('.bres').innerHTML = `<h2 class="${win ? 'w' : 'l'}">${win ? 'WIN !' : 'LOSE...'}</h2>
         ${win ? `<p class="gain">+${gf(rw)}</p>` : ''}
-        <div class="say"><img src="../images/play/gk/${WHO[say[0]][1]}.jpg" alt=""><span><b>${WHO[say[0]][0]}</b>${esc(say[1])}</span></div>
+        <div class="say"><span><b>${WHO[say[0]]}</b>${esc(say[1])}</span></div>
         <div class="btns" style="margin-top:14px"><button class="btn" type="button" data-x>확인</button></div>`;
     m.querySelector('[data-x]').addEventListener('click', () => { m.remove(); busy = false; renderBattle(); });
     updBar(win);
