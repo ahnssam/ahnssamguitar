@@ -1051,7 +1051,9 @@ const START_GOLD = 500, DAILY_GOLD = 1000,
 //   2026-11-15 ~ 11-16에는 한 번 부르면 15분 쉬기, 그 전엔 하루 5번이었다(끝없이 되살리면 파괴가 의미 없어서)
 // 골드가 모자랄 때 보상형 광고를 보면 골드 (2026-11-13 사용자: '돈 없을 땐 광고 보고 돈 채우는 거, 피크 자리에').
 //   금액·횟수는 사용자가 고른 값 — 출석과 같은 1,000G, 하루 5번(초반에 막혔을 때만 풀어 주고 경제는 안 망가지게)
-const AD_GOLD = 1000, AD_GOLD_DAY = 5;
+//   2026-11-17 사용자: '골드 받기 양을 점점 증폭 — 천 원, 이천 원, 3천 원, 5천 원, 만 원' → 그날 몇 번째냐에 따라 1,000 · 2,000 · 3,000 · 5,000 · 10,000G
+const AD_GOLDS = [1000, 2000, 3000, 5000, 10000], AD_GOLD_DAY = AD_GOLDS.length;
+const adGoldNext = () => AD_GOLDS[Math.min(AD_GOLDS.length - 1, adDay().n)];
 const CASE_MAX = 3;   // 하드케이스는 3개까지 가질 수 있다 (2026-11-12 사용자)
 const CASE_PRICE = 1000000;   // 상점 '장비' 칸에서 하드케이스 하나 100만G (2026-11-17 사용자)
 // 하드케이스 ON 은 켠 그 악기에만 (2026-11-17 사용자: '다시 악기 만들기 시작하면 하드케이스가 자동으로 on 되던데 그렇게 하지 마') — S.caseFor = 켠 악기 id
@@ -2075,7 +2077,7 @@ function updBar(goldBump) {
     // 골드 받기(광고): 지금 하려는 것(강화·기타 찾기)에 골드가 모자랄 때만, 오늘 횟수가 남았을 때만 (2026-11-13 사용자)
     { const need = S.bench ? (S.bench.lv < MAX ? COST[S.bench.lv] : 0) : S.first ? FIND_GOLD : 0;   // 첫 기타는 공짜라 그땐 안 보인다
       $('#rAdG').hidden = !(need > 0 && S.gold < need && adDay().n < AD_GOLD_DAY);
-      $('#rAdG').title = `골드 받기 — 오늘 ${AD_GOLD_DAY - adDay().n}번 남음`; }
+      $('#rAdG').title = `골드 받기 +${gf(adGoldNext())} — 오늘 ${AD_GOLD_DAY - adDay().n}번 남음`; }
     const got = S.daily === today();
     $('#rDaily').classList.toggle('got', got);
     $('#rDaily span').textContent = got ? '출첵' : '출석 보상';   // 2026-11-13 사용자: 받기 전 '출석 보상', 받은 뒤엔 회색 '출첵'만
@@ -2116,7 +2118,7 @@ function lackCard(title, why) {
     const dl = S.daily !== today(), ad = adDay().n < AD_GOLD_DAY;
     return `<img class="g1" src="../images/play/gk/sil_guitar.webp" alt=""><p class="big">${title}<small>${why}<br>${dl ? `출석하면 ${gf(DAILY_GOLD)}을 받아요.` : `기타를 팔거나, 아래에서 골드를 더 받아요.`}</small></p>
         ${dl ? `<button class="btn pick" type="button" data-a="daily"><i class="fas fa-gift"></i> 출석하고 받기 <small>${gf(DAILY_GOLD)}</small></button>`
-        : ad ? `<button class="btn pick" type="button" data-a="adgold"><i class="fas fa-clapperboard"></i> 골드 받기 <small>오늘 ${AD_GOLD_DAY - adDay().n}번</small></button>` : ''}
+        : ad ? `<button class="btn pick" type="button" data-a="adgold"><i class="fas fa-clapperboard"></i> 골드 받기 <small>+${gf(adGoldNext())}</small></button>` : ''}
         ${GSHARE}`;
 }
 function renderBench() {
@@ -2703,7 +2705,7 @@ function wreckCard(w) {
     const dl = S.daily !== today(), ad = adDay().n < AD_GOLD_DAY;
     return h + `<p class="lackw">기타 다시 찾기는 ${gf(FIND_GOLD)} · 골드가 ${gf(FIND_GOLD - S.gold)} 모자라요</p>`
         + (dl ? `<button class="btn pick" type="button" data-a="daily"><i class="fas fa-gift"></i> 출석하고 받기 <small>${gf(DAILY_GOLD)}</small></button>`
-        : ad ? `<button class="btn pick" type="button" data-a="adgold"><i class="fas fa-clapperboard"></i> 골드 받기 <small>오늘 ${AD_GOLD_DAY - adDay().n}번</small></button>` : '');
+        : ad ? `<button class="btn pick" type="button" data-a="adgold"><i class="fas fa-clapperboard"></i> 골드 받기 <small>+${gf(adGoldNext())}</small></button>` : '');
 }
 
 // ---------- 광고 보고 되살리기 (2026-11-13 사용자: 파괴될 때 광고를 보면 부활) ----------
@@ -2745,10 +2747,11 @@ async function goldAd() {
     const d = adDay();
     if (d.n >= AD_GOLD_DAY) { toast(`오늘은 다 받았어요. 내일 또 ${AD_GOLD_DAY}번 받을 수 있어요`); return; }
     adBusy = true;
+    const amt = AD_GOLDS[d.n];   // 오늘 몇 번째냐에 따라 점점 많이
     const box = document.createElement('div');
     box.className = 'gk-modal adwrap';
     const r = await PLAY.rewarded('gold', (show, skip) => {
-        box.innerHTML = `<div class="in adbox"><span class="ic"><i class="fas fa-coins"></i></span><b>+${gf(AD_GOLD)}</b>
+        box.innerHTML = `<div class="in adbox"><span class="ic"><i class="fas fa-coins"></i></span><b>+${gf(amt)}</b>
             <p>광고를 끝까지 보면 골드를 받아요</p>
             <button type="button" class="btn go"><i class="fas fa-circle-play"></i> 광고 보고 골드 받기</button>
             <button type="button" class="no">나중에</button><small>오늘 ${AD_GOLD_DAY - d.n}번 남음</small></div>`;
@@ -2761,9 +2764,11 @@ async function goldAd() {
     adBusy = false;
     // 2026-11-17 사용자: '아직 광고도 못 붙였는데 — 광고가 없으면 그냥 줘'. 광고가 준비 안 됐으면(승인 전·광고 없음·차단) 바로 준다(하루 횟수는 그대로 셈)
     if (r === 'viewed' || r === 'none') {
-        d.n++; gain(AD_GOLD); save(); updBar(true); sfx('sell');
-        toast(`골드 +${gf(AD_GOLD)} · 오늘 ${AD_GOLD_DAY - d.n}번 남음`);
+        const g0 = S.gold;
+        d.n++; gain(amt); save();
         if (tab === 'bench') renderBench(); else if (tab === 'shop') renderShop();
+        countGold(g0, S.gold, 1000);   // 골드 숫자가 촤라락 올라간다
+        toast(`골드 +${gf(amt)}` + (d.n < AD_GOLD_DAY ? ` · 다음엔 +${gf(AD_GOLDS[d.n])} (오늘 ${AD_GOLD_DAY - d.n}번 남음)` : ' · 오늘은 다 받았어요'));
     } else if (r === 'dismissed') toast('끝까지 봐야 골드를 받아요');
 }
 
