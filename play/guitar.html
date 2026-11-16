@@ -431,6 +431,14 @@
     .stage.locked .sact > button:not(.strum), .stage.locked .sopt, .stage.locked .sgauge, .stage.locked #rSC, .stage.locked #rShare, .stage.locked #nextg { pointer-events: none; }
     .stage .hmr-sw { position: absolute; z-index: 5; pointer-events: none; }
     .stage .hmr-sw img { display: block; width: 100%; height: 100%; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.45)); }
+    /* 튜너 아이콘 그림 (2026-11-17 사용자가 GPT로 뽑은 4개 → tuner_1~4.webp, 예전 Font Awesome 아이콘 대신) */
+    .shop .shead, #tab-shop .shead { display: flex; align-items: baseline; gap: 10px; margin: 16px 2px 8px; }
+    #tab-shop .shead:first-of-type { margin-top: 6px; }
+    #tab-shop .shead b { flex: none; font-size: 18px; font-weight: 900; color: var(--green-deep); }
+    #tab-shop .shead span { margin-left: auto; min-width: 0; font-size: 12.5px; font-weight: 700; color: var(--sub); text-align: right; }
+    .item .ic.tni-box { background: #23302c; } .item .ic.tni-box img { display: block; width: 36px; height: 36px; }
+    .sopt button .tni { width: 18px; height: 18px; flex: none; }
+    .tuner .tn-top .tni { width: 22px; height: 22px; margin-right: 4px; vertical-align: -5px; }
     .item .ic.hmr { background: #2a2420; display: grid; place-items: center; overflow: hidden; } .item .ic.hmr img { display: block; height: 38px; width: auto; transform: rotate(-35deg); }   /* 망치 전체가 보이게(살짝 눕혀서) */
     .fx .pick { position: absolute; width: calc(6px * var(--s)); height: calc(7px * var(--s)); z-index: 3; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.5)); }
     .fx .pick svg { display: block; width: 100%; height: 100%; }
@@ -1280,13 +1288,14 @@ const srvFam = f => (FAMS[f] && FAMS[f].srv) || f;   // 서버가 아직 모르�
 // 튜너: 바늘이 초록 칸에 있을 때 탭하면 성공 +%p (유지에서 가져오고 파괴는 그대로)
 // 2026-11-15 사용자: 성공 보너스가 너무 뛴다 — +2·+4·+6 → +1·+3·+5%p
 // 프렛 망치 (2026-11-17 사용자: 강화 = 망치로 기타를 왼쪽·오른쪽 번갈아 내려치기, 상점 '장비'에서 판다 — 그림은 사용자가 GPT로 뽑은 4개 hammer_1~4.webp)
-//   능력은 Claude가 정함: 좋은 망치일수록 강화 성공 +%p(줄 끊김에서 가져옴). 값은 튜너·스킨 사이쯤. 바꿔도 된다
+//   능력은 Claude가 정함: 좋은 망치일수록 강화 성공 +%p(줄 끊김에서 가져옴). 바꿔도 된다
+//   값: 2026-11-17 사용자 '망치 최고 금액 천만 원' → 50만 · 220만 · 1,000만G(같은 배수로, 처음엔 50만 · 500만 · 5,000만)
 //   w·h = 그림 크기(같은 배율로 잘라서 전설 망치는 불꽃만큼 더 큼), hy = 머리 가운데 높이(그림 높이 대비), hx = 손잡이 가운데(폭 대비)
 const HAMMERS = [
     { name: '나무 프렛 망치', img: 'hammer_1.webp', w: 123, h: 303, hy: 0.094, hx: 0.501, price: 0, up: 0, desc: '처음 받는 기본 망치. 황동 머리에 하얀 나일론 면' },
     { name: '손질한 황동 망치', img: 'hammer_2.webp', w: 123, h: 303, hy: 0.091, hx: 0.495, price: 500000, up: 0.5, desc: '반짝이게 닦은 황동 머리, 가죽을 감은 손잡이' },
-    { name: '금 망치', img: 'hammer_3.webp', w: 130, h: 304, hy: 0.094, hx: 0.488, price: 5000000, up: 1, desc: '금빛 머리에 빨간 보석, 흑단 손잡이' },
-    { name: '전설의 번개 망치', img: 'hammer_4.webp', w: 144, h: 347, hy: 0.153, hx: 0.552, price: 50000000, up: 2, desc: '번개 무늬 머리, 치는 면에 불꽃, 빨간 끈 손잡이' }];
+    { name: '금 망치', img: 'hammer_3.webp', w: 130, h: 304, hy: 0.094, hx: 0.488, price: 2200000, up: 1, desc: '금빛 머리에 빨간 보석, 흑단 손잡이' },
+    { name: '전설의 번개 망치', img: 'hammer_4.webp', w: 144, h: 347, hy: 0.153, hx: 0.552, price: 10000000, up: 2, desc: '번개 무늬 머리, 치는 면에 불꽃, 빨간 끈 손잡이' }];
 const hammerUp = () => (HAMMERS[S.hammer | 0] || HAMMERS[0]).up;
 const TUNERS = [null,
     { name: '클립 튜너', icon: 'fa-paperclip', price: 6000, bonus: 0.5, zone: 0.2, period: 1.6, desc: '헤드에 꽂는 작은 튜너. 초록 칸이 좁고 바늘이 빨라요' },
@@ -2270,7 +2279,7 @@ function renderOpt() {
         ? `<button type="button" class="hk ${cOn ? 'on' : ''}" data-a="case" aria-pressed="${cOn}" title="하드케이스 ${cOn ? '끼움' : '안 끼움'} — 끼우면 파괴를 한 번 막아 줘요 (${S.cases}/${CASE_MAX}개)"><i class="fas fa-briefcase"></i>하케 ${cOn ? 'ON' : 'OFF'}</button>`
         : `<button type="button" class="hk none" data-a="gocase" title="하드케이스가 없어요 — 조각 ${S.shards}/${CASE_SHARDS}"><i class="fas fa-briefcase"></i>하케 없음</button>`)
         + (T
-        ? `<button type="button" class="tn ${S.tuneOn ? 'on' : ''}" data-a="tune" aria-pressed="${S.tuneOn}" title="${S.tuneOn ? `튜닝하고 강화 — 바늘을 맞히면 성공 +${up}%p` : '튜닝 안 함'}"><i class="fas ${T.icon}"></i>튜너 ${S.tuneOn ? 'ON' : 'OFF'}</button>`
+        ? `<button type="button" class="tn ${S.tuneOn ? 'on' : ''}" data-a="tune" aria-pressed="${S.tuneOn}" title="${S.tuneOn ? `튜닝하고 강화 — 바늘을 맞히면 성공 +${up}%p` : '튜닝 안 함'}"><img class="tni" src="../images/play/gk/tuner_${S.tuner}.webp" alt="">튜너 ${S.tuneOn ? 'ON' : 'OFF'}</button>`
         : `<button type="button" class="tn none" data-a="gotuner" title="튜너가 없어요 — 상점에서 사요"><i class="fas fa-sliders"></i>튜너 없음</button>`);
 }
 // 팔기 단추 바로 위 작은 게이지 (2026-11-17 사용자: '행운 바하고 보상 바를 팔기 버튼 위쪽에 조그맣게, 보상은 접을 수 있게 — 나중엔 어차피 정체될 거니까,
@@ -2511,7 +2520,7 @@ function tune(T) {
     return new Promise(res => {
         const box = $('#tuner'), z = T.zone * 46;
         box.className = 'tuner t' + S.tuner; box.hidden = false;
-        box.innerHTML = `<div class="tn-top"><b>${T.name}</b><span>바늘이 가운데 초록 칸에 올 때 탭!</span><span class="note">E</span></div>
+        box.innerHTML = `<div class="tn-top"><img class="tni" src="../images/play/gk/tuner_${S.tuner}.webp" alt=""><b>${T.name}</b><span>바늘이 가운데 초록 칸에 올 때 탭!</span><span class="note">E</span></div>
             <div class="gauge"><span class="zone" style="left:${50 - z}%;width:${2 * z}%"></span><span class="mid"></span><span class="needle"></span></div>
             <div class="tn-bot"><span class="res2">맞히면 성공 +${T.bonus}%p</span><button class="tn-skip" type="button">건너뛰기</button></div>`;
         const needle = box.querySelector('.needle'), t0 = performance.now() - Math.random() * T.period * 1000;
@@ -3963,17 +3972,20 @@ function renderShop() {
     updBar();
     const el = $('#tab-shop');
     let h = `<div class="shoptop"><span class="sgold"><i class="fas fa-coins"></i><b data-gold>${gf(S.gold)}</b></span><div class="shopcat">${SHOP_CATS.map(([k, ic, t]) => `<button type="button" data-a="shopcat" data-c="${k}" class="${shopCat === k ? 'on' : ''}"><i class="fas ${ic}"></i><span>${t.replace(' 스킨', '<em> 스킨</em>')}</span></button>`).join('')}</div></div>`;
-    if (shopCat === 'tuner') h += TUNERS.slice(1).map((T, i) => {
+    // '장비'는 한 목록 안에서 종류별로 — 큰 제목 + 오른쪽 한 문장 (2026-11-17 사용자: 긴 설명 말고 '튜너' 크게, 오른쪽에 한 문장으로 딱)
+    const shead = (t, d) => `<div class="shead"><b>${t}</b><span>${d}</span></div>`;
+    if (shopCat === 'tuner') h += shead('튜너', '바늘을 맞히면 강화 성공 ↑ (+7부터)') + TUNERS.slice(1).map((T, i) => {
         const n = i + 1, own = S.tuner >= n;
-        return `<div class="item"><span class="ic t${n}"><i class="fas ${T.icon}"></i></span><div class="it"><b>${T.name} · 성공 +${T.bonus}%p</b><small>${T.desc}</small></div>
+        return `<div class="item"><span class="ic tni-box"><img src="../images/play/gk/tuner_${n}.webp" alt=""></span><div class="it"><b>${T.name} · 성공 +${T.bonus}%p</b><small>${T.desc}</small></div>
             ${own ? `<span class="own">${S.tuner === n ? '쓰는 중' : '더 좋은 걸 써요'}</span>` : `<button type="button" data-a="buyT" data-n="${n}" ${S.gold >= T.price ? '' : 'disabled'}>${gf(T.price)}</button>`}</div>`;
-    }).join('') + `<p class="note2">튜너가 있으면 강화할 때 바늘을 맞춰요. 성공률은 '줄 끊김'에서 가져오고 '파괴'는 그대로예요. 파괴 확률이 생기는 +7부터 강화 단추 위 '튜너' 스위치로 켜고 꺼요.</p>`
+    }).join('')
         // 프렛 망치 (2026-11-17 사용자: 상점에도) — 가진 것 중 가장 좋은 걸 쓴다
-        + `<p class="note2">망치는 강화할 때 기타를 내려쳐요. 좋은 망치일수록 강화 성공이 조금 올라요(올라간 몫은 '${keepWord(S.bench)}'에서 가져와요).</p>`
+        + shead('망치', '강화할 때 내려치는 망치 · 좋을수록 성공 ↑')
         + HAMMERS.map((H, n) => { const own = (S.hammer | 0) >= n;
             return `<div class="item"><span class="ic hmr"><img src="../images/play/gk/${H.img}" alt=""></span><div class="it"><b>${H.name}${H.up ? ` · 강화 성공 +${H.up}%p` : ''}</b><small>${H.desc}</small></div>
                 ${own ? `<span class="own">${(S.hammer | 0) === n ? '쓰는 중' : '더 좋은 걸 써요'}</span>` : `<button type="button" data-a="buyHm" data-n="${n}" ${S.gold >= H.price ? '' : 'disabled'}>${gf(H.price)}</button>`}</div>`; }).join('')
         // 하드케이스 하나 100만G (2026-11-17 사용자) — 조각 15개로 저절로 만들어지는 것과 같은 하드케이스, 3개까지
+        + shead('하드케이스', '파괴를 한 번 막아 줘요')
         + `<div class="item"><span class="ic case"><i class="fas fa-briefcase"></i></span><div class="it"><b>하드케이스 · 파괴 1번 막기</b><small>지금 ${S.cases}/${CASE_MAX}개 · 조각 ${CASE_SHARDS}개를 모아도 저절로 생겨요. 강화 단추 위 '하케' 스위치로 그 악기에 끼워요</small></div>
             ${S.cases >= CASE_MAX ? '<span class="own">가득</span>' : `<button type="button" data-a="buyCase" ${S.gold >= CASE_PRICE ? '' : 'disabled'}>${gf(CASE_PRICE)}</button>`}</div>`;
     if (shopCat === 'bench') h += BENCHES.map((B, i) => {
