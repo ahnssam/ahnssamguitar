@@ -90,6 +90,7 @@
     }
     .res.gold.bump { animation: pkBump .6s cubic-bezier(.3, 1.6, .5, 1); }
     .res.gold { transition: transform .22s ease-out, box-shadow .22s; transform-origin: left center; }
+    .res.gold.spending { transform: scale(1.1); box-shadow: 0 0 0 2px #ff8a7a, 0 0 12px rgba(255, 110, 90, 0.6); }   /* 돈 쓸 때 골드 칸 (2026-11-17) */
     .res.gold.counting { transform: scale(1.18); box-shadow: 0 0 0 2px #ffd23f, 0 0 16px rgba(255, 210, 63, 0.75); }   /* 팔 때 골드 칸이 커지며 숫자가 올라간다 (2026-11-17) */
     .gk-bar .sp { flex: 1; }
     .daily { border-color: #f6d29a; background: #fff8ec; color: #a85a00; cursor: pointer; }
@@ -1611,6 +1612,10 @@ function sfx(kind, lv = 0, ms = 0) {
             const dur = ms / 1000, n = Math.max(10, Math.round(dur * 16));
             for (let i = 0; i < n; i++) { const x = 1 - Math.pow(1 - i / n, 1 / 2.2); T(1500 + (i / n) * 900 + Math.random() * 250, x * dur, 0.045, 'square', 0.035); }
         }
+        else if (kind === 'spend') {   // 골드가 내려갈 때: 낮아지는 짧은 똑딱 몇 번 (2026-11-17)
+            const dur = ms / 1000, n = Math.max(5, Math.round(dur * 9));
+            for (let i = 0; i < n; i++) { const x = 1 - Math.pow(1 - i / n, 1 / 2.2); T(1300 - (i / n) * 600, x * dur, 0.04, 'triangle', 0.05); }
+        }
         else if (kind === 'gift') { [1568, 2093, 2637].forEach((f, i) => T(f, i * 0.08, 0.25, 'sine', 0.13)); }
         else if (kind === 'luck') { [784, 988, 1175, 1568].forEach((f, i) => T(f, i * 0.07, 0.4, 'sine', 0.15)); T(3136, 0.3, 0.3, 'sine', 0.05); }
         else if (kind === 'btnpop') { T(1500, 0, 0.05, 'square', 0.1, 650); T(540, 0.03, 0.1, 'triangle', 0.18, 300); noise(t, 0.035, 0.22, out, 5200, 1800); T(880, 0.5, 0.05, 'triangle', 0.1, 700); }
@@ -2500,6 +2505,7 @@ async function enhance() {
     const r = Math.random() * 100;
     let out = lucky || r < s ? 'ok' : r < s + m ? 'keep' : 'boom';
     if (out === 'boom' && caseOnFor(g)) out = 'saved';
+    const goldBefore = S.gold;
     S.gold -= cost; S.st.tries++;
     // 행운 게이지(이 악기만) · 콤보 (2026-11-17)
     if (comboId !== g.id) combo = 0;
@@ -2508,6 +2514,7 @@ async function enhance() {
     const luckNow = !lucky && g.luck >= LUCK_MAX;   // 이번에 막 가득 찼다
     let jump = 1, newDex = false, comboG = 0, gifts = [];
     updBar();   // 기다리는 동안 위 줄은 골드만 줄어든다(조각·케이스 수가 결과를 먼저 알려 주지 않게)
+    spendFx(goldBefore, S.gold);   // 골드 숫자가 내려간다 (2026-11-17)
     // 결과를 먼저 저장하고(새로고침으로 되돌리기 막기), 기다림·연출은 그다음. 기다리는 동안은 강화 전 기타·이름 그대로 보인다
     ghost = { ...g };
     const wasRep = S.rep === g.id;   // 되살리면 대표도 그대로
@@ -2771,7 +2778,7 @@ async function findGuitar(first) {
         if (!S.first) return;
         if (S.gold < FIND_GOLD) { toast('골드가 모자라요'); renderBench(); return; }
         S.gold -= FIND_GOLD;
-        updBar();
+        updBar(); spendFx(S.gold + FIND_GOLD, S.gold);
     }
     busy = true; talkClear(); wreck = null;
     S.bench = { id: rid(), lv: 0, f: pickFam() };
@@ -2831,20 +2838,29 @@ async function sellBench() {
     if (g.lv >= 10) talk([['me', one(['좋은 값이다.', '팔 때를 아는 것도 실력이지.', '…아깝다. 그래도 장사는 장사.'])]]);
     renderBench();
 }
-// 위 골드 칸이 커지며 숫자가 from → to 로 촤라락 올라간다(처음 빠르고 끝에서 천천히). 끝나면 원래 크기로
+// 골드 숫자가 from → to 로 움직인다(처음 빠르고 끝에서 천천히). 끝나면 원래 크기로
+//   올라갈 때(팔기): 골드 칸이 커지고 노랗게 빛나며 촤라락. 내려갈 때(돈 쓸 때, 2026-11-17 사용자: '돈 쓸 때도 내려가는 액션 —
+//   덜 쓰면 1초, 10만G대 이상이면 2초'): 골드 칸이 살짝 커지고 붉게. 위 골드 칸(#rGold)과 배틀·상점 안 골드([data-gold]) 모두
+let goldRaf = 0;
 function countGold(from, to, ms) {
     return new Promise(res => {
-        const box = $('#rGold'), el = box.querySelector('span'), t0 = performance.now();
-        box.classList.add('counting'); sfx('coins', 0, ms); buzz(12);
+        cancelAnimationFrame(goldRaf);
+        const up = to >= from, box = $('#rGold'), t0 = performance.now();
+        const els = () => [box.querySelector('span'), ...document.querySelectorAll('[data-gold]')].filter(e => e && e.offsetParent);
+        const paint = v => els().forEach(el => { el.textContent = gf(v); if (el.scrollWidth > el.clientWidth + 1) el.textContent = gshort(v); });
+        box.classList.remove('counting', 'spending'); box.classList.add(up ? 'counting' : 'spending');
+        if (up) { sfx('coins', 0, ms); buzz(12); } else sfx('spend', 0, ms);
+        paint(from);   // 바로 그 자리부터(먼저 그려진 마지막 숫자가 번쩍 보이지 않게)
         const step = now => {
-            const k = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - k, 2.2), v = Math.round(from + (to - from) * e);
-            el.textContent = gf(v); if (el.scrollWidth > el.clientWidth + 1) el.textContent = gshort(v);
-            if (k < 1) { requestAnimationFrame(step); return; }
-            box.classList.remove('counting'); updBar(true); sfx('sell'); res();
+            const k = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - k, 2.2);
+            paint(Math.round(from + (to - from) * e));
+            if (k < 1) { goldRaf = requestAnimationFrame(step); return; }
+            box.classList.remove('counting', 'spending'); updBar(up); if (up) sfx('sell'); res();
         };
-        requestAnimationFrame(step);
+        goldRaf = requestAnimationFrame(step);
     });
 }
+const spendFx = (from, to) => { if (to < from) countGold(from, to, from - to >= 1e5 ? 2000 : 1000); };   // 돈 쓸 때: 10만G 이상이면 2초, 아니면 1초
 // +0 버리기: 골드 없이 작업대를 비운다(쓰레기통으로 쏙)
 async function tossBench() {
     const g = S.bench;
@@ -3846,12 +3862,12 @@ $('#app').addEventListener('click', e => {
     else if (a === 'buyCase') {
         if (S.cases >= CASE_MAX) { toast(`하드케이스는 ${CASE_MAX}개까지예요`); return; }
         if (S.gold < CASE_PRICE) return;
-        S.gold -= CASE_PRICE; S.cases++; save(); sfx('case'); renderShop(); updBar(); toast(`하드케이스를 샀어요 (${S.cases}/${CASE_MAX})`);
+        S.gold -= CASE_PRICE; S.cases++; save(); sfx('case'); renderShop(); updBar(); spendFx(S.gold + CASE_PRICE, S.gold); toast(`하드케이스를 샀어요 (${S.cases}/${CASE_MAX})`);
     }
     else if (a === 'buyT') {
         const n = +b.dataset.n, T = TUNERS[n];
         if (S.gold < T.price || S.tuner >= n) return;
-        S.gold -= T.price; S.tuner = n; S.tuneOn = true; save(); sfx('sell'); renderShop(); toast(`${T.name}를 샀어요! 강화할 때 바늘을 맞춰요`);
+        S.gold -= T.price; S.tuner = n; S.tuneOn = true; save(); sfx('sell'); renderShop(); spendFx(S.gold + T.price, S.gold); toast(`${T.name}를 샀어요! 강화할 때 바늘을 맞춰요`);
     } else if (a === 'wopen') {   // 잠긴 걸이 열기: 한 번 누르면 '열까요?', 한 번 더 누르면 연다
         const i = +b.dataset.i, price = openPrice();
         if (S.open[i]) return;
@@ -3859,17 +3875,17 @@ $('#app').addEventListener('click', e => {
         if (b.dataset.sure !== '1') { document.querySelectorAll('.wsb.lock.sure').forEach(x => { x.classList.remove('sure'); x.dataset.sure = ''; x.querySelector('span').textContent = gs(price); }); b.dataset.sure = '1'; b.classList.add('sure'); b.querySelector('span').textContent = '열까요?'; return; }
         S.gold -= price; S.open[i] = true; justOpened = i; acted(); save(); sfx('hang'); renderRoom(); updBar(true); toast('걸이를 열었어요! 조명이 켜졌어요');
     } else if (a === 'skin') {
-        const W = WALLS.find(w => w.id === b.dataset.id); if (!W) return;
-        if (!S.skins.includes(W.id)) { if (S.gold < W.price) return; S.gold -= W.price; S.skins.push(W.id); sfx('sell'); }
-        S.skin = W.id; save(); renderShop(); toast(`진열 벽을 '${W.name}'(으)로 바꿨어요`);
+        const W = WALLS.find(w => w.id === b.dataset.id); if (!W) return; let paid = 0;
+        if (!S.skins.includes(W.id)) { if (S.gold < W.price) return; S.gold -= W.price; paid = W.price; S.skins.push(W.id); sfx('sell'); }
+        S.skin = W.id; save(); renderShop(); spendFx(S.gold + paid, S.gold); toast(`진열 벽을 '${W.name}'(으)로 바꿨어요`);
     } else if (a === 'askin') {
-        const A = ARENAS.find(w => w.id === b.dataset.id); if (!A) return;
-        if (!S.asks.includes(A.id)) { if (S.gold < A.price) return; S.gold -= A.price; S.asks.push(A.id); sfx('sell'); }
-        S.ask = A.id; save(); renderShop(); toast(`싸움터를 '${A.name}'(으)로 바꿨어요`);
+        const A = ARENAS.find(w => w.id === b.dataset.id); if (!A) return; let paid = 0;
+        if (!S.asks.includes(A.id)) { if (S.gold < A.price) return; S.gold -= A.price; paid = A.price; S.asks.push(A.id); sfx('sell'); }
+        S.ask = A.id; save(); renderShop(); spendFx(S.gold + paid, S.gold); toast(`싸움터를 '${A.name}'(으)로 바꿨어요`);
     } else if (a === 'bskin') {
-        const B = BENCHES.find(w => w.id === b.dataset.id); if (!B) return;
-        if (!S.bskins.includes(B.id)) { if (S.gold < B.price) return; S.gold -= B.price; S.bskins.push(B.id); sfx('sell'); }
-        S.bskin = B.id; save(); applyBench(); renderShop(); toast(`작업대를 '${B.name}'(으)로 바꿨어요`);
+        const B = BENCHES.find(w => w.id === b.dataset.id); if (!B) return; let paid = 0;
+        if (!S.bskins.includes(B.id)) { if (S.gold < B.price) return; S.gold -= B.price; paid = B.price; S.bskins.push(B.id); sfx('sell'); }
+        S.bskin = B.id; save(); applyBench(); renderShop(); spendFx(S.gold + paid, S.gold); toast(`작업대를 '${B.name}'(으)로 바꿨어요`);
     } else if (a === 'reset') {
         if (!confirm('골드·기타·기록을 모두 지우고 처음부터 할까요? 되돌릴 수 없어요.')) return;
         S = fresh(); save(); setTab('bench'); start();
