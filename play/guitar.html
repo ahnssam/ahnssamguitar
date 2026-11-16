@@ -89,6 +89,8 @@
         .gk-bar .res.adg span { display: none; }   /* 아주 좁은 폰에선 동전 아이콘만 */
     }
     .res.gold.bump { animation: pkBump .6s cubic-bezier(.3, 1.6, .5, 1); }
+    .res.gold { transition: transform .22s ease-out, box-shadow .22s; transform-origin: left center; }
+    .res.gold.counting { transform: scale(1.18); box-shadow: 0 0 0 2px #ffd23f, 0 0 16px rgba(255, 210, 63, 0.75); }   /* 팔 때 골드 칸이 커지며 숫자가 올라간다 (2026-11-17) */
     .gk-bar .sp { flex: 1; }
     .daily { border-color: #f6d29a; background: #fff8ec; color: #a85a00; cursor: pointer; }
     .daily:not(.got) { animation: dPulse 1.8s ease-in-out infinite; }
@@ -348,22 +350,26 @@
     .gfcard small { font-size: 10.5px; color: #a99d90; }
     @keyframes bxShake { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-14deg) scale(1.05); } 75% { transform: rotate(14deg) scale(1.05); } }
     @keyframes bxOpen { 0% { transform: scale(.4); } 70% { transform: scale(1.25); } }
-    /* 검은 칸: 행운 게이지 · 다음 선물까지 */
-    .sband { flex-wrap: wrap; }
-    .sband .gmeta { flex: 1 1 100%; display: flex; flex-direction: row; justify-content: center; gap: 8px; min-width: 0; }   /* 이름이 배틀 탭 .bmeta 와 겹쳐서 세로로 쌓였었다 (2026-11-17) */
-    .sband .gm { flex: 0 1 auto; min-width: 0; display: flex; flex-direction: row; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); color: #c9d2ce; font-size: 11.5px; font-weight: 800; white-space: nowrap; cursor: pointer; }
-    .sband .gm > span { overflow: hidden; text-overflow: ellipsis; } .sband .gm > span i { margin-right: 4px; } .sband .gm b { color: #fff; }
-    .sband .gm > em { display: block; flex: 0 0 auto; width: 44px; height: 6px; border-radius: 99px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }   /* 글 옆 짧은 막대 (2026-11-17 사용자: 막대가 쓸데없이 길어) */
-    .sband .gm > em i { display: block; height: 100%; border-radius: inherit; transition: width .5s; }
-    .sband .gm.luck > span i { color: #6fdc9a; } .sband .gm.luck > em i { background: linear-gradient(90deg, #2fae6a, #7be0a5); }
-    .sband .gm.gift > span i { color: #ff9cbc; } .sband .gm.gift > em i { background: linear-gradient(90deg, #e0567a, #ffb38a); }
-    .sband .gm.luck.full { color: #fff; border-color: #7be0a5; box-shadow: 0 0 12px rgba(123, 224, 165, 0.45); animation: lkGlow 1.2s ease-in-out infinite alternate; }
-    @keyframes lkGlow { to { box-shadow: 0 0 20px rgba(123, 224, 165, 0.8); } }
-    @media (max-width: 359px) { .sband .gm { padding: 5px 7px; gap: 5px; font-size: 10.5px; } .sband .gm > em { width: 30px; } .sband .gmeta { gap: 6px; } }
+    /* 팔기 단추 바로 위 작은 게이지 두 줄 — 행운 · 다음 획득보상 (2026-11-17 사용자: '팔기 버튼 위쪽에 조그맣게', 보상 줄은 접기) */
+    .stage .sgauge { position: absolute; left: 10px; bottom: calc(var(--t) + 4px); z-index: 5; width: calc((100% - 28px) / 2.6); display: flex; flex-direction: column; align-items: flex-start; gap: 4px; animation: fade .2s; }
+    .stage .sgauge[hidden] { display: none; }
+    .sgauge .gr { display: flex; align-items: center; gap: 5px; max-width: 100%; min-width: 0; height: 22px; padding: 0 8px; border-radius: 99px; background: rgba(8, 14, 12, 0.8); border: 1px solid rgba(255, 255, 255, 0.22); color: #e8f0ec; font-size: 11px; font-weight: 800; white-space: nowrap; cursor: pointer; }
+    .sgauge .gr > i { flex: none; font-size: 10.5px; }
+    .sgauge .gr > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .sgauge .gr b { color: #fff; } .sgauge .gr.gift b.g { color: #ffd76a; }
+    .sgauge .gr > em { flex: 0 0 auto; display: block; width: 30px; height: 5px; border-radius: 99px; background: rgba(255, 255, 255, 0.15); overflow: hidden; }
+    .sgauge .gr > em i { display: block; height: 100%; border-radius: inherit; transition: width .5s; }
+    .sgauge .gr.luck > i { color: #6fdc9a; } .sgauge .gr.luck > em i { background: linear-gradient(90deg, #2fae6a, #7be0a5); }
+    .sgauge .gr.gift > i { color: #ff9cbc; } .sgauge .gr.gift > em i { background: linear-gradient(90deg, #e0567a, #ffb38a); }
+    .sgauge .gr .fd { flex: none; margin: 0 -4px 0 0; padding: 0 4px; height: 20px; color: #c9d2ce; font-size: 10px; background: none; }
+    .sgauge .gr.gift.folded { padding: 0 6px; }
+    .sgauge .gr.luck.full { color: #fff; border-color: #7be0a5; box-shadow: 0 0 10px rgba(123, 224, 165, 0.55); animation: lkGlow 1.2s ease-in-out infinite alternate; }
+    @keyframes lkGlow { to { box-shadow: 0 0 18px rgba(123, 224, 165, 0.9); } }
+    @media (max-width: 359px) { .sgauge .gr { font-size: 10px; gap: 4px; padding: 0 6px; height: 20px; } .sgauge .gr > em { width: 22px; } .sgauge .gr .w { display: none; } }
     /* 행운이 가득 찬 강화 단추 */
     .sact .ag.lucky { box-shadow: 0 0 0 2px #b9f5d2, 0 0 18px rgba(123, 224, 165, 0.8), 0 8px 18px rgba(0, 0, 0, 0.35); animation: lkBtn 1.1s ease-in-out infinite alternate; }
     @keyframes lkBtn { to { box-shadow: 0 0 0 3px #e3ffe9, 0 0 28px rgba(123, 224, 165, 1), 0 8px 18px rgba(0, 0, 0, 0.35); } }
-    @media (prefers-reduced-motion: reduce) { .stage .nextg .im img, .sband .gm.luck.full, .sact .ag.lucky, .gfcard .bx { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .stage .nextg .im img, .sgauge .gr.luck.full, .sact .ag.lucky, .gfcard .bx { animation: none; } }
     /* 부서진 뒤 화면 (2026-11-17 사용자: 바로 타이틀로 가지 말고 부서진 화면에서 조각 채운 것과 '기타 다시 찾기') */
     .empty.wreck { justify-content: flex-end; gap: 10px; padding-bottom: 18px; }
     .empty.wreck .wk { position: absolute; left: 50%; top: calc(var(--h0) * 0.3); width: calc(42px * var(--s)); height: auto; transform: translate(-50%, -50%) rotate(84deg); filter: grayscale(.7) brightness(.45) drop-shadow(0 6px 6px rgba(0, 0, 0, 0.6)); opacity: .85; pointer-events: none; z-index: -1; }
@@ -971,6 +977,8 @@
             <div class="sact" id="sact" hidden></div>
             <!-- 2026-11-15 사용자: 강화 단추 바로 위에 [하케 OFF] [튜너 OFF] — 파괴 확률이 생기는 단계(+7)부터, 누르면 ON -->
             <div class="sopt" id="sopt" hidden></div>
+            <!-- 2026-11-17: 팔기 단추 바로 위 작은 게이지(행운 · 다음 획득보상) -->
+            <div class="sgauge" id="sgauge" hidden></div>
         </div>
         <!-- 2026-11-13 사용자: 작업 박스 아래를 검은 칸으로 늘려서 튜닝·팔기·버리기를 강화 아래로 -->
         <div class="sband" id="sband" hidden></div>
@@ -1599,6 +1607,10 @@ function sfx(kind, lv = 0, ms = 0) {
         else if (kind === 'lose') { [392, 370, 349, 294].forEach((f, i) => T(f, i * 0.16, 0.3, 'triangle', 0.18)); }
         else if (kind === 'tick') { T(1200, 0, 0.04, 'square', 0.05); }
         else if (kind === 'jackpot') { [523, 659, 784, 1047, 1319, 1568, 2093].forEach((f, i) => T(f, 0.05 + i * 0.055, 0.3, 'square', 0.07)); T(2093, 0.45, 0.6, 'sine', 0.12); noise(t + 0.4, 0.3, 0.12, out, 9000, 4000); }
+        else if (kind === 'coins') {   // 골드 숫자가 올라가는 동안 동전 소리가 촤라락 (처음 촘촘하고 끝에서 드문드문)
+            const dur = ms / 1000, n = Math.max(10, Math.round(dur * 16));
+            for (let i = 0; i < n; i++) { const x = 1 - Math.pow(1 - i / n, 1 / 2.2); T(1500 + (i / n) * 900 + Math.random() * 250, x * dur, 0.045, 'square', 0.035); }
+        }
         else if (kind === 'gift') { [1568, 2093, 2637].forEach((f, i) => T(f, i * 0.08, 0.25, 'sine', 0.13)); }
         else if (kind === 'luck') { [784, 988, 1175, 1568].forEach((f, i) => T(f, i * 0.07, 0.4, 'sine', 0.15)); T(3136, 0.3, 0.3, 'sine', 0.05); }
         else if (kind === 'btnpop') { T(1500, 0, 0.05, 'square', 0.1, 650); T(540, 0.03, 0.1, 'triangle', 0.18, 300); noise(t, 0.035, 0.22, out, 5200, 1800); T(880, 0.5, 0.05, 'triangle', 0.1, 700); }
@@ -2132,7 +2144,7 @@ function renderBench() {
 function renderSact() {
     const el = $('#sact'), g = S.bench, show = !!g && !busy;
     el.hidden = !show; $('#stage').classList.toggle('has-act', !!show);
-    renderBand();
+    renderBand(); renderGauge();
     if (!show) { $('#sopt').hidden = true; return; }
     const cost = COST[g.lv], can = g.lv < MAX;
     // 2026-11-13 사용자: [팔기] [강화] — 강화를 오른쪽으로 보내고 팔기와 자리 바꿈. 하드케이스 ON/OFF 는 검은 칸 튜닝 오른쪽('하케 ON')
@@ -2166,6 +2178,24 @@ function renderOpt() {
         ? `<button type="button" class="tn ${S.tuneOn ? 'on' : ''}" data-a="tune" aria-pressed="${S.tuneOn}" title="${S.tuneOn ? `튜닝하고 강화 — 바늘을 맞히면 성공 +${up}%p` : '튜닝 안 함'}"><i class="fas ${T.icon}"></i>튜너 ${S.tuneOn ? 'ON' : 'OFF'}</button>`
         : `<button type="button" class="tn none" data-a="gotuner" title="튜너가 없어요 — 상점에서 사요"><i class="fas fa-sliders"></i>튜너 없음</button>`);
 }
+// 팔기 단추 바로 위 작은 게이지 (2026-11-17 사용자: '행운 바하고 보상 바를 팔기 버튼 위쪽에 조그맣게, 보상은 접을 수 있게 — 나중엔 어차피 정체될 거니까,
+//   돈 얼마 받는지 짧게라도 보여 줘야 열의 있게'). 보상 줄 접기는 이 브라우저에 기억(gk.giftFold)
+let giftFold = mem.get('gk.giftFold', false) === true;
+const giftShort = x => { const R = GIFTS[x]; return R.gold ? gs(R.gold) : R.cases ? '하케' : R.luck ? `행운+${R.luck}` : ''; };
+function renderGauge() {
+    const el = $('#sgauge'), g = S.bench, show = !!g && !busy && g.lv < MAX;
+    el.hidden = !show;
+    if (!show) return;
+    const L = luckOf(g), full = L >= LUCK_MAX, nx = nextGift(g);
+    let h = `<div class="gr luck${full ? ' full' : ''}" data-a="luckinfo" role="button" tabindex="0" title="강화를 누를 때마다 한 칸, ${LUCK_MAX}칸이면 다음 강화는 반드시 성공"><i class="fas fa-clover"></i><span>${full ? '<b>행운 가득!</b>' : `<span class="w">행운 </span><b>${L}/${LUCK_MAX}</b>`}</span><em><i style="width:${L / LUCK_MAX * 100}%"></i></em></div>`;
+    if (nx != null) {
+        const pv = GIFT_AT.filter(x => x < nx).pop() || 0, pc = Math.max(0, Math.min(1, (g.lv - pv) / (nx - pv)));
+        h += giftFold
+            ? `<div class="gr gift folded" data-a="giftfold" role="button" tabindex="0" title="획득보상 펼치기"><i class="fas fa-gift"></i><i class="fas fa-chevron-right" style="font-size:9px;color:#c9d2ce"></i></div>`
+            : `<div class="gr gift" data-a="giftinfo" role="button" tabindex="0" title="+${nx}에 처음 닿으면 받는 보상"><i class="fas fa-gift"></i><span><b>+${nx}</b> <b class="g">${giftShort(nx)}</b></span><em><i style="width:${pc * 100}%"></i></em><button type="button" class="fd" data-a="giftfold" aria-label="획득보상 접기"><i class="fas fa-chevron-left"></i></button></div>`;
+    }
+    el.innerHTML = h;
+}
 function renderBand() {
     const el = $('#sband'), g = S.bench;
     el.hidden = !g; $('#stage').classList.toggle('has-band', !!g);
@@ -2175,18 +2205,7 @@ function renderBand() {
     el.classList.toggle('wait', busy);
     if (busy) return;   // 기다리는 동안은 누르기 전 모습 그대로(결과를 먼저 알려 주지 않게)
     // 2026-11-15 사용자: 튜닝·하케는 강화 단추 위 스위치(renderOpt)로 옮겼다 — 여기는 컬렉션에 진열만
-    // 2026-11-17: 위에 행운 게이지 · 다음 선물까지 (최고 단계면 둘 다 없음)
-    let meta = '';
-    if (g.lv < MAX) {
-        const L = luckOf(g), full = L >= LUCK_MAX, nx = nextGift(g);
-        // 2026-11-17 사용자: '+10 선물까지 3단계'는 뜻을 모르겠다 → '+10 획득보상까지'로 짧게, 두 게이지를 한 줄에 글 옆 짧은 막대로(막대가 쓸데없이 길었음)
-        meta += `<div class="gm luck${full ? ' full' : ''}" data-a="luckinfo" role="button" tabindex="0"><span><i class="fas fa-clover"></i>${full ? '<b>행운 가득!</b>' : `행운 <b>${L}/${LUCK_MAX}</b>`}</span><em><i style="width:${L / LUCK_MAX * 100}%"></i></em></div>`;
-        if (nx != null) {
-            const pv = GIFT_AT.filter(x => x < nx).pop() || 0, pc = Math.max(0, Math.min(1, (g.lv - pv) / (nx - pv)));
-            meta += `<div class="gm gift" data-a="giftinfo" role="button" tabindex="0"><span><i class="fas fa-gift"></i><b>+${nx}</b> 획득보상까지</span><em><i style="width:${pc * 100}%"></i></em></div>`;
-        }
-    }
-    el.innerHTML = (meta ? `<div class="gmeta">${meta}</div>` : '') + `<button type="button" class="hg" data-a="hang"><i class="fas fa-image"></i>컬렉션에 진열</button>`;   // 2026-11-15 사용자: '진열하기' → '컬렉션에 진열'   // 2026-11-13 사용자: 버리기는 뺐다(+0은 공짜로 강화해서 팔면 된다)
+    el.innerHTML = `<button type="button" class="hg" data-a="hang"><i class="fas fa-image"></i>컬렉션에 진열</button>`;   // 2026-11-15 사용자: '진열하기' → '컬렉션에 진열'   // 2026-11-13 사용자: 버리기는 뺐다(+0은 공짜로 강화해서 팔면 된다)
 }
 function renderTable() {
     const el = $('#otab'), open = el.open, lv = S.bench ? S.bench.lv : -1;
@@ -2790,17 +2809,38 @@ async function sellBench() {
     const g = S.bench;
     if (busy || !g || !g.lv) return;
     busy = true; talkClear();
-    const price = SELL[g.lv];
+    const price = SELL[g.lv], g0 = S.gold;
     gain(price); S.st.sold++; S.st.earned += price;
     ghost = g; S.bench = null; if (S.rep === g.id) S.rep = '';
-    save(); updBar(true); renderSact(); $('#bench').innerHTML = '';
+    save(); renderSact(); $('#bench').innerHTML = '';   // 위 골드 숫자는 아직 그대로 — 악기가 날아간 뒤 촤라락 올라간다
+    // 2026-11-17 사용자: '팔기 누르면 악기가 돈 쪽으로 날아가면서 페이드아웃, 돈 칸이 약간 커지면서 돈이 촤라라락 올라가게' —
+    //   왼쪽 위 골드 칸으로 작아지며 날아가 사라지고, 골드 칸이 커지며 숫자가 2초(100만G 이상이면 3초) 동안 올라간다
     sfx('sell'); pop('+' + gf(price), 'gold', 36);
-    burst(12, ['#f5b31e', '#ffe27a', '#fff2b0'], { y: 50, spread: 120, size: [6, 10], dur: 900, grav: false });
-    const a = cv.animate([{ transform: CVT, opacity: 1 }, { transform: `${CVT} translateX(120%) rotate(12deg)`, opacity: 0 }], { duration: 520, easing: 'ease-in', fill: 'forwards' });
-    await sleep(540);
-    a.cancel(); ghost = null; busy = false;
+    const gr = $('#rGold').getBoundingClientRect(), cr = cv.getBoundingClientRect();
+    const dx = Math.round(gr.left + gr.width / 2 - (cr.left + cr.width / 2)), dy = Math.round(gr.top + gr.height / 2 - (cr.top + cr.height / 2));
+    const a = cv.animate([{ transform: CVT, opacity: 1 },
+        { transform: `${CVT} translate(${Math.round(dx * 0.12)}px, ${Math.round(dy * 0.12) - 26}px) scale(.92) rotate(-6deg)`, opacity: 1, offset: 0.25 },
+        { transform: `${CVT} translate(${dx}px, ${dy}px) scale(.1) rotate(-28deg)`, opacity: 0 }], { duration: 700, easing: 'cubic-bezier(.45, 0, .7, .6)', fill: 'forwards' });
+    await sleep(640);
+    a.cancel(); ghost = null; renderName();
+    await countGold(g0, S.gold, price >= 1e6 ? 3000 : 2000);
+    busy = false;
     if (g.lv >= 10) talk([['me', one(['좋은 값이다.', '팔 때를 아는 것도 실력이지.', '…아깝다. 그래도 장사는 장사.'])]]);
     renderBench();
+}
+// 위 골드 칸이 커지며 숫자가 from → to 로 촤라락 올라간다(처음 빠르고 끝에서 천천히). 끝나면 원래 크기로
+function countGold(from, to, ms) {
+    return new Promise(res => {
+        const box = $('#rGold'), el = box.querySelector('span'), t0 = performance.now();
+        box.classList.add('counting'); sfx('coins', 0, ms); buzz(12);
+        const step = now => {
+            const k = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - k, 2.2), v = Math.round(from + (to - from) * e);
+            el.textContent = gf(v); if (el.scrollWidth > el.clientWidth + 1) el.textContent = gshort(v);
+            if (k < 1) { requestAnimationFrame(step); return; }
+            box.classList.remove('counting'); updBar(true); sfx('sell'); res();
+        };
+        requestAnimationFrame(step);
+    });
 }
 // +0 버리기: 골드 없이 작업대를 비운다(쓰레기통으로 쏙)
 async function tossBench() {
@@ -3735,6 +3775,7 @@ $('#app').addEventListener('click', e => {
     else if (a === 'dex') dexZoom(b.dataset.f, +b.dataset.lv, b);   // 2026-11-13 사용자: 도감에서 모은 기타를 누르면 그 자리 근처에 두 배쯤
     else if (a === 'new') findGuitar(false);
     else if (a === 'nextg') { const g = S.bench; if (g && g.lv < MAX) toast(dexHas(giftFam(g.f), g.lv + 1) ? `다음 단계: +${g.lv + 1} ${gname({ ...g, lv: g.lv + 1 })}` : `다음 단계는 +${g.lv + 1} ??? — 강화해서 확인해 봐요`); }
+    else if (a === 'giftfold') { giftFold = !giftFold; mem.set('gk.giftFold', giftFold); renderGauge(); }
     else if (a === 'luckinfo') { const g = S.bench; if (g) toast(luckOf(g) >= LUCK_MAX ? '행운 게이지 가득! 이번 강화는 반드시 성공해요' : `강화를 누를 때마다 한 칸(실패해도). ${LUCK_MAX}칸이 차면 다음 강화는 반드시 성공 — ${LUCK_MAX - luckOf(g)}칸 남음`); }
     else if (a === 'giftinfo') { const g = S.bench, nx = g && nextGift(g); if (nx) toast(`${(FAMS[g.f] || FAMS.strat).dexName || (FAMS[g.f] || FAMS.strat).name} +${nx}에 처음 닿으면 획득보상(선물 상자)을 받아요 · ${nx - g.lv}단계 남음`); }
     else if (a === 'buy1') findGuitar(true);
