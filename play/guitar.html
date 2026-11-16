@@ -1121,7 +1121,9 @@ const floorRoom = (fl, g) => fl.filter(x => x.f === g.f).length < FLOOR_EACH;
 // 같은 이름 그림을 바꾸면 여기 판 번호를 올린다(브라우저가 예전 그림을 기억하지 않게)
 //   2026-11-13 헤드머신 수를 바로잡은 V2 그림으로 바꿈(사용자가 GPT로 다시 뽑은 것 중 맞는 것만): 스트랫 +0~9·+20, 텔레 +3·+20, 슈퍼스트랫 +4, 통기타·베이스 전부
 //   같은 날 텔레 +0~9(+3 빼고)·+10~19, 슈퍼스트랫 +0~9도 다시 뽑은 시트로 바꿈, 슈퍼스트랫 +11·+14·+16과 스트랫 +10~19는 한 장씩 다시 뽑은 것으로, 통기타 +0~9는 기둥 3+3 시트(+6 카포·+8 12현은 낱개)로 — 판 3, 슈퍼스트랫 +10·12·13·15·17·18·19는 다시 뽑은 시트로, 스트랫 +0~9는 기둥 6개 낱개로 — 판 3
-const ART_V = { fx: { 8: 2, 10: 2, 11: 2, 12: 2, 13: 2, 14: 2, 15: 2, 16: 2, 17: 2, 18: 2, 19: 2 },
+// 2026-11-17 텔레·레스폴 2세트를 사용자가 새로 뽑은 그림으로 바꿈 — 판 2
+const ART_V = { tele2: { 0: 2, 1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: 2, 11: 2, 12: 2, 13: 2, 14: 2, 15: 2, 16: 2, 17: 2, 18: 2, 19: 2, 20: 2 }, lespaul2: { 0: 2, 1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: 2, 11: 2, 12: 2, 13: 2, 14: 2, 15: 2, 16: 2, 17: 2, 18: 2, 19: 2, 20: 2 },
+    fx: { 8: 2, 10: 2, 11: 2, 12: 2, 13: 2, 14: 2, 15: 2, 16: 2, 17: 2, 18: 2, 19: 2 },
     strat: { 0: 3, 1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3, 7: 3, 8: 3, 9: 3, 10: 2, 11: 2, 12: 2, 13: 2, 14: 2, 15: 2, 16: 2, 17: 2, 18: 2, 19: 2, 20: 2 }, tl: { 0: 2, 1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: 2, 11: 2, 12: 2, 13: 2, 14: 2, 15: 2, 16: 2, 17: 2, 18: 2, 19: 2, 20: 2 }, ss: { 0: 2, 1: 2, 2: 2, 3: 2, 4: 3, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: 2, 11: 2, 12: 2, 13: 2, 14: 2, 15: 2, 16: 2, 17: 2, 18: 2, 19: 2 },
     ac: { 0: 3, 1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3, 7: 3, 8: 3, 9: 3, 10: 2, 11: 2, 12: 2, 13: 2, 14: 2, 15: 2, 16: 2, 17: 2, 18: 2, 19: 2, 20: 2 },
     bs: { 0: 2, 1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: 2, 11: 2, 12: 2, 13: 2, 14: 2, 15: 2, 16: 2, 17: 2, 18: 2, 19: 2, 20: 2 } };
@@ -2601,7 +2603,8 @@ async function enhance() {
     const luckNow = !lucky && g.luck >= LUCK_MAX;   // 이번에 막 가득 찼다
     let jump = 1, newDex = false, comboG = 0, gifts = [];
     updBar();   // 기다리는 동안 위 줄은 골드만 줄어든다(조각·케이스 수가 결과를 먼저 알려 주지 않게)
-    spendFx(goldBefore, S.gold);   // 골드 숫자가 내려간다 (2026-11-17)
+    holdGold(goldBefore);   // 2026-11-17 사용자: 강화 돈은 칸을 다 채우는 마지막 누름에 빠져나가게 — 그때까지 골드 숫자는 그대로(돈은 이미 저장됨)
+    const goldAfterCost = goldBefore - cost;
     // 결과를 먼저 저장하고(새로고침으로 되돌리기 막기), 기다림·연출은 그다음. 기다리는 동안은 강화 전 기타·이름 그대로 보인다
     ghost = { ...g };
     const wasRep = S.rep === g.id;   // 되살리면 대표도 그대로
@@ -2624,7 +2627,7 @@ async function enhance() {
     // 피크로 긁기 (2026-11-17 사용자): 단계가 높을수록 빈칸이 많고(+10이면 7칸), 누를 때마다 한 칸 — 처음 누른 것도 한 칸. 다 차면 결과로.
     //   긁는 동안 두근거림이 쌓이니 그 뒤 기다림은 칸 수만큼 짧게(0.7초까지)
     const sn = strumNeed(lv0);
-    await strumPhase(sn);
+    await strumPhase(sn, () => spendFx(goldBefore, goldAfterCost));   // 마지막 칸을 누르는 순간 골드가 내려간다
     actsLock(false); renderSact();   // 두근두근 막대가 나올 때는 단추가 없어진다 (2026-11-17 사용자 — 긁는 동안만 그대로)
     const sms = sn > 1 ? Math.max(700, WAIT_MS(lv0) - (sn - 1) * 400) : undefined;
     await suspense(lv0, lucky ? { txt: '행운 강화 — 반드시 성공!', ms: sms } : { ms: sms });
@@ -2716,9 +2719,9 @@ const strumSlots = lv => `<span class="slots">${'<i></i>'.repeat(strumNeed(lv))}
 let strum = null;   // { n, done, res } — 긁는 중
 let lockedActs = false;
 function actsLock(on) { lockedActs = on; $('#stage').classList.toggle('locked', on); }
-function strumPhase(n) {
+function strumPhase(n, onLast) {
     return new Promise(res => {
-        strum = { n, done: 0, res };
+        strum = { n, done: 0, res, onLast };
         const html = `<button type="button" class="ag strum" data-a="strum"><span class="agl"><i class="fas fa-hammer"></i>강화 <small>0/${n}</small></span><span class="slots">${'<i></i>'.repeat(n)}</span></button>`;
         const old = document.querySelector('#sact .ag'), sa = $('#sact');
         if (old) old.outerHTML = html; else sa.insertAdjacentHTML('beforeend', html);   // 강화 단추 자리만 바꾼다(팔기·스위치·게이지는 그대로)
@@ -2738,7 +2741,7 @@ function strumHit() {
     }
     pickStrum(st.done); anvilSparks(btn, st.done === st.n);
     sfx('strum', Math.min(20, st.done)); buzz(40);   // 진동 '웅'
-    if (st.done >= st.n) setTimeout(() => { strum = null; if (btn) btn.classList.add('done'); st.res(); }, 300);   // 다 차면 그 모습 그대로 결과를 기다린다
+    if (st.done >= st.n) { if (st.onLast) st.onLast(); setTimeout(() => { strum = null; if (btn) btn.classList.add('done'); st.res(); }, 300); }   // 다 차면 그 모습 그대로 결과를 기다린다
 }
 // 피크가 기타 몸통 위 줄을 가로질러 긁는다(번갈아 왼→오, 오→왼). 기타는 살짝 흔들리고 번쩍
 function pickStrum(k) {
@@ -3045,6 +3048,8 @@ function countGold(from, to, ms) {
         goldRaf = requestAnimationFrame(step);
     });
 }
+// 골드 칸에 이 숫자를 그대로 보여 둔다(실제 골드는 이미 바뀌었어도) — 강화 마지막 칸을 누를 때까지
+function holdGold(v) { [$('#rGold span'), ...document.querySelectorAll('[data-gold]')].forEach(el => { if (!el) return; el.textContent = gf(v); if (el.scrollWidth > el.clientWidth + 1) el.textContent = gshort(v); }); }
 const spendFx = (from, to) => { if (to < from) countGold(from, to, from - to >= 1e5 ? 2000 : 1000); };   // 돈 쓸 때: 10만G 이상이면 2초, 아니면 1초
 // +0 버리기: 골드 없이 작업대를 비운다(쓰레기통으로 쏙)
 async function tossBench() {
