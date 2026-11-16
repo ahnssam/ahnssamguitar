@@ -290,6 +290,22 @@
     .revive small { display: block; margin-top: 4px; font-size: 11.5px; color: #a99c8e; }
     .revive.wait { opacity: .6; pointer-events: none; }
     @keyframes rvIn { from { opacity: 0; transform: translate(-50%, -42%) scale(.92); } }
+    /* 파괴 화면의 조각 칸 (2026-11-16 사용자: 쾅 화면에서 조각이 몇 개 나왔는지 · 몇 개 찼는지 · 하드케이스가 만들어졌는지) — shardCard() */
+    .shcard { position: absolute; left: 50%; top: calc(var(--h0) * .6); transform: translate(-50%, -50%); z-index: 9; width: min(260px, 82%); padding: 12px 14px 10px; border-radius: 16px; background: rgba(18, 13, 9, 0.9); border: 1.5px solid rgba(255, 215, 106, 0.45); color: #fff; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); animation: rvIn .3s ease-out; cursor: pointer; transition: opacity .25s; }
+    .shcard.out { opacity: 0; }
+    .shcard .t { font-size: 15px; font-weight: 900; }
+    .shcard .t i { color: #e6ad74; margin-right: 2px; }
+    .shcard .t b { margin-left: 2px; font-size: 19px; color: #ffd76a; }
+    .shcard .bar { position: relative; height: 18px; margin: 9px 0 7px; border-radius: 99px; background: rgba(255, 255, 255, 0.13); overflow: hidden; }
+    .shcard .bar i { position: absolute; top: 0; bottom: 0; left: 0; width: 0; border-radius: inherit; background: linear-gradient(90deg, #b9782a, #ffd76a); transition: width .6s cubic-bezier(.3, .8, .4, 1); }
+    .shcard .bar i.reset { transition: none; }
+    .shcard .bar.full i { background: linear-gradient(90deg, #ffd76a, #fff6d2); box-shadow: 0 0 14px #ffd76a; }
+    .shcard .bar.full span { color: #4a2c00; text-shadow: none; }
+    .shcard .bar span { position: relative; display: block; font: 900 11.5px/18px 'Arial Black', sans-serif; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); }
+    .shcard .m { min-height: 18px; font-size: 12.5px; font-weight: 800; color: #e8ddd0; }
+    .shcard .m.case { font-size: 14.5px; color: #ffd76a; animation: caseIn .45s cubic-bezier(.3, 1.6, .5, 1); }
+    @keyframes caseIn { from { opacity: 0; transform: scale(.55); } }
+    @media (prefers-reduced-motion: reduce) { .shcard, .shcard .m.case { animation: none; } .shcard .bar i { transition: none; } }
     .flash { position: absolute; inset: 0; z-index: 5; background: #fff; pointer-events: none; animation: flash .35s ease-out forwards; }
     @keyframes flash { from { opacity: .85; } to { opacity: 0; } }
     .stbox { position: relative; border-radius: 18px; overflow: hidden; }
@@ -1610,6 +1626,36 @@ function btnCap() {
 //   가득(CASE_MAX)이면 조각은 모아 두었다가, 케이스를 하나 쓰면 바로 만든다. 만든 개수를 돌려준다
 function autoCase() { let n = 0; while (S.shards >= CASE_SHARDS && S.cases < CASE_MAX) { S.shards -= CASE_SHARDS; S.cases++; n++; } return n; }
 function caseNote(n) { if (!n) return; sfx('case'); toast(`조각 ${CASE_SHARDS}개로 하드케이스를 만들었어요 (${S.cases}/${CASE_MAX})`); }
+// 파괴 화면의 조각 칸 (2026-11-16 사용자: '쾅 하는 화면에서 이 악기에서 부서진 조각이 몇 개 나왔는지, 몇 개 채워졌는지, 하드케이스가 만들어졌는지')
+//   before = 부서지기 전 조각, got = 이번에 나온 조각, made = 이번에 만든 하드케이스 수(autoCase 뒤라 S.shards·S.cases 는 이미 바뀐 값).
+//   막대가 before → before+got 으로 차고, 20을 넘기면 가득 → '하드케이스 완성!' → 남은 조각으로 다시 시작. 누르면 바로 넘어간다
+function shardCard(before, got, made) {
+    return new Promise(res => {
+        const d = document.createElement('div'), T = [];
+        d.className = 'shcard';
+        const pct = n => Math.min(100, n / CASE_SHARDS * 100);
+        const msg = made ? `<i class="fas fa-briefcase"></i> 하드케이스 완성! (${S.cases}/${CASE_MAX})`
+            : S.cases >= CASE_MAX ? `하드케이스는 ${CASE_MAX}개 가득 · 조각은 모아 둬요` : `하드케이스까지 ${CASE_SHARDS - S.shards}개 남음`;
+        d.innerHTML = `<div class="t"><i class="fas fa-puzzle-piece"></i> 부서진 기타 조각 <b>+${got}</b></div>
+            <div class="bar"><i style="width:${pct(before)}%"></i><span>${before}/${CASE_SHARDS}</span></div><div class="m"></div>`;
+        const bar = d.querySelector('.bar'), fill = bar.querySelector('i'), num = bar.querySelector('span'), m = d.querySelector('.m');
+        let done = false;
+        const end = () => { if (done) return; done = true; T.forEach(clearTimeout); d.classList.add('out'); setTimeout(() => { d.remove(); res(); }, 250); };
+        T.push(setTimeout(() => { fill.style.width = pct(before + got) + '%'; num.textContent = `${made ? Math.min(before + got, CASE_SHARDS) : S.shards}/${CASE_SHARDS}`; }, 250));
+        T.push(setTimeout(() => {
+            m.innerHTML = msg;
+            if (!made) return;
+            m.classList.add('case'); bar.classList.add('full'); sfx('case');
+        }, 900));
+        if (made) T.push(setTimeout(() => {   // 남은 조각으로 다시
+            bar.classList.remove('full'); fill.classList.add('reset'); fill.style.width = '0%'; void fill.offsetWidth;
+            fill.classList.remove('reset'); fill.style.width = pct(S.shards) + '%'; num.textContent = `${S.shards}/${CASE_SHARDS}`;
+        }, 1600));
+        T.push(setTimeout(end, made ? 2800 : 2000));
+        d.addEventListener('click', end);
+        $('#stage').appendChild(d);
+    });
+}
 function shake(big) { const el = $('#stbox'); el.classList.remove('shake', 'shake2'); void el.offsetWidth; el.classList.add(big ? 'shake2' : 'shake'); }
 function flash() { const d = document.createElement('div'); d.className = 'flash'; $('#stbox').appendChild(d); setTimeout(() => d.remove(), 400); }
 
@@ -2087,11 +2133,13 @@ async function enhance() {
     ghost = { ...g };
     const wasRep = S.rep === g.id;   // 되살리면 대표도 그대로
     let gotSh = 0;   // 부서졌을 때 나온 조각 수
-    let caseMade = 0;   // 하드케이스를 쓰고 바로 새로 만든 개수
+    let caseMade = 0;   // 하드케이스를 쓰고 바로 새로 만든 개수 · 부서져서 모인 조각으로 만든 개수
+    const sh0 = S.shards, cs0 = S.cases;   // 부서지기 전 조각·케이스 — 넥뿌의 요정이 되살리면 그대로 돌려놓는다
     if (out === 'ok') { g.lv++; S.st.ok++; S.st.best = Math.max(S.st.best, g.lv); dexAdd(g.f, g.lv); }
     else if (out === 'keep') S.st.keep++;
     else if (out === 'saved') { S.st.saved++; S.cases--; caseMade = autoCase(); if (!S.cases) S.caseOn = false; }
-    else { gotSh = shardDrop(g.lv); S.st.boom++; S.shards += gotSh; S.bench = null; if (S.rep === g.id) S.rep = ''; }
+    // 부서지면 하드케이스도 바로 만든다(2026-11-16 — 쾅 화면에 보여 주려고. 예전엔 되살리기를 안 할 때만 나중에 만들었다)
+    else { gotSh = shardDrop(g.lv); S.st.boom++; S.shards += gotSh; caseMade = autoCase(); S.bench = null; if (S.rep === g.id) S.rep = ''; }
     save();
     await suspense(lv0);
     if (out !== 'boom') ghost = null;
@@ -2138,13 +2186,14 @@ async function enhance() {
         burst(28, ['#8d3142', '#c04050', '#f1e1c0', '#e6ad74', '#7a7b7d', '#0e1614'], { y: 62, spread: 170, size: [5, 12], dur: 1100 });
         pop('쾅!', 'boom', 40);
         await sleep(450);
-        pop(`부서진 기타 조각 +${gotSh}`, 'sm', 22);
-        await sleep(450);
+        updBar();
+        await shardCard(sh0, gotSh, caseMade);   // 조각 +N · 막대 n/20 · 하드케이스 완성 여부 (2026-11-16 사용자)
         a.cancel(); ghost = null; redAt = 0; renderName();
         // 2026-11-13 사용자: 악기가 부서지면 전면 광고(AdSense H5 게임 광고 adBreak 'next') — 첫 번째 파괴엔 띄우고, 두 번째는 건너뛰고, 세 번째는 띄우고…(홀수 번째만, S.st.boom 은 이 브라우저에서 부서진 횟수)
         // 부서진 것·조각 수를 다 보여 준 뒤에 띄우고, 실제로 뜰지는 구글이 정한다(안 띄우면 바로 넘어감). 하드케이스가 막은 건 안 부서졌으니 광고 없음
         await sleep(400);
         if (await reviveOffer(g, gotSh, wasRep)) {   // 광고를 끝까지 보고 되살렸으면 파괴 광고·신세한탄 없이
+            S.shards = sh0; S.cases = cs0; save();   // 안 부서진 셈 — 조각도, 그 조각으로 만든 하드케이스도 없던 일로
             updBar(); renderName();
             sfx('ok', g.lv); flash();
             cv.animate([{ transform: `${CVT} scale(.55)`, opacity: 0, filter: 'brightness(3)' }, { transform: `${CVT} scale(1.06)`, opacity: 1, filter: 'brightness(2)', offset: .6 }, { transform: CVT, opacity: 1, filter: 'brightness(1)' }], { duration: 800, easing: 'ease-out' });
@@ -2153,9 +2202,7 @@ async function enhance() {
             pop(`+${g.lv} 부활!`, 'ok');
             setTimeout(() => talk(one(LINES.revive)), 600);
             await sleep(500);
-        } else {
-            const made = autoCase();
-            if (made) { save(); updBar(); caseNote(made); await sleep(700); }
+        } else {   // 하드케이스는 부서질 때 이미 만들었고 쾅 화면(shardCard)에서 보여 줬다
             if (S.st.boom % 2 === 1) await new Promise(res => PLAY.interstitial(res, '악기가 부서진 뒤 전면 광고', 'boom'));
             talk([['me', one(g.lv >= 10 ? LINES.bigSigh : LINES.sigh)]]);   // 2026-11-13 사용자: '나'의 신세한탄 (2026-11-15 다른 인물의 한마디는 지움)
         }
