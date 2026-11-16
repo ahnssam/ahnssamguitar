@@ -814,8 +814,10 @@
             <div class="bar"><span style="width:${pct}%"></span><i style="left:${goal}%" title="${MAIN_GOAL}곡"></i></div>
             <small>${done >= MAIN_GOAL ? '🎉 ' + MAIN_GOAL + '곡 넘음 — 새 메인 반영 검토' : '새 메인 반영까지 ' + (MAIN_GOAL - done) + '곡'}</small>`;
     }
+    // 검색: 어퍼스트로피(' ’ ‘ ` ´ 등)는 빼고 비교 — dont 로도 Don't 가 나오게
+    const srch = v => String(v || '').toLowerCase().replace(/['‘’‛ʼ`´′]/g, '');
     function render() {
-        const q = $('q').value.trim().toLowerCase();
+        const q = srch($('q').value.trim());
         const rank = orderRanks();
         const hasOrders = Object.keys(rank).length > 0;
         const dups = dupCounts(), chk = CHECKS[checkFilter];
@@ -823,7 +825,7 @@
             (filter === 'hid' ? isHidden(s) : (!!q || !isHidden(s)) && (filter === 'all' || (filter === 'pub' ? s.published : !s.published))) &&
             (pdfFilter === 'all' || (pdfFilter === 'has' ? !!filesById[s.id] : !filesById[s.id])) &&
             (!chk || chk.test(s, dups)) &&
-            (!q || [s.title, s.title_original, s.artist].join(' ').toLowerCase().includes(q)));
+            (!q || srch([s.title, s.title_original, s.artist].join(' ')).includes(q)));
         if (sortBy === 'orders') rows = rows.slice().sort(regDir ? regCmp : fsCmp);
         const up = sortBy === 'up' ? upOrder() : null;
         if (up) rows = rows.filter(s => !filesById[s.id]).sort((a, b) => upKey(up, a) - upKey(up, b) || ((b.fullscore_orders || 0) - (a.fullscore_orders || 0)));
