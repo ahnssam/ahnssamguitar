@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>안쌤갤러리 | 안쌤의 기타나무숲</title>
+<link rel="icon" href="/images/favicon-32x32.png">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!--
+  안쌤갤러리 (2026-11-16) — 운영 계정 전용. 내 아이디 메뉴의 '안쌤갤러리'로 들어온다.
+  채널 분석·기획 글과 영상 대본을 모아 둔 게시판으로, ahnssamcc 대시보드(🖋️ 안쌤갤러리 탭)와 같은 글을 본다.
+  글은 이 저장소(공개)에 없다. Supabase 표 yt.gallery_posts·yt.gallery_comments 에 있고, 엣지 함수 yt-gallery 가
+  운영 계정 로그인 토큰을 확인한 뒤에만 돌려준다. (함수·표 정의는 비공개 저장소 ahnssamcc 의 src/yt-gallery.ts · src/schema.sql)
+  아래 '공용 코드' 블록(CSS·JS)은 ahnssamcc 대시보드와 글자 하나 다르지 않게 똑같다. 고치면 둘 다 고친다.
+-->
+<style>
+    :root { --green: #2a6b4a; --ink: #151515; --sub: #808080; --line: #e6e6e6; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; font-family: 'Noto Sans KR', sans-serif; color: var(--ink); background: #f7f8f7; font-size: 14px; line-height: 1.5; }
+    button, input, select, textarea { font: inherit; }
+    .wrap { max-width: 1000px; margin: 0 auto; padding: 0 20px; }
+    header { background: #fff; border-bottom: 1px solid var(--line); }
+    header .wrap { display: flex; align-items: center; gap: 14px; height: 60px; }
+    header h1 { margin: 0; font-size: 16px; font-weight: 900; color: var(--green); }
+    header h1 small { color: var(--sub); font-weight: 500; margin-left: 6px; }
+    header .site { margin-left: auto; font-size: 13px; color: var(--sub); text-decoration: none; }
+    .gate { max-width: 420px; margin: 80px auto; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 34px; text-align: center; }
+    .gate i { font-size: 28px; color: var(--green); margin-bottom: 12px; }
+    .gate p { color: #555; margin: 0 0 16px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 8px 14px; font-weight: 700; font-size: 13.5px; cursor: pointer; }
+    .btn.primary { background: var(--green); border-color: var(--green); color: #fff; }
+    main.wrap { padding-top: 22px; padding-bottom: 40px; }
+    @media (max-width: 600px) {
+        header h1 { white-space: nowrap; font-size: 15px; }
+        header h1 small, header .site span { display: none; }
+        header .site { white-space: nowrap; }
+    }
+    .foot-note { max-width: 960px; margin: 12px auto 0; color: #888; font-size: 12px; }
+    /* 게시판 글자는 대시보드와 같게 (Noto Sans 대신 게시판 글꼴) */
+    .dc button, .dc input, .dc select, .dc textarea { font-family: inherit; }
+    .dc button { cursor: pointer; }
+
+/* ══ 🖋️ 안쌤갤러리 게시판 CSS — 공용 코드 시작 (ahnssamcc 대시보드 · ahnssamguitar/admin/gallery.html 에 똑같이 있음. 고치면 둘 다) ══
+   커뮤니티 게시판 모양. 다크 모드와 상관없이 게시판 색을 고정한다 */
+.dc { --dcb: #3b4890; --dcb2: #29367c; --dcline: #ccc; --dcsoft: #f3f3f3; --dcred: #d31900;
+  background: #fff; color: #333; font-family: "Malgun Gothic", "맑은 고딕", Dotum, sans-serif; font-size: 13px;
+  max-width: 960px; margin: 0 auto; padding: 0 0 30px; border: 1px solid #ddd; }
+.dc a { color: inherit; text-decoration: none; cursor: pointer; }
+.dc-top { background: var(--dcb); color: #fff; padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+.dc-top .logo { font-weight: 800; font-size: 17px; letter-spacing: -0.5px; }
+.dc-top .crumb { font-size: 12px; opacity: .85; }
+.dc-head { padding: 16px 16px 0; }
+.dc-head h2 { margin: 0; font-size: 22px; color: var(--dcb); letter-spacing: -1px; }
+.dc-head h2 small { font-size: 12px; color: #777; font-weight: 400; margin-left: 8px; letter-spacing: 0; }
+.dc-tabs { display: flex; gap: 0; margin: 12px 16px 0; border-bottom: 2px solid var(--dcb); }
+.dc-tabs button { background: #fff; color: #555; border: 1px solid var(--dcline); border-bottom: none; border-radius: 0;
+  padding: 6px 16px; margin-right: -1px; font-size: 13px; }
+.dc-tabs button.on { background: var(--dcb); color: #fff; border-color: var(--dcb); font-weight: 700; }
+.dc-tabs .sp { flex: 1; }
+.dc-btn { background: var(--dcb); color: #fff; border: 1px solid var(--dcb2); border-radius: 2px; padding: 5px 14px; font-size: 13px; font-weight: 700; }
+.dc-btn.gray { background: #fff; color: #333; border-color: #bbb; font-weight: 400; }
+.dc-list { width: calc(100% - 32px); margin: 0 16px; border-collapse: collapse; }
+.dc-list th { font-weight: 400; color: #333; border-bottom: 1px solid var(--dcline); padding: 8px 4px; font-size: 13px; }
+.dc-list td { border-bottom: 1px solid #eee; padding: 8px 4px; text-align: center; color: #666; font-size: 12.5px; white-space: nowrap; }
+.dc-list td.tit { text-align: left; color: #333; white-space: normal; font-size: 13px; }
+.dc-list tr:hover td { background: #f8f8f8; }
+.dc-list tr.notice td { background: #f9f9fb; }
+.dc-list tr.notice td.tit { font-weight: 700; }
+.dc-list .cmt { color: var(--dcred); font-size: 12px; margin-left: 4px; }
+.dc-list .icon { display: inline-block; font-size: 11px; color: #fff; background: #999; border-radius: 2px; padding: 0 4px; margin-right: 6px; }
+.dc-list .icon.hot { background: var(--dcred); }
+.dc-list .icon.notice { background: var(--dcb); }
+.dc-cat { color: #666; font-weight: 400; margin-right: 4px; }   /* 제목 앞 [말머리] */
+.dc-star { display: inline-block; width: 18px; margin-right: 4px; color: #bbb; font-size: 15px; line-height: 1; text-align: center;
+  cursor: pointer; user-select: none; vertical-align: -1px; }
+.dc-star:hover { color: #f0a800; }
+.dc-star.on { color: #f0a800; }
+.dc-list tr.fav td { background: #fffbea; }
+.dc-view .vh h3 .dc-star { font-size: 17px; }
+.dc-nick { color: #333; }
+.dc-nick.gonik { color: var(--dcb); font-weight: 700; }
+.dc-nick .gk { display: inline-block; width: 12px; height: 12px; border-radius: 2px; background: var(--dcb); color: #fff;
+  font-size: 9px; line-height: 12px; text-align: center; margin-left: 3px; vertical-align: 1px; }
+.dc-ip { color: #999; font-size: 11px; }
+.dc-bottom { display: flex; justify-content: space-between; align-items: center; margin: 12px 16px 0; }
+.dc-paging { text-align: center; margin: 14px 0 0; color: #333; }
+.dc-paging b { color: var(--dcred); }
+.dc-view { margin: 14px 16px 0; border-top: 2px solid var(--dcb); }
+.dc-view .vh { padding: 12px 6px 10px; border-bottom: 1px solid var(--dcline); }
+.dc-view .vh h3 { margin: 0 0 8px; font-size: 16px; color: #333; }
+.dc-view .vh .meta { display: flex; justify-content: space-between; font-size: 12px; color: #777; flex-wrap: wrap; gap: 6px; }
+.dc-body { padding: 22px 8px 10px; font-size: 14px; line-height: 1.75; color: #222; word-break: keep-all; overflow-wrap: anywhere; }
+.dc-body h1 { font-size: 17px; margin: 22px 0 8px; color: #222; }
+.dc-body h2 { font-size: 15px; margin: 20px 0 6px; color: var(--dcb); }
+.dc-body h3 { font-size: 14px; margin: 16px 0 6px; color: #222; }
+.dc-body p { margin: 0 0 12px; white-space: pre-wrap; }   /* 글 속 들여쓰기(   -> …)를 그대로 보여줌 */
+.dc-body ul { margin: 0 0 12px; padding-left: 20px; }
+.dc-body blockquote { margin: 10px 0 14px; padding: 10px 14px; background: #f6f7fb; border-left: 3px solid var(--dcb); }
+.dc-body a { color: var(--dcb); text-decoration: underline; }
+.dc-view .dc-move { margin-top: 8px; text-align: right; }
+.dc-body hr { border: none; border-top: 1px dashed #ccc; margin: 18px 0; }
+.dc-body table { border-collapse: collapse; margin: 6px 0 14px; display: block; max-width: 100%; overflow-x: auto; }   /* 넓은 표는 휴대폰에서 가로로 밀어서 봄 */
+.dc-body td, .dc-body th { border: 1px solid #ddd; padding: 4px 8px; }
+.dc-rec { display: flex; justify-content: center; gap: 14px; margin: 18px 0 8px; }
+.dc-rec button { width: 92px; height: 92px; border-radius: 50%; border: 2px solid var(--dcb); background: #fff; color: var(--dcb);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; }
+.dc-rec button b { font-size: 24px; line-height: 1; }
+.dc-rec button.down { border-color: #999; color: #777; }
+.dc-rec button:disabled { opacity: .55; cursor: default; }
+.dc-concept { text-align: center; color: var(--dcred); font-size: 12px; min-height: 18px; }
+.dc-cmts { margin: 16px 0 0; border-top: 2px solid var(--dcb); }
+.dc-cmts .ch { padding: 8px 6px; font-weight: 700; border-bottom: 1px solid var(--dcline); }
+.dc-cmts .ch span { color: var(--dcred); }
+.dc-cmt { display: grid; grid-template-columns: 130px 1fr auto; gap: 10px; padding: 9px 6px; border-bottom: 1px solid #eee; font-size: 13px; }
+.dc-cmt .d { color: #999; font-size: 11px; white-space: nowrap; }
+.dc-cmtform { background: var(--dcsoft); padding: 10px; margin-top: 10px; display: grid; grid-template-columns: 130px 1fr auto; gap: 8px; }
+.dc-cmtform input, .dc-cmtform textarea, .dc-write input, .dc-write textarea, .dc-write select { border: 1px solid #ccc; background: #fff; color: #333;
+  font: inherit; padding: 6px 8px; border-radius: 0; }
+.dc-cmtform textarea { min-height: 54px; resize: vertical; }
+.dc-write { margin: 14px 16px 0; border-top: 2px solid var(--dcb); padding-top: 12px; display: grid; gap: 8px; }
+.dc-write textarea { min-height: 360px; resize: vertical; line-height: 1.6; }
+.dc-write .row { display: flex; gap: 8px; }
+.dc-write .hint { color: #888; font-size: 12px; }
+.dc-msg { text-align: center; color: #666; padding: 60px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.dc-msg small { color: #999; }
+.dc-note { margin: 12px 16px 0; padding: 8px 12px; background: #eef1fb; color: var(--dcb); border: 1px solid #d5dbf2; font-size: 12.5px; }
+/* 모바일 목록 전용 칸 — PC에선 숨기고, 720px 이하에서만 커뮤니티 앱처럼 '제목 한 줄 + 정보 한 줄 + 오른쪽 댓글 수'로 보여준다 */
+.dc-list .m-main, .dc-list .m-cmt { display: none; }
+@media (max-width: 720px) {
+  .dc { margin: 0 -20px; border-left: none; border-right: none; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }   /* .wrap 좌우 여백(20px)을 상쇄해 화면 끝까지 */
+  .dc-list { width: 100%; margin: 0; }
+  .dc-list thead, .dc-list td:not(.m-main):not(.m-cmt):not(.m-empty) { display: none; }
+  .dc-list td.m-main, .dc-list td.m-cmt { display: table-cell; border-bottom: 1px solid #e3e3e3; }
+  .dc-list td.m-main { text-align: left; white-space: normal; padding: 10px 6px 9px 14px; }
+  .dc-list td.m-cmt { width: 40px; padding: 0 14px 0 4px; text-align: right; color: var(--dcred); font-size: 14px; }
+  .dc-list .m-t { color: #222; font-size: 14.5px; line-height: 1.4; word-break: keep-all; overflow-wrap: anywhere; }
+  .dc-list .m-t .dc-star { font-size: 16px; width: 18px; }
+  .dc-list .m-meta { margin-top: 4px; color: #888; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dc-list .m-meta i { font-style: normal; color: #ccc; margin: 0 5px; }
+  .dc-list .m-meta .dc-nick { color: #666; }
+  .dc-list .m-meta b { color: var(--dcred); font-weight: 400; }
+  .dc-tabs { margin: 12px 0 0; overflow-x: auto; }
+  .dc-tabs button { white-space: nowrap; padding: 6px 12px; flex: none; }   /* 좁은 화면에서 탭 글자가 세로로 쪼개지지 않게 */
+  .dc-cmt, .dc-cmtform { grid-template-columns: 1fr; }
+}
+/* ══ 🖋️ 안쌤갤러리 게시판 CSS — 공용 코드 끝 ══ */
+</style>
+</head>
+<body>
+<header>
+    <div class="wrap">
+        <h1>안쌤의 기타나무숲<small>안쌤갤러리</small></h1>
+        <a class="site" href="/" title="사이트로"><span>사이트로 </span><i class="fas fa-arrow-up-right-from-square"></i></a>
+        <div class="auth-slot"></div>
+    </div>
+</header>
+
+<div id="gate" class="gate"><i class="fas fa-spinner fa-spin"></i><p>로그인 상태를 확인하고 있어요…</p></div>
+
+<main id="app" class="wrap" hidden>
+    <div class="dc">
+        <div class="dc-top"><a class="logo" onclick="dcList()" title="글 목록으로">안쌤갤러리</a><span class="crumb">갤러리 › 음악 › 안쌤의 기타나무숲 갤러리</span></div>
+        <div class="dc-head"><h2><a onclick="dcList()" title="글 목록으로">안쌤의 기타나무숲 갤러리</a><small>채널 분석·기획 글 올리는 곳</small></h2></div>
+        <div id="dcMain"></div>
+    </div>
+    <p class="foot-note">커맨드센터 대시보드의 🖋️ 안쌤갤러리와 같은 글입니다. 어느 쪽에서 쓰거나 고쳐도 다른 쪽에 바로 보입니다.</p>
+</main>
+
+<script>
+(function () {
+    'use strict';
+    // 운영 계정만 (auth.js 의 OWNER_EMAILS, 엣지 함수 yt-gallery 의 OWNER_EMAILS 와 같음)
+    const ADMIN_EMAIL = 'steveq2568@gmail.com';
+    const FN_URL = 'https://qpcbrqgqylxkgdwoflku.supabase.co/functions/v1/yt-gallery';
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    // 게시판 공용 코드가 쓰는 연결부: 서버 호출(로그인 토큰으로) · 주소(#/...) 바꾸기 · 맨 위로
+    window.DC_HOST = {
+        async api(action, params) {
+            const sb = window.ahnssamAuth && window.ahnssamAuth.supabase;
+            const s = sb ? (await sb.auth.getSession()).data.session : null;
+            if (!s) throw new Error('로그인이 풀렸어요. 다시 로그인해 주세요');
+            const r = await fetch(FN_URL, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json', Authorization: 'Bearer ' + s.access_token },
+                body: JSON.stringify(Object.assign({ action: action }, params || {})),
+            });
+            const j = await r.json().catch(() => ({}));
+            if (!j.ok) throw new Error(j.error === 'unauthorized' ? '운영 계정만 볼 수 있어요' : (j.error || ('서버 오류 ' + r.status)));
+            return j.data;
+        },
+        go(route, replace) {
+            const h = '#/' + route;
+            if (location.hash === h) return dcRoute(route);   // 같은 화면이면 기록 없이 다시 그리기만
+            if (replace) location.replace(h); else location.hash = h;   // → hashchange 에서 dcRoute
+        },
+        top() { window.scrollTo({ top: 0 }); },
+    };
+    // 주소 #/view/14 → "view/14". 로그인 돌아올 때의 #access_token=... 같은 것은 목록으로
+    const routeFromHash = () => location.hash.indexOf('#/') === 0 ? location.hash.slice(2) : '';
+
+    let started = false;
+    function gate(icon, html) {
+        $('app').hidden = true;
+        $('gate').hidden = false;
+        $('gate').innerHTML = `<i class="fas ${icon}"></i>${html}`;
+    }
+    function onAuth(user) {
+        if (!user) {
+            gate('fa-lock', '<p>운영 계정으로 로그인해 주세요.</p><button class="btn primary" id="loginBtn">로그인</button>');
+            $('loginBtn').onclick = () => window.ahnssamAuth && window.ahnssamAuth.openLogin();
+            return;
+        }
+        if (String(user.email || '').toLowerCase() !== ADMIN_EMAIL) {
+            gate('fa-ban', `<p>이 페이지는 운영 계정만 쓸 수 있어요.<br><small>${esc(user.email)}</small></p>`);
+            return;
+        }
+        $('gate').hidden = true;
+        $('app').hidden = false;
+        if (!started) { started = true; dcRoute(routeFromHash()); }
+    }
+    window.addEventListener('ahnssam-auth-settled', e => onAuth(e.detail && e.detail.user));
+    window.addEventListener('hashchange', () => { if (started) dcRoute(routeFromHash()); });
+    // 다른 창(대시보드 등)에서 고치고 돌아오면 새로 받아 반영
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && started && DCG) dcReload(); });
+})();
+</script>
+<script>
+/* ══════════════ 🖋️ 안쌤갤러리 게시판 — 공용 코드 시작 ══════════════
+   이 블록(과 CSS의 같은 이름 블록)은 아래 두 곳에 글자 하나 다르지 않게 똑같이 들어 있다. 고치면 둘 다 고친다.
+     · ahnssamcc/기타나무숲_대시보드.html   (🖋️ 안쌤갤러리 탭)
+     · ahnssamguitar/admin/gallery.html     (홈페이지 운영 계정 메뉴 → 안쌤갤러리)
+   글·댓글·추천·조회·★ 는 Supabase 표 yt.gallery_posts / yt.gallery_comments 에 있고, 엣지 함수 yt-gallery 로만 읽고 쓴다.
+   그래서 어느 쪽에서 고쳐도 다른 쪽에 바로 보인다. 이 브라우저에만 남는 것은 '내가 누른 추천·비추'(같은 글 두 번 못 누르게)뿐.
+   쓰는 쪽(host)이 이 블록보다 먼저 DC_HOST 를 만들어 둔다:
+     DC_HOST.api(action, params) → Promise<data>   서버(yt-gallery) 호출
+     DC_HOST.go(route, replace)                     주소 바꾸기 → host 가 다시 dcRoute(route) 를 부른다
+     DC_HOST.top()                                  글 보기·글쓰기를 열 때 화면 맨 위로
+   route: "" (전체글 1쪽) · "<탭>/<쪽>" · "view/<글번호>" · "write" · "edit/<글번호>"   탭: all · concept · notice · script · review */
+const DC_KEY = "ytnamu.dc.v1";   // 이 브라우저 저장: { myVotes: {글번호: "up"|"down"}, migrated: true }. 2026-11-16 전에는 글쓰기·댓글·★ 도 여기 있었다
+const DC_PER = 15;
+const DC_CATS = ["내 채널", "다른 채널", "기획", "강의 정리"];   // 글 말머리. 목록은 전부 같이 보여주고 제목 앞에 [말머리]만 붙인다
+const DC_SCRIPT = "대본 초안";   // 이 말머리 글은 전체글에 안 섞이고 공지 옆 "대본 초안" 탭에만 나온다
+const DC_REVIEW = "완료";        // 영상으로 다 만든 대본(이미 올린 리뷰 영상의 실제 대본 등). 전체글에 안 섞이고 "완료" 탭에만 나온다. 대본 초안 글 안의 "완료로 옮기기" 버튼으로도 옮긴다
+const DC_TABS = [["all", "전체글"], ["concept", "개념글"], ["notice", "공지"], ["script", "대본 초안"], ["review", "완료"]];
+const DC_BOARDS = ["script", "review"];   // 전체글과 따로 노는 탭
+let DCV = { tab: "all", page: 1, view: null, write: false, edit: null };
+let DCG = null;      // 서버에서 받은 것 { posts: [...], comments: {글번호: [...]} }
+let DCLOAD = null;   // 불러오는 중
+let DCERR = "";      // 불러오기 실패 문구
+let DCNOTE = "";     // 목록 위에 한 번 띄우는 알림 (예전 브라우저 데이터를 서버로 옮긴 결과)
+const dc$ = (s) => document.querySelector(s);
+const dcEsc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function dcLocal() {
+  let st = null;
+  try { st = JSON.parse(localStorage.getItem(DC_KEY) || "null"); } catch (e) { st = null; }
+  return Object.assign({ myVotes: {} }, st || {});
+}
+function dcLocalSave(st) { try { localStorage.setItem(DC_KEY, JSON.stringify(st)); } catch (e) { /* 저장이 막힌 환경: 이번 화면에만 반영 */ } }
+
+// 글 본문 표시: 마크다운 조금(## 소제목, **굵게**, - 목록, > 인용, | 표 |, ``` 코드, ---) + 주소는 눌러서 열림
+function mdRender(src) {
+  const E = (s) => dcEsc(s);
+  const inline = (s) => E(s)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+    .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<i>$2</i>")
+    // 글 속 주소(유튜브 영상 링크 등)를 눌러서 열 수 있게 함
+    .replace(/https?:\/\/[^\s<"]*[^\s<".,)]/g, (u) => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
+  const lines = src.replace(/\r/g, "").split("\n");
+  let html = "", i = 0, inUl = false, para = [];
+  const flushP = () => { if (para.length) { html += `<p>${para.map(inline).join("<br>")}</p>`; para = []; } };
+  const closeUl = () => { if (inUl) { html += "</ul>"; inUl = false; } };
+  while (i < lines.length) {
+    const L = lines[i];
+    if (/^```/.test(L)) { flushP(); closeUl(); let buf = []; i++;
+      while (i < lines.length && !/^```/.test(lines[i])) buf.push(lines[i++]);
+      html += `<pre><code>${E(buf.join("\n"))}</code></pre>`; i++; continue; }
+    if (/^\|/.test(L)) { flushP(); closeUl(); const rows = [];
+      while (i < lines.length && /^\|/.test(lines[i])) rows.push(lines[i++]);
+      const cells = (r) => r.replace(/^\||\|$/g, "").split(/(?<!\\)\|/).map((c) => inline(c.trim().replace(/\\\|/g, "|")));
+      let t = "<table>";
+      rows.forEach((r, ri) => {
+        if (/^\|[\s:|-]+\|?$/.test(r)) return;
+        const tag = ri === 0 ? "th" : "td";
+        t += "<tr>" + cells(r).map((c) => `<${tag}>${c}</${tag}>`).join("") + "</tr>";
+      });
+      html += t + "</table>"; continue; }
+    const h = /^(#{1,4})\s+(.*)/.exec(L);
+    if (h) { flushP(); closeUl(); html += `<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`; i++; continue; }
+    if (/^(---|═+|━+)\s*$/.test(L)) { flushP(); closeUl(); html += "<hr>"; i++; continue; }
+    if (/^>\s?/.test(L)) { flushP(); closeUl(); const buf = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) buf.push(lines[i++].replace(/^>\s?/, ""));
+      html += `<blockquote>${buf.map(inline).join("<br>")}</blockquote>`; continue; }
+    const li = /^\s*[-*]\s+(.*)/.exec(L);
+    if (li) { flushP(); if (!inUl) { html += "<ul>"; inUl = true; } html += `<li>${inline(li[1])}</li>`; i++; continue; }
+    if (L.trim() === "") { flushP(); closeUl();
+      // 빈 줄이 2줄 이상 이어지면 그만큼 간격을 더 띄움 (대본 글의 구간 구분용)
+      let n = 0; while (i < lines.length && lines[i].trim() === "") { n++; i++; }
+      if (n > 1) html += `<div style="height:${(n - 1) * 1.4}em"></div>`;
+      continue; }
+    para.push(L); i++;
+  }
+  flushP(); closeUl();
+  return html;
+}
+
+// ── 서버에서 받아오기 ──
+async function dcFetch() {
+  const d = await DC_HOST.api("all");
+  const comments = {};
+  (d.comments || []).forEach((c) => (comments[c.post_id] || (comments[c.post_id] = [])).push(c));
+  DCG = { posts: d.posts || [], comments };
+}
+// 2026-11-16 전에 이 브라우저(localStorage)에만 있던 글쓰기·추천·댓글·조회수·★·옮기기를 한 번 서버로 합친다
+async function dcMigrateLocal() {
+  const st = dcLocal();
+  if (st.migrated) return false;
+  const has = (o) => o && Object.keys(o).length > 0;
+  const old = { posts: (st.posts || []).filter((p) => p && p.mine), votes: st.votes, comments: st.comments, views: st.views, favs: st.favs, moved: st.moved };
+  if (old.posts.length || has(old.votes) || has(old.comments) || has(old.views) || has(old.favs) || has(old.moved)) {
+    const r = await DC_HOST.api("import", { state: old });
+    if (r.posts || r.comments) DCNOTE = `이 브라우저에만 있던 글 ${r.posts}개 · 댓글 ${r.comments}개를 서버로 옮겼습니다 (이제 어디서 열어도 보입니다)`;
+  }
+  dcLocalSave({ myVotes: st.myVotes || {}, migrated: true });
+  return true;
+}
+// 처음이거나 실패했으면 화면을 '불러오는 중'으로 두고 받는다. 이미 있으면 그대로 그려 두고 뒤에서 새로 받아 바꾼다
+function dcReload() {
+  if (DCLOAD) return DCLOAD;
+  const had = !!DCG;
+  DCLOAD = (async () => {
+    try {
+      await dcFetch();
+      if (await dcMigrateLocal().catch((e) => { console.warn("[갤러리] 예전 데이터 옮기기 실패", e); return false; })) await dcFetch();
+      DCERR = "";
+    } catch (e) { DCERR = e.message || String(e); }
+    DCLOAD = null;
+    // 글쓰기 중에는 다시 그리지 않음 (쓰던 내용이 날아가지 않게). 글을 읽던 중이면 스크롤을 그대로 둔다
+    if (DCV.write) return;
+    if (had && DCG && DCV.view != null) dcRenderView(DCV.view, true); else renderDc();
+  })();
+  return DCLOAD;
+}
+window.dcRetry = () => { DCERR = ""; DCG = null; renderDc(); };
+
+function dcPosts() {
+  return DCG.posts.map((p) => ({ ...p, cmts: (DCG.comments[p.id] || []).length, fav: p.fav_at ? Date.parse(p.fav_at) : 0 }));
+}
+const dcFind = (id) => DCG && DCG.posts.find((x) => x.id === id);
+const dcDate = (iso, full) => { const d = new Date(iso); const p = (n) => String(n).padStart(2, "0");
+  const today = new Date().toDateString() === d.toDateString();
+  return full ? `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+    : today ? `${p(d.getHours())}:${p(d.getMinutes())}` : `${String(d.getFullYear()).slice(2)}.${p(d.getMonth() + 1)}.${p(d.getDate())}`; };
+const dcNick = (p) => p.gonik ? `<span class="dc-nick gonik">${dcEsc(p.nick)}<span class="gk" title="고정닉">고</span></span>`
+  : `<span class="dc-nick">${dcEsc(p.nick)}</span> <span class="dc-ip">(${dcEsc(p.ip || "1.234")})</span>`;
+const dcIsScript = (p) => p.cat === DC_SCRIPT;
+const dcBoard = (p) => p.cat === DC_SCRIPT ? "script" : p.cat === DC_REVIEW ? "review" : "all";   // 글이 사는 목록 탭
+const dcCat = (p) => p.cat ? `<span class="dc-cat">[${dcEsc(p.cat)}]</span>` : "";
+const dcStar = (p) => `<span class="dc-star${p.fav ? " on" : ""}" onclick="dcFav(event,${p.id})" title="${p.fav ? "개념글 해제" : "개념글로 — 목록 맨 위에 고정"}">${p.fav ? "★" : "☆"}</span>`;
+
+function dcRoute(route) {
+  const [sub, arg] = String(route || "").split("/");
+  DCV.write = sub === "write" || sub === "edit";
+  DCV.edit = sub === "edit" ? Number(arg) : null;
+  DCV.view = sub === "view" ? Number(arg) : null;
+  if (!DCV.write && DCV.view == null) { DCV.tab = DC_TABS.some(([k]) => k === sub) ? sub : "all"; DCV.page = Math.max(1, Number(arg) || 1); }
+  renderDc();
+}
+function renderDc() {
+  if (!DCG) {
+    if (!DCERR) dcReload();
+    dc$("#dcMain").innerHTML = DCERR
+      ? `<div class="dc-msg">글을 불러오지 못했습니다<small>${dcEsc(DCERR)}</small><button class="dc-btn" onclick="dcRetry()">다시 시도</button></div>`
+      : `<div class="dc-msg">글을 불러오는 중…</div>`;
+    return;
+  }
+  if (DCV.write) return dcRenderWrite();
+  if (DCV.view != null) return dcRenderView(DCV.view);
+  dcRenderList();
+}
+function dcRenderList() {
+  const posts = dcPosts();
+  // ★ 누른 글(=개념글)은 공지보다도 위, 모든 페이지 맨 위에 고정 (최근에 누른 것이 위)
+  const favs = posts.filter((p) => p.fav).sort((a, b) => b.fav - a.fav);
+  const notices = posts.filter((p) => p.notice && !p.fav);
+  const board = DC_BOARDS.includes(DCV.tab) ? DCV.tab : "all";
+  let list = posts.filter((p) => !p.notice && !p.fav && dcBoard(p) === board);
+  if (DCV.tab === "concept") list = [];   // 개념글 = ★ 누른 글. 이미 맨 위(favs)에 나오므로 아래 목록은 비움
+  if (DCV.tab === "notice") list = [];
+  list.sort((a, b) => b.id - a.id);
+  const pages = Math.max(1, Math.ceil(list.length / DC_PER));
+  DCV.page = Math.min(DCV.page, pages);
+  const shown = list.slice((DCV.page - 1) * DC_PER, DCV.page * DC_PER);
+  const row = (p) => `<tr class="${p.fav ? "fav" : p.notice ? "notice" : ""}" onclick="dcOpen(${p.id})">
+    <td class="c-no">${p.notice ? "공지" : p.id}</td>
+    <td class="tit">${dcStar(p)}${p.notice ? '<span class="icon notice">공지</span>' : p.fav ? '<span class="icon hot">개념</span>' : ""}${dcCat(p)}<a>${dcEsc(p.title)}</a>${p.cmts ? `<span class="cmt">[${p.cmts}]</span>` : ""}</td>
+    <td>${dcNick(p)}</td><td class="c-date">${dcDate(p.date)}</td><td class="c-view">${p.views}</td><td>${p.up}</td>
+    <td class="m-main"><div class="m-t">${dcStar(p)}${dcCat(p)}${dcEsc(p.title)}</div>
+      <div class="m-meta">${p.notice ? "공지" : p.fav ? "개념" : dcIsScript(p) ? "대본" : dcBoard(p) === "review" ? "완료" : "일반"}<i>|</i>${p.gonik ? dcNick(p) : `<span class="dc-nick">${dcEsc(p.nick)}</span>`}<i>|</i>${dcDate(p.date)}<i>|</i>조회 ${p.views}<i>|</i>추천 <b>${p.up}</b></div></td>
+    <td class="m-cmt">${p.cmts || ""}</td></tr>`;
+  dc$("#dcMain").innerHTML = `${DCNOTE ? `<div class="dc-note">${dcEsc(DCNOTE)}</div>` : ""}
+    <div class="dc-tabs">
+      ${DC_TABS.map(([k, l]) => `<button class="${DCV.tab === k ? "on" : ""}" onclick="dcTab('${k}')">${l}</button>`).join("")}
+      <span class="sp"></span>
+    </div>
+    <table class="dc-list">
+      <thead><tr><th class="c-no" style="width:60px">번호</th><th>제목</th><th style="width:130px">글쓴이</th><th class="c-date" style="width:70px">작성일</th><th class="c-view" style="width:50px">조회</th><th style="width:50px">추천</th></tr></thead>
+      <tbody>${favs.map(row).join("")}${notices.map(row).join("")}${shown.map(row).join("") || (DCV.tab === "notice" || favs.length ? "" : `<tr><td colspan="6" class="m-empty" style="padding:30px">글이 없습니다</td></tr>`)}</tbody>
+    </table>
+    <div class="dc-bottom"><span></span><button class="dc-btn" onclick="dcWrite()">글쓰기</button></div>
+    <div class="dc-paging">${Array.from({ length: pages }, (_, i) => i + 1 === DCV.page ? `<b>${i + 1}</b>` : `<a onclick="dcPage(${i + 1})">${i + 1}</a>`).join(" &nbsp; ")}</div>`;
+  DCNOTE = "";
+}
+function dcRenderView(id, keepScroll) {
+  const p = dcPosts().find((x) => x.id === id);
+  if (!p) { DCV.view = null; return dcRenderList(); }
+  if (dcBoard(p) !== "all") DCV.tab = dcBoard(p); else if (DC_BOARDS.includes(DCV.tab)) DCV.tab = "all";   // 목록 버튼이 이 글이 있는 탭으로 가게
+  const cm = DCG.comments[id] || [], my = dcLocal().myVotes[id];
+  // 대본 초안 글 → "완료로 옮기기", 이 버튼으로 옮긴 글 → "대본 초안으로 되돌리기" (글 위·아래 두 군데)
+  const moveBtn = p.cat === DC_SCRIPT ? `<button class="dc-btn" onclick="dcMove(${id},'${DC_REVIEW}')">완료로 옮기기</button>`
+    : p.cat === DC_REVIEW && p.prev_cat === DC_SCRIPT ? `<button class="dc-btn gray" onclick="dcMove(${id},null)">대본 초안으로 되돌리기</button>` : "";
+  dc$("#dcMain").innerHTML = `
+    <div class="dc-view">
+      <div class="vh"><h3>${dcStar(p)}${p.notice ? "[공지] " : ""}${dcCat(p)}${dcEsc(p.title)}</h3>
+        <div class="meta"><span>${dcNick(p)} &nbsp;|&nbsp; ${dcDate(p.date, true)}</span><span>조회 ${p.views} &nbsp;|&nbsp; 추천 ${p.up} &nbsp;|&nbsp; 댓글 ${cm.length}</span></div>
+        ${moveBtn ? `<div class="dc-move">${moveBtn}</div>` : ""}</div>
+      <div class="dc-body">${mdRender(p.body)}</div>
+      <div class="dc-rec">
+        <button onclick="dcVote(${id},'up')" ${my ? "disabled" : ""}><b>${p.up}</b>추천</button>
+        <button class="down" onclick="dcVote(${id},'down')" ${my ? "disabled" : ""}><b>${p.down}</b>비추</button>
+      </div>
+      <div class="dc-concept">${my ? (my === "up" ? "추천했습니다" : "비추했습니다") : ""}</div>
+      <div class="dc-cmts">
+        <div class="ch">전체 댓글 <span>${cm.length}</span>개</div>
+        ${cm.map((c) => `<div class="dc-cmt"><div>${dcNick(c)}</div><div>${dcEsc(c.text).replace(/\n/g, "<br>")}</div>
+          <div class="d">${dcDate(c.date, true)} <a onclick="dcDelCmt(${id},${c.id})" title="삭제">✕</a></div></div>`).join("")}
+        <div class="dc-cmtform">
+          <input id="dcCNick" placeholder="닉네임" value="ㅇㅇ">
+          <textarea id="dcCText" placeholder="댓글 내용을 입력하세요"></textarea>
+          <button class="dc-btn" onclick="dcAddCmt(${id})">등록</button>
+        </div>
+      </div>
+      <div class="dc-bottom">
+        <span><button class="dc-btn gray" onclick="dcList()">목록</button> ${moveBtn}</span>
+        <span>${p.notice ? "" : `<button class="dc-btn gray" onclick="dcDel(${id})">삭제</button> `}<button class="dc-btn gray" onclick="dcEdit(${id})">수정</button> <button class="dc-btn" onclick="dcWrite()">글쓰기</button></span>
+      </div>
+    </div>`;
+  if (!keepScroll) DC_HOST.top();
+}
+function dcRenderWrite() {
+  const e = DCV.edit != null ? dcFind(DCV.edit) : null;
+  if (DCV.edit != null && !e) { DCV.write = false; return dcRenderList(); }
+  const cat = e ? e.cat || "" : DCV.tab === "script" ? DC_SCRIPT : DCV.tab === "review" ? DC_REVIEW : "";
+  dc$("#dcMain").innerHTML = `
+    <div class="dc-write">
+      ${e ? `<div class="hint">${e.id}번 글 고치기 — 저장하면 글 날짜가 지금 시각으로 바뀝니다</div>` : ""}
+      <div class="row"><input id="dcWNick" placeholder="닉네임" value="${dcEsc(e ? e.nick : "안쌤")}" style="width:160px">
+        <label class="hint" style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="dcWGonik"${!e || e.gonik ? " checked" : ""}> 고정닉</label>
+        <select id="dcWCat"><option value="">말머리 없음</option>${[...DC_CATS, DC_SCRIPT, DC_REVIEW].map((c) => `<option${c === cat ? " selected" : ""}>${c}</option>`).join("")}</select></div>
+      <input id="dcWTitle" placeholder="제목을 입력해 주세요" value="${dcEsc(e ? e.title : "")}">
+      <textarea id="dcWBody" placeholder="내용을 입력하세요. 마크다운(## 소제목, **굵게**, - 목록, > 인용, | 표 |)을 쓸 수 있습니다">${dcEsc(e ? e.body : "")}</textarea>
+      <div class="dc-bottom" style="margin:0"><button class="dc-btn gray" onclick="${e ? `DC_HOST.go('view/${e.id}',true)` : "dcList()"}">취소</button><button class="dc-btn" id="dcWSubmit" onclick="dcSubmit()">${e ? "저장" : "등록"}</button></div>
+    </div>`;
+  DC_HOST.top();
+}
+const dcListRoute = (tab = DCV.tab, page = DCV.page) => tab === "all" && page === 1 ? "" : `${tab}/${page}`;
+const dcFail = (e) => alert("서버에 저장하지 못했습니다: " + (e.message || e));
+window.dcOpen = (id, replace) => {
+  const p = dcFind(id);
+  if (p) { p.views++; DC_HOST.api("view", { id }).catch(() => {}); }   // 조회수: 화면에는 바로 +1, 서버에는 뒤에서
+  DC_HOST.go(`view/${id}`, replace);
+};
+window.dcFav = (ev, id) => {
+  ev.stopPropagation();   // 행 클릭(글 열기)으로 번지지 않게
+  const p = dcFind(id); if (!p) return;
+  const on = !p.fav_at, before = p.fav_at;
+  p.fav_at = on ? new Date().toISOString() : null; renderDc();
+  DC_HOST.api("fav", { id, on }).then((r) => { if (r) p.fav_at = r.fav_at; }).catch((e) => { p.fav_at = before; renderDc(); dcFail(e); });
+};
+window.dcList = (replace) => DC_HOST.go(dcListRoute(), replace);
+window.dcTab = (t) => DC_HOST.go(dcListRoute(t, 1));
+window.dcPage = (n) => DC_HOST.go(dcListRoute(DCV.tab, n));
+window.dcWrite = () => { DCV.edit = null; DC_HOST.go("write"); };
+window.dcEdit = (id) => DC_HOST.go(`edit/${id}`);
+window.dcVote = (id, kind) => {
+  const st = dcLocal(); if (st.myVotes[id]) return;
+  const p = dcFind(id); if (!p) return;
+  st.myVotes[id] = kind; dcLocalSave(st); p[kind]++; dcRenderView(id, true);
+  DC_HOST.api("vote", { id, kind }).then((r) => { if (r) { p.up = r.up; p.down = r.down; if (DCV.view === id) dcRenderView(id, true); } })
+    .catch((e) => { delete st.myVotes[id]; dcLocalSave(st); p[kind]--; dcRenderView(id, true); dcFail(e); });
+};
+window.dcAddCmt = (id) => {
+  const text = dc$("#dcCText").value.trim(); if (!text) return;
+  DC_HOST.api("comment", { post_id: id, nick: dc$("#dcCNick").value.trim() || "ㅇㅇ", text })
+    .then((c) => { (DCG.comments[id] || (DCG.comments[id] = [])).push(c); dcRenderView(id, true); }).catch(dcFail);
+};
+window.dcDelCmt = (id, cid) => { if (!confirm("댓글을 삭제할까요?")) return;
+  DC_HOST.api("comment_del", { id: cid })
+    .then(() => { DCG.comments[id] = (DCG.comments[id] || []).filter((c) => c.id !== cid); dcRenderView(id, true); }).catch(dcFail); };
+window.dcMove = (id, cat) => {   // cat=null 이면 옮기기 전 말머리로 되돌림
+  DC_HOST.api("move", { id, cat }).then((row) => { Object.assign(dcFind(id), row); dcRenderView(id, true); }).catch(dcFail);
+};
+window.dcSubmit = () => {
+  const title = dc$("#dcWTitle").value.trim(), body = dc$("#dcWBody").value.trim();
+  if (!title || !body) { alert("제목과 내용을 입력해 주세요"); return; }
+  const btn = dc$("#dcWSubmit"); btn.disabled = true; btn.textContent = "저장 중…";
+  const editId = DCV.edit;
+  DC_HOST.api("save", { id: editId || undefined, title, body, cat: dc$("#dcWCat").value || null, nick: dc$("#dcWNick").value.trim() || "ㅇㅇ", gonik: dc$("#dcWGonik").checked })
+    .then((row) => {
+      const old = dcFind(row.id);
+      if (old) Object.assign(old, row); else DCG.posts.push(row);
+      DCV.write = false; DC_HOST.go(`view/${row.id}`, true);   // 글쓰기 화면을 새 글 보기로 바꿔치기 (뒤로 가면 목록)
+    })
+    .catch((e) => { btn.disabled = false; btn.textContent = editId ? "저장" : "등록"; dcFail(e); });
+};
+window.dcDel = (id) => { if (!confirm("글을 삭제할까요?\n(서버에서 바로 지우지 않고 목록에서만 빼 둡니다. 되살리려면 클로드에게 말하면 됩니다)")) return;
+  DC_HOST.api("delete", { id }).then(() => { DCG.posts = DCG.posts.filter((p) => p.id !== id); delete DCG.comments[id]; dcList(true); }).catch(dcFail); };
+/* ══════════════ 🖋️ 안쌤갤러리 게시판 — 공용 코드 끝 ══════════════ */
+</script>
+<script src="/auth.js?v=2026111601" defer></script>
+</body>
+</html>

@@ -615,7 +615,7 @@ nav.scrolled .auth-btn:hover {
                     ? `class="auth-user-avatar has-image" style="--avatar-url: url('${avatarUrl.replace(/'/g, "\\'")}')" aria-label="${escapeHtml(initial)}"`
                     : `class="auth-user-avatar"`;
                 const avatarContent = avatarUrl ? '' : escapeHtml(initial);
-                // 운영자(본인) 계정에서만 노출되는 메뉴 — 악보관리(마이페이지 자리), 프리셋 빌더
+                // 운영자(본인) 계정에서만 노출되는 메뉴 — 악보관리(마이페이지 자리), 프리셋 빌더, 안쌤갤러리(2026-11-16, 커맨드센터 대시보드와 같은 글)
                 const OWNER_EMAILS = ['steveq2568@gmail.com'];
                 const isOwner = OWNER_EMAILS.indexOf(
                     String((currentSession.user && currentSession.user.email) || '').toLowerCase()
@@ -633,7 +633,7 @@ nav.scrolled .auth-btn:hover {
                     <div class="auth-user-menu" role="menu">
                         ${isApp ? '' : '<button type="button" data-auth-action="purchases">구매한 악보</button>'}
                         ${isOwner
-                            ? '<button type="button" data-auth-action="sheets">악보관리</button><button type="button" data-auth-action="builder">프리셋 빌더</button>'
+                            ? '<button type="button" data-auth-action="sheets">악보관리</button><button type="button" data-auth-action="builder">프리셋 빌더</button><button type="button" data-auth-action="gallery">안쌤갤러리</button>'
                             : '<button type="button" data-auth-action="mypage">마이페이지</button>'}
                         <button type="button" data-auth-action="change-nickname">닉네임 변경</button>
                         <hr>
@@ -658,6 +658,7 @@ nav.scrolled .auth-btn:hover {
                     else if (a === 'sheets') window.location.href = '/admin/sheets.html';
                     else if (a === 'purchases') window.location.href = '/purchases.html';
                     else if (a === 'builder') window.location.href = '/presets-builder.html';
+                    else if (a === 'gallery') window.location.href = '/admin/gallery.html';
                 });
                 slot.appendChild(container);
             } else {
