@@ -529,6 +529,10 @@
     .wall5 .wpop .pw { background: linear-gradient(#3fb877, #23935a); border: 1.5px solid #b9f5d2; }
     .wall5 .wpop button[disabled] { background: rgba(40, 46, 44, 0.9); border-color: rgba(255, 255, 255, 0.2); color: #b9c2bd; box-shadow: none; }
     .wall5 .wpop button i { font-size: 12px; }
+    .wall5 .swapo { position: absolute; z-index: 5; display: grid; place-items: center; width: clamp(26px, 7.5vw, 40px); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; background: rgba(245, 179, 30, 0.95); color: #3a2400; font-size: clamp(11px, 3.2vw, 17px); box-shadow: 0 0 0 2px #fff6d2, 0 3px 10px rgba(0, 0, 0, 0.5); pointer-events: none; animation: swIn .22s cubic-bezier(.3, 1.6, .5, 1), swPulse 1.1s .22s ease-in-out infinite alternate; }
+    @keyframes swIn { from { transform: translate(-50%, -50%) scale(.3); opacity: 0; } }
+    @keyframes swPulse { to { transform: translate(-50%, -50%) scale(1.12); box-shadow: 0 0 0 3px #fff6d2, 0 0 14px rgba(245, 179, 30, 0.8); } }
+    @media (prefers-reduced-motion: reduce) { .wall5 .swapo { animation: none; } }
     .wall5 .wg.pick { filter: drop-shadow(0 0 7px #7be0a5) drop-shadow(0 0 2px #7be0a5); }
     .grow { grid-template-columns: 38px 1fr auto; }
     .grow .lkb { align-self: start; display: inline-flex; align-items: center; gap: 4px; padding: 5px 9px; border-radius: 99px; border: 1.5px solid var(--line); background: #fff; font-size: 11.5px; font-weight: 800; color: #888; white-space: nowrap; }
@@ -2819,6 +2823,13 @@ function renderRoom(enter) {
             <span class="wp floor" style="left:${fl.x}%;top:${fl.bottom - 3.5}%">+${g.lv}</span>${isRep ? `<span class="wrep" style="left:${fl.x}%;top:${Math.max(3, fl.t2 - 3)}%">대표</span>` : ''}`;
     }).join('');
     justOpened = -1;
+    // 기타 하나를 고르면(자리 바꾸기) 바꿀 수 있는 다른 악기 위에 동그라미 ⇄ (2026-11-17 사용자)
+    let swapHtml = '';
+    if (selId && !roomFull) {
+        const sf = S.floor.find(x => x.id === selId), mark = (x, y) => `<span class="swapo" style="left:${x}%;top:${y}%" aria-hidden="true"><i class="fas fa-arrows-left-right"></i></span>`;
+        if (selWall) swapHtml = W.x.map((x, i) => S.open[i] && S.wall[i] && S.wall[i].id !== selId ? mark(x, top + hh * 0.5) : '').join('');
+        else if (sf) swapHtml = S.floor.map(g => g.id !== selId && g.f === sf.f && floor[g.id] ? mark(floor[g.id].x, floor[g.id].bottom - floor[g.id].h2 * 0.45) : '').join('');
+    }
     // 꽉 찼을 때 누른 악기 위에 [이 악기 팔기] [작업 중인 악기와 교체] (위아래로)
     let popHtml = '';
     if (pickId) {
@@ -2844,7 +2855,7 @@ function renderRoom(enter) {
         + grp('fa-sliders', '멀티이펙터', mults, `줄 끊김 −${gearBuff().multi}%p`)].filter(Boolean);
     // 꽉 찼다는 안내는 진열 벽 바로 아래, 기타 목록 위 (2026-11-17 사용자: '컬렉션 박스 아래, 기타 리스트 위 그 사이')
     el.innerHTML = `<div class="wall5 ${enter ? 'enter' : ''}" style="aspect-ratio:${W.w} / ${W.h}">
-        <img class="bg" src="../images/play/gk/${W.src}" alt="컬렉션 진열 벽">${slots}${floorHtml}${popHtml}</div>${roomFull ? roomFullNote() : ''}
+        <img class="bg" src="../images/play/gk/${W.src}" alt="컬렉션 진열 벽">${slots}${floorHtml}${swapHtml}${popHtml}</div>${roomFull ? roomFullNote() : ''}
         <p class="rinfo sel" ${selId ? '' : 'hidden'}><i class="fas fa-arrows-left-right"></i> 다른 기타를 누르면 서로 자리를 바꿔요${selWall ? ' · 빈 걸이를 누르면 그리로 옮겨요' : ''} · 다시 누르면 선택을 풀어요</p>
         ${storeBox()}
         <div class="glist">${rows.length ? rows.join('') : '<p class="note2">아직 진열한 기타가 없어요.</p>'}</div>
