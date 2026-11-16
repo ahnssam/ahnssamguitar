@@ -1457,6 +1457,7 @@ function load() {
     if (PERSONA && !s.rk) s.rk = newRk();   // 테스트 기록은 랭킹·배틀 줄도 따로
     return s;
 }
+let veil = null;   // 결과 가리기 { gold, sh, cs } — 가리는 동안 화면에 보일 값 (아래 fitGold 위 설명)
 let S = load();
 const save = () => { mem.set(GK, S); cloudDirty(); autoSync(); };
 // 골드가 들어올 때는 이걸로: 모은 돈(랭킹)에도 더한다
@@ -2151,28 +2152,44 @@ let busy = false, tuning = null, tab = 'bench', selId = '', wreck = null;
 // 컬렉션이 꽉 찼을 때 (2026-11-17): roomFull = 작업대 악기 종류('guitar'·'amp'·'multi'), pickId = 그때 누른 진열 악기(위에 [팔기][교체])
 let roomFull = '', pickId = '';   // wreck: 방금 부서진 기타(부서진 뒤 화면, 2026-11-17)
 // 골드는 숫자 그대로, 자리가 모자라면(무대 위에선 오른쪽 출석·소리와 닿으면, 골드 줄에선 줄이 넘치면) 만·억으로
+// 결과 가리기 (2026-11-17 사용자: '연속 성공 보상·선물이 결과가 나오기 전에 반영되잖아, 스포되잖아') — 강화·기타 찾기를 누른 순간 결과는
+//   저장되지만(새로고침으로 되돌리기 막기), 결과 연출이 나올 때까지 화면의 골드·조각·하케 숫자·도감 빨간 점·아래 검은 칸은 누르기 전 그대로
+const shownGold = () => veil ? veil.gold : S.gold;
+// 결과가 나온 뒤 받은 골드(콤보·선물)를 촤라락 올린다 — 보이는 숫자만(실제 골드는 이미 저장됨)
+function veilAdd(n, delay = 0) {
+    if (!veil || !n) return;
+    setTimeout(() => {   // 올라가기 시작할 때 보이는 값을 바꾼다(그 전에 다른 연출이 끝나며 마지막 숫자를 먼저 보여 주지 않게)
+        if (!veil) { updBar(); return; }
+        const f = veil.gold; veil.gold = f + n;
+        countGold(f, f + n, n >= 1e6 ? 3000 : n >= 1e5 ? 2000 : 1000);
+    }, delay);
+}
+const goldCounting = () => { const b = $('#rGold'); return b.classList.contains('counting') || b.classList.contains('spending'); };
 function fitGold() {
     const el = $('#rGold span'), L = $('#gL'), R = $('#gR');
-    el.textContent = gf(S.gold);
+    if (goldCounting()) return;   // 숫자가 올라가는(내려가는) 중엔 그 연출에 맡긴다
+    const G = shownGold();
+    el.textContent = gf(G);
     if (!L.offsetWidth) return;
     const bar = L.parentElement;
     const over = bar.id === 'gkBar' ? bar.scrollWidth > bar.clientWidth + 1 || el.scrollWidth > el.clientWidth + 1
         : L.getBoundingClientRect().right + 6 > R.getBoundingClientRect().left || el.scrollWidth > el.clientWidth + 1;
-    if (over) el.textContent = gshort(S.gold);
+    if (over) el.textContent = gshort(G);
 }
 function updBar(goldBump) {
     fitGold();
-    document.querySelectorAll('[data-gold]').forEach(e => { e.textContent = gf(S.gold); if (e.scrollWidth > e.clientWidth + 1) e.textContent = gshort(S.gold); });   // 배틀·상점 안 골드
-    $('#rGold').title = '골드 ' + S.gold.toLocaleString() + 'G';
+    if (!goldCounting()) document.querySelectorAll('[data-gold]').forEach(e => { e.textContent = gf(shownGold()); if (e.scrollWidth > e.clientWidth + 1) e.textContent = gshort(shownGold()); });   // 배틀·상점 안 골드
+    $('#rGold').title = '골드 ' + shownGold().toLocaleString() + 'G';
     if (goldBump) { const g = $('#rGold'); g.classList.remove('bump'); void g.offsetWidth; g.classList.add('bump'); }
-    $('#rShard span').textContent = `${S.shards}/${CASE_SHARDS}`;
-    $('#rCase span').textContent = `${S.cases}/${CASE_MAX}`;
-    $('#rCase').classList.toggle('full', S.cases >= CASE_MAX);
-    $('#rSC').classList.toggle('ready', S.shards >= CASE_SHARDS && S.cases < CASE_MAX);
+    const sh = veil ? veil.sh : S.shards, cs = veil ? veil.cs : S.cases;   // 결과 전엔 누르기 전 숫자
+    $('#rShard span').textContent = `${sh}/${CASE_SHARDS}`;
+    $('#rCase span').textContent = `${cs}/${CASE_MAX}`;
+    $('#rCase').classList.toggle('full', cs >= CASE_MAX);
+    $('#rSC').classList.toggle('ready', sh >= CASE_SHARDS && cs < CASE_MAX);
     // 골드 받기(광고): 지금 하려는 것(강화·기타 찾기)에 골드가 모자랄 때만, 오늘 횟수가 남았을 때만 (2026-11-13 사용자)
     { const need = S.bench ? (S.bench.lv < MAX ? COST[S.bench.lv] : 0) : S.first ? FIND_GOLD : 0;   // 첫 기타는 공짜라 그땐 안 보인다
       // 2026-11-17 사용자: 한 번 받으면 바로 다시 뜨지 말고 다음다음 악기 강화 시작할 때 — 받은 뒤 새 악기를 두 번 더 찾아야 다시 보인다(adWaitOk)
-      $('#rAdG').hidden = !(need > 0 && S.gold < need && adDay().n < AD_GOLD_DAY && adWaitOk());
+      if (!veil) $('#rAdG').hidden = !(need > 0 && S.gold < need && adDay().n < AD_GOLD_DAY && adWaitOk());
       $('#rAdG').querySelector('.adn').textContent = `${Math.min(AD_GOLD_DAY, adDay().n + 1)}/${AD_GOLD_DAY}`;   // 오늘 몇 번째 받기인지 (사용자: 1/5 2/5)
       $('#rAdG').title = `골드 받기 +${gf(adGoldNext())} (${Math.min(AD_GOLD_DAY, adDay().n + 1)}/${AD_GOLD_DAY}) — 오늘 ${AD_GOLD_DAY - adDay().n}번 남음`; }
     const got = S.daily === today();
@@ -2319,7 +2336,7 @@ function renderGauge() {
     el.innerHTML = h + (nx != null && !giftFold ? luck.replace('</em></div>', '</em><span class="fd" aria-hidden="true" style="visibility:hidden"><i class="fas fa-chevron-left"></i></span></div>') : luck);
 }
 function renderBand() {
-    const el = $('#sband'), g = S.bench;
+    const el = $('#sband'), g = S.bench || (veil && ghost) || null;   // 결과 전엔 부서졌어도 검은 칸 그대로 (결과 가리기)
     el.hidden = !g; $('#stage').classList.toggle('has-band', !!g);
     $('#rSC').hidden = $('#rShare').hidden = !g || busy;   // 무대 안 조각 상자·자랑하기도 기타가 있을 때만, 강화 중엔 숨김
     renderNext();
@@ -2338,7 +2355,7 @@ function renderTable() {
         <p class="note2"><b>대박</b>: +0~+9 강화가 성공하면 그중 ${JACKPOT_P}%는 한 번에 2단계 올라요(성공 확률 안에서 — +1→+2 성공 96%면 대박은 약 ${r1(96 * JACKPOT_P / 100)}%).
         <b>행운 게이지</b>: 그 악기로 강화를 누를 때마다(성공·${keepWord(S.bench)} 모두) 한 칸, ${LUCK_MAX}칸이 차면 다음 강화는 반드시 성공해요.
         <b>콤보</b>: 같은 악기로 3번 연속 성공하면 그 강화 비용의 ${COMBO_STEP * 100}%씩 골드를 더 받아요(최대 ${COMBO_STEP * COMBO_CAP * 100}%).
-        <b>선물</b>: 악기 종류마다 하루에 한 번(새벽 4시에 다시) +3·+5·+7·+10·+13·+15·+20에 닿으면 선물 상자 — +3 골드 1,000G · +5 행운 +5칸 · +7 조각 7개 · +10 골드 10만G + 행운 가득 · +13 골드 100만G · +15 골드 500만G + 하드케이스 + 행운 가득 · +20 골드 1,000만G.</p>`;
+        <b>선물</b>: 어느 악기든 하루에 한 번(새벽 4시에 다시) +3·+5·+7·+10·+13·+15·+20에 닿으면 선물 상자 — +3 골드 1,000G · +5 행운 +5칸 · +7 조각 7개 · +10 골드 10만G + 행운 가득 · +13 골드 100만G · +15 골드 500만G + 하드케이스 + 행운 가득 · +20 골드 1,000만G.</p>`;
     el.open = open;
 }
 
@@ -2352,6 +2369,7 @@ function dexAdd(f, lv) {
     return true;
 }
 function dexDot() {
+    if (veil) return;   // 결과가 나온 뒤에 (결과 가리기)
     const b = $('#tabs [data-t="dex"]'), dot = b.querySelector('.dot');
     if (S.dexNew && tab !== 'dex' && !dot) b.insertAdjacentHTML('beforeend', '<span class="dot" title="도감에 새로 들어온 기타"></span>');
     if ((!S.dexNew || tab === 'dex') && dot) dot.remove();
@@ -2620,6 +2638,7 @@ async function enhance() {
     let out = lucky || r < s ? 'ok' : r < s + m ? 'keep' : 'boom';
     if (out === 'boom' && caseOnFor(g)) out = 'saved';
     const goldBefore = S.gold;
+    veil = { gold: goldBefore, sh: S.shards, cs: S.cases };   // 결과가 나올 때까지 화면엔 누르기 전 숫자 (2026-11-17 사용자: 스포 금지)
     S.gold -= cost; S.st.tries++;
     // 행운 게이지(이 악기만) · 콤보 (2026-11-17)
     if (comboId !== g.id) combo = 0;
@@ -2652,11 +2671,12 @@ async function enhance() {
     // 피크로 긁기 (2026-11-17 사용자): 단계가 높을수록 빈칸이 많고(+10이면 7칸), 누를 때마다 한 칸 — 처음 누른 것도 한 칸. 다 차면 결과로.
     //   긁는 동안 두근거림이 쌓이니 그 뒤 기다림은 칸 수만큼 짧게(0.7초까지)
     const sn = strumNeed(lv0);
-    await strumPhase(sn, () => spendFx(goldBefore, goldAfterCost));   // 마지막 칸을 누르는 순간 골드가 내려간다
+    await strumPhase(sn, () => { veil.gold = goldAfterCost; spendFx(goldBefore, goldAfterCost); });   // 마지막 칸을 누르는 순간 골드가 내려간다(강화 비용만 — 콤보·선물 골드는 결과 뒤에)
     actsLock(false); renderSact();   // 두근두근 막대가 나올 때는 단추가 없어진다 (2026-11-17 사용자 — 긁는 동안만 그대로)
     const sms = sn > 1 ? Math.max(700, WAIT_MS(lv0) - (sn - 1) * 400) : undefined;
     await suspense(lv0, lucky ? { txt: '행운 강화 — 반드시 성공!', ms: sms } : { ms: sms });
     if (out !== 'boom') ghost = null;
+    if (out !== 'ok') veil = null;   // 줄 끊김·하케·파괴는 더 받을 골드가 없다 — 성공이면 콤보·선물 골드를 보여 줄 때까지 가린 채로
     updBar();
     if (out === 'ok') {
         sfx('ok', g.lv, combo - 1); buzz(jump > 1 ? [25, 40, 25, 40, 80] : 14); renderName();   // 콤보가 이어질수록 한 음씩 높게
@@ -2667,10 +2687,15 @@ async function enhance() {
         if (jump > 1) { flash(); sfx('jackpot'); pop(`대박! +${jump} 점프`, 'jack', 30); setTimeout(() => pop(`+${g.lv} 성공!`, 'ok', 44), 380); }
         else pop(`+${g.lv} 성공!`, 'ok');
         if (combo >= 2) setTimeout(() => pop(`${combo}연속!${comboG ? `  +${gf(comboG)}` : ''}`, 'combo', 60), jump > 1 ? 650 : 260);
+        veilAdd(comboG, jump > 1 ? 650 : 260);   // 콤보 골드는 'n연속!'이 뜰 때 올라간다
         if (newDex) setTimeout(stamp, jump > 1 ? 700 : 420);
         if (LINES.up[g.lv]) setTimeout(() => talk(LINES.up[g.lv]), 500);
         await sleep(jump > 1 ? 900 : 330);
-        if (gifts.length) { await sleep(700); for (const G of gifts) await giftCard(G, g); }
+        if (gifts.length) { await sleep(700); for (const G of gifts) {
+            if (veil) { veil.sh = S.shards; veil.cs = S.cases; updBar(); }
+            veilAdd((GIFTS[G.x] || {}).gold, 600);   // 선물 골드는 선물 창이 열릴 때 올라간다
+            await giftCard(G, g);
+        } }
     } else if (out === 'keep' && g.f === 'multi') {   // 멀티이펙터: 버튼이 툭 빠져 날아갔다가 → 다시 끼움
         sfx('btnpop'); btnCap();
         pop('툭!', 'keep', 30);
@@ -2730,6 +2755,8 @@ async function enhance() {
             talk([['me', one(g.lv >= 10 ? LINES.bigSigh : LINES.sigh)]]);   // 2026-11-13 사용자: '나'의 신세한탄 (2026-11-15 다른 인물의 한마디는 지움)
         }
     }
+    if (veil) { veil = null; if (!goldCounting()) updBar(); }   // 가리기 끝 — 숫자가 올라가는 중이면 그 연출이 끝나며 맞춘다
+    dexDot();
     actsLock(false);
     if (luckNow && out !== 'boom') { sfx('luck'); buzz([15, 40, 15]); pop('🍀 행운 가득! 다음 강화는 반드시 성공', 'sm', 74); }
     busy = false;
@@ -2824,12 +2851,18 @@ const luckOf = g => Math.min(LUCK_MAX, Math.max(0, (g && g.luck) | 0));
 const giftFam = f => FAMS[f] ? f : 'strat';
 // 선물 하루: 새벽 4시에 날이 바뀐다(한국 시간 기준 이 기기 시계). 날이 바뀌면 받은 것(S.gift)을 비운다
 const giftDay = () => { const d = new Date(Date.now() - 4 * 3600e3); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
-function giftToday() { if (S.giftDay !== giftDay()) { S.gift = {}; S.giftDay = giftDay(); } return S.gift; }
-const giftHas = (f, x) => !!((giftToday()[giftFam(f)] | 0) & (1 << x));
+// 2026-11-17 사용자: '방금 +5 선물 받았는데 새로 악기 뽑아서 하니까 또 주네? 악기마다 다를 필요 없어' → 어느 악기든 하루에 한 번(S.gift.all 비트).
+//   (같은 날 처음엔 악기 종류마다 따로였다 — 그때 받은 것은 합쳐서 '오늘 받음'으로 친다)
+function giftToday() {
+    if (S.giftDay !== giftDay()) { S.gift = {}; S.giftDay = giftDay(); }
+    if (S.gift.all == null) { let m = 0; for (const k in S.gift) m |= S.gift[k] | 0; S.gift = { all: m }; }
+    return S.gift;
+}
+const giftHas = (f, x) => !!((giftToday().all | 0) & (1 << x));
 const nextGift = g => GIFT_AT.find(x => x > g.lv && !giftHas(g.f, x));
 function giveGift(g, x) {   // 받은 것으로 적고 바로 준다(결과와 같이 저장) → 화면에 보일 [아이콘, 글] 목록
     const f = giftFam(g.f), R = GIFTS[x], out = [], gt = giftToday();
-    gt[f] = (gt[f] | 0) | (1 << x);
+    gt.all = (gt.all | 0) | (1 << x);   // 어느 악기든 하루에 한 번
     if (R.gold) { gain(R.gold); out.push(['coins', `골드 +${gf(R.gold)}`]); }
     if (R.shards) { S.shards += R.shards; out.push(['puzzle-piece', `부서진 기타 조각 +${R.shards}`]); if (autoCase()) out.push(['briefcase', `하드케이스 완성! (${S.cases}/${CASE_MAX})`]); }
     if (R.cases) {
@@ -2844,7 +2877,7 @@ function giftCard(G, g) {   // 선물 상자가 흔들리다 열린다(누르면
         const F = FAMS[G.f] || FAMS.strat, d = document.createElement('div'), T = [];
         d.className = 'gfcard';
         // 2026-11-17 사용자: '첫 선물 달성! 하고 아래 뭘 주는지 써 있어야지. 중복 보상이면 나왔다가 3초 뒤에 그다음 보상, 그다음 다시 처음 보상'
-        d.innerHTML = `<span class="bx" aria-hidden="true">🎁</span><div class="sb">${esc(F.dexName || F.name)} · <b>+${G.x}</b> · 오늘 처음</div><div class="t">첫 선물 달성!</div>
+        d.innerHTML = `<span class="bx" aria-hidden="true">🎁</span><div class="sb"><b>+${G.x}</b> · 오늘 처음</div><div class="t">첫 선물 달성!</div>
             <div class="rw"><span class="one"></span></div>${G.out.length > 1 ? `<div class="dots">${G.out.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : ''}<small>누르면 넘어가요</small>`;
         let done = false, opened = false, k = 0, cyc = 0;
         const one = d.querySelector('.rw .one'), dots = [...d.querySelectorAll('.dots i')];
@@ -3003,12 +3036,14 @@ async function findGuitar(first) {
         updBar(); spendFx(S.gold + FIND_GOLD, S.gold);
     }
     busy = true; talkClear(); wreck = null;
+    veil = { gold: S.gold, sh: S.shards, cs: S.cases };   // 결과 가리기 — 처음 보는 악기인지(도감 빨간 점)도 나타난 뒤에
     S.bench = { id: rid(), lv: 0, f: pickFam() };
     S.st.found = (S.st.found | 0) + 1;   // 찾은 악기 수(골드 받기 쉬기에 씀, 2026-11-17)
     const newDex = dexAdd(S.bench.f, 0);
     save();   // 먼저 저장(새로고침해도 찾은 기타는 그대로)
     $('#empty').hidden = true; $('#bench').innerHTML = '';
     await suspense(4, { find: true, ms: first ? 1900 : 1100, txt: first ? '첫 기타를 찾는 중…' : '기타 찾는 중…', hush: first });
+    veil = null; dexDot();
     flash(); sfx('ok', 6);
     burst(first ? 22 : 14, ['#ffe27a', '#ffffff', '#72c492', '#f5b31e'], { y: 52, spread: 150, size: [4, 9], dur: 950, grav: false });
     cv.animate([{ transform: `${CVT} scale(.9)`, filter: 'brightness(2.4)' }, { transform: `${CVT} scale(1.07)`, filter: 'brightness(1.3)', offset: 0.4 }, { transform: CVT, filter: 'brightness(1)' }], { duration: 650, easing: 'ease-out' });
@@ -4030,7 +4065,7 @@ $('#app').addEventListener('click', e => {
     else if (a === 'nextg') { const g = S.bench; if (g && g.lv < MAX) toast(dexHas(giftFam(g.f), g.lv + 1) ? `다음 단계: +${g.lv + 1} ${gname({ ...g, lv: g.lv + 1 })}` : `다음 단계는 +${g.lv + 1} ??? — 강화해서 확인해 봐요`); }
     else if (a === 'giftfold') { giftFold = !giftFold; mem.set('gk.giftFold', giftFold); renderGauge(); }
     else if (a === 'luckinfo') { const g = S.bench; if (g) toast(luckOf(g) >= LUCK_MAX ? '행운 게이지 가득! 이번 강화는 반드시 성공해요' : `강화를 누를 때마다 한 칸(실패해도). ${LUCK_MAX}칸이 차면 다음 강화는 반드시 성공 — ${LUCK_MAX - luckOf(g)}칸 남음`); }
-    else if (a === 'giftinfo') { const g = S.bench, nx = g && nextGift(g); if (nx) toast(`${(FAMS[g.f] || FAMS.strat).dexName || (FAMS[g.f] || FAMS.strat).name} +${nx}에 오늘 처음 닿으면 획득보상(${giftShort(nx)}) · ${nx - g.lv}단계 남음 · 매일 새벽 4시에 다시`); }
+    else if (a === 'giftinfo') { const g = S.bench, nx = g && nextGift(g); if (nx) toast(`+${nx}에 오늘 처음 닿으면 획득보상(${giftShort(nx)}) · ${nx - g.lv}단계 남음 · 어느 악기든 하루에 한 번, 매일 새벽 4시에 다시`); }
     else if (a === 'buy1') findGuitar(true);
     else if (a === 'adgold') goldAd();
     else if (a === 'daily') $('#rDaily').click();
