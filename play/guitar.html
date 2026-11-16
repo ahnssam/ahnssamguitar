@@ -1089,7 +1089,10 @@ const benchUp = () => BENCH_UP[skinTier(BENCHES, S.bskin)] || 0;      // 작업�
 // 컬렉션(진열 벽) 스킨 파괴 줄임 (2026-11-17 사용자: '컬렉션 스킨도 금액 같게, 대신 파괴 확률 −5') — 벽돌 로프트 0.1 → 별빛 신전 5.0, 작업대처럼 점점 크게. 예전엔 한 칸에 0.1씩(최대 −1)
 const WALL_CUTS = [0, 0.1, 0.2, 0.3, 0.4, 0.6, 0.9, 1.4, 2.1, 3.2, 5];
 const wallCut = () => WALL_CUTS[skinTier(WALLS, S.skin)] || 0;        // 진열 벽: 파괴 → 줄 끊김
-const arenaUp = () => skinTier(ARENAS, S.ask) * ARENA_RW;            // 싸움터: 배틀에서 이기면 받는 돈
+// 싸움터 스킨 배틀 보상 (2026-11-17 사용자: '배틀 보상은 마지막 금액 천만 원, 점진적 상승. 마지막 보상은 배틀 보상 20%로, 역시 점진적 상승')
+//   값 10만 → 1,000만G, 보상 +2 → +20% 모두 한 칸마다 같은 배수로. 예전엔 한 칸에 +2%씩(최대 +12%)
+const ARENA_UP = [0, 0.02, 0.03, 0.05, 0.08, 0.13, 0.2];
+const arenaUp = () => ARENA_UP[skinTier(ARENAS, S.ask)] || 0;            // 싸움터: 배틀에서 이기면 받는 돈
 // 이 단계의 실제 확률 [성공, 줄 끊김, 부서짐, 파괴를 줄인 몫(앰프+벽), 줄 끊김을 줄인 몫(멀티+작업대)]
 function oddsFor(lv) {
     let [sp, mp, dp] = ODDS[lv];
@@ -1218,11 +1221,11 @@ const arenaAttr = id => { const A = ARENAS.find(a => a.id === id) || ARENAS[0];
 const ARENAS = [
     { id: 'alley', name: '비 오는 뒷골목', desc: '가로등 하나, 젖은 바닥에 번지는 불빛', price: 0 },
     { id: 'club', name: '지하 클럽', desc: '보랏빛 조명 아래 관객 그림자', price: 100000, img: 'arena_club.webp' },
-    { id: 'factory', name: '폐공장', desc: '녹슨 철골, 먼지 낀 주황 불빛', price: 350000, img: 'arena_factory.webp' },
-    { id: 'rooftop', name: '한밤 옥상', desc: '도시 불빛이 깔린 옥상 위 달', price: 1200000, img: 'arena_rooftop.webp' },
-    { id: 'lava', name: '용암 무대', desc: '갈라진 바닥 틈으로 용암이 끓는다', price: 4200000, img: 'arena_lava.webp' },
-    { id: 'neon', name: '네온 링', desc: '분홍·청록 네온 줄을 두른 링', price: 14000000, img: 'arena_neon.webp' },
-    { id: 'space', name: '무중력 우주', desc: '별과 성운 사이에서 붙는다', price: 50000000, img: 'arena_space.webp' },
+    { id: 'factory', name: '폐공장', desc: '녹슨 철골, 먼지 낀 주황 불빛', price: 250000, img: 'arena_factory.webp' },
+    { id: 'rooftop', name: '한밤 옥상', desc: '도시 불빛이 깔린 옥상 위 달', price: 630000, img: 'arena_rooftop.webp' },
+    { id: 'lava', name: '용암 무대', desc: '갈라진 바닥 틈으로 용암이 끓는다', price: 1600000, img: 'arena_lava.webp' },
+    { id: 'neon', name: '네온 링', desc: '분홍·청록 네온 줄을 두른 링', price: 4000000, img: 'arena_neon.webp' },
+    { id: 'space', name: '무중력 우주', desc: '별과 성운 사이에서 붙는다', price: 10000000, img: 'arena_space.webp' },
 ];
 const BENCHES = [
     { id: 'workshop', name: '밤의 기타 공방', desc: '처음 받는 기본 작업대. 양쪽 벽에 기타, 가운데 거치대', src: 'bg_workshop.webp', price: 0 },
@@ -3598,7 +3601,7 @@ function renderShop() {
             ${use ? '<span class="own">쓰는 중</span>' : own ? `<button type="button" data-a="bskin" data-id="${B.id}">바꾸기</button>` : `<button type="button" data-a="bskin" data-id="${B.id}" ${S.gold >= B.price ? '' : 'disabled'}>${gf(B.price)}</button>`}</div>`;
     }).join('') + `<p class="note2">작업대는 좋은 것일수록 강화 성공이 아주 조금씩 올라요(올라간 몫은 '${keepWord(S.bench)}'에서 가져와요). 지금 쓰는 작업대 +${benchUp()}%p.</p>`;
     if (shopCat === 'arena') h += ARENAS.map((A, i) => {
-        const own = S.asks.includes(A.id), use = S.ask === A.id, up = Math.round(i * ARENA_RW * 100);
+        const own = S.asks.includes(A.id), use = S.ask === A.id, up = Math.round((ARENA_UP[i] || 0) * 100);
         return `<div class="item"><span class="ic apv ${A.img ? '' : `askin ask-${A.id}`}" ${A.img ? `style="background:#111 url(../images/play/gk/${A.img.replace('arena_', 'arenat_')}) center / cover"` : ''}><i class="fas fa-guitar"></i><i class="fas fa-guitar"></i></span><div class="it"><b>${A.name}${up ? ` · 배틀 보상 +${up}%` : ''}</b><small>${A.desc}</small></div>
             ${use ? '<span class="own">쓰는 중</span>' : own ? `<button type="button" data-a="askin" data-id="${A.id}">바꾸기</button>` : `<button type="button" data-a="askin" data-id="${A.id}" ${S.gold >= A.price ? '' : 'disabled'}>${gf(A.price)}</button>`}</div>`;
     }).join('') + `<p class="note2">배틀할 때 내 싸움터 배경이에요. 기타 넥끼리 칼처럼 부딪쳐요. 좋은 싸움터일수록 이기면 받는 돈이 조금 더 많아요 (지금 +${Math.round(arenaUp() * 100)}%).</p>`;
