@@ -49,6 +49,7 @@
     .stage .res.gold i { color: #ffcf3f; }
     .stage .res.daily:not(.got), .stage .res.adg { background: #fff3dc; color: #a85a00; border-color: #f6d29a; }
     .stage .res.adg i { color: #e0a63c; }
+    .stage .res.adg i.adi { color: #a85a00; margin-right: -1px; }   /* 광고 표시(🎬) — 2026-11-17 사용자: 골드 받기 왼쪽에 */
     .stage .res.daily.got { background: rgba(8, 14, 12, 0.6); color: #b9c2bd; }
     .stage .res.daily.got i { display: none; }
     @media (max-width: 380px) { .stage > .gL, .stage > .gR { top: 6px; gap: 4px; } .stage > .gL { left: 6px; } .stage > .gR { right: 6px; } .stage .res { height: 30px; padding: 0 8px; font-size: 12.5px; gap: 4px; } .stage .iconbtn { width: 30px; height: 30px; } .stage .res.adg span { display: none; } }
@@ -940,7 +941,7 @@
         <div class="gk-bar" id="gkBar" hidden>
             <span class="gL" id="gL"><span class="res gold" id="rGold" title="골드"><i class="fas fa-coins"></i><span>0G</span></span>
                 <!-- 2026-11-13 사용자: '골드 받기'(보상형 광고). 골드가 모자랄 때만 보인다 -->
-                <button class="res adg" id="rAdG" type="button" hidden title="골드 받기"><i class="fas fa-coins"></i><span>골드 받기</span></button></span>
+                <button class="res adg" id="rAdG" type="button" hidden title="골드 받기"><i class="fas fa-clapperboard adi"></i><i class="fas fa-coins"></i><span>골드 받기</span></button></span>
             <span class="gR" id="gR"><button class="res daily" id="rDaily" type="button" title="하루 한 번: 1,000G"><i class="fas fa-gift"></i><span>출석 보상</span></button>
                 <button class="iconbtn" id="rSnd" type="button" aria-label="효과음 켜기/끄기"><i class="fas fa-volume-high"></i></button></span>
         </div>
@@ -2098,7 +2099,7 @@ function lackCard(title, why) {
     const dl = S.daily !== today(), ad = adDay().n < AD_GOLD_DAY;
     return `<img class="g1" src="../images/play/gk/sil_guitar.webp" alt=""><p class="big">${title}<small>${why}<br>${dl ? `출석하면 ${gf(DAILY_GOLD)}을 받아요.` : `기타를 팔거나, 아래에서 골드를 더 받아요.`}</small></p>
         ${dl ? `<button class="btn pick" type="button" data-a="daily"><i class="fas fa-gift"></i> 출석하고 받기 <small>${gf(DAILY_GOLD)}</small></button>`
-        : ad ? `<button class="btn pick" type="button" data-a="adgold"><i class="fas fa-coins"></i> 골드 받기 <small>오늘 ${AD_GOLD_DAY - adDay().n}번</small></button>` : ''}
+        : ad ? `<button class="btn pick" type="button" data-a="adgold"><i class="fas fa-clapperboard"></i> 골드 받기 <small>오늘 ${AD_GOLD_DAY - adDay().n}번</small></button>` : ''}
         ${GSHARE}`;
 }
 function renderBench() {
@@ -2672,7 +2673,7 @@ function wreckCard(w) {
     const dl = S.daily !== today(), ad = adDay().n < AD_GOLD_DAY;
     return h + `<p class="lackw">기타 다시 찾기는 ${gf(FIND_GOLD)} · 골드가 ${gf(FIND_GOLD - S.gold)} 모자라요</p>`
         + (dl ? `<button class="btn pick" type="button" data-a="daily"><i class="fas fa-gift"></i> 출석하고 받기 <small>${gf(DAILY_GOLD)}</small></button>`
-        : ad ? `<button class="btn pick" type="button" data-a="adgold"><i class="fas fa-coins"></i> 골드 받기 <small>오늘 ${AD_GOLD_DAY - adDay().n}번</small></button>` : '');
+        : ad ? `<button class="btn pick" type="button" data-a="adgold"><i class="fas fa-clapperboard"></i> 골드 받기 <small>오늘 ${AD_GOLD_DAY - adDay().n}번</small></button>` : '');
 }
 
 // ---------- 광고 보고 되살리기 (2026-11-13 사용자: 파괴될 때 광고를 보면 부활) ----------
@@ -2707,7 +2708,7 @@ async function reviveOffer(g, sh, wasRep) {
     return true;
 }
 // 골드가 모자랄 때 보상형 광고를 보면 골드 (2026-11-13 사용자, 1,000G · 하루 5번).
-//   되살리기와 같은 방식 — 구글이 광고를 준비했을 때만 '광고를 끝까지 보면' 안내가 뜬다(승인 전·광고 없으면 그냥 알려 주고 끝)
+//   되살리기와 같은 방식 — 구글이 광고를 준비했을 때만 '광고를 끝까지 보면' 안내가 뜬다(승인 전·광고 없으면 묻지 않고 바로 준다, 2026-11-17)
 let adBusy = false;
 async function goldAd() {
     if (adBusy) return;
@@ -2728,12 +2729,12 @@ async function goldAd() {
     }, '골드 받기');
     box.remove();
     adBusy = false;
-    if (r === 'viewed') {
+    // 2026-11-17 사용자: '아직 광고도 못 붙였는데 — 광고가 없으면 그냥 줘'. 광고가 준비 안 됐으면(승인 전·광고 없음·차단) 바로 준다(하루 횟수는 그대로 셈)
+    if (r === 'viewed' || r === 'none') {
         d.n++; gain(AD_GOLD); save(); updBar(true); sfx('sell');
         toast(`골드 +${gf(AD_GOLD)} · 오늘 ${AD_GOLD_DAY - d.n}번 남음`);
         if (tab === 'bench') renderBench(); else if (tab === 'shop') renderShop();
     } else if (r === 'dismissed') toast('끝까지 봐야 골드를 받아요');
-    else if (r === 'none') toast('지금은 볼 수 있는 광고가 없어요. 잠시 뒤에 다시 해 봐요');
 }
 
 // 기타 찾기: 강화처럼 두근두근 기다리다가 그림자에서 기타가 '탄생'한다 (2026-11-12 사용자 요청).
