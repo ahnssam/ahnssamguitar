@@ -824,8 +824,8 @@
             <!-- 이름표 + 바로 아래 작업자 대사를 한 덩어리로 (2026-11-12 사용자: 작업자 멘트를 기타 이름 아래에 붙여) — 같이 둥실 -->
             <div class="nmhud" id="nmhud"><div class="nmtag" id="nm"></div><div class="talk" id="talk" hidden></div></div>
             <!-- 2026-11-13 사용자: 조각 정보는 도형만으론 뜻을 모르니 무대 왼쪽 위(기타 이름 아래)에 글로. 누르면 안내(2026-11-15 상점 케이스 칸은 지움) -->
-            <button type="button" class="scbox" id="rSC" data-a="gocase" hidden title="파괴되면 부서진 기타 조각이 나와요. 조각 20개가 모이면 하드케이스가 저절로 1개(3개까지, 끼우면 파괴 1번 막음)">
-                <span class="h">파괴 시 조각</span><span><em>획득</em><i>조각</i> <b id="rShard"><span>0/20</span></b></span>
+            <button type="button" class="scbox" id="rSC" data-a="gocase" hidden title="파괴되면 부서진 기타 조각이 나와요. 조각 15개가 모이면 하드케이스가 저절로 1개(3개까지, 끼우면 파괴 1번 막음)">
+                <span class="h">파괴 시 조각</span><span><em>획득</em><i>조각</i> <b id="rShard"><span>0/15</span></b></span>
                 <span class="h">→ 하드케이스로</span><span><em>파괴 방지</em><i>하케</i> <b id="rCase"><span>0/3</span></b></span>
             </button>
             <button type="button" class="brag" id="rShare" hidden title="내 기타 자랑하기"><i class="fas fa-share-nodes"></i><span>자랑하기</span></button>
@@ -901,7 +901,7 @@ const COST = (() => {
 const MAX = 20;
 // 2026-11-13 사용자: 기타 키우기에서는 놀이터 피크를 안 쓴다('피크 시스템은 빼자 여기선'). 출석은 골드만, 첫 기타는 공짜
 const START_GOLD = 500, DAILY_GOLD = 1000,
-      CASE_SHARDS = 20, BT_DAY = 5;   // 하루 배틀 5번 (2026-11-13 사용자, 예전 10번)
+      CASE_SHARDS = 15, BT_DAY = 5;   // 하루 배틀 5번 (2026-11-13 사용자, 예전 10번) · 하드케이스는 조각 15개 (2026-11-16 사용자, 예전 20개)
 // 넥뿌의 요정 소환(되살리기)은 하루에 한 번 (2026-11-16 사용자: '넥뿌의 요정 소환은 하루에 한 번만' — rvToday).
 //   2026-11-15 ~ 11-16에는 한 번 부르면 15분 쉬기, 그 전엔 하루 5번이었다(끝없이 되살리면 파괴가 의미 없어서)
 // 골드가 모자랄 때 보상형 광고를 보면 골드 (2026-11-13 사용자: '돈 없을 땐 광고 보고 돈 채우는 거, 피크 자리에').
@@ -1280,6 +1280,7 @@ function askWhich(srv, uid) {
 async function cloudSync() {
     const uid = acctId();
     cloudBtn();
+    if (uid && cloud && cloud.uid && cloud.uid !== uid) { resetLocal('switched'); return; }   // 2026-11-16 다른 계정의 기록 — 이 계정에 올리거나 합치지 않고 처음부터
     if (!uid || cloudBusy || cloudOff) return;
     let srv;
     try { srv = ((await PLAY.rpc('play_guitar_load', {}, { auth: true })) || [])[0] || null; }
@@ -1292,6 +1293,59 @@ async function cloudSync() {
     }
     if (localEmpty()) adopt(srv, uid);                                        // 이 기기는 아직 안 했다 → 계정 것
     else askWhich(srv, uid);
+}
+// ---------- 로그아웃·계정 바꾸기 (2026-11-16 사용자: 로그아웃하고 다른 계정으로 바꿨는데 게임 진행이 그대로 남아 있었음) ----------
+//   이 기기의 기록이 계정(cloud.uid)과 이어져 있으면 그 기록은 그 계정 것이다. 그 계정이 로그아웃했거나(어느 페이지에서든)
+//   다른 계정이 들어오면 이 기기 게임을 처음 화면으로 돌린다 — 다시 로그인하면 계정에서 불러온다.
+//   예전엔 그대로 남아서 로그아웃한 채 이어 하거나, 새 계정이 비어 있으면 앞 계정 기록이 새 계정에 올라갔다(있으면 합치기 창).
+//   돌리기 전 기록은 'gk.prev' 에 한 벌 남겨 두고, 랭킹 열쇠(S.rk)도 새로 만든다 — 앞 계정의 랭킹 줄을 덮어쓰지 않게
+function newRk() { const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'; return [...crypto.getRandomValues(new Uint8Array(24))].map(b => A[b & 63]).join(''); }
+function resetLocal(why) {
+    try { mem.set('gk.prev', { uid: cloud && cloud.uid, at: Date.now(), dirty: !!(cloud && cloud.dirty), why, data: S }); } catch (e) {}
+    const f = fresh(); f.rk = newRk();
+    mem.set('gk', f); mem.set('gk.cloud', null); mem.set('gk.sync2', {}); mem.set('gk.coll', {});
+    location.reload();
+}
+// 로그아웃을 누르면 먼저 묻는다 (2026-11-16 사용자: '게임 진행 중이니까 팝업 — 끄면 저장 안 한 데이터가 날아간다').
+//   계정과 이어져 있을 때만: 계정에 마지막으로 저장 → 로그아웃 → 이 기기 게임은 처음 화면. 저장이 안 되면 그래도 할지 한 번 더 묻는다.
+//   계정과 안 이어진 기록(고르기 창에서 '나중에')은 이 기기 것이라 그대로 둔다(묻지도 않음)
+let loggingOut = false;
+document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('[data-auth-action="signout"]');
+    if (!b || loggingOut || !linked()) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    document.querySelectorAll('.auth-user-menu.open').forEach(x => x.classList.remove('open'));
+    askLogout();
+}, true);
+function askLogout() {
+    if (document.querySelector('.cloudask')) return;
+    const m = document.createElement('div');
+    m.className = 'cloudask logoutask';
+    const draw = fail => {
+        m.innerHTML = `<div class="in"><h3>${fail ? '계정에 저장하지 못했어요' : '로그아웃할까요?'}</h3>
+            <p>${fail ? '인터넷 연결을 확인해 주세요. 지금 로그아웃하면 마지막으로 한 진행이 사라질 수 있어요.'
+                : '기타 키우기 기록을 계정에 저장하고 로그아웃해요. 이 기기의 게임은 처음 화면으로 돌아가고, 다시 로그인하면 이어서 해요.'}</p>
+            <button type="button" class="pick2 best" data-w="go"><b>${fail ? '다시 저장하고 로그아웃' : '저장하고 로그아웃'}</b></button>
+            ${fail ? '<button type="button" class="pick2" data-w="force"><b>그래도 로그아웃</b><small>저장하지 못한 진행은 사라져요</small></button>' : ''}
+            <button type="button" class="later" data-w="no">취소하고 계속 하기</button></div>`;
+    };
+    draw(false);
+    m.addEventListener('click', async e => {
+        const b = e.target.closest('button');
+        if (!b) { if (e.target === m) m.remove(); return; }
+        if (b.disabled) return;
+        if (b.dataset.w === 'no') { m.remove(); return; }
+        if (b.dataset.w === 'go') {
+            m.querySelectorAll('button').forEach(x => { x.disabled = true; }); b.querySelector('b').textContent = '저장하는 중…';
+            if (cloud && cloud.dirty) { clearTimeout(cloudT); while (cloudBusy) await sleep(150); await cloudPush(); }
+            if (!linked() || cloudOff || cloud.dirty) { draw(true); return; }
+        }
+        loggingOut = true;
+        m.querySelectorAll('button').forEach(x => { x.disabled = true; });
+        try { if (window.ahnssamAuth) await window.ahnssamAuth.signOut(); } catch (x) {}
+        resetLocal('logout');
+    });
+    document.body.appendChild(m);
 }
 function cloudBtn() {
     const b = document.getElementById('rCloud'); if (!b) return;
@@ -3252,7 +3306,11 @@ $('#rShare').addEventListener('click', () => {   // 2026-11-13 사용자: 무대
 });
 $('#adw').innerHTML = PLAY.adSlot('wide');
 
-addEventListener('ahnssam-auth-settled', () => cloudSync());
+addEventListener('ahnssam-auth-settled', e => {
+    // 이 기기 기록의 계정이 로그아웃했으면(다른 페이지·다른 탭에서 해도) 처음 화면으로 (2026-11-16)
+    if (!(e.detail && e.detail.user) && cloud && cloud.uid && !loggingOut) { resetLocal('signed-out'); return; }
+    cloudSync();
+});
 document.addEventListener('visibilitychange', () => { if (document.hidden && linked() && cloud.dirty) cloudPush(); });
 function start() {
     applyBench();
