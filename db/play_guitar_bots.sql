@@ -6,6 +6,7 @@
 --   단계는 +0~+13(2026-11-15 사용자: '최고 무기 랭킹이 너무 높다, 고점을 13까지' — 처음 +0~+16으로 넣었다가
 --         단계 × 13/16(반올림)으로 줄이고, 모은 돈도 그 단계 판매가 비율로 줄임). 모은 돈은 그 단계 판매가에 맞춰 대충.
 --   배틀하면 봇의 방어 승패(def_wins·def_losses)도 서버가 그대로 센다.
+--   닉네임은 2026-11-16 db/play_guitar_coll.sql 에서 진짜 사람 닉네임처럼 바꿨다(아래 values 는 처음 넣은 이름). 컬렉션도 그 파일에서 넣는다.
 --   주의: 상대 목록은 30일 안에 들어온 사람만 보여서(play_guitar_opponents), 봇도 30일쯤 지나면 상대 목록에서 빠진다(랭킹엔 남음).
 --         계속 두려면 updated_at 을 새로 바꾸면 된다:
 --           update public.play_guitar_players set updated_at = now() where key_hash in (select encode(sha256(convert_to('bot:ahnssam:' || g, 'UTF8')), 'hex') from generate_series(1, 40) g);
