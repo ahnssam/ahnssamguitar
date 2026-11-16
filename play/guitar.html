@@ -902,8 +902,8 @@ const MAX = 20;
 // 2026-11-13 사용자: 기타 키우기에서는 놀이터 피크를 안 쓴다('피크 시스템은 빼자 여기선'). 출석은 골드만, 첫 기타는 공짜
 const START_GOLD = 500, DAILY_GOLD = 1000,
       CASE_SHARDS = 20, BT_DAY = 5;   // 하루 배틀 5번 (2026-11-13 사용자, 예전 10번)
-// 넥뿌의 요정 소환(광고 보고 되살리기)은 한 번 부르면 15분 쉰다 (2026-11-15 사용자, 예전엔 하루 5번 — 끝없이 되살리면 파괴가 의미 없어서)
-const REVIVE_CD = 15 * 60 * 1000;
+// 넥뿌의 요정 소환(되살리기)은 하루에 한 번 (2026-11-16 사용자: '넥뿌의 요정 소환은 하루에 한 번만' — rvToday).
+//   2026-11-15 ~ 11-16에는 한 번 부르면 15분 쉬기, 그 전엔 하루 5번이었다(끝없이 되살리면 파괴가 의미 없어서)
 // 골드가 모자랄 때 보상형 광고를 보면 골드 (2026-11-13 사용자: '돈 없을 땐 광고 보고 돈 채우는 거, 피크 자리에').
 //   금액·횟수는 사용자가 고른 값 — 출석과 같은 1,000G, 하루 5번(초반에 막혔을 때만 풀어 주고 경제는 안 망가지게)
 const AD_GOLD = 1000, AD_GOLD_DAY = 5;
@@ -1300,7 +1300,8 @@ function cloudBtn() {
     b.title = cloudOff ? '계정 저장은 곧 열려요' : on ? (cloud.dirty ? '계정에 저장하는 중…' : '계정에 저장돼요 — 다른 기기에서 로그인해도 이어서 해요') : acctId() ? '계정과 이어 붙이는 중…' : '로그인하면 이 기록을 계정에 저장해서 다른 기기에서도 이어서 해요';
 }
 function btDay() { if (S.bt.day !== today()) S.bt = { day: today(), n: 0, done: {} }; return S.bt; }
-const rvLeft = () => Math.max(0, (+S.rv.at || 0) + REVIVE_CD - Date.now());   // 넥뿌의 요정이 다시 올 때까지 남은 시간(ms)
+const dayOf = t => { const d = new Date(t); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };   // today() 와 같은 모양
+const rvToday = () => !!(+S.rv.at) && dayOf(+S.rv.at) === today();   // 넥뿌의 요정을 오늘 이미 불렀나 (하루 한 번)
 function adDay() { if (!S.ad || S.ad.day !== today()) S.ad = { day: today(), n: 0 }; return S.ad; }   // 광고 보고 골드: 하루 AD_GOLD_DAY 번
 // 대표 기타: 고른 것 → 벽의 가장 높은 것 → 작업대
 function rep() {
@@ -2213,15 +2214,14 @@ async function enhance() {
 
 // ---------- 광고 보고 되살리기 (2026-11-13 사용자: 파괴될 때 광고를 보면 부활) ----------
 // 구글 보상형 광고(H5 게임 광고 adBreak 'reward')가 준비됐을 때만 묻는다 — 승인 전·광고가 없으면 묻지 않고 예전처럼 파괴(PLAY.rewarded).
-// 광고 길이·건너뛰기는 구글이 정하고, 끝까지 봐야(adViewed) 되살아난다. 한 번 되살리면 15분(REVIVE_CD) 쉰다.
+// 광고 길이·건너뛰기는 구글이 정하고, 끝까지 봐야(adViewed) 되살아난다. 하루에 한 번만(rvToday, 2026-11-16 — 그 전엔 15분 쉬기).
 // 2026-11-15 사용자: 이름은 '넥뿌의 요정 소환'(넥뿌 = 넥 부러짐), 단추 글자 앞에 광고 표시로 영화 슬레이트(🎬 fa-clapperboard) 아이콘
 // 되살리면 같은 단계 그대로 작업대로 돌아오고, 파괴로 받은 조각은 도로 빼고 '부순 기타' 수도 하나 줄인다(안 부서진 셈).
 // 파괴 결과는 이미 저장돼 있어서, 묻는 동안 새로고침하면 그대로 파괴로 남는다.
 async function reviveOffer(g, sh, wasRep) {
     if (S.bench) return false;
-    const left = rvLeft();
-    if (left > 0) {   // 쉬는 중 — 한 번이라도 불러 본 사람에게만 알려 준다(광고가 열리기 전엔 이 기능이 안 보이니까)
-        toast(`넥뿌의 요정은 쉬는 중이에요 · ${mmss(left)} 뒤에 다시 부를 수 있어요`);
+    if (rvToday()) {   // 오늘 이미 불렀으면
+        toast('넥뿌의 요정은 하루에 한 번만 와요 · 내일 다시 부를 수 있어요');
         return false;
     }
     const box = document.createElement('div');
@@ -2229,7 +2229,7 @@ async function reviveOffer(g, sh, wasRep) {
     const r = await PLAY.rewarded('revive', (show, skip) => {
         box.innerHTML = `<span class="fy" aria-hidden="true">🧚</span><b>${esc(full(g))}</b><p>넥뿌의 요정을 부르면 부서진 기타를 되살려 줘요<br><span class="ad">광고를 끝까지 보면 와요</span></p>
             <button type="button" class="go"><i class="fas fa-clapperboard"></i> 넥뿌의 요정 소환</button>
-            <button type="button" class="no">그냥 보낼게요</button><small>한 번 부르면 15분 쉬어요</small>`;
+            <button type="button" class="no">그냥 보낼게요</button><small>하루에 한 번만 부를 수 있어요</small>`;
         box.querySelector('.go').addEventListener('click', () => { box.classList.add('wait'); show(); });
         box.querySelector('.no').addEventListener('click', skip);
         $('#stage').appendChild(box);
