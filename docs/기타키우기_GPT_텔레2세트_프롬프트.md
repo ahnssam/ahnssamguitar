@@ -122,3 +122,87 @@ The legendary rock hero's dragon guitar: the surf-green body is road-worn after 
 - 기타 뒤에 아우라·빛 번짐이 있으면: `Remove the glow / aura / soft light around the guitars. Effects must be solid shapes with clear outlines and hard edges, easy to cut out.`
 - 해파리가 비쳐 보이면: `Make the jellyfish fully opaque with clear outlines - not see-through.`
 - 글자가 들어갔으면: `Remove all text, letters and numbers - flags, labels and the compass must be blank.`
+
+## 5. 다시 뽑기 판 (2026-11-17 — 단계 격차 크게)
+
+사용자: "레스폴 2와 텔레 2는 그런 느낌이 덜하네. 12강쯤부터는 와 진짜 갖고 싶다, 4강까지는 진짜 쓰레기, 8강 갈 무렵부턴 오 좀 멋있어지려나? 이 느낌이 나와야 하는데."
+
+게임에 넣은 21장은 **처음부터 끝까지 멀쩡한 같은 민트색 텔레에 소품만 하나씩** 붙어 있었다.
+- +0~+4: 칼자국·탄 자국이 있어도 몸통은 깨끗해서 쓰레기 같지 않다.
+- +5~+9: 소품만 바뀌어서 나아지는 느낌이 없다.
+- +10~+19: 기타 옆에 산호·해파리·문어가 붙은 정도라 '와' 소리가 안 난다.
+
+그래서 이름·주제는 그대로 두고, 그림 설명만 CLAUDE.md 11절 ④ 단계 격차 규칙대로 세게 다시 썼다.
+- +0~+4: 기타 자체가 박살·썩음.
+- +5~+7: 고쳤지만 수수함.
+- +8~+11: '오, 멋있어지려나?'
+- +12~+19: 기타 자체가 바다 생물·보물로 변신해 '와, 갖고 싶다'.
+- +20: 그보다 더.
+
+새로 받으면 지금 `tele2_00`~`20.webp` 자리에 바꿔 넣는다. 같은 이름 그림이라 `ART_V`·`SHARE_V`를 올리고 공유 썸네일을 다시 만든다.
+
+```
+I'm making a mobile game called "Guitar Upgrade": a guitar is upgraded step by step from +0 to +20. Please draw a NEW set of 21 guitars as THREE images:
+- IMAGE A: guitars +0 to +9 (one sprite sheet)
+- IMAGE B: guitars +10 to +19 (one sprite sheet)
+- IMAGE C: guitar +20 (one single guitar)
+Draw all three images one after another in this conversation. Do not stop to ask me anything and do not wait for me to say "next" - just keep going until A, B and C (and any redraws, see SELF-CHECK) are all done.
+
+POWER CURVE (the most important rule of this set - the jump between levels must be HUGE and obvious, like a real upgrade game)
+- +0 to +4: TOTAL GARBAGE. The guitar ITSELF is wrecked - cracked, chipped, warped, rotten, rusty, filthy, with broken or missing parts - NOT a clean guitar with a funny object stuck on it. Anyone would throw it in the trash. Funny and gross-cute, never scary or bloody.
+- +5 to +7: repaired and playable, but still plain and humble.
+- +8 to +11: "oh, this is getting cool" - nicer finish and hardware, the theme starts to change the guitar itself, clearly cooler with every step.
+- +12 to +19: "WOW, I NEED this" - jaw-dropping legendary rare items. The guitar ITSELF transforms: its body becomes precious material or a sea creature (pearl, crystal, gold, jewels, scales, coral...), with big dramatic sculptural decorations, intricate detail and rich bold color. Never just a normal guitar with a creature or object placed next to it. Each one more spectacular than the one before.
+- +20: the ultimate guitar, the most impressive of all.
+Even when the body transforms, keep the guitar's single-cutaway outline, neck and headstock so it is still clearly this guitar.
+
+RULES FOR EVERY IMAGE
+- SHEETS (A and B): one image, landscape 1536x1024, a grid of 5 columns x 2 rows with lots of empty space between the guitars. Order: top row left to right = guitars 1-5, bottom row left to right = guitars 6-10. Every guitar and all of its creatures and objects stay completely inside its own cell - nothing touches or crosses into a neighbouring cell.
+- Every guitar stands upright, seen exactly from the front, centered in its cell, all at the SAME size (about 85% of the cell height), with the bottom of the body at the same height in every cell. The neck points straight up.
+- BACKGROUND: fully transparent (if that is impossible, plain flat white). NO fog, haze, smoke clouds, water or sea backgrounds, gradients or floor shadows behind the guitars - even for the ocean guitars, only the objects described.
+- NO AURA OR GLOW (very important - I have to cut every guitar out of the background, and soft light is almost impossible to cut out cleanly; the game adds its own glow later): no aura, halo light, glow, light bloom, lens flare, mist, haze, light rays fading into the background or any soft see-through light around or behind any guitar. Every effect (waves, foam, bubbles, corals, tentacles, rays) must be a SOLID, OPAQUE shape with a clear dark outline and hard edges, sitting close to its own guitar, so it can be cut out cleanly. Bubbles are outlined circles; crystal and pearl are solid with white highlights, not see-through.
+- NO text, letters, numbers or logos anywhere. Flags, labels, compass faces, tags and boxes are blank.
+- NO people anywhere - only sea creatures, animals and objects.
+- Original designs only: no real brand headstock shape, no real brand logos.
+- STYLE: polished 2D mobile-game item illustration, bold clean dark outlines, flat colors with soft cel shading (2-3 tones), slightly chunky and charming, light from the top-left, easy to read even when small on a phone.
+- BASE GUITAR (all 21 are this same guitar, changed as described): a single-cutaway flat slab-body electric guitar in surf green (pale mint green) with a white pickguard, a slanted bridge pickup set in a flat chrome bridge plate with three saddles, a chrome-covered neck pickup, a chrome control plate with two knobs and a switch, a maple neck with a dark rosewood fretboard and dot inlays, and an ORIGINAL headstock with all six tuning keys on ONE side.
+- HEADSTOCK AND STRINGS (very important, even for the garbage guitars): every guitar has exactly SIX tuning keys in one straight line along the upper edge of the headstock, exactly SIX round string posts in one line on the headstock face (one post per key), and exactly SIX strings running from the bridge, over the nut, each to its own post. Keys = posts = strings = 6. Nothing (animals, tentacles, crowns, lures, sunglasses) may cover the tuning keys or the posts.
+
+SELF-CHECK (do this after EVERY image)
+After you finish an image, zoom in and check every guitar one by one: count its tuning keys, its string posts and its strings (6 each). Check that no guitar has glow, aura, mist, a sea background or soft see-through light around or behind it. Check the POWER CURVE: +0 to +4 must look like total garbage (the guitar itself wrecked), +8 onward must clearly get cooler, and +12 to +19 must be jaw-dropping transformations - if one is not, redraw it bolder. If ANY guitar is wrong (5 or 7 keys, posts that do not match the keys, missing or extra strings), immediately redraw ONLY that guitar as its own single image - portrait 1024x1536, transparent background, same design, same style, upright and centered, about 85% of the image height - one guitar per image, one at a time. Check each redraw the same way. Then write one short line saying which guitars you redrew (for example "A3, B7 redrawn") and continue with the next image.
+
+IMAGE A - guitars +0 to +9
+From TOTAL GARBAGE (a surf-green guitar abused as household junk) to a beach-repaired guitar that the ocean starts to change.
+1. (+0) Mom's chopping board: the flat body hacked to pieces from years as a kitchen chopping board - deep knife gashes everywhere, a whole chunk chopped off the lower corner, the green paint soaked brown and grey with old food stains, the pickguard cracked and peeling, two knobs missing, rusty slack strings, rotten onion skins, a slimy green onion and a garlic clove stuck to it.
+2. (+1) Ramen pot stand: the middle of the body scorched black and blistered with a burnt-through hole, the pickguard melted and warped, dried noodles glued on, crusty orange soup stains, a broken chopstick jammed under the rusty strings.
+3. (+2) Run over by a moving truck: the body cracked almost in half and squashed flat, a muddy tire track across it, splinters sticking out, the pickguard snapped with a piece hanging loose, the neck bent, a cracked headstock tip (all six keys still there), a torn piece of cardboard stuck on.
+4. (+3) Pigeon nest: the body grey and weathered from years outside, the neck pickup ripped out to make room for a twig nest with two white eggs, a grey pigeon perched on the upper edge of the body (NOT on the headstock), moss in the cracks and white cartoon bird droppings all over.
+5. (+4) Mop-handle neck: the original neck is gone, replaced by a dirty round wooden mop handle with frets drawn as black marker lines; a crude wooden plank nailed on top as the headstock (six keys, six posts); the grimy body held together with nails and wire, a tuft of grey mop strings tied around the joint.
+6. (+5) Patched with seashells: every hole and crack patched with seashells, sea glass and small nails, the guitar cleaned up - lumpy and plain but finally solid and playable.
+7. (+6) Swim ring: freshly repainted in neat surf green, a red-and-white striped swim ring around the lower body, small round sunglasses hooked on the upper corner of the body - clean and cheerful but still simple.
+8. (+7) Sandcastle: glossy polished paint, a small sandcastle on wet sand on the lower body, a toy bucket and spade beside it, a pink starfish on the pickguard - cute but still a simple guitar.
+9. (+8) Sailor's anchor (now it starts to look cool): polished brass binding around the whole body edge, the neck joint wrapped in neat sailor's rope knots, a brass compass set into the control plate (needle only, no letters), a heavy iron anchor hanging from the strap button on a thick rope, a deep navy racing stripe across the green body.
+10. (+9) A wave bursts out: the lower half of the body itself is carved into a curling blue ocean wave in classic woodblock-print style - solid shapes, white foam "claws", clear outlines - with solid water drops and one silver fish leaping out; clearly cooler than the guitars before it.
+
+IMAGE B - guitars +10 to +19
+A magical OCEAN LEGEND theme: aquamarine, coral pink, pearl, deep navy, violet and gold. +10 and +11 are cool and getting very special; from +12 the guitar ITSELF transforms and becomes "WOW, I NEED this", each one more spectacular than the last. Keep the same single-cutaway outline, neck and one-side headstock (six keys, six posts, six strings) under all the decoration. Remember: no people, no sea background, no glow - only the guitar and the solid creatures and objects described.
+1. (+10) Coral reef: the body turns glossy coral pink, branching pink, orange and purple corals grow out of its edges, a sea anemone by the bridge, two striped clownfish beside it, outlined bubbles.
+2. (+11) Pearl clam: the whole body becomes iridescent mother-of-pearl (solid pink, sky-blue and white swirls) with gold binding, a giant open clam shell stands behind it like a throne with one huge pearl, pearl knobs and strap buttons.
+3. (+12) Jellyfish crystal: the WHOLE body becomes a glossy layered jellyfish bell of solid lavender-and-pink crystal with pearl-white highlights, long frilly crystal tentacles cascading from the bottom of the body around the base, three smaller crystal jellyfish orbiting it, strings of pearls.
+4. (+13) Octopus guitarist: a giant friendly purple octopus becomes part of the guitar - its rounded head forms the lower body with big kind golden eyes, eight huge tentacles with gold-rimmed suckers coil around the whole guitar, one tentacle tip strumming the strings (keys and posts stay visible).
+5. (+14) Sunken treasure: the body is a ship's treasure - dark ship planks framed in ornate gold baroque corners, encrusted with rubies, emeralds and gold coins, a golden ship's steering wheel standing behind it, two open chests overflowing with gold and pearl necklaces at the base, seaweed.
+6. (+15) Whale song: the WHOLE body becomes a majestic blue whale shaped to the guitar's outline - white belly grooves along the lower body, a small kind eye, its huge tail flukes rising behind the guitar like a crest - with solid white foam swirls and outlined bubbles.
+7. (+16) Mermaid scales: the body completely covered in shimmering teal, violet and gold mermaid scales (solid colors with hard white highlights), the bottom flowing into a huge elegant tail fin, delicate fins rising from the upper horns, pearl strands and a golden starfish jewel.
+8. (+17) Deep-sea lantern: the body becomes the armored head of a giant deep-sea anglerfish - dark navy scales with rows of bright cyan and violet solid dots, golden spiny fins fanning out from the edges, a lure on a long curved stalk arching over the headstock with a bright yellow bulb (a solid circle with a white highlight, NO glow, not covering the keys or posts) - mysterious and awesome, not scary.
+9. (+18) Thousand-year sea turtle: the guitar rides on the shell of a colossal ancient sea turtle whose jade-and-gold shell plates carry a whole tiny island - palm trees, a little solid waterfall, flowers - with solid foam swirls around its huge flippers; the guitar's own body has jade and gold shell-plate patterns.
+10. (+19) King of the seas: the body sculpted from aquamarine and gold with carved waves and pearl inlays, a giant golden trident standing diagonally behind it, a towering crown of coral, pearls and gold above the headstock (NOT covering the keys or posts), solid white sea-foam swirls and jewel-studded shells around the base.
+
+IMAGE C - guitar +20 (single image)
+One guitar, portrait 1024x1536, transparent background, upright and centered, about 85% of the image height, same style and same base guitar shape as the sheets, six keys, six posts, six strings.
+The legendary rock hero's dragon guitar, the ultimate guitar of the set: the surf-green body is road-worn after thousands of concerts and hand-painted all over with a swirling psychedelic 1960s-style dragon in rainbow colors (green, yellow, orange, red and blue), the dragon's tail curling up onto the headstock (not covering the keys or posts); white pickguard, worn chrome hardware. Behind it big hard-edged rainbow-colored rays with clear outlines (no glow), and solid outlined sparkles close around the guitar. No aura, no glow, no soft light - show its power through the rich details, so it looks like the most powerful guitar in the whole game.
+```
+
+다시 뽑기 판이 안 맞게 나오면 4절 문장과 아래를 같은 대화에 붙여 넣는다.
+- 초반이 덜 망가졌으면: `Guitars A1-A5 still look like clean guitars with objects stuck on. Redraw them so the guitar ITSELF is wrecked - cracked, broken, rotten, filthy, missing parts.`
+- +8부터 안 나아지면: `A9 and A10 must look clearly cooler than A6-A8. Redraw them with a nicer finish, polished hardware and the theme changing the guitar itself.`
+- +12부터가 덜 멋있으면: `B3-B10 still look like a normal guitar with a creature next to it. Redraw them so the guitar body itself transforms into the creature or treasure - jaw-dropping legendary items.`

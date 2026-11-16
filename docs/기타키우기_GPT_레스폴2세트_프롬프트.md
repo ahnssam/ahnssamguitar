@@ -121,3 +121,87 @@ The legendary heavy-metal hero's guitar: the whole body is painted with a bold b
 - 사막·하늘 배경이 들어갔으면: `Remove the background scene. Make it completely transparent (or flat white) with nothing behind the guitars except the objects described.`
 - 기타 뒤에 아우라·빛 번짐이 있으면: `Remove the glow / aura / soft light around the guitars. Effects must be solid shapes with clear outlines and hard edges, easy to cut out.`
 - 상형문자·글자가 들어갔으면: `Remove all hieroglyphs, text, letters and numbers - use only pattern bands, jewels and pictures.`
+
+## 5. 다시 뽑기 판 (2026-11-17 — 단계 격차 크게)
+
+사용자: "레스폴 2와 텔레 2는 그런 느낌이 덜하네. 12강쯤부터는 와 진짜 갖고 싶다, 4강까지는 진짜 쓰레기, 8강 갈 무렵부턴 오 좀 멋있어지려나? 이 느낌이 나와야 하는데."
+
+게임에 넣은 21장은 **처음부터 끝까지 멀쩡한 같은 까만 레스폴에 소품만 하나씩** 붙어 있었다.
+- +0~+4: 고양이 털·뚫어뻥·껌이 붙어도 몸통은 새것이라 쓰레기 같지 않다.
+- +5~+8: 금선·건반·턱시도·경매 소품만 바뀌어서 나아지는 느낌이 약하다.
+- +12~+19: +14 고양이, +18 빨간 해처럼 기타 자체는 그대로인 단계가 많다.
+
+그래서 이름·주제는 그대로 두고, 그림 설명만 CLAUDE.md 11절 ④ 단계 격차 규칙대로 세게 다시 썼다.
+- +0~+4: 기타 자체가 박살·썩음.
+- +5~+7: 고쳤지만 수수함.
+- +8~+11: '오, 멋있어지려나?'
+- +12~+19: 기타 자체가 황금 유물·조각상으로 변신해 '와, 갖고 싶다'.
+- +20: 그보다 더.
+
+새로 받으면 지금 `lespaul2_00`~`20.webp` 자리에 바꿔 넣는다. 같은 이름 그림이라 `ART_V`·`SHARE_V`를 올리고 공유 썸네일을 다시 만든다.
+
+```
+I'm making a mobile game called "Guitar Upgrade": a guitar is upgraded step by step from +0 to +20. Please draw a NEW set of 21 guitars as THREE images:
+- IMAGE A: guitars +0 to +9 (one sprite sheet)
+- IMAGE B: guitars +10 to +19 (one sprite sheet)
+- IMAGE C: guitar +20 (one single guitar)
+Draw all three images one after another in this conversation. Do not stop to ask me anything and do not wait for me to say "next" - just keep going until A, B and C (and any redraws, see SELF-CHECK) are all done.
+
+POWER CURVE (the most important rule of this set - the jump between levels must be HUGE and obvious, like a real upgrade game)
+- +0 to +4: TOTAL GARBAGE. The guitar ITSELF is wrecked - cracked, chipped, warped, rotten, rusty, filthy, with broken or missing parts - NOT a clean guitar with a funny object stuck on it. Anyone would throw it in the trash. Funny and gross-cute, never scary or bloody.
+- +5 to +7: repaired and playable, but still plain and humble.
+- +8 to +11: "oh, this is getting cool" - nicer finish and hardware, the theme starts to change the guitar itself, clearly cooler with every step.
+- +12 to +19: "WOW, I NEED this" - jaw-dropping legendary rare items. The guitar ITSELF transforms: its body becomes a golden ancient relic, a statue or a sacred creature (solid gold, lapis lazuli, turquoise, carnelian, obsidian, carved sandstone...), with big dramatic sculptural decorations, intricate detail and rich bold color. Never just a normal black guitar with an object or animal placed next to it. Each one more spectacular than the one before.
+- +20: the ultimate guitar, the most impressive of all.
+Even when the body transforms, keep the guitar's single-cutaway outline, neck and headstock so it is still clearly this guitar.
+
+RULES FOR EVERY IMAGE
+- SHEETS (A and B): one image, landscape 1536x1024, a grid of 5 columns x 2 rows with lots of empty space between the guitars. Order: top row left to right = guitars 1-5, bottom row left to right = guitars 6-10. Every guitar and all of its objects stay completely inside its own cell - nothing touches or crosses into a neighbouring cell.
+- Every guitar stands upright, seen exactly from the front, centered in its cell, all at the SAME size (about 85% of the cell height), with the bottom of the body at the same height in every cell. The neck points straight up.
+- BACKGROUND: fully transparent (if that is impossible, plain flat white). NO fog, haze, smoke clouds, desert or sky backgrounds, gradients or floor shadows behind the guitars - only the guitar and the solid objects described.
+- NO AURA OR GLOW (very important - I have to cut every guitar out of the background, and soft light is almost impossible to cut out cleanly; the game adds its own glow later): no aura, halo light, glow, light bloom, lens flare, mist, haze, light rays fading into the background or any soft see-through light around or behind any guitar. Every effect (sparkles, sun discs, wings, rays, sand) must be a SOLID, OPAQUE shape with a clear dark outline and hard edges, sitting close to its own guitar, so it can be cut out cleanly.
+- NO text, letters, numbers or logos anywhere. No hieroglyphs or writing-like symbols either - ancient decorations are pattern bands, jewels and pictures only. Plates, tags, paddles and labels are blank.
+- NO people anywhere - only animals, statues of animals and objects.
+- Original designs only: no real brand headstock shape, no real brand logos.
+- STYLE: polished 2D mobile-game item illustration, bold clean dark outlines, flat colors with soft cel shading (2-3 tones), slightly chunky and charming, light from the top-left, easy to read even when small on a phone.
+- BASE GUITAR (all 21 are this same guitar, changed as described): a heavy single-cutaway carved-top solid-body electric guitar in glossy ebony black with gold hardware, multi-layer white binding around the body edge and the headstock, two gold-covered humbucker pickups, four gold knobs and a small toggle switch, a gold bridge with a separate tailpiece, a dark ebony fretboard with pearl block inlays, and an ORIGINAL headstock with three tuning keys on each side. Keep the black body clearly outlined so it reads well on a white background.
+- HEADSTOCK AND STRINGS (very important, even for the garbage guitars): every guitar has exactly SIX tuning keys - three on the left edge and three on the right edge of the headstock - exactly SIX round string posts on the headstock face (three on each side, one post per key), and exactly SIX strings running from the tailpiece, over the nut, each to its own post. Keys = posts = strings = 6. Nothing (animals, ornaments, cobras, pyramids, sun discs) may cover the tuning keys or the posts.
+
+SELF-CHECK (do this after EVERY image)
+After you finish an image, zoom in and check every guitar one by one: count its tuning keys (3 + 3), its string posts (3 + 3) and its strings (6). Check that no guitar has glow, aura, mist, a background scene or soft see-through light around or behind it. Check the POWER CURVE: +0 to +4 must look like total garbage (the guitar itself wrecked), +8 onward must clearly get cooler, and +12 to +19 must be jaw-dropping transformations - if one is not, redraw it bolder. If ANY guitar is wrong (5 or 7 keys, 4 + 2 keys, posts that do not match the keys, missing or extra strings), immediately redraw ONLY that guitar as its own single image - portrait 1024x1536, transparent background, same design, same style, upright and centered, about 85% of the image height - one guitar per image, one at a time. Check each redraw the same way. Then write one short line saying which guitars you redrew (for example "A3, B7 redrawn") and continue with the next image.
+
+IMAGE A - guitars +0 to +9
+From TOTAL GARBAGE (a guitar so heavy it ended up as household junk) to a fancy guitar that wakes up as an ancient relic.
+1. (+0) Used as a doorstop: years of holding a door open - one corner of the body smashed flat and splintered, a long crack through the top, the black finish chipped down to bare wood all over, the neck snapped and glued back crooked, the gold hardware gone dull brown and rusty, two knobs and one pickup cover missing, slack rusty strings, a rubber door wedge jammed under it, dust and dirt.
+2. (+1) Cat scratcher: the body edges and the back of the neck shredded down to raw splintered wood by cat claws, strips of binding torn off and hanging, clumps of orange cat hair matted everywhere, a chewed toy mouse dangling from the strap button, one tuning key bent (still six keys).
+3. (+2) Toilet plunger: a red rubber plunger stuck by suction to the lower body (handle sticking out sideways inside the cell), the wood water-damaged, swollen and warped, the black paint bubbling and peeling, a crack, grimy water stains - funny, not gross.
+4. (+3) Chewing gum: blobs of old chewed gum in pink, green and blue stuck all over the chipped, scratched body, one pickup cover ripped off showing loose wires, a gum strand stretched between two strings (still six strings), dirt stuck in the gum.
+5. (+4) So heavy it got wheels: four rusty caster wheels screwed straight into the bottom of the body with crooked screws, the bottom edge ground down raw from being dragged across the floor, a frayed rope tied to the strap button, scrapes and dents everywhere.
+6. (+5) Gold-mended cracks: the cracks and the smashed corner mended with shiny gold seams in kintsugi style, the hardware polished back to gold - finally clean and playable, but still a simple black guitar.
+7. (+6) Piano keys: a row of real black-and-white piano keys inlaid across the lower body below the tailpiece - neat but still simple.
+8. (+7) Tuxedo: tuxedo lapels painted on the upper body (black satin with a white shirt V), a small black bow tie at the neck joint, a white pocket square, a red rose at the strap button - classy but still a plain guitar underneath.
+9. (+8) At the auction (now it starts to look cool): the guitar gleams like a prize - mirror-polished black with bright gold hardware and gold-leaf trim along the binding, displayed on a small velvet stand with a blank round auction paddle, a little golden gavel and a red velvet rope.
+10. (+9) Ancient relic awakens: gold and turquoise Egyptian-style pattern bands spread over the black body from the lower edge, gold engraved corners, a golden scarab amulet hanging from the strap button, a small blank brass museum plate at the base, solid gold sparkles - clearly cooler than the guitars before it.
+
+IMAGE B - guitars +10 to +19
+A magical ANCIENT EGYPT legend theme: gold, lapis-lazuli blue, turquoise, carnelian red and obsidian black. +10 and +11 are cool and getting very special; from +12 the guitar ITSELF transforms into a golden relic, statue or sacred creature and becomes "WOW, I NEED this", each one more spectacular than the last. Keep the same single-cutaway outline, neck and headstock (3 + 3 keys, 3 + 3 posts, six strings) under all the decoration. Remember: no people, no background scene, no glow, no hieroglyphs - only the guitar and the solid objects described.
+1. (+10) Golden scarab: a large golden scarab beetle with spread turquoise-and-lapis wings across the lower body, lapis-blue inlays along the binding, gold beads.
+2. (+11) Nile lotus: the body painted with a blue river winding across it, green papyrus reeds and blue lotus flowers rising from the edges, gold-and-lapis binding, a white ibis at the base.
+3. (+12) Golden pyramid: the WHOLE body becomes solid gold carved with stepped pyramid relief under turquoise enamel, three golden pyramids rising at the base, a gold pyramid capstone on the very top of the headstock (not covering the keys or posts), lapis jewels set along the edges.
+4. (+13) Sphinx guardian: a colossal sandstone-and-gold sphinx embraces the guitar from behind, its blue-and-gold striped headdress framing the upper body and its great paws stretched forward around the base; the body itself is carved sandstone inlaid with gold and lapis bands.
+5. (+14) Cat goddess: the body becomes a sleek polished obsidian cat-goddess statue - gold collar patterns around the edges, emerald cat-eye gems as the four knobs, tall golden cat ears rising from the top of the upper body, a seated black cat goddess with gold earrings wrapping her tail around the base.
+6. (+15) Pharaoh's golden cobra: the body striped blue and gold like a pharaoh's royal headdress and studded with jewels, a broad gold-turquoise-carnelian collar necklace draped across the lower body, a huge golden cobra with its hood spread rising behind the headstock (not covering the keys or posts).
+7. (+16) Scale of truth: the body becomes black onyx covered in fine gold filigree, a giant golden balance scale stands behind it with a white feather on one pan and a red heart-shaped gem on the other, a golden jackal statue lies at the base.
+8. (+17) Eye of the falcon: huge golden falcon wings spread wide behind the guitar, the whole body feathered in gold and turquoise with a large ancient eye symbol in gold and lapis on the lower body, a golden falcon head crest rising from the upper horn.
+9. (+18) Boat of the sun: the guitar stands on a magnificent golden sun-boat with curled-up ends decorated with lapis and turquoise, a huge solid red-and-gold sun disc with solid golden rays behind the body (hard edges, no glow), the body inlaid with gold sun patterns.
+10. (+19) Sun god's disc: a gold-and-lapis body inlaid with turquoise and carnelian jewels, a huge solid golden sun disc with a rearing cobra behind the headstock (a hard-edged disc, not a glowing halo, not covering the keys or posts), enormous golden falcon wings fanning out behind the body, golden pyramids and jewels at the base.
+
+IMAGE C - guitar +20 (single image)
+One guitar, portrait 1024x1536, transparent background, upright and centered, about 85% of the image height, same style and same base guitar shape as the sheets, 3 + 3 keys, 3 + 3 posts, six strings.
+The legendary heavy-metal hero's guitar, the ultimate guitar of the set: the whole body painted with a bold black-and-white bullseye pattern - big concentric rings spreading out from the center like a target - with gold hardware, multi-layer white binding and pearl block inlays, a little road-worn from years of loud shows. Behind it big solid black-and-gold spiky rays like a heavy-metal star burst with clear outlines (no glow), and solid outlined gold sparkles close around the guitar. No aura, no glow, no soft light - show its power through the rich details, so it looks like the most powerful guitar in the whole game.
+```
+
+다시 뽑기 판이 안 맞게 나오면 4절 문장과 아래를 같은 대화에 붙여 넣는다.
+- 초반이 덜 망가졌으면: `Guitars A1-A5 still look like clean guitars with objects stuck on. Redraw them so the guitar ITSELF is wrecked - cracked, broken, rotten, filthy, missing parts.`
+- +8부터 안 나아지면: `A9 and A10 must look clearly cooler than A6-A8. Redraw them with a nicer finish, polished gold hardware and the theme changing the guitar itself.`
+- +12부터가 덜 멋있으면: `B3-B10 still look like a normal black guitar with an object next to it. Redraw them so the guitar body itself transforms into the golden relic, statue or sacred creature - jaw-dropping legendary items.`
