@@ -518,6 +518,16 @@
     /* 컬렉션 목록 장비별 제목 (2026-11-12 사용자) */
     .glist .gh { display: flex; align-items: baseline; gap: 6px; margin: 10px 2px 2px; font-size: 14px; font-weight: 900; color: var(--green-deep); }
     .glist .gh:first-child { margin-top: 0; }
+    /* 운영 계정 테스트 모드 (2026-11-17) — 프로필 메뉴 안 [안쌤(운영)][테스트 1·2·3] · 게임 위 노란 띠 */
+    .gk-persona { display: block; margin: 4px 8px 6px; padding: 7px 8px 8px; border-radius: 10px; background: #fff6dc; border: 1px solid #f2d58a; text-align: left; }
+    .gk-persona small { display: block; margin-bottom: 5px; font-size: 11.5px; font-weight: 800; color: #8a5600; }
+    .gk-persona > div { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .gk-persona button { padding: 6px 4px; border-radius: 8px; border: 1px solid #e6c97a; background: #fff; font-size: 12px; font-weight: 800; color: #6b4a00; cursor: pointer; white-space: nowrap; }
+    .gk-persona button.on { background: #f5b31e; border-color: #d39500; color: #3a2400; }
+    .persona-bar { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; padding: 8px 12px; border-radius: 12px; background: #fff3cf; border: 1.5px solid #f2c94c; font-size: 13px; color: #6b4a00; }
+    .persona-bar b { font-weight: 900; color: #4a3200; }
+    .persona-bar span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+    .persona-bar button { margin-left: auto; flex: none; padding: 5px 10px; border-radius: 99px; border: 1.5px solid #e0b64a; background: #fff; font-size: 12px; font-weight: 800; color: #7a5200; }
     /* 컬렉션이 꽉 찼을 때 (2026-11-17 사용자): 메뉴와 진열 벽 사이 안내 · 누른 악기 위 [팔기][교체] · 목록마다 잠금 */
     .rfull { display: flex; align-items: flex-start; gap: 9px; margin: 10px 0 2px; padding: 10px 12px; border-radius: 12px; background: #fff3cf; border: 1.5px solid #f2c94c; color: #6b4a00; font-size: 13px; line-height: 1.45; animation: fade .25s; }
     .rfull > i { margin-top: 2px; color: #e0a514; font-size: 16px; }
@@ -795,6 +805,13 @@
     @keyframes dexPop { from { opacity: 0; transform: scale(.35); } }
     .dexpop .dxsh { display: inline-flex; align-items: center; gap: 6px; margin-top: 9px; padding: 7px 18px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); border: 1.5px solid rgba(255, 255, 255, 0.28); color: #fff; font-size: 13px; font-weight: 800; }
     .dexpop .dxsh:hover { background: rgba(255, 255, 255, 0.2); }
+    .dexpop { position: relative; }
+    .dexpop .dxnav { position: absolute; z-index: 2; top: 42%; width: 42px; height: 42px; margin-top: -21px; display: grid; place-items: center; border-radius: 50%; background: rgba(10, 8, 6, 0.72); border: 1.5px solid rgba(255, 255, 255, 0.35); color: #fff; font-size: 17px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45); }   /* 이전·다음 (2026-11-17) */
+    .dexpop .dxnav.prev { left: -8px; } .dexpop .dxnav.next { right: -8px; }
+    .dexpop .dxnav:hover { background: rgba(10, 8, 6, 0.9); }
+    .dexpop .dxnav:active { transform: scale(.94); }
+    .dexpop .dxnav[disabled] { opacity: .25; cursor: default; }
+    .dexpop .art { touch-action: pan-y; }
     .dexpop .art { position: relative; margin: 0 auto; aspect-ratio: 2 / 3; border-radius: 10px; overflow: hidden; background: #1c2a25; }
     .dexpop .art img { position: absolute; width: 150%; left: -25%; top: -41%; }
     .dexwrap.sq .art img { width: 120%; left: -10%; top: 2%; }
@@ -1277,12 +1294,26 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMo
 const rid = () => Math.random().toString(36).slice(2, 9);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+// ---------- 운영 계정 테스트 모드 '안쌤테스트 1·2·3' (2026-11-17 사용자) ----------
+//   운영 계정으로 로그인했을 때만, 프로필 메뉴(닉네임 변경 아래)에서 테스트 1·2·3 을 고르면 이 브라우저의 기타 키우기가
+//   그 테스트 기록으로 바뀌어 일반인처럼 돈다: 기록은 따로(play.gk.t1 …), 계정 저장 안 함, 운영 계정 대우 없음(도감 전체·봇 표시·#000000 숨김 등),
+//   랭킹·배틀 열쇠도 새로(S.rk) — 서버에는 로그인 안 한 보통 사람으로 올라간다. 처음 들어가면 게임 닉네임 정하기부터.
+//   이 브라우저가 운영 계정임을 확인한 적이 있고(gk.adminUid) 지금도 같은 계정일 때만 켜진다. 서버에 다시 물어 운영 계정이 아니면 끈다
+const PERSONA = (() => {
+    const p = String(mem.get('gk.persona', '') || '');
+    let uid = ''; try { const t = JSON.parse(localStorage.getItem('sb-qpcbrqgqylxkgdwoflku-auth-token') || 'null'); uid = (t && t.user && t.user.id) || ''; } catch (e) {}
+    return ['1', '2', '3'].includes(p) && uid && mem.get('gk.adminUid', '') === uid ? p : '';
+})();
+const GK = PERSONA ? 'gk.t' + PERSONA : 'gk';                       // 게임 기록 저장 키
+const GKK = k => PERSONA ? `gk.t${PERSONA}.${k}` : 'gk.' + k;        // 계정 연결·서버 올린 기록(cloud·sync2·coll·prev)도 따로
+const personaName = n => `안쌤테스트 ${n}`;
+
 // ---------- 저장 (이 브라우저) ----------
 const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [null, null, null, null, null], floor: [], open: [false, false, true, false, false], skin: 'wood', skins: ['wood'], bskin: 'workshop', bskins: ['workshop'], ask: 'alley', asks: ['alley'], dex: {}, store: [], rep: '', shards: 0, cases: 0, caseOn: false, gift: {}, tuner: 0, tuneOn: true, daily: '', nick: '', nickOk: false, intro: false, first: false, rr: { real: 0, prac: 0 },
     bt: { day: '', n: 0, done: {} }, rv: { at: 0 }, ad: { day: '', n: 0 }, st: { tries: 0, ok: 0, keep: 0, boom: 0, saved: 0, revive: 0, sold: 0, earned: 0, made: START_GOLD, best: 0, win: 0, lose: 0, jack: 0 } });
 const okG = g => g && typeof g === 'object' && Number.isInteger(g.lv) && g.lv >= 0 && g.lv <= MAX && typeof g.id === 'string';
 function load() {
-    const raw = mem.get('gk', {}) || {};
+    const raw = mem.get(GK, {}) || {};
     const s = Object.assign(fresh(), raw);
     // 첫 기타 피크 구매(2026-11-12)가 생기기 전에 시작한 사람은 이미 산 것으로
     if (typeof raw.first !== 'boolean') s.first = !!(raw.intro || raw.bench || (Array.isArray(raw.wall) && raw.wall.length));
@@ -1337,10 +1368,11 @@ function load() {
     const mark = (f, lv) => { for (let i = 0; i <= lv; i++) s.dex[f] = (s.dex[f] | 0) | (1 << i); };
     [s.bench, ...s.wall, ...s.floor, ...s.store].forEach(g => { if (g) mark(FAMS[g.f] ? g.f : 'strat', g.lv); });
     if (!raw.dex && s.first) mark('strat', Math.min(MAX, s.st.best | 0));
+    if (PERSONA && !s.rk) s.rk = newRk();   // 테스트 기록은 랭킹·배틀 줄도 따로
     return s;
 }
 let S = load();
-const save = () => { mem.set('gk', S); cloudDirty(); autoSync(); };
+const save = () => { mem.set(GK, S); cloudDirty(); autoSync(); };
 // 골드가 들어올 때는 이걸로: 모은 돈(랭킹)에도 더한다
 const gain = n => { S.gold += n; S.st.made = (+S.st.made || 0) + n; };
 // 대표 기타를 랭킹 서버에 저절로 올린다 (2026-11-12 사용자: 사람이 쌓이면 유저끼리 붙게 — 예전엔 배틀 탭을 열어야만 올라갔다).
@@ -1353,14 +1385,14 @@ const gkKey = () => S.rk || PLAY.myKey();
 // ---------- 계정에 저장 (2026-11-12 사용자: 로그인 없이 하다가 로그인해도 끊기지 않게, db/play_guitar_saves.sql) ----------
 //   로그인 안 하면 브라우저에만. 로그인하면: 계정이 비었으면 올리고, 이 브라우저가 비었으면 불러오고, 둘 다 있으면 묻는다.
 //   그다음부터는 바뀔 때마다(2.5초 모아서) 계정에도 저장. mem 'gk.cloud' = { uid, rev, dirty }
-let cloud = mem.get('gk.cloud', null), cloudBusy = false, cloudT = 0, cloudOff = false;
+let cloud = mem.get(GKK('cloud'), null), cloudBusy = false, cloudT = 0, cloudOff = false;
 function acctId() {
     try { const t = JSON.parse(localStorage.getItem('sb-qpcbrqgqylxkgdwoflku-auth-token') || 'null'); return t && t.user && t.user.id && PLAY.hasLogin() ? t.user.id : ''; } catch (e) { return ''; }
 }
-const linked = () => !!(cloud && cloud.uid && cloud.uid === acctId());
+const linked = () => !PERSONA && !!(cloud && cloud.uid && cloud.uid === acctId());   // 테스트 기록은 계정에 안 올린다
 function cloudDirty() {
     if (!linked()) return;
-    cloud.dirty = true; mem.set('gk.cloud', cloud);
+    cloud.dirty = true; mem.set(GKK('cloud'), cloud);
     clearTimeout(cloudT); cloudT = setTimeout(cloudPush, 2500);
 }
 async function cloudPush() {
@@ -1368,28 +1400,28 @@ async function cloudPush() {
     cloudBusy = true; cloudBtn();
     try {
         const r = (await PLAY.rpc('play_guitar_store', { p_data: S }, { auth: true }))[0];
-        if (r) { cloud.rev = r.rev; cloud.dirty = false; cloud.at = Date.now(); mem.set('gk.cloud', cloud); }
+        if (r) { cloud.rev = r.rev; cloud.dirty = false; cloud.at = Date.now(); mem.set(GKK('cloud'), cloud); }
     } catch (e) { if (e && e.status === 404) cloudOff = true; }   // 아직 DB 적용 전
     cloudBusy = false; cloudBtn();
 }
 const localEmpty = () => !S.first && !S.bench && !S.wall.some(Boolean) && !S.floor.length && !S.store.length;
 function adopt(srv, uid) {
-    mem.set('gk', srv.data); S = load();
-    cloud = { uid, rev: srv.rev, dirty: false, at: Date.now() }; mem.set('gk.cloud', cloud);
+    mem.set(GK, srv.data); S = load();
+    cloud = { uid, rev: srv.rev, dirty: false, at: Date.now() }; mem.set(GKK('cloud'), cloud);
     updBar(); setTab(tab); toast('계정에 저장된 기록으로 이어서 해요');
     setTimeout(nickCheck, 600);
 }
 function linkUp(uid, rev) {
     setTimeout(nickCheck, 600);
     if (!S.rk) S.rk = PLAY.myKey();
-    cloud = { uid, rev, dirty: true }; mem.set('gk', S); mem.set('gk.cloud', cloud);
+    cloud = { uid, rev, dirty: true }; mem.set(GK, S); mem.set(GKK('cloud'), cloud);
     cloudPush().then(() => { if (linked() && !cloud.dirty) toast('이 기록을 계정에 저장했어요. 다른 기기에서도 이어서 할 수 있어요'); });
 }
 // 이 기기 기록 + 계정 기록 합치기 (2026-11-12 사용자: 로그인 없이 잘 뜬 악기를 계정에 '추가'할 수도 있어야)
 //   기타: 계정 것 그대로 + 이 기기 기타(작업대·벽·창고)를 빈 작업대 → 빈 걸이 → 창고 순으로. 골드·조각·케이스·기록은 더하고,
 //   도감·스킨은 합치고, 걸이·튜너는 높은 쪽. 출석·배틀 횟수는 계정 쪽 그대로
 function mergeSaves(here, acct) {
-    mem.set('gk', acct); const A = load(); mem.set('gk', here); const H = load();
+    mem.set(GK, acct); const A = load(); mem.set(GK, here); const H = load();
     const ids = new Set([A.bench, ...A.wall, ...A.floor, ...A.store].filter(Boolean).map(g => g.id));
     const mine = [H.bench, ...H.wall, ...H.floor, ...H.store].filter(Boolean).map(g => ids.has(g.id) ? { ...g, id: rid() } : g);
     A.open = A.open.map((o, i) => o || H.open[i]);
@@ -1430,7 +1462,7 @@ function askWhich(srv, uid) {
         m.remove();
         if (b.dataset.w === 'merge') {
             const M = mergeSaves(S, srv.data || {});
-            mem.set('gk', M); S = load();
+            mem.set(GK, M); S = load();
             linkUp(uid, srv.rev); updBar(); setTab(tab);
             toast('두 기록을 합쳤어요' + (S.store.length ? ` · 벽에 못 건 기타 ${S.store.length}대는 컬렉션 창고에 있어요` : ''));
         }
@@ -1442,6 +1474,7 @@ function askWhich(srv, uid) {
 async function cloudSync() {
     const uid = acctId();
     cloudBtn();
+    if (PERSONA) { setTimeout(nickCheck, 600); return; }   // 테스트 기록은 계정 저장 없이 — 닉네임만 확인
     if (uid && cloud && cloud.uid && cloud.uid !== uid) { resetLocal('switched'); return; }   // 2026-11-16 다른 계정의 기록 — 이 계정에 올리거나 합치지 않고 처음부터
     if (!uid || cloudBusy || cloudOff) return;
     let srv;
@@ -1463,9 +1496,9 @@ async function cloudSync() {
 //   돌리기 전 기록은 'gk.prev' 에 한 벌 남겨 두고, 랭킹 열쇠(S.rk)도 새로 만든다 — 앞 계정의 랭킹 줄을 덮어쓰지 않게
 function newRk() { const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'; return [...crypto.getRandomValues(new Uint8Array(24))].map(b => A[b & 63]).join(''); }
 function resetLocal(why) {
-    try { mem.set('gk.prev', { uid: cloud && cloud.uid, at: Date.now(), dirty: !!(cloud && cloud.dirty), why, data: S }); } catch (e) {}
+    try { mem.set(GKK('prev'), { uid: cloud && cloud.uid, at: Date.now(), dirty: !!(cloud && cloud.dirty), why, data: S }); } catch (e) {}
     const f = fresh(); f.rk = newRk();
-    mem.set('gk', f); mem.set('gk.cloud', null); mem.set('gk.sync2', {}); mem.set('gk.coll', {});
+    mem.set(GK, f); mem.set(GKK('cloud'), null); mem.set(GKK('sync2'), {}); mem.set(GKK('coll'), {});
     location.reload();
 }
 // 로그아웃을 누르면 먼저 묻는다 (2026-11-16 사용자: '게임 진행 중이니까 팝업 — 끄면 저장 안 한 데이터가 날아간다').
@@ -2196,36 +2229,119 @@ function dexZoom(f, lv, cell) {
     el.className = `dexwrap ${F.sq ? 'sq' : ''} ${lv >= 10 ? 'hi' : ''} ${whole ? 'whole' : ''}`;
     el.innerHTML = `<div class="dexpop" style="width:${artW + 20}px">
         <div class="art" style="width:${artW}px"><img src="${artSrc(f, lv)}" alt=""></div>
+        <button type="button" class="dxnav prev" aria-label="이전 그림"><i class="fas fa-chevron-left"></i></button><button type="button" class="dxnav next" aria-label="다음 그림"><i class="fas fa-chevron-right"></i></button>
         <p class="nm"><span class="lvb">+${lv}</span>${esc(F.names[lv])}</p>`
         // 파일 이름·'원본 열기'는 운영 계정에서도 안 보인다 (2026-11-15 사용자)
         + `<button type="button" class="dxsh" data-a="dexshare" data-f="${f}" data-lv="${lv}"><i class="fas fa-share-nodes"></i> 공유</button></div>`;
     document.body.appendChild(el);
+    // 양옆 화살표로 이전·다음 그림 (2026-11-17 사용자: '도감에서 이미지를 누르면 양옆으로 화살표, 누르면 이전 이미지 이후 이미지') —
+    //   도감에 보이는 칸 순서대로(종류가 바뀌면 다음 종류로 이어서). ←·→ 키, 그림을 옆으로 밀어도 넘어간다
+    const cells = [...document.querySelectorAll('#tab-dex .cell[data-a="dex"]')];
+    let k = Math.max(0, cells.indexOf(cell)), cur = { f, lv };
+    const img = el.querySelector('.art img'), nm = el.querySelector('.nm'), prev = el.querySelector('.dxnav.prev'), next = el.querySelector('.dxnav.next');
+    const navUpd = () => { prev.disabled = k <= 0; next.disabled = k >= cells.length - 1; };
+    const go = d => {
+        const k2 = k + d, c = cells[k2]; if (!c) return;
+        k = k2; const f2 = c.dataset.f, lv2 = +c.dataset.lv, F2 = FAMS[f2] || FAMS.strat;
+        cur = { f: f2, lv: lv2 };
+        img.src = artSrc(f2, lv2);
+        nm.innerHTML = `<span class="lvb">+${lv2}</span>${esc(F2.names[lv2])}`;
+        el.classList.toggle('sq', !!F2.sq); el.classList.toggle('hi', lv2 >= 10);
+        img.animate([{ opacity: 0.2, transform: `translateX(${d * 14}px)` }, { opacity: 1, transform: 'none' }], { duration: 180, easing: 'ease-out' });
+        navUpd(); sfx('tick');
+    };
+    prev.addEventListener('click', () => go(-1)); next.addEventListener('click', () => go(1));
+    el._nav = go; navUpd();
+    { let x0 = null; const art = el.querySelector('.art');
+      art.addEventListener('pointerdown', e => { x0 = e.clientX; });
+      art.addEventListener('pointerup', e => { if (x0 != null && Math.abs(e.clientX - x0) > 40) go(e.clientX < x0 ? 1 : -1); x0 = null; }); }
     const r = cell.getBoundingClientRect(), box = el.querySelector('.dexpop').getBoundingClientRect();   // 누른 칸에서 커져 나오게
     el.style.setProperty('--ox', (r.left + r.width / 2 - box.left) + 'px');
     el.style.setProperty('--oy', (r.top + r.height / 2 - box.top) + 'px');
     el.addEventListener('click', e => { if (!e.target.closest('.dexpop')) dexClose(); });
     // 도감 공유 (2026-11-13 사용자) — 그 단계의 공유 페이지(카톡 미리보기에 그 기타 썸네일)
-    el.querySelector('.dxsh').addEventListener('click', () => shareText('기타 도감', `${full({ f, lv })} 🎸\n안쌤 놀이터 '기타 키우기' 도감에서 봤어요`, shareUrl({ f, lv })));
+    el.querySelector('.dxsh').addEventListener('click', () => shareText('기타 도감', `${full(cur)} 🎸\n안쌤 놀이터 '기타 키우기' 도감에서 봤어요`, shareUrl(cur)));
     dexPop = el;
 }
 addEventListener('pointerdown', e => { if (dexPop && !e.target.closest('.dexwrap') && !e.target.closest('[data-a="dex"]')) dexClose(); }, true);
 addEventListener('scroll', dexClose, { passive: true });
 addEventListener('resize', dexClose);
-addEventListener('keydown', e => { if (e.key === 'Escape') dexClose(); });
+addEventListener('keydown', e => { if (e.key === 'Escape') dexClose(); else if (dexPop && dexPop._nav && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { e.preventDefault(); dexPop._nav(e.key === 'ArrowLeft' ? -1 : 1); } });
 // 운영 계정 도감 (2026-11-13 사용자: "헤드머신 숫자 안 맞는 거 내가 고칠 거야 — 관리자 계정으로 들어가면 도감에 기타 그림 전체를 볼 수 있게")
 //   운영 계정으로 로그인해 있으면 168칸을 모두 열고, 칸·크게 보기 모두 자르지 않은 전체 그림(헤드까지)으로 보여 준다.
 //   크게 보기에 파일 이름(strat_07.webp 등)과 '원본 열기'. 내 도감 기록(S.dex)은 그대로 두고, 위 단추로 '내 도감만 보기'와 오간다.
 //   운영 계정인지는 서버 is_site_admin()에 묻는다(로그인한 계정이 바뀌면 다시 물음)
-var ADMIN = false, adminUid = null, dexAll = mem.get('gk.dexAll', true) !== false;   // var: setTab 이 이 줄보다 먼저 불려도 괜찮게
+var ADMIN = false, REAL_ADMIN = false, adminUid = null, dexAll = mem.get('gk.dexAll', true) !== false;   // var: setTab 이 이 줄보다 먼저 불려도 괜찮게
+//   ADMIN = 게임 안에서 운영 계정 대우(테스트 모드면 false), REAL_ADMIN = 진짜 운영 계정(테스트 메뉴를 보여 줄지)
 function checkAdmin() {
     const uid = acctId();
     if (uid === adminUid) return;
-    adminUid = uid; ADMIN = false;
-    if (!uid) return;
+    adminUid = uid; ADMIN = REAL_ADMIN = false;
+    if (!uid) { personaMenu(); return; }
     PLAY.rpc('is_site_admin', {}, { auth: true })
-        .then(v => { if (adminUid === uid) { ADMIN = v === true; if (ADMIN && tab === 'dex') renderDex(); if (ADMIN && tab === 'rank') renderRank(); } })
+        .then(v => {
+            if (adminUid !== uid) return;
+            REAL_ADMIN = v === true; ADMIN = REAL_ADMIN && !PERSONA;
+            if (REAL_ADMIN) mem.set('gk.adminUid', uid);
+            else if (PERSONA) { mem.set('gk.persona', ''); location.reload(); return; }   // 운영 계정이 아니면 테스트 모드를 끈다
+            personaMenu();
+            if (ADMIN && tab === 'dex') renderDex(); if (ADMIN && tab === 'rank') renderRank();
+        })
         .catch(() => {});
 }
+// 프로필 메뉴(닉네임 변경 아래)에 [안쌤(운영)] [테스트 1] [테스트 2] [테스트 3] — 진짜 운영 계정에만. 고르면 저장하고 새로고침
+function personaMenu() {
+    document.querySelectorAll('.gk-persona').forEach(x => { if (!REAL_ADMIN) x.remove(); });
+    personaBar();
+    if (!REAL_ADMIN) return;
+    document.querySelectorAll('.auth-user-menu').forEach(menu => {
+        if (menu.querySelector('.gk-persona')) return;
+        const box = document.createElement('div');
+        box.className = 'gk-persona'; box.setAttribute('role', 'group'); box.setAttribute('aria-label', '기타 키우기 테스트 계정');
+        box.innerHTML = `<small><i class="fas fa-flask"></i> 기타 키우기 테스트</small><div>${['', '1', '2', '3'].map(n => `<button type="button" data-persona="${n}" class="${PERSONA === n ? 'on' : ''}">${n ? '테스트 ' + n : '안쌤(운영)'}</button>`).join('')}</div>`;
+        const items = [...menu.querySelectorAll('a, button')], nk = items.find(x => /닉네임/.test(x.textContent || '')), out = menu.querySelector('[data-auth-action="signout"]');
+        if (nk) nk.insertAdjacentElement('afterend', box); else if (out) out.insertAdjacentElement('beforebegin', box); else menu.appendChild(box);
+    });
+}
+function setPersona(n) {
+    if (busy) { toast('강화가 끝난 뒤에 바꿔요'); return; }
+    if (n === PERSONA) return;
+    try { save(); } catch (e) {}
+    mem.set('gk.persona', n);
+    location.reload();
+}
+document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('.gk-persona [data-persona]');
+    if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    setPersona(b.dataset.persona);
+}, true);
+// 테스트 모드일 때 게임 위에 노란 띠 + 위 프로필 이름도 '안쌤테스트 N'
+function personaBar() {
+    let bar = document.getElementById('personaBar');
+    if (!PERSONA) { if (bar) bar.remove(); return; }
+    if (!bar) {
+        bar = document.createElement('div'); bar.id = 'personaBar'; bar.className = 'persona-bar';
+        bar.innerHTML = `<i class="fas fa-flask"></i><b>${personaName(PERSONA)}</b><span>일반인처럼 · 기록 따로</span><button type="button" data-persona="">운영 계정으로</button>`;
+        bar.querySelector('button').addEventListener('click', () => setPersona(''));
+        $('#app').insertAdjacentElement('afterbegin', bar);
+    }
+    const walk = document.createTreeWalker(document.querySelector('.auth-slot') || document.createElement('i'), NodeFilter.SHOW_TEXT);
+    for (let t = walk.nextNode(); t; t = walk.nextNode()) {
+        if (t.parentElement && t.parentElement.closest('.auth-user-menu')) continue;
+        if (/안쌤/.test(t.nodeValue) && !/안쌤테스트/.test(t.nodeValue)) t.nodeValue = t.nodeValue.replace('안쌤', personaName(PERSONA));
+    }
+}
+// 프로필 메뉴는 그때그때 다시 그려져서, 바뀌면 다시 넣는다(한 프레임에 한 번만)
+let personaRaf = 0;
+new MutationObserver(() => {
+    if ((!REAL_ADMIN && !PERSONA) || personaRaf) return;
+    personaRaf = requestAnimationFrame(() => {
+        personaRaf = 0;
+        if (REAL_ADMIN && [...document.querySelectorAll('.auth-user-menu')].some(m => !m.querySelector('.gk-persona'))) personaMenu();
+        else if (PERSONA) personaBar();
+    });
+}).observe(document.body, { childList: true, subtree: true });
 function dexWhole() { return !!(ADMIN && dexAll); }
 function artFile(f, lv) { const F = FAMS[f] || FAMS.strat, n = F.extra && F.extra.includes(lv) ? lv : Math.min(lv, F.artMax); return `${F.art}_${String(n).padStart(2, '0')}.webp`; }
 function renderDex() {
@@ -3013,11 +3129,11 @@ async function syncMe(force) {
     const g = rep();
     if (!g || NORANK) return null;
     const t = topGuitar(), made = Math.floor(+S.st.made || 0);
-    const old = mem.get('gk.sync2', {}), sig = repSig(g) + '|' + S.st.best + '|' + (t ? t.f + t.lv : '-') + '|' + made;
+    const old = mem.get(GKK('sync2'), {}), sig = repSig(g) + '|' + S.st.best + '|' + (t ? t.f + t.lv : '-') + '|' + made;
     if (!force && old.sig === sig && old.id != null && Date.now() - (old.at || 0) < 10 * 60e3) { syncColl(old); return old; }
     // 최고 무기·모은 돈(2026-11-13 랭킹 탭). 운영 계정이면 서버가 무엇을 보내든 +10 스트랫으로 적는다(db/play_guitar_rank2.sql)
     const save = (fam, tf) => PLAY.rpc('play_guitar_save', { p_key: gkKey(), p_nick: myNick(), p_fam: fam, p_lv: g.lv, p_best: S.st.best,
-        p_top_fam: tf, p_top_lv: t ? t.lv : 0, p_gold: made }, { auth: true });
+        p_top_fam: tf, p_top_lv: t ? t.lv : 0, p_gold: made }, { auth: !PERSONA });   // 테스트 기록은 운영 계정 토큰 없이(보통 사람으로)
     let r;
     try { r = (await save(g.f, t ? t.f : null))[0]; }
     catch (e) {   // 서버가 아직 새 계열(tele2·lespaul2)을 모르면 'tele'·'lespaul' 로 (db/play_guitar_fam_set2.sql 적용 전)
@@ -3025,7 +3141,7 @@ async function syncMe(force) {
         r = (await save(srvFam(g.f), t ? srvFam(t.f) : null))[0];
     }
     const m = { sig, at: Date.now(), id: r.id, pos: r.pos, players: r.players, hidden: r.hidden };
-    mem.set('gk.sync2', m);
+    mem.set(GKK('sync2'), m);
     syncColl(m);
     return m;
 }
@@ -3039,11 +3155,11 @@ function collData() {   // function: 페이지가 다 읽히기 전에 불려도
 }
 async function syncColl(m) {
     if (!m || m.hidden || NORANK || m.id == null) return;
-    const c = collData(), sig = JSON.stringify(c), old = mem.get('gk.coll', {});
+    const c = collData(), sig = JSON.stringify(c), old = mem.get(GKK('coll'), {});
     if (old.sig === sig && old.id === m.id && (old.ok || Date.now() - (old.at || 0) < 10 * 60e3)) return;
     let ok = false;
     try { ok = (await PLAY.rpc('play_guitar_coll_save', { p_key: gkKey(), p_coll: c })) !== false; } catch (e) {}
-    mem.set('gk.coll', { sig, id: m.id, ok, at: Date.now() });
+    mem.set(GKK('coll'), { sig, id: m.id, ok, at: Date.now() });
 }
 async function loadNet() {
     netBusy = true;
@@ -3073,7 +3189,7 @@ let OPPS = [], rerankAnim = false;
 //   2026-11-13 사용자: 차례 번호(000005) 말고 무작위 6자리, 운영 계정은 000000 (db/play_guitar_fight_no.sql — 서버 함수의 id 가 곧 파이트 넘버)
 //   로그인하면 계정에 저장된 열쇠(S.rk)로 이어져서 다른 기기에서도 같은 번호
 let FIND = null, findMsg = '', findQ = '', findBusy = false;
-const myNo = () => { if (NORANK) return null; const a = NET.me && NET.me.id, b = (mem.get('gk.sync2', {}) || {}).id; return a != null ? a : b != null ? b : null; };
+const myNo = () => { if (NORANK) return null; const a = NET.me && NET.me.id, b = (mem.get(GKK('sync2'), {}) || {}).id; return a != null ? a : b != null ? b : null; };
 const fmtNo = n => String(n).padStart(6, '0');   // 늘 6자리 (#000000 · #482913)
 async function findNo(raw) {
     findQ = String(raw || '').trim();
@@ -3155,7 +3271,7 @@ function renderBattle() {
 //   모은 돈 = 지금까지 번 골드(S.st.made — 시작 골드·판 돈·배틀·출석). 상점에서 써도 줄지 않는다
 //   운영 계정(시험)·시험 브라우저는 안 올라간다
 const topGuitar = () => [S.bench, ...S.wall, ...S.store].filter(g => g && !isSq(g)).sort((a, b) => b.lv - a.lv)[0] || null;
-const amHidden = () => !!((NET.me && NET.me.hidden) || (mem.get('gk.sync2', {}) || {}).hidden);
+const amHidden = () => !!((NET.me && NET.me.hidden) || (mem.get(GKK('sync2'), {}) || {}).hidden);
 let rkKind = ['gold', 'rec'].includes(mem.get('gk.rkKind', 'top')) ? mem.get('gk.rkKind', 'top') : 'top';
 const RK = { top: null, gold: null }, rkAt = { top: 0, gold: 0 };
 let rkBusy = false, rkErr = false;
@@ -3412,7 +3528,7 @@ async function nickAsk(must) {
     const first = !S.nickPick;   // 처음 정하기(무료, 셈하지 않음)
     if (!first && nickLeft()) { toast(`닉네임은 1주일에 한 번 바꿀 수 있어요 · ${dhm(nickLeft())} 뒤에 다시`); return; }
     checkAdmin();   // 운영 계정이면 '안쌤' 같은 이름도 쓸 수 있게 미리 물어 둔다
-    const pn = acctId() && PLAY.myProfileNick ? (await PLAY.myProfileNick()).slice(0, 12) : '';
+    const pn = !PERSONA && acctId() && PLAY.myProfileNick ? (await PLAY.myProfileNick()).slice(0, 12) : '';
     if (document.querySelector('.nickask')) return;
     const free = nickFree(), cost = free ? 0 : NICK_PRICE, poor = S.gold < cost;
     const m = document.createElement('div');
@@ -3429,7 +3545,7 @@ async function nickAsk(must) {
     const apply = async (v, pick) => {
         let e = nickErr(v);
         if (e === RESERVED_MSG && acctId()) {   // 운영 계정인지 아직 모르면 서버에 물어보고 다시
-            try { ADMIN = (await PLAY.rpc('is_site_admin', {}, { auth: true })) === true; adminUid = acctId(); } catch (x) {}
+            try { ADMIN = !PERSONA && (await PLAY.rpc('is_site_admin', {}, { auth: true })) === true; adminUid = acctId(); } catch (x) {}
             e = nickErr(v);
         }
         if (e) { err.textContent = pick === 'login' ? `로그인 이름은 쓸 수 없어요 · ${e}` : e; err.hidden = false; if (pick === 'game') inp.focus(); return; }
@@ -3463,6 +3579,7 @@ async function nickCheck() {
     if (!uid) return;
     if (document.querySelector('.cloudask')) { setTimeout(nickCheck, 1200); return; }
     if (S.nickPick === 'game') return;
+    if (PERSONA) { nickAsk(true); return; }   // 테스트 기록: 처음 온 일반인처럼 게임 닉네임부터
     let admin = ADMIN && adminUid === uid;
     if (!admin) try { admin = (await PLAY.rpc('is_site_admin', {}, { auth: true })) === true; if (admin) { ADMIN = true; adminUid = uid; } } catch (e) {}
     if (S.nickPick === 'login' || admin) {
@@ -3744,6 +3861,7 @@ $('#adw').innerHTML = PLAY.adSlot('wide');
 addEventListener('ahnssam-auth-settled', e => {
     // 이 기기 기록의 계정이 로그아웃했으면(다른 페이지·다른 탭에서 해도) 처음 화면으로 (2026-11-16)
     if (!(e.detail && e.detail.user) && cloud && cloud.uid && !loggingOut) { resetLocal('signed-out'); return; }
+    adminUid = null; checkAdmin();   // 테스트 메뉴(운영 계정만)
     cloudSync();
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden && linked() && cloud.dirty) cloudPush(); });
@@ -3759,6 +3877,7 @@ function start() {
 addEventListener('pageshow', e => { if (e.persisted && !busy && tab === 'bench') renderBench(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && !busy && tab === 'bench' && !S.bench) renderBench(); });
 start();
+checkAdmin(); personaBar();
 setTimeout(cloudSync, 1200);
 autoSync();   // 들어오면 한 번(마지막으로 온 날을 새로 해서 다른 사람의 상대 목록에 남게)
 </script>
