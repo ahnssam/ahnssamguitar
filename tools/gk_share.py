@@ -32,7 +32,7 @@ def art_info(label):   # 그 계열 줄 뒤에서 처음 나오는 art·artMax
     return m.group(1), int(m.group(2))
 
 FAMS = {}
-for key, label, nm in [('strat', "strat: { name: '스트랫'", '스트랫'), ('strat2', "strat2: { name: '스트랫'", '스트랫'), ('tele', "tele: { name: '텔레'", '텔레'), ('lespaul', "lespaul: { name: '레스폴'", '레스폴'),
+for key, label, nm in [('strat', "strat: { name: '스트랫'", '스트랫'), ('strat2', "strat2: { name: '스트랫'", '스트랫'), ('tele', "tele: { name: '텔레'", '텔레'), ('tele2', "tele2: { name: '텔레'", '텔레'), ('lespaul', "lespaul: { name: '레스폴'", '레스폴'), ('lespaul2', "lespaul2: { name: '레스폴'", '레스폴'),
                        ('superstrat', "superstrat: { name: '슈퍼스트랫'", '슈퍼스트랫'), ('acoustic', "acoustic: { name: '통기타'", '통기타'), ('bass', "bass: { name: '베이스'", '베이스')]:
     art, amax = art_info(label)
     FAMS[key] = dict(name=nm, names=names_after(label), art=art, artMax=amax, sq=False)
