@@ -426,7 +426,9 @@
     .sact .ag .slots i.on { background: linear-gradient(#fffbe8, #ffd35e); box-shadow: 0 0 6px #ffe9a0, inset 0 0 0 1px #fff; }
     .sact .ag.strum { animation: strumGlow .9s ease-in-out infinite alternate; }
     @keyframes strumGlow { to { box-shadow: 0 0 0 2px #ffe0a0, 0 0 22px rgba(255, 170, 60, 0.85), 0 8px 18px rgba(0, 0, 0, 0.35); } }
-    .sact .sph { display: block; visibility: hidden; }   /* 긁는 동안 팔기 자리를 비워 두어 강화 단추가 그대로 오른쪽에 */
+    .sact .ag.strum.done { animation: none; }
+    /* 강화 중에는 다른 단추를 그대로 보이되 눌리지 않게 (2026-11-17 사용자: 내려칠 때 다른 버튼이 없어지지 않아도 됨) */
+    .stage.locked .sact > button:not(.strum), .stage.locked .sopt, .stage.locked .sgauge, .stage.locked #rSC, .stage.locked #rShare, .stage.locked #nextg { pointer-events: none; }
     .fx .pick { position: absolute; width: calc(6px * var(--s)); height: calc(7px * var(--s)); z-index: 3; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.5)); }
     .fx .pick svg { display: block; width: 100%; height: 100%; }
     .stage .anvfl { position: absolute; z-index: 7; width: 70px; height: 34px; border-radius: 50%; pointer-events: none; background: radial-gradient(closest-side, #fff, rgba(255, 215, 120, 0.85) 45%, rgba(255, 120, 30, 0)); mix-blend-mode: screen; }
@@ -2220,12 +2222,7 @@ function renderBench() {
 // 2026-11-12 사용자: 강화·진열하기는 무대 안 아래에 늘 (아래 큰 '강화하기' 단추는 뺐다). 기다리는 동안·빈 작업대엔 숨김
 function renderSact() {
     const el = $('#sact'), g = S.bench, show = !!g && !busy;
-    if (strum) {   // 피크로 긁는 동안: 강화 단추만 같은 자리에(손가락 아래서 안 움직이게), 칸이 하나씩 찬다
-        el.hidden = false; $('#stage').classList.add('has-act'); el.classList.remove('one');
-        renderBand(); renderGauge(); $('#sopt').hidden = true;
-        el.innerHTML = `<i class="sph" aria-hidden="true"></i><button type="button" class="ag strum" data-a="strum"><span class="agl"><i class="fas fa-hammer"></i>강화 <small>${strum.done}/${strum.n}</small></span><span class="slots">${Array.from({ length: strum.n }, (_, i) => `<i class="${i < strum.done ? 'on' : ''}"></i>`).join('')}</span></button>`;
-        return;
-    }
+    if (strum || lockedActs) return;   // 강화 중(긁기·기다림)에는 누르기 전 단추를 그대로 둔다(잠김) — 결과가 미리 보이지 않게 다시 그리지 않는다
     el.hidden = !show; $('#stage').classList.toggle('has-act', !!show);
     renderBand(); renderGauge();
     if (!show) { $('#sopt').hidden = true; return; }
@@ -2586,7 +2583,7 @@ async function enhance() {
     if (busy || !g || g.lv >= MAX) return;
     const cost = COST[g.lv];
     if (S.gold < cost) { toast('골드가 모자라요'); return; }
-    busy = true; talkClear(); renderSact();
+    busy = true; talkClear(); actsLock(true);   // 2026-11-17 사용자: 내려칠(긁을) 때 다른 단추가 없어지지 않게 — 누르기 전 모습 그대로 두고 눌리지만 않게
     const lucky = luckOf(g) >= LUCK_MAX;   // 행운 게이지 가득 → 반드시 성공 (2026-11-17)
     let bonus = 0;
     const T = TUNERS[S.tuner];
@@ -2666,6 +2663,7 @@ async function enhance() {
         await sleep(600);
     } else {
         $('#bench').innerHTML = '';
+        actsLock(false); renderSact();   // 부서진 악기의 팔기·강화 단추는 치운다(busy 라 숨겨짐)
         redAt = performance.now();   // 들어 올리는 동안 사알짝 벌게지고(캔버스) 붉은 빛이 번진다(filter)
         const RG = 'drop-shadow(0 0 12px rgba(255, 45, 25, 0.55))', RG0 = 'drop-shadow(0 0 0 rgba(255, 45, 25, 0))';
         const a = cv.animate([
@@ -2703,6 +2701,7 @@ async function enhance() {
             talk([['me', one(g.lv >= 10 ? LINES.bigSigh : LINES.sigh)]]);   // 2026-11-13 사용자: '나'의 신세한탄 (2026-11-15 다른 인물의 한마디는 지움)
         }
     }
+    actsLock(false);
     if (luckNow && out !== 'boom') { sfx('luck'); buzz([15, 40, 15]); pop('🍀 행운 가득! 다음 강화는 반드시 성공', 'sm', 74); }
     busy = false;
     renderBench();
@@ -2714,8 +2713,17 @@ async function enhance() {
 const strumNeed = lv => lv <= 5 ? 3 : lv <= 7 ? 4 : lv <= 11 ? 5 : 7;
 const strumSlots = lv => `<span class="slots">${'<i></i>'.repeat(strumNeed(lv))}</span>`;
 let strum = null;   // { n, done, res } — 긁는 중
+let lockedActs = false;
+function actsLock(on) { lockedActs = on; $('#stage').classList.toggle('locked', on); }
 function strumPhase(n) {
-    return new Promise(res => { strum = { n, done: 0, res }; renderSact(); strumHit(); });
+    return new Promise(res => {
+        strum = { n, done: 0, res };
+        const html = `<button type="button" class="ag strum" data-a="strum"><span class="agl"><i class="fas fa-hammer"></i>강화 <small>0/${n}</small></span><span class="slots">${'<i></i>'.repeat(n)}</span></button>`;
+        const old = document.querySelector('#sact .ag'), sa = $('#sact');
+        if (old) old.outerHTML = html; else sa.insertAdjacentHTML('beforeend', html);   // 강화 단추 자리만 바꾼다(팔기·스위치·게이지는 그대로)
+        sa.hidden = false;
+        strumHit();
+    });
 }
 function strumHit() {
     const st = strum; if (!st || st.done >= st.n) return;
@@ -2729,7 +2737,7 @@ function strumHit() {
     }
     pickStrum(st.done); anvilSparks(btn, st.done === st.n);
     sfx('strum', Math.min(20, st.done)); buzz(40);   // 진동 '웅'
-    if (st.done >= st.n) setTimeout(() => { strum = null; renderSact(); st.res(); }, 300);
+    if (st.done >= st.n) setTimeout(() => { strum = null; if (btn) btn.classList.add('done'); st.res(); }, 300);   // 다 차면 그 모습 그대로 결과를 기다린다
 }
 // 피크가 기타 몸통 위 줄을 가로질러 긁는다(번갈아 왼→오, 오→왼). 기타는 살짝 흔들리고 번쩍
 function pickStrum(k) {
