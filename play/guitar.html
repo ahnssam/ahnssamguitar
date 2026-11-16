@@ -351,11 +351,11 @@
     @keyframes bxShake { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-14deg) scale(1.05); } 75% { transform: rotate(14deg) scale(1.05); } }
     @keyframes bxOpen { 0% { transform: scale(.4); } 70% { transform: scale(1.25); } }
     /* 팔기 단추 바로 위 작은 게이지 두 줄 — 행운 · 다음 획득보상 (2026-11-17 사용자: '팔기 버튼 위쪽에 조그맣게', 보상 줄은 접기) */
-    .stage .sgauge { position: absolute; left: 10px; bottom: calc(var(--t) + 4px); z-index: 5; width: calc((100% - 28px) / 2.6); display: flex; flex-direction: column; align-items: flex-start; gap: 4px; animation: fade .2s; }
+    .stage .sgauge { position: absolute; left: 10px; bottom: calc(var(--t) + 4px); z-index: 5; width: calc((100% - 28px) / 2.6); display: flex; flex-direction: column; align-items: stretch; gap: 4px; animation: fade .2s; }   /* 두 줄 가로 폭을 같게(팔기 단추 폭) — 2026-11-17 사용자 */
     .stage .sgauge[hidden] { display: none; }
     .sgauge .gr { display: flex; align-items: center; gap: 5px; max-width: 100%; min-width: 0; height: 22px; padding: 0 8px; border-radius: 99px; background: rgba(8, 14, 12, 0.8); border: 1px solid rgba(255, 255, 255, 0.22); color: #e8f0ec; font-size: 11px; font-weight: 800; white-space: nowrap; cursor: pointer; }
     .sgauge .gr > i { flex: none; font-size: 10.5px; }
-    .sgauge .gr > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .sgauge .gr > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }   /* 글이 남는 폭을 채워서 막대가 두 줄 모두 오른쪽 끝에 맞춰 선다 */
     .sgauge .gr b { color: #fff; } .sgauge .gr.gift b.g { color: #ffd76a; }
     .sgauge .gr > em { flex: 0 0 auto; display: block; width: 30px; height: 5px; border-radius: 99px; background: rgba(255, 255, 255, 0.15); overflow: hidden; }
     .sgauge .gr > em i { display: block; height: 100%; border-radius: inherit; transition: width .5s; }
@@ -2187,14 +2187,17 @@ function renderGauge() {
     el.hidden = !show;
     if (!show) return;
     const L = luckOf(g), full = L >= LUCK_MAX, nx = nextGift(g);
-    let h = `<div class="gr luck${full ? ' full' : ''}" data-a="luckinfo" role="button" tabindex="0" title="강화를 누를 때마다 한 칸, ${LUCK_MAX}칸이면 다음 강화는 반드시 성공"><i class="fas fa-clover"></i><span>${full ? '<b>행운 가득!</b>' : `<span class="w">행운 </span><b>${L}/${LUCK_MAX}</b>`}</span><em><i style="width:${L / LUCK_MAX * 100}%"></i></em></div>`;
+    // 위 = 획득보상, 아래 = 행운 (2026-11-17 사용자: '행운하고 보상 위아래 위치 바꿔')
+    const luck = `<div class="gr luck${full ? ' full' : ''}" data-a="luckinfo" role="button" tabindex="0" title="강화를 누를 때마다 한 칸, ${LUCK_MAX}칸이면 다음 강화는 반드시 성공"><i class="fas fa-clover"></i><span>${full ? '<b>행운 가득!</b>' : `<span class="w">행운 </span><b>${L}/${LUCK_MAX}</b>`}</span><em><i style="width:${L / LUCK_MAX * 100}%"></i></em></div>`;
+    let h = '';
     if (nx != null) {
         const pv = GIFT_AT.filter(x => x < nx).pop() || 0, pc = Math.max(0, Math.min(1, (g.lv - pv) / (nx - pv)));
         h += giftFold
             ? `<div class="gr gift folded" data-a="giftfold" role="button" tabindex="0" title="획득보상 펼치기"><i class="fas fa-gift"></i><i class="fas fa-chevron-right" style="font-size:9px;color:#c9d2ce"></i></div>`
             : `<div class="gr gift" data-a="giftinfo" role="button" tabindex="0" title="+${nx}에 처음 닿으면 받는 보상"><i class="fas fa-gift"></i><span><b>+${nx}</b> <b class="g">${giftShort(nx)}</b></span><em><i style="width:${pc * 100}%"></i></em><button type="button" class="fd" data-a="giftfold" aria-label="획득보상 접기"><i class="fas fa-chevron-left"></i></button></div>`;
     }
-    el.innerHTML = h;
+    // 위 보상 줄 끝에 접기 단추가 있으면, 아래 행운 줄도 같은 자리를 비워 두 막대가 위아래로 줄 맞춰 서게
+    el.innerHTML = h + (nx != null && !giftFold ? luck.replace('</em></div>', '</em><span class="fd" aria-hidden="true" style="visibility:hidden"><i class="fas fa-chevron-left"></i></span></div>') : luck);
 }
 function renderBand() {
     const el = $('#sband'), g = S.bench;
