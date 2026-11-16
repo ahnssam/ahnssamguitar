@@ -49,7 +49,8 @@
     .stage .res.gold i { color: #ffcf3f; }
     .stage .res.daily:not(.got), .stage .res.adg { background: #fff3dc; color: #a85a00; border-color: #f6d29a; }
     .stage .res.adg i { color: #e0a63c; }
-    .stage .res.adg i.adi { color: #a85a00; margin-right: -1px; }   /* 광고 표시(🎬) — 2026-11-17 사용자: 골드 받기 왼쪽에 */
+    .stage .res.adg i.adi { color: #a85a00; margin-right: -1px; }
+    .stage .res.adg .adn { font-style: normal; font-size: 10.5px; font-weight: 900; color: #fff; background: #e0a63c; border-radius: 99px; padding: 1px 6px; margin-left: 1px; }   /* 오늘 몇 번째 받기 n/5 (2026-11-17) */   /* 광고 표시(🎬) — 2026-11-17 사용자: 골드 받기 왼쪽에 */
     .stage .res.daily.got { background: rgba(8, 14, 12, 0.6); color: #b9c2bd; }
     .stage .res.daily.got i { display: none; }
     @media (max-width: 380px) { .stage > .gL, .stage > .gR { top: 6px; gap: 4px; } .stage > .gL { left: 6px; } .stage > .gR { right: 6px; } .stage .res { height: 30px; padding: 0 8px; font-size: 12.5px; gap: 4px; } .stage .iconbtn { width: 30px; height: 30px; } .stage .res.adg span { display: none; } }
@@ -948,7 +949,7 @@
         <div class="gk-bar" id="gkBar" hidden>
             <span class="gL" id="gL"><span class="res gold" id="rGold" title="골드"><i class="fas fa-coins"></i><span>0G</span></span>
                 <!-- 2026-11-13 사용자: '골드 받기'(보상형 광고). 골드가 모자랄 때만 보인다 -->
-                <button class="res adg" id="rAdG" type="button" hidden title="골드 받기"><i class="fas fa-clapperboard adi"></i><i class="fas fa-coins"></i><span>골드 받기</span></button></span>
+                <button class="res adg" id="rAdG" type="button" hidden title="골드 받기"><i class="fas fa-clapperboard adi"></i><i class="fas fa-coins"></i><span>골드 받기</span><em class="adn">1/5</em></button></span>
             <span class="gR" id="gR"><button class="res daily" id="rDaily" type="button" title="하루 한 번: 1,000G"><i class="fas fa-gift"></i><span>출석 보상</span></button>
                 <button class="iconbtn" id="rSnd" type="button" aria-label="효과음 켜기/끄기"><i class="fas fa-volume-high"></i></button></span>
         </div>
@@ -1564,6 +1565,9 @@ function btDay() { if (S.bt.day !== today()) S.bt = { day: today(), n: 0, done: 
 const dayOf = t => { const d = new Date(t); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };   // today() 와 같은 모양
 const rvToday = () => !!(+S.rv.at) && dayOf(+S.rv.at) === today();   // 넥뿌의 요정을 오늘 이미 불렀나 (하루 한 번)
 function adDay() { if (!S.ad || S.ad.day !== today()) S.ad = { day: today(), n: 0 }; return S.ad; }   // 광고 보고 골드: 하루 AD_GOLD_DAY 번
+// 받은 뒤 쉬기: 받을 때 S.ad.after = 찾은 악기 수 + 2 → 새 악기를 두 번 더 찾으면(다음다음 악기를 시작하면) 위 단추가 다시 보인다.
+//   기타가 없고 찾을 돈도 없는 화면(빈 작업대·부서진 뒤)의 '골드 받기'는 막히지 않게 늘 보인다
+const adWaitOk = () => (S.st.found | 0) >= (adDay().after | 0);
 // 대표 기타: 고른 것 → 벽의 가장 높은 것 → 작업대
 function rep() {
     // 앰프·멀티는 대표가 될 수 없다 (2026-11-12 사용자) — 기타만
@@ -2076,8 +2080,10 @@ function updBar(goldBump) {
     $('#rSC').classList.toggle('ready', S.shards >= CASE_SHARDS && S.cases < CASE_MAX);
     // 골드 받기(광고): 지금 하려는 것(강화·기타 찾기)에 골드가 모자랄 때만, 오늘 횟수가 남았을 때만 (2026-11-13 사용자)
     { const need = S.bench ? (S.bench.lv < MAX ? COST[S.bench.lv] : 0) : S.first ? FIND_GOLD : 0;   // 첫 기타는 공짜라 그땐 안 보인다
-      $('#rAdG').hidden = !(need > 0 && S.gold < need && adDay().n < AD_GOLD_DAY);
-      $('#rAdG').title = `골드 받기 +${gf(adGoldNext())} — 오늘 ${AD_GOLD_DAY - adDay().n}번 남음`; }
+      // 2026-11-17 사용자: 한 번 받으면 바로 다시 뜨지 말고 다음다음 악기 강화 시작할 때 — 받은 뒤 새 악기를 두 번 더 찾아야 다시 보인다(adWaitOk)
+      $('#rAdG').hidden = !(need > 0 && S.gold < need && adDay().n < AD_GOLD_DAY && adWaitOk());
+      $('#rAdG').querySelector('.adn').textContent = `${Math.min(AD_GOLD_DAY, adDay().n + 1)}/${AD_GOLD_DAY}`;   // 오늘 몇 번째 받기인지 (사용자: 1/5 2/5)
+      $('#rAdG').title = `골드 받기 +${gf(adGoldNext())} (${Math.min(AD_GOLD_DAY, adDay().n + 1)}/${AD_GOLD_DAY}) — 오늘 ${AD_GOLD_DAY - adDay().n}번 남음`; }
     const got = S.daily === today();
     $('#rDaily').classList.toggle('got', got);
     $('#rDaily span').textContent = got ? '출첵' : '출석 보상';   // 2026-11-13 사용자: 받기 전 '출석 보상', 받은 뒤엔 회색 '출첵'만
@@ -2118,7 +2124,7 @@ function lackCard(title, why) {
     const dl = S.daily !== today(), ad = adDay().n < AD_GOLD_DAY;
     return `<img class="g1" src="../images/play/gk/sil_guitar.webp" alt=""><p class="big">${title}<small>${why}<br>${dl ? `출석하면 ${gf(DAILY_GOLD)}을 받아요.` : `기타를 팔거나, 아래에서 골드를 더 받아요.`}</small></p>
         ${dl ? `<button class="btn pick" type="button" data-a="daily"><i class="fas fa-gift"></i> 출석하고 받기 <small>${gf(DAILY_GOLD)}</small></button>`
-        : ad ? `<button class="btn pick" type="button" data-a="adgold"><i class="fas fa-clapperboard"></i> 골드 받기 <small>+${gf(adGoldNext())}</small></button>` : ''}
+        : ad ? `<button class="btn pick" type="button" data-a="adgold"><i class="fas fa-clapperboard"></i> 골드 받기 <small>+${gf(adGoldNext())} · ${adDay().n + 1}/${AD_GOLD_DAY}</small></button>` : ''}
         ${GSHARE}`;
 }
 function renderBench() {
@@ -2705,7 +2711,7 @@ function wreckCard(w) {
     const dl = S.daily !== today(), ad = adDay().n < AD_GOLD_DAY;
     return h + `<p class="lackw">기타 다시 찾기는 ${gf(FIND_GOLD)} · 골드가 ${gf(FIND_GOLD - S.gold)} 모자라요</p>`
         + (dl ? `<button class="btn pick" type="button" data-a="daily"><i class="fas fa-gift"></i> 출석하고 받기 <small>${gf(DAILY_GOLD)}</small></button>`
-        : ad ? `<button class="btn pick" type="button" data-a="adgold"><i class="fas fa-clapperboard"></i> 골드 받기 <small>+${gf(adGoldNext())}</small></button>` : '');
+        : ad ? `<button class="btn pick" type="button" data-a="adgold"><i class="fas fa-clapperboard"></i> 골드 받기 <small>+${gf(adGoldNext())} · ${adDay().n + 1}/${AD_GOLD_DAY}</small></button>` : '');
 }
 
 // ---------- 광고 보고 되살리기 (2026-11-13 사용자: 파괴될 때 광고를 보면 부활) ----------
@@ -2751,7 +2757,7 @@ async function goldAd() {
     const box = document.createElement('div');
     box.className = 'gk-modal adwrap';
     const r = await PLAY.rewarded('gold', (show, skip) => {
-        box.innerHTML = `<div class="in adbox"><span class="ic"><i class="fas fa-coins"></i></span><b>+${gf(amt)}</b>
+        box.innerHTML = `<div class="in adbox"><span class="ic"><i class="fas fa-coins"></i></span><b>+${gf(amt)} <small>(${d.n + 1}/${AD_GOLD_DAY})</small></b>
             <p>광고를 끝까지 보면 골드를 받아요</p>
             <button type="button" class="btn go"><i class="fas fa-circle-play"></i> 광고 보고 골드 받기</button>
             <button type="button" class="no">나중에</button><small>오늘 ${AD_GOLD_DAY - d.n}번 남음</small></div>`;
@@ -2765,10 +2771,10 @@ async function goldAd() {
     // 2026-11-17 사용자: '아직 광고도 못 붙였는데 — 광고가 없으면 그냥 줘'. 광고가 준비 안 됐으면(승인 전·광고 없음·차단) 바로 준다(하루 횟수는 그대로 셈)
     if (r === 'viewed' || r === 'none') {
         const g0 = S.gold;
-        d.n++; gain(amt); save();
+        d.n++; d.after = (S.st.found | 0) + 2; gain(amt); save();
         if (tab === 'bench') renderBench(); else if (tab === 'shop') renderShop();
         countGold(g0, S.gold, 1000);   // 골드 숫자가 촤라락 올라간다
-        toast(`골드 +${gf(amt)}` + (d.n < AD_GOLD_DAY ? ` · 다음엔 +${gf(AD_GOLDS[d.n])} (오늘 ${AD_GOLD_DAY - d.n}번 남음)` : ' · 오늘은 다 받았어요'));
+        toast(`골드 +${gf(amt)} (${d.n}/${AD_GOLD_DAY})` + (d.n < AD_GOLD_DAY ? ` · 다음 +${gf(AD_GOLDS[d.n])}은 악기를 두 번 더 찾은 뒤에` : ' · 오늘은 다 받았어요'));
     } else if (r === 'dismissed') toast('끝까지 봐야 골드를 받아요');
 }
 
@@ -2787,6 +2793,7 @@ async function findGuitar(first) {
     }
     busy = true; talkClear(); wreck = null;
     S.bench = { id: rid(), lv: 0, f: pickFam() };
+    S.st.found = (S.st.found | 0) + 1;   // 찾은 악기 수(골드 받기 쉬기에 씀, 2026-11-17)
     const newDex = dexAdd(S.bench.f, 0);
     save();   // 먼저 저장(새로고침해도 찾은 기타는 그대로)
     $('#empty').hidden = true; $('#bench').innerHTML = '';
