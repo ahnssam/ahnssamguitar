@@ -344,7 +344,11 @@
     .gfcard.out { opacity: 0; }
     .gfcard .bx { display: inline-block; font-size: 46px; line-height: 1; animation: bxShake .5s ease-in-out 2; }
     .gfcard.open .bx { animation: bxOpen .45s cubic-bezier(.2, 1.6, .4, 1); }
-    .gfcard .t { margin-top: 6px; font-size: 14px; font-weight: 900; color: #ffd76a; word-break: keep-all; }
+    .gfcard .sb { margin-top: 4px; font-size: 12px; font-weight: 800; color: #c9b8a8; } .gfcard .sb b { color: #ffd76a; }
+    .gfcard .rw .one { display: inline-flex; align-items: center; gap: 7px; font-size: 19px; font-weight: 900; opacity: 1; animation: none; }
+    .gfcard .rw .one i { color: #ffd76a; } .gfcard .rw .one i.fa-clover { color: #7be0a5; } .gfcard .rw .one i.fa-puzzle-piece { color: #e6ad74; }
+    .gfcard .dots { display: flex; justify-content: center; gap: 5px; margin: 0 0 6px; } .gfcard .dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, 0.25); } .gfcard .dots i.on { background: #ffd76a; }
+    .gfcard .t { margin-top: 2px; font-size: 20px; font-weight: 900; color: #ffd76a; word-break: keep-all; }
     .gfcard .rw { display: flex; flex-direction: column; gap: 4px; min-height: 24px; margin: 8px 0 4px; }
     .gfcard .rw span { font-size: 16px; font-weight: 900; opacity: 0; animation: caseIn .45s cubic-bezier(.3, 1.6, .5, 1) forwards; }
     .gfcard .rw span i { margin-right: 6px; color: #ffd76a; }
@@ -1136,7 +1140,8 @@ function oddsFor(lv) {
 const STORE_MAX = 30;   // 창고: 기록을 합칠 때 벽·작업대에 못 둔 기타가 들어간다
 // 단계별 이름 (2026-11-12 사용자와 정함): +0~+9 개그 → +10부터 신비한 느낌 → +20은 그 기타로 유명한 기타리스트 이름을 살짝 바꿔서.
 // 계열마다 이름표를 따로 둔다(레스폴 +20 은 '게리 무르의 레스폴' 예정). 아예 다른 물건(주전자 등)은 나중에 '첫 기타 찾기' 랜덤으로 (CLAUDE.md 11절)
-const FAMS = { strat: { name: '스트랫', names: [
+// 세트 이름(dexName, 2026-11-17 사용자: '스트랫·스트랫 2 말고 세트별로 캐릭터 있게') — 도감 줄·획득보상 글에 보인다. 이름은 그 세트 +10~+19 이야기에서 지음(Claude)
+const FAMS = { strat: { name: '스트랫', dexName: '천공 스트랫', names: [
     '중고나라에서 온 스트랫', '손끝까지 녹물 드는 스트랫', '줄 갈았더니 드디어 소리 나는 스트랫', '스티커가 안 떨어지는 스트랫', '한숨 쉬며 셋업한 스트랫',
     '금빛 픽업에서 윙 소리 나는 스트랫', '넥이 하나 더 자란 스트랫', '반짝이 뿌려서 눈부신 스트랫', '밤마다 혼자 깜빡이는 스트랫', '아무도 안 꽂았는데 소리 나는 스트랫',
     '꺼지지 않는 불꽃의 스트랫', '세 개의 시간을 켜는 스트랫', '서리꽃이 핀 스트랫', '새벽빛 날개가 돋은 스트랫', '바람이 대신 줄을 튕기는 스트랫',
@@ -1144,7 +1149,7 @@ const FAMS = { strat: { name: '스트랫', names: [
     '지미 헨도릭스의 스트랫'], art: 'strat', artMax: 20 },
     // 스트랫 2세트 (2026-11-15 사용자가 GPT로 뽑은 21장 — docs/기타키우기_GPT_스트랫2세트_프롬프트.md). 3톤 선버스트: 고물 → 개조 → 한국 전설 → 전설의 선버스트.
     //   찾을 때 스트랫이 나오면 반반으로 1세트·2세트(pickFam). 서버는 아직 'strat2' 를 모르면 'strat' 로 올린다(srvFam, db/play_guitar_fam_strat2.sql 적용 전)
-    strat2: { name: '스트랫', dexName: '스트랫 2', art: 'strat2', artMax: 20, srv: 'strat', names: [
+    strat2: { name: '스트랫', dexName: '설화 스트랫', art: 'strat2', artMax: 20, srv: 'strat', names: [
     '반토막 난 걸 박스 테이프로 붙인 스트랫', '지하실에서 버섯이 자라난 스트랫', '넥이 바나나처럼 휜 스트랫', '옆집 개가 물어뜯은 스트랫', '줄 대신 낚싯줄을 맨 스트랫',
     '고물상 아저씨가 용접해 준 스트랫', '부품이 전부 짝짝이인 스트랫', '몸통에 금붕어가 사는 스트랫', '카세트테이프가 돌아가는 스트랫', '먹물이 스며드는 스트랫',
     '수묵화에서 걸어 나온 스트랫', '청자빛으로 구워 낸 스트랫', '단청 옷을 입은 스트랫', '달토끼가 방아 찧는 스트랫', '까치호랑이가 지키는 스트랫',
@@ -1153,47 +1158,63 @@ const FAMS = { strat: { name: '스트랫', names: [
     // 텔레 2세트·레스폴 2세트 (2026-11-17 사용자가 GPT로 뽑은 21장씩 — docs/기타키우기_GPT_텔레2세트_프롬프트.md · 레스폴2세트). 이름은 그 문서 그대로(Claude가 지음).
     //   텔레 2세트 = 서프 그린 텔레, 집안 살림 고물 → 바닷가 수리 → 바다 전설 → +20 '지미 패이지의 텔레'. 레스폴 2세트 = 블랙 뷰티, 무거운 살림 고물 → 금 이음·경매 → 고대 이집트 → +20 '잭 와일더의 레스폴'.
     //   찾을 때 텔레·레스폴이 나오면 반반으로 1세트·2세트(pickFam). 서버가 아직 'tele2'·'lespaul2'를 모르면 'tele'·'lespaul'로 올린다(srvFam, db/play_guitar_fam_set2.sql 적용 전)
-    tele2: { name: '텔레', dexName: '텔레 2', art: 'tele2', artMax: 20, srv: 'tele', names: [
+    tele2: { name: '텔레', dexName: '바다왕 텔레', art: 'tele2', artMax: 20, srv: 'tele', names: [
     '엄마가 도마로 쓰던 텔레', '라면 냄비 받침이던 텔레', '이삿짐 트럭에 밟힌 텔레', '비둘기가 둥지를 튼 텔레', '넥 대신 대걸레 자루를 꽂은 텔레',
     '조개껍데기로 때운 텔레', '튜브를 낀 텔레', '모래성이 올라앉은 텔레', '닻을 매단 텔레', '파도가 터져 나오는 텔레',
     '산호초가 자라는 텔레', '진주조개가 품은 텔레', '해파리가 춤추는 텔레', '문어가 연주하는 텔레', '난파선 보물상자의 텔레',
     '고래의 노래를 담은 텔레', '인어의 비늘을 입은 텔레', '심해의 등불을 단 텔레', '천년 바다거북이 업고 온 텔레', '바다의 왕이 삼지창을 내린 텔레',
     '지미 패이지의 텔레'] },
-    lespaul2: { name: '레스폴', dexName: '레스폴 2', art: 'lespaul2', artMax: 20, srv: 'lespaul', names: [
+    lespaul2: { name: '레스폴', dexName: '파라오 레스폴', art: 'lespaul2', artMax: 20, srv: 'lespaul', names: [
     '문 받침으로 쓰던 레스폴', '고양이 스크래처가 된 레스폴', '뚫어뻥이 붙은 레스폴', '껌이 덕지덕지 붙은 레스폴', '너무 무거워서 바퀴를 단 레스폴',
     '금 간 데를 금으로 이은 레스폴', '피아노 건반이 박힌 레스폴', '턱시도를 입은 레스폴', '경매에 나온 레스폴', '고대 유물 전시실에 놓였던 레스폴',
     '황금 풍뎅이가 날개를 편 레스폴', '나일강 연꽃이 핀 레스폴', '피라미드 세 개가 솟은 레스폴', '스핑크스가 지키는 레스폴', '검은 고양이 여신의 레스폴',
     '파라오의 황금 코브라 레스폴', '진실의 깃털 저울을 단 레스폴', '매의 눈이 뜬 레스폴', '태양의 배를 탄 레스폴', '태양신의 원반을 이고 온 레스폴',
     '잭 와일더의 레스폴'] },
+    // 통기타 2세트·베이스 2세트 (2026-11-17 사용자가 GPT로 뽑은 21장씩 — docs/기타키우기_GPT_통기타2세트_프롬프트.md · 베이스2세트, 이름은 Claude가 지음).
+    //   그림은 그 문서의 첫 판(+12 브레멘·+13 거울 / +12 암모나이트·+13 트리케라톱스 순서)으로 뽑혀서 이름도 그 순서.
+    //   통기타 2세트 = 새까만 드레드노트: 학교 쓰레기 → 태엽 장난감 상자 → 옛이야기 왕국 → +20 '조니 캐씨의 통기타'. 베이스 2세트 = 체리 바이올린 베이스: 밭 쓰레기 → 탐험·발굴 → 공룡 시대 → +20 '폴 맥카드니의 베이스'.
+    //   찾을 때 통기타·베이스가 나오면 반반으로 1세트·2세트(pickFam). 서버가 아직 모르면 'acoustic'·'bass'로 올린다(srvFam, db/play_guitar_fam_set2.sql 적용 전)
+    acoustic2: { name: '통기타', dexName: '동화나라 통기타', art: 'acoustic2', artMax: 20, srv: 'acoustic', names: [
+    '학교 쓰레기통에서 주운 통기타', '줄 대신 고무줄을 건 통기타', '개미 소굴이 된 통기타', '낙서와 압정 범벅인 통기타', '교실 잡동사니 선반이 된 통기타',
+    '태엽을 달아 고친 통기타', '회전목마 금장식을 두른 통기타', '종이접기 동물이 춤추는 통기타', '금실 꼭두각시 무대의 통기타', '금박 동화책에서 걸어 나온 통기타',
+    '호박 마차를 타고 온 통기타', '태엽 꾀꼬리가 노래하는 통기타', '브레멘 음악대가 올라탄 통기타', '마법 거울로 변한 통기타', '라푼젤의 탑이 솟은 통기타',
+    '호두까기 왕의 근위대 통기타', '사탕 궁전으로 변한 통기타', '지니의 보물을 실은 통기타', '구름 위 왕국의 성이 된 통기타', '요정 대모의 별 마법이 깃든 통기타',
+    '조니 캐씨의 통기타'] },
+    bass2: { name: '베이스', dexName: '공룡왕 베이스', art: 'bass2', artMax: 20, srv: 'bass', names: [
+    '허수아비 팔로 쓰던 베이스', '두더지가 뚫고 나온 베이스', '암탉 둥지가 된 베이스', '참새 떼 전깃줄이 된 베이스', '짚더미에 처박혀 있던 베이스',
+    '가죽 끈으로 동여매 고친 베이스', '탐험 배낭을 멘 베이스', '정글 앵무새가 앉은 베이스', '발굴 도구가 꽂힌 베이스', '화석이 깨어나는 베이스',
+    '공룡 알에서 깨어난 베이스', '앰버 보석에 갇힌 베이스', '암모나이트가 박힌 베이스', '트리케라톱스 갑옷을 두른 베이스', '스테고사우루스 골판을 세운 베이스',
+    '프테라노돈이 날개를 펼친 베이스', '스피노사우루스 돛을 단 베이스', '매머드 상아로 깎은 베이스', '공룡 뼈 왕좌에 오른 베이스', '티라노 왕의 베이스',
+    '폴 맥카드니의 베이스'] },
     // 통기타·베이스 (2026-11-12 사용자가 뽑은 +0~+9 그림 ac_00~09 · bs_00~09). +10~+20 이름은 Claude가 지은 것(바꿀 수 있음),
     // 그 단계 그림이 아직 없어 +9 그림을 그대로 보여 준다 — 그림이 오면 artMax 만 올린다
-    acoustic: { name: '통기타', art: 'ac', artMax: 20, names: [
+    acoustic: { name: '통기타', dexName: '방랑자 통기타', art: 'ac', artMax: 20, names: [
     '교회 창고에서 나온 통기타', '줄이 너무 높아 손가락 아픈 통기타', '사운드홀에 거미가 사는 통기타', '캠핑장 모닥불 냄새 밴 통기타', '스트랩 대신 넥타이를 맨 통기타',
     '사운드홀에서 꽃이 피어난 통기타', '카포가 세 개나 끼워진 통기타', '몸통이 두 배로 커진 점보 통기타', '줄이 열두 개로 늘어난 통기타', '사운드홀에서 별빛이 새어 나오는 통기타',
     '모닥불 정령이 깃든 통기타', '달빛으로 줄을 감은 통기타', '숲의 노래를 기억하는 통기타', '비 오는 날만 우는 통기타', '사막 오아시스에서 건진 통기타',
     '오로라를 담은 통기타', '천 개의 캠프파이어를 지나온 통기타', '고래가 따라 부르는 통기타', '첫눈 내리는 소리를 내는 통기타', '세상 끝 등대에서 울린 통기타',
     '에릭 크랩튼의 통기타'] },
-    bass: { name: '베이스', art: 'bs', artMax: 20, names: [
+    bass: { name: '베이스', dexName: '태초 베이스', art: 'bs', artMax: 20, names: [
     '동아리방 구석에 버려진 베이스', '줄이 세 개뿐인 베이스', '슬랩 하다 엄지 자국 난 베이스', '아무도 소리를 못 듣는 베이스', '프렛이 사라진 베이스',
     '줄이 다섯 개로 늘어난 베이스', '쿵쿵 울려서 컵이 떨리는 베이스', '넥이 길게 늘어난 베이스', '몸통이 고래처럼 생긴 베이스', '치면 땅이 울리는 베이스',
     '심장 박동을 맞추는 베이스', '깊은 바다의 울림을 품은 베이스', '화산 속에서 단련된 베이스', '지구 반대편까지 울리는 베이스', '거인의 발걸음을 내는 베이스',
     '블랙홀의 저음을 켜는 베이스', '대지의 맥박이 흐르는 베이스', '천둥보다 낮은 베이스', '행성을 공전시키는 베이스', '태초의 첫 음을 낸 베이스',
     '자코 파스토리오의 베이스'] },
     // 레스폴 (2026-11-12 사용자가 뽑은 lp_00~09, +6은 '노브가 커지는'으로 다시 뽑은 그림). +10~+20 이름은 Claude가 지은 것
-    lespaul: { name: '레스폴', art: 'lp', artMax: 20, names: [
+    lespaul: { name: '레스폴', dexName: '록스타 레스폴', art: 'lp', artMax: 20, names: [
     '이모부 창고에서 나온 레스폴', '어깨가 빠질 듯 무거운 레스폴', '헤드가 한 번 부러졌다 붙은 레스폴', '픽업 커버 벗겼더니 얼룩말인 레스폴', '골드탑 칠하다 만 레스폴',
     '무늬가 너무 진해서 불타 보이는 레스폴', '노브가 자꾸 커지는 레스폴', '체리 선버스트에 진짜 체리가 열린 레스폴', '무대 연기가 따라다니는 레스폴', '아무도 안 잡았는데 비브라토 걸리는 레스폴',
     '용암이 흐르는 레스폴', '황금 시대를 기억하는 레스폴', '무대 조명을 삼킨 레스폴', '백 년 묵은 마호가니 정령의 레스폴', '폭풍 속에서 울린 레스폴',
     '왕관을 쓴 레스폴', '만 명의 함성을 머금은 레스폴', '해 질 녘 금빛이 깃든 레스폴', '별똥별을 품은 레스폴', '전설의 무대에서 내려온 레스폴',
     '게리 무르의 레스폴'] },
     // 텔레·슈퍼스트랫 (2026-11-12 사용자가 뽑은 tl_00~09 · ss_00~09). +10~+20 이름은 Claude가 지은 것
-    tele: { name: '텔레', art: 'tl', artMax: 20, names: [
+    tele: { name: '텔레', dexName: '황야 텔레', art: 'tl', artMax: 20, names: [
     '시골 다방 구석에서 나온 텔레', '픽가드에 낙서가 가득한 텔레', '소리가 너무 쨍해서 개가 짖는 텔레', '카우보이 모자를 쓴 텔레', '렐릭 한다고 너무 깎은 텔레',
     '줄이 혼자 쭉 올라가는 텔레', '픽가드가 거울이 된 텔레', '몸통에 꽃무늬가 핀 텔레', '밤마다 네온사인처럼 켜지는 텔레', '사막 바람이 불어오는 텔레',
     '은빛 달이 뜨는 텔레', '끝없는 고속도로를 달려온 텔레', '별이 쏟아지는 사막의 텔레', '천둥 치는 평원의 텔레', '은하 열차에 실린 텔레',
     '오로라 아래서 울린 텔레', '황금 박차를 단 텔레', '신기루 너머에서 온 텔레', '별을 길들인 카우보이의 텔레', '세상 끝 술집에서 전설이 된 텔레',
     '키스 리차스의 텔레'] },
-    superstrat: { name: '슈퍼스트랫', art: 'ss', artMax: 20, names: [
+    superstrat: { name: '슈퍼스트랫', dexName: '광속 슈퍼스트랫', art: 'ss', artMax: 20, names: [
     '80년대 형이 쓰던 슈퍼스트랫', '트레몰로가 안 잡혀 줄이 엉킨 슈퍼스트랫', '형광 핑크로 다시 칠한 슈퍼스트랫', '헤드가 너무 뾰족해서 찔리는 슈퍼스트랫', '줄이 일곱 개로 늘어난 슈퍼스트랫',
     '속주하면 프렛에서 불꽃 튀는 슈퍼스트랫', '상어 지느러미가 헤엄치는 슈퍼스트랫', '몸통이 번개 모양으로 깎인 슈퍼스트랫', '미러볼처럼 번쩍이는 슈퍼스트랫', '손가락이 안 보이게 혼자 속주하는 슈퍼스트랫',
     '음속을 넘어선 슈퍼스트랫', '용의 비늘을 두른 슈퍼스트랫', '플라즈마가 흐르는 슈퍼스트랫', '시간을 앞질러 치는 슈퍼스트랫', '차원의 틈을 가르는 슈퍼스트랫',
@@ -1226,7 +1247,7 @@ FAMS.multi = { name: '멀티이펙터', art: 'fx', artMax: 20, sq: true, names: 
 const FIND_FAMS = ['strat', 'tele', 'lespaul', 'superstrat', 'acoustic', 'bass', 'amp', 'multi'];
 // 찾기: 여덟 가지 중 하나, 스트랫이면 반반으로 1세트·2세트(2026-11-15 스트랫 2세트 — 스트랫이 나올 확률은 그대로 1/8)
 // 스트랫·텔레·레스폴이 나오면 반반으로 1세트·2세트 (2세트: 스트랫 2026-11-15 · 텔레·레스폴 2026-11-17) — 악기 종류가 나올 확률은 그대로
-const SET2 = { strat: 'strat2', tele: 'tele2', lespaul: 'lespaul2' };
+const SET2 = { strat: 'strat2', tele: 'tele2', lespaul: 'lespaul2', acoustic: 'acoustic2', bass: 'bass2' };
 const pickFam = () => { const f = one(FIND_FAMS); return SET2[f] && Math.random() < 0.5 ? SET2[f] : f; };
 const srvFam = f => (FAMS[f] && FAMS[f].srv) || f;   // 서버가 아직 모르는 계열은 비슷한 계열 이름으로
 // 튜너: 바늘이 초록 칸에 있을 때 탭하면 성공 +%p (유지에서 가져오고 파괴는 그대로)
@@ -2198,7 +2219,18 @@ function renderOpt() {
 // 팔기 단추 바로 위 작은 게이지 (2026-11-17 사용자: '행운 바하고 보상 바를 팔기 버튼 위쪽에 조그맣게, 보상은 접을 수 있게 — 나중엔 어차피 정체될 거니까,
 //   돈 얼마 받는지 짧게라도 보여 줘야 열의 있게'). 보상 줄 접기는 이 브라우저에 기억(gk.giftFold)
 let giftFold = mem.get('gk.giftFold', false) === true;
-const giftShort = x => { const R = GIFTS[x]; return R.gold ? gs(R.gold) : R.shards ? `조각 ${R.shards}` : R.cases ? '하케' : R.luck ? `행운+${R.luck}` : ''; };
+// 그 단계 보상을 짧게 하나씩 [아이콘, 글] — 여러 개면 팔기 위 줄·선물 창에서 3초마다 다음 것으로 돈다 (2026-11-17 사용자: '중복 보상이면 3초 뒤에 그다음 보상, 그다음 다시 처음')
+const giftItems = x => { const R = GIFTS[x] || {}, o = [];
+    if (R.gold) o.push(['coins', gs(R.gold)]); if (R.shards) o.push(['puzzle-piece', `조각 ${R.shards}`]);
+    if (R.cases) o.push(['briefcase', '하드케이스']); if (R.luck) o.push(['clover', R.luck >= LUCK_MAX ? '행운 가득' : `행운+${R.luck}`]); return o; };
+const giftShort = x => giftItems(x).map(i => i[1]).join(' · ');
+let giftCycle = 0;
+setInterval(() => {   // 팔기 위 보상 줄: 보상이 여러 개면 3초마다 다음 것
+    const el = document.querySelector('#sgauge .gr.gift b.g'); if (!el || !el.dataset.x) return;
+    const it = giftItems(+el.dataset.x); if (it.length < 2) return;
+    giftCycle = (giftCycle + 1) % it.length; el.textContent = it[giftCycle][1];
+    el.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'ease-out' });
+}, 3000);
 function renderGauge() {
     const el = $('#sgauge'), g = S.bench, show = !!g && !busy && g.lv < MAX;
     el.hidden = !show;
@@ -2211,7 +2243,7 @@ function renderGauge() {
         const pv = GIFT_AT.filter(x => x < nx).pop() || 0, pc = Math.max(0, Math.min(1, (g.lv - pv) / (nx - pv)));
         h += giftFold
             ? `<div class="gr gift folded" data-a="giftfold" role="button" tabindex="0" title="획득보상 펼치기"><i class="fas fa-gift"></i><i class="fas fa-chevron-right" style="font-size:9px;color:#c9d2ce"></i></div>`
-            : `<div class="gr gift" data-a="giftinfo" role="button" tabindex="0" title="+${nx}에 처음 닿으면 받는 보상"><i class="fas fa-gift"></i><span><b>+${nx}</b> <b class="g">${giftShort(nx)}</b></span><em><i style="width:${pc * 100}%"></i></em><button type="button" class="fd" data-a="giftfold" aria-label="획득보상 접기"><i class="fas fa-chevron-left"></i></button></div>`;
+            : `<div class="gr gift" data-a="giftinfo" role="button" tabindex="0" title="+${nx}에 처음 닿으면 받는 보상"><i class="fas fa-gift"></i><span><b>+${nx}</b> <b class="g" data-x="${nx}">${(giftItems(nx)[giftCycle % Math.max(1, giftItems(nx).length)] || ['', ''])[1]}</b></span><em><i style="width:${pc * 100}%"></i></em><button type="button" class="fd" data-a="giftfold" aria-label="획득보상 접기"><i class="fas fa-chevron-left"></i></button></div>`;
     }
     // 위 보상 줄 끝에 접기 단추가 있으면, 아래 행운 줄도 같은 자리를 비워 두 막대가 위아래로 줄 맞춰 서게
     el.innerHTML = h + (nx != null && !giftFold ? luck.replace('</em></div>', '</em><span class="fd" aria-hidden="true" style="visibility:hidden"><i class="fas fa-chevron-left"></i></span></div>') : luck);
@@ -2241,7 +2273,7 @@ function renderTable() {
 }
 
 // ---------- 도감 ----------
-const DEX_FAMS = ['strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'acoustic', 'bass', 'amp', 'multi'];
+const DEX_FAMS = ['strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'acoustic', 'acoustic2', 'bass', 'bass2', 'amp', 'multi'];
 const dexHas = (f, lv) => !!((S.dex[f] | 0) & (1 << lv));
 function dexAdd(f, lv) {
     f = FAMS[f] ? f : 'strat';
@@ -2649,20 +2681,29 @@ function giftCard(G, g) {   // 선물 상자가 흔들리다 열린다(누르면
     return new Promise(res => {
         const F = FAMS[G.f] || FAMS.strat, d = document.createElement('div'), T = [];
         d.className = 'gfcard';
-        d.innerHTML = `<span class="bx" aria-hidden="true">🎁</span><div class="t">${esc(F.dexName || F.name)} +${G.x} 오늘 첫 달성 선물!</div><div class="rw"></div><small>누르면 열려요</small>`;
-        let done = false, opened = false;
+        // 2026-11-17 사용자: '첫 선물 달성! 하고 아래 뭘 주는지 써 있어야지. 중복 보상이면 나왔다가 3초 뒤에 그다음 보상, 그다음 다시 처음 보상'
+        d.innerHTML = `<span class="bx" aria-hidden="true">🎁</span><div class="sb">${esc(F.dexName || F.name)} · <b>+${G.x}</b> · 오늘 처음</div><div class="t">첫 선물 달성!</div>
+            <div class="rw"><span class="one"></span></div>${G.out.length > 1 ? `<div class="dots">${G.out.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : ''}<small>누르면 넘어가요</small>`;
+        let done = false, opened = false, k = 0, cyc = 0;
+        const one = d.querySelector('.rw .one'), dots = [...d.querySelectorAll('.dots i')];
+        const showItem = () => {
+            const [ic, t] = G.out[k];
+            one.innerHTML = `<i class="fas fa-${ic}"></i>${esc(t)}`;
+            one.animate([{ opacity: 0, transform: 'translateY(8px) scale(.9)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.3, 1.4, .5, 1)' });
+            dots.forEach((x, i) => x.classList.toggle('on', i === k));
+        };
+        showItem();   // 받을 것은 처음부터 보인다
+        if (G.out.length > 1) cyc = setInterval(() => { k = (k + 1) % G.out.length; showItem(); }, 3000);   // 여러 개면 3초마다 다음 → 다시 처음 (누를 때까지)
         const open = () => {
             if (opened) return; opened = true;
-            d.querySelector('small').textContent = '누르면 넘어가요';
             d.classList.add('open'); d.querySelector('.bx').textContent = '🎉';
-            d.querySelector('.rw').innerHTML = G.out.map(([ic, t], i) => `<span style="animation-delay:${i * 0.15}s"><i class="fas fa-${ic}"></i>${esc(t)}</span>`).join('');
             sfx('sell'); burst(16, ['#ff9cbc', '#ffd76a', '#ffffff', '#7be0a5'], { y: 52, spread: 130, size: [4, 9], dur: 900, grav: false });
             updBar(true); renderBand();
         };
-        const end = () => { if (done) return; done = true; T.forEach(clearTimeout); d.classList.add('out'); setTimeout(() => { d.remove(); res(); }, 250); };
+        const end = () => { if (done) return; done = true; T.forEach(clearTimeout); clearInterval(cyc); d.classList.add('out'); setTimeout(() => { d.remove(); res(); }, 250); };
         sfx('gift'); buzz([15, 30, 15]);
-        T.push(setTimeout(open, 1000));   // 상자는 1초 흔들리다 저절로 열리고, 닫는 건 누를 때만
-        d.addEventListener('click', () => { if (!opened) open(); else end(); });
+        T.push(setTimeout(open, 900));   // 상자는 잠깐 흔들리다 저절로 열리고, 닫는 건 누를 때만
+        d.addEventListener('click', () => { if (!opened) { open(); return; } end(); });
         $('#stage').appendChild(d);
     });
 }
