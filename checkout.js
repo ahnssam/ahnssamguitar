@@ -309,6 +309,17 @@
         return data || [];
     }
 
+    // 반주 + 기타솔로를 나눠 살 때: 이 곡에서 이미 산 쪽 'solo' | 'main' | null (db/sheet_set_split.sql)
+    //   이미 산 쪽의 반대편만 사면 서버(create_sheet_order)가 500원을 깎는다. 함수가 아직 없거나 로그인 안 했으면 null.
+    async function setOwned(sheetId) {
+        await ready();
+        if (!session()) return null;
+        try {
+            const { data, error } = await auth().supabase.rpc('my_sheet_set_owned', { p_sheet: sheetId });
+            return error ? null : (data === 'solo' || data === 'main' ? data : null);
+        } catch (e) { return null; }
+    }
+
     // 결제창에서 돌아왔을 때 승인 요청 (purchases.html 에서 부름)
     async function confirm(paymentKey, orderId, amount) {
         await ready();
@@ -327,7 +338,7 @@
         try { return sessionStorage.getItem(RETURN_KEY); } catch (e) { return null; }
     }
 
-    window.ahnssamCheckout = { ready, buy, download, myPurchases, confirm, canPay, trialOnly, isTest, isAdmin, returnSheet,
+    window.ahnssamCheckout = { ready, buy, download, myPurchases, setOwned, confirm, canPay, trialOnly, isTest, isAdmin, returnSheet,
         guestOrders, guestOrder, rememberGuest: saveGuest, rememberGuestPayment, guestList, guestDownload, guestResend,
         // 다시 받을 수 있는 구매인지 (구매일로부터 1년, db/sheet_download_1y.sql). expires_at 이 없으면(예전 서버) 받을 수 있다고 본다
         canRedownload: x => !x || !x.expires_at || Date.parse(x.expires_at) > Date.now() };

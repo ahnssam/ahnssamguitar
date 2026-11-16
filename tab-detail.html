@@ -714,7 +714,7 @@
 </style>
     <!-- Supabase auth (shared) -->
     <script src="auth.js?v=2026111402" defer></script>
-    <script src="checkout.js?v=20261112a" defer></script>
+    <script src="checkout.js?v=20261116a" defer></script>
 </head>
 <body>
 
@@ -886,6 +886,9 @@
         const SET_DISCOUNT = 500;   // 반주 + 기타솔로를 함께 사면 깎는 금액 (서버 create_sheet_order 와 같은 값)
         const won = n => Number(n || 0).toLocaleString() + '원';
         let PARTS = [], SEL = new Set(), OWNED = new Set(), buyOpen = false;
+        // 반주 + 기타솔로를 나눠 살 때 이미 산 쪽 'solo' | 'main' (1년 안, db/sheet_set_split.sql) — 그 반대편만 사면 서버도 500원 깎는다
+        let SET_OWN = null;
+        const SIDE_NAME = { solo: '기타솔로', main: '반주' };
         // 같은 곡·같은 종류의 다른 편곡 — 제목 끝 "(2021 편곡)"·"(쉬운 편곡)" 만 다르고 원곡 가수가 같은 공개 악보 (CLAUDE.md '같은 곡의 여러 판')
         let VERSIONS = [];
         const VER_RE = /\s*\(([^()]*편곡)\)\s*$/;
@@ -1011,18 +1014,40 @@
         function partsTotal() {
             const list = PARTS.filter(x => SEL.has(x.id) && !OWNED.has(x.id));
             const sum = list.reduce((n, x) => n + (x.price || 0), 0);
-            const off = list.some(x => x.style === 'solo') && list.some(x => x.style !== 'solo') ? SET_DISCOUNT : 0;
-            return { list, sum, off, total: sum - off };
+            const hasS = list.some(x => x.style === 'solo'), hasM = list.some(x => x.style !== 'solo');
+            // 함께 사면 500원. 짝을 이미 샀으면(SET_OWN) 반대편만 사도 500원 — 서버 sheet_set_credit 과 같은 규칙
+            const split = !(hasS && hasM) && !!SET_OWN && (SET_OWN === 'solo' ? hasM : hasS) && sum - SET_DISCOUNT >= 100;
+            const off = (hasS && hasM) || split ? SET_DISCOUNT : 0;
+            return { list, sum, off, split, total: sum - off };
         }
         // 구성 고르기 칸과 위의 가격·종류·페이지 (악보가 하나뿐인 곡은 그대로)
+        // 짝을 이미 산 사람에게: '기타솔로를 이미 사셨네요 — 반주를 500원 할인해서 2,000원'
+        function splitDeal(t) {
+            const other = SET_OWN === 'solo' ? x => x.style !== 'solo' : x => x.style === 'solo';
+            const x = PARTS.find(y => other(y) && !OWNED.has(y.id) && SEL.has(y.id)) || PARTS.find(y => other(y) && !OWNED.has(y.id));
+            if (!x || (x.price || 0) - SET_DISCOUNT < 100) return '';
+            const want = SIDE_NAME[SET_OWN === 'solo' ? 'main' : 'solo'];
+            return `<div class="set-deal${t.split ? ' on' : ''}"><i class="fas fa-gift"></i><span><b>${SIDE_NAME[SET_OWN]}</b>를 이미 사셨네요 — ${want}도 사면 <b>묶음 할인 ${won(SET_DISCOUNT)}!</b> <span class="sum">→ ${won(x.price - SET_DISCOUNT)}</span></span></div>`;
+        }
+        function priceHtml(t) {
+            return t.off ? `<span class="price-was">₩${t.sum.toLocaleString()}</span>₩${t.total.toLocaleString()}<span class="price-off">${won(t.off)} 할인</span>`
+                : '₩' + t.total.toLocaleString();
+        }
         function renderParts(p) {
             const box = document.getElementById('parts');
-            if (PARTS.length < 2) { box.hidden = true; return; }
+            if (PARTS.length < 2) {
+                // 짝 파트가 비공개라 이 페이지엔 악보가 하나뿐이어도, 짝을 이미 샀으면 할인은 그대로 (서버가 같은 값을 받는다)
+                const t1 = partsTotal(), d1 = t1.split ? splitDeal(t1) : '';
+                box.innerHTML = d1; box.hidden = !d1;
+                if (t1.list.length) document.getElementById('productPrice').innerHTML = priceHtml(t1);
+                return;
+            }
             const t = partsTotal();
             const solo = PARTS.find(x => x.style === 'solo' && !OWNED.has(x.id));
             const main = PARTS.find(x => x.style !== 'solo' && !OWNED.has(x.id) && SEL.has(x.id)) || PARTS.find(x => x.style !== 'solo' && !OWNED.has(x.id));
             let deal = '';
-            if (solo && main) {
+            if (SET_OWN) deal = splitDeal(t);
+            else if (solo && main) {
                 const sep = (main.price || 0) + (solo.price || 0);
                 // 합본: 반주 안에 솔로까지 들어간 악보 — 둘 다 산 사람에게 덤 (db/sheet_bundle_full.sql)
                 const gift = main.bundle_pdf ? '<br>함께 사면 <b>반주 + 기타솔로 합본 PDF</b>도 같이 드려요' : '';
@@ -1045,8 +1070,7 @@
             box.hidden = false;
             document.getElementById('productPrice').innerHTML = !t.list.length
                 ? '<span style="font-size:1rem;font-weight:600;color:var(--text-light)">구성을 골라 주세요</span>'
-                : t.off ? `<span class="price-was">₩${t.sum.toLocaleString()}</span>₩${t.total.toLocaleString()}<span class="price-off">${won(t.off)} 할인</span>`
-                : '₩' + t.total.toLocaleString();
+                : priceHtml(t);
             document.getElementById('productStyle').textContent = (t.list.length && t.list.every(x => x.style === 'bass') ? '베이스 TAB · ' : t.list.some(x => x.style === 'bass') ? 'TAB · ' : '기타 TAB · ') + (t.list.map(x => PART_NAME[x.style] || '악보').join(' + ') || '고른 악보 없음');   // 베이스만 고르면 '베이스 TAB'
             const pg = t.list.filter(x => x.pages);
             document.getElementById('pagesRow').style.display = pg.length ? '' : 'none';
@@ -1078,7 +1102,7 @@
                 back.innerHTML = `<div class="buy-confirm" role="alertdialog" aria-modal="true"><h3>구매하기 전에 확인해 주세요</h3>
                     <p>${what}</p>${left.length ? `<p class="no-inc"><i class="fas fa-circle-info"></i> ${escHtml(left.join(', '))}는 포함되지 않아요.</p>` : ''}
                     <div class="what">${t.list.map(x => `<div><span>${escHtml(PART_NAME[x.style] || '악보')}</span><span>${won(x.price)}</span></div>`).join('')}
-                        ${t.off ? `<div class="off"><span>함께 사서 할인</span><span>−${won(t.off)}</span></div>` : ''}
+                        ${t.off ? `<div class="off"><span>${t.split ? '이미 산 ' + SIDE_NAME[SET_OWN] + '와 묶음 할인' : '함께 사서 할인'}</span><span>−${won(t.off)}</span></div>` : ''}
                         <div class="sum"><span>결제 금액</span><span>${won(t.total)}</span></div></div>
                     <div class="acts"><button type="button" data-n>다시 고를게요</button><button type="button" class="go" data-y>결제하기</button></div></div>`;
                 const done = v => { back.remove(); document.removeEventListener('keydown', esc); res(v); };
@@ -1107,6 +1131,7 @@
             const showDownload = () => set('fa-download', 'PDF 내려받기', () => C.download(p.id, p.title, p.artist));
             // 산 지 1년이 지난 악보는 다시 살 수 있다 (db/sheet_download_1y.sql)
             try { const mine = new Set((await C.myPurchases()).filter(x => !C.canRedownload || C.canRedownload(x)).map(x => x.sheet_id)); OWNED = new Set(PARTS.filter(x => mine.has(x.id)).map(x => x.id)); } catch (e) {}
+            SET_OWN = C.setOwned ? await C.setOwned(p.id) : null;   // 짝을 이미 산 쪽 (나눠 사도 묶음 할인)
             renderParts(p);
             if (PARTS.every(x => OWNED.has(x.id))) {
                 if (PARTS.length > 1) set('fa-circle-check', '모두 구매한 악보예요'); else showDownload();
@@ -1162,6 +1187,7 @@
         // 악보 하나를 화면에 — 같은 곡 다른 구성(PARTS)과 다른 편곡(VERSIONS)까지. versions 를 주면 다시 찾지 않는다(편곡 버튼)
         async function openSheet(p, versions) {
             PARTS = [p];
+            SET_OWN = null;   // 다른 곡(편곡)으로 바꾸면 setupBuy 가 다시 물어본다
             if (p.song_key && /^[0-9a-f-]{36}$/i.test(p.song_key)) {
                 try {
                     const r2 = await fetch(SB_URL + '/rest/v1/sheets?select=*&published=eq.true&song_key=eq.' + p.song_key, { headers: { apikey: SB_KEY } });
