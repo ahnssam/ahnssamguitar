@@ -2599,14 +2599,15 @@ function giveGift(g, x) {   // 받은 것으로 적고 바로 준다(결과와 �
     if (R.luck) { g.luck = Math.min(LUCK_MAX, luckOf(g) + R.luck); out.push(['clover', R.luck >= LUCK_MAX ? '행운 게이지 가득!' : `행운 게이지 +${R.luck}칸`]); }
     return { x, f, out };
 }
-function giftCard(G, g) {   // 선물 상자가 흔들리다 열린다. 누르면 바로 열리고, 한 번 더 누르면 넘어간다
+function giftCard(G, g) {   // 선물 상자가 흔들리다 열린다(누르면 바로 열림). 열린 뒤에는 누를 때까지 그대로 — 2026-11-17 사용자: '누르면 넘어간다는데 왜 지 맘대로 사라짐?'
     return new Promise(res => {
         const F = FAMS[G.f] || FAMS.strat, d = document.createElement('div'), T = [];
         d.className = 'gfcard';
-        d.innerHTML = `<span class="bx" aria-hidden="true">🎁</span><div class="t">${esc(F.dexName || F.name)} +${G.x} 첫 달성 선물!</div><div class="rw"></div><small>누르면 넘어가요</small>`;
+        d.innerHTML = `<span class="bx" aria-hidden="true">🎁</span><div class="t">${esc(F.dexName || F.name)} +${G.x} 첫 달성 선물!</div><div class="rw"></div><small>누르면 열려요</small>`;
         let done = false, opened = false;
         const open = () => {
             if (opened) return; opened = true;
+            d.querySelector('small').textContent = '누르면 넘어가요';
             d.classList.add('open'); d.querySelector('.bx').textContent = '🎉';
             d.querySelector('.rw').innerHTML = G.out.map(([ic, t], i) => `<span style="animation-delay:${i * 0.15}s"><i class="fas fa-${ic}"></i>${esc(t)}</span>`).join('');
             sfx('sell'); burst(16, ['#ff9cbc', '#ffd76a', '#ffffff', '#7be0a5'], { y: 52, spread: 130, size: [4, 9], dur: 900, grav: false });
@@ -2614,9 +2615,8 @@ function giftCard(G, g) {   // 선물 상자가 흔들리다 열린다. 누르�
         };
         const end = () => { if (done) return; done = true; T.forEach(clearTimeout); d.classList.add('out'); setTimeout(() => { d.remove(); res(); }, 250); };
         sfx('gift'); buzz([15, 30, 15]);
-        T.push(setTimeout(open, 1000));
-        T.push(setTimeout(end, 3200));
-        d.addEventListener('click', () => { if (!opened) { open(); T.push(setTimeout(end, 1800)); } else end(); });
+        T.push(setTimeout(open, 1000));   // 상자는 1초 흔들리다 저절로 열리고, 닫는 건 누를 때만
+        d.addEventListener('click', () => { if (!opened) open(); else end(); });
         $('#stage').appendChild(d);
     });
 }
