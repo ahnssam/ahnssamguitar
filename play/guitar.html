@@ -2316,30 +2316,16 @@ document.addEventListener('click', e => {
     e.preventDefault(); e.stopPropagation();
     setPersona(b.dataset.persona);
 }, true);
-// 테스트 모드일 때 게임 위에 노란 띠 + 위 프로필 이름도 '안쌤테스트 N'
-function personaBar() {
-    let bar = document.getElementById('personaBar');
-    if (!PERSONA) { if (bar) bar.remove(); return; }
-    if (!bar) {
-        bar = document.createElement('div'); bar.id = 'personaBar'; bar.className = 'persona-bar';
-        bar.innerHTML = `<i class="fas fa-flask"></i><b>${personaName(PERSONA)}</b><span>일반인처럼 · 기록 따로</span><button type="button" data-persona="">운영 계정으로</button>`;
-        bar.querySelector('button').addEventListener('click', () => setPersona(''));
-        $('#app').insertAdjacentElement('afterbegin', bar);
-    }
-    const walk = document.createTreeWalker(document.querySelector('.auth-slot') || document.createElement('i'), NodeFilter.SHOW_TEXT);
-    for (let t = walk.nextNode(); t; t = walk.nextNode()) {
-        if (t.parentElement && t.parentElement.closest('.auth-user-menu')) continue;
-        if (/안쌤/.test(t.nodeValue) && !/안쌤테스트/.test(t.nodeValue)) t.nodeValue = t.nodeValue.replace('안쌤', personaName(PERSONA));
-    }
-}
+// 테스트 모드라고 위에 띄우지 않는다 (2026-11-17 사용자: '안쌤테스트 3 이라고도 위에 띄우지 마') — 게임 위 노란 띠도, 위 프로필 이름 바꾸기도 없음.
+//   지금 어느 테스트인지는 프로필 메뉴의 [안쌤(운영)][테스트 1·2·3] 중 노랗게 칠해진 칸으로만 보인다. 예전에 붙은 띠가 있으면 치운다
+function personaBar() { const bar = document.getElementById('personaBar'); if (bar) bar.remove(); }
 // 프로필 메뉴는 그때그때 다시 그려져서, 바뀌면 다시 넣는다(한 프레임에 한 번만)
 let personaRaf = 0;
 new MutationObserver(() => {
-    if ((!REAL_ADMIN && !PERSONA) || personaRaf) return;
+    if (!REAL_ADMIN || personaRaf) return;
     personaRaf = requestAnimationFrame(() => {
         personaRaf = 0;
         if (REAL_ADMIN && [...document.querySelectorAll('.auth-user-menu')].some(m => !m.querySelector('.gk-persona'))) personaMenu();
-        else if (PERSONA) personaBar();
     });
 }).observe(document.body, { childList: true, subtree: true });
 function dexWhole() { return !!(ADMIN && dexAll); }
