@@ -1,15 +1,16 @@
--- 기타 키우기: 계열에 텔레 2세트(tele2)·레스폴 2세트(lespaul2)를 더한다 (2026-11-17 사용자: 텔레·레스폴 새 디자인 21장씩)
+-- 기타 키우기: 계열에 텔레 2세트(tele2)·레스폴 2세트(lespaul2)·통기타 2세트(acoustic2)·베이스 2세트(bass2)를 더한다
+--   (2026-11-17 사용자: 텔레·레스폴 새 디자인 21장씩 → 같은 날 통기타·베이스 2세트도 넣어서 이 파일에 함께 더함, 아직 적용 전)
 --   지금 서버는 strat·strat2·tele·lespaul·superstrat·acoustic·bass·amp·multi 만 받아서, 2세트 텔레·레스폴을 대표로 올리면 'bad_fam' 이 난다.
 --   그동안 게임(guitar.html 의 syncMe)은 'bad_fam' 이 나면 'tele'·'lespaul' 로 다시 올린다 — 그래서 다른 사람 화면(오늘의 상대·랭킹)에는 1세트 그림으로 보인다.
 --   이 파일을 적용하면 2세트 그대로 올라가서 다른 사람 화면에도 2세트 그림으로 보인다. 다른 것은 그대로(db/play_guitar_fam_strat2.sql 과 같은 함수에 두 이름만 더함).
 alter table public.play_guitar_players drop constraint if exists play_guitar_players_fam_check;
 alter table public.play_guitar_players add constraint play_guitar_players_fam_check
-    check (fam in ('strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'acoustic', 'bass', 'amp', 'multi'));
+    check (fam in ('strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'acoustic', 'acoustic2', 'bass', 'bass2', 'amp', 'multi'));
 alter table public.play_guitar_players drop constraint if exists play_guitar_players_top_fam_check;
 alter table public.play_guitar_players add constraint play_guitar_players_top_fam_check
-    check (top_fam is null or top_fam in ('strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'acoustic', 'bass'));
+    check (top_fam is null or top_fam in ('strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'acoustic', 'acoustic2', 'bass', 'bass2'));
 
--- play_guitar_save — 계열 목록에 'tele2'·'lespaul2' 만 더함(나머지는 db/play_guitar_fam_strat2.sql 그대로)
+-- play_guitar_save — 계열 목록에 'tele2'·'lespaul2'·'acoustic2'·'bass2' 만 더함(나머지는 db/play_guitar_fam_strat2.sql 그대로)
 create or replace function public.play_guitar_save(p_key text, p_nick text, p_fam text, p_lv integer, p_best integer default null::integer, p_top_fam text default null::text, p_top_lv integer default null::integer, p_gold bigint default null::bigint)
  returns table(id bigint, pos integer, players integer, hidden boolean)
  language plpgsql
@@ -25,9 +26,9 @@ declare
     v_hidden boolean;
 begin
     if v_hash is null then raise exception 'bad_key'; end if;
-    if coalesce(p_fam, '') not in ('strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'acoustic', 'bass', 'amp', 'multi') then raise exception 'bad_fam'; end if;
+    if coalesce(p_fam, '') not in ('strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'acoustic', 'acoustic2', 'bass', 'bass2', 'amp', 'multi') then raise exception 'bad_fam'; end if;
     if p_lv is null or p_lv not between 0 and 20 then raise exception 'bad_lv'; end if;
-    if p_top_fam is not null and p_top_fam not in ('strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'acoustic', 'bass') then raise exception 'bad_fam'; end if;
+    if p_top_fam is not null and p_top_fam not in ('strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'acoustic', 'acoustic2', 'bass', 'bass2') then raise exception 'bad_fam'; end if;
     if p_top_lv is not null and p_top_lv not between 0 and 20 then raise exception 'bad_lv'; end if;
     if p_gold is not null and p_gold not between 0 and 1000000000000000 then raise exception 'bad_gold'; end if;
     if char_length(v_nick) > 12 then raise exception 'long'; end if;
@@ -45,8 +46,8 @@ begin
 
     insert into public.play_guitar_players as p (key_hash, nickname, fam, lv, best, hidden, top_fam, top_lv, gold)
     values (v_hash, v_nick, p_fam, p_lv, greatest(p_lv, least(coalesce(p_best, 0), 20)), v_admin,
-            coalesce(p_top_fam, case when p_fam in ('strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'acoustic', 'bass') then p_fam end),
-            coalesce(p_top_lv, case when p_fam in ('strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'acoustic', 'bass') then p_lv else 0 end),
+            coalesce(p_top_fam, case when p_fam in ('strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'acoustic', 'acoustic2', 'bass', 'bass2') then p_fam end),
+            coalesce(p_top_lv, case when p_fam in ('strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'acoustic', 'acoustic2', 'bass', 'bass2') then p_lv else 0 end),
             coalesce(p_gold, 0))
     on conflict (key_hash) do update
         set nickname = excluded.nickname,

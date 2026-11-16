@@ -18,7 +18,7 @@ IDX_B = IDX_R = 0
 if not os.path.exists(FONT_B):   # 맥: Apple SD Gothic Neo 묶음 글꼴(.ttc) 안의 Bold(6)·Regular(0)
     FONT_B = FONT_R = '/System/Library/Fonts/AppleSDGothicNeo.ttc'; IDX_B, IDX_R = 6, 0
 W, H = 800, 420
-SHARE_V = 12   # 썸네일 그림을 바꾸면 올린다 — 카톡이 og:image 를 주소로 기억해서(2026-11-12 몸통 클로즈업으로 바꿈 · 2026-11-13 헤드머신 V2 그림·맥에서 다시 만듦 · 같은 날 텔레 +0~19·슈퍼스트랫 +0~9·+11·+14·+16 · 스트랫 +10~19 · 통기타 +0~9 · 슈퍼스트랫 +10~19 · 스트랫 +0~9)
+SHARE_V = 13   # 썸네일 그림을 바꾸면 올린다 — 카톡이 og:image 를 주소로 기억해서(2026-11-12 몸통 클로즈업으로 바꿈 · 2026-11-13 헤드머신 V2 그림·맥에서 다시 만듦 · 같은 날 텔레 +0~19·슈퍼스트랫 +0~9·+11·+14·+16 · 스트랫 +10~19 · 통기타 +0~9 · 슈퍼스트랫 +10~19 · 스트랫 +0~9 · 2026-11-17 세트 이름(천공 스트랫 등)·통기타·베이스 2세트)
 
 src = open(os.path.join(ROOT, GAME), encoding='utf8').read()
 
@@ -27,18 +27,24 @@ def names_after(label):
     k = src.index(']', j)
     return re.findall(r"'([^']*)'", src[j:k])
 
+def set_name(label, nm):   # 세트 이름(dexName, 2026-11-17) — 계열 줄에 있으면 썸네일 '+N' 옆 작은 글자로
+    line = src[src.index(label):src.index('\n', src.index(label))]
+    m = re.search(r"dexName: '([^']*)'", line)
+    return m.group(1) if m else nm
+
 def art_info(label):   # 그 계열 줄 뒤에서 처음 나오는 art·artMax
     m = re.compile(r"art: '(\w+)', artMax: (\d+)").search(src, src.index(label))
     return m.group(1), int(m.group(2))
 
 FAMS = {}
 for key, label, nm in [('strat', "strat: { name: '스트랫'", '스트랫'), ('strat2', "strat2: { name: '스트랫'", '스트랫'), ('tele', "tele: { name: '텔레'", '텔레'), ('tele2', "tele2: { name: '텔레'", '텔레'), ('lespaul', "lespaul: { name: '레스폴'", '레스폴'), ('lespaul2', "lespaul2: { name: '레스폴'", '레스폴'),
+                       ('acoustic2', "acoustic2: { name: '통기타'", '통기타'), ('bass2', "bass2: { name: '베이스'", '베이스'),
                        ('superstrat', "superstrat: { name: '슈퍼스트랫'", '슈퍼스트랫'), ('acoustic', "acoustic: { name: '통기타'", '통기타'), ('bass', "bass: { name: '베이스'", '베이스')]:
     art, amax = art_info(label)
-    FAMS[key] = dict(name=nm, names=names_after(label), art=art, artMax=amax, sq=False)
+    FAMS[key] = dict(name=nm, set=set_name(label, nm), names=names_after(label), art=art, artMax=amax, sq=False)
 for key, glabel, flabel, nm in [('amp', "amp: { name: '앰프', art: 'amp'", "FAMS.amp = {", '앰프'), ('multi', "fx: { name: '멀티이펙터', art: 'fx'", "FAMS.multi = {", '멀티이펙터')]:
     art, amax = art_info(flabel)
-    FAMS[key] = dict(name=nm, names=names_after(glabel), art=art, artMax=amax, sq=True)
+    FAMS[key] = dict(name=nm, set=nm, names=names_after(glabel), art=art, artMax=amax, sq=True)
 
 bg = Image.open(os.path.join(ROOT, 'images/play/gk/bg_workshop.webp')).convert('RGB')
 bw = bg.width; bh = round(bw * H / W)
@@ -116,7 +122,7 @@ for fam, F in FAMS.items():
         col = (240, 89, 43) if lv < 10 else (214, 158, 30) if lv < 20 else (140, 70, 220)
         d.rounded_rectangle((x0, 70, x0 + tw + 34, 70 + 58), radius=29, fill=col)
         d.text((x0 + 17, 70 + 4), badge, font=bf, fill='white')
-        d.text((x0 + tw + 50, 70 + 14), F['name'], font=fB(24), fill=(255, 226, 150))
+        d.text((x0 + tw + 50, 70 + 14), F['set'], font=fB(24), fill=(255, 226, 150))
         name = F['names'][lv]
         nf = fB(34); lines = wrap(d, name, nf, W - x0 - 30)
         if len(lines) > 3: nf = fB(28); lines = wrap(d, name, nf, W - x0 - 30)
@@ -136,7 +142,7 @@ for fam, F in FAMS.items():
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="안쌤의 기타나무숲">
 <meta property="og:title" content="{title}">
-<meta property="og:description" content="안쌤 놀이터 '기타 키우기'에서 키운 {F['name']}. 나도 키워 보기 →">
+<meta property="og:description" content="안쌤 놀이터 '기타 키우기'에서 키운 {F['set']}. 나도 키워 보기 →">
 <meta property="og:image" content="{SITE}/images/play/gk/share/{out}.jpg?v={SHARE_V}">
 <meta property="og:image:width" content="{W}"><meta property="og:image:height" content="{H}">
 <meta property="og:url" content="{SITE}/play/gk/s/{out}.html">
