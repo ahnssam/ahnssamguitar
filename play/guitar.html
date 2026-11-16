@@ -486,6 +486,7 @@
     @media (max-width: 430px) { .sband { gap: 6px; } .sband button { padding: 10px 6px; gap: 4px; font-size: 12.5px; } .sband .tn small { padding: 1px 5px; font-size: 11px; } }
     @media (max-width: 345px) { .sband button i { display: none; } .sband button { padding: 10px 5px; } .sact button { font-size: 14.5px; gap: 5px; padding-left: 8px; padding-right: 8px; } .sact .sl { font-size: 13px; } .sact .sl i { display: none; } }   /* 아주 좁은 폰: 아이콘을 빼서 글자가 안 잘리게 */
     details.table { margin-top: 16px; background: #fff; border-radius: 14px; border: 1px solid var(--line); padding: 10px 14px; }
+    .sfx-credit { margin: 14px 4px 0; font-size: 11px; color: var(--sub); text-align: center; } .sfx-credit a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
     details.table summary { cursor: pointer; font-weight: 800; font-size: 13.5px; }
     details.table summary small { font-weight: 500; color: var(--sub); }
     .otab { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px; text-align: right; }
@@ -1008,6 +1009,8 @@
         <div class="bench" id="bench"></div>
         <!-- 2026-11-17 사용자: '확률표 가리자 이젠' — 강화 확률표는 숨긴다(코드는 그대로, 다시 보이려면 hidden 을 뺀다) -->
         <details class="table" id="otab" hidden></details>
+        <!-- 망치 효과음 출처 — 사용 조건: 공개된 곳에 쓰면 이 문구를 꼭 붙인다 (2026-11-17) -->
+        <p class="sfx-credit" id="sfxCredit">강화 망치 효과음 — 영상출처 : <a href="https://www.youtube.com/watch?v=G_IC0UVsKJE" target="_blank" rel="noopener">CUBE-TEAM (Youtube)</a> / 공식채널 : cubeteam_project</p>
     </section>
     <section id="tab-room" hidden></section>
     <section id="tab-battle" hidden></section>
@@ -1634,11 +1637,21 @@ function noise(t, dur, vol, out, f0, f1) {
     s.buffer = b; lp.type = 'lowpass'; lp.frequency.setValueAtTime(f0, t); lp.frequency.exponentialRampToValueAtTime(f1, t + dur);
     g.gain.value = vol; s.connect(lp); lp.connect(g); g.connect(out); s.start(t);
 }
+// 강화(피크로 긁기)의 망치 '깡' — CUBE-TEAM 무료 효과음 '쇠망치 소리 3종 세트.001'(유튜브 G_IC0UVsKJE)의 첫 '깡' 0.44초를 잘라 쓴다 (2026-11-17 사용자).
+//   공개된 곳에 쓰면 '영상출처 : CUBE-TEAM (Youtube) / 공식채널 : cubeteam_project' 를 꼭 붙여야 해서 게임 아래에 적었다(#sfxCredit)
+let clangBuf = null, clangTry = false;
+function loadClang() {
+    if (clangBuf || clangTry || !actx) return;
+    clangTry = true;
+    fetch('sfx/anvil_clang.wav?v=1').then(r => r.arrayBuffer()).then(b => new Promise((ok, no) => actx.decodeAudioData(b, ok, no))).then(buf => { clangBuf = buf; }).catch(() => { clangTry = false; });
+}
+addEventListener('pointerdown', () => { if (soundOn()) { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); loadClang(); } catch (e) {} } }, { once: true, passive: true });   // 첫 터치에 미리 불러 둔다
 function sfx(kind, lv = 0, ms = 0) {
     if (!soundOn()) return;
     try {
         actx = actx || new (window.AudioContext || window.webkitAudioContext)();
         if (actx.state === 'suspended') actx.resume();
+        loadClang();
         const t = actx.currentTime + 0.01, out = actx.createGain();
         out.gain.value = 0.5; out.connect(actx.destination);
         const T = (f, d, len, type = 'triangle', vol = 0.2, f2) => tone(f, t + d, len, type, vol, f2, out);
@@ -1667,7 +1680,11 @@ function sfx(kind, lv = 0, ms = 0) {
         else if (kind === 'strum') {   // 피크로 뮤트한 줄을 긁는 '드르륵' + 망치로 쇠를 치는 '깡' (2026-11-17)
             for (let i = 0; i < 6; i++) noise(t + i * 0.011, 0.03, 0.3 - i * 0.03, out, 3200 + lv * 40, 700);
             T(120, 0, 0.07, 'sine', 0.3, 70);
-            T(2600 + Math.random() * 300, 0.01, 0.16, 'triangle', 0.06, 2300); T(3900, 0.012, 0.09, 'sine', 0.035);
+            if (clangBuf) {   // 진짜 망치 소리(CUBE-TEAM 무료 효과음의 첫 '깡') — 칠 때마다 높이를 살짝 바꿔 단조롭지 않게
+                const src = actx.createBufferSource(), cg = actx.createGain();
+                src.buffer = clangBuf; src.playbackRate.value = 0.94 + Math.random() * 0.12 + Math.min(10, lv) * 0.006;
+                cg.gain.value = 1.2; src.connect(cg); cg.connect(out); src.start(t);
+            } else { T(2600 + Math.random() * 300, 0.01, 0.16, 'triangle', 0.06, 2300); T(3900, 0.012, 0.09, 'sine', 0.035); }   // 아직 못 불러왔으면 만든 소리
         }
         else if (kind === 'gift') { [1568, 2093, 2637].forEach((f, i) => T(f, i * 0.08, 0.25, 'sine', 0.13)); }
         else if (kind === 'luck') { [784, 988, 1175, 1568].forEach((f, i) => T(f, i * 0.07, 0.4, 'sine', 0.15)); T(3136, 0.3, 0.3, 'sine', 0.05); }
@@ -2692,7 +2709,9 @@ async function enhance() {
 }
 // ---------- 피크로 긁기 (2026-11-17 사용자: '강화 버튼 텍스트 아래 빈칸 — 10강이면 7개쯤. 한 번 누르면 피크로 기타를 긁는 게 강화 액션,
 //   누를 때 진동 웅, 강화 버튼에서 팡팡 튀는 효과(대장장이가 달군 쇳덩이를 망치로 내려칠 때 튀는 불꽃), 긁을 땐 드르륵 뮤트 소리') ----------
-const strumNeed = lv => Math.max(1, Math.min(14, Math.round(lv * 0.7)));   // +0~2 1칸 · +5 4칸 · +10 7칸 · +15 11칸 · +19 13칸
+// 2026-11-17 사용자: '0강부터 5강까진 3번, 8강부터는 5번, 12강부터는 7번' (+6·+7은 말이 '6강부터는… 8강부터는'으로 끊겨서 그 사이 4번 — Claude 판단)
+//   (같은 날 처음엔 단계 × 0.7: +10 7칸 · +19 13칸)
+const strumNeed = lv => lv <= 5 ? 3 : lv <= 7 ? 4 : lv <= 11 ? 5 : 7;
 const strumSlots = lv => `<span class="slots">${'<i></i>'.repeat(strumNeed(lv))}</span>`;
 let strum = null;   // { n, done, res } — 긁는 중
 function strumPhase(n) {
