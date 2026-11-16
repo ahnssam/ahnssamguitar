@@ -429,6 +429,9 @@
     .sact .ag.strum.done { animation: none; }
     /* 강화 중에는 다른 단추를 그대로 보이되 눌리지 않게 (2026-11-17 사용자: 내려칠 때 다른 버튼이 없어지지 않아도 됨) */
     .stage.locked .sact > button:not(.strum), .stage.locked .sopt, .stage.locked .sgauge, .stage.locked #rSC, .stage.locked #rShare, .stage.locked #nextg { pointer-events: none; }
+    .stage .hmr-sw { position: absolute; z-index: 5; pointer-events: none; }
+    .stage .hmr-sw img { display: block; width: 100%; height: 100%; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.45)); }
+    .item .ic.hmr { background: #2a2420; display: grid; place-items: center; overflow: hidden; } .item .ic.hmr img { display: block; height: 38px; width: auto; transform: rotate(-35deg); }   /* 망치 전체가 보이게(살짝 눕혀서) */
     .fx .pick { position: absolute; width: calc(6px * var(--s)); height: calc(7px * var(--s)); z-index: 3; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.5)); }
     .fx .pick svg { display: block; width: 100%; height: 100%; }
     .stage .anvfl { position: absolute; z-index: 7; width: 70px; height: 34px; border-radius: 50%; pointer-events: none; background: radial-gradient(closest-side, #fff, rgba(255, 215, 120, 0.85) 45%, rgba(255, 120, 30, 0)); mix-blend-mode: screen; }
@@ -1158,7 +1161,7 @@ const arenaUp = () => ARENA_UP[skinTier(ARENAS, S.ask)] || 0;            // 싸�
 function oddsFor(lv) {
     let [sp, mp, dp] = ODDS[lv];
     const b = gearBuff(), cd = Math.min(dp, r1(b.amp + wallCut())); dp -= cd; mp += cd;
-    const cm = Math.min(mp, r1(b.multi + benchUp())); mp -= cm; sp += cm;
+    const cm = Math.min(mp, r1(b.multi + benchUp() + hammerUp())); mp -= cm; sp += cm;   // 망치(2026-11-17)도 줄 끊김 → 성공
     return [r1(sp), r1(mp), r1(dp), r1(cd), r1(cm)];
 }
 const STORE_MAX = 30;   // 창고: 기록을 합칠 때 벽·작업대에 못 둔 기타가 들어간다
@@ -1276,6 +1279,15 @@ const pickFam = () => { const f = one(FIND_FAMS); return SET2[f] && Math.random(
 const srvFam = f => (FAMS[f] && FAMS[f].srv) || f;   // 서버가 아직 모르는 계열은 비슷한 계열 이름으로
 // 튜너: 바늘이 초록 칸에 있을 때 탭하면 성공 +%p (유지에서 가져오고 파괴는 그대로)
 // 2026-11-15 사용자: 성공 보너스가 너무 뛴다 — +2·+4·+6 → +1·+3·+5%p
+// 프렛 망치 (2026-11-17 사용자: 강화 = 망치로 기타를 왼쪽·오른쪽 번갈아 내려치기, 상점 '장비'에서 판다 — 그림은 사용자가 GPT로 뽑은 4개 hammer_1~4.webp)
+//   능력은 Claude가 정함: 좋은 망치일수록 강화 성공 +%p(줄 끊김에서 가져옴). 값은 튜너·스킨 사이쯤. 바꿔도 된다
+//   w·h = 그림 크기(같은 배율로 잘라서 전설 망치는 불꽃만큼 더 큼), hy = 머리 가운데 높이(그림 높이 대비), hx = 손잡이 가운데(폭 대비)
+const HAMMERS = [
+    { name: '나무 프렛 망치', img: 'hammer_1.webp', w: 123, h: 303, hy: 0.094, hx: 0.501, price: 0, up: 0, desc: '처음 받는 기본 망치. 황동 머리에 하얀 나일론 면' },
+    { name: '손질한 황동 망치', img: 'hammer_2.webp', w: 123, h: 303, hy: 0.091, hx: 0.495, price: 500000, up: 0.5, desc: '반짝이게 닦은 황동 머리, 가죽을 감은 손잡이' },
+    { name: '금 망치', img: 'hammer_3.webp', w: 130, h: 304, hy: 0.094, hx: 0.488, price: 5000000, up: 1, desc: '금빛 머리에 빨간 보석, 흑단 손잡이' },
+    { name: '전설의 번개 망치', img: 'hammer_4.webp', w: 144, h: 347, hy: 0.153, hx: 0.552, price: 50000000, up: 2, desc: '번개 무늬 머리, 치는 면에 불꽃, 빨간 끈 손잡이' }];
+const hammerUp = () => (HAMMERS[S.hammer | 0] || HAMMERS[0]).up;
 const TUNERS = [null,
     { name: '클립 튜너', icon: 'fa-paperclip', price: 6000, bonus: 0.5, zone: 0.2, period: 1.6, desc: '헤드에 꽂는 작은 튜너. 초록 칸이 좁고 바늘이 빨라요' },
     { name: '페달 튜너', icon: 'fa-gauge-high', price: 60000, bonus: 1, zone: 0.28, period: 2.0, desc: '발로 밟는 튜너. 칸이 넓어지고 바늘이 느려요' },
@@ -1370,7 +1382,7 @@ const GKK = k => PERSONA ? `gk.t${PERSONA}.${k}` : 'gk.' + k;        // 계정 �
 const personaName = n => `안쌤테스트 ${n}`;
 
 // ---------- 저장 (이 브라우저) ----------
-const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [null, null, null, null, null], floor: [], open: [false, false, true, false, false], skin: 'wood', skins: ['wood'], bskin: 'workshop', bskins: ['workshop'], ask: 'alley', asks: ['alley'], dex: {}, store: [], rep: '', shards: 0, cases: 0, caseOn: false, gift: {}, tuner: 0, tuneOn: true, daily: '', nick: '', nickOk: false, intro: false, first: false, rr: { real: 0, prac: 0 },
+const fresh = () => ({ v: 1, gold: START_GOLD, bench: null, wall: [null, null, null, null, null], floor: [], open: [false, false, true, false, false], skin: 'wood', skins: ['wood'], bskin: 'workshop', bskins: ['workshop'], ask: 'alley', asks: ['alley'], dex: {}, store: [], rep: '', shards: 0, cases: 0, caseOn: false, gift: {}, tuner: 0, hammer: 0, tuneOn: true, daily: '', nick: '', nickOk: false, intro: false, first: false, rr: { real: 0, prac: 0 },
     bt: { day: '', n: 0, done: {} }, rv: { at: 0 }, ad: { day: '', n: 0 }, st: { tries: 0, ok: 0, keep: 0, boom: 0, saved: 0, revive: 0, sold: 0, earned: 0, made: START_GOLD, best: 0, win: 0, lose: 0, jack: 0 } });
 const okG = g => g && typeof g === 'object' && Number.isInteger(g.lv) && g.lv >= 0 && g.lv <= MAX && typeof g.id === 'string';
 function load() {
@@ -1417,6 +1429,7 @@ function load() {
     if (typeof s.caseFor !== 'string') s.caseFor = s.caseOn && s.bench ? s.bench.id : '';   // 2026-11-17 하드케이스 ON 은 그 악기에만
     while (s.shards >= CASE_SHARDS && s.cases < CASE_MAX) { s.shards -= CASE_SHARDS; s.cases++; }   // 하드케이스는 저절로 (2026-11-15)
     s.tuner = Math.min(TUNERS.length - 1, Math.max(0, s.tuner | 0));
+    s.hammer = Math.min(HAMMERS.length - 1, Math.max(0, s.hammer | 0));
     s.rr = Object.assign({ real: 0, prac: 0, bt: 0 }, s.rr && typeof s.rr === 'object' ? s.rr : {}); s.nickOk = s.nickOk === true;
     s.nickPick = ['game', 'login'].includes(s.nickPick) ? s.nickPick : '';   // 게임 닉네임 (2026-11-16, nickAsk)
     s.nickCh = Math.max(0, s.nickCh | 0); s.nickAt = Math.max(0, +s.nickAt || 0);
@@ -1498,7 +1511,7 @@ function mergeSaves(here, acct) {
     for (const [f, bits] of Object.entries(H.dex)) A.dex[f] = (A.dex[f] | 0) | (bits | 0);
     if (H.giftDay === A.giftDay) for (const [f, bits] of Object.entries(H.gift)) A.gift[f] = (A.gift[f] | 0) | (bits | 0);
     A.skins = [...new Set([...A.skins, ...H.skins])]; A.bskins = [...new Set([...A.bskins, ...H.bskins])]; A.asks = [...new Set([...A.asks, ...H.asks])];
-    A.tuner = Math.max(A.tuner, H.tuner);
+    A.tuner = Math.max(A.tuner, H.tuner); A.hammer = Math.max(A.hammer | 0, H.hammer | 0);
     for (const k of Object.keys(A.st)) A.st[k] = k === 'best' ? Math.max(A.st.best, H.st.best) : (+A.st[k] || 0) + (+H.st[k] || 0);
     A.first = A.first || H.first; A.rk = A.rk || H.rk; A.nick = A.nick || H.nick;
     if (H.daily === today()) A.daily = today();
@@ -1682,8 +1695,7 @@ function sfx(kind, lv = 0, ms = 0) {
             for (let i = 0; i < n; i++) { const x = 1 - Math.pow(1 - i / n, 1 / 2.2); T(1300 - (i / n) * 600, x * dur, 0.04, 'triangle', 0.05); }
         }
         else if (kind === 'strum') {   // 피크로 뮤트한 줄을 긁는 '드르륵' + 망치로 쇠를 치는 '깡' (2026-11-17)
-            for (let i = 0; i < 6; i++) noise(t + i * 0.011, 0.03, 0.3 - i * 0.03, out, 3200 + lv * 40, 700);
-            T(120, 0, 0.07, 'sine', 0.3, 70);
+            T(120, 0, 0.07, 'sine', 0.3, 70); noise(t, 0.04, 0.18, out, 4000, 900);   // 쿵 + 짧은 쇳소리 (피크 '드르륵'은 망치로 바꾸며 뺐다, 2026-11-17)
             if (clangBuf) {   // 진짜 망치 소리(CUBE-TEAM 무료 효과음의 첫 '깡') — 칠 때마다 높이를 살짝 바꿔 단조롭지 않게
                 const src = actx.createBufferSource(), cg = actx.createGain();
                 src.buffer = clangBuf; src.playbackRate.value = 0.94 + Math.random() * 0.12 + Math.min(10, lv) * 0.006;
@@ -2213,7 +2225,7 @@ function renderBench() {
         // 장비·스킨 보너스는 실제로 깎을 게 있을 때만 (파괴 0%인 단계에서 '파괴 −1%p'라고 하면 거짓말)
         const amp = gearBuff(), [, , , cd, cm] = oddsFor(g.lv), wc = wallCut(), bu = benchUp();
         const tip = [cd && amp.amp ? `<span><i class="fas fa-volume-high"></i>앰프 파괴 −${amp.amp}%p</span>` : '', cd && wc ? `<span><i class="fas fa-image"></i>벽 파괴 −${wc}%p</span>` : '',
-            cm && amp.multi ? `<span><i class="fas fa-sliders"></i>멀티 ${keepWord(g)} −${amp.multi}%p</span>` : '', cm && bu ? `<span><i class="fas fa-screwdriver-wrench"></i>작업대 성공 +${bu}%p</span>` : ''].join('');
+            cm && amp.multi ? `<span><i class="fas fa-sliders"></i>멀티 ${keepWord(g)} −${amp.multi}%p</span>` : '', cm && bu ? `<span><i class="fas fa-screwdriver-wrench"></i>작업대 성공 +${bu}%p</span>` : '', cm && hammerUp() ? `<span><i class="fas fa-hammer"></i>망치 성공 +${hammerUp()}%p</span>` : ''].join('');
         if (tip) h += `<p class="gline">${tip}</p>`;
         if (S.gold < cost) h += `<p class="lack">골드가 ${gf(cost - S.gold)} 모자라요. 팔거나 출석 골드를 받아요.</p>`;
     }
@@ -2739,27 +2751,37 @@ function strumHit() {
         if (slot) { slot.classList.add('on'); slot.animate([{ transform: 'scaleY(2.2)', filter: 'brightness(2)' }, { transform: 'none', filter: 'none' }], { duration: 260, easing: 'ease-out' }); }
         btn.animate([{ transform: 'translateY(3px) scale(.97)' }, { transform: 'none' }], { duration: 140, easing: 'ease-out' });
     }
-    pickStrum(st.done); anvilSparks(btn, st.done === st.n);
-    sfx('strum', Math.min(20, st.done)); buzz(40);   // 진동 '웅'
+    const big = st.done === st.n, k = st.done;
+    hammerStrike(k, (x, y, dir) => { anvilSparks(x, y, dir, big); sfx('strum', Math.min(20, k)); buzz(40); });   // 진동 '웅' — 맞는 순간에
     if (st.done >= st.n) { if (st.onLast) st.onLast(); setTimeout(() => { strum = null; if (btn) btn.classList.add('done'); st.res(); }, 300); }   // 다 차면 그 모습 그대로 결과를 기다린다
 }
-// 피크가 기타 몸통 위 줄을 가로질러 긁는다(번갈아 왼→오, 오→왼). 기타는 살짝 흔들리고 번쩍
-function pickStrum(k) {
-    const fx = $('#fx'), dir = k % 2 ? 1 : -1, d = document.createElement('i');
-    d.className = 'pick';
-    d.innerHTML = '<svg viewBox="0 0 40 46" aria-hidden="true"><path d="M20 44C11 36 2 22 2 12 2 5 9 1 20 1s18 4 18 11c0 10-9 24-18 32z" fill="url(#pkg)" stroke="#3a1d06" stroke-width="2.5"/><defs><linearGradient id="pkg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd27a"/><stop offset=".55" stop-color="#e0702a"/><stop offset="1" stop-color="#8a3a10"/></linearGradient></defs><path d="M11 9c3-3 13-4 18-1" stroke="#fff6d8" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".7"/></svg>';
-    fx.appendChild(d);
-    const x0 = 50 - dir * 13, x1 = 50 + dir * 13;
-    d.animate([{ left: x0 + '%', top: '66%', transform: `translate(-50%, -50%) rotate(${-dir * 35}deg)`, opacity: 0 },
-        { opacity: 1, offset: 0.15 }, { left: x1 + '%', top: '70%', transform: `translate(-50%, -50%) rotate(${dir * 25}deg)`, opacity: 1, offset: 0.8 },
-        { left: (x1 + dir * 3) + '%', top: '71%', transform: `translate(-50%, -50%) rotate(${dir * 30}deg)`, opacity: 0 }], { duration: 240, easing: 'cubic-bezier(.3, .1, .3, 1)', fill: 'forwards' }).onfinish = () => d.remove();
-    cv.animate([{ transform: CVT, filter: 'brightness(1)' }, { transform: `${CVT} translateX(${dir * 2}px) rotate(${dir * 1.4}deg)`, filter: 'brightness(1.35)', offset: 0.3 }, { transform: CVT, filter: 'brightness(1)' }], { duration: 170, easing: 'ease-out' });
+// 프렛 망치가 기타 몸통 옆을 내려친다 — 홀수 번째는 왼쪽, 짝수 번째는 오른쪽 (2026-11-17 사용자: 피크로 긁기 대신 '내려치는' 것, 기타 왼쪽에서 내려치고 오른쪽에서 내려치고)
+//   손잡이 끝을 축으로 휘둘러 머리의 황동 면이 몸통 가장자리에 닿는 순간(onHit) 불꽃·소리·진동, 기타는 맞은 반대쪽으로 살짝 밀린다
+function hammerStrike(k, onHit) {
+    const st = $('#stage'), sr = st.getBoundingClientRect(), cr = cv.getBoundingClientRect(), H = HAMMERS[S.hammer | 0] || HAMMERS[0];
+    const left = k % 2 === 1, dir = left ? 1 : -1;   // dir: 기타가 밀리는 쪽
+    const ix = cr.left - sr.left + cr.width * (left ? 0.31 : 0.69), iy = cr.top - sr.top + cr.height * 0.74;   // 몸통 가장자리 맞는 자리
+    const ph = Math.round(($('#fx').clientHeight || 400) * 0.34 * (H.h / 303)), pw = Math.round(ph * H.w / H.h);
+    const w = document.createElement('i');
+    w.className = 'hmr-sw';
+    w.style.cssText = `left:${Math.round(left ? ix - pw + 3 : ix - 3)}px;top:${Math.round(iy - H.hy * ph)}px;width:${pw}px;height:${ph}px;transform-origin:${(left ? 1 - H.hx : H.hx) * 100}% 96%`;
+    w.innerHTML = `<img src="../images/play/gk/${H.img}" alt="" draggable="false" style="${left ? 'transform:scaleX(-1)' : ''}">`;   // 그림은 황동 면이 왼쪽 — 왼쪽에서 칠 땐 뒤집어 기타 쪽을 보게
+    st.appendChild(w);
+    const a0 = left ? -72 : 72, a1 = left ? 5 : -5, a2 = left ? -30 : 30;
+    // 휘두르기(0 → 0.55, 점점 빠르게) → 맞음(0.55 = 165ms, 아래 setTimeout 과 같은 때) → 튕겨 물러나며 사라짐
+    w.animate([{ transform: `rotate(${a0}deg)`, opacity: 0, easing: 'cubic-bezier(.6, 0, 1, .7)' }, { transform: `rotate(${a1}deg)`, opacity: 1, offset: 0.55, easing: 'ease-out' },
+        { transform: `rotate(${a2}deg)`, opacity: 0 }], { duration: 300, easing: 'linear', fill: 'forwards' }).onfinish = () => w.remove();
+    setTimeout(() => {
+        onHit(ix, iy, dir);
+        cv.animate([{ transform: CVT, filter: 'brightness(1)' }, { transform: `${CVT} translateX(${dir * 5}px) rotate(${dir * 2.2}deg)`, filter: 'brightness(1.5)', offset: 0.25 }, { transform: CVT, filter: 'brightness(1)' }], { duration: 220, easing: 'ease-out' });
+    }, 165);
 }
-// 대장장이 망치 불꽃: 강화 단추 위쪽에서 하얗게 달군 불꽃이 위로 팡 튀었다가 무게를 받아 떨어지며 식는다(흰 → 노랑 → 주황 → 빨강)
-function anvilSparks(btn, big) {
-    if (!btn || calm()) return;
-    const st = $('#stage'), sr = st.getBoundingClientRect(), br = btn.getBoundingClientRect();
-    const ox = br.left - sr.left + br.width / 2, oy = br.top - sr.top + 4, n = big ? 28 : 16;
+new Image().src = '../images/play/gk/hammer_1.webp';   // 첫 강화에 망치가 늦게 뜨지 않게 미리
+// 대장장이 망치 불꽃: 망치가 맞은 자리(기타 몸통 가장자리)에서 하얗게 달군 불꽃이 바깥·위로 팍 튀었다가 무게를 받아 떨어지며 식는다(흰 → 노랑 → 주황 → 빨강)
+//   dir = 1 이면 왼쪽을 맞음(불꽃은 왼쪽 위로), -1 이면 오른쪽(오른쪽 위로). 마지막 칸은 더 크게
+function anvilSparks(ox, oy, dir, big) {
+    if (calm()) return;
+    const st = $('#stage'), n = big ? 30 : 18;
     const fl = document.createElement('i');   // 내려친 자리 번쩍
     fl.className = 'anvfl'; fl.style.cssText = `left:${ox}px;top:${oy}px`;
     st.appendChild(fl);
@@ -2768,8 +2790,8 @@ function anvilSparks(btn, big) {
     for (let i = 0; i < n; i++) {
         const sp = document.createElement('i'), hot = i % 4;
         sp.className = 'spk' + (hot === 0 ? ' em' : '');
-        const a = (-90 + (Math.random() * 2 - 1) * 70) * Math.PI / 180, v = (big ? 260 : 180) + Math.random() * (big ? 260 : 200);
-        const vx = Math.cos(a) * v, vy = Math.sin(a) * v, T = 0.45 + Math.random() * 0.4, x0 = ox + (Math.random() * 2 - 1) * br.width * 0.25;
+        const base = dir > 0 ? -140 : -40, a = (base + (Math.random() * 2 - 1) * 65) * Math.PI / 180, v = (big ? 260 : 190) + Math.random() * (big ? 280 : 210);
+        const vx = Math.cos(a) * v, vy = Math.sin(a) * v, T = 0.45 + Math.random() * 0.4, x0 = ox + (Math.random() * 2 - 1) * 6;
         sp.style.cssText = `left:${x0}px;top:${oy}px`;
         st.appendChild(sp);
         const kf = [];
@@ -3946,6 +3968,11 @@ function renderShop() {
         return `<div class="item"><span class="ic t${n}"><i class="fas ${T.icon}"></i></span><div class="it"><b>${T.name} · 성공 +${T.bonus}%p</b><small>${T.desc}</small></div>
             ${own ? `<span class="own">${S.tuner === n ? '쓰는 중' : '더 좋은 걸 써요'}</span>` : `<button type="button" data-a="buyT" data-n="${n}" ${S.gold >= T.price ? '' : 'disabled'}>${gf(T.price)}</button>`}</div>`;
     }).join('') + `<p class="note2">튜너가 있으면 강화할 때 바늘을 맞춰요. 성공률은 '줄 끊김'에서 가져오고 '파괴'는 그대로예요. 파괴 확률이 생기는 +7부터 강화 단추 위 '튜너' 스위치로 켜고 꺼요.</p>`
+        // 프렛 망치 (2026-11-17 사용자: 상점에도) — 가진 것 중 가장 좋은 걸 쓴다
+        + `<p class="note2">망치는 강화할 때 기타를 내려쳐요. 좋은 망치일수록 강화 성공이 조금 올라요(올라간 몫은 '${keepWord(S.bench)}'에서 가져와요).</p>`
+        + HAMMERS.map((H, n) => { const own = (S.hammer | 0) >= n;
+            return `<div class="item"><span class="ic hmr"><img src="../images/play/gk/${H.img}" alt=""></span><div class="it"><b>${H.name}${H.up ? ` · 강화 성공 +${H.up}%p` : ''}</b><small>${H.desc}</small></div>
+                ${own ? `<span class="own">${(S.hammer | 0) === n ? '쓰는 중' : '더 좋은 걸 써요'}</span>` : `<button type="button" data-a="buyHm" data-n="${n}" ${S.gold >= H.price ? '' : 'disabled'}>${gf(H.price)}</button>`}</div>`; }).join('')
         // 하드케이스 하나 100만G (2026-11-17 사용자) — 조각 15개로 저절로 만들어지는 것과 같은 하드케이스, 3개까지
         + `<div class="item"><span class="ic case"><i class="fas fa-briefcase"></i></span><div class="it"><b>하드케이스 · 파괴 1번 막기</b><small>지금 ${S.cases}/${CASE_MAX}개 · 조각 ${CASE_SHARDS}개를 모아도 저절로 생겨요. 강화 단추 위 '하케' 스위치로 그 악기에 끼워요</small></div>
             ${S.cases >= CASE_MAX ? '<span class="own">가득</span>' : `<button type="button" data-a="buyCase" ${S.gold >= CASE_PRICE ? '' : 'disabled'}>${gf(CASE_PRICE)}</button>`}</div>`;
@@ -4050,6 +4077,11 @@ $('#app').addEventListener('click', e => {
     else if (a === 'rkview') rkView(+b.dataset.i);
     else if (a === 'nickedit') nickAsk(false);
     else if (a === 'vslink') challengeLink();
+    else if (a === 'buyHm') {   // 프렛 망치 사기
+        const n = +b.dataset.n, H = HAMMERS[n];
+        if (!H || (S.hammer | 0) >= n || S.gold < H.price) return;
+        S.gold -= H.price; S.hammer = n; save(); sfx('strum', 5); renderShop(); spendFx(S.gold + H.price, S.gold); toast(`${H.name}를 샀어요! 강화할 때 이 망치로 내려쳐요`);
+    }
     else if (a === 'buyCase') {
         if (S.cases >= CASE_MAX) { toast(`하드케이스는 ${CASE_MAX}개까지예요`); return; }
         if (S.gold < CASE_PRICE) return;
