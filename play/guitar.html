@@ -1118,7 +1118,9 @@ const GIFTS = { 3: { gold: 1000 }, 5: { luck: 5 }, 7: { shards: 7 }, 10: { gold:
 const FIND_GOLD = 300;
 // 컬렉션 바닥(앰프·멀티): 걸이와 따로 (2026-11-12 사용자: 앰프·멀티가 걸이 칸을 차지해서, 걸이가 비어 보이는데 걸 수 없다고 나옴)
 //   2026-11-12 사용자: 앰프는 오른쪽에 쭈루룩, 이펙터(멀티)는 왼쪽에 쭈루룩, 각각 3개까지
-const FLOOR_EACH = 3;
+//   2026-11-17 사용자: '앰프 슬롯하고 이펙터 슬롯 한 개씩 줄이자, 각각 중앙 안쪽에 있는 슬롯 없애' → 2개씩(끝에서 두 칸만, 가운데 쪽 셋째 칸을 뺐다).
+//   남은 두 칸의 자리·크기는 예전 그대로가 되게 크기 계산은 3칸 기준(FLOOR_LAYOUT)
+const FLOOR_EACH = 2, FLOOR_LAYOUT = 3;
 // 바닥 물건 그림이 틀(정사각형) 폭에서 실제로 차지하는 비율 — 넓은 것만(나머지 앰프 0.51 · 멀티 0.63). 그림을 바꾸면 다시 잰다(2026-11-15)
 const FLOOR_ART_W = { amp: { 5: 0.60, 9: 0.60, 10: 0.55, 13: 0.54, 14: 0.53, 19: 0.60, 20: 0.68 },
     multi: { 0: 0.67, 2: 0.66, 3: 0.67, 4: 0.82, 7: 0.65, 8: 0.70, 9: 0.85, 19: 0.64, 20: 0.82 } };
@@ -1422,7 +1424,10 @@ function load() {
     delete s.room;
     // 바닥(앰프·멀티). 예전(2026-11-12)에 걸이 칸에 들어가 있던 앰프·멀티는 바닥으로 옮긴다(바닥이 차면 창고로)
     s.floor = [];
-    (Array.isArray(raw.floor) ? raw.floor : []).forEach(g => { if (okG(g) && isSq(g) && floorRoom(s.floor, g)) s.floor.push(g); });
+    (Array.isArray(raw.floor) ? raw.floor : []).forEach(g => { if (!okG(g) || !isSq(g)) return;
+        if (floorRoom(s.floor, g)) s.floor.push(g);
+        else if (s.store.length < STORE_MAX) s.store.push(g); else s.gold = (+s.gold || 0) + SELL[g.lv];   // 2026-11-17 바닥이 2칸으로 줄어 넘치는 것(가운데 쪽 셋째)은 창고로 — 창고도 차면 판 값으로
+    });
     s.wall = s.wall.map(g => {
         if (!g || !isSq(g)) return g;
         if (floorRoom(s.floor, g)) s.floor.push(g); else if (s.store.length < STORE_MAX) s.store.push(g); else s.gold = (+s.gold || 0) + SELL[g.lv];
@@ -3228,7 +3233,7 @@ function wallLayout(W, floorList) {
     const fh = { amp: hh * 0.96, multi: hh * 0.64 }, fw = { amp: 0.56, multi: 0.68 }, fb = { amp: 97, multi: 96.5 };
     const wideOf = g => ((FLOOR_ART_W[g.f] || {})[Math.min(20, g.lv)] || (g.f === 'amp' ? 0.51 : 0.63));
     {   // 앰프 3 + 멀티 3 자리가 바닥 폭에 다 안 들어가면(좁은 벽 그림·휴대폰) 둘 다 같은 비율로 작게
-        const iwOf = f => fh[f] * (W.h / W.w) * (56 / 84) * fw[f], items = FLOOR_EACH * (iwOf('amp') + iwOf('multi')), fixed = 2 * (FLOOR_EACH - 1) + 3 + 2;
+        const iwOf = f => fh[f] * (W.h / W.w) * (56 / 84) * fw[f], items = FLOOR_LAYOUT * (iwOf('amp') + iwOf('multi')), fixed = 2 * (FLOOR_LAYOUT - 1) + 3 + 2;
         if (items + fixed > 100) { const k = (100 - fixed) / items; fh.amp *= k; fh.multi *= k; }
     }
     for (const f of ['amp', 'multi']) {
