@@ -1070,8 +1070,11 @@ const shardDrop = lv => 1 + Math.floor(Math.random() * Math.max(1, lv));
 //      연속 성공 콤보: 같은 악기로 3연속부터 그 강화 비용의 20%씩(5단계 = 100%까지, 최소 10G) 골드를 더 주고, 효과음이 한 음씩 올라간다
 //   ⑤ 손맛: 휴대폰 진동(안드로이드, 소리를 끄면 진동도 끔), '+1'이 튀어 오르고, +5부터 색종이(높을수록 많이), +0~+5 기다림은 1.5초
 const JACKPOT_P = 5, JACKPOT_MAX_LV = 9, LUCK_MAX = 10, COMBO_STEP = 0.2, COMBO_CAP = 5;
-const GIFT_AT = [3, 5, 7, 10];
-const GIFTS = { 3: { gold: 500 }, 5: { luck: 5 }, 7: { cases: 1 }, 10: { gold: 30000, luck: LUCK_MAX } };
+// 2026-11-17 사용자가 고른 추천안 + '+15는 500만, 하드케이스, 행운 가득': 그 단계에서 강화 한 번 값쯤 — +13·+15·+20 을 더해 높은 단계도 목표가 생기게.
+//   매일 새벽 4시에 다시 받을 수 있다(giftDay, 사용자: '새벽 4시 되면 리셋'). 예전(같은 날 낮)엔 +3 500 · +5 행운5 · +7 하드케이스 · +10 3만+행운, 평생 한 번
+const GIFT_AT = [3, 5, 7, 10, 13, 15, 20];
+const GIFTS = { 3: { gold: 1000 }, 5: { luck: 5 }, 7: { shards: 7 }, 10: { gold: 100000, luck: LUCK_MAX }, 13: { gold: 1000000 },
+    15: { gold: 5000000, cases: 1, luck: LUCK_MAX }, 20: { gold: 10000000 } };
 // 맨 처음 '기타 찾기'는 공짜(2026-11-13 사용자: 피크 빼기 — 그 전에는 피크 3개였다). 그다음부터 '시작'은 골드 FIND_GOLD
 //   (2026-11-12 사용자: 50G는 싸다 → 300G). +4에서 팔면(350G) 손해, +5(700G)는 가야 남는다. 출석 1,000G면 세 번.
 //   골드가 모자라면 출석하거나 광고를 보고 골드를 받는다(AD_GOLD)
@@ -1378,6 +1381,7 @@ function load() {
     // 도감: 계열마다 딴 단계(비트). 도감 전(2026-11-12)에 시작했으면 가진 기타의 단계까지, 최고 기록은 스트랫으로 채운다(그때는 스트랫뿐이었다)
     s.dex = s.dex && typeof s.dex === 'object' ? s.dex : {};
     s.gift = s.gift && typeof s.gift === 'object' && !Array.isArray(s.gift) ? s.gift : {};   // 단계 선물 받은 것 (2026-11-17)
+    if (typeof s.giftDay !== 'string') s.giftDay = '';   // 선물 날(새벽 4시 기준) — 다르면 giftToday() 가 비운다
     const mark = (f, lv) => { for (let i = 0; i <= lv; i++) s.dex[f] = (s.dex[f] | 0) | (1 << i); };
     [s.bench, ...s.wall, ...s.floor, ...s.store].forEach(g => { if (g) mark(FAMS[g.f] ? g.f : 'strat', g.lv); });
     if (!raw.dex && s.first) mark('strat', Math.min(MAX, s.st.best | 0));
@@ -1447,7 +1451,7 @@ function mergeSaves(here, acct) {
     A.gold += H.gold; A.shards += H.shards; A.cases = Math.min(CASE_MAX, A.cases + H.cases);
     while (A.shards >= CASE_SHARDS && A.cases < CASE_MAX) { A.shards -= CASE_SHARDS; A.cases++; }
     for (const [f, bits] of Object.entries(H.dex)) A.dex[f] = (A.dex[f] | 0) | (bits | 0);
-    for (const [f, bits] of Object.entries(H.gift)) A.gift[f] = (A.gift[f] | 0) | (bits | 0);
+    if (H.giftDay === A.giftDay) for (const [f, bits] of Object.entries(H.gift)) A.gift[f] = (A.gift[f] | 0) | (bits | 0);
     A.skins = [...new Set([...A.skins, ...H.skins])]; A.bskins = [...new Set([...A.bskins, ...H.bskins])]; A.asks = [...new Set([...A.asks, ...H.asks])];
     A.tuner = Math.max(A.tuner, H.tuner);
     for (const k of Object.keys(A.st)) A.st[k] = k === 'best' ? Math.max(A.st.best, H.st.best) : (+A.st[k] || 0) + (+H.st[k] || 0);
@@ -2194,7 +2198,7 @@ function renderOpt() {
 // 팔기 단추 바로 위 작은 게이지 (2026-11-17 사용자: '행운 바하고 보상 바를 팔기 버튼 위쪽에 조그맣게, 보상은 접을 수 있게 — 나중엔 어차피 정체될 거니까,
 //   돈 얼마 받는지 짧게라도 보여 줘야 열의 있게'). 보상 줄 접기는 이 브라우저에 기억(gk.giftFold)
 let giftFold = mem.get('gk.giftFold', false) === true;
-const giftShort = x => { const R = GIFTS[x]; return R.gold ? gs(R.gold) : R.cases ? '하케' : R.luck ? `행운+${R.luck}` : ''; };
+const giftShort = x => { const R = GIFTS[x]; return R.gold ? gs(R.gold) : R.shards ? `조각 ${R.shards}` : R.cases ? '하케' : R.luck ? `행운+${R.luck}` : ''; };
 function renderGauge() {
     const el = $('#sgauge'), g = S.bench, show = !!g && !busy && g.lv < MAX;
     el.hidden = !show;
@@ -2232,7 +2236,7 @@ function renderTable() {
         <p class="note2"><b>대박</b>: +0~+9 강화가 성공하면 그중 ${JACKPOT_P}%는 한 번에 2단계 올라요(성공 확률 안에서 — +1→+2 성공 96%면 대박은 약 ${r1(96 * JACKPOT_P / 100)}%).
         <b>행운 게이지</b>: 그 악기로 강화를 누를 때마다(성공·${keepWord(S.bench)} 모두) 한 칸, ${LUCK_MAX}칸이 차면 다음 강화는 반드시 성공해요.
         <b>콤보</b>: 같은 악기로 3번 연속 성공하면 그 강화 비용의 ${COMBO_STEP * 100}%씩 골드를 더 받아요(최대 ${COMBO_STEP * COMBO_CAP * 100}%).
-        <b>선물</b>: 악기 종류마다 +3·+5·+7·+10에 처음 닿으면 선물 상자(+3 골드 ${gf(GIFTS[3].gold)} · +5 행운 +${GIFTS[5].luck}칸 · +7 하드케이스 · +10 골드 ${gf(GIFTS[10].gold)} + 행운 가득).</p>`;
+        <b>선물</b>: 악기 종류마다 하루에 한 번(새벽 4시에 다시) +3·+5·+7·+10·+13·+15·+20에 닿으면 선물 상자 — +3 골드 1,000G · +5 행운 +5칸 · +7 조각 7개 · +10 골드 10만G + 행운 가득 · +13 골드 100만G · +15 골드 500만G + 하드케이스 + 행운 가득 · +20 골드 1,000만G.</p>`;
     el.open = open;
 }
 
@@ -2624,12 +2628,16 @@ async function enhance() {
 let combo = 0, comboId = '';
 const luckOf = g => Math.min(LUCK_MAX, Math.max(0, (g && g.luck) | 0));
 const giftFam = f => FAMS[f] ? f : 'strat';
-const giftHas = (f, x) => !!((S.gift[giftFam(f)] | 0) & (1 << x));
+// 선물 하루: 새벽 4시에 날이 바뀐다(한국 시간 기준 이 기기 시계). 날이 바뀌면 받은 것(S.gift)을 비운다
+const giftDay = () => { const d = new Date(Date.now() - 4 * 3600e3); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+function giftToday() { if (S.giftDay !== giftDay()) { S.gift = {}; S.giftDay = giftDay(); } return S.gift; }
+const giftHas = (f, x) => !!((giftToday()[giftFam(f)] | 0) & (1 << x));
 const nextGift = g => GIFT_AT.find(x => x > g.lv && !giftHas(g.f, x));
 function giveGift(g, x) {   // 받은 것으로 적고 바로 준다(결과와 같이 저장) → 화면에 보일 [아이콘, 글] 목록
-    const f = giftFam(g.f), R = GIFTS[x], out = [];
-    S.gift[f] = (S.gift[f] | 0) | (1 << x);
+    const f = giftFam(g.f), R = GIFTS[x], out = [], gt = giftToday();
+    gt[f] = (gt[f] | 0) | (1 << x);
     if (R.gold) { gain(R.gold); out.push(['coins', `골드 +${gf(R.gold)}`]); }
+    if (R.shards) { S.shards += R.shards; out.push(['puzzle-piece', `부서진 기타 조각 +${R.shards}`]); if (autoCase()) out.push(['briefcase', `하드케이스 완성! (${S.cases}/${CASE_MAX})`]); }
     if (R.cases) {
         if (S.cases < CASE_MAX) { S.cases += R.cases; out.push(['briefcase', `하드케이스 +${R.cases}`]); }
         else { S.shards += CASE_SHARDS * R.cases; out.push(['puzzle-piece', `조각 +${CASE_SHARDS * R.cases} (하드케이스 가득)`]); }
@@ -2641,7 +2649,7 @@ function giftCard(G, g) {   // 선물 상자가 흔들리다 열린다(누르면
     return new Promise(res => {
         const F = FAMS[G.f] || FAMS.strat, d = document.createElement('div'), T = [];
         d.className = 'gfcard';
-        d.innerHTML = `<span class="bx" aria-hidden="true">🎁</span><div class="t">${esc(F.dexName || F.name)} +${G.x} 첫 달성 선물!</div><div class="rw"></div><small>누르면 열려요</small>`;
+        d.innerHTML = `<span class="bx" aria-hidden="true">🎁</span><div class="t">${esc(F.dexName || F.name)} +${G.x} 오늘 첫 달성 선물!</div><div class="rw"></div><small>누르면 열려요</small>`;
         let done = false, opened = false;
         const open = () => {
             if (opened) return; opened = true;
@@ -3808,7 +3816,7 @@ $('#app').addEventListener('click', e => {
     else if (a === 'nextg') { const g = S.bench; if (g && g.lv < MAX) toast(dexHas(giftFam(g.f), g.lv + 1) ? `다음 단계: +${g.lv + 1} ${gname({ ...g, lv: g.lv + 1 })}` : `다음 단계는 +${g.lv + 1} ??? — 강화해서 확인해 봐요`); }
     else if (a === 'giftfold') { giftFold = !giftFold; mem.set('gk.giftFold', giftFold); renderGauge(); }
     else if (a === 'luckinfo') { const g = S.bench; if (g) toast(luckOf(g) >= LUCK_MAX ? '행운 게이지 가득! 이번 강화는 반드시 성공해요' : `강화를 누를 때마다 한 칸(실패해도). ${LUCK_MAX}칸이 차면 다음 강화는 반드시 성공 — ${LUCK_MAX - luckOf(g)}칸 남음`); }
-    else if (a === 'giftinfo') { const g = S.bench, nx = g && nextGift(g); if (nx) toast(`${(FAMS[g.f] || FAMS.strat).dexName || (FAMS[g.f] || FAMS.strat).name} +${nx}에 처음 닿으면 획득보상(선물 상자)을 받아요 · ${nx - g.lv}단계 남음`); }
+    else if (a === 'giftinfo') { const g = S.bench, nx = g && nextGift(g); if (nx) toast(`${(FAMS[g.f] || FAMS.strat).dexName || (FAMS[g.f] || FAMS.strat).name} +${nx}에 오늘 처음 닿으면 획득보상(${giftShort(nx)}) · ${nx - g.lv}단계 남음 · 매일 새벽 4시에 다시`); }
     else if (a === 'buy1') findGuitar(true);
     else if (a === 'adgold') goldAd();
     else if (a === 'daily') $('#rDaily').click();
