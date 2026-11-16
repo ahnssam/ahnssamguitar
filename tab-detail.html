@@ -12,6 +12,9 @@
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TAB악보 - 안쌤의 기타나무숲</title>
+    <!-- 설명·표준 주소(canonical)는 악보를 불러온 뒤 setSeo() 가 악보마다 바꾼다 (2026-11-16 Search Console '중복 페이지') -->
+    <meta id="metaDesc" name="description" content="안쌤(안규호)이 직접 채보한 기타 TAB악보 PDF. 결제 즉시 내려받기.">
+    <meta property="og:site_name" content="안쌤의 기타나무숲">
     <!-- 탭 아이콘 (index.html 과 같다) -->
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
     <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
@@ -925,6 +928,32 @@
                     '<a href="/#shop" class="product-paused-link">Shop 으로 돌아가기</a>' +
                 '</div>';
             document.title = 'TAB악보 | 안쌤의 기타나무숲';
+            setSeo(null);
+        }
+        // 검색엔진용 — 2026-11-16 Search Console '사용자가 선택한 표준이 없는 중복 페이지'(악보 상세 8곳):
+        //   주소만 ?id= 로 다르고 머리말(제목·설명)이 같아서 구글이 같은 페이지로 봤다. 같은 곡 반주·솔로는 제목까지 같았다.
+        //   그래서 악보마다 자기 주소를 표준(canonical)으로 걸고, 제목·설명에 종류·가수·쪽 수를 넣는다.
+        //   없는 악보·비공개 악보(운영 계정만 보는 것)는 검색에 안 나오게 noindex.
+        function setSeo(p) {
+            const head = document.head;
+            let can = head.querySelector('link[rel="canonical"]');
+            let rob = head.querySelector('meta[name="robots"]');
+            if (!p || !p.published) {
+                if (can) can.remove();
+                if (!rob) { rob = document.createElement('meta'); rob.name = 'robots'; head.appendChild(rob); }
+                rob.content = 'noindex';
+                return;
+            }
+            if (rob) rob.remove();
+            if (!can) { can = document.createElement('link'); can.rel = 'canonical'; head.appendChild(can); }
+            can.href = 'https://ahnssamguitar.com/tab-detail.html?id=' + encodeURIComponent(p.id);
+            const kind = p.style === 'chord' ? '코드악보' : (p.style === 'bass' ? '베이스' : (STYLE_LABEL[p.style] || '기타')) + ' TAB악보';
+            const who = p.kind === 'original' ? '안쌤 자작곡' : (p.artist || '');
+            document.title = p.title + ' ' + kind + (who ? ' - ' + who : '') + ' | 안쌤의 기타나무숲';
+            const info = [p.pages ? p.pages + '페이지' : '', p.difficulty ? '난이도 ' + p.difficulty : '', p.capo ? '카포 ' + p.capo + '프렛' : '', p.price ? Number(p.price).toLocaleString() + '원' : ''].filter(Boolean).join(' · ');
+            document.getElementById('metaDesc').content =
+                (who ? who + ' - ' : '') + p.title + ' ' + kind + '. ' + (info ? info + '. ' : '') +
+                (p.kind === 'original' ? '안쌤(안규호) 작곡·편곡' : '안쌤(안규호)이 직접 ' + (p.kind === 'arrangement' ? '편곡' : '채보')) + '한 PDF 악보, 결제 즉시 내려받기.';
         }
         function showSheet(p) {
             const SEP = '<span class="by-sep"></span>';   // 원곡 · 채보를 한 줄에
@@ -952,7 +981,7 @@
             const desc = document.getElementById('productDesc');
             desc.textContent = p.description || '';
             desc.hidden = !p.description;
-            document.title = p.title + ' - TAB악보 | 안쌤의 기타나무숲';
+            setSeo(p);   // 제목·설명·표준 주소 (편곡 버튼으로 바꿀 때도)
 
             renderParts(p);
             setupBuy(p);
