@@ -350,16 +350,16 @@
     @keyframes bxOpen { 0% { transform: scale(.4); } 70% { transform: scale(1.25); } }
     /* 검은 칸: 행운 게이지 · 다음 선물까지 */
     .sband { flex-wrap: wrap; }
-    .sband .bmeta { flex: 1 1 100%; display: flex; gap: 8px; min-width: 0; }
-    .sband .gm { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 6px 9px 7px; border-radius: 10px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); color: #c9d2ce; font-size: 11.5px; font-weight: 800; white-space: nowrap; cursor: pointer; }
+    .sband .gmeta { flex: 1 1 100%; display: flex; flex-direction: row; justify-content: center; gap: 8px; min-width: 0; }   /* 이름이 배틀 탭 .bmeta 와 겹쳐서 세로로 쌓였었다 (2026-11-17) */
+    .sband .gm { flex: 0 1 auto; min-width: 0; display: flex; flex-direction: row; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); color: #c9d2ce; font-size: 11.5px; font-weight: 800; white-space: nowrap; cursor: pointer; }
     .sband .gm > span { overflow: hidden; text-overflow: ellipsis; } .sband .gm > span i { margin-right: 4px; } .sband .gm b { color: #fff; }
-    .sband .gm > em { display: block; height: 6px; border-radius: 99px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+    .sband .gm > em { display: block; flex: 0 0 auto; width: 44px; height: 6px; border-radius: 99px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }   /* 글 옆 짧은 막대 (2026-11-17 사용자: 막대가 쓸데없이 길어) */
     .sband .gm > em i { display: block; height: 100%; border-radius: inherit; transition: width .5s; }
     .sband .gm.luck > span i { color: #6fdc9a; } .sband .gm.luck > em i { background: linear-gradient(90deg, #2fae6a, #7be0a5); }
     .sband .gm.gift > span i { color: #ff9cbc; } .sband .gm.gift > em i { background: linear-gradient(90deg, #e0567a, #ffb38a); }
     .sband .gm.luck.full { color: #fff; border-color: #7be0a5; box-shadow: 0 0 12px rgba(123, 224, 165, 0.45); animation: lkGlow 1.2s ease-in-out infinite alternate; }
     @keyframes lkGlow { to { box-shadow: 0 0 20px rgba(123, 224, 165, 0.8); } }
-    @media (max-width: 359px) { .sband .gm { padding: 5px 7px 6px; font-size: 10.5px; } .sband .bmeta { gap: 6px; } }
+    @media (max-width: 359px) { .sband .gm { padding: 5px 7px; gap: 5px; font-size: 10.5px; } .sband .gm > em { width: 30px; } .sband .gmeta { gap: 6px; } }
     /* 행운이 가득 찬 강화 단추 */
     .sact .ag.lucky { box-shadow: 0 0 0 2px #b9f5d2, 0 0 18px rgba(123, 224, 165, 0.8), 0 8px 18px rgba(0, 0, 0, 0.35); animation: lkBtn 1.1s ease-in-out infinite alternate; }
     @keyframes lkBtn { to { box-shadow: 0 0 0 3px #e3ffe9, 0 0 28px rgba(123, 224, 165, 1), 0 8px 18px rgba(0, 0, 0, 0.35); } }
@@ -2179,13 +2179,14 @@ function renderBand() {
     let meta = '';
     if (g.lv < MAX) {
         const L = luckOf(g), full = L >= LUCK_MAX, nx = nextGift(g);
-        meta += `<div class="gm luck${full ? ' full' : ''}" data-a="luckinfo" role="button" tabindex="0"><span><i class="fas fa-clover"></i>${full ? '<b>행운 가득!</b> 반드시 성공' : `행운 <b>${L}/${LUCK_MAX}</b>`}</span><em><i style="width:${L / LUCK_MAX * 100}%"></i></em></div>`;
+        // 2026-11-17 사용자: '+10 선물까지 3단계'는 뜻을 모르겠다 → '+10 획득보상까지'로 짧게, 두 게이지를 한 줄에 글 옆 짧은 막대로(막대가 쓸데없이 길었음)
+        meta += `<div class="gm luck${full ? ' full' : ''}" data-a="luckinfo" role="button" tabindex="0"><span><i class="fas fa-clover"></i>${full ? '<b>행운 가득!</b>' : `행운 <b>${L}/${LUCK_MAX}</b>`}</span><em><i style="width:${L / LUCK_MAX * 100}%"></i></em></div>`;
         if (nx != null) {
             const pv = GIFT_AT.filter(x => x < nx).pop() || 0, pc = Math.max(0, Math.min(1, (g.lv - pv) / (nx - pv)));
-            meta += `<div class="gm gift" data-a="giftinfo" role="button" tabindex="0"><span><i class="fas fa-gift"></i>+${nx} 선물까지 <b>${nx - g.lv}단계</b></span><em><i style="width:${pc * 100}%"></i></em></div>`;
+            meta += `<div class="gm gift" data-a="giftinfo" role="button" tabindex="0"><span><i class="fas fa-gift"></i><b>+${nx}</b> 획득보상까지</span><em><i style="width:${pc * 100}%"></i></em></div>`;
         }
     }
-    el.innerHTML = (meta ? `<div class="bmeta">${meta}</div>` : '') + `<button type="button" class="hg" data-a="hang"><i class="fas fa-image"></i>컬렉션에 진열</button>`;   // 2026-11-15 사용자: '진열하기' → '컬렉션에 진열'   // 2026-11-13 사용자: 버리기는 뺐다(+0은 공짜로 강화해서 팔면 된다)
+    el.innerHTML = (meta ? `<div class="gmeta">${meta}</div>` : '') + `<button type="button" class="hg" data-a="hang"><i class="fas fa-image"></i>컬렉션에 진열</button>`;   // 2026-11-15 사용자: '진열하기' → '컬렉션에 진열'   // 2026-11-13 사용자: 버리기는 뺐다(+0은 공짜로 강화해서 팔면 된다)
 }
 function renderTable() {
     const el = $('#otab'), open = el.open, lv = S.bench ? S.bench.lv : -1;
@@ -3735,7 +3736,7 @@ $('#app').addEventListener('click', e => {
     else if (a === 'new') findGuitar(false);
     else if (a === 'nextg') { const g = S.bench; if (g && g.lv < MAX) toast(dexHas(giftFam(g.f), g.lv + 1) ? `다음 단계: +${g.lv + 1} ${gname({ ...g, lv: g.lv + 1 })}` : `다음 단계는 +${g.lv + 1} ??? — 강화해서 확인해 봐요`); }
     else if (a === 'luckinfo') { const g = S.bench; if (g) toast(luckOf(g) >= LUCK_MAX ? '행운 게이지 가득! 이번 강화는 반드시 성공해요' : `강화를 누를 때마다 한 칸(실패해도). ${LUCK_MAX}칸이 차면 다음 강화는 반드시 성공 — ${LUCK_MAX - luckOf(g)}칸 남음`); }
-    else if (a === 'giftinfo') { const g = S.bench, nx = g && nextGift(g); if (nx) toast(`${(FAMS[g.f] || FAMS.strat).dexName || (FAMS[g.f] || FAMS.strat).name} +${nx}에 처음 닿으면 선물 상자를 받아요`); }
+    else if (a === 'giftinfo') { const g = S.bench, nx = g && nextGift(g); if (nx) toast(`${(FAMS[g.f] || FAMS.strat).dexName || (FAMS[g.f] || FAMS.strat).name} +${nx}에 처음 닿으면 획득보상(선물 상자)을 받아요 · ${nx - g.lv}단계 남음`); }
     else if (a === 'buy1') findGuitar(true);
     else if (a === 'adgold') goldAd();
     else if (a === 'daily') $('#rDaily').click();
