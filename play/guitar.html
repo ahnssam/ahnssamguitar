@@ -2792,7 +2792,7 @@ setInterval(() => {   // 1초마다 남은 시간을 줄이고, 다 지나면 �
     if (tab !== 'battle') return;
     document.querySelectorAll('#tab-battle .rerank[data-k]').forEach(b => { const left = rrLeft(b.dataset.k); b.disabled = !!left || oppBusy || netBusy; b.classList.toggle('cd', !!left); b.querySelector('span').textContent = left ? mmss(left) : '상대 새로고침'; });
     const bb = document.querySelector('#tab-battle .btrf');
-    if (bb) { const left = rrLeft('bt'); bb.disabled = btrOff(); bb.classList.toggle('cd', !!left); bb.querySelector('span').textContent = left ? mmss(left) : '갱신'; }
+    if (bb) { bb.disabled = btrOff(); bb.classList.toggle('cd', !!rrLeft('bt') || !btrLeftN()); bb.querySelector('span').textContent = btrLabel(); }
 }, 1000);
 async function oppRefresh(k = 'real') {
     if (oppBusy || netBusy) return;
@@ -2826,11 +2826,17 @@ async function oppRefresh(k = 'real') {
 //   보상형 광고를 끝까지 보면 오늘 배틀이 다시 BT_DAY번 — 이긴·진 표시도 지워서 같은 상대에게 다시 도전할 수 있다. 쿨타임은 상대 새로고침과 같은 15분
 //   서버(db/play_guitar_battle_refill.sql)도 오늘 센 수를 0으로. 서버가 아직 모르면(적용 전·연결 안 됨) 진짜 상대와도 브라우저 안에서 겨룬다(fight 의 bt.rf)
 //   구글이 광고를 준비 못 했으면(승인 전·광고 없음) 그냥 갱신해 준다 — 상대 새로고침과 같음
+//   하루 3번까지 (2026-11-16 사용자: '배틀 갱신은 하루에 총 3번까지만') — 센 수는 S.bt.rfN(날이 바뀌면 btDay 가 새로). 다 쓰면 단추가 '내일'로 꺼진다.
+//     서버(db/play_guitar_battle_refill3.sql)도 하루 3번을 센다
 let btrBusy = false;
-const btrOff = () => btrBusy || busy || !!rrLeft('bt') || !btDay().n;
-const btrBtn = () => { const left = rrLeft('bt'); return `<button type="button" class="btrf${left ? ' cd' : ''}" data-a="btrefill" aria-label="오늘 배틀 갱신" ${btrOff() ? 'disabled' : ''}><i class="fas fa-clapperboard"></i><span>${left ? mmss(left) : '갱신'}</span></button>`; };
+const BT_REFILL_DAY = 3;
+const btrLeftN = () => Math.max(0, BT_REFILL_DAY - (btDay().rfN | 0));
+const btrLabel = () => !btrLeftN() ? '내일' : rrLeft('bt') ? mmss(rrLeft('bt')) : '갱신';
+const btrOff = () => btrBusy || busy || !!rrLeft('bt') || !btDay().n || !btrLeftN();
+const btrBtn = () => { const cd = !!rrLeft('bt') || !btrLeftN(); return `<button type="button" class="btrf${cd ? ' cd' : ''}" data-a="btrefill" aria-label="오늘 배틀 갱신 (하루 ${BT_REFILL_DAY}번, ${btrLeftN()}번 남음)" ${btrOff() ? 'disabled' : ''}><i class="fas fa-clapperboard"></i><span>${btrLabel()}</span></button>`; };
 async function btRefill() {
     if (btrBusy || busy) return;
+    if (!btrLeftN()) { toast(`배틀 갱신은 하루 ${BT_REFILL_DAY}번까지예요 · 내일 다시`); return; }
     if (rrLeft('bt')) { toast(`${mmss(rrLeft('bt'))} 뒤에 다시 갱신할 수 있어요`); return; }
     if (!btDay().n) { toast('오늘 배틀이 아직 다 남아 있어요'); return; }
     btrBusy = true;
@@ -2838,7 +2844,7 @@ async function btRefill() {
     box.className = 'gk-modal adwrap';
     const r = await PLAY.rewarded('battles', (show, skip) => {
         box.innerHTML = `<div class="in adbox"><span class="ic"><i class="fas fa-bolt"></i></span><b>배틀 갱신</b>
-            <p>광고를 끝까지 보면 오늘 배틀이 다시 ${BT_DAY}번 생겨요</p>
+            <p>광고를 끝까지 보면 오늘 배틀이 다시 ${BT_DAY}번 생겨요<br><small>갱신은 하루 ${BT_REFILL_DAY}번 · 오늘 ${btrLeftN()}번 남음</small></p>
             <button type="button" class="btn go"><i class="fas fa-clapperboard"></i> 광고 보고 배틀 채우기</button>
             <button type="button" class="no">나중에</button></div>`;
         box.querySelector('.go').addEventListener('click', () => { box.classList.add('wait'); show(); });
@@ -2854,10 +2860,11 @@ async function btRefill() {
     if (!srvOk) try { await syncMe(); await PLAY.rpc('play_guitar_battle_refill', { p_key: gkKey() }); srvOk = true; } catch (e) {}
     const bt = btDay();
     bt.n = 0; bt.done = {}; if (!srvOk) bt.rf = true;
+    bt.rfN = (bt.rfN | 0) + 1;
     btrBusy = false;
     save(); sfx('drop');
     renderBattle();
-    toast(`오늘 배틀이 다시 ${BT_DAY}번 생겼어요`);
+    toast(`오늘 배틀이 다시 ${BT_DAY}번 생겼어요 · 갱신 ${btrLeftN() ? `${btrLeftN()}번 남음` : '오늘은 끝'}`);
 }
 // 닉네임 (2026-11-15 사용자: 로그인하면 맨 처음에 닉네임부터 — 꼭 정하게. 랭킹·배틀에 이 이름으로 보인다)
 //   상스러운 말은 막는다 — 띄어쓰기·숫자·기호를 빼고 본다. 서버(db/play_nick_filter.sql, 2026-11-15 적용)도 같은 목록으로 '익명'으로 바꿔 저장
