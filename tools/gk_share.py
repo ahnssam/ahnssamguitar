@@ -18,7 +18,7 @@ IDX_B = IDX_R = 0
 if not os.path.exists(FONT_B):   # 맥: Apple SD Gothic Neo 묶음 글꼴(.ttc) 안의 Bold(6)·Regular(0)
     FONT_B = FONT_R = '/System/Library/Fonts/AppleSDGothicNeo.ttc'; IDX_B, IDX_R = 6, 0
 W, H = 800, 420
-SHARE_V = 14   # 썸네일 그림을 바꾸면 올린다 — 카톡이 og:image 를 주소로 기억해서(2026-11-12 몸통 클로즈업으로 바꿈 · 2026-11-13 헤드머신 V2 그림·맥에서 다시 만듦 · 같은 날 텔레 +0~19·슈퍼스트랫 +0~9·+11·+14·+16 · 스트랫 +10~19 · 통기타 +0~9 · 슈퍼스트랫 +10~19 · 스트랫 +0~9 · 2026-11-17 세트 이름(천공 스트랫 등)·통기타·베이스 2세트 · 2026-11-17 텔레·레스폴 2세트 새 그림)
+SHARE_V = 15   # 썸네일 그림을 바꾸면 올린다 — 카톡이 og:image 를 주소로 기억해서(2026-11-12 몸통 클로즈업으로 바꿈 · 2026-11-13 헤드머신 V2 그림·맥에서 다시 만듦 · 같은 날 텔레 +0~19·슈퍼스트랫 +0~9·+11·+14·+16 · 스트랫 +10~19 · 통기타 +0~9 · 슈퍼스트랫 +10~19 · 스트랫 +0~9 · 2026-11-17 세트 이름(천공 스트랫 등)·통기타·베이스 2세트 · 2026-11-17 텔레·레스폴 2세트 새 그림 · 슈퍼스트랫 2세트)
 
 src = open(os.path.join(ROOT, GAME), encoding='utf8').read()
 
@@ -39,7 +39,7 @@ def art_info(label):   # 그 계열 줄 뒤에서 처음 나오는 art·artMax
 FAMS = {}
 for key, label, nm in [('strat', "strat: { name: '스트랫'", '스트랫'), ('strat2', "strat2: { name: '스트랫'", '스트랫'), ('tele', "tele: { name: '텔레'", '텔레'), ('tele2', "tele2: { name: '텔레'", '텔레'), ('lespaul', "lespaul: { name: '레스폴'", '레스폴'), ('lespaul2', "lespaul2: { name: '레스폴'", '레스폴'),
                        ('acoustic2', "acoustic2: { name: '통기타'", '통기타'), ('bass2', "bass2: { name: '베이스'", '베이스'),
-                       ('superstrat', "superstrat: { name: '슈퍼스트랫'", '슈퍼스트랫'), ('acoustic', "acoustic: { name: '통기타'", '통기타'), ('bass', "bass: { name: '베이스'", '베이스')]:
+                       ('superstrat', "superstrat: { name: '슈퍼스트랫'", '슈퍼스트랫'), ('superstrat2', "superstrat2: { name: '슈퍼스트랫'", '슈퍼스트랫'), ('acoustic', "acoustic: { name: '통기타'", '통기타'), ('bass', "bass: { name: '베이스'", '베이스')]:
     art, amax = art_info(label)
     FAMS[key] = dict(name=nm, set=set_name(label, nm), names=names_after(label), art=art, artMax=amax, sq=False)
 for key, glabel, flabel, nm in [('amp', "amp: { name: '앰프', art: 'amp'", "FAMS.amp = {", '앰프'), ('multi', "fx: { name: '멀티이펙터', art: 'fx'", "FAMS.multi = {", '멀티이펙터')]:

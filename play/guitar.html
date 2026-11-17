@@ -1264,7 +1264,16 @@ const FAMS = { strat: { name: '스트랫', dexName: '천공 스트랫', names: [
     '속주하면 프렛에서 불꽃 튀는 슈퍼스트랫', '상어 지느러미가 헤엄치는 슈퍼스트랫', '몸통이 번개 모양으로 깎인 슈퍼스트랫', '미러볼처럼 번쩍이는 슈퍼스트랫', '손가락이 안 보이게 혼자 속주하는 슈퍼스트랫',
     '음속을 넘어선 슈퍼스트랫', '용의 비늘을 두른 슈퍼스트랫', '플라즈마가 흐르는 슈퍼스트랫', '시간을 앞질러 치는 슈퍼스트랫', '차원의 틈을 가르는 슈퍼스트랫',
     '초신성이 터진 슈퍼스트랫', '1초에 백만 음을 치는 슈퍼스트랫', '사이버 천사의 슈퍼스트랫', '은하 끝까지 울린 슈퍼스트랫', '신의 손가락이 닿은 슈퍼스트랫',
-    '스티브 바히의 슈퍼스트랫'] } };
+    '스티브 바히의 슈퍼스트랫'] },
+    // 슈퍼스트랫 2세트 = 발할라 슈퍼스트랫 (2026-11-17 사용자가 GPT로 뽑은 21장 — docs/기타키우기_GPT_슈퍼스트랫2세트_프롬프트.md, 이름은 그 문서 그대로·Claude가 지음).
+    //   검푸른 건메탈: 가전제품 쓰레기 → 대장간·바이킹 → 북유럽 신화 → +20 '에디 반 해일런의 슈퍼스트랫'.
+    //   찾을 때 슈퍼스트랫이 나오면 반반으로 1세트·2세트(pickFam). 서버가 아직 모르면 'superstrat'로 올린다(srvFam, db/play_guitar_fam_superstrat2.sql 적용 전)
+    superstrat2: { name: '슈퍼스트랫', dexName: '발할라 슈퍼스트랫', art: 'superstrat2', artMax: 20, srv: 'superstrat', names: [
+    '쓰레기 압축기에 눌린 슈퍼스트랫', '세탁기에 돌린 슈퍼스트랫', '전자레인지에 녹아내린 슈퍼스트랫', '진공청소기에 빨려 들어갔던 슈퍼스트랫', '픽업에 쇳조각이 잔뜩 붙은 슈퍼스트랫',
+    '대장간에서 두들겨 편 슈퍼스트랫', '쇠 징을 박은 슈퍼스트랫', '둥근 방패를 덧댄 슈퍼스트랫', '투구 뿔이 돋은 슈퍼스트랫', '매듭 무늬가 새겨진 슈퍼스트랫',
+    '오딘의 까마귀가 앉은 슈퍼스트랫', '걀라르호른 뿔나팔을 멘 슈퍼스트랫', '토르의 망치로 벼린 슈퍼스트랫', '펜리르 늑대 갑옷을 두른 슈퍼스트랫', '슬레이프니르의 은 갑옷을 입은 슈퍼스트랫',
+    '요르문간드가 휘감은 슈퍼스트랫', '비프로스트 무지개다리를 건너온 슈퍼스트랫', '오딘의 창 궁니르를 든 슈퍼스트랫', '발할라 황금 전당의 슈퍼스트랫', '라그나로크를 견뎌 낸 슈퍼스트랫',
+    '에디 반 해일런의 슈퍼스트랫'] } };
 // 앰프·멀티이펙터 이름표 (아래 FAMS.amp·FAMS.multi 가 쓴다). 그림 amp_00~09 · fx_00~09 (448×448, 바닥 맞춤)
 //   (잠깐 따로 키우던 '장비'는 2026-11-12 사용자 결정으로 없애고, '시작'에서 랜덤으로 나오는 물건이 됐다)
 //   +10~+20 이름은 Claude가 지은 것. 그 단계 그림이 없으면 +9 그림
@@ -1292,7 +1301,7 @@ FAMS.multi = { name: '멀티이펙터', art: 'fx', artMax: 20, sq: true, names: 
 const FIND_FAMS = ['strat', 'tele', 'lespaul', 'superstrat', 'acoustic', 'bass', 'amp', 'multi'];
 // 찾기: 여덟 가지 중 하나, 스트랫이면 반반으로 1세트·2세트(2026-11-15 스트랫 2세트 — 스트랫이 나올 확률은 그대로 1/8)
 // 스트랫·텔레·레스폴이 나오면 반반으로 1세트·2세트 (2세트: 스트랫 2026-11-15 · 텔레·레스폴 2026-11-17) — 악기 종류가 나올 확률은 그대로
-const SET2 = { strat: 'strat2', tele: 'tele2', lespaul: 'lespaul2', acoustic: 'acoustic2', bass: 'bass2' };
+const SET2 = { strat: 'strat2', tele: 'tele2', lespaul: 'lespaul2', superstrat: 'superstrat2', acoustic: 'acoustic2', bass: 'bass2' };
 const pickFam = () => { const f = one(FIND_FAMS); return SET2[f] && Math.random() < 0.5 ? SET2[f] : f; };
 const srvFam = f => (FAMS[f] && FAMS[f].srv) || f;   // 서버가 아직 모르는 계열은 비슷한 계열 이름으로
 // 튜너: 바늘이 초록 칸에 있을 때 탭하면 성공 +%p (유지에서 가져오고 파괴는 그대로)
@@ -2373,7 +2382,7 @@ function renderTable() {
 }
 
 // ---------- 도감 ----------
-const DEX_FAMS = ['strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'acoustic', 'acoustic2', 'bass', 'bass2', 'amp', 'multi'];
+const DEX_FAMS = ['strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'superstrat2', 'acoustic', 'acoustic2', 'bass', 'bass2', 'amp', 'multi'];
 const dexHas = (f, lv) => !!((S.dex[f] | 0) & (1 << lv));
 function dexAdd(f, lv) {
     f = FAMS[f] ? f : 'strat';
