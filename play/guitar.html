@@ -1077,10 +1077,16 @@ const SELL = (() => {
 //   → +5 130 · +7 1,700 · +8 6,600 · +9 2.6만 · +10 10만 · +12 130만 · +15 4,300만 · +17 3.3억 · +19 18억
 //   평균으로 보면 +14까지는 누르는 게 이득, +15부터는 손해를 보는 도박(랭킹·도감용)
 //   2026-11-13 사용자 '살짝 쉬운 게 나을지도' → 처음 넣은 25%→50%에서 15%→35%로 낮춤(약 30% 싸짐)
-const COST = (() => {
-    const r2 = x => { const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(x)) - 1)); return Math.round(x / p) * p; };
-    return Array.from({ length: 20 }, (_, k) => k < 5 ? [0, 10, 20, 40, 70][k] : r2(SELL[k] * (0.11 + 0.24 * Math.min(1, (k - 4) / 6))));
-})();
+//   2026-11-17 경제 다시 보기(사용자: '한두 시간 집중하면 소득이 얼마나 될까? 인플레 안 생길까? 고시형이 1등인데 얼마 만에?') — 시뮬레이션(처음부터 쉬지 않고 누르기)으로
+//   지금 비용이면 +5~+14 어디서든 한 번 누를 때마다 평균으로 돈을 번다(+10은 그 기타 값만큼, +13도 32% — 행운까지 넣으면 +15도 본전).
+//   그래서 처음 시작한 사람도 1시간 약 4억, 2시간 약 9억, 장비 다 갖추면 1시간 20억 넘게 → 상점 맨 위 물건(5,000만)도 십몇 분이면 산다.
+//   사용자가 고른 'A1': +7~+18 비용을 '평균 득실이 0이 되는 값(행운 포함) − 원하는 득실'로 올린다.
+//     원하는 득실(판매가 대비): +7 +80% · +8 +60% · +9 +40% · +10 +20% · +11 +5% · +12 −5% · +13 −10% · +14 −15% · +15~ −20%
+//     → +10까지는 누를수록 조금씩 벌고, +12부터는 평균으로 손해 보는 도박(랭킹·도감용). +0~+6과 +19는 그대로.
+//   결과(시뮬레이션): 처음 1시간 약 1,300만(+10 팔기)~3,700만(+12 팔기), 2시간 약 8,000만, 장비 다 갖춘 부자 1시간 약 1.7억.
+//   +8~+12 비용은 그 기타 판매가보다 비싸다 — '팔까, 누를까'를 고민하게(+10 기타 29.2만에 강화 한 번 37만).
+//   예전(2026-11-13~11-17): +5부터 판매가의 15% → +10에서 35%(+10 10만 · +12 130만 · +13 430만 · +15 4,300만)
+const COST = [0, 10, 20, 40, 70, 130, 470, 6700, 26000, 97000, 370000, 1200000, 3900000, 11000000, 29000000, 69000000, 130000000, 330000000, 790000000, 1800000000];
 const MAX = 20;
 // 2026-11-13 사용자: 기타 키우기에서는 놀이터 피크를 안 쓴다('피크 시스템은 빼자 여기선'). 출석은 골드만, 첫 기타는 공짜
 const START_GOLD = 500, DAILY_GOLD = 1000,
@@ -1171,7 +1177,9 @@ const arenaUp = () => ARENA_UP[skinTier(ARENAS, S.ask)] || 0;            // 싸�
 function oddsFor(lv) {
     let [sp, mp, dp] = ODDS[lv];
     const b = gearBuff(), cd = Math.min(dp, r1(b.amp + wallCut())); dp -= cd; mp += cd;
-    const cm = Math.min(mp, r1(b.multi + benchUp() + hammerUp())); mp -= cm; sp += cm;   // 망치(2026-11-17)도 줄 끊김 → 성공
+    // 2026-11-17 사용자(경제 다시 보기): 작업대·망치·튜너·바닥 멀티의 '성공 +n'은 이 단계 성공 확률의 n%(예전엔 +n%p를 그대로 더해서 높은 단계에서 너무 셌다).
+    //   성공 40%에서 +5%면 40 → 42%. 올라간 몫은 줄 끊김에서 가져온다. 파괴 줄임(앰프·컬렉션 스킨)은 %p 그대로
+    const cm = Math.min(mp, r1(ODDS[lv][0] * (b.multi + benchUp() + hammerUp()) / 100)); mp -= cm; sp += cm;
     return [r1(sp), r1(mp), r1(dp), r1(cd), r1(cm)];
 }
 const STORE_MAX = 30;   // 창고: 기록을 합칠 때 벽·작업대에 못 둔 기타가 들어간다
@@ -2258,7 +2266,7 @@ function renderBench() {
         // 장비·스킨 보너스는 실제로 깎을 게 있을 때만 (파괴 0%인 단계에서 '파괴 −1%p'라고 하면 거짓말)
         const amp = gearBuff(), [, , , cd, cm] = oddsFor(g.lv), wc = wallCut(), bu = benchUp();
         const tip = [cd && amp.amp ? `<span><i class="fas fa-volume-high"></i>앰프 파괴 −${amp.amp}%p</span>` : '', cd && wc ? `<span><i class="fas fa-image"></i>벽 파괴 −${wc}%p</span>` : '',
-            cm && amp.multi ? `<span><i class="fas fa-sliders"></i>멀티 ${keepWord(g)} −${amp.multi}%p</span>` : '', cm && bu ? `<span><i class="fas fa-screwdriver-wrench"></i>작업대 성공 +${bu}%p</span>` : '', cm && hammerUp() ? `<span><i class="fas fa-hammer"></i>망치 성공 +${hammerUp()}%p</span>` : ''].join('');
+            cm && amp.multi ? `<span><i class="fas fa-sliders"></i>멀티 성공 +${amp.multi}%</span>` : '', cm && bu ? `<span><i class="fas fa-screwdriver-wrench"></i>작업대 성공 +${bu}%</span>` : '', cm && hammerUp() ? `<span><i class="fas fa-hammer"></i>망치 성공 +${hammerUp()}%</span>` : ''].join('');
         if (tip) h += `<p class="gline">${tip}</p>`;
         if (S.gold < cost) h += `<p class="lack">골드가 ${gf(cost - S.gold)} 모자라요. 팔거나 출석 골드를 받아요.</p>`;
     }
@@ -2298,7 +2306,7 @@ function renderOpt() {
     const el = $('#sopt'), g = S.bench, show = optStage(g) && !busy;
     el.hidden = !show;
     if (!show) { el.innerHTML = ''; return; }
-    const T = TUNERS[S.tuner], cOn = caseOnFor(g), up = T ? r1(Math.min(T.bonus, oddsFor(g.lv)[1])) : 0;
+    const T = TUNERS[S.tuner], cOn = caseOnFor(g), up = T ? r1(Math.min(ODDS[g.lv][0] * T.bonus / 100, oddsFor(g.lv)[1])) : 0;   // 실제로 오르는 %p
     el.innerHTML = (S.cases
         ? `<button type="button" class="hk ${cOn ? 'on' : ''}" data-a="case" aria-pressed="${cOn}" title="하드케이스 ${cOn ? '끼움' : '안 끼움'} — 끼우면 파괴를 한 번 막아 줘요 (${S.cases}/${CASE_MAX}개)"><i class="fas fa-briefcase"></i>하케 ${cOn ? 'ON' : 'OFF'}</button>`
         : `<button type="button" class="hk none" data-a="gocase" title="하드케이스가 없어요 — 조각 ${S.shards}/${CASE_SHARDS}"><i class="fas fa-briefcase"></i>하케 없음</button>`)
@@ -2549,7 +2557,7 @@ function tune(T) {
         box.className = 'tuner t' + S.tuner; box.hidden = false;
         box.innerHTML = `<div class="tn-top"><img class="tni" src="../images/play/gk/tuner_${S.tuner}.webp" alt=""><b>${T.name}</b><span>바늘이 가운데 초록 칸에 올 때 탭!</span><span class="note">E</span></div>
             <div class="gauge"><span class="zone" style="left:${50 - z}%;width:${2 * z}%"></span><span class="mid"></span><span class="needle"></span></div>
-            <div class="tn-bot"><span class="res2">맞히면 성공 +${T.bonus}%p</span><button class="tn-skip" type="button">건너뛰기</button></div>`;
+            <div class="tn-bot"><span class="res2">맞히면 성공 +${T.bonus}%</span><button class="tn-skip" type="button">건너뛰기</button></div>`;
         const needle = box.querySelector('.needle'), t0 = performance.now() - Math.random() * T.period * 1000;
         const pos = now => { const p = ((now - t0) / 1000 / T.period) % 1; return p < 0.5 ? -1 + 4 * p : 3 - 4 * p; };
         let raf = 0, done = false;
@@ -2562,7 +2570,7 @@ function tune(T) {
             needle.style.left = (50 + x * 46) + '%';
             const r = box.querySelector('.res2');
             r.className = 'res2 ' + (hit ? 'hit' : 'miss');
-            r.textContent = skip ? '튜닝 건너뜀' : hit ? `딱 맞았다! 성공 +${T.bonus}%p` : '살짝 빗나갔다';
+            r.textContent = skip ? '튜닝 건너뜀' : hit ? `딱 맞았다! 성공 +${T.bonus}%` : '살짝 빗나갔다';
             if (!skip) sfx(hit ? 'hit' : 'miss');
             setTimeout(() => { box.hidden = true; res(hit ? T.bonus : 0); }, skip ? 120 : 420);
         };
@@ -2638,7 +2646,7 @@ async function enhance() {
     let bonus = 0;
     const T = TUNERS[S.tuner];
     if (!lucky && T && T.bonus > 0 && S.tuneOn && optStage(g) && oddsFor(g.lv)[1] > 0) bonus = await tune(T);   // 튜닝은 스위치가 보이는 단계(+7)부터
-    const lv0 = g.lv, [s0, m0] = oddsFor(lv0), b = Math.min(bonus, m0), s = s0 + b, m = m0 - b;   // 바닥 앰프·멀티 능력치까지 넣은 확률
+    const lv0 = g.lv, [s0, m0] = oddsFor(lv0), b = Math.min(r1(ODDS[lv0][0] * bonus / 100), m0), s = s0 + b, m = m0 - b;   // 바닥 앰프·멀티 능력치까지 넣은 확률 · 튜너도 성공 확률의 n% (2026-11-17)
     const r = Math.random() * 100;
     let out = lucky || r < s ? 'ok' : r < s + m ? 'keep' : 'boom';
     if (out === 'boom' && caseOnFor(g)) out = 'saved';
@@ -3311,7 +3319,7 @@ function renderRoom(enter) {
     const wallG = S.wall.map((g, i) => g && [g, i]).filter(Boolean), amps = S.floor.filter(g => g.f === 'amp').map(g => [g, -1]), mults = S.floor.filter(g => g.f === 'multi').map(g => [g, -1]);
     const rows = [grp('fa-guitar', '기타', wallG, '')
         + grp('fa-volume-high', '앰프', amps, `파괴 −${gearBuff().amp}%p`)
-        + grp('fa-sliders', '멀티이펙터', mults, `줄 끊김 −${gearBuff().multi}%p`)].filter(Boolean);
+        + grp('fa-sliders', '멀티이펙터', mults, `성공 +${gearBuff().multi}%`)].filter(Boolean);
     // 꽉 찼다는 안내는 진열 벽 바로 아래, 기타 목록 위 (2026-11-17 사용자: '컬렉션 박스 아래, 기타 리스트 위 그 사이')
     el.innerHTML = `<div class="wall5 ${enter ? 'enter' : ''}" style="aspect-ratio:${W.w} / ${W.h}">
         <img class="bg" src="../images/play/gk/${W.src}" alt="컬렉션 진열 벽">${slots}${floorHtml}${swapHtml}${popHtml}</div>${roomFull ? roomFullNote() : ''}
@@ -4020,23 +4028,24 @@ function renderShop() {
     const shead = (t, d) => `<div class="shead"><b>${t}</b><span>${d}</span></div>`;
     if (shopCat === 'tuner') h += shead('튜너', '바늘을 맞히면 성공 ↑ (+7부터)') + TUNERS.slice(1).map((T, i) => {
         const n = i + 1, own = S.tuner >= n;
-        return `<div class="item"><span class="ic tni-box"><img src="../images/play/gk/tuner_${n}.webp" alt=""></span><div class="it"><b>${T.name}${T.bonus ? ` · 성공 +${T.bonus}%p` : ''}</b><small>${T.desc}</small></div>
+        return `<div class="item"><span class="ic tni-box"><img src="../images/play/gk/tuner_${n}.webp" alt=""></span><div class="it"><b>${T.name}${T.bonus ? ` · 성공 +${T.bonus}%` : ''}</b><small>${T.desc}</small></div>
             ${own ? `<span class="own">${S.tuner === n ? '쓰는 중' : '더 좋은 걸 써요'}</span>` : `<button type="button" data-a="buyT" data-n="${n}" ${S.gold >= T.price ? '' : 'disabled'}>${gf(T.price)}</button>`}</div>`;
     }).join('')
         // 프렛 망치 (2026-11-17 사용자: 상점에도) — 가진 것 중 가장 좋은 걸 쓴다
         + shead('망치', '강화할 때 내려치는 망치 · 좋을수록 성공 ↑')
         + HAMMERS.map((H, n) => { const own = (S.hammer | 0) >= n;
-            return `<div class="item"><span class="ic hmr"><img src="../images/play/gk/${H.img}" alt=""></span><div class="it"><b>${H.name}${H.up ? ` · 성공 +${H.up}%p` : ''}</b><small>${H.desc}</small></div>
+            return `<div class="item"><span class="ic hmr"><img src="../images/play/gk/${H.img}" alt=""></span><div class="it"><b>${H.name}${H.up ? ` · 성공 +${H.up}%` : ''}</b><small>${H.desc}</small></div>
                 ${own ? `<span class="own">${(S.hammer | 0) === n ? '쓰는 중' : '더 좋은 걸 써요'}</span>` : `<button type="button" data-a="buyHm" data-n="${n}" ${S.gold >= H.price ? '' : 'disabled'}>${gf(H.price)}</button>`}</div>`; }).join('')
         // 하드케이스 하나 100만G (2026-11-17 사용자) — 조각 15개로 저절로 만들어지는 것과 같은 하드케이스, 3개까지
         + shead('하드케이스', '파괴를 한 번 막아 줘요')
         + `<div class="item"><span class="ic case"><i class="fas fa-briefcase"></i></span><div class="it"><b>하드케이스 · 파괴 1번 막기</b><small>지금 ${S.cases}/${CASE_MAX}개 · 조각 ${CASE_SHARDS}개를 모아도 저절로 생겨요. 강화 단추 위 '하케' 스위치로 그 악기에 끼워요</small></div>
-            ${S.cases >= CASE_MAX ? '<span class="own">가득</span>' : `<button type="button" data-a="buyCase" ${S.gold >= CASE_PRICE ? '' : 'disabled'}>${gf(CASE_PRICE)}</button>`}</div>`;
+            ${S.cases >= CASE_MAX ? '<span class="own">가득</span>' : `<button type="button" data-a="buyCase" ${S.gold >= CASE_PRICE ? '' : 'disabled'}>${gf(CASE_PRICE)}</button>`}</div>`
+        + `<p class="note2">'성공 +n%'는 그 단계 성공 확률의 n%만큼 올라요 — 성공 40%에서 +5%면 42%.</p>`;
     if (shopCat === 'bench') h += BENCHES.map((B, i) => {
         const own = S.bskins.includes(B.id), use = S.bskin === B.id, up = BENCH_UP[i] || 0;
-        return `<div class="item"><span class="ic skin" style="background-image:url(../images/play/gk/${B.src.replace('bg_', 'bgt_')})"></span><div class="it"><b>${B.name}${up ? ` · 성공 +${up}%p` : ''}</b><small>${B.desc}</small></div>
+        return `<div class="item"><span class="ic skin" style="background-image:url(../images/play/gk/${B.src.replace('bg_', 'bgt_')})"></span><div class="it"><b>${B.name}${up ? ` · 성공 +${up}%` : ''}</b><small>${B.desc}</small></div>
             ${use ? '<span class="own">쓰는 중</span>' : own ? `<button type="button" data-a="bskin" data-id="${B.id}">바꾸기</button>` : `<button type="button" data-a="bskin" data-id="${B.id}" ${S.gold >= B.price ? '' : 'disabled'}>${gf(B.price)}</button>`}</div>`;
-    }).join('') + `<p class="note2">작업대는 좋은 것일수록 성공이 아주 조금씩 올라요(올라간 몫은 '${keepWord(S.bench)}'에서 가져와요). 지금 쓰는 작업대 +${benchUp()}%p.</p>`;
+    }).join('') + `<p class="note2">작업대는 좋은 것일수록 성공이 아주 조금씩 올라요(올라간 몫은 '${keepWord(S.bench)}'에서 가져와요). 지금 쓰는 작업대 +${benchUp()}%.</p>`;
     if (shopCat === 'arena') h += ARENAS.map((A, i) => {
         const own = S.asks.includes(A.id), use = S.ask === A.id, up = Math.round((ARENA_UP[i] || 0) * 100);
         return `<div class="item"><span class="ic apv ${A.img ? '' : `askin ask-${A.id}`}" ${A.img ? `style="background:#111 url(../images/play/gk/${A.img.replace('arena_', 'arenat_')}) center / cover"` : ''}><i class="fas fa-guitar"></i><i class="fas fa-guitar"></i></span><div class="it"><b>${A.name}${up ? ` · 배틀 보상 +${up}%` : ''}</b><small>${A.desc}</small></div>
