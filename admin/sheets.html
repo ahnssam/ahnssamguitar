@@ -202,9 +202,9 @@
     .th { --c: #9a9a9a; --c2: #7d7d7d; --fg: #fff; position: relative; flex: none; aspect-ratio: 1; container-type: inline-size; overflow: hidden; border-radius: 6px; background: color-mix(in srgb, var(--c) 10%, #fbfaf7); }
     .th .cv, .th .pp { position: absolute; overflow: hidden; }
     .th .cv img, .th .pp img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
-    /* 앨범 커버 — 없으면(또는 못 불러오면) 종류 색 바탕에 레코드 그림 */
-    .th .cv { left: 6cqw; top: 6cqw; width: 50cqw; height: 50cqw; z-index: 2; border-radius: 2.4cqw; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 30%, #fff); box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), 0 1px 3px rgb(0 0 0 / 0.1); }
-    .th .cv i { font-size: 18cqw; color: #fff; opacity: 0.85; }
+    /* 앨범 커버 — 없으면(또는 못 불러오면) 종류 색 바탕에 안쌤의 기타나무숲 나무 마크 (2026-11-17 사용자, 예전엔 레코드 그림) */
+    .th .cv { left: 6cqw; top: 6cqw; width: 50cqw; height: 50cqw; z-index: 2; border-radius: 2.4cqw; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 18%, #fff); box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), 0 1px 3px rgb(0 0 0 / 0.1); }
+    .th .cv img.mk { inset: auto; left: 50%; top: 50%; width: auto; height: 66%; transform: translate(-50%, -50%); object-fit: contain; }
     /* 악보 종이 — 실제 악보 윗부분(제목·첫 줄)을 위 가운데 기준으로. 없으면 곡 제목 + TAB 줄 그림 */
     .th .pp { left: 50cqw; top: 10cqw; width: 44cqw; height: 50cqw; z-index: 1; border-radius: 1.2cqw; background: #fff; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08); padding: 6cqw 4cqw 0 8cqw; }
     .th .pp img { object-position: 50% 0; }
@@ -646,7 +646,7 @@
     function thumbHtml(d) {   // d = { style, kind, lv, plus, cover, paper, title }
         const st = STYLE[d.style] ? d.style : 'other';
         const img = src => src ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : '';
-        return `<div class="th s-${st}"><div class="cv"><i class="fas fa-compact-disc"></i>${img(d.cover)}</div><div class="pp"><b>${esc(d.title)}</b>${img(d.paper)}</div>`
+        return `<div class="th s-${st}"><div class="cv"><img class="mk" src="../images/cover-mark.webp" alt="" loading="lazy" decoding="async">${img(d.cover)}</div><div class="pp"><b>${esc(d.title)}</b>${img(d.paper)}</div>`
             + `<div class="band">${KIND_TAG[d.kind] ? `<span class="kd">${KIND_TAG[d.kind]}</span>` : ''}<b class="nm">${STYLE[st][0]}</b><span class="r2"><span class="en">${STYLE[st][1]}</span>${d.plus ? '<span class="plus">+ <span class="lg">기타</span>솔로</span>' : ''}${dots(d.lv)}</span></div></div>`;
     }
 
@@ -1666,7 +1666,7 @@
         $('cvDel').hidden = !own;
         renderCoverFrom(linked, from);
         $('cvNote').textContent = newCover ? '저장하면 올라가요' : from ? `‘${coverLabel(from)}’의 커버를 같이 써요 — 저장하면 바뀌어요` : dropCover ? '저장하면 커버가 빠져요'
-            : sib ? `같은 곡 ‘${sib.title}’ (${(STYLE[sib.style] || ['악보'])[0]}) 악보의 커버를 같이 써요` : own ? '' : '커버 그림을 끌어다 놓거나 붙여넣어도 돼요 (없으면 레코드 그림)';
+            : sib ? `같은 곡 ‘${sib.title}’ (${(STYLE[sib.style] || ['악보'])[0]}) 악보의 커버를 같이 써요` : own ? '' : '커버 그림을 끌어다 놓거나 붙여넣어도 돼요 (없으면 나무 마크)';
         updatePdfInfo();
         updateSaveBtn();
     }
