@@ -712,6 +712,38 @@
     .nav-new.soon { background: #eef1ef; color: #7c8780; }
     .mnav-soon { display: block; padding: 12px 4px; font-size: 15px; font-weight: 700; color: #9aa59f; border-bottom: 1px solid #f1f4f2; cursor: default; }
     .mnav-soon i { width: 22px; color: #b7c0bb; }
+
+    /* ===== 이 악보 소개 (2026-11-18 애드센스 대책 2번 — data/notes/<id>.json) ===== */
+    .sheet-notes { max-width: 1160px; margin: -0.5rem auto 3.5rem; padding: 0 2rem; }
+    .sn-card { background: var(--white); border-radius: 16px; box-shadow: 0 4px 30px rgba(0,0,0,0.06); padding: 2rem 2.2rem; }
+    .sn-head { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+    .sn-head h2 { font-size: 1.35rem; font-weight: 800; color: var(--green-deep); letter-spacing: -0.01em; }
+    .sn-head h2 i { color: var(--green-mid); margin-right: 6px; }
+    .sn-draft { font-size: 0.75rem; font-weight: 800; color: #7a5400; background: #fff3c4; border: 1px solid #f0d77a; border-radius: 999px; padding: 3px 10px; }
+    .sn-body { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 2.4rem; align-items: start; }
+    .sn-intro p { font-size: 0.98rem; line-height: 1.85; color: var(--text-mid); margin-bottom: 0.9rem; word-break: keep-all; }
+    .sn-text h3, .sn-facts h3 { font-size: 1rem; font-weight: 800; color: var(--text-dark); margin: 1.3rem 0 0.7rem; }
+    .sn-facts h3 { margin-top: 0; }
+    .sn-text h3 i, .sn-facts h3 i { color: var(--green-mid); margin-right: 6px; }
+    .sn-points { list-style: none; counter-reset: snp; display: flex; flex-direction: column; gap: 0.65rem; }
+    .sn-points li { counter-increment: snp; position: relative; padding: 0.75rem 0.9rem 0.75rem 2.6rem; background: var(--cream); border-radius: 10px; font-size: 0.93rem; line-height: 1.7; color: var(--text-mid); word-break: keep-all; }
+    .sn-points li::before { content: counter(snp); position: absolute; left: 0.85rem; top: 0.8rem; width: 1.3rem; height: 1.3rem; border-radius: 50%; background: var(--green-mid); color: #fff; font-size: 0.72rem; font-weight: 800; display: grid; place-items: center; }
+    .sn-for { margin-top: 1rem; font-size: 0.92rem; line-height: 1.7; color: var(--green-deep); background: var(--green-faint); border-radius: 10px; padding: 0.7rem 0.95rem; word-break: keep-all; }
+    .sn-for i { margin-right: 6px; }
+    .sn-facts { background: var(--cream); border: 1px solid var(--green-faint); border-radius: 14px; padding: 1.2rem 1.3rem; }
+    .sn-facts dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.55rem 0.9rem; font-size: 0.9rem; }
+    .sn-facts dt { font-weight: 700; color: var(--text-light); white-space: nowrap; }
+    .sn-facts dd { color: var(--text-dark); line-height: 1.55; word-break: keep-all; }
+    .sn-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .sn-chips span { background: var(--white); border: 1px solid var(--green-pale); border-radius: 6px; padding: 1px 7px; font-size: 0.8rem; line-height: 1.6; }
+    .sn-src { margin-top: 0.9rem; font-size: 0.75rem; color: var(--text-light); line-height: 1.5; }
+    @media (max-width: 900px) {
+        .sn-body { grid-template-columns: 1fr; gap: 1.6rem; }
+    }
+    @media (max-width: 768px) {
+        .sheet-notes { padding: 0 1.2rem; margin-top: 0; }
+        .sn-card { padding: 1.4rem 1.2rem; }
+    }
 </style>
     <!-- Supabase auth (shared) -->
     <script src="auth.js?v=2026111601" defer></script>
@@ -837,6 +869,26 @@
             </div>
         </div>
     </div>
+
+    <!-- 이 악보 소개 — data/notes/<악보 id>.json (곡 소개·연습 포인트 + 원본 .gp에서 센 숫자). draft 면 운영 계정에만 -->
+    <section class="sheet-notes" id="sheetNotes" hidden aria-labelledby="snTitle">
+        <div class="sn-card">
+            <div class="sn-head"><h2 id="snTitle"><i class="fas fa-book-open"></i>이 악보 소개</h2><span class="sn-draft" id="snDraft" hidden>초안 · 운영 계정에만 보여요</span></div>
+            <div class="sn-body">
+                <div class="sn-text">
+                    <div class="sn-intro" id="snIntro"></div>
+                    <h3><i class="fas fa-bullseye"></i>연습 포인트</h3>
+                    <ol class="sn-points" id="snPoints"></ol>
+                    <p class="sn-for" id="snFor" hidden></p>
+                </div>
+                <aside class="sn-facts" id="snFactsBox">
+                    <h3><i class="fas fa-magnifying-glass-chart"></i>TAB 한눈에 보기</h3>
+                    <dl id="snFacts"></dl>
+                    <p class="sn-src">원본 Guitar Pro 악보에서 센 값이에요. 반복 구간은 한 번만 셌어요.</p>
+                </aside>
+            </div>
+        </div>
+    </section>
 
     <!-- Footer -->
     <footer>
@@ -988,6 +1040,7 @@
             desc.textContent = p.description || '';
             desc.hidden = !p.description;
             setSeo(p);   // 제목·설명·표준 주소 (편곡 버튼으로 바꿀 때도)
+            loadNotes(p.id);   // 아래 '이 악보 소개'
 
             renderParts(p);
             setupBuy(p);
@@ -1011,6 +1064,38 @@
             yt.innerHTML = vids.map((o, i) => { const x = o.x; return `<div class="yt-item">${vids.length > 1 ? `<div class="yt-label"><i class="fab fa-youtube"></i>${escHtml(label(o))}</div>` : ''}<div class="yt-wrapper">
                 <iframe src="${vsrc(o.v)}" title="${escHtml(x.title)} ${escHtml(PART_NAME[x.style] || '')} 영상"${i ? ' loading="lazy"' : ''} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div></div>`; }).join('');
             yt.hidden = !vids.length;
+        }
+
+        // 이 악보 소개 (2026-11-18 애드센스 '가치가 별로 없는 콘텐츠' 대책 2번) — data/notes/<id>.json
+        //   intro(문단들)·points(연습 포인트)·for(이런 분께) = Claude 초안 → 안쌤 확인, facts = 원본 .gp 에서 센 값([이름, 글 또는 칩 목록]).
+        //   draft:true 인 동안은 운영 계정에만 보인다(초안 표시). 파일이 없으면 칸을 숨긴다. 글을 고치면 NOTES_V 를 올린다.
+        const NOTES_V = '2026111801';
+        let NOTE_REQ = 0;
+        async function loadNotes(id) {
+            const my = ++NOTE_REQ, box = document.getElementById('sheetNotes');
+            box.hidden = true;
+            let n = null;
+            try { const r = await fetch('data/notes/' + encodeURIComponent(id) + '.json?v=' + NOTES_V); if (r.ok) n = await r.json(); } catch (e) {}
+            if (my !== NOTE_REQ || !n || !Array.isArray(n.intro)) return;
+            if (n.draft) {
+                if (document.readyState === 'loading') await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
+                const C = window.ahnssamCheckout;
+                if (!C) return;
+                await C.ready();
+                if (my !== NOTE_REQ || !C.isAdmin()) return;
+            }
+            document.getElementById('snDraft').hidden = !n.draft;
+            document.getElementById('snIntro').innerHTML = n.intro.map(t => '<p>' + escHtml(t) + '</p>').join('');
+            document.getElementById('snPoints').innerHTML = (n.points || []).map(t => '<li>' + escHtml(t) + '</li>').join('');
+            document.getElementById('snPoints').previousElementSibling.hidden = !(n.points || []).length;
+            const f = document.getElementById('snFor');
+            f.innerHTML = n.for ? '<i class="fas fa-user-check"></i>' + escHtml(n.for) : '';
+            f.hidden = !n.for;
+            const facts = n.facts || [];
+            document.getElementById('snFacts').innerHTML = facts.map(([k, v]) => '<dt>' + escHtml(k) + '</dt><dd>' +
+                (Array.isArray(v) ? '<div class="sn-chips">' + v.map(c => '<span>' + escHtml(c) + '</span>').join('') + '</div>' : escHtml(v)) + '</dd>').join('');
+            document.getElementById('snFactsBox').hidden = !facts.length;
+            box.hidden = false;
         }
 
         // 고른 구성의 금액: 가격 합 − (기타솔로와 반주를 함께 고르면 500원)
