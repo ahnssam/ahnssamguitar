@@ -1102,7 +1102,12 @@
     //   아직 안 올린 곡 = 풀스코어 등록 순서(코드 2511210007 의 앞 6자리가 날짜).
     //   (2026-11-06 ~ 11-10 에는 올린 곡도 풀스코어 등록 순이라, 예전 풀스코어 곡을 올려도 안 보이고 코드악보가 위에 남았음)
     const upKey = up => up ? String(up).replace(/\D/g, '').slice(2, 14) : '';   // 2026-11-10T12:29:05 → 261110122905
-    const relKey = x => x.on ? upKey(x.up) : x.c ? String(x.c) : upKey(x.up);
+    // 2026-11-18 사용자: '새로 나온 악보'·최신순을 페이지에 건 유튜브 영상이 올라간 날 순으로 다시 — data/sheet-released.json(그날까지 올린 198곡,
+    //   악보 id → 날짜: 대표 유튜브 영상 업로드일, 영상이 없거나 비공개면 풀스코어 등록일, 그것도 없으면 사이트에 만든 날).
+    //   그 목록에 없는 악보(그 뒤에 새로 올린 악보)는 예전처럼 사이트에 올린 때라 맨 위에 온다. 같은 날이면 사이트에 올린 시각 순.
+    let REL = {};
+    const loadRel = () => fetch('data/sheet-released.json?v=2026111801').then(r => r.ok ? r.json() : {}).then(j => { REL = (j && j.d) || {}; }).catch(() => {});
+    const relKey = x => REL[x.id] ? String(REL[x.id]).replace(/\D/g, '').slice(2) + upKey(x.up).slice(6) : x.on ? upKey(x.up) : x.c ? String(x.c) : upKey(x.up);
     const tidy = list => mergeVersions(bundle(list.filter(x => STYLE[x.s === 'fingerstyle' ? 'finger' : x.s])
         .map(x => ({ ...x, rel: relKey(x), t: String(x.t || '').normalize('NFC'), s: x.s === 'fingerstyle' ? 'finger' : x.s, k: norm(x.t + ' ' + (x.a || '') + ' ' + STYLE[x.s === 'fingerstyle' ? 'finger' : x.s][1]) }))));   // 종류 이름(기타솔로·코드악보…)으로도 검색
     // 같은 곡(sk = song_key)의 반주 + 기타솔로: 반주 칸에 '+ 솔로'로 하나만, 가격은 함께 산 값(500원 할인).
@@ -1157,6 +1162,7 @@
     }
 
     async function loadSheets() {
+        const relP = loadRel();
         try {
             const [r, pr] = await Promise.all([
                 fetch(SB_URL + '/rest/v1/rpc/sheet_catalog', { method: 'POST', headers: { apikey: SB_KEY, 'Content-Type': 'application/json' }, body: '{}' }),
@@ -1166,6 +1172,7 @@
             if (!r.ok) throw new Error('HTTP ' + r.status);
             const rows = await r.json();
             const pv = new Map(pr && pr.ok ? (await pr.json()).map(s => [s.id, s.preview_path]) : []);
+            await relP;
             if (rows.length) return tidy(rows.map(s => ({ id: s.id, c: s.fullscore_code, t: s.title, a: s.artist, s: s.style, g: s.genre, lv: s.difficulty, p: s.price, yt: s.youtube_id, o: s.fullscore_orders || 0, on: !!s.on_sale, up: s.updated_at, pv: pv.get(s.id), sk: s.song_key, vk: s.version_key, kd: s.kind, cv: cvUrl(s.cover_path, s.updated_at), pk: s.pick_rank })));
         } catch (e) { console.warn('[sheets] 목록 함수를 못 불러와서 저장본으로 보여요', e); }
         return loadSheetsFallback();
@@ -1173,6 +1180,7 @@
 
     async function loadSheetsFallback() {
         let base = [], live = [];
+        await loadRel();
         try { base = await (await fetch('data/sheet-catalog.json')).json(); } catch (e) { console.warn('[sheets] 목록 파일을 못 읽었어요', e); }
         try {
             const r = await fetch(SB_URL + '/rest/v1/sheets?select=*&published=eq.true', { headers: { apikey: SB_KEY } });
