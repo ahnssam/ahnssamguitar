@@ -61,6 +61,15 @@ def main():
 
     for loc, lm, freq, prio in PAGES:
         url(loc, lm or newest, freq, prio)   # 메인은 가장 최근에 바뀐 악보 날짜
+    # 강좌 & 레슨 (2026-11-18) — data/lessons.json (tools/gen_lessons.py 가 만든 페이지)
+    try:
+        lessons = json.load(open(os.path.join(ROOT, 'data/lessons.json'), encoding='utf-8'))
+    except FileNotFoundError:
+        lessons = []
+    if lessons:
+        url('/lessons.html', today, 'weekly', '0.9')
+        for L in lessons:
+            url(f'/lessons/{L["id"]}.html', L.get('date'), 'monthly', '0.8')
     # 악보 상세 — tab-detail.html 의 setSeo() 가 거는 canonical 과 같은 주소
     for r in rows:
         url('/tab-detail.html?id=' + r['id'], r['updated_at'][:10], 'monthly', '0.6')
@@ -68,7 +77,8 @@ def main():
     path = os.path.join(ROOT, 'sitemap.xml')
     with open(path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(out) + '\n')
-    print(f'sitemap.xml: 고정 페이지 {len(PAGES)} + 악보 {len(rows)} = {len(PAGES) + len(rows)}개')
+    n = len(PAGES) + len(rows) + (len(lessons) + 1 if lessons else 0)
+    print(f'sitemap.xml: 고정 페이지 {len(PAGES)} + 강좌 {len(lessons) + 1 if lessons else 0} + 악보 {len(rows)} = {n}개')
 
 
 if __name__ == '__main__':

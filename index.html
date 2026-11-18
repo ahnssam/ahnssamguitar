@@ -100,7 +100,7 @@
     header { position: sticky; top: 0; z-index: 30; background: #fff; box-shadow: 0 1px 0 #eef2ef; }   /* 흐림(backdrop-filter) 없이: 아래 배너 나뭇잎이 움직일 때 크롬에서 메뉴가 깜빡여서 */
     .hd { max-width: 1440px; margin: 0 auto; padding: 0 32px; height: 84px; display: flex; align-items: center; gap: 24px; }
     .hd .logo img { height: 60px; display: block; }
-    .nav { display: flex; gap: 38px; margin: 0 auto; font-size: 13.5px; font-weight: 600; letter-spacing: 0.15em; color: #333; }
+    .nav { display: flex; gap: 38px; margin: 0 auto; font-size: 13.5px; font-weight: 600; letter-spacing: 0.15em; color: #333; white-space: nowrap; }
     .nav a.on { color: var(--green-deep); }
     .hd-right { display: flex; align-items: center; gap: 10px; }
     .pill-btn { display: inline-flex; align-items: center; gap: 7px; border: 1.5px solid var(--green-mid); color: var(--green-deep); background: #fff; border-radius: 999px; padding: 7px 16px; font-size: 13px; font-weight: 600; white-space: nowrap; }
@@ -556,8 +556,9 @@
     /* ===== 모바일 ===== */
     @media (max-width: 1100px) {
         .sns-mini { display: none; }
-        .nav { gap: 24px; }
+        .nav { gap: 16px; letter-spacing: 0.06em; }
     }
+    @media (max-width: 1000px) { .nav { gap: 12px; font-size: 12.5px; letter-spacing: 0.03em; } }   /* 2026-11-18 메뉴 7칸 */
     /* 1000~1300px(세로 모니터 등): 넓은 화면과 똑같이 사진·제목 왼쪽, 카드 오른쪽 — 배너와 카드를 같은 비율로 줄인다 (2026-11-09 사용자 요청) */
     @media (min-width: 1000px) and (max-width: 1300px) {
         .banner { --z: 0.95; --bh: calc(250px * var(--z)); }
@@ -716,6 +717,21 @@
     .mnav-soon { display: block; padding: 12px 4px; font-size: 15px; font-weight: 700; color: #9aa59f; border-bottom: 1px solid #f1f4f2; cursor: default; }
     .mnav-soon i { width: 22px; color: #b7c0bb; }
 </style>
+<style>
+/* 메인 '강좌 & 레슨' 칸 (2026-11-18, 카드 모양은 lessons.html 과 같다) */
+#lessons .ls-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 14px; }
+#lessons .ls-card { display: flex; flex-direction: column; background: #fff; border-radius: 14px; overflow: hidden; border: 1px solid #e3eee7; box-shadow: 0 2px 8px rgba(30,70,45,.05); transition: transform .15s, box-shadow .15s; color: inherit; }
+#lessons .ls-card:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(30,70,45,.12); }
+#lessons .ls-th { position: relative; aspect-ratio: 16 / 9; background: #111 center / cover no-repeat; }
+#lessons .ls-th .dur { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.78); color: #fff; font-size: 12px; font-weight: 700; padding: 2px 7px; border-radius: 6px; }
+#lessons .ls-th .pl { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 46px; height: 32px; border-radius: 10px; background: rgba(220,30,30,.9); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+#lessons .ls-cb { padding: 11px 13px 13px; display: flex; flex-direction: column; gap: 5px; }
+#lessons .ls-cb .tag { font-size: 11.5px; font-weight: 800; color: #52a872; }
+#lessons .ls-cb h3 { font-size: 15px; font-weight: 800; line-height: 1.45; margin: 0; }
+#lessons .ls-cb p { font-size: 12.5px; line-height: 1.6; color: #666; margin: 0; }
+@media (max-width: 900px) { #lessons .ls-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { #lessons .ls-grid { grid-template-columns: 1fr; } #lessons .ls-card:nth-child(n+4) { display: none; } }
+</style>
 </head>
 <body>
 <!-- 로딩 화면: 첫 방문·새로고침·다른 페이지 로고에서 올 때 보이고, 뒤로가기나 '돌아가기'(skipLoader)일 때는 바로 숨긴다 -->
@@ -747,6 +763,7 @@
         <nav class="nav">
             <a class="on" href="#sheets">TAB악보</a>
             <a href="requests.html">악보요청</a>
+            <a href="/lessons.html">강좌 &amp; 레슨<span class="nav-new">NEW</span></a>
             <a href="#books">교본</a>
             <a href="#contents">콘텐츠</a>
             <a href="/play/">놀이터<span class="nav-new">NEW</span></a>
@@ -771,6 +788,7 @@
     <nav class="mnav" id="mnav">
         <a href="#sheets"><i class="fas fa-music"></i>TAB악보</a>
         <a href="requests.html"><i class="fas fa-comment-dots"></i>악보요청</a>
+        <a href="/lessons.html"><i class="fas fa-chalkboard-user"></i>강좌 &amp; 레슨 <span class="nav-new">NEW</span></a>
         <a href="#books"><i class="fas fa-book"></i>교본</a>
         <a href="#contents"><i class="fab fa-youtube"></i>콘텐츠</a>
         <a href="/play/"><i class="fas fa-gamepad"></i>기타 놀이터 <span class="nav-new">NEW</span></a>
@@ -921,6 +939,16 @@
     </div>
 </section>
 
+<!-- 강좌 & 레슨 (2026-11-18 사용자) — 카드 6개 + 더보기 → /lessons.html. 이 사이는 tools/gen_lessons.py 가 채운다 -->
+<!-- LESSONS:START -->
+<section class="sec bg-white" id="lessons" style="padding: 44px 0;">
+<div class="wrap">
+<div class="col-hd"><small>LESSONS</small><h2>강좌 &amp; 레슨</h2><span style="color:#999;font-size:13px;">영상 + 글로 정리한 기타 강좌</span><a class="more" href="/lessons.html">더보기 <i class="fas fa-chevron-right"></i></a></div>
+<div class="ls-grid"><a class="ls-card" href="/lessons/5YPrJmJfyK8.html"><div class="ls-th" style="background-image:url(https://i.ytimg.com/vi/5YPrJmJfyK8/hqdefault.jpg)"><span class="pl"><i class="fas fa-play"></i></span><span class="dur">9:36</span></div><div class="ls-cb"><span class="tag">입문 기초 · 입문</span><h3>기타 튜닝 제대로 하는 법 — 초보자 필수 가이드</h3><p>튜너로 줄마다 음을 맞추는 기본 방법과 튜닝할 때 자주 놓치는 주의사항을 정리했어요</p></div></a><a class="ls-card" href="/lessons/YVBDvDvvrdg.html"><div class="ls-th" style="background-image:url(https://i.ytimg.com/vi/YVBDvDvvrdg/hqdefault.jpg)"><span class="pl"><i class="fas fa-play"></i></span><span class="dur">9:05</span></div><div class="ls-cb"><span class="tag">입문 기초 · 입문</span><h3>기타 오른손 자세와 피크 잡는 법 — 멜로디·스트로크·아르페지오</h3><p>줄 하나를 칠 때와 두 줄 이상 칠 때 달라지는 피크 잡는 법과 오른손 움직임을 정리했어요</p></div></a><a class="ls-card" href="/lessons/iHMhXA1H4tk.html"><div class="ls-th" style="background-image:url(https://i.ytimg.com/vi/iHMhXA1H4tk/hqdefault.jpg)"><span class="pl"><i class="fas fa-play"></i></span><span class="dur">20:13</span></div><div class="ls-cb"><span class="tag">입문 기초 · 입문</span><h3>기타 코드 연습 완전 정리 — 입문자 단계별 가이드</h3><p>코드표 읽는 법부터 1·2·3단계 기본 코드, 코드를 한 번에 잡는 연습법까지 정리했어요</p></div></a><a class="ls-card" href="/lessons/a8nB90Ju_54.html"><div class="ls-th" style="background-image:url(https://i.ytimg.com/vi/a8nB90Ju_54/hqdefault.jpg)"><span class="pl"><i class="fas fa-play"></i></span><span class="dur">10:44</span></div><div class="ls-cb"><span class="tag">입문 기초 · 입문</span><h3>크로매틱 연습 제대로 하기</h3><p>5번 프렛 기본 크로매틱과 꼭 지켜야 할 네 가지 포인트, 메트로놈으로 속도 올리는 법까지 정리해요</p></div></a><a class="ls-card" href="/lessons/SdlHzO8pXa8.html"><div class="ls-th" style="background-image:url(https://i.ytimg.com/vi/SdlHzO8pXa8/hqdefault.jpg)"><span class="pl"><i class="fas fa-play"></i></span><span class="dur">14:01</span></div><div class="ls-cb"><span class="tag">테크닉 · 입문</span><h3>파워코드 기초 — 잡는 법부터 팜뮤트까지</h3><p>두 줄로 잡는 파워코드 기본 모양과 뮤트 안전장치, 팜뮤트, 단계별 예제 6개로 밴드 곡 반주를 준비해요</p></div></a><a class="ls-card" href="/lessons/VPzXFmwEnKQ.html"><div class="ls-th" style="background-image:url(https://i.ytimg.com/vi/VPzXFmwEnKQ/hqdefault.jpg)"><span class="pl"><i class="fas fa-play"></i></span><span class="dur">16:41</span></div><div class="ls-cb"><span class="tag">테크닉 · 초급</span><h3>쨉쨉이 완전 정리 — 싱글노트·스캥크까지</h3><p>16비트 펑크 스트로크 쨉쨉이를 오른손 자세부터 트라이어드, 똑딱이, 스캥크 예제까지 차근차근 익혀요</p></div></a></div>
+</div>
+</section>
+<!-- LESSONS:END -->
+
 <!-- 장르별 악보 -->
 <section class="sec bg-cream" id="browse">
     <div class="wrap">
@@ -998,7 +1026,7 @@
 
 <footer>
     <div class="fl">안쌤의 기타나무숲</div>
-    <div class="links"><a href="#sheets">TAB악보</a><a href="requests.html">악보요청</a><a href="#books">교본</a><a href="tools.html">연습도구</a><a href="legal/terms.html">이용약관</a><a href="legal/terms.html#refund">환불 정책</a><a href="legal/privacy.html">개인정보 처리방침</a></div>
+    <div class="links"><a href="#sheets">TAB악보</a><a href="requests.html">악보요청</a><a href="/lessons.html">강좌 &amp; 레슨</a><a href="#books">교본</a><a href="tools.html">연습도구</a><a href="legal/terms.html">이용약관</a><a href="legal/terms.html#refund">환불 정책</a><a href="legal/privacy.html">개인정보 처리방침</a></div>
     <span>상호: 안쌤의기타나무숲</span><span>대표: 안규호</span><span>사업자등록번호: 453-22-00905</span><span>통신판매업 신고번호: 제2026-서울강남-06306호</span><br>
     <span>주소: 서울특별시 강남구 영동대로 210, 지하1층 3호(대치동, 쌍용대치종합상가)</span><span>고객센터: <a href="tel:050713349804">0507-1334-9804</a></span><span>이메일: <a href="mailto:ahnssamguitar@gmail.com">ahnssamguitar@gmail.com</a></span><span>호스팅: GitHub</span>
     <div style="margin-top:8px;">© 2026 안쌤의 기타나무숲. All rights reserved.</div>

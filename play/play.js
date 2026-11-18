@@ -206,7 +206,7 @@
             ['https://cafe.naver.com/ahnsguitarforest', '네이버 카페', '<i class="fas fa-mug-hot" style="color:#5cc06b"></i>', '<i class="fas fa-mug-hot"></i>'],
         ];
         const sns = m => SNS.map(([u, l, a, b]) => `<a href="${u}" target="_blank" rel="noopener" aria-label="${l}">${m ? b : a}</a>`).join('');
-        const MENU = [['/#sheets', 'TAB악보', 'fa-music'], ['/requests.html', '악보요청', 'fa-comment-dots'], ['/#books', '교본', 'fa-book'], ['/#contents', '콘텐츠', 'fab fa-youtube'], ['/play/', '놀이터', 'fa-gamepad'], ['/#contact', 'CONTACT', 'fa-envelope']];
+        const MENU = [['/#sheets', 'TAB악보', 'fa-music'], ['/requests.html', '악보요청', 'fa-comment-dots'], ['/lessons.html', '강좌 & 레슨', 'fa-chalkboard-user'], ['/#books', '교본', 'fa-book'], ['/#contents', '콘텐츠', 'fab fa-youtube'], ['/play/', '놀이터', 'fa-gamepad'], ['/#contact', 'CONTACT', 'fa-envelope']];
         const ic = c => c.startsWith('fab') ? c : 'fas ' + c;
         document.body.insertAdjacentHTML('afterbegin', `<header class="site-hd"><div class="hd">
             <a class="logo" href="/"><img src="../images/logo-vertical.webp" alt="안쌤의 기타나무숲"></a>
