@@ -242,6 +242,29 @@
         lg.after(t);
         document.body.classList.add('ttl-up');
     })();
+    // 도움말 '?' (2026-11-18 사용자: 게임 설명은 바로 떠 있지 말고 물음표 단추를 누르면 나오게).
+    //   글은 페이지 HTML 의 #plHelp(검색엔진·애드센스 심사가 읽게) — 여기선 단추를 달고 창으로 열고 닫기만.
+    //   단추 자리: [data-help-slot](기타 펑펑 칩 줄) > 사이트 메뉴로 올린 제목 옆 > 놀이터 줄 제목 옆
+    (function helpInit() {
+        const box = document.getElementById('plHelp'); if (!box) return;
+        const slot = document.querySelector('[data-help-slot]');
+        const ttl = document.querySelector('body.ttl-up header.site-hd .ttl') || document.querySelector('header.ph .ttl');
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.title = '도움말 · 게임 설명'; btn.setAttribute('aria-label', '도움말 · 게임 설명');
+        if (slot) { btn.className = 'chip hlp-chip'; btn.innerHTML = '<i class="fas fa-circle-question"></i><span>도움말</span>'; slot.replaceWith(btn); }
+        else if (ttl) { btn.className = 'hlp-btn'; btn.innerHTML = '<i class="fas fa-question"></i>'; ttl.after(btn); }
+        else return;
+        const wrap = document.createElement('div');
+        wrap.className = 'hlp-wrap'; wrap.hidden = true;
+        wrap.innerHTML = '<div class="hlp-card" role="dialog" aria-modal="true" aria-label="도움말"><button type="button" class="hlp-x" aria-label="닫기"><i class="fas fa-xmark"></i></button></div>';
+        document.body.appendChild(wrap);
+        const card = wrap.firstChild;
+        card.appendChild(box); box.hidden = false;
+        const close = () => { wrap.hidden = true; document.documentElement.classList.remove('hlp-open'); btn.focus({ preventScroll: true }); };
+        btn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); wrap.hidden = false; card.scrollTop = 0; document.documentElement.classList.add('hlp-open'); card.querySelector('.hlp-x').focus({ preventScroll: true }); });
+        wrap.addEventListener('click', e => { if (e.target === wrap || e.target.closest('.hlp-x')) close(); });
+        addEventListener('keydown', e => { if (e.key === 'Escape' && !wrap.hidden) { e.stopImmediatePropagation(); e.preventDefault(); close(); } }, true);
+    })();
     // 놀이터·다른 게임 단추 — 사이트 메뉴로 제목을 올린 페이지에서만 보인다(앱은 놀이터 줄에 있음, play.css 의 .slk)
     //   other = [주소, 아이콘, 이름], text = 글자까지(목록 화면) / 없으면 동그란 아이콘만(게임 줄)
     function sideLinks(other, text) {
