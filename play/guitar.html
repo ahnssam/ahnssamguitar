@@ -295,7 +295,7 @@
     .revive small { display: block; margin-top: 4px; font-size: 11.5px; color: #a99c8e; }
     .revive.wait { opacity: .6; pointer-events: none; }
     @keyframes rvIn { from { opacity: 0; transform: translate(-50%, -42%) scale(.92); } }
-    /* 파괴 화면의 조각 칸 (2026-11-16 사용자: 쾅 화면에서 조각이 몇 개 나왔는지 · 몇 개 찼는지 · 하드케이스가 만들어졌는지) — shardCard() */
+    /* 조각 칸 — 부서진 뒤 화면(wreckCard)에서 쓴다. 2026-11-16 ~ 11-18 에는 쾅 화면 가운데에도 떴다(shardCard, 2026-11-18 사용자: 두 번 나와서 뺌) */
     .shcard { position: absolute; left: 50%; top: calc(var(--h0) * .6); transform: translate(-50%, -50%); z-index: 9; width: min(260px, 82%); padding: 12px 14px 10px; border-radius: 16px; background: rgba(18, 13, 9, 0.9); border: 1.5px solid rgba(255, 215, 106, 0.45); color: #fff; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); animation: rvIn .3s ease-out; cursor: pointer; transition: opacity .25s; }
     .shcard.out { opacity: 0; }
     .shcard .t { font-size: 15px; font-weight: 900; }
@@ -1039,13 +1039,13 @@
 </main>
 
 <footer>
-    <div class="links"><a href="../">TAB악보</a><a href="../requests.html">악보요청</a><a href="../tools.html">연습도구</a><a href="../legal/terms.html">이용약관</a><a href="../legal/privacy.html">개인정보 처리방침</a></div>
+    <div class="links"><a href="../">TAB악보</a><a href="../requests.html">악보요청</a><a href="../lessons.html">강좌 &amp; 레슨</a><a href="../tools.html">연습도구</a><a href="../legal/terms.html">이용약관</a><a href="../legal/privacy.html">개인정보 처리방침</a></div>
     <span>상호: 안쌤의기타나무숲</span><span>대표: 안규호</span><span>사업자등록번호: 453-22-00905</span><span>통신판매업 신고번호: 제2026-서울강남-06306호</span><br>
     <span>주소: 서울특별시 강남구 영동대로 210, 지하1층 3호(대치동, 쌍용대치종합상가)</span><span>고객센터: 0507-1334-9804</span><span>이메일: ahnssamguitar@gmail.com</span><span>호스팅: GitHub</span>
     <div>© 2026 안쌤의 기타나무숲</div>
 </footer>
 
-<script src="play.js?v=2026111501"></script>
+<script src="play.js?v=2026111801"></script>
 <script>
 // ===== 기타 키우기 (2026-11-12 MVP — 스트랫 하나로 먼저) =====
 // 카톡 '검키우기' 구조: 강화 한 번 누를 때마다 성공 / 유지(줄 끊김) / 파괴(무대에서 내리찍기). 팔고, 걸고, 배틀한다.
@@ -1094,7 +1094,9 @@ const SELL = (() => {
 // 2026-11-18 사용자: '강화 비용을 지금보다 살짝 25% 낮추자 — 파는 금액과 강화 금액이 비슷하고 생각보다 높다'
 //   → 위 A1 값을 모두 × 0.75(유효숫자 두 자리, +4·+5는 50·100으로). 이제 +8~+12 강화 한 번이 그 기타 판매가보다 조금 싸다(+10: 28만 < 29.2만)
 //   A1 값(2026-11-17 ~ 11-18): 0 · 10 · 20 · 40 · 70 · 130 · 470 · 6,700 · 2.6만 · 9.7만 · 37만 · 120만 · 390만 · 1,100만 · 2,900만 · 6,900만 · 1.3억 · 3.3억 · 7.9억 · 18억
-const COST = [0, 8, 15, 30, 50, 100, 350, 5000, 20000, 73000, 280000, 900000, 2900000, 8300000, 22000000, 52000000, 98000000, 250000000, 590000000, 1400000000];
+// 2026-11-18 사용자(같은 날 다시): '금액 살짝 더 싸도 좋겠다' → 위 값 × 0.85 (A1 대비 약 × 0.64). +10: 24만 (판매 29.2만의 82%)
+//   위 값(11-18 잠깐): 0 · 8 · 15 · 30 · 50 · 100 · 350 · 5,000 · 2만 · 7.3만 · 28만 · 90만 · 290만 · 830만 · 2,200만 · 5,200만 · 9,800만 · 2.5억 · 5.9억 · 14억
+const COST = [0, 7, 13, 25, 40, 85, 300, 4300, 17000, 62000, 240000, 770000, 2500000, 7100000, 19000000, 44000000, 83000000, 210000000, 500000000, 1200000000];
 const MAX = 20;
 // 2026-11-13 사용자: 기타 키우기에서는 놀이터 피크를 안 쓴다('피크 시스템은 빼자 여기선'). 출석은 골드만, 첫 기타는 공짜
 const START_GOLD = 500, DAILY_GOLD = 1000,
@@ -2028,36 +2030,11 @@ function btnCap() {
 //   가득(CASE_MAX)이면 조각은 모아 두었다가, 케이스를 하나 쓰면 바로 만든다. 만든 개수를 돌려준다
 function autoCase() { let n = 0; while (S.shards >= CASE_SHARDS && S.cases < CASE_MAX) { S.shards -= CASE_SHARDS; S.cases++; n++; } return n; }
 function caseNote(n) { if (!n) return; sfx('case'); toast(`조각 ${CASE_SHARDS}개로 하드케이스를 만들었어요 (${S.cases}/${CASE_MAX})`); }
-// 파괴 화면의 조각 칸 (2026-11-16 사용자: '쾅 하는 화면에서 이 악기에서 부서진 조각이 몇 개 나왔는지, 몇 개 채워졌는지, 하드케이스가 만들어졌는지')
-//   before = 부서지기 전 조각, got = 이번에 나온 조각, made = 이번에 만든 하드케이스 수(autoCase 뒤라 S.shards·S.cases 는 이미 바뀐 값).
-//   막대가 before → before+got 으로 차고, 20을 넘기면 가득 → '하드케이스 완성!' → 남은 조각으로 다시 시작. 누르면 바로 넘어간다
-function shardCard(before, got, made) {
-    return new Promise(res => {
-        const d = document.createElement('div'), T = [];
-        d.className = 'shcard';
-        const pct = n => Math.min(100, n / CASE_SHARDS * 100);
-        const msg = made ? `<i class="fas fa-briefcase"></i> 하드케이스 완성! (${S.cases}/${CASE_MAX})`
-            : S.cases >= CASE_MAX ? `하드케이스는 ${CASE_MAX}개 가득 · 조각은 모아 둬요` : `하드케이스까지 ${CASE_SHARDS - S.shards}개 남음`;
-        d.innerHTML = `<div class="t"><i class="fas fa-puzzle-piece"></i> 부서진 기타 조각 <b>+${got}</b></div>
-            <div class="bar"><i style="width:${pct(before)}%"></i><span>${before}/${CASE_SHARDS}</span></div><div class="m"></div>`;
-        const bar = d.querySelector('.bar'), fill = bar.querySelector('i'), num = bar.querySelector('span'), m = d.querySelector('.m');
-        let done = false;
-        const end = () => { if (done) return; done = true; T.forEach(clearTimeout); d.classList.add('out'); setTimeout(() => { d.remove(); res(); }, 250); };
-        T.push(setTimeout(() => { fill.style.width = pct(before + got) + '%'; num.textContent = `${made ? Math.min(before + got, CASE_SHARDS) : S.shards}/${CASE_SHARDS}`; }, 250));
-        T.push(setTimeout(() => {
-            m.innerHTML = msg;
-            if (!made) return;
-            m.classList.add('case'); bar.classList.add('full'); sfx('case');
-        }, 900));
-        if (made) T.push(setTimeout(() => {   // 남은 조각으로 다시
-            bar.classList.remove('full'); fill.classList.add('reset'); fill.style.width = '0%'; void fill.offsetWidth;
-            fill.classList.remove('reset'); fill.style.width = pct(S.shards) + '%'; num.textContent = `${S.shards}/${CASE_SHARDS}`;
-        }, 1600));
-        T.push(setTimeout(end, made ? 2800 : 2000));
-        d.addEventListener('click', end);
-        $('#stage').appendChild(d);
-    });
-}
+// 조각 칸 아래 한 줄: 하드케이스 완성 / 가득 / 몇 개 남음 (부서진 뒤 화면 wreckCard)
+//   2026-11-18 사용자: 쾅 화면 가운데에 따로 뜨던 조각 칸(shardCard, 2026-11-16 ~ 11-18)은 뺐다 — 부서진 뒤 화면의 조각 칸과 두 번 나와서.
+//   이제 조각이 올라가는 건 부서진 뒤 화면 조각 칸에서만 보인다(wreckAnim)
+const shardMsg = made => made ? `<i class="fas fa-briefcase"></i> 하드케이스 완성! (${S.cases}/${CASE_MAX})`
+    : S.cases >= CASE_MAX ? `하드케이스는 ${CASE_MAX}개 가득 · 조각은 모아 둬요` : `하드케이스까지 ${CASE_SHARDS - S.shards}개 남음`;
 function shake(big) { const el = $('#stbox'); el.classList.remove('shake', 'shake2'); void el.offsetWidth; el.classList.add(big ? 'shake2' : 'shake'); }
 function flash() { const d = document.createElement('div'); d.className = 'flash'; $('#stbox').appendChild(d); setTimeout(() => d.remove(), 400); }
 
@@ -2274,6 +2251,7 @@ function renderBench() {
     if (g) wreck = null;
     em.classList.toggle('wreck', !em.hidden && !!wreck);
     if (!em.hidden) em.innerHTML = wreck ? wreckCard(wreck) : emptyCard();
+    if (!em.hidden && wreck && wreck.anim) { wreck.anim = false; wreckAnim(em, wreck); }
     renderTable();
     renderSact();   // 빈 작업대('기타 키우기 / 기타 찾기')에는 강화·진열하기 단추가 없어야 한다 (2026-11-12 사용자)
     if (!g) { box.innerHTML = ''; return; }   // 2026-11-13 사용자: "'시작'은 300G예요, 골드가 모자라면…" 설명은 뺌
@@ -2765,9 +2743,8 @@ async function enhance() {
         sfx('boom'); buzz([90, 40, 140, 40, 220]); shake(true); flash();
         burst(28, ['#8d3142', '#c04050', '#f1e1c0', '#e6ad74', '#7a7b7d', '#0e1614'], { y: 62, spread: 170, size: [5, 12], dur: 1100 });
         pop('쾅!', 'boom', 40);
-        await sleep(450);
+        await sleep(900);
         updBar();
-        await shardCard(sh0, gotSh, caseMade);   // 조각 +N · 막대 n/20 · 하드케이스 완성 여부 (2026-11-16 사용자)
         a.cancel(); ghost = null; redAt = 0; renderName();
         // 2026-11-13 사용자: 악기가 부서지면 전면 광고(AdSense H5 게임 광고 adBreak 'next') — 첫 번째 파괴엔 띄우고, 두 번째는 건너뛰고, 세 번째는 띄우고…(홀수 번째만, S.st.boom 은 이 브라우저에서 부서진 횟수)
         // 부서진 것·조각 수를 다 보여 준 뒤에 띄우고, 실제로 뜰지는 구글이 정한다(안 띄우면 바로 넘어감). 하드케이스가 막은 건 안 부서졌으니 광고 없음
@@ -2782,10 +2759,10 @@ async function enhance() {
             pop(`+${g.lv} 부활!`, 'ok');
             setTimeout(() => talk(one(LINES.revive)), 600);
             await sleep(500);
-        } else {   // 하드케이스는 부서질 때 이미 만들었고 쾅 화면(shardCard)에서 보여 줬다
+        } else {   // 하드케이스는 부서질 때 이미 만들었다 — 조각이 차오르고 하드케이스가 생기는 건 부서진 뒤 화면에서 보여 준다
             if (S.st.boom % 2 === 1) await new Promise(res => PLAY.interstitial(res, '악기가 부서진 뒤 전면 광고', 'boom'));
             // 2026-11-17 사용자: 바로 타이틀 화면으로 가지 말고, 부서진 화면에 조각 채운 것과 '기타 다시 찾기'를 남긴다
-            wreck = { f: g.f, lv: g.lv, got: gotSh, made: caseMade };
+            wreck = { f: g.f, lv: g.lv, got: gotSh, made: caseMade, from: sh0, anim: true };   // from·anim: 처음 그릴 때 조각 막대가 from → from+got 으로 차오른다
             talk([['me', one(g.lv >= 10 ? LINES.bigSigh : LINES.sigh)]]);   // 2026-11-13 사용자: '나'의 신세한탄 (2026-11-15 다른 인물의 한마디는 지움)
         }
     }
@@ -2978,18 +2955,40 @@ function renderNext() {   // 강화 단추 위 오른쪽: 다음 단계 그림�
 // 부서진 뒤 화면 (2026-11-17 사용자: 바로 타이틀 화면으로 가지 말고 그 박살 난 화면에서 조각 갯수 채운 것과 '기타 다시 찾기')
 //   부서진 기타가 바닥에 쓰러져 있고, 가운데에 쾅 화면의 조각 칸(채워진 그대로) + 아래에 '기타 다시 찾기'. 새로고침하거나 기타를 찾으면 없어진다
 function wreckCard(w) {
-    const F = FAMS[w.f] || FAMS.strat, pct = Math.min(100, S.shards / CASE_SHARDS * 100);
-    const msg = w.made ? `<i class="fas fa-briefcase"></i> 하드케이스 완성! (${S.cases}/${CASE_MAX})`
-        : S.cases >= CASE_MAX ? `하드케이스는 ${CASE_MAX}개 가득 · 조각은 모아 둬요` : `하드케이스까지 ${CASE_SHARDS - S.shards}개 남음`;
+    const F = FAMS[w.f] || FAMS.strat, a = !!w.anim, n0 = a ? w.from : S.shards, pct = Math.min(100, n0 / CASE_SHARDS * 100);
     let h = `<img class="wk${F.sq ? ' sq' : ''}" src="${artSrc(w.f, w.lv)}" alt="">
         <div class="shcard"><p class="wt"><b>+${w.lv} ${esc(gname(w))}</b>이(가) 부서졌어요</p>
         <div class="t"><i class="fas fa-puzzle-piece"></i> 부서진 기타 조각 <b>+${w.got}</b></div>
-        <div class="bar"><i style="width:${pct}%"></i><span>${S.shards}/${CASE_SHARDS}</span></div><div class="m${w.made ? ' case' : ''}">${msg}</div></div>`;
+        <div class="bar"><i style="width:${pct}%"></i><span>${n0}/${CASE_SHARDS}</span></div><div class="m${w.made && !a ? ' case' : ''}">${a ? '' : shardMsg(w.made)}</div></div>`;
     if (S.gold >= FIND_GOLD) return h + `<button class="btn start" type="button" data-a="new"><i class="fas fa-magnifying-glass"></i>기타 다시 찾기</button><small class="cost"><i class="fas fa-coins"></i> ${gf(FIND_GOLD)}</small>`;
     const dl = S.daily !== today(), ad = adDay().n < AD_GOLD_DAY;
     return h + `<p class="lackw">기타 다시 찾기는 ${gf(FIND_GOLD)} · 골드가 ${gf(FIND_GOLD - S.gold)} 모자라요</p>`
         + (dl ? `<button class="btn pick" type="button" data-a="daily"><i class="fas fa-gift"></i> 출석하고 받기 <small>${gf(DAILY_GOLD)}</small></button>`
         : ad ? `<button class="btn pick" type="button" data-a="adgold"><i class="fas fa-clapperboard"></i> 골드 받기 <small>+${gf(adGoldNext())} · ${adDay().n + 1}/${AD_GOLD_DAY}</small></button>` : '');
+}
+// 부서진 뒤 화면을 처음 그릴 때 한 번: 조각 막대가 부서지기 전 → 더한 만큼 차오르고 숫자도 하나씩 올라간다.
+//   15를 넘기면 가득 → '하드케이스 완성!' → 남은 조각으로 다시. 다시 그리면(골드 받기 등) 다 찬 모습 그대로
+function wreckAnim(em, w) {
+    const card = em.querySelector('.shcard'); if (!card) return;
+    const bar = card.querySelector('.bar'), fill = bar.querySelector('i'), num = bar.querySelector('span'), m = card.querySelector('.m');
+    const pct = n => Math.min(100, n / CASE_SHARDS * 100), on = () => card.isConnected;
+    const top = w.made ? Math.min(w.from + w.got, CASE_SHARDS) : S.shards, steps = Math.max(1, top - w.from), dt = Math.min(90, 600 / steps);
+    setTimeout(() => {
+        if (!on()) return;
+        fill.style.width = pct(top) + '%';
+        for (let i = 1; i <= steps; i++) setTimeout(() => { if (on()) { num.textContent = `${Math.min(top, w.from + i)}/${CASE_SHARDS}`; if (i % 2 || i === steps) sfx('tick'); } }, i * dt);
+    }, 350);
+    setTimeout(() => {
+        if (!on()) return;
+        m.innerHTML = shardMsg(w.made);
+        if (!w.made) return;
+        m.classList.add('case'); bar.classList.add('full'); sfx('case');
+    }, 350 + steps * dt + 250);
+    if (w.made) setTimeout(() => {   // 남은 조각으로 다시
+        if (!on()) return;
+        bar.classList.remove('full'); fill.classList.add('reset'); fill.style.width = '0%'; void fill.offsetWidth;
+        fill.classList.remove('reset'); fill.style.width = pct(S.shards) + '%'; num.textContent = `${S.shards}/${CASE_SHARDS}`;
+    }, 350 + steps * dt + 950);
 }
 
 // ---------- 광고 보고 되살리기 (2026-11-13 사용자: 파괴될 때 광고를 보면 부활) ----------
