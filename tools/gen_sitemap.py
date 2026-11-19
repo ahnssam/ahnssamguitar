@@ -8,6 +8,10 @@
 새 악보를 공개하거나 페이지를 더하면 다시 돌린다:
     python3 tools/gen_sitemap.py
 공개 목록은 사이트와 같은 공개 키(sb_publishable_…, 읽기 전용·공개 값)로 읽는다.
+
+같이 하는 일 (2026-11-19): tab-detail.html 의 <!-- SEO:START --> ~ <!-- SEO:END --> 사이에
+공개 악보 이름표(id → 곡명·가수·종류·쪽·난이도·카포·값)를 채운다. 구글이 페이지를 그릴 때
+Supabase 악보 요청을 건너뛰어도('기타 오류') 제목·표준 주소가 그 악보 것이게.
 """
 import json
 import os
@@ -37,7 +41,7 @@ PAGES = [
 
 def sheets():
     req = urllib.request.Request(
-        SB_URL + '/rest/v1/sheets?select=id,updated_at&published=eq.true&order=updated_at.desc',
+        SB_URL + '/rest/v1/sheets?select=id,updated_at,title,artist,style,kind,pages,difficulty,capo,price&published=eq.true&order=updated_at.desc',
         headers={'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY})
     with urllib.request.urlopen(req, timeout=30) as r:
         return json.load(r)
@@ -79,6 +83,24 @@ def main():
         f.write('\n'.join(out) + '\n')
     n = len(PAGES) + len(rows) + (len(lessons) + 1 if lessons else 0)
     print(f'sitemap.xml: 고정 페이지 {len(PAGES)} + 강좌 {len(lessons) + 1 if lessons else 0} + 악보 {len(rows)} = {n}개')
+    seo_map(rows)
+
+
+def seo_map(rows):
+    """tab-detail.html 안 SEO_MAP 채우기 — 값: [곡명, 가수, 종류, kind, 쪽, 난이도, 카포, 값]"""
+    m = {r['id']: [r.get('title') or '', r.get('artist') or '', r.get('style') or '', r.get('kind') or '',
+                   r.get('pages'), r.get('difficulty'), r.get('capo'), r.get('price')]
+         for r in sorted(rows, key=lambda r: r['id'])}
+    js = json.dumps(m, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/')
+    path = os.path.join(ROOT, 'tab-detail.html')
+    html = open(path, encoding='utf-8').read()
+    a, b = '<!-- SEO:START -->', '<!-- SEO:END -->'
+    i, j = html.index(a) + len(a), html.index(b)
+    head = html[:i] + '\n    <script>window.SEO_MAP=' + js + ';</script>\n    '
+    html = head + html[j:]
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(html)
+    print(f'tab-detail.html: 악보 이름표 {len(m)}곡 ({len(js) // 1024}KB)')
 
 
 if __name__ == '__main__':
