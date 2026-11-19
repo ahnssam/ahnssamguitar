@@ -44,7 +44,15 @@ for key, label, nm in [('strat', "strat: { name: '스트랫'", '스트랫'), ('s
     FAMS[key] = dict(name=nm, set=set_name(label, nm), names=names_after(label), art=art, artMax=amax, sq=False)
 for key, glabel, flabel, nm in [('amp', "amp: { name: '앰프', art: 'amp'", "FAMS.amp = {", '앰프'), ('multi', "fx: { name: '멀티이펙터', art: 'fx'", "FAMS.multi = {", '멀티이펙터')]:
     art, amax = art_info(flabel)
-    FAMS[key] = dict(name=nm, set=nm, names=names_after(glabel), art=art, artMax=amax, sq=True)
+    m = re.search(r"FAMS\.%s\.dexName = '([^']*)'" % key, src)   # 2026-11-19 1세트에도 세트 이름(2세트가 생겨서)
+    FAMS[key] = dict(name=nm, set=m.group(1) if m else nm, names=names_after(glabel), art=art, artMax=amax, sq=True)
+# 앰프·이펙터 2세트(2026-11-19): 증기기관 앰프 · 오락실 멀티이펙터 · 오락실 페달 — FAMS.<계열> = { ... names: [ ... ] } 한 덩어리
+for key, nm in [('amp2', '앰프'), ('multi2', '멀티이펙터'), ('pedal', '페달')]:
+    label = f'FAMS.{key} = {{'
+    art, amax = art_info(label)
+    FAMS[key] = dict(name=nm, set=set_name(label, nm), names=names_after(label), art=art, artMax=amax, sq=True)
+# 몇 계열만 다시 만들 때: python -X utf8 tools/gk_share.py amp amp2 multi multi2 pedal (게임 썸네일은 건너뜀)
+ONLY = [a for a in sys.argv[1:] if a in FAMS]
 
 bg = Image.open(os.path.join(ROOT, 'images/play/gk/bg_workshop.webp')).convert('RGB')
 bw = bg.width; bh = round(bw * H / W)
@@ -89,6 +97,7 @@ os.makedirs(os.path.join(ROOT, 'play/gk/s'), exist_ok=True)
 
 count = 0
 for fam, F in FAMS.items():
+    if ONLY and fam not in ONLY: continue
     for lv in range(21):
         n = min(lv, F['artMax'])
         art = Image.open(os.path.join(ROOT, f"images/play/gk/{F['art']}_{n:02d}.webp")).convert('RGBA')
@@ -153,6 +162,9 @@ for fam, F in FAMS.items():
 '''
         open(os.path.join(ROOT, f'play/gk/s/{out}.html'), 'w', encoding='utf8', newline='\n').write(html)
         count += 1
+if ONLY:
+    print('만든 수', count, '(게임 썸네일은 건너뜀)'); sys.exit(0)
+
 # ---------- 게임 자체 공유 썸네일 (2026-11-13 사용자: 처음 화면 '친구에게 공유'를 카톡에 보내면 +20 레스폴·스트랫이 썸네일로) ----------
 #   images/play/gk/share/game.jpg + 공유 페이지 play/gk/s/game.html, 그리고 play/guitar.html 의 og:image 도 이 그림으로 바꾼다.
 #   그림을 바꾸면 GAME_V 를 올린다(카톡이 그림 주소로 기억해서).

@@ -1196,9 +1196,16 @@ const FIND_GOLD = 300;
 const FLOOR_EACH = 2, FLOOR_LAYOUT = 3;
 // 바닥 물건 그림이 틀(정사각형) 폭에서 실제로 차지하는 비율 — 넓은 것만(나머지 앰프 0.51 · 멀티 0.63). 그림을 바꾸면 다시 잰다(2026-11-15)
 const FLOOR_ART_W = { amp: { 5: 0.60, 9: 0.60, 10: 0.55, 13: 0.54, 14: 0.53, 19: 0.60, 20: 0.68 },
-    multi: { 0: 0.67, 2: 0.66, 3: 0.67, 4: 0.82, 7: 0.65, 8: 0.70, 9: 0.85, 19: 0.64, 20: 0.82 } };
+    multi: { 0: 0.67, 2: 0.66, 3: 0.67, 4: 0.82, 7: 0.65, 8: 0.70, 9: 0.85, 19: 0.64, 20: 0.82 },
+    // 2세트(2026-11-19) — 21장 모두 잰 값
+    amp2: { 0: 0.54, 1: 0.51, 2: 0.54, 3: 0.52, 4: 0.54, 5: 0.51, 6: 0.50, 7: 0.55, 8: 0.52, 9: 0.54, 10: 0.52, 11: 0.56, 12: 0.57, 13: 0.62, 14: 0.58, 15: 0.60, 16: 0.54, 17: 0.60, 18: 0.56, 19: 0.64, 20: 0.68 },
+    multi2: { 0: 0.65, 1: 0.64, 2: 0.65, 3: 0.65, 4: 0.69, 5: 0.65, 6: 0.64, 7: 0.67, 8: 0.66, 9: 0.69, 10: 0.63, 11: 0.63, 12: 0.66, 13: 0.64, 14: 0.65, 15: 0.65, 16: 0.63, 17: 0.63, 18: 0.64, 19: 0.70, 20: 0.71 },
+    pedal: { 0: 0.58, 1: 0.55, 2: 0.65, 3: 0.57, 4: 0.57, 5: 0.56, 6: 0.56, 7: 0.56, 8: 0.57, 9: 0.59, 10: 0.56, 11: 0.57, 12: 0.57, 13: 0.62, 14: 0.59, 15: 0.57, 16: 0.58, 17: 0.56, 18: 0.60, 19: 0.58, 20: 0.91 } };
 const isSq = g => !!(g && FAMS[g.f] && FAMS[g.f].sq);
-const floorRoom = (fl, g) => fl.filter(x => x.f === g.f).length < FLOOR_EACH;
+// 바닥 자리·능력치 종류: 앰프 2세트는 'amp', 오락실 멀티·페달은 'multi' 자리를 같이 쓴다(2026-11-19, FAMS.<계열>.base)
+const baseOf = f => (FAMS[f] && FAMS[f].base) || f;
+const gearName = f => baseOf(f) === 'amp' ? '앰프' : '이펙터';
+const floorRoom = (fl, g) => fl.filter(x => baseOf(x.f) === baseOf(g.f)).length < FLOOR_EACH;
 // 바닥에 놓은 앰프·멀티의 능력치 (2026-11-12 사용자: 앰프는 부서짐↓, 이펙터는 줄 끊김↓, 단계별로. 3개씩 놓을 수 있으니 너무 크지 않게)
 //   한 대에 단계 × 0.1%p (+10 = 1%p, +20 = 2%p), 바닥의 같은 종류끼리 더한다(3대 모두 +20이면 6%p).
 //   앰프가 줄인 부서짐은 줄 끊김으로, 멀티가 줄인 줄 끊김은 성공으로 간다. 작업대에서 강화 중인 앰프·멀티는 안 친다
@@ -1216,11 +1223,11 @@ const ART_V = { tele2: { 0: 2, 1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9
 const artV = (pre, n) => { const v = ART_V[pre] && ART_V[pre][n]; return v ? `?v=${v}` : ''; };
 const GEAR_PER = 0.1, r1 = x => Math.round(x * 10) / 10;
 // '유지' 이름: 기타는 줄 끊김, 멀티이펙터는 버튼 빠짐 (2026-11-12 사용자: 이펙터는 줄이 없으니 버튼이 빠졌다가 다시 끼움)
-const keepWord = g => g && g.f === 'multi' ? '버튼 빠짐' : '줄 끊김';
+const keepWord = g => g && baseOf(g.f) === 'multi' ? '버튼 빠짐' : '줄 끊김';
 const gearCut = g => r1((g.lv | 0) * GEAR_PER);
 function gearBuff() {
     const b = { amp: 0, multi: 0, nAmp: 0, nMulti: 0 };
-    S.floor.forEach(g => { if (g.f === 'amp') { b.amp += gearCut(g); b.nAmp++; } else if (g.f === 'multi') { b.multi += gearCut(g); b.nMulti++; } });
+    S.floor.forEach(g => { const k = baseOf(g.f); if (k === 'amp') { b.amp += gearCut(g); b.nAmp++; } else if (k === 'multi') { b.multi += gearCut(g); b.nMulti++; } });
     b.amp = r1(b.amp); b.multi = r1(b.multi);
     return b;
 }
@@ -1364,12 +1371,37 @@ const GEAR = {
 // 2026-11-12: 레스폴·슈퍼스트랫·통기타·베이스·앰프 +10~+20 그림이 들어왔다(텔레는 아직 +9까지). 멀티는 +20만 먼저(extra)
 FAMS.amp = { name: '앰프', art: 'amp', artMax: 20, sq: true, names: GEAR.amp.names };
 FAMS.multi = { name: '멀티이펙터', art: 'fx', artMax: 20, sq: true, names: GEAR.fx.names };   // 2026-11-12 +0~+19도 받음(+0~+9는 색을 입혀 다시 뽑은 것)
+// 앰프·이펙터 2세트 (2026-11-19 사용자가 GPT로 뽑은 21장씩 — 구글 드라이브 기타 키우기/guitar_upgrade_amp_multi_analog_final.zip, '멀티·페달 둘 다'):
+//   앰프 = 증기기관 앰프, 이펙터 = 오락실 멀티이펙터 + 오락실 아날로그 페달(멀티가 나오면 1세트 멀티·오락실 멀티·오락실 페달이 1/3씩).
+//   base = 바닥 자리·능력치를 같이 쓰는 1세트 계열(앰프 자리 2칸·이펙터 자리 2칸을 나눠 씀), srv = 서버가 아직 모르면 올리는 이름(db/play_guitar_fam_gear2.sql 적용 전)
+//   세트 이름은 Claude가 지음(1세트도 2세트가 생겨서 같이 — 바꿔도 됨)
+FAMS.amp.dexName = '은하 앰프'; FAMS.multi.dexName = '차원 멀티이펙터';
+FAMS.amp2 = { name: '앰프', dexName: '증기기관 앰프', art: 'amp2', artMax: 20, sq: true, base: 'amp', srv: 'amp', names: [
+    '석탄 더미에 묻혀 있던 앰프', '녹물이 줄줄 흐르는 앰프', '스프링이 튀어나온 앰프', '쥐가 갉아 먹은 앰프', '진공관이 다 깨진 앰프',
+    '황동으로 땜질한 앰프', '압력계를 단 앰프', '구리 관이 칭칭 감긴 앰프', '나팔 스피커를 단 앰프', '톱니바퀴가 돌아가는 앰프',
+    '증기 기적을 울리는 앰프', '피스톤이 쿵쾅대는 앰프', '증기 기관차가 된 앰프', '하늘을 나는 비행선 앰프', '증기 파이프 오르간이 된 앰프',
+    '기계 코끼리가 된 앰프', '증기 로봇이 된 앰프', '기계 공작새가 깃든 앰프', '황동 성채가 된 앰프', '모든 기계를 움직이는 대기관 앰프',
+    '레오 팬더의 앰프'] };
+FAMS.multi2 = { name: '멀티이펙터', dexName: '오락실 멀티이펙터', art: 'fx2', artMax: 20, sq: true, base: 'multi', srv: 'multi', names: [
+    '오락기에 깔려 박살 난 멀티이펙터', '오락실 입구 발판으로 쓴 멀티이펙터', '콜라를 쏟아 끈적한 멀티이펙터', '구멍마다 코인이 낀 멀티이펙터', '건전지 물이 새서 허옇게 슨 멀티이펙터',
+    '닦고 조여 낸 멀티이펙터', '오락기 버튼을 단 멀티이펙터', '조이스틱을 꽂은 멀티이펙터', '사탕색 옷을 입은 멀티이펙터', '코인 문이 달린 멀티이펙터',
+    '픽셀 불꽃놀이가 터지는 멀티이펙터', '핀볼 플리퍼가 달린 멀티이펙터', '오락기 조종대가 된 멀티이펙터', '핀볼 기계가 된 멀티이펙터', '인형뽑기 기계를 얹은 멀티이펙터',
+    '레이싱 오락기가 된 멀티이펙터', '리듬 게임 발판이 된 멀티이펙터', '8비트 세계가 된 멀티이펙터', '최종 보스를 깨운 멀티이펙터', '전설의 황금 오락기 멀티이펙터',
+    '톰 모렐루의 멀티이펙터'] };
+FAMS.pedal = { name: '페달', dexName: '오락실 페달', art: 'pedal', artMax: 20, sq: true, base: 'multi', srv: 'multi', names: [
+    '오락기에 깔려 박살 난 페달', '오락실 입구 발판으로 쓴 페달', '콜라를 쏟아 끈적한 페달', '구멍마다 코인이 낀 페달', '건전지 물이 새서 허옇게 슨 페달',
+    '닦고 조여 낸 페달', '오락기 버튼을 단 페달', '조이스틱을 꽂은 페달', '사탕색 옷을 입은 페달', '코인 문이 달린 페달',
+    '픽셀 불꽃놀이가 터지는 페달', '핀볼 플리퍼가 달린 페달', '오락기 조종대가 된 페달', '핀볼 기계가 된 페달', '인형뽑기 기계를 얹은 페달',
+    '레이싱 오락기가 된 페달', '리듬 게임 발판이 된 페달', '8비트 세계가 된 페달', '최종 보스를 깨운 페달', '전설의 황금 오락기 페달',
+    '톰 모렐루의 페달'] };
 // '시작'에서 나오는 것: 기타 6종 + 앰프 + 멀티, 같은 확률
 const FIND_FAMS = ['strat', 'tele', 'lespaul', 'superstrat', 'acoustic', 'bass', 'amp', 'multi'];
 // 찾기: 여덟 가지 중 하나, 스트랫이면 반반으로 1세트·2세트(2026-11-15 스트랫 2세트 — 스트랫이 나올 확률은 그대로 1/8)
 // 스트랫·텔레·레스폴이 나오면 반반으로 1세트·2세트 (2세트: 스트랫 2026-11-15 · 텔레·레스폴 2026-11-17) — 악기 종류가 나올 확률은 그대로
 const SET2 = { strat: 'strat2', tele: 'tele2', lespaul: 'lespaul2', superstrat: 'superstrat2', acoustic: 'acoustic2', bass: 'bass2' };
-const pickFam = () => { const f = one(FIND_FAMS); return SET2[f] && Math.random() < 0.5 ? SET2[f] : f; };
+// 앰프·멀티도 2세트(2026-11-19): 앰프는 반반, 멀티는 1세트 멀티·오락실 멀티·오락실 페달이 1/3씩 — 앰프·멀티가 나올 확률은 그대로
+const SETS = { amp: ['amp', 'amp2'], multi: ['multi', 'multi2', 'pedal'] };
+const pickFam = () => { const f = one(FIND_FAMS); if (SETS[f]) return one(SETS[f]); return SET2[f] && Math.random() < 0.5 ? SET2[f] : f; };
 const srvFam = f => (FAMS[f] && FAMS[f].srv) || f;   // 서버가 아직 모르는 계열은 비슷한 계열 이름으로
 // 튜너: 바늘이 초록 칸에 있을 때 탭하면 성공 +%p (유지에서 가져오고 파괴는 그대로)
 // 2026-11-15 사용자: 성공 보너스가 너무 뛴다 — +2·+4·+6 → +1·+3·+5%p
@@ -2418,7 +2450,7 @@ function renderTable() {
     el.innerHTML = `<summary>강화 확률표 <small>— 화면에 적은 확률이 실제 확률이에요</small></summary>
         <table class="otab"><tr><th>강화</th><th>성공</th><th>${keepWord(S.bench)}</th><th>파괴</th><th>비용</th><th>팔면</th></tr>
         ${ODDS.map(([s, m, d], i) => `<tr class="${i === lv ? 'me' : ''}"><td>+${i}→+${i + 1}</td><td>${s}%</td><td>${m}%</td><td>${d}%</td><td>${COST[i] ? gshort(COST[i]) : '공짜'}</td><td>${gshort(SELL[i + 1])}</td></tr>`).join('')}</table>
-        <p class="note2">${S.bench && S.bench.f === 'multi' ? '버튼이 빠지면 다시 끼우고, 단계는 그대로예요.' : '줄이 끊기면 단계는 그대로예요.'} 파괴되면 기타가 없어지고 '부서진 조각'이 1 ~ 단계만큼 랜덤으로 남아요(+8이면 1~8개). 조각 ${CASE_SHARDS}개로 하드케이스를 만들면 파괴를 한 번 막아 줘요.</p>
+        <p class="note2">${S.bench && baseOf(S.bench.f) === 'multi' ? '버튼이 빠지면 다시 끼우고, 단계는 그대로예요.' : '줄이 끊기면 단계는 그대로예요.'} 파괴되면 기타가 없어지고 '부서진 조각'이 1 ~ 단계만큼 랜덤으로 남아요(+8이면 1~8개). 조각 ${CASE_SHARDS}개로 하드케이스를 만들면 파괴를 한 번 막아 줘요.</p>
         <p class="note2"><b>대박</b>: +0~+9 강화가 성공하면 그중 ${JACKPOT_P}%는 한 번에 2단계 올라요(성공 확률 안에서 — +1→+2 성공 96%면 대박은 약 ${r1(96 * JACKPOT_P / 100)}%).
         <b>행운 게이지</b>: 그 악기로 강화를 누를 때마다(성공·${keepWord(S.bench)} 모두) 한 칸, ${LUCK_MAX}칸이 차면 다음 강화는 반드시 성공해요.
         <b>콤보</b>: 같은 악기로 3번 연속 성공하면 그 강화 비용의 ${COMBO_STEP * 100}%씩 골드를 더 받아요(최대 ${COMBO_STEP * COMBO_CAP * 100}%).
@@ -2427,7 +2459,7 @@ function renderTable() {
 }
 
 // ---------- 도감 ----------
-const DEX_FAMS = ['strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'superstrat2', 'acoustic', 'acoustic2', 'bass', 'bass2', 'amp', 'multi'];
+const DEX_FAMS = ['strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'superstrat2', 'acoustic', 'acoustic2', 'bass', 'bass2', 'amp', 'amp2', 'multi', 'multi2', 'pedal'];
 const dexHas = (f, lv) => !!((S.dex[f] | 0) & (1 << lv));
 function dexAdd(f, lv) {
     f = FAMS[f] ? f : 'strat';
@@ -2766,7 +2798,7 @@ async function enhance() {
             veilAdd((GIFTS[G.x] || {}).gold, 600);   // 선물 골드는 선물 창이 열릴 때 올라간다
             await giftCard(G, g);
         } }
-    } else if (out === 'keep' && g.f === 'multi') {   // 멀티이펙터: 버튼이 툭 빠져 날아갔다가 → 다시 끼움
+    } else if (out === 'keep' && baseOf(g.f) === 'multi') {   // 멀티이펙터: 버튼이 툭 빠져 날아갔다가 → 다시 끼움
         sfx('btnpop'); btnCap();
         pop('툭!', 'keep', 30);
         setTimeout(() => pop('버튼 빠짐 — 다시 끼움', 'sm', 46), 120);
@@ -3232,14 +3264,14 @@ function placeItem(g, prefer) {
     if (slot == null) return '';
     S.wall[slot] = g; return 'wall';
 }
-const noRoomMsg = g => isSq(g) ? `바닥에 ${FAMS[g.f].name}는 ${FLOOR_EACH}개까지예요. 바닥의 ${FAMS[g.f].name}를 팔거나 작업대로 가져와요`
+const noRoomMsg = g => isSq(g) ? `바닥에 ${gearName(g.f)}는 ${FLOOR_EACH}개까지예요. 바닥의 ${gearName(g.f)}를 팔거나 작업대로 가져와요`
     : S.open.every(Boolean) ? '벽이 꽉 찼어요. 걸린 기타를 팔거나 작업대로 가져와요' : '빈 걸이가 없어요. 컬렉션에서 잠긴 걸이를 열어요';
 async function hangBench() {
     const g = S.bench;
     if (busy || !g) return;
     const where = placeItem(g);
     // 2026-11-17 사용자: 꽉 찼으면 컬렉션으로 넘어가서, 메뉴와 진열 벽 사이에 안내 — 진열된 악기를 누르면 [팔기][작업 중인 악기와 교체]
-    if (!where) { talkClear(); setTab('room'); roomFull = isSq(g) ? g.f : 'guitar'; pickId = ''; selId = ''; renderRoom(); sfx('drop'); return; }
+    if (!where) { talkClear(); setTab('room'); roomFull = isSq(g) ? baseOf(g.f) : 'guitar'; pickId = ''; selId = ''; renderRoom(); sfx('drop'); return; }
     busy = true; talkClear();
     ghost = g; S.bench = null; renderSact();
     if (!S.rep) S.rep = g.id;
@@ -3317,7 +3349,7 @@ function wallLayout(W, floorList) {
     // 2026-11-15 사용자: 멀티 두 개가 겹침 — 몇몇 그림(멀티 +4·+9·+20, 앰프 +19·+20 등)은 틀의 80% 넘게 넓어서 자리 폭(fw)을 넘었다.
     //   자리를 조금 넓히고(fw), 그보다 넓은 그림은 그 비율만큼 작게 그린다(아래 끝은 그대로)
     const fh = { amp: hh * 0.96, multi: hh * 0.64 }, fw = { amp: 0.56, multi: 0.68 }, fb = { amp: 97, multi: 96.5 };
-    const wideOf = g => ((FLOOR_ART_W[g.f] || {})[Math.min(20, g.lv)] || (g.f === 'amp' ? 0.51 : 0.63));
+    const wideOf = g => ((FLOOR_ART_W[g.f] || {})[Math.min(20, g.lv)] || (baseOf(g.f) === 'amp' ? 0.51 : 0.63));
     {   // 앰프 3 + 멀티 3 자리가 바닥 폭에 다 안 들어가면(좁은 벽 그림·휴대폰) 둘 다 같은 비율로 작게
         const iwOf = f => fh[f] * (W.h / W.w) * (56 / 84) * fw[f], items = FLOOR_LAYOUT * (iwOf('amp') + iwOf('multi')), fixed = 2 * (FLOOR_LAYOUT - 1) + 3 + 2;
         if (items + fixed > 100) { const k = (100 - fixed) / items; fh.amp *= k; fh.multi *= k; }
@@ -3327,7 +3359,7 @@ function wallLayout(W, floorList) {
         fpos[f] = Array.from({ length: FLOOR_EACH }, (_, k) => ({ x: edge[f] + dir[f] * (iw / 2 + k * (iw + 1)), h2, t2: fb[f] - h2 * 75.75 / 84, bottom: fb[f], iw }));
         let k = 0;
         floorList.forEach((g, j) => {
-            if (g.f !== f) return;
+            if (baseOf(g.f) !== f) return;
             const P = fpos[f][k++]; if (!P) return;
             const sc = Math.min(1, fw[f] / wideOf(g)), h = P.h2 * sc;
             at[j] = { ...P, h2: h, t2: P.bottom - h * 75.75 / 84, iw: P.iw * Math.min(1, wideOf(g) / fw[f]) * sc };
@@ -3357,7 +3389,7 @@ function renderRoom(enter) {
     }).join('');
     // 바닥 물건(앰프·멀티): 걸이와 상관없이 오른쪽 끝부터
     // 빈 발판: 앰프는 오른쪽, 멀티는 왼쪽. 물건 그림 아래 끝(바닥)에 맞춘 점선 상자
-    const padHtml = ['amp', 'multi'].map(f => fpos[f].slice(S.floor.filter(g => g.f === f).length).map(P => {
+    const padHtml = ['amp', 'multi'].map(f => fpos[f].slice(S.floor.filter(g => baseOf(g.f) === f).length).map(P => {
         const bh = P.h2 * (f === 'amp' ? 0.36 : 0.3);
         return `<div class="fpad ${f}" style="left:${P.x}%;width:${P.iw}%;top:${P.bottom - bh}%;height:${bh}%"><i class="fas ${f === 'amp' ? 'fa-volume-high' : 'fa-sliders'}"></i><span>${f === 'amp' ? '앰프' : '멀티'}</span></div>`;
     }).join('')).join('');
@@ -3373,28 +3405,28 @@ function renderRoom(enter) {
     if (selId && !roomFull) {
         const sf = S.floor.find(x => x.id === selId), mark = (x, y) => `<span class="swapo" style="left:${x}%;top:${y}%" aria-hidden="true"><i class="fas fa-arrows-left-right"></i></span>`;
         if (selWall) swapHtml = W.x.map((x, i) => S.open[i] && S.wall[i] && S.wall[i].id !== selId ? mark(x, top + hh * 0.5) : '').join('');
-        else if (sf) swapHtml = S.floor.map(g => g.id !== selId && g.f === sf.f && floor[g.id] ? mark(floor[g.id].x, floor[g.id].bottom - floor[g.id].h2 * 0.45) : '').join('');
+        else if (sf) swapHtml = S.floor.map(g => g.id !== selId && baseOf(g.f) === baseOf(sf.f) && floor[g.id] ? mark(floor[g.id].x, floor[g.id].bottom - floor[g.id].h2 * 0.45) : '').join('');
     }
     // 꽉 찼을 때 누른 악기 위에 [이 악기 팔기] [작업 중인 악기와 교체] (위아래로)
     let popHtml = '';
     if (pickId) {
         const wi = wallFind(pickId), g = wi >= 0 ? S.wall[wi] : S.floor.find(x => x.id === pickId), fl = floor[pickId];
         const cx = wi >= 0 ? W.x[wi] : fl ? fl.x : 50, cy = wi >= 0 ? top + hh * 0.55 : fl ? fl.bottom - fl.h2 * 0.45 : 50;
-        const b0 = S.bench, same = !!b0 && (isSq(b0) ? isSq(g) && g.f === b0.f : !isSq(g));
+        const b0 = S.bench, same = !!b0 && (isSq(b0) ? isSq(g) && baseOf(g.f) === baseOf(b0.f) : !isSq(g));
         popHtml = `<div class="wpop" style="left:clamp(70px, ${cx}%, calc(100% - 70px));top:clamp(42px, ${cy}%, calc(100% - 42px))">
             ${g.lock ? '<button type="button" class="ps" disabled><i class="fas fa-lock"></i>잠긴 악기</button>'
             : `<button type="button" class="ps" data-a="psell" data-id="${g.id}"><i class="fas fa-coins"></i>${g.lv ? `이 악기 팔기 <small>${gs(SELL[g.lv])}</small>` : '이 악기 버리기'}</button>`}
-            <button type="button" class="pw" data-a="pswap" data-id="${g.id}" ${same ? '' : 'disabled'}><i class="fas fa-right-left"></i>${same ? '작업 중인 악기와 교체' : isSq(b0) ? `${FAMS[b0.f].name}끼리만 바꿔요` : '기타끼리만 바꿔요'}</button></div>`;
+            <button type="button" class="pw" data-a="pswap" data-id="${g.id}" ${same ? '' : 'disabled'}><i class="fas fa-right-left"></i>${same ? '작업 중인 악기와 교체' : isSq(b0) ? `${gearName(b0.f)}끼리만 바꿔요` : '기타끼리만 바꿔요'}</button></div>`;
     }
     // 목록은 장비별로 (2026-11-12 사용자): 기타(걸이) · 앰프 · 멀티이펙터(바닥). 악기마다 공유 단추, 작업대로 가는 단추는 '다시 작업대로'
     const row = (g, i) => `<div class="grow ${g.id === selId ? 'sel' : ''}${g.lock ? ' locked' : ''}" id="row-${g.id}">${gc(g.lv, '', 2, g.f)}
-            <div class="gt"><b>${g.lock ? '<i class="fas fa-lock"></i>' : ''}${esc(full(g))}</b><small>${i < 0 ? `${g.f === 'amp' ? '파괴' : '줄 끊김'} −${gearCut(g)}%p · ` : rp && g.id === rp.id ? '⭐ 대표 기타 · ' : ''}팔면 ${gf(SELL[g.lv])}</small></div>
+            <div class="gt"><b>${g.lock ? '<i class="fas fa-lock"></i>' : ''}${esc(full(g))}</b><small>${i < 0 ? `${baseOf(g.f) === 'amp' ? '파괴' : '줄 끊김'} −${gearCut(g)}%p · ` : rp && g.id === rp.id ? '⭐ 대표 기타 · ' : ''}팔면 ${gf(SELL[g.lv])}</small></div>
             <div class="ga">${isSq(g) ? '' : `<button type="button" class="pri" data-a="setrep" data-id="${g.id}" ${rp && g.id === rp.id ? 'disabled' : ''}>대표로</button>`}
             <button type="button" data-a="take" data-id="${g.id}">다시 작업대로</button>
             <button type="button" data-a="wsell" data-id="${g.id}" ${g.lv && !g.lock ? '' : 'disabled'}>${g.lock ? '<i class="fas fa-lock"></i> 팔기' : '팔기'}</button>
             <button type="button" class="sh" data-a="gshare" data-id="${g.id}" aria-label="공유"><i class="fas fa-share-nodes"></i>공유</button></div>${lockBtn(g)}</div>`;
     const grp = (icon, title, list, note) => list.length ? `<h4 class="gh"><i class="fas ${icon}"></i>${title}${note ? `<small>${note}</small>` : ''}</h4>` + list.map(([g, i]) => row(g, i)).join('') : '';   // 2026-11-13: 몇 대·몇 칸 같은 설명은 뺌
-    const wallG = S.wall.map((g, i) => g && [g, i]).filter(Boolean), amps = S.floor.filter(g => g.f === 'amp').map(g => [g, -1]), mults = S.floor.filter(g => g.f === 'multi').map(g => [g, -1]);
+    const wallG = S.wall.map((g, i) => g && [g, i]).filter(Boolean), amps = S.floor.filter(g => baseOf(g.f) === 'amp').map(g => [g, -1]), mults = S.floor.filter(g => baseOf(g.f) === 'multi').map(g => [g, -1]);
     const rows = [grp('fa-guitar', '기타', wallG, '')
         + grp('fa-volume-high', '앰프', amps, `파괴 −${gearBuff().amp}%p`)
         + grp('fa-sliders', '멀티이펙터', mults, `성공 +${gearBuff().multi}%`)].filter(Boolean);
@@ -3411,7 +3443,7 @@ function wallFind(id) { return S.wall.findIndex(g => g && g.id === id); }
 // ---------- 컬렉션이 꽉 찼을 때 · 잠금 (2026-11-17 사용자) ----------
 const lockBtn = g => `<button type="button" class="lkb${g.lock ? ' on' : ''}" data-a="lock" data-id="${g.id}" aria-pressed="${!!g.lock}" title="${g.lock ? '잠김 — 눌러서 풀기' : '잠그면 실수로 팔지 않아요'}"><i class="fas ${g.lock ? 'fa-lock' : 'fa-lock-open'}"></i>${g.lock ? '잠김' : '잠금'}</button>`;
 function roomFullNote() {
-    const b = S.bench, sq = roomFull !== 'guitar', nm = sq ? FAMS[roomFull].name : '기타';
+    const b = S.bench, sq = roomFull !== 'guitar', nm = sq ? gearName(roomFull) : '기타';
     const locked = !sq && S.open.some(o => !o);
     return `<div class="rfull"><i class="fas fa-circle-info"></i><div><b>${sq ? `바닥에 ${nm}는 ${FLOOR_EACH}개까지라 더 놓을 자리가 없어요` : '컬렉션이 꽉 찼어요'}</b>
         진열된 ${nm}를 누르면 팔거나, 작업대의 <b style="display:inline">${b ? esc(full(b)) : ''}</b>와(과) 바꿀 수 있어요.${locked ? ' 잠긴 걸이를 열어도 돼요.' : ''}</div></div>`;
@@ -3461,7 +3493,7 @@ async function popSell(id) {   // 꽉 찼을 때 누른 악기 팔기
 async function popSwap(id) {   // 꽉 찼을 때 누른 악기 ↔ 작업대 악기
     const wi = wallFind(id), fk = S.floor.findIndex(x => x.id === id), g = wi >= 0 ? S.wall[wi] : S.floor[fk], b = S.bench;
     if (!g || !b) return;
-    if (isSq(b) ? !(isSq(g) && g.f === b.f) : isSq(g)) { toast(isSq(b) ? `${FAMS[b.f].name}끼리만 바꿀 수 있어요` : '기타끼리만 바꿀 수 있어요'); return; }
+    if (isSq(b) ? !(isSq(g) && baseOf(g.f) === baseOf(b.f)) : isSq(g)) { toast(isSq(b) ? `${gearName(b.f)}끼리만 바꿀 수 있어요` : '기타끼리만 바꿀 수 있어요'); return; }
     if (!await askYN('이 악기를 작업대로 보내고,<br>작업대 악기를 진열하겠습니까?', `<p class="mv"><span>작업대로</span>${itemBadge(g)}</p><p class="mv"><span>진열</span>${itemBadge(b)}</p>`, '예, 바꿀게요')) return;
     if (S.bench !== b || findItem(id) !== g) return;
     const wi2 = wallFind(id), fk2 = S.floor.findIndex(x => x.id === id);
@@ -3478,8 +3510,8 @@ function swapSpots(a, bId, emptyI) {
     if (bId) {
         const ib = wallFind(bId), fb = S.floor.findIndex(g => g.id === bId);
         if (ia >= 0 && ib >= 0) [S.wall[ia], S.wall[ib]] = [S.wall[ib], S.wall[ia]];
-        else if (fa >= 0 && fb >= 0 && S.floor[fa].f === S.floor[fb].f) [S.floor[fa], S.floor[fb]] = [S.floor[fb], S.floor[fa]];
-        else { selId = bId; renderRoom(); if (ia >= 0 || fa >= 0) toast(ia >= 0 ? '기타는 걸이끼리만 자리를 바꿔요' : '앰프는 앰프끼리, 멀티는 멀티끼리 바꿔요'); return; }
+        else if (fa >= 0 && fb >= 0 && baseOf(S.floor[fa].f) === baseOf(S.floor[fb].f)) [S.floor[fa], S.floor[fb]] = [S.floor[fb], S.floor[fa]];
+        else { selId = bId; renderRoom(); if (ia >= 0 || fa >= 0) toast(ia >= 0 ? '기타는 걸이끼리만 자리를 바꿔요' : '앰프는 앰프끼리, 이펙터는 이펙터끼리 바꿔요'); return; }
     } else if (ia >= 0 && emptyI != null && S.open[emptyI] && !S.wall[emptyI]) { S.wall[emptyI] = S.wall[ia]; S.wall[ia] = null; }
     else return;
     selId = ''; save(); sfx('hang'); renderRoom();
@@ -3797,14 +3829,14 @@ async function rkView(id) {
     const ok = !!(c && Array.isArray(c.w));
     if (!ok) c = { s: 'wood', w: [null, null, tf ? [tf, tl] : null, null, null], o: 31, f: [], r: tf ? 2 : -1 };   // 모르는 걸이는 잠금 표시 없이 빈 걸이로
     const items = [...c.w.filter(Boolean), ...(c.f || [])].map(([f, lv]) => ({ f: FAMS[f] ? f : 'strat', lv }));
-    const n = f => items.filter(g => (f ? g.f === f : !isSq(g))).length;
+    const n = f => items.filter(g => (f ? baseOf(g.f) === f : !isSq(g))).length;
     const m = document.createElement('div');
     m.className = 'gk-modal collask';
     m.innerHTML = `<div class="in"><button type="button" class="x" aria-label="닫기"><i class="fas fa-xmark"></i></button>
         <div class="ch"><span class="md ${r.pos <= 3 ? 'p' + r.pos : ''}">${r.pos === 1 ? '<i class="fas fa-crown"></i>' : ''}${r.pos}위</span><b>${esc(nick)}${r.me ? ' (나)' : ''}</b>${whoTag(r)}</div>
         <p class="cs">${tf ? `최고 무기 <b>+${tl}</b>` : '기타 없음'} · 모은 돈 <b>${gf(gold)}</b></p>
         ${wallViewHtml(c)}
-        ${ok ? `<p class="cn">기타 ${n('')}대${n('amp') ? ` · 앰프 ${n('amp')}대` : ''}${n('multi') ? ` · 멀티 ${n('multi')}대` : ''}</p>` : '<p class="cn">아직 컬렉션을 올리지 않았어요 · 최고 무기만 보여요</p>'}
+        ${ok ? `<p class="cn">기타 ${n('')}대${n('amp') ? ` · 앰프 ${n('amp')}대` : ''}${n('multi') ? ` · 이펙터 ${n('multi')}대` : ''}</p>` : '<p class="cn">아직 컬렉션을 올리지 않았어요 · 최고 무기만 보여요</p>'}
         <div class="cl">${items.sort((a, b) => b.lv - a.lv).map(g => `<div class="ci">${gc(g.lv, '', 2, g.f)}<span>${esc(full(g))}</span></div>`).join('')}</div></div>`;
     const close = () => { m.remove(); document.removeEventListener('keydown', esc1); };
     const esc1 = e => { if (e.key === 'Escape') close(); };
