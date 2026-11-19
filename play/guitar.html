@@ -177,6 +177,8 @@
     .shopcat button.on { background: #fff; color: var(--green-deep); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
     @media (max-width: 400px) { .shopcat button i { display: none; } .shopcat button { font-size: 12px; } .sgold { font-size: 12.5px; gap: 4px; padding: 0 8px; } }
     .btncap { position: absolute; z-index: 5; width: 17px; height: 17px; border-radius: 50%; transform: translate(-50%, -50%); background: radial-gradient(circle at 35% 30%, #fff, #c9ced3 42%, #6d747a); box-shadow: 0 0 0 2px #2b2f33, 0 3px 5px rgba(0, 0, 0, 0.5); }
+    .btncap.knob { width: 19px; height: 19px; background: radial-gradient(circle at 35% 30%, #7a7a7a, #262626 55%, #0b0b0b); box-shadow: 0 0 0 2px #c9ced3, 0 3px 5px rgba(0, 0, 0, 0.5); }
+    .btncap.knob::after { content: ''; position: absolute; left: 50%; top: 2px; width: 2px; height: 7px; margin-left: -1px; border-radius: 1px; background: #fff; }
     .stage .aura { position: absolute; z-index: 0; left: 50%; top: calc(var(--h0) * 0.5); width: 46%; height: calc(var(--h0) * 0.72); transform: translate(-50%, -50%); pointer-events: none; opacity: 0; transition: opacity .8s; filter: blur(10px); mix-blend-mode: screen; }
     .stage .aura.on { opacity: .55; }
     .stage .aura.l15 { opacity: .7; }
@@ -1007,7 +1009,7 @@
     <h3>2. 강화하기</h3>
     <ul>
         <li><b>강화</b>를 누르면 단추 아래 빈칸이 생겨요. 누를 때마다 프렛 망치가 기타를 한 번씩 내려치고, 칸을 다 채우면 결과가 나와요.</li>
-        <li>결과는 세 가지예요. <b>성공</b>이면 한 단계 올라가고, <b>줄 끊김</b>이면 단계가 그대로이고(이펙터는 '버튼 빠짐'), <b>파괴</b>면 악기가 부서져요. 파괴는 +7부터 생겨요.</li>
+        <li>결과는 세 가지예요. <b>성공</b>이면 한 단계 올라가고, <b>줄 끊김</b>이면 단계가 그대로이고(앰프는 '노브 빠짐', 이펙터는 '버튼 빠짐'), <b>파괴</b>면 악기가 부서져요. 파괴는 +7부터 생겨요.</li>
         <li>강화 비용은 단계가 높을수록 비싸져요. +8쯤부터는 강화 한 번 값이 그 기타를 판 값과 꽤 비슷해요.</li>
         <li><b>대박</b>: +9 아래에서 성공하면 가끔 한 번에 두 단계가 올라가요.</li>
         <li><b>콤보</b>: 같은 기타로 연속 성공하면 세 번째부터 보너스 골드가 붙어요.</li>
@@ -1241,8 +1243,9 @@ const ART_V = { tele2: { 0: 2, 1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9
     bs: { 0: 2, 1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: 2, 11: 2, 12: 2, 13: 2, 14: 2, 15: 2, 16: 2, 17: 2, 18: 2, 19: 2, 20: 2 } };
 const artV = (pre, n) => { const v = ART_V[pre] && ART_V[pre][n]; return v ? `?v=${v}` : ''; };
 const GEAR_PER = 0.1, r1 = x => Math.round(x * 10) / 10;
-// '유지' 이름: 기타는 줄 끊김, 멀티이펙터는 버튼 빠짐 (2026-11-12 사용자: 이펙터는 줄이 없으니 버튼이 빠졌다가 다시 끼움)
-const keepWord = g => g && baseOf(g.f) === 'multi' ? '버튼 빠짐' : '줄 끊김';
+// '유지' 이름: 기타는 줄 끊김, 멀티이펙터는 버튼 빠짐 (2026-11-12 사용자: 이펙터는 줄이 없으니 버튼이 빠졌다가 다시 끼움),
+//   앰프는 노브 빠짐 (2026-11-19 사용자: 앰프도 줄 끊김 말고)
+const keepWord = g => !g ? '줄 끊김' : baseOf(g.f) === 'multi' ? '버튼 빠짐' : baseOf(g.f) === 'amp' ? '노브 빠짐' : '줄 끊김';
 const gearCut = g => r1((g.lv | 0) * GEAR_PER);
 function gearBuff() {
     const b = { amp: 0, multi: 0, nAmp: 0, nMulti: 0 };
@@ -2139,9 +2142,9 @@ function burst(n, colors, { y = 50, spread = 140, size = [4, 10], dur = 900, gra
     }
 }
 // 멀티이펙터 버튼(풋스위치 캡)이 튀어 날아갔다가 떨어진다
-function btnCap() {
+function btnCap(knob) {   // knob: 앰프 — 노브가 빠진다(앰프 그림의 노브 줄 높이, 노브 하나를 무작위로)
     const d = document.createElement('i'), side = Math.random() < 0.5 ? -1 : 1;
-    d.className = 'btncap'; d.style.left = '50%'; d.style.top = '66%';
+    d.className = knob ? 'btncap knob' : 'btncap'; d.style.left = knob ? `${42 + Math.random() * 14}%` : '50%'; d.style.top = knob ? '53%' : '66%';
     $('#fx').appendChild(d);
     d.animate([{ transform: 'translate(-50%, -50%) rotate(0deg)', opacity: 1 }, { transform: `translate(calc(-50% + ${side * 60}px), calc(-50% - 95px)) rotate(${side * 300}deg)`, opacity: 1, offset: .45 },
         { transform: `translate(calc(-50% + ${side * 115}px), calc(-50% + 70px)) rotate(${side * 620}deg)`, opacity: 0 }], { duration: 900, easing: 'cubic-bezier(.25, .6, .45, 1)', fill: 'forwards' }).onfinish = () => d.remove();
@@ -2490,7 +2493,7 @@ function renderTable() {
     el.innerHTML = `<summary>강화 확률표 <small>— 화면에 적은 확률이 실제 확률이에요</small></summary>
         <table class="otab"><tr><th>강화</th><th>성공</th><th>${keepWord(S.bench)}</th><th>파괴</th><th>비용</th><th>팔면</th></tr>
         ${ODDS.map(([s, m, d], i) => `<tr class="${i === lv ? 'me' : ''}"><td>+${i}→+${i + 1}</td><td>${s}%</td><td>${m}%</td><td>${d}%</td><td>${COST[i] ? gshort(COST[i]) : '공짜'}</td><td>${gshort(SELL[i + 1])}</td></tr>`).join('')}</table>
-        <p class="note2">${S.bench && baseOf(S.bench.f) === 'multi' ? '버튼이 빠지면 다시 끼우고, 단계는 그대로예요.' : '줄이 끊기면 단계는 그대로예요.'} 파괴되면 기타가 없어지고 '부서진 조각'이 1 ~ 단계만큼 랜덤으로 남아요(+8이면 1~8개). 조각 ${CASE_SHARDS}개로 하드케이스를 만들면 파괴를 한 번 막아 줘요.</p>
+        <p class="note2">${S.bench && baseOf(S.bench.f) === 'multi' ? '버튼이 빠지면 다시 끼우고, 단계는 그대로예요.' : S.bench && baseOf(S.bench.f) === 'amp' ? '노브가 빠지면 다시 끼우고, 단계는 그대로예요.' : '줄이 끊기면 단계는 그대로예요.'} 파괴되면 기타가 없어지고 '부서진 조각'이 1 ~ 단계만큼 랜덤으로 남아요(+8이면 1~8개). 조각 ${CASE_SHARDS}개로 하드케이스를 만들면 파괴를 한 번 막아 줘요.</p>
         <p class="note2"><b>대박</b>: +0~+9 강화가 성공하면 그중 ${JACKPOT_P}%는 한 번에 2단계 올라요(성공 확률 안에서 — +1→+2 성공 96%면 대박은 약 ${r1(96 * JACKPOT_P / 100)}%).
         <b>행운 게이지</b>: 그 악기로 강화를 누를 때마다(성공·${keepWord(S.bench)} 모두) 한 칸, ${LUCK_MAX}칸이 차면 다음 강화는 반드시 성공해요.
         <b>콤보</b>: 같은 악기로 3번 연속 성공하면 그 강화 비용의 ${COMBO_STEP * 100}%씩 골드를 더 받아요(최대 ${COMBO_STEP * COMBO_CAP * 100}%).
@@ -2838,10 +2841,11 @@ async function enhance() {
             veilAdd((GIFTS[G.x] || {}).gold, 600);   // 선물 골드는 선물 창이 열릴 때 올라간다
             await giftCard(G, g);
         } }
-    } else if (out === 'keep' && baseOf(g.f) === 'multi') {   // 멀티이펙터: 버튼이 툭 빠져 날아갔다가 → 다시 끼움
-        sfx('btnpop'); btnCap();
+    } else if (out === 'keep' && (baseOf(g.f) === 'multi' || baseOf(g.f) === 'amp')) {   // 멀티이펙터: 버튼이, 앰프: 노브가 툭 빠져 날아갔다가 → 다시 끼움
+        const amp = baseOf(g.f) === 'amp';
+        sfx('btnpop'); btnCap(amp);
         pop('툭!', 'keep', 30);
-        setTimeout(() => pop('버튼 빠짐 — 다시 끼움', 'sm', 46), 120);
+        setTimeout(() => pop(amp ? '노브 빠짐 — 다시 끼움' : '버튼 빠짐 — 다시 끼움', 'sm', 46), 120);
         cv.animate([{ transform: CVT }, { transform: `${CVT} translateY(4px)` }, { transform: `${CVT} rotate(-2deg)` }, { transform: CVT }], { duration: 300 });
         await sleep(300);
     } else if (out === 'keep') {
