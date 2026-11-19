@@ -800,7 +800,11 @@
 
     /* 배틀 창 */
     .gk-modal { position: fixed; inset: 0; z-index: 90; background: rgba(10, 18, 15, 0.84); display: flex; align-items: center; justify-content: center; padding: 16px; animation: fade .2s; }
-    .nickask .in { max-width: 340px; }
+    .nickask .in { max-width: 340px; position: relative; }
+    .nickask .x { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; border-radius: 50%; color: #777; font-size: 18px; }
+    .nickask .an { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; margin-top: 8px; padding: 9px 12px; border-radius: 12px; border: 1.5px dashed #c9cfcc; background: #f7f8f7; font-size: 14px; font-weight: 800; color: #555; }
+    .nickask .an small { font-size: 12px; font-weight: 700; color: var(--sub); }
+    .nickask .an[disabled] { opacity: .5; }
     .nickask .ic { display: grid; place-items: center; width: 54px; height: 54px; margin: 2px auto 8px; border-radius: 50%; background: #e2f5ea; color: var(--green-deep); font-size: 22px; }
     .nickask h3 { font-size: 18px; font-weight: 900; }
     .nickask p { margin: 6px 0 12px; font-size: 13.5px; color: #555; }
@@ -1591,7 +1595,7 @@ function load() {
     s.tuner = Math.min(TUNERS.length - 1, Math.max(0, s.tuner | 0));   // 0 = 튜너 없음 (2026-11-18 클립도 사야 생김. 11-17 ~ 11-18 에 받은 클립은 그대로 둔다)
     s.hammer = Math.min(HAMMERS.length - 1, Math.max(0, s.hammer | 0));
     s.rr = Object.assign({ real: 0, prac: 0, bt: 0 }, s.rr && typeof s.rr === 'object' ? s.rr : {}); s.nickOk = s.nickOk === true;
-    s.nickPick = ['game', 'login'].includes(s.nickPick) ? s.nickPick : '';   // 게임 닉네임 (2026-11-16, nickAsk)
+    s.nickPick = ['game', 'login', 'anon'].includes(s.nickPick) ? s.nickPick : '';   // 게임 닉네임 (2026-11-16, nickAsk)
     s.nickCh = Math.max(0, s.nickCh | 0); s.nickAt = Math.max(0, +s.nickAt || 0);
     // 예전(2026-11-12 잠깐) 따로 키우던 앰프·멀티는 창고에 물건으로 옮긴다
     if (raw.gear && typeof raw.gear === 'object') [['amp', 'amp'], ['fx', 'multi']].forEach(([k, f]) => { const lv = Math.min(MAX, Math.max(0, raw.gear[k] | 0)); if (lv > 0 && s.store.length < STORE_MAX) s.store.push({ id: rid(), lv, f }); });
@@ -3195,6 +3199,8 @@ async function goldAd() {
 // 첫 기타는 공짜, 그다음부터 FIND_GOLD. 계열은 FIND_FAMS 중 하나(스트랫·통기타·베이스) — 나중에 텔레·주전자…도 (CLAUDE.md 11절)
 async function findGuitar(first) {
     if (S.bench || busy) return;
+    if (!(await nickBeforeFind())) return;   // 닉네임을 안 정했으면 먼저 묻는다(2026-11-19) — X 를 눌러도 그대로 찾는다
+    if (S.bench || busy) return;
     if (first) {
         if (S.first) return;
         S.first = true;   // 첫 기타는 공짜 (2026-11-13 사용자: 피크 빼기)
@@ -3609,7 +3615,9 @@ function rankers() {
 // ---------- 진짜 랭킹 (db/play_guitar_rank.sql, 2026-11-12 적용) — 안 닿거나 사람이 적으면 연습 상대로 채운다 ----------
 // 사람당 한 줄(대표 기타 단계·닉네임·승패)만 서버에 둔다. 진짜 상대와의 승패는 서버가 정한다(하루 BT_DAY번).
 let NET = { ok: null, at: 0, sig: '', opps: [], top: [], me: null }, netBusy = false;
-const myNick = () => (S.nick || '').trim() || '익명';
+// 익명 = '익명' + 내 파이트 넘버 6자리 (2026-11-19 사용자: 닉네임 창의 '익명으로 하기', 닉네임을 안 정한 사람도) — 번호를 아직 못 받았으면 '익명'
+function anonName() { let no = null; try { no = myNo(); } catch (e) {} return no != null ? '익명' + fmtNo(no) : '익명'; }
+const myNick = () => (S.nickPick !== 'anon' && (S.nick || '').trim()) || anonName();
 const repSig = g => g ? `${g.f}|${g.lv}|${myNick()}` : '';
 const LINK_RE = /(https?:|www\.|\.(com|net|kr|co|io|me|ly)\b)/i;
 // 대표 기타를 서버에 올린다(바뀌었거나 10분 지났을 때만). 운영 계정으로 로그인해 있으면 서버가 숨김으로 둔다
@@ -3617,7 +3625,7 @@ const LINK_RE = /(https?:|www\.|\.(com|net|kr|co|io|me|ly)\b)/i;
 // 시험 브라우저(2026-11-13 사용자: Claude 시험용 +18 기타가 진짜 랭킹 1위로 올라가 지우고 막음):
 //   그 브라우저에 localStorage 'play.gk.norank' = 'true' 를 두면 랭킹에 올리지 않는다(상대·랭킹 보기는 그대로, 진짜 상대와도 브라우저 안에서만 겨룸)
 const NORANK = mem.get('gk.norank', false) === true;
-async function syncMe(force) {
+async function syncMe(force, again) {
     const g = rep();
     if (!g || NORANK) return null;
     const t = topGuitar(), made = Math.floor(+S.st.made || 0);
@@ -3634,6 +3642,7 @@ async function syncMe(force) {
     }
     const m = { sig, at: Date.now(), id: r.id, pos: r.pos, players: r.players, hidden: r.hidden };
     mem.set(GKK('sync2'), m);
+    if (!again && !r.hidden && repSig(g) + '|' + S.st.best + '|' + (t ? t.f + t.lv : '-') + '|' + made !== sig) return syncMe(true, true);   // 처음 번호를 받아 '익명' → '익명123456'
     syncColl(m);
     return m;
 }
@@ -3828,7 +3837,7 @@ function renderRank() {
         const left = nickLeft();
         const nnote = !S.nickPick ? '아직 게임 닉네임을 안 정했어요 · 처음 정하는 건 무료' : nickFree() ? '한 번은 무료로 바꿀 수 있어요'
             : left ? `${dhm(left)} 뒤에 바꿀 수 있어요 · ${gf(NICK_PRICE)}` : `바꾸기 ${gf(NICK_PRICE)} · 1주일에 한 번`;
-        h += `<div class="card mycard nickcard"><span class="nic"><i class="fas fa-signature"></i></span><div class="mt"><small>내 닉네임${S.nickPick === 'login' ? ' · 로그인 이름' : ''}</small><b>${esc(myNick())}</b>
+        h += `<div class="card mycard nickcard"><span class="nic"><i class="fas fa-signature"></i></span><div class="mt"><small>내 닉네임${S.nickPick === 'login' ? ' · 로그인 이름' : S.nickPick === 'anon' ? ' · 익명' : ''}</small><b>${esc(myNick())}</b>
             <div class="left">${nnote}</div></div><button type="button" class="nkbtn" data-a="nickedit" ${left ? 'disabled' : ''}>${S.nickPick ? '바꾸기' : '정하기'}</button></div>`;
         // 내가 가진 최고 무기 — 최고 무기 랭킹 위에 있던 카드를 여기로 (2026-11-16 사용자: '내 기록 안에 내가 가진 최고의 무기 띄우면 되겠네')
         h += `<div class="card mycard">${tg ? gc(tg.lv, '', 2, tg.f) : ''}<div class="mt"><small>내가 가진 최고 무기</small><b>${tg ? esc(full(tg)) : '아직 기타가 없어요'}</b></div></div>`;
@@ -4018,7 +4027,7 @@ function nickErr(v) {
     const n = String(v || '').replace(/\s+/g, ' ').trim(), flat = n.replace(/[\s\d_\-.·,!?~*^]+/g, '');
     if (n.length < 2) return '2자 이상으로 정해 주세요';
     if (n.length > 12) return '12자까지예요';
-    if (n === '익명') return "'익명' 말고 다른 이름으로 정해 주세요";
+    if (/^익명\d*$/.test(n.replace(/\s+/g, ''))) return "익명은 아래 '익명으로 하기'를 눌러 주세요";
     if (LINK_RE.test(n)) return '이름에 링크는 쓸 수 없어요';
     if (BAD_NICK.test(flat)) return '쓸 수 없는 말이 들어 있어요';
     if (RESERVED_NICK.test(flat) && !ADMIN) return RESERVED_MSG;
@@ -4033,49 +4042,75 @@ const NICK_PRICE = 10000000, NICK_CD = 7 * 864e5;
 const nickFree = () => !S.nickPick || (S.nickCh | 0) < 1;
 const nickLeft = () => !S.nickPick ? 0 : Math.max(0, (+S.nickAt || 0) + NICK_CD - Date.now());
 const dhm = ms => { const m = Math.ceil(ms / 60000), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60); return d ? `${d}일 ${h}시간` : h ? `${h}시간 ${m % 60}분` : `${m}분`; };
-async function nickAsk(must) {
-    if (document.querySelector('.nickask')) return;
+// 묻는 때 (2026-11-19 사용자): 들어오자마자 말고, 닉네임 없이 '악기 찾기'를 처음 누를 때(nickBeforeFind). 위 X(또는 바깥·Esc) = 나중에 — 그대로 게임 시작,
+//   이 페이지에서는 다시 안 묻고 다음에 들어와 악기를 찾을 때 또 묻는다. '익명으로 하기' = S.nickPick 'anon'(이름 = '익명' + 파이트 넘버 6자리).
+//   익명을 고른 것도 한 번 정한 것으로 친다(그다음 바꾸기 한 번은 무료 — 예전 규칙 그대로)
+let nickLater = false, nickWait = false;
+function nickAsk(start) {
+    return new Promise(done => nickAskIn(start, done));
+}
+async function nickAskIn(start, done) {
+    if (document.querySelector('.nickask')) return done();
     const first = !S.nickPick;   // 처음 정하기(무료, 셈하지 않음)
-    if (!first && nickLeft()) { toast(`닉네임은 1주일에 한 번 바꿀 수 있어요 · ${dhm(nickLeft())} 뒤에 다시`); return; }
+    if (!first && nickLeft()) { toast(`닉네임은 1주일에 한 번 바꿀 수 있어요 · ${dhm(nickLeft())} 뒤에 다시`); return done(); }
     checkAdmin();   // 운영 계정이면 '안쌤' 같은 이름도 쓸 수 있게 미리 물어 둔다
     const pn = !PERSONA && acctId() && PLAY.myProfileNick ? (await PLAY.myProfileNick()).slice(0, 12) : '';
-    if (document.querySelector('.nickask')) return;
+    if (document.querySelector('.nickask')) return done();
     const free = nickFree(), cost = free ? 0 : NICK_PRICE, poor = S.gold < cost;
+    const an = anonName();
     const m = document.createElement('div');
     m.className = 'gk-modal nickask';
-    m.innerHTML = `<div class="in"><span class="ic"><i class="fas fa-signature"></i></span><h3>${first ? '게임 닉네임을 정해 주세요' : '닉네임 바꾸기'}</h3>
+    m.innerHTML = `<div class="in"><button type="button" class="x" aria-label="${start ? '나중에' : '닫기'}" title="${start ? '나중에 정할게요' : '닫기'}"><i class="fas fa-xmark"></i></button>
+        <span class="ic"><i class="fas fa-signature"></i></span><h3>${first ? '게임 닉네임을 정해 주세요' : '닉네임 바꾸기'}</h3>
         <p>랭킹·배틀에 보일 이름이에요. 2~12자.${first && pn ? '<br>로그인 이름 대신 게임에서 쓸 이름을 정해도 돼요.' : ''}</p>
         ${first ? '' : `<p class="price ${free ? 'free' : ''}">${free ? '이번 한 번은 무료예요' : `한 번 바꾸는 데 ${gf(NICK_PRICE)} · 1주일에 한 번<br><small>지금 가진 돈 ${gf(S.gold)}</small>`}</p>`}
         <input id="nkIn" maxlength="12" placeholder="게임 닉네임" autocomplete="off" value="${S.nickPick === 'game' ? esc(S.nick || '') : ''}"><p class="err" hidden></p>
         <button type="button" class="btn go" ${poor ? 'disabled' : ''}>${poor ? `골드가 ${gf(cost - S.gold)} 모자라요` : '확인'}</button>
         ${pn && S.nickPick !== 'login' ? `<button type="button" class="lg" ${poor ? 'disabled' : ''}><i class="fas fa-user"></i>로그인 이름 쓰기<small>${esc(pn)}</small></button>` : ''}
-        ${must ? '' : '<button type="button" class="no">닫기</button>'}</div>`;
+        ${S.nickPick !== 'anon' ? `<button type="button" class="an" ${poor ? 'disabled' : ''}>익명으로 하기<small>${an !== '익명' ? esc(an) : '익명 + 내 파이트 넘버 6자리'}</small></button>` : ''}</div>`;
     document.body.appendChild(m);
     const inp = m.querySelector('#nkIn'), err = m.querySelector('.err');
+    const esckey = e => { if (e.key === 'Escape') close(); };
+    const close = () => { if (!m.isConnected) return; m.remove(); removeEventListener('keydown', esckey); if (start) nickLater = true; done(); };
+    const finish = () => { m.remove(); removeEventListener('keydown', esckey); done(); };
     const apply = async (v, pick) => {
-        let e = nickErr(v);
+        let e = pick === 'anon' ? '' : nickErr(v);
         if (e === RESERVED_MSG && acctId()) {   // 운영 계정인지 아직 모르면 서버에 물어보고 다시
             try { ADMIN = !PERSONA && (await PLAY.rpc('is_site_admin', {}, { auth: true })) === true; adminUid = acctId(); } catch (x) {}
             e = nickErr(v);
         }
         if (e) { err.textContent = pick === 'login' ? `로그인 이름은 쓸 수 없어요 · ${e}` : e; err.hidden = false; if (pick === 'game') inp.focus(); return; }
-        const n = String(v).replace(/\s+/g, ' ').trim();
+        const n = pick === 'anon' ? '' : String(v).replace(/\s+/g, ' ').trim();
         if (!first) {
-            if (n === S.nick && pick === S.nickPick) { m.remove(); return; }   // 그대로면 돈도 횟수도 안 씀
+            if (n === S.nick && pick === S.nickPick) { finish(); return; }   // 그대로면 돈도 횟수도 안 씀
             if (!free) { if (S.gold < NICK_PRICE) return; S.gold -= NICK_PRICE; }
             S.nickCh = (S.nickCh | 0) + 1; S.nickAt = Date.now();
         }
         S.nick = n; S.nickPick = pick; S.nickOk = true; save();
-        m.remove(); updBar(true); sfx('drop');
-        toast(first ? `'${n}'(으)로 정했어요` : free ? `'${n}'(으)로 바꿨어요 (무료)` : `'${n}'(으)로 바꿨어요 · ${gf(NICK_PRICE)}`);
+        finish(); updBar(true); sfx('drop');
+        const shown = pick === 'anon' ? (anonName() !== '익명' ? anonName() : '익명') : n;
+        toast(pick === 'anon' ? `익명으로 했어요 · 랭킹에는 '${shown === '익명' ? '익명 + 파이트 넘버' : shown}'(으)로 보여요`
+            : first ? `'${n}'(으)로 정했어요` : free ? `'${n}'(으)로 바꿨어요 (무료)` : `'${n}'(으)로 바꿨어요 · ${gf(NICK_PRICE)}`);
         nickRefresh();
     };
     m.querySelector('.go').addEventListener('click', () => apply(inp.value, 'game'));
     m.querySelector('.lg')?.addEventListener('click', () => apply(pn, 'login'));
+    m.querySelector('.an')?.addEventListener('click', () => apply('', 'anon'));
     inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !poor) apply(inp.value, 'game'); });
     inp.addEventListener('input', () => { err.hidden = true; });
-    if (!must) { m.querySelector('.no').addEventListener('click', () => m.remove()); m.addEventListener('click', e => { if (e.target === m) m.remove(); }); }
+    m.querySelector('.x').addEventListener('click', close);
+    m.addEventListener('click', e => { if (e.target === m) close(); });
+    addEventListener('keydown', esckey);
     if (!matchMedia('(pointer: coarse)').matches) inp.focus();   // 휴대폰은 키보드가 저절로 안 뜨게
+}
+// 닉네임을 안 정한 로그인 사용자(운영 계정 빼고)·테스트 기록이면 악기를 찾기 전에 한 번 묻는다. X 를 누르면 이 페이지에선 다시 안 묻는다
+const nickNeed = () => !S.nickPick && !nickLater && (PERSONA || (acctId() && !(ADMIN && adminUid === acctId())));
+async function nickBeforeFind() {
+    if (!nickNeed()) return true;
+    if (nickWait) return false;
+    nickWait = true;
+    try { await nickAsk(true); } finally { nickWait = false; }
+    return true;
 }
 function nickRefresh() {   // 이름이 바뀌면 서버(랭킹·배틀)에 다시 올리고 지금 화면을 다시 그린다
     try { syncMe(true); } catch (x) {}
@@ -4088,16 +4123,14 @@ async function nickCheck() {
     const uid = acctId();
     if (!uid) return;
     if (document.querySelector('.cloudask')) { setTimeout(nickCheck, 1200); return; }
-    if (S.nickPick === 'game') return;
-    if (PERSONA) { nickAsk(true); return; }   // 테스트 기록: 처음 온 일반인처럼 게임 닉네임부터
+    if (S.nickPick === 'game' || S.nickPick === 'anon' || PERSONA) return;   // 테스트 기록은 일반인처럼 — 악기를 찾을 때 묻는다
     let admin = ADMIN && adminUid === uid;
     if (!admin) try { admin = (await PLAY.rpc('is_site_admin', {}, { auth: true })) === true; if (admin) { ADMIN = true; adminUid = uid; } } catch (e) {}
     if (S.nickPick === 'login' || admin) {
         const pn = PLAY.myProfileNick ? (await PLAY.myProfileNick()).slice(0, 12) : '';
         if (pn && (S.nick !== pn || S.nickPick !== 'login')) { S.nick = pn; S.nickPick = 'login'; S.nickOk = true; save(); nickRefresh(); }
-        return;
     }
-    nickAsk(true);
+    // 2026-11-19 사용자: 들어오자마자 묻지 않는다 — 닉네임 없이 '악기 찾기'를 누를 때 묻는다(nickBeforeFind)
 }
 // 배틀 연출 (2026-11-12 사용자: 기타 넥을 칼이라 생각하고 넥끼리 부딪치게). 기타는 몸통을 축으로 기울여 넥을 칼처럼 겨누고,
 //   몇 번 부딪친(불꽃·쨍) 뒤 마지막 한 방에 진 쪽이 튕겨 나간다. 앰프·멀티(sq)는 넥이 없어서 몸통 박치기
