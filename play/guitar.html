@@ -896,6 +896,7 @@
     .arena .tag b { display: block; font-size: 11.5px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .arena .tag small { font-size: 10.5px; opacity: .75; }
     .spk { position: absolute; z-index: 4; width: 0; height: 0; pointer-events: none; }
+    .arena .afx { position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }   /* 배틀 폭죽 (2026-11-19, arenaFx) */
     .spk b { position: absolute; left: 0; top: 0; width: 38px; height: 38px; border-radius: 50%; transform: translate(-50%, -50%); background: radial-gradient(circle, #fff 0 18%, rgba(255, 232, 150, 0.9) 34%, rgba(255, 150, 40, 0) 70%); animation: spkFlash .32s ease-out forwards; }
     .spk.big b { width: 96px; height: 96px; }
     .spk i { position: absolute; left: 0; top: 0; width: 4px; height: 4px; border-radius: 2px; background: #fff3b0; box-shadow: 0 0 6px #ffb84d, 0 0 2px #fff; }
@@ -3266,9 +3267,16 @@ function placeItem(g, prefer) {
 }
 const noRoomMsg = g => isSq(g) ? `바닥에 ${gearName(g.f)}는 ${FLOOR_EACH}개까지예요. 바닥의 ${gearName(g.f)}를 팔거나 작업대로 가져와요`
     : S.open.every(Boolean) ? '벽이 꽉 찼어요. 걸린 기타를 팔거나 작업대로 가져와요' : '빈 걸이가 없어요. 컬렉션에서 잠긴 걸이를 열어요';
+// 걸 자리가 있나(placeItem 과 같은 기준, 바꾸지 않고 보기만)
+const canPlace = g => isSq(g) ? !!floorRoom(S.floor, g) : HANG_ORDER.some(i => S.open[i] && !S.wall[i]);
 async function hangBench() {
     const g = S.bench;
     if (busy || !g) return;
+    // 2026-11-19 사용자: '컬렉션에 진열'을 눌러도 한 번 묻기(예/아니오) + 작게 '걸어 둬도 다시 이어서 강화할 수 있다'. 자리가 없으면 묻지 않고 바로 꽉 찼을 때 화면으로
+    if (canPlace(g)) {
+        if (!await askYN(isSq(g) ? '컬렉션 바닥에 놓을까요?' : '컬렉션에 걸까요?', `${itemBadge(g)}<p class="nt">컬렉션에 진열해 두어도 언제든 다시 작업대로 가져와 이어서 강화할 수 있어요</p>`)) return;
+        if (busy || S.bench !== g) return;
+    }
     const where = placeItem(g);
     // 2026-11-17 사용자: 꽉 찼으면 컬렉션으로 넘어가서, 메뉴와 진열 벽 사이에 안내 — 진열된 악기를 누르면 [팔기][작업 중인 악기와 교체]
     if (!where) { talkClear(); setTab('room'); roomFull = isSq(g) ? baseOf(g.f) : 'guitar'; pickId = ''; selId = ''; renderRoom(); sfx('drop'); return; }
@@ -3536,16 +3544,18 @@ function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let
 const DUEL_FAMS = FIND_FAMS.filter(f => !(FAMS[f] && FAMS[f].sq));
 const duelOk = o => !(FAMS[o.f] && FAMS[o.f].sq);
 // 연습 상대: 날짜·내 단계·새로고침 횟수로 정해진다. 새로고침하면 다른 사람들로 (2026-11-12 사용자, 하루 배틀 횟수는 그대로)
+// 2026-11-19 사용자: '극한의 대결' — 진짜 어려운, 이길 수 없는 상대들만. 고레벨 장비를 시연하는 느낌으로 +17 ~ +20 악기만 (예전: 내 단계 −2 ~ +6)
+//   이길 확률은 다른 배틀과 같은 공식(winP)으로 화면에 적힌 그대로 굴린다. 악기는 기타 종류만, 2세트도 반반
+const EXTREME_LV = [17, 20];
 function rankers() {
-    const me = rep(), m = me ? me.lv : 0, day = today(), rr = btDay().rr | 0;
-    const r = rng(hashStr(day + '|' + m + '|' + PLAY.myKey().slice(0, 8) + (rr ? '|' + rr : '')));
+    const day = today(), rr = btDay().rr | 0;
+    const r = rng(hashStr(day + '|ex|' + PLAY.myKey().slice(0, 8) + (rr ? '|' + rr : '')));
     const names = NICKS.slice();
-    return [6, 4, 3, 2, 1, 1, 0, 0, -1, -2].map(off => {
+    return Array.from({ length: 10 }, () => {
         const nick = names.splice(Math.floor(r() * names.length), 1)[0];
-        const lv = Math.max(0, Math.min(MAX, m + off + (r() < 0.3 ? 1 : 0)));
-        // 새로고침한 상대는 악기도 여러 가지 — 기타 종류만(2026-11-19 사용자: '왜 연습 상대에 앰프가 있냐, 이펙터도 상대로 뜨면 안 돼' — 예전엔 FIND_FAMS 여덟 개에서 뽑아 앰프·멀티도 나왔다)
-        const f = rr ? (g => SET2[g] && r() < 0.5 ? SET2[g] : g)(DUEL_FAMS[Math.floor(r() * DUEL_FAMS.length)]) : 'strat';
-        return { id: 'r' + hashStr(day + (rr ? rr + '|' : '') + nick), nick, lv, f };
+        const lv = EXTREME_LV[0] + Math.floor(r() * (EXTREME_LV[1] - EXTREME_LV[0] + 1));
+        const g = DUEL_FAMS[Math.floor(r() * DUEL_FAMS.length)], f = SET2[g] && r() < 0.5 ? SET2[g] : g;
+        return { id: 'x' + hashStr(day + (rr ? rr + '|' : '') + nick), nick, lv, f };
     }).sort((a, b) => b.lv - a.lv);
 }
 // ---------- 진짜 랭킹 (db/play_guitar_rank.sql, 2026-11-12 적용) — 안 닿거나 사람이 적으면 연습 상대로 채운다 ----------
@@ -3665,7 +3675,7 @@ function renderBattle() {
     OPPS = NET.ok === null ? [] : rankers().slice(0, Math.max(0, 10 - real.length));
     // 랭킹은 2026-11-13 메뉴 맨 오른쪽 '랭킹' 탭으로 옮김(사용자). 여기는 상태만
     const rankLine = NORANK ? '시험 브라우저 · 배틀 기록이 안 남아요' : amHidden() ? '운영 계정(시험) · 기록 안 남음 · 남들에겐 #000000 +10 스트랫'
-        : NET.ok === false ? '서버에 연결이 안 돼요 · 연습 상대와 붙어요' : '';
+        : NET.ok === false ? '서버에 연결이 안 돼요 · 극한의 대결만 할 수 있어요' : '';
     const no = me ? myNo() : null;
     // 2026-11-15 사용자: 맨 위 한 줄 = [골드 + 내 파이트 넘버] [내 대표 기타] — 그다음 오늘의 상대, 그 아래 파이트 넘버로 배틀·친구에게 배틀 신청
     let h = `<div class="btop"><div class="bmeta"><div class="bg"><i class="fas fa-coins"></i><b data-gold>${gf(S.gold)}</b></div>
@@ -3675,7 +3685,7 @@ function renderBattle() {
         <div class="left btl"><span><em>오늘 </em>남은 배틀 ${BT_DAY - bt.n}/${BT_DAY}</span>${me ? btrBtn() : ''}</div><div class="wl">${S.st.win}승 ${S.st.lose}패</div>${rankLine ? `<div class="rkline">${rankLine}</div>` : ''}</div></div></div>`;
     // 도전이 막혔을 때 이유를 보여 준다 (2026-11-19 사용자: '연습 상대 도전은 왜 다 막혀 있냐' — 단추만 회색으로 꺼져서 몰랐음)
     if (me && bt.n >= BT_DAY) h += `<div class="btlim"><i class="fas fa-hourglass-end"></i><div class="bl"><b>오늘 배틀 ${BT_DAY}번을 다 했어요</b>
-        <small>${btrLeftN() ? `연습 상대도 같은 ${BT_DAY}번 안에 들어요 · 갱신하면 다시 ${BT_DAY}번 (오늘 ${btrLeftN()}번 남음)` : `연습 상대도 같은 ${BT_DAY}번 안에 들어요 · 내일 다시 ${BT_DAY}번 생겨요`}</small></div>${btrLeftN() ? btrBtn() : ''}</div>`;
+        <small>${btrLeftN() ? `극한의 대결도 같은 ${BT_DAY}번 안에 들어요 · 갱신하면 다시 ${BT_DAY}번 (오늘 ${btrLeftN()}번 남음)` : `극한의 대결도 같은 ${BT_DAY}번 안에 들어요 · 내일 다시 ${BT_DAY}번 생겨요`}</small></div>${btrLeftN() ? btrBtn() : ''}</div>`;
     else if (!me) h += `<div class="btlim"><i class="fas fa-guitar"></i><div class="bl"><b>대표 기타가 있어야 도전할 수 있어요</b><small>작업대에서 기타를 키우거나 컬렉션에 걸어 두면 대표가 돼요(앰프·멀티는 안 돼요)</small></div></div>`;
     if (VS) {
         const mineLink = [...S.wall.filter(Boolean), ...S.floor, ...(S.bench ? [S.bench] : [])].some(g => g.id === VS.mine) || (VS.p != null && NET.me && VS.p === NET.me.id);
@@ -3690,10 +3700,11 @@ function renderBattle() {
         ${FIND ? `<div class="duo-res">${oppRow(FIND, 'vs')}</div>` : findMsg ? `<div class="duo-res"><p class="fmsg">${esc(findMsg)}</p></div>` : ''}`;
     if (NET.ok === null) h += `<p class="note2" style="text-align:center;padding:18px 0">상대를 불러오는 중…</p>`;
     // 상대 새로고침: 오늘의 상대·연습 상대 칸마다 단추. 앞에 광고 표시(🎬). 2026-11-15 사용자: 광고 승인 전이라 15분 쿨타임
-    const pracH = OPPS.length ? `<div class="sec-h"><h3>${real.length ? '연습 상대' : '오늘의 상대'}</h3><small>${NET.ok ? '사람이 모일 때까지 채워 둔 가상 기타리스트' : '연습 상대예요'}</small>${rrBtn('prac')}</div>`
+    // 2026-11-19 사용자: '연습 상대' → '극한의 대결' — +17~+20 전설의 악기를 구경시키는 칸, 설명은 '이기면 로또, 지면 뭐…'
+    const pracH = OPPS.length ? `<div class="sec-h"><h3>극한의 대결</h3><small>이기면 로또, 지면 뭐… 전설의 악기 구경 값</small>${rrBtn('prac')}</div>`
         + `<div class="opps ${rerankAnim ? 'fresh' : ''}">${OPPS.map(o => oppRow(o)).join('')}</div>` : '';
     if (real.length) h += `<div class="sec-h"><h3>오늘의 상대</h3><small>다른 사람들의 대표 기타</small>${rrBtn('real')}</div>` + real.map(o => oppRow(o)).join('') + duo + pracH;
-    else h += pracH + duo;   // 진짜 상대가 없으면 연습 상대가 '오늘의 상대'라 그게 먼저
+    else h += pracH + duo;   // 진짜 상대가 없으면(서버에 안 닿음) 극한의 대결이 먼저
     rerankAnim = false;
     h += `<p class="note2">단계가 같으면 50%, 한 단계 높으면 75%, 두 단계 87.5%… 높은 상대를 이길수록 보상이 커요. 지면 잃는 건 없어요.${arenaUp() ? ` 지금 싸움터 덕분에 이기면 받는 돈이 +${Math.round(arenaUp() * 100)}% 더 올라요.` : ''}</p>`;
     el.innerHTML = h;
@@ -3857,7 +3868,7 @@ const RR_CD = 15 * 60 * 1000;   // 상대 새로고침 쿨타임 15분 (2026-11-
 const rrLeft = k => Math.max(0, (+S.rr[k] || 0) + RR_CD - Date.now());
 // 남은 쿨타임을 '14:54'처럼 분:초로 (2026-11-15 사용자: 'n분 뒤' 말고 정확한 초까지)
 const mmss = ms => { const t = Math.ceil(ms / 1000); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
-const rrBtn = k => { const left = rrLeft(k); return `<button type="button" class="rerank${left ? ' cd' : ''}" data-a="rerank" data-k="${k}" aria-label="${k === 'real' ? '오늘의 상대' : '연습 상대'} 새로고침" ${oppBusy || netBusy || left ? 'disabled' : ''}><i class="fas fa-clapperboard"></i><span>${left ? mmss(left) : '상대 새로고침'}</span></button>`; };
+const rrBtn = k => { const left = rrLeft(k); return `<button type="button" class="rerank${left ? ' cd' : ''}" data-a="rerank" data-k="${k}" aria-label="${k === 'real' ? '오늘의 상대' : '극한의 대결'} 새로고침" ${oppBusy || netBusy || left ? 'disabled' : ''}><i class="fas fa-clapperboard"></i><span>${left ? mmss(left) : '상대 새로고침'}</span></button>`; };
 setInterval(() => {   // 1초마다 남은 시간을 줄이고, 다 지나면 단추를 다시 켠다
     if (tab !== 'battle') return;
     document.querySelectorAll('#tab-battle .rerank[data-k]').forEach(b => { const left = rrLeft(b.dataset.k); b.disabled = !!left || oppBusy || netBusy; b.classList.toggle('cd', !!left); b.querySelector('span').textContent = left ? mmss(left) : '상대 새로고침'; });
@@ -3871,7 +3882,7 @@ async function oppRefresh(k = 'real') {
     box.className = 'gk-modal adwrap';
     const r = await PLAY.rewarded('opps', (show, skip) => {
         box.innerHTML = `<div class="in adbox"><span class="ic"><i class="fas fa-users"></i></span><b>새 상대</b>
-            <p>광고를 끝까지 보면 ${k === 'real' ? '오늘의 상대' : '연습 상대'}를 새로 불러와요</p>
+            <p>광고를 끝까지 보면 ${k === 'real' ? '오늘의 상대' : '극한의 대결 상대'}를 새로 불러와요</p>
             <button type="button" class="btn go"><i class="fas fa-clapperboard"></i> 광고 보고 새 상대 보기</button>
             <button type="button" class="no">나중에</button></div>`;
         box.querySelector('.go').addEventListener('click', () => { box.classList.add('wait'); show(); });
@@ -4029,6 +4040,93 @@ async function nickCheck() {
 // 배틀 연출 (2026-11-12 사용자: 기타 넥을 칼이라 생각하고 넥끼리 부딪치게). 기타는 몸통을 축으로 기울여 넥을 칼처럼 겨누고,
 //   몇 번 부딪친(불꽃·쨍) 뒤 마지막 한 방에 진 쪽이 튕겨 나간다. 앰프·멀티(sq)는 넥이 없어서 몸통 박치기
 const R0 = 52;
+// 배틀 폭죽 (2026-11-19 사용자: '기타 펑펑에서 터지는 느낌으로, 악기끼리 한 번 붙을 때마다 폭죽 터지듯이 — 딱 그 악기가 맞닿는 지점을 팡팡')
+//   기타 펑펑(boom.html 의 explode)을 싸움터 크기로 작게 옮겼다: 번쩍 + 고리 + 색 불꽃(무게로 떨어짐) + 날아가다 한 번 더 터지는 폭죽 불씨 + 깜빡이는 반짝이 + '펑!' 글자.
+//   싸움터 위에 캔버스 한 장(.afx), 터질 게 남아 있을 때만 그린다. 마지막 한 방은 크게(big). 움직임 줄이기 설정이면 조금만
+function arenaFx(ar) {
+    const cvs = document.createElement('canvas'), W = ar.clientWidth, H = ar.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
+    cvs.className = 'afx'; cvs.width = Math.round(W * dpr); cvs.height = Math.round(H * dpr); ar.appendChild(cvs);
+    const c = cvs.getContext('2d'), TAU = Math.PI * 2, rnd = (a, b) => a + Math.random() * (b - a), lite = calm();
+    c.scale(dpr, dpr);
+    const fx = [], sp = [], bombs = [], gl = [], words = [];
+    let raf = 0, last = 0;
+    const spray = (x, y, n, v0, v1, hue, spread = 42) => { for (let j = 0; j < n; j++) { const a = rnd(0, TAU), v = rnd(v0, v1); sp.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: rnd(0.4, 1.05), hue: hue + rnd(-spread, spread), l: rnd(58, 86), w: rnd(1.2, 3) }); } };
+    function burst(x, y, big) {
+        const P = big ? 1.9 : 1, hue = rnd(0, 360), R = 26 * P;
+        fx.push({ k: 'flash', x, y, r: R * 1.9, t: 0, life: 0.4, hue });
+        fx.push({ k: 'ring', x, y, r0: R * 0.2, r1: R * 2.2, t: 0, life: 0.5, hue, w: 6 * P });
+        fx.push({ k: 'ring', x, y, r0: R * 0.1, r1: R * 1.4, t: -0.06, life: 0.45, hue: hue + 60, w: 3.5 * P });
+        if (big) fx.push({ k: 'ring', x, y, r0: R * 0.1, r1: R * 3.4, t: -0.14, life: 0.75, hue: hue + 180, w: 2.5 });
+        spray(x, y, lite ? 12 : big ? 64 : 32, 90, 430 * P, hue);
+        for (let j = 0, m = lite ? 0 : big ? 7 : 3; j < m; j++) { const a = rnd(-Math.PI * 0.95, -Math.PI * 0.05), v = rnd(170, 320) * P; bombs.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, fuse: rnd(0.18, 0.4), hue: hue + rnd(-90, 90), big }); }
+        for (let j = 0, m = lite ? 4 : big ? 28 : 12; j < m; j++) { const a = rnd(0, TAU), v = rnd(20, 210) * P; gl.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: rnd(0.7, 1.5), hue: hue + rnd(-60, 60), ph: rnd(0, TAU), r: rnd(1.6, 3.2) }); }
+        if (big || Math.random() < 0.65) words.push({ x: x + rnd(-14, 14), y: y - R * 0.9, s: big ? '쾅!' : one(['펑!', '팡!', '쨍!']), t: 0, life: big ? 0.85 : 0.55, hue, size: big ? 46 : 30, rot: rnd(-0.25, 0.25) });
+        if (!raf) { last = performance.now(); raf = requestAnimationFrame(loop); }
+    }
+    function loop(now) {
+        if (!cvs.isConnected) { raf = 0; return; }
+        const dt = Math.min(0.05, (now - last) / 1000); last = now;
+        c.clearRect(0, 0, W, H);
+        c.globalCompositeOperation = 'lighter';
+        for (let i = fx.length - 1; i >= 0; i--) {
+            const f = fx[i]; f.t += dt; if (f.t >= f.life) { fx.splice(i, 1); continue; }
+            if (f.t < 0) continue;
+            const k = f.t / f.life;
+            if (f.k === 'flash') {
+                const g = c.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r);
+                g.addColorStop(0, `hsla(${f.hue}, 100%, 96%, ${(1 - k) * 0.95})`); g.addColorStop(0.35, `hsla(${f.hue}, 100%, 70%, ${(1 - k) * 0.55})`); g.addColorStop(1, `hsla(${f.hue}, 100%, 50%, 0)`);
+                c.fillStyle = g; c.beginPath(); c.arc(f.x, f.y, f.r, 0, TAU); c.fill();
+            } else {
+                const r = f.r0 + (f.r1 - f.r0) * (1 - Math.pow(1 - k, 3));
+                c.strokeStyle = `hsla(${f.hue}, 100%, 70%, ${1 - k})`; c.lineWidth = f.w * (1 - k) + 0.5;
+                c.beginPath(); c.arc(f.x, f.y, r, 0, TAU); c.stroke();
+            }
+        }
+        const drag = Math.pow(0.986, dt * 60);
+        c.lineCap = 'round';
+        for (let i = sp.length - 1; i >= 0; i--) {
+            const p = sp[i]; p.t += dt; if (p.t >= p.life) { sp.splice(i, 1); continue; }
+            p.vx *= drag; p.vy = p.vy * drag + 700 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+            const k = p.t / p.life;
+            c.strokeStyle = `hsla(${p.hue}, 100%, ${p.l}%, ${1 - k})`; c.lineWidth = p.w * (1 - k * 0.6);
+            c.beginPath(); c.moveTo(p.x - p.vx * 0.03, p.y - p.vy * 0.03); c.lineTo(p.x, p.y); c.stroke();
+        }
+        for (let i = bombs.length - 1; i >= 0; i--) {
+            const b = bombs[i]; b.t += dt;
+            b.vy += 480 * dt; b.x += b.vx * dt; b.y += b.vy * dt;
+            if (b.t >= b.fuse) {   // 한 번 더 터진다
+                bombs.splice(i, 1);
+                fx.push({ k: 'flash', x: b.x, y: b.y, r: b.big ? 30 : 20, t: 0, life: 0.3, hue: b.hue });
+                spray(b.x, b.y, b.big ? 22 : 14, 50, b.big ? 230 : 170, b.hue, 25);
+                continue;
+            }
+            c.strokeStyle = `hsla(${b.hue}, 100%, 75%, 0.9)`; c.lineWidth = 2.4;
+            c.beginPath(); c.moveTo(b.x - b.vx * 0.05, b.y - b.vy * 0.05); c.lineTo(b.x, b.y); c.stroke();
+            c.fillStyle = `hsla(${b.hue}, 100%, 92%, 1)`; c.beginPath(); c.arc(b.x, b.y, 2.4, 0, TAU); c.fill();
+        }
+        for (let i = gl.length - 1; i >= 0; i--) {
+            const g = gl[i]; g.t += dt; if (g.t >= g.life) { gl.splice(i, 1); continue; }
+            g.vx *= Math.pow(0.94, dt * 60); g.vy = g.vy * Math.pow(0.94, dt * 60) + 60 * dt; g.x += g.vx * dt; g.y += g.vy * dt;
+            const a = (1 - g.t / g.life) * (0.45 + 0.55 * Math.sin(g.ph + g.t * 22));
+            if (a <= 0) continue;
+            c.fillStyle = `hsla(${g.hue}, 100%, 82%, ${a})`; c.beginPath(); c.arc(g.x, g.y, g.r, 0, TAU); c.fill();
+        }
+        c.globalCompositeOperation = 'source-over';
+        for (let i = words.length - 1; i >= 0; i--) {
+            const w = words[i]; w.t += dt; if (w.t >= w.life) { words.splice(i, 1); continue; }
+            const k = w.t / w.life, sc = k < 0.18 ? 0.4 + (k / 0.18) * 0.85 : 1.25 - (k - 0.18) * 0.3;
+            c.save(); c.translate(w.x, w.y - k * 16); c.rotate(w.rot); c.scale(sc, sc);
+            c.globalAlpha = 1 - k * k;
+            c.font = `900 ${w.size}px 'Arial Black', sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+            c.lineWidth = 6; c.strokeStyle = 'rgba(0, 0, 0, 0.75)'; c.strokeText(w.s, 0, 0);
+            c.fillStyle = `hsl(${w.hue}, 100%, 68%)`; c.fillText(w.s, 0, 0);
+            c.restore();
+        }
+        raf = fx.length || sp.length || bombs.length || gl.length || words.length ? requestAnimationFrame(loop) : 0;
+        if (!raf) c.clearRect(0, 0, W, H);
+    }
+    return { burst };
+}
 async function duel(ar, win, bar) {
     const F = { me: ar.querySelector('.fighter.me'), op: ar.querySelector('.fighter.op') };
     const C = { me: F.me.querySelector('canvas'), op: F.op.querySelector('canvas') };
@@ -4044,8 +4142,10 @@ async function duel(ar, win, bar) {
         c: [{ transform: rot(k, R0) }, { transform: rot(k, 22), offset: .38 }, { transform: rot(k, 86), offset: .62 }, { transform: rot(k, 70), offset: .8 }, { transform: rot(k, R0) }],
         f: [{ transform: 'none' }, { transform: `translateX(${-dir(k) * 12}px)`, offset: .38 }, { transform: `translateX(${dir(k) * lg}px)`, offset: .62 }, { transform: `translateX(${dir(k) * lg * 0.35}px)`, offset: .8 }, { transform: 'none' }] });
     const swing = (k, dur) => { const kf = KF(k, lunge(k)); C[k].animate(kf.c, { duration: dur, easing: 'ease-in-out' }); F[k].animate(kf.f, { duration: dur, easing: 'ease-in-out' }); };
+    const afx = arenaFx(ar);
     const spark = big => {
         const y = sq.me && sq.op ? pivotY - fh * 0.12 : pivotY - L * Math.cos(rad(86)) - 6;
+        afx.burst(W / 2, y, big);   // 악기가 맞닿는 자리에서 폭죽
         const d = document.createElement('div');
         d.className = 'spk' + (big ? ' big' : ''); d.style.left = W / 2 + 'px'; d.style.top = y + 'px';
         d.innerHTML = '<b></b>' + '<i></i>'.repeat(big ? 18 : 10);
