@@ -3004,7 +3004,7 @@ function giftCard(G, g) {   // 선물 상자가 흔들리다 열린다(누르면
         d.className = 'gfcard';
         // 2026-11-17 사용자: '첫 선물 달성! 하고 아래 뭘 주는지 써 있어야지. 중복 보상이면 나왔다가 3초 뒤에 그다음 보상, 그다음 다시 처음 보상'
         d.innerHTML = `<span class="bx" aria-hidden="true">🎁</span><div class="sb"><b>+${G.x}</b> · 오늘 처음</div><div class="t">첫 선물 달성!</div>
-            <div class="rw"><span class="one"></span></div>${G.out.length > 1 ? `<div class="dots">${G.out.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : ''}<small>누르면 넘어가요</small>`;
+            <div class="rw"><span class="one"></span></div>${G.out.length > 1 ? `<div class="dots">${G.out.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : ''}<small>아무 곳이나 누르면 넘어가요</small>`;
         let done = false, opened = false, k = 0, cyc = 0;
         const one = d.querySelector('.rw .one'), dots = [...d.querySelectorAll('.dots i')];
         const showItem = () => {
@@ -3021,10 +3021,20 @@ function giftCard(G, g) {   // 선물 상자가 흔들리다 열린다(누르면
             sfx('sell'); burst(16, ['#ff9cbc', '#ffd76a', '#ffffff', '#7be0a5'], { y: 52, spread: 130, size: [4, 9], dur: 900, grav: false });
             updBar(true); renderBand();
         };
-        const end = () => { if (done) return; done = true; T.forEach(clearTimeout); clearInterval(cyc); d.classList.add('out'); setTimeout(() => { d.remove(); res(); }, 250); };
+        // 2026-11-19 사용자: '그 박스를 눌러야만 꺼지는데, 박스 외에 다른 부분을 클릭해도 넘어가게' — 화면 어디를 눌러도(Esc 도) 같다.
+        //   그 누름은 여기서 먹어서, 다른 단추(강화 등)가 같이 눌리지 않게 한다.
+        const tap = () => { if (!opened) { open(); return; } end(); };
+        const anyClick = e => { if (done) return; e.preventDefault(); e.stopPropagation(); tap(); };
+        const escKey = e => { if (!done && e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); tap(); } };
+        const end = () => {
+            if (done) return; done = true; T.forEach(clearTimeout); clearInterval(cyc);
+            document.removeEventListener('click', anyClick, true); document.removeEventListener('keydown', escKey, true);
+            d.classList.add('out'); setTimeout(() => { d.remove(); res(); }, 250);
+        };
         sfx('gift'); buzz([15, 30, 15]);
         T.push(setTimeout(open, 900));   // 상자는 잠깐 흔들리다 저절로 열리고, 닫는 건 누를 때만
-        d.addEventListener('click', () => { if (!opened) { open(); return; } end(); });
+        document.addEventListener('click', anyClick, true);   // 상자를 눌러도, 바깥을 눌러도
+        document.addEventListener('keydown', escKey, true);
         $('#stage').appendChild(d);
     });
 }
