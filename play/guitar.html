@@ -1808,6 +1808,7 @@ function noise(t, dur, vol, out, f0, f1) {
 // 강화(피크로 긁기)의 망치 '깡' — CUBE-TEAM 무료 효과음 '쇠망치 소리 3종 세트.001'(유튜브 G_IC0UVsKJE)의 첫 '깡' 0.44초를 잘라 쓴다 (2026-11-17 사용자).
 //   공개된 곳에 쓰면 '영상출처 : CUBE-TEAM (Youtube) / 공식채널 : cubeteam_project' 를 꼭 붙여야 해서 게임 아래에 적었다(#sfxCredit)
 let clangBuf = null, clangTry = false;
+const CLANG_VOL = 0.5;   // 망치 '깡' 크기 (2026-11-19 사용자: 다른 효과음보다 너무 큼 → 1.2 에서 0.5 로, 약 −7.6dB)
 function loadClang() {
     if (clangBuf || clangTry || !actx) return;
     clangTry = true;
@@ -1850,7 +1851,7 @@ function sfx(kind, lv = 0, ms = 0) {
             if (clangBuf) {   // 진짜 망치 소리(CUBE-TEAM 무료 효과음의 첫 '깡') — 칠 때마다 높이를 살짝 바꿔 단조롭지 않게
                 const src = actx.createBufferSource(), cg = actx.createGain();
                 src.buffer = clangBuf; src.playbackRate.value = 0.94 + Math.random() * 0.12 + Math.min(10, lv) * 0.006;
-                cg.gain.value = 1.2; src.connect(cg); cg.connect(out); src.start(t);
+                cg.gain.value = CLANG_VOL; src.connect(cg); cg.connect(out); src.start(t);
             } else { T(2600 + Math.random() * 300, 0.01, 0.16, 'triangle', 0.06, 2300); T(3900, 0.012, 0.09, 'sine', 0.035); }   // 아직 못 불러왔으면 만든 소리
         }
         else if (kind === 'gift') { [1568, 2093, 2637].forEach((f, i) => T(f, i * 0.08, 0.25, 'sine', 0.13)); }
