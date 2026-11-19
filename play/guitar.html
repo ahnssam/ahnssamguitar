@@ -1923,7 +1923,7 @@ SPR.img.src = '../images/play/gk/item_strat.png';
 // 통기타 = ac_NN, 베이스 = bs_NN (같은 틀, 몸통 아래 끝·넥 가운데가 스트랫과 같은 자리. 베이스는 7% 길게)
 const ART = {};
 function art(lv, f) {
-    const F = FAMS[f] || FAMS.strat, n = F.extra && F.extra.includes(lv) ? lv : Math.min(Math.max(0, lv), F.artMax), key = F.art + n;
+    const F = FAMS[f] || FAMS.strat, n = F.extra && F.extra.includes(lv) ? lv : Math.min(Math.max(0, lv), F.artMax), key = F.art + '_' + n;   // '_' 꼭: 없으면 'strat'+20 과 'strat2'+0 이 같은 'strat20' 이 돼서 +20 에 2세트 +0 그림이 나왔다(2026-11-19)
     let a = ART[key];
     if (!a) {
         a = ART[key] = { img: new Image(), ok: false, bad: false, sq: !!F.sq };
@@ -1947,7 +1947,7 @@ function snapLine(c, p) {   // 줄 끊김(그림 단계): 브리지에 붙은 �
 function drawGuitar(c, lv, t, o = {}) {
     const a = art(lv, o.f);
     if (a) {   // 그림 단계: 바뀐 게 없으면 다시 그리지 않는다(작업방 걸이는 매 프레임 불림)
-        const key = (o.f || 'strat') + lv + (o.snap != null ? ':' + o.snap : '') + (o.red ? '~' + o.red : '');
+        const key = (o.f || 'strat') + '_' + lv + (o.snap != null ? ':' + o.snap : '') + (o.red ? '~' + o.red : '');
         if (!a.ok) { if (c.canvas._drawn != null) clearGuitar(c); return; }
         if (c.canvas._drawn === key) return;
         const K = c.canvas.width / 56;
