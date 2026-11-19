@@ -1304,29 +1304,48 @@
             await openSheet(x, rest);
         });
 
+        // 악보를 못 불러왔을 때(인터넷·서버 문제) — '판매하지 않는 악보'로 치지 않고 noindex 도 붙이지 않는다
+        function showLoadError() {
+            document.getElementById('productContainer').innerHTML =
+                '<div class="product-paused">' +
+                    '<i class="fas fa-rotate-right"></i>' +
+                    '<h1>악보를 불러오지 못했어요</h1>' +
+                    '<p>잠시 후 다시 열어 주세요.</p>' +
+                    '<a href="' + escHtml(location.href) + '" class="product-paused-link">다시 불러오기</a>' +
+                '</div>';
+        }
+        // 2026-11-19 Search Console 'NOINDEX 태그에 의해 제외됨' — 공개 악보 5곳(11-16~18 크롤링)에 noindex 가 붙어 있었다.
+        //   지금 열면(실제 URL 테스트도) 멀쩡하다 → 구글이 그릴 때 악보 불러오기·그리기 중 한 번 실패했고,
+        //   예전엔 어떤 실패든 showPaused()(= noindex)로 갔다. 이제 noindex 는 '정말 없는·비공개 악보'일 때만.
         (async function loadSheet() {
             const raw = new URLSearchParams(window.location.search).get('id') || '';
             const id = LEGACY_IDS[raw] || raw;
-            try {
-                if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error('bad id');
-                const res = await fetch(SB_URL + '/rest/v1/sheets?select=*&published=eq.true&id=eq.' + id, { headers: { apikey: SB_KEY } });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                const rows = await res.json();
-                const p = rows[0] || await loadPrivateForAdmin(id);
-                if (p) {
-                    await openSheet(p, null);
-                    if (!p.published) {
-                        const note = document.createElement('div');
-                        note.className = 'private-note';
-                        note.innerHTML = '<i class="fas fa-eye-slash"></i> 비공개 악보예요 — 운영 계정에게만 보여요';
-                        document.getElementById('adminRow').prepend(note);
-                        document.getElementById('adminRow').hidden = false;
-                    }
-                } else showPaused();
-            } catch (e) {
-                showPaused();
+            const reveal = () => { document.getElementById('productContainer').style.visibility = ''; };
+            if (!/^[0-9a-f-]{36}$/i.test(id)) { showPaused(); reveal(); return; }
+            let rows = null;   // 세 번까지 다시 묻는다
+            for (let i = 0; i < 3 && !rows; i++) {
+                if (i) await new Promise(r => setTimeout(r, 700 * i));
+                try {
+                    const res = await fetch(SB_URL + '/rest/v1/sheets?select=*&published=eq.true&id=eq.' + id, { headers: { apikey: SB_KEY } });
+                    if (res.ok) { const j = await res.json(); if (Array.isArray(j)) rows = j; }
+                } catch (e) {}
             }
-            document.getElementById('productContainer').style.visibility = '';
+            if (!rows) { showLoadError(); reveal(); return; }
+            let p = rows[0] || null;
+            if (!p) { try { p = await loadPrivateForAdmin(id); } catch (e) {} }
+            if (!p) { showPaused(); reveal(); return; }
+            if (p.published) setSeo(p);   // 아래 그리기에서 문제가 나도 검색용 제목·표준 주소는 이 악보 것으로
+            try {
+                await openSheet(p, null);
+                if (!p.published) {
+                    const note = document.createElement('div');
+                    note.className = 'private-note';
+                    note.innerHTML = '<i class="fas fa-eye-slash"></i> 비공개 악보예요 — 운영 계정에게만 보여요';
+                    document.getElementById('adminRow').prepend(note);
+                    document.getElementById('adminRow').hidden = false;
+                }
+            } catch (e) { console.error('악보 그리기', e); }
+            reveal();
         })();
 
         // 운영 계정에게만 '악보 편집' 버튼: 악보관리를 열면서 지금 보고 있는 악보의 편집 창을 바로 연다 (admin/sheets.html?edit=<id>).
