@@ -136,6 +136,18 @@
     .seg.chk button.zero small { background: #eef6f1; color: #1f8a52; }
     .seg.chk button.on small { background: rgba(255, 255, 255, .2); color: #fff; }
     .empty { text-align: center; padding: 50px; color: var(--sub); background: #fff; border: 1px dashed #d8d8d8; border-radius: 12px; }
+    /* 묶인곡: 곡마다 한 줄로 접어 두고 누르면 펼침 (2026-11-19) — 빈 칸 경고가 아니라서 숫자는 빨강 대신 파랑 */
+    .seg.chk button.info small { background: #eef2f8; color: #3b5b8c; }
+    .list tr.grp-hd td { background: #fafcfb; cursor: pointer; padding: 12px 14px; }
+    .list tr.grp-hd:hover td { background: #f1f8f4; }
+    .list tr.grp-hd .gt { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .list tr.grp-hd .gt > i { color: var(--sub); width: 12px; transition: transform .15s; }
+    .list tr.grp-hd.open .gt > i { transform: rotate(90deg); }
+    .list tr.grp-hd .gn { font-size: 12px; color: var(--sub); }
+    .list tr.grp-hd .gs { font-size: 12px; color: #888; margin-left: auto; }
+    .list tr.grp-hd .chip { margin: 0; }
+    .list tr.grp-m td:first-child { box-shadow: inset 3px 0 0 var(--green-2, #52a872); }
+    .chip.loose { background: #fff4e5; color: #b26a00; }
     /* 안쌤의 픽: 목록 '상태' 칸의 별을 눌러 1~5위를 고른다 (메인 맨 위 왼쪽 칸, db/sheet_picks.sql) */
     .pk { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; border: 1px solid var(--line); border-radius: 99px; background: #fff; padding: 2px 9px; font-size: 12px; color: #aaa; cursor: pointer; white-space: nowrap; }
     .pk:hover { border-color: var(--gold); color: var(--gold); }
@@ -502,12 +514,13 @@
     <div class="toolbar2">
         <span class="lbl">정렬</span>
         <!-- 2026-11-18 사용자: 업로드를 다 해서 풀스코어 참고(주문순·6개월/전체 판매·풀스코어 등록일·올릴 순서·숨김)는 지움 -->
-        <div class="seg" id="sortSeg"><button class="on" data-s="new" title="악보관리에 만든 순서 (최근에 만든 악보가 위)">최신순</button><button data-s="edit" title="최근에 고친 악보가 위">고친 순</button><button data-s="title" title="곡명 가나다·ABC 순">곡명순</button></div>
-        <span class="lbl" style="margin-left:8px;">PDF</span>
-        <div class="seg" id="pdfSeg"><button class="on" data-p="all">전체</button><button data-p="none">없음</button><button data-p="has">있음</button></div>
+        <!-- 2026-11-19 사용자: 최신순·고친 순 대신 '수정일 순' 하나(처음 정렬), PDF 전체·없음·있음은 지움(PDF 다 올림) -->
+        <div class="seg" id="sortSeg"><button class="on" data-s="edit" title="최근에 고친 악보가 위">수정일 순</button><button data-s="title" title="곡명 가나다·ABC 순">곡명순</button></div>
         <span class="lbl" style="margin-left:8px;">확인용</span>
         <div class="seg chk" id="chkSeg"></div>
     </div>
+    <!-- 종류별 (2026-11-19 사용자: 정렬 아랫단에 카테고리별) -->
+    <div class="toolbar2"><span class="lbl">종류</span><div class="seg" id="styleSeg"></div></div>
     <div class="toolbar2"><span class="lbl"><i class="fas fa-star" style="color:var(--gold)"></i> 안쌤의 픽</span><div class="pick-bar" id="pickBar"></div></div>
     <div id="listWrap"></div>
 </main>
@@ -656,9 +669,10 @@
     let filter = 'all';        // 'all' | 'pub' | 'draft'
     // 2026-11-18 사용자: 업로드를 다 해서 풀스코어 참고 기능(주문순·6개월/전체 판매·풀스코어 등록일·올릴 순서·숨김·올릴 악보 ①②③)을 지움.
     //   풀스코어 코드(fullscore_code)와 판매 기록 표(sheet_sales)는 DB 에 그대로 — 나중에 풀스코어 악보 비공개·유튜브 링크 바꾸기에 쓴다
-    let sortBy = 'new';        // 'new' = 만든 순(최신이 위) / 'edit' = 고친 순 / 'title' = 곡명순
-    let pdfFilter = 'all';     // 'all' | 'none' | 'has'
-    let checkFilter = '';      // 확인용: '' | 'cover' | 'pdf' | 'yt' | 'lv' | 'dup'
+    let sortBy = 'edit';       // 'edit' = 수정일 순(최근에 고친 악보가 위, 처음 정렬) / 'title' = 곡명순 — 2026-11-19 사용자: 최신순·고친 순 대신 수정일 순
+    let styleFilter = '';      // 종류별: '' = 전체 | acoustic · electric · fingerstyle · solo · chord · bass
+    let checkFilter = '';      // 확인용: '' | 'cover' | 'genre' | 'yt' | 'lv' | 'grp'
+    const openGrp = new Set(); // 묶인곡에서 펼친 묶음
     let page = 1;              // 목록은 10곡씩 쪽으로 나눠 보여 준다 (2026-11-07 사용자 요청). 검색·필터·정렬을 바꾸면 1쪽으로
     const PER_PAGE = 10;
     let editing = null;        // 편집 중인 행 (새 악보면 null)
@@ -765,33 +779,65 @@
     const srch = v => String(v || '').toLowerCase().replace(/['‘’‛ʼ`´′]/g, '');
     function render() {
         const q = srch($('q').value.trim());
-        const dups = dupCounts(), chk = CHECKS[checkFilter];
+        const G = groupInfo(), chk = CHECKS[checkFilter];
         let rows = sheets.filter(s =>
             (filter === 'all' || (filter === 'pub' ? s.published : !s.published)) &&
-            (pdfFilter === 'all' || (pdfFilter === 'has' ? !!filesById[s.id] : !filesById[s.id])) &&
-            (!chk || chk.test(s, dups)) &&
+            (!styleFilter || s.style === styleFilter) &&
+            (!chk || chk.test(s, G)) &&
             (!q || srch([s.title, s.title_original, s.artist].join(' ')).includes(q)));
-        // 정렬: 만든 순(불러올 때 created_at 최신이 위 — 그대로) · 고친 순 · 곡명순
-        if (sortBy === 'edit') rows = rows.slice().sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at)));
-        else if (sortBy === 'title') rows = rows.slice().sort((a, b) => String(a.title).localeCompare(String(b.title), 'ko'));
-        if (checkFilter === 'dup') rows = rows.slice().sort((a, b) => dupKey(a).localeCompare(dupKey(b), 'ko'));   // 같은 곡끼리 붙여서
+        // 정렬: 수정일 순(최근에 고친 악보가 위) · 곡명순
+        if (sortBy === 'title') rows = rows.slice().sort((a, b) => String(a.title).localeCompare(String(b.title), 'ko'));
+        else rows = rows.slice().sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at)));
+        renderChecks(G);
+        renderStyles();
+        renderPickBar();
+        // 묶인곡: 곡마다 한 줄로 접어 두고, 누르면 그 곡에 묶인 악보가 펼쳐진다 (2026-11-19 사용자 — 예전 '중복곡'은 다 펼쳐져 있었음)
+        if (checkFilter === 'grp' && rows.length) {
+            const byG = new Map();
+            rows.forEach(s => { const g = G.of[s.id]; (byG.get(g) || byG.set(g, []).get(g)).push(s); });
+            let groups = [...byG.entries()].map(([g, m]) => ({ g, m, name: grpName(m) })).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+            const pages = Math.max(1, Math.ceil(groups.length / PER_PAGE));
+            page = Math.min(Math.max(1, page), pages);
+            const total = groups.length;
+            groups = groups.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+            $('count').textContent = `${sheets.length}곡 · PDF ${sheets.filter(s => filesById[s.id]).length} · 공개 ${sheets.filter(s => s.published).length}`;
+            $('listWrap').innerHTML = `<table class="list"><thead><tr><th></th><th>곡명</th><th class="c-st">종류·스타일</th><th class="c-lv">난이도</th><th>가격</th><th>상태</th><th class="c-up">수정일</th><th class="c-go"></th></tr></thead><tbody>${
+                groups.map(({ g, m, name }) => {
+                    const open = openGrp.has(g), all = G.members[g];
+                    const kinds = [all.some(x => x.song_key && all.some(y => y !== x && y.song_key === x.song_key)) ? '<span class="chip bundle"><i class="fas fa-link"></i> 파트별</span>' : '',
+                        all.some(x => x.version_key && all.some(y => y !== x && y.version_key === x.version_key)) ? '<span class="chip vers"><i class="fas fa-layer-group"></i> 편곡별</span>' : '',
+                        G.loose[g] ? '<span class="chip loose" title="곡명·종류가 같은데 묶기가 안 된 악보가 있어요"><i class="fas fa-triangle-exclamation"></i> 묶기 안 됨</span>' : ''].join('');
+                    const sty = [...new Set(all.map(x => (STYLE[x.style] || ['악보'])[0]))].join(' · ');
+                    return `<tr class="grp-hd${open ? ' open' : ''}" data-grp="${esc(g)}"><td colspan="8"><span class="gt"><i class="fas fa-chevron-right"></i><b>${esc(name)}</b><span class="gn">${all.length}개</span>${kinds}<span class="gs">${esc(sty)}</span></span></td></tr>`
+                        + (open ? all.slice().sort((a, b) => String(a.title).localeCompare(String(b.title), 'ko')).map(s => rowHtml(s, 'grp-m')).join('') : '');
+                }).join('')
+            }</tbody></table>${pagerHtml(total, pages)}`;
+            return;
+        }
         const pages = Math.max(1, Math.ceil(rows.length / PER_PAGE));
         page = Math.min(Math.max(1, page), pages);   // 저장·삭제로 곡 수가 바뀌어도 있는 쪽에 머문다
         const total = rows.length;
         rows = rows.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-        renderChecks(dups);
-        renderPickBar();
         $('count').textContent = `${sheets.length}곡 · PDF ${sheets.filter(s => filesById[s.id]).length} · 공개 ${sheets.filter(s => s.published).length}`;
         if (!sheets.length) {
             $('listWrap').innerHTML = '<div class="empty"><i class="fas fa-music" style="font-size:24px;color:var(--green);display:block;margin-bottom:10px;"></i>아직 등록한 악보가 없어요. 오른쪽 위 <b>새 악보</b>로 첫 악보를 올려 보세요.</div>';
             return;
         }
         if (!rows.length && chk) {
-            $('listWrap').innerHTML = `<div class="empty"><i class="fas fa-circle-check" style="font-size:24px;color:var(--green);display:block;margin-bottom:10px;"></i>${chk.done}${filter !== 'all' || pdfFilter !== 'all' || q ? '<br><small>(위의 공개·PDF·검색 조건도 함께 걸려 있어요)</small>' : ''}</div>`;
+            $('listWrap').innerHTML = `<div class="empty"><i class="fas fa-circle-check" style="font-size:24px;color:var(--green);display:block;margin-bottom:10px;"></i>${chk.done}${filter !== 'all' || styleFilter || q ? '<br><small>(위의 공개·종류·검색 조건도 함께 걸려 있어요)</small>' : ''}</div>`;
+            return;
+        }
+        if (!rows.length) {
+            $('listWrap').innerHTML = `<div class="empty">조건에 맞는 악보가 없어요${filter !== 'all' || styleFilter || q ? '<br><small>(위의 공개·종류·검색 조건을 확인해 보세요)</small>' : ''}</div>`;
             return;
         }
         $('listWrap').innerHTML = `<table class="list"><thead><tr><th></th><th>곡명</th><th class="c-st">종류·스타일</th><th class="c-lv">난이도</th><th>가격</th><th>상태</th><th class="c-up">수정일</th><th class="c-go"></th></tr></thead><tbody>${
-            rows.map(s => `<tr data-id="${s.id}" class="${filesById[s.id] ? 'done' : ''}">
+            rows.map(s => rowHtml(s)).join('')
+        }</tbody></table>${pagerHtml(total, pages)}`;
+    }
+    // 목록 한 줄 (묶인곡에서 펼친 줄은 cls = 'grp-m')
+    function rowHtml(s, cls = '') {
+        return `<tr data-id="${s.id}" class="${[filesById[s.id] ? 'done' : '', cls].filter(Boolean).join(' ')}">
                 <td>${listThumb(s)}</td>
                 <td class="nm"><b>${esc(s.title)}</b><small>${esc(s.artist || '')}</small>${filesById[s.id] ? '<div class="haspdf"><i class="fas fa-circle-check"></i> PDF 있음</div>' : '<div class="nopdf"><i class="fas fa-triangle-exclamation"></i> PDF 없음</div>'}${
                     (m => m.length ? `<div class="miss"><i class="fas fa-triangle-exclamation"></i> 빈 칸: ${m.join(' · ')}</div>` : '')(missingOf(s))}${
@@ -804,8 +850,7 @@
                 <td><span class="pub ${s.published ? 'on' : ''}" data-toggle="${s.id}"><span class="dot"></span>${s.published ? '공개' : '비공개'}</span><br><button type="button" class="pk ${s.pick_rank ? 'on' : ''}" data-pick="${s.id}" title="안쌤의 픽 순위 고르기 (메인 맨 위 왼쪽)"><i class="${s.pick_rank ? 'fas' : 'far'} fa-star"></i>${s.pick_rank ? '픽 ' + s.pick_rank + '위' : '픽'}</button></td>
                 <td class="c-up" style="color:var(--sub);font-size:12.5px;">${ymd(s.updated_at)}</td>
                 <td class="c-go"><a class="salego" href="/tab-detail.html?id=${s.id}" target="_blank" rel="noopener" title="손님에게 보이는 판매 페이지를 새 탭으로 열기${s.published ? '' : ' (비공개 악보는 운영 계정에게만 보여요)'}"><span>판매페이지 보기</span><i class="fas fa-arrow-up-right-from-square"></i></a></td>
-            </tr>`).join('')
-        }</tbody></table>${pagerHtml(total, pages)}`;
+            </tr>`;
     }
     // 쪽 단추: ‹ 1 … 4 5 [6] 7 8 … 25 › (처음·끝 쪽과 지금 쪽 앞뒤 둘)
     function pagerHtml(total, pages) {
@@ -953,20 +998,37 @@
         render();
     });
     // ---------- 확인용: 아직 안 채운 칸이 있는 악보만 보기 ----------
-    // 중복곡: 곡명(괄호 속 말·띄어쓰기 빼고)과 종류가 같은 악보가 둘 이상. 'OOOO 버전' 은 다른 악보로 본다
+    // 묶인곡 (2026-11-19 사용자: '중복곡'이라 하지 말고 '묶인곡', 곡마다 접어 두고 누르면 펼치기):
+    //   같은 song_key(파트별: 반주 + 기타솔로) · 같은 version_key(편곡별: 2021·2025 편곡 …) · 곡명(괄호 속 말·띄어쓰기 빼고)과 종류가 같은 악보를
+    //   하나로 이은 묶음이 둘 이상이면 묶인곡. 곡명·종류만 같고 묶기가 안 된 것도 여기 들어오고 '묶기 안 됨' 표시가 붙는다. 'OOOO 버전' 은 다른 악보로 본다
     const dupKey = s => songName(s.title) + '|' + ((String(s.title).match(/(\d{4})\s*버전/) || [])[1] || '') + '|' + (s.style || '');
-    function dupCounts() { const n = {}; sheets.forEach(s => { const k = dupKey(s); n[k] = (n[k] || 0) + 1; }); return n; }
+    function groupInfo() {
+        const par = {}, root = x => par[x] === x ? x : (par[x] = root(par[x]));
+        sheets.forEach(s => { par[s.id] = s.id; });
+        const first = {}, join = (k, s) => { if (!first[k]) first[k] = s.id; else { const a = root(first[k]), b = root(s.id); if (a !== b) par[b] = a; } };
+        sheets.forEach(s => { if (s.song_key) join('s|' + s.song_key, s); if (s.version_key) join('v|' + s.version_key, s); join('d|' + dupKey(s), s); });
+        const of = {}, members = {}, loose = {};
+        sheets.forEach(s => { const g = root(s.id); of[s.id] = g; (members[g] = members[g] || []).push(s); });
+        Object.entries(members).forEach(([g, m]) => {
+            if (m.length < 2) { delete members[g]; return; }
+            // 곡명·종류가 같은 두 악보가 같은 song_key·version_key 로 묶이지 않았으면 '묶기 안 됨'
+            loose[g] = m.some((a, i) => m.some((b, j) => j > i && dupKey(a) === dupKey(b) && !(a.song_key && a.song_key === b.song_key) && !(a.version_key && a.version_key === b.version_key)));
+        });
+        return { of, members, loose, count: Object.keys(members).length };
+    }
+    const grpName = m => m.map(x => String(x.title || '').replace(VER_RE, '')).sort((a, b) => a.length - b.length)[0] || '';
     const CHECKS = {
         cover: { label: '커버 없음', tip: '썸네일에 앨범 커버가 없는 악보 (같은 곡으로 묶인 악보의 커버를 쓰는 건 빼고)', done: '모든 악보에 커버가 있어요 — 다 채웠어요!', test: s => !coverOwner(s) },
-        pdf: { label: 'PDF 없음', tip: '판매할 PDF를 아직 안 올린 악보', done: '모든 악보에 PDF가 있어요 — 다 채웠어요!', test: s => !filesById[s.id] },
+        // 2026-11-19 사용자: PDF 를 다 올려서 'PDF 없음' 대신 '장르 없음'
+        genre: { label: '장르 없음', tip: '장르를 아직 안 고른 악보 (메인의 장르별 칸에 안 나와요)', done: '모든 악보에 장르가 있어요 — 다 채웠어요!', test: s => !s.genre },
         yt: { label: '유튜브 없음', tip: '유튜브 영상 주소가 없는 악보 (코드악보는 영상이 없어도 돼서 빼고)', done: '모든 악보에 유튜브 영상이 있어요 — 다 채웠어요!', test: s => !s.youtube_id && s.style !== 'chord' },
         lv: { label: '난이도 없음', tip: '난이도를 아직 안 고른 악보', done: '모든 악보에 난이도가 있어요 — 다 채웠어요!', test: s => !s.difficulty },
-        dup: { label: '중복곡', tip: '곡명과 종류가 같은 악보가 둘 이상 — 같은 곡끼리 붙여서 보여요 (2023 버전처럼 버전이 다르면 빼고)', done: '중복된 악보가 없어요', test: (s, dups) => dups[dupKey(s)] > 1 },
+        grp: { label: '묶인곡', tip: '파트별(반주 + 기타솔로)·편곡별로 묶인 곡, 곡명과 종류가 같은 악보 — 곡마다 한 줄, 누르면 묶인 악보가 펼쳐져요', done: '묶인 곡이 없어요', test: (s, G) => !!G.members[G.of[s.id]], count: G => G.count },
     };
-    function renderChecks(dups) {
+    function renderChecks(G) {
         $('chkSeg').innerHTML = Object.entries(CHECKS).map(([k, c]) => {
-            const n = sheets.filter(s => c.test(s, dups)).length;
-            return `<button type="button" data-c="${k}" class="${k === checkFilter ? 'on' : ''}${n ? '' : ' zero'}" title="${c.tip}">${c.label} <small>${n}</small></button>`;
+            const n = c.count ? c.count(G) : sheets.filter(s => c.test(s, G)).length;
+            return `<button type="button" data-c="${k}" class="${k === checkFilter ? 'on' : ''}${n ? '' : ' zero'}${k === 'grp' ? ' info' : ''}" title="${c.tip}">${c.label} <small>${n}</small></button>`;
         }).join('');
     }
     $('chkSeg').addEventListener('click', e => {
@@ -975,10 +1037,22 @@
         page = 1;
         render();
     });
-    $('pdfSeg').addEventListener('click', e => {
-        const b = e.target.closest('button'); if (!b) return;
-        pdfFilter = b.dataset.p; page = 1;
-        [...$('pdfSeg').children].forEach(x => x.classList.toggle('on', x === b));
+    // 종류별 (2026-11-19 사용자: 정렬 아랫단에 카테고리별)
+    function renderStyles() {
+        const n = k => sheets.filter(s => !k || s.style === k).length;
+        const keys = ['', ...Object.keys(STYLE).filter(k => k !== 'other' || sheets.some(s => s.style === 'other'))];
+        $('styleSeg').innerHTML = keys.map(k => `<button type="button" data-st="${k}" class="${k === styleFilter ? 'on' : ''}">${k ? STYLE[k][0] : '전체'} <small>${n(k)}</small></button>`).join('');
+    }
+    $('styleSeg').addEventListener('click', e => {
+        const b = e.target.closest('[data-st]'); if (!b) return;
+        styleFilter = b.dataset.st; page = 1;
+        render();
+    });
+    // 묶인곡 한 줄을 누르면 펼치고, 한 번 더 누르면 접는다
+    $('listWrap').addEventListener('click', e => {
+        const h = e.target.closest('tr.grp-hd'); if (!h) return;
+        const g = h.dataset.grp;
+        openGrp.has(g) ? openGrp.delete(g) : openGrp.add(g);
         render();
     });
 
