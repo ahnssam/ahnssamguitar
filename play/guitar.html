@@ -119,7 +119,7 @@
     .cloudask button.pick2.best b { color: #1f6b44; }
     .cloudask .cmp { display: grid; gap: 5px; margin: 8px 0 12px; padding: 9px 11px; border-radius: 12px; background: #f3f6f4; font-size: 13px; }
     .cloudask .cmp div { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-    .cloudask .cmp span { flex: none; width: 28px; font-size: 11.5px; font-weight: 800; color: var(--sub); }
+    .cloudask .cmp span { flex: none; min-width: 28px; white-space: nowrap; font-size: 11.5px; font-weight: 800; color: var(--sub); }
     .cloudask .cmp b { min-width: 0; font-weight: 700; }
     .cloudask button.pick2.out { background: #fff; }
     .cloudask button.pick2.out b { color: #555; }
@@ -1538,7 +1538,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ---------- 운영 계정 테스트 모드 '안쌤테스트 1·2·3' (2026-11-17 사용자) ----------
 //   운영 계정으로 로그인했을 때만, 프로필 메뉴(닉네임 변경 아래)에서 테스트 1·2·3 을 고르면 이 브라우저의 기타 키우기가
-//   그 테스트 기록으로 바뀌어 일반인처럼 돈다: 기록은 따로(play.gk.t1 …), 계정 저장 안 함, 운영 계정 대우 없음(도감 전체·봇 표시·#000000 숨김 등),
+//   그 테스트 기록으로 바뀌어 일반인처럼 돈다: 기록은 따로(play.gk.t1 …), 운영 계정 대우 없음(도감 전체·봇 표시·#000000 숨김 등),
+//   계정에도 테스트마다 따로 저장(2026-11-20, db/play_guitar_saves_test.sql 의 칸 1·2·3 — 어느 기기에서든 같은 테스트 기록·같은 랭킹 줄),
 //   랭킹·배틀 열쇠도 새로(S.rk) — 서버에는 로그인 안 한 보통 사람으로 올라간다. 처음 들어가면 게임 닉네임 정하기부터.
 //   이 브라우저가 운영 계정임을 확인한 적이 있고(gk.adminUid) 지금도 같은 계정일 때만 켜진다. 서버에 다시 물어 운영 계정이 아니면 끈다
 const PERSONA = (() => {
@@ -1638,7 +1639,9 @@ let cloud = mem.get(GKK('cloud'), null), cloudBusy = false, cloudT = 0, cloudOff
 function acctId() {
     try { const t = JSON.parse(localStorage.getItem('sb-qpcbrqgqylxkgdwoflku-auth-token') || 'null'); return t && t.user && t.user.id && PLAY.hasLogin() ? t.user.id : ''; } catch (e) { return ''; }
 }
-const linked = () => !PERSONA && !!(cloud && cloud.uid && cloud.uid === acctId());   // 테스트 기록은 계정에 안 올린다
+const linked = () => !!(cloud && cloud.uid && cloud.uid === acctId());
+// 계정 저장 칸: 0 = 계정 기록, 1·2·3 = 테스트 1·2·3 (2026-11-20, 운영 계정만). 0번은 p_slot 없이 불러서 예전 서버 함수에도 맞게
+const slotArg = o => PERSONA ? Object.assign(o, { p_slot: +PERSONA }) : o;
 function cloudDirty() {
     if (!linked()) return;
     cloud.dirty = true; mem.set(GKK('cloud'), cloud);
@@ -1648,9 +1651,9 @@ async function cloudPush() {
     if (!linked() || cloudBusy || cloudOff) return;
     cloudBusy = true; cloudBtn();
     try {
-        const r = (await PLAY.rpc('play_guitar_store', { p_data: S }, { auth: true }))[0];
+        const r = (await PLAY.rpc('play_guitar_store', slotArg({ p_data: S }), { auth: true }))[0];
         if (r) { cloud.rev = r.rev; cloud.dirty = false; cloud.at = Date.now(); mem.set(GKK('cloud'), cloud); }
-    } catch (e) { if (e && e.status === 404) cloudOff = true; }   // 아직 DB 적용 전
+    } catch (e) { if (e && (e.status === 404 || /not_admin|bad_slot/.test(e.code || ''))) cloudOff = true; }   // 아직 DB 적용 전 · 테스트 칸을 못 쓰는 계정
     cloudBusy = false; cloudBtn();
 }
 const localEmpty = () => !S.first && !S.bench && !S.wall.some(Boolean) && !S.floor.length && !S.store.length;
@@ -1661,14 +1664,14 @@ function adopt(srv, uid, why) {
     if (why === 'acct' || (why === 'newer' && cloud && cloud.dirty)) keepPrev(why);
     mem.set(GK, srv.data); S = load();
     cloud = { uid, rev: srv.rev, dirty: false, at: Date.now() }; mem.set(GKK('cloud'), cloud);
-    updBar(); setTab(tab); toast(why === 'newer' ? '다른 기기에서 한 기록으로 이어서 해요' : '계정에 저장된 기록으로 이어서 해요');
+    updBar(); setTab(tab); toast(why === 'newer' ? '다른 기기에서 한 기록으로 이어서 해요' : PERSONA ? `계정에 저장된 테스트 ${PERSONA} 기록으로 이어서 해요` : '계정에 저장된 기록으로 이어서 해요');
     setTimeout(nickCheck, 600);
 }
 function linkUp(uid, rev) {
     setTimeout(nickCheck, 600);
     if (!S.rk) S.rk = PLAY.myKey();
     cloud = { uid, rev, dirty: true }; mem.set(GK, S); mem.set(GKK('cloud'), cloud);
-    cloudPush().then(() => { if (linked() && !cloud.dirty) toast('이 기록을 계정에 저장했어요. 다른 기기에서도 이어서 할 수 있어요'); });
+    cloudPush().then(() => { if (linked() && !cloud.dirty) toast(PERSONA ? `테스트 ${PERSONA} 기록을 계정에 저장했어요. 다른 기기에서도 이어서 해요` : '이 기록을 계정에 저장했어요. 다른 기기에서도 이어서 할 수 있어요'); });
 }
 // 이 기기 기록 + 계정 기록 합치기 (2026-11-12 사용자: 로그인 없이 잘 뜬 악기를 계정에 '추가'할 수도 있어야)
 //   기타: 계정 것 그대로 + 이 기기 기타(작업대·벽·창고)를 빈 작업대 → 빈 걸이 → 창고 순으로. 골드·조각·케이스·기록은 더하고,
@@ -1738,15 +1741,32 @@ function askWhich(srv, uid) {
     });
     document.body.appendChild(m);
 }
+// 테스트 1·2·3: 이 기기에 테스트 기록이 있는데 계정 칸에도 있을 때 (2026-11-20 — 예전엔 기기마다 따로였다)
+//   합치기·로그아웃은 없다(합치면 골드가 두 번 들어가고, 테스트는 운영 계정으로 로그인해야만 됨). 남기지 않은 쪽은 'prev'·'prevAcct' 에 한 벌
+function askTest(srv, uid) {
+    if (document.querySelector('.cloudask')) return;
+    const m = document.createElement('div');
+    m.className = 'cloudask';
+    m.innerHTML = `<div class="in"><h3>계정에 테스트 ${PERSONA} 기록이 있어요</h3>
+        <div class="cmp"><div><span>계정</span><b>${esc(saveSum(srv.data || {}))}</b></div><div><span>이 기기</span><b>${esc(saveSum(S))}</b></div></div>
+        <button type="button" class="pick2 best" data-w="acct"><b>계정 기록으로 하기</b><small>이 기기의 테스트 ${PERSONA} 기록은 지워져요</small></button>
+        <button type="button" class="pick2" data-w="here"><b>이 기기 기록으로 하기</b><small>계정의 테스트 ${PERSONA} 기록을 이걸로 바꿔요</small></button></div>`;
+    m.addEventListener('click', e => {
+        const b = e.target.closest('button'); if (!b) return;
+        m.remove();
+        if (b.dataset.w === 'acct') adopt(srv, uid, 'acct');
+        else { try { mem.set(GKK('prevAcct'), { at: Date.now(), rev: srv.rev, data: srv.data }); } catch (x) {} linkUp(uid, srv.rev); }
+    });
+    document.body.appendChild(m);
+}
 async function cloudSync() {
     const uid = acctId();
     cloudBtn();
-    if (PERSONA) { setTimeout(nickCheck, 600); return; }   // 테스트 기록은 계정 저장 없이 — 닉네임만 확인
     if (uid && cloud && cloud.uid && cloud.uid !== uid) { resetLocal('switched'); return; }   // 2026-11-16 다른 계정의 기록 — 이 계정에 올리거나 합치지 않고 처음부터
     if (!uid || cloudBusy || cloudOff) return;
     let srv;
-    try { srv = ((await PLAY.rpc('play_guitar_load', {}, { auth: true })) || [])[0] || null; }
-    catch (e) { if (e && e.status === 404) cloudOff = true; cloudBtn(); return; }
+    try { srv = ((await PLAY.rpc('play_guitar_load', slotArg({}), { auth: true })) || [])[0] || null; }
+    catch (e) { if (e && (e.status === 404 || /not_admin|bad_slot/.test(e.code || ''))) cloudOff = true; cloudBtn(); return; }
     if (linked()) {                                                           // 이 기기가 이미 이 계정과 이어져 있다
         if (!srv) cloudPush();                                                // 계정 저장이 없어졌다 → 다시 올린다
         else if (srv.rev > (cloud.rev | 0)) adopt(srv, uid, 'newer');        // 다른 기기가 그사이 저장 — 계정 것이 먼저 (2026-11-20, 예전엔 묻는 창)
@@ -1754,6 +1774,7 @@ async function cloudSync() {
         cloudBtn(); setTimeout(nickCheck, 600); return;
     }
     if (localEmpty()) { if (srv) adopt(srv, uid, ''); else linkUp(uid, 0); return; }   // 이 기기는 아직 안 했다 → 묻지 않는다
+    if (PERSONA) { if (srv) askTest(srv, uid); else linkUp(uid, 0); return; }   // 테스트: 계정 칸이 비었으면 그냥 올리고, 둘 다 있으면 하나 고르기
     askWhich(srv, uid);                                                       // 로그인 없이 한 기록이 있다 → 고르기
 }
 // ---------- 로그아웃·계정 바꾸기 (2026-11-16 사용자: 로그아웃하고 다른 계정으로 바꿨는데 게임 진행이 그대로 남아 있었음) ----------
@@ -2630,10 +2651,13 @@ function personaMenu() {
         if (nk) nk.insertAdjacentElement('afterend', box); else if (out) out.insertAdjacentElement('beforebegin', box); else menu.appendChild(box);
     });
 }
-function setPersona(n) {
+async function setPersona(n) {
     if (busy) { toast('강화가 끝난 뒤에 바꿔요'); return; }
     if (n === PERSONA) return;
     try { save(); } catch (e) {}
+    try {   // 바꾸기 전에 지금 기록을 계정에 올려 둔다(새로고침하면 2.5초 모아 올리기가 끊겨서)
+        if (linked() && cloud.dirty) { clearTimeout(cloudT); const t = Date.now(); while (cloudBusy && Date.now() - t < 4000) await sleep(150); await Promise.race([cloudPush(), sleep(4000)]); }
+    } catch (e) {}
     mem.set('gk.persona', n);
     location.reload();
 }
