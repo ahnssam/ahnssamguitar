@@ -222,7 +222,7 @@ def page_lesson(L, all_lessons, shell_parts):
     title = f'{L["title"]} | 기타 강좌 | 안쌤의 기타나무숲'
     ld = {
         '@context': 'https://schema.org', '@type': 'VideoObject', 'name': L['title'], 'description': desc,
-        'thumbnailUrl': [thumb(vid, 'maxresdefault'), thumb(vid)], 'uploadDate': L['date'],
+        'thumbnailUrl': [thumb(vid, 'maxresdefault'), thumb(vid)], 'uploadDate': L.get('uploaded') or L['date'] + 'T12:00:00+09:00',
         'duration': iso_dur(L['dur']), 'embedUrl': f'https://www.youtube.com/embed/{vid}',
         'contentUrl': f'https://www.youtube.com/watch?v={vid}',
         'author': {'@type': 'Person', 'name': '안규호(안쌤)', 'url': SITE + '/'}}
