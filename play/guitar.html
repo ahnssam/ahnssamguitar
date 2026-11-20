@@ -1629,7 +1629,10 @@ const gain = n => { S.gold += n; S.st.made = (+S.st.made || 0) + n; };
 // 대표 기타를 랭킹 서버에 저절로 올린다 (2026-11-12 사용자: 사람이 쌓이면 유저끼리 붙게 — 예전엔 배틀 탭을 열어야만 올라갔다).
 //   저장할 때마다 4초 모아서, 바뀌었거나 10분 지났을 때만 실제로 보낸다(syncMe). 30일 안 온 사람은 서버가 상대 목록에서 뺀다
 let syncT = 0;
-function autoSync() { clearTimeout(syncT); syncT = setTimeout(() => { if (rep()) syncMe().catch(() => {}); }, 4000); }
+function autoSync() { clearTimeout(syncT); syncT = setTimeout(() => { if (personaWait()) { autoSync(); return; } if (rep()) syncMe().catch(() => {}); }, 4000); }
+// 테스트 1·2·3 은 계정 칸과 이어지기 전엔 랭킹에 올리지 않는다 (2026-11-20 — 폰·다른 크롬이 이 기기의 예전 열쇠로 +0 빈 줄 익명566364·익명109494 를 만들었음).
+//   계정 칸을 불러오면 그 기록의 열쇠(S.rk)로 올린다. 서버 함수가 없거나(cloudOff) 운영 계정이 아니면 예전처럼 바로
+const personaWait = () => !!PERSONA && !linked() && !cloudOff;
 // 랭킹·배틀에 쓰는 열쇠. 계정에 처음 올린 기기의 열쇠를 저장해 두고(S.rk) 다른 기기에서도 같은 줄로 이어진다
 const gkKey = () => S.rk || PLAY.myKey();
 
@@ -1663,8 +1666,11 @@ const keepPrev = why => { try { if (!localEmpty()) mem.set(GKK('prev'), { uid: c
 //   why: '' 이 기기가 비어 있어 계정 것을 불러옴 · 'acct' 고르기 창에서 '계정 데이터로만' · 'newer' 다른 기기가 그사이 저장(계정 것이 먼저)
 function adopt(srv, uid, why) {
     if (why === 'acct' || (why === 'newer' && cloud && cloud.dirty)) keepPrev(why);
+    const rk0 = S.rk;
     mem.set(GK, srv.data); S = load();
+    if (S.rk !== rk0) { mem.set(GKK('sync2'), {}); mem.set(GKK('coll'), {}); }   // 다른 랭킹 줄 — 이 기기가 기억하던 예전 번호는 버린다
     cloud = { uid, rev: srv.rev, dirty: false, at: Date.now() }; mem.set(GKK('cloud'), cloud);
+    autoSync();
     updBar(); setTab(tab); toast(why === 'newer' ? '다른 기기에서 한 기록으로 이어서 해요' : PERSONA ? `계정에 저장된 테스트 ${PERSONA} 기록으로 이어서 해요` : '계정에 저장된 기록으로 이어서 해요');
     setTimeout(nickCheck, 600);
 }
@@ -1672,6 +1678,7 @@ function linkUp(uid, rev) {
     setTimeout(nickCheck, 600);
     if (!S.rk) S.rk = PLAY.myKey();
     cloud = { uid, rev, dirty: true }; mem.set(GK, S); mem.set(GKK('cloud'), cloud);
+    autoSync();
     cloudPush().then(() => { if (linked() && !cloud.dirty) toast(PERSONA ? `테스트 ${PERSONA} 기록을 계정에 저장했어요. 다른 기기에서도 이어서 해요` : '이 기록을 계정에 저장했어요. 다른 기기에서도 이어서 할 수 있어요'); });
 }
 // 이 기기 기록 + 계정 기록 합치기 (2026-11-12 사용자: 로그인 없이 잘 뜬 악기를 계정에 '추가'할 수도 있어야)
@@ -3689,7 +3696,7 @@ const LINK_RE = /(https?:|www\.|\.(com|net|kr|co|io|me|ly)\b)/i;
 const NORANK = mem.get('gk.norank', false) === true;
 async function syncMe(force, again) {
     const g = rep();
-    if (!g || NORANK) return null;
+    if (!g || NORANK || personaWait()) return null;
     const t = topGuitar(), made = Math.floor(+S.st.made || 0);
     const old = mem.get(GKK('sync2'), {}), sig = repSig(g) + '|' + S.st.best + '|' + (t ? t.f + t.lv : '-') + '|' + made;
     if (!force && old.sig === sig && old.id != null && Date.now() - (old.at || 0) < 10 * 60e3) { syncColl(old); return old; }
