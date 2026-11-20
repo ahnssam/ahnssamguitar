@@ -613,9 +613,15 @@
     .wall5.picking .wg:not(.pick) { filter: brightness(.45) saturate(.6); }
     .wall5.picking .wp:not(.pk), .wall5.picking .wrep { opacity: .5; }
     .wall5 .wp.pk { z-index: 4; padding: 2px 7px; border-radius: 99px; background: #ffd76a; color: #3a2400; text-shadow: none; box-shadow: 0 0 0 2px #fff6d2, 0 0 12px rgba(255, 215, 106, 0.8); }
-    .wall5 .wpop.low { transform: translate(-50%, 0); gap: 4px; }   /* 기타 아래 단추는 조금 납작하게 — 360px 넘는 폰이면 벽 안에 들어간다 */
-    .wall5 .wpop.low button { padding: 6px 10px; font-size: 12px; line-height: 1.15; }
-    .wall5 .wpop.low button i { line-height: 1; }
+    /* 두 단추를 좌우로 나란히, 벽 가운데 (2026-11-21 사용자: '버튼을 좌우로'). 좁으면 단추 안에서 글자가 두 줄 */
+    .wall5 .wpop.row { left: 50%; width: min(94%, 400px); flex-direction: row; gap: 6px; }
+    .wall5 .wpop.row.low { transform: translate(-50%, 0); }
+    .wall5 .wpop.row button { flex: 1 1 0; min-width: 0; padding: 7px 6px; font-size: 12px; line-height: 1.25; white-space: normal; word-break: keep-all; text-align: center; }
+    .wall5 .wpop.row button > span { display: block; }   /* 아이콘·글자를 한 덩어리 글로 — 좁으면 글처럼 자연스럽게 두 줄 */
+    .wall5 .wpop.row button i { margin-right: 5px; line-height: 1; }
+    /* 꽉 찼을 때 작업대 악기와 다른 종류(기타면 바닥 앰프·이펙터)는 누를 수 없어 어둡게 */
+    .wall5 .wg.na { filter: brightness(.5) saturate(.55); }
+    .wall5 .fpad.na { opacity: .35; }
     @media (prefers-reduced-motion: reduce) { .wall5 .wg.pick { animation: none; } }
     .grow { grid-template-columns: 38px 1fr auto; }
     .grow .lkb { align-self: start; display: inline-flex; align-items: center; gap: 4px; padding: 5px 9px; border-radius: 99px; border: 1.5px solid var(--line); background: #fff; font-size: 11.5px; font-weight: 800; color: #888; white-space: nowrap; }
@@ -773,6 +779,7 @@
     .fullask.drawn { animation: none; }
     .fullask.drawn .in { animation: none; }
     .fullask .warn { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 0 34px 0; padding: 8px 12px; border-radius: 12px; background: #fde7e4; color: #c0392b; font-size: 16.5px; font-weight: 900; word-break: keep-all; }
+    @media (max-width: 360px) { .fullask .warn { margin: 0 30px; padding: 8px 10px; font-size: 15px; white-space: nowrap; } }   /* 좁은 폰에서 경고가 두 줄로 안 갈리게 */
     .fullask .fs { margin: 8px 0 10px; font-size: 13px; color: #555; line-height: 1.45; word-break: keep-all; }
     .fullask .fs b { color: #333; }
     .fullask .wall5 .wsb { cursor: pointer; }
@@ -3473,7 +3480,7 @@ function fullShow() {
         const draw = () => {
             const b = S.bench, sq = roomFull !== 'guitar', nm = sq ? gearName(roomFull) : '기타', locked = !sq && S.open.some(o => !o);
             m.innerHTML = `<div class="in" role="dialog" aria-modal="true"><button type="button" class="x" aria-label="닫기"><i class="fas fa-xmark"></i></button>
-                <div class="warn"><i class="fas fa-triangle-exclamation"></i>${sq ? `바닥에 ${nm} 자리가 가득 찼어요` : '컬렉션이 가득 찼어요'}</div>
+                <div class="warn"><i class="fas fa-triangle-exclamation"></i>${sq ? `${nm} 자리가 가득 찼어요` : '컬렉션이 가득 찼어요'}</div>
                 <p class="fs">진열된 ${nm}를 누르면 팔거나, 작업대의 ${b ? `<b>${esc(full(b))}</b>` : '악기'}와(과) 바꿀 수 있어요${locked ? ' · 잠긴 걸이를 열어도 돼요' : ''}</p>
                 ${roomWall(first)}<small class="tp">${pickId ? '다시 누르면 닫혀요 · 다른 악기를 누르면 그 악기로' : `${nm}를 눌러 보세요`}</small></div>`;
             if (!first) m.classList.add('drawn');   // 다시 그릴 때(악기를 누를 때마다)는 창이 다시 튀어나오지 않게
@@ -3675,25 +3682,29 @@ function roomWall(enter) {
     const L = wallLayout(W, S.floor), { u, top, hh, fpos } = L, hit = `top:${W.hook - 4}%;height:${W.foot - W.hook + 8}%`;
     const price = openPrice(), floor = {};
     S.floor.forEach((g, j) => { if (L.at[j]) floor[g.id] = L.at[j]; });
+    // 꽉 찼을 때(roomFull)는 작업대 악기와 같은 종류만 누를 수 있다 (2026-11-21 사용자: '기타면 걸어 놓은 다섯 개하고만 바꾸는 거지,
+    //   아래 이펙터·앰프는 안 건드리게 — 앰프는 앰프를 강화하고 있을 때만 앰프랑 교환'). 다른 종류는 어둡게, 누르는 칸 없음
+    const can = g => !roomFull || (isSq(g) ? baseOf(g.f) === roomFull : roomFull === 'guitar');
     const slots = W.x.map((x, i) => {
-        if (!S.open[i]) return `<div class="wl" style="left:${x}%"></div><button type="button" class="wsb lock" data-a="wopen" data-i="${i}" style="left:${x}%;${hit}" aria-label="걸이 열기 ${gf(price)}"><i class="fas fa-lock"></i><span>${gs(price)}</span></button>`;
+        if (!S.open[i]) return roomFull && roomFull !== 'guitar' ? `<div class="wl" style="left:${x}%"></div><span class="wlk" style="left:${x}%;top:${(W.hook + W.foot) / 2}%"><i class="fas fa-lock"></i></span>`
+            : `<div class="wl" style="left:${x}%"></div><button type="button" class="wsb lock" data-a="wopen" data-i="${i}" style="left:${x}%;${hit}" aria-label="걸이 열기 ${gf(price)}"><i class="fas fa-lock"></i><span>${gs(price)}</span></button>`;
         const g = S.wall[i], lit = i === justOpened ? `<div class="wl off" style="left:${x}%"></div>` : '';
         if (!g) return lit + (selWall ? `<button type="button" class="wsb to" data-a="slot" data-i="${i}" style="left:${x}%;${hit}" aria-label="이 걸이로 옮기기"></button>` : '');
         const isRep = rp && g.id === rp.id;
-        return `${lit}<canvas class="gkc wg live ${g.id === selId ? 'sel' : ''}${g.id === pickId ? ' pick' : ''}" width="448" height="672" data-lv="${g.lv}" data-f="${g.f || 'strat'}" style="left:${x}%;top:${top}%;height:${hh}%;--d:${Math.abs(i - MID) * 0.1}s"></canvas>
-            <button type="button" class="wsb" data-a="slot" data-id="${g.id}" style="left:${x}%;${hit}" aria-label="${esc(full(g))}"></button>
+        return `${lit}<canvas class="gkc wg live ${g.id === selId ? 'sel' : ''}${g.id === pickId ? ' pick' : ''}${can(g) ? '' : ' na'}" width="448" height="672" data-lv="${g.lv}" data-f="${g.f || 'strat'}" style="left:${x}%;top:${top}%;height:${hh}%;--d:${Math.abs(i - MID) * 0.1}s"></canvas>
+            ${can(g) ? `<button type="button" class="wsb" data-a="slot" data-id="${g.id}" style="left:${x}%;${hit}" aria-label="${esc(full(g))}"></button>` : ''}
             <span class="wp${g.id === pickId ? ' pk' : ''}" style="left:${x}%;top:${W.plate}%">+${g.lv}</span>${isRep ? `<span class="wrep" style="left:${x}%;top:${Math.max(3, W.hook - 8 * u - 4.5)}%">대표</span>` : ''}`;
     }).join('');
     // 바닥 물건(앰프·멀티): 걸이와 상관없이 오른쪽 끝부터
     // 빈 발판: 앰프는 오른쪽, 멀티는 왼쪽. 물건 그림 아래 끝(바닥)에 맞춘 점선 상자
     const padHtml = ['amp', 'multi'].map(f => fpos[f].slice(S.floor.filter(g => baseOf(g.f) === f).length).map(P => {
         const bh = P.h2 * (f === 'amp' ? 0.36 : 0.3);
-        return `<div class="fpad ${f}" style="left:${P.x}%;width:${P.iw}%;top:${P.bottom - bh}%;height:${bh}%"><i class="fas ${f === 'amp' ? 'fa-volume-high' : 'fa-sliders'}"></i><span>${f === 'amp' ? '앰프' : '이펙터'}</span></div>`;
+        return `<div class="fpad ${f}${roomFull && roomFull !== f ? ' na' : ''}" style="left:${P.x}%;width:${P.iw}%;top:${P.bottom - bh}%;height:${bh}%"><i class="fas ${f === 'amp' ? 'fa-volume-high' : 'fa-sliders'}"></i><span>${f === 'amp' ? '앰프' : '이펙터'}</span></div>`;
     }).join('')).join('');
     const floorHtml = padHtml + S.floor.map((g, k) => {
         const fl = floor[g.id], isRep = rp && g.id === rp.id;
-        return `<canvas class="gkc wg live ${g.id === selId ? 'sel' : ''}${g.id === pickId ? ' pick' : ''}" width="448" height="672" data-lv="${g.lv}" data-f="${g.f}" style="left:${fl.x}%;top:${fl.t2}%;height:${fl.h2}%;--d:${0.2 + k * 0.1}s"></canvas>
-            <button type="button" class="wsb" data-a="slot" data-id="${g.id}" style="left:${fl.x}%;width:${fl.iw}%;top:${fl.bottom - fl.h2 * 0.4}%;height:${fl.h2 * 0.4}%" aria-label="${esc(full(g))}"></button>
+        return `<canvas class="gkc wg live ${g.id === selId ? 'sel' : ''}${g.id === pickId ? ' pick' : ''}${can(g) ? '' : ' na'}" width="448" height="672" data-lv="${g.lv}" data-f="${g.f}" style="left:${fl.x}%;top:${fl.t2}%;height:${fl.h2}%;--d:${0.2 + k * 0.1}s"></canvas>
+            ${can(g) ? `<button type="button" class="wsb" data-a="slot" data-id="${g.id}" style="left:${fl.x}%;width:${fl.iw}%;top:${fl.bottom - fl.h2 * 0.4}%;height:${fl.h2 * 0.4}%" aria-label="${esc(full(g))}"></button>` : ''}
             <span class="wp floor${g.id === pickId ? ' pk' : ''}" style="left:${fl.x}%;top:${fl.bottom - 3.5}%">+${g.lv}</span>${isRep ? `<span class="wrep" style="left:${fl.x}%;top:${Math.max(3, fl.t2 - 3)}%">대표</span>` : ''}`;
     }).join('');
     justOpened = -1;
@@ -3704,19 +3715,19 @@ function roomWall(enter) {
         if (selWall) swapHtml = W.x.map((x, i) => S.open[i] && S.wall[i] && S.wall[i].id !== selId ? mark(x, top + hh * 0.5) : '').join('');
         else if (sf) swapHtml = S.floor.map(g => g.id !== selId && baseOf(g.f) === baseOf(sf.f) && floor[g.id] ? mark(floor[g.id].x, floor[g.id].bottom - floor[g.id].h2 * 0.45) : '').join('');
     }
-    // 꽉 찼을 때 누른 악기 위에 [이 악기 팔기] [작업 중인 악기와 교체] (위아래로)
+    // 꽉 찼을 때 누른 악기에 [이 악기 팔기] [작업 중인 악기와 교체] — 좌우로 나란히 (2026-11-21 사용자: '버튼을 좌우로')
     let popHtml = '';
     if (pickId && wallFind(pickId) < 0 && !S.floor.some(x => x.id === pickId)) pickId = '';
     if (pickId) {
-        const wi = wallFind(pickId), g = wi >= 0 ? S.wall[wi] : S.floor.find(x => x.id === pickId), fl = floor[pickId];
+        const wi = wallFind(pickId), g = wi >= 0 ? S.wall[wi] : S.floor.find(x => x.id === pickId);
         // 2026-11-21 사용자: '단추가 기타를 가려서 구도가 안 예쁨 — 기타를 고르면 기타 아랫줄에, 앰프·이펙터는 가운데로 올려서(기타를 가려도 괜찮음)'
-        //   걸이 기타 = 명판 바로 아래(.low, 위 끝을 맞춤 — 좁은 폰에서 벽 아래로 조금 나가면 fullShow 가 벽 아래를 띄운다), 바닥 앰프·이펙터 = 벽 가운데 높이
-        const low = wi >= 0, cx = low ? W.x[wi] : fl ? fl.x : 50;
+        //   걸이 기타 = 명판 바로 아래 한 줄(.low — 좁은 폰에서 벽 아래로 조금 나가면 fullShow 가 벽 아래를 띄운다), 바닥 앰프·이펙터 = 벽 가운데 높이. 둘 다 벽 가운데 정렬
+        const low = wi >= 0;
         const b0 = S.bench, same = !!b0 && (isSq(b0) ? isSq(g) && baseOf(g.f) === baseOf(b0.f) : !isSq(g));
-        popHtml = `<div class="wpop${low ? ' low' : ''}" style="left:clamp(90px, ${cx}%, calc(100% - 90px));top:${low ? `${W.plate + 3.3}%` : '40%'}">
-            ${g.lock ? '<button type="button" class="ps" disabled><i class="fas fa-lock"></i>잠긴 악기</button>'
-            : `<button type="button" class="ps" data-a="psell" data-id="${g.id}"><i class="fas fa-coins"></i>${g.lv ? `이 악기 팔기 <small>${gshort(SELL[g.lv])}</small>` : '이 악기 버리기'}</button>`}
-            <button type="button" class="pw" data-a="pswap" data-id="${g.id}" ${same ? '' : 'disabled'}><i class="fas fa-right-left"></i>${same ? '작업 중인 악기와 교체' : isSq(b0) ? `${gearName(b0.f)}끼리만 바꿔요` : '기타끼리만 바꿔요'}</button></div>`;
+        popHtml = `<div class="wpop row${low ? ' low' : ''}" style="top:${low ? `${W.plate + 3.3}%` : '42%'}">
+            ${g.lock ? '<button type="button" class="ps" disabled><span><i class="fas fa-lock"></i>잠긴 악기</span></button>'
+            : `<button type="button" class="ps" data-a="psell" data-id="${g.id}"><span><i class="fas fa-coins"></i>${g.lv ? `이 악기 팔기 <small>${gshort(SELL[g.lv])}</small>` : '이 악기 버리기'}</span></button>`}
+            <button type="button" class="pw" data-a="pswap" data-id="${g.id}" ${same ? '' : 'disabled'}><span><i class="fas fa-right-left"></i>${same ? '작업 중인 악기와 교체' : isSq(b0) ? `${gearName(b0.f)}끼리만 바꿔요` : '기타끼리만 바꿔요'}</span></button></div>`;
     }
     return `<div class="wall5 ${enter ? 'enter' : ''}${pickId ? ' picking' : ''}" style="aspect-ratio:${W.w} / ${W.h}">
         <img class="bg" src="../images/play/gk/${W.src}" alt="컬렉션 진열 벽">${slots}${floorHtml}${swapHtml}${popHtml}</div>`;
