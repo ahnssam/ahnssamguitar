@@ -1744,12 +1744,13 @@ function askWhich(srv, uid) {
 }
 // 테스트 1·2·3: 이 기기에 테스트 기록이 있는데 계정 칸에도 있을 때 (2026-11-20 — 예전엔 기기마다 따로였다)
 //   합치기·로그아웃은 없다(합치면 골드가 두 번 들어가고, 테스트는 운영 계정으로 로그인해야만 됨). 남기지 않은 쪽은 'prev'·'prevAcct' 에 한 벌
+const saveMade = d => Math.max(+((d && d.st) || {}).made || 0, +(d && d.gold) || 0);   // 얼마나 한 기록인지(모은 돈)
 function askTest(srv, uid) {
     if (document.querySelector('.cloudask')) return;
     const m = document.createElement('div');
     m.className = 'cloudask';
     // 더 많이 한 쪽(모은 돈 st.made 가 큰 쪽)에 '추천' — 다른 기기에서 새로 시작한 기록이 먼저 올라가 있어도 헷갈리지 않게
-    const made = d => Math.max(+((d && d.st) || {}).made || 0, +(d && d.gold) || 0), hereBest = made(S) > made(srv.data || {});
+    const hereBest = saveMade(S) > saveMade(srv.data || {});
     const tag = '<em class="rec">추천 · 더 많이 한 기록</em>';
     m.innerHTML = `<div class="in"><h3>계정에 테스트 ${PERSONA} 기록이 있어요</h3>
         <div class="cmp"><div><span>계정</span><b>${esc(saveSum(srv.data || {}))}</b></div><div><span>이 기기</span><b>${esc(saveSum(S))}</b></div></div>
@@ -1778,7 +1779,12 @@ async function cloudSync() {
         cloudBtn(); setTimeout(nickCheck, 600); return;
     }
     if (localEmpty()) { if (srv) adopt(srv, uid, ''); else linkUp(uid, 0); return; }   // 이 기기는 아직 안 했다 → 묻지 않는다
-    if (PERSONA) { if (srv) askTest(srv, uid); else linkUp(uid, 0); return; }   // 테스트: 계정 칸이 비었으면 그냥 올리고, 둘 다 있으면 하나 고르기
+    if (PERSONA) {   // 테스트: 계정 칸이 비었으면 그냥 올리고, 둘 다 있으면 하나 고르기
+        if (!srv) { linkUp(uid, 0); return; }
+        // 이 기기 테스트 기록이 거의 빈 것(모은 돈이 시작 골드 그대로 + 강화 5번 이하)이거나 계정 것과 같은 기록이면 묻지 않고 계정 것 (2026-11-20 사용자: '항상 따라다니게')
+        if ((saveMade(S) <= START_GOLD && (S.st.tries | 0) <= 5) || (S.rk && srv.data && srv.data.rk === S.rk && saveMade(srv.data) >= saveMade(S))) { adopt(srv, uid, 'acct'); return; }
+        askTest(srv, uid); return;
+    }
     askWhich(srv, uid);                                                       // 로그인 없이 한 기록이 있다 → 고르기
 }
 // ---------- 로그아웃·계정 바꾸기 (2026-11-16 사용자: 로그아웃하고 다른 계정으로 바꿨는데 게임 진행이 그대로 남아 있었음) ----------
