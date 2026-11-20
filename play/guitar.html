@@ -121,6 +121,7 @@
     .cloudask .cmp div { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
     .cloudask .cmp span { flex: none; min-width: 28px; white-space: nowrap; font-size: 11.5px; font-weight: 800; color: var(--sub); }
     .cloudask .cmp b { min-width: 0; font-weight: 700; }
+    .cloudask .pick2 .rec { display: block; margin: 2px 0 1px; font-style: normal; font-size: 11.5px; font-weight: 800; color: #1f8a4c; }
     .cloudask button.pick2.out { background: #fff; }
     .cloudask button.pick2.out b { color: #555; }
     .cloudask .later { display: block; margin: 4px auto 0; color: var(--sub); font-size: 12.5px; background: none; border: 0; text-decoration: underline; }
@@ -1747,10 +1748,13 @@ function askTest(srv, uid) {
     if (document.querySelector('.cloudask')) return;
     const m = document.createElement('div');
     m.className = 'cloudask';
+    // 더 많이 한 쪽(모은 돈 st.made 가 큰 쪽)에 '추천' — 다른 기기에서 새로 시작한 기록이 먼저 올라가 있어도 헷갈리지 않게
+    const made = d => Math.max(+((d && d.st) || {}).made || 0, +(d && d.gold) || 0), hereBest = made(S) > made(srv.data || {});
+    const tag = '<em class="rec">추천 · 더 많이 한 기록</em>';
     m.innerHTML = `<div class="in"><h3>계정에 테스트 ${PERSONA} 기록이 있어요</h3>
         <div class="cmp"><div><span>계정</span><b>${esc(saveSum(srv.data || {}))}</b></div><div><span>이 기기</span><b>${esc(saveSum(S))}</b></div></div>
-        <button type="button" class="pick2 best" data-w="acct"><b>계정 기록으로 하기</b><small>이 기기의 테스트 ${PERSONA} 기록은 지워져요</small></button>
-        <button type="button" class="pick2" data-w="here"><b>이 기기 기록으로 하기</b><small>계정의 테스트 ${PERSONA} 기록을 이걸로 바꿔요</small></button></div>`;
+        <button type="button" class="pick2${hereBest ? '' : ' best'}" data-w="acct"><b>계정 기록으로 하기</b>${hereBest ? '' : tag}<small>이 기기의 테스트 ${PERSONA} 기록은 지워져요</small></button>
+        <button type="button" class="pick2${hereBest ? ' best' : ''}" data-w="here"><b>이 기기 기록으로 하기</b>${hereBest ? tag : ''}<small>계정의 테스트 ${PERSONA} 기록을 이걸로 바꿔요</small></button></div>`;
     m.addEventListener('click', e => {
         const b = e.target.closest('button'); if (!b) return;
         m.remove();
