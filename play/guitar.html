@@ -3733,6 +3733,9 @@ function roomWall(enter) {
         <img class="bg" src="../images/play/gk/${W.src}" alt="컬렉션 진열 벽">${slots}${floorHtml}${swapHtml}${popHtml}</div>`;
 }
 function wallFind(id) { return S.wall.findIndex(g => g && g.id === id); }
+// 컬렉션·창고의 악기를 작업대로 가져올 때 작업대에 있던 악기를 버릴까 (2026-11-22 사용자: '컬렉션의 기타를 작업대로 가져오면
+//   빈자리에 +0 악기가 생긴다 — 그냥 자리가 비어야지'). +0 은 팔아도 0G(팔기 자리가 '버리기')라 버린다. 잠근 +0 과 +1 부터는 예전처럼 그 자리에 건다
+const junkBench = g => !!g && !g.lv && !g.lock;
 // ---------- 컬렉션이 꽉 찼을 때 · 잠금 (2026-11-17 사용자) ----------
 const lockBtn = g => `<button type="button" class="lkb${g.lock ? ' on' : ''}" data-a="lock" data-id="${g.id}" aria-pressed="${!!g.lock}" title="${g.lock ? '잠김 — 눌러서 풀기' : '잠그면 실수로 팔지 않아요'}"><i class="fas ${g.lock ? 'fa-lock' : 'fa-lock-open'}"></i>${g.lock ? '잠김' : '잠금'}</button>`;
 function roomFullNote() {
@@ -4655,13 +4658,15 @@ $('#app').addEventListener('click', e => {
     else if (a === 'take') {   // 작업대로(작업대 것은 제자리 → 다른 빈 자리 → 창고)
         const [g, i] = unplace(id); if (!g) return;
         acted();
-        const old = S.bench;
-        if (old && !placeItem(old, i >= 0 ? i : null)) {
+        const old = S.bench, tossed = junkBench(old);   // +0 은 빈자리에 걸지 않고 버린다 (2026-11-22 사용자)
+        if (old && !tossed && !placeItem(old, i >= 0 ? i : null)) {
             if (S.store.length < STORE_MAX) { S.store.push(old); toast('작업대에 있던 것은 창고에 넣었어요'); }
             else { placeItem(g, i >= 0 ? i : null); toast(noRoomMsg(old)); renderRoom(); return; }
         }
+        if (tossed && S.rep === old.id) S.rep = '';
         S.bench = g; selId = ''; save();
         setTab('bench'); sfx('drop');
+        if (tossed) toast(`작업대에 있던 ${full(old)}은(는) 버렸어요`);
     } else if (a === 'wsell') {
         const g = S.wall.find(x => x && x.id === id) || S.floor.find(x => x.id === id); if (!g) return;
         if (g.lock) { toast('잠긴 악기예요 · 잠금을 풀어야 팔 수 있어요'); return; }
@@ -4674,7 +4679,10 @@ $('#app').addEventListener('click', e => {
         const g = S.store[i];
         if (a === 'ssell' && g.lock) { toast('잠긴 악기예요 · 잠금을 풀어야 팔 수 있어요'); return; }
         if (a !== 'ssell' || b.dataset.sure === '1') acted();
-        if (a === 'stake') { if (S.bench) S.store[i] = S.bench; else S.store.splice(i, 1); S.bench = g; save(); setTab('bench'); sfx('drop'); return; }
+        if (a === 'stake') { const old = S.bench, tossed = junkBench(old);   // 창고에서 가져올 때도 작업대의 +0 은 창고에 넣지 않고 버린다
+            if (old && !tossed) S.store[i] = old; else S.store.splice(i, 1);
+            if (tossed && S.rep === old.id) S.rep = '';
+            S.bench = g; save(); setTab('bench'); sfx('drop'); if (tossed) toast(`작업대에 있던 ${full(old)}은(는) 버렸어요`); return; }
         if (a === 'shang') {
             const where = placeItem(g); if (!where) { toast(noRoomMsg(g)); return; }
             S.store.splice(i, 1); save(); sfx('hang'); renderRoom(); toast(where === 'floor' ? '바닥에 놓았어요' : '벽에 걸었어요'); return;
