@@ -342,6 +342,11 @@
     .stamp { position: absolute; left: 73%; top: calc(var(--h0) * 0.27); z-index: 9; pointer-events: none; padding: 5px 11px 6px; border: 3px solid #ff4f5e; border-radius: 9px; background: rgba(255, 252, 245, 0.95); color: #e2333f; text-align: center; line-height: 1.05; transform: translate(-50%, -50%) rotate(-12deg); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4); animation: stampIn .38s cubic-bezier(.2, 1.5, .4, 1), stampOut .4s 1.7s forwards; }
     .stamp b { display: block; font: 900 21px/1 'Arial Black', sans-serif; letter-spacing: .02em; }
     .stamp span { display: block; margin-top: 2px; font-size: 12px; font-weight: 900; }
+    .stamp small { display: block; margin-top: 3px; font-size: 10px; font-weight: 800; color: #b8481a; white-space: nowrap; }
+    .dx-perk { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; margin: 8px 0 12px; padding: 8px 12px; border-radius: 12px; background: #fff3cf; color: #6b4a00; font-size: 13px; font-weight: 800; }
+    .dx-perk > i { color: #e0a514; }
+    .dx-perk b { color: #3a2400; font-weight: 900; }
+    .dx-perk small { flex-basis: 100%; padding-left: 22px; font-size: 11.5px; font-weight: 700; color: #8a6a1a; }
     @keyframes stampIn { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(-12deg) scale(2.6); } 60% { opacity: 1; transform: translate(-50%, -50%) rotate(-12deg) scale(.92); } }
     @keyframes stampOut { to { opacity: 0; transform: translate(-50%, -60%) rotate(-12deg) scale(.96); } }
     @media (max-width: 359px) { .stamp { left: 74%; } .stamp b { font-size: 17px; } .stamp span { font-size: 10.5px; } }
@@ -1073,6 +1078,7 @@
         <li>기타가 부서지면 <b>부서진 조각</b>이 나와요. 조각 15개가 모이면 <b>하드케이스</b>가 저절로 만들어져요(3개까지, 상점에서도 살 수 있어요).</li>
         <li>+7부터 강화 단추 위 <b>[하케]</b> 스위치를 켜면, 부서질 때 하드케이스가 한 번 막아 줘요. 켠 악기에만 적용돼요. 옆의 <b>[자동]</b>을 켜 두면 하드케이스가 있을 때 저절로 끼워요.</li>
         <li><b>튜너</b>(상점)를 사면 +7부터, 망치로 칸을 다 채운 뒤 가운데에 튜너가 떠요. 바늘이 초록 칸에 올 때 <b>튜너를 누르면</b> 성공 확률이 올라가요(좋은 튜너일수록 더).</li>
+        <li><b>도감</b>에 칸이 하나 찰 때마다 성공 확률과 팔 때 받는 골드가 조금씩 쌓여서 올라가요(도감 탭 맨 위에 지금 특전).</li>
         <li><b>프렛 망치</b>(상점)는 좋은 것일수록 성공이 더 올라가요. '성공 +n%'는 그 단계 성공 확률의 n%만큼 오른다는 뜻이에요.</li>
     </ul>
     <h3>5. 팔기 · 컬렉션 · 상점</h3>
@@ -1326,7 +1332,7 @@ function oddsFor(lv) {
     const b = gearBuff(), cd = Math.min(dp, r1(b.amp + wallCut())); dp -= cd; mp += cd;
     // 2026-11-17 사용자(경제 다시 보기): 작업대·망치·튜너·바닥 멀티의 '성공 +n'은 이 단계 성공 확률의 n%(예전엔 +n%p를 그대로 더해서 높은 단계에서 너무 셌다).
     //   성공 40%에서 +5%면 40 → 42%. 올라간 몫은 줄 끊김에서 가져온다. 파괴 줄임(앰프·컬렉션 스킨)은 %p 그대로
-    const cm = Math.min(mp, r1(ODDS[lv][0] * (b.multi + benchUp() + hammerUp()) / 100)); mp -= cm; sp += cm;
+    const cm = Math.min(mp, r1(ODDS[lv][0] * (b.multi + benchUp() + hammerUp() + dexUp()) / 100)); mp -= cm; sp += cm;
     return [r1(sp), r1(mp), r1(dp), r1(cd), r1(cm)];
 }
 const STORE_MAX = 30;   // 창고: 기록을 합칠 때 벽·작업대에 못 둔 기타가 들어간다
@@ -2502,7 +2508,7 @@ function renderBench() {
         // 장비·스킨 보너스는 실제로 깎을 게 있을 때만 (파괴 0%인 단계에서 '파괴 −1%p'라고 하면 거짓말)
         const amp = gearBuff(), [, , , cd, cm] = oddsFor(g.lv), wc = wallCut(), bu = benchUp();
         const tip = [cd && amp.amp ? `<span><i class="fas fa-volume-high"></i>앰프 파괴 −${amp.amp}%p</span>` : '', cd && wc ? `<span><i class="fas fa-image"></i>벽 파괴 −${wc}%p</span>` : '',
-            cm && amp.multi ? `<span><i class="fas fa-sliders"></i>멀티 성공 +${amp.multi}%</span>` : '', cm && bu ? `<span><i class="fas fa-screwdriver-wrench"></i>작업대 성공 +${bu}%</span>` : '', cm && hammerUp() ? `<span><i class="fas fa-hammer"></i>망치 성공 +${hammerUp()}%</span>` : ''].join('');
+            cm && amp.multi ? `<span><i class="fas fa-sliders"></i>멀티 성공 +${amp.multi}%</span>` : '', cm && bu ? `<span><i class="fas fa-screwdriver-wrench"></i>작업대 성공 +${bu}%</span>` : '', cm && hammerUp() ? `<span><i class="fas fa-hammer"></i>망치 성공 +${hammerUp()}%</span>` : '', cm && dexUp() ? `<span><i class="fas fa-book-open"></i>도감 성공 +${dexUp()}%</span>` : ''].join('');
         if (tip) h += `<p class="gline">${tip}</p>`;
         if (S.gold < cost) h += `<p class="lack">골드가 ${gf(cost - S.gold)} 모자라요. 팔거나 출석 골드를 받아요.</p>`;
     }
@@ -2522,12 +2528,12 @@ function renderSact() {
     el.classList.toggle('one', !can);
     // 2026-11-15 사용자: 처음(+0)엔 팔 수 없으니 그 자리는 '버리기'
     el.innerHTML = (g.lock ? `<button type="button" class="sl lk" data-a="lockb" data-id="${g.id}" title="잠긴 악기 — 눌러서 잠금 풀기"><i class="fas fa-lock"></i>잠김</button>`
-        : g.lv ? `<button type="button" class="sl" data-a="sell"><i class="fas fa-coins"></i>팔기 <b>${gf(SELL[g.lv])}</b></button>`
+        : g.lv ? `<button type="button" class="sl" data-a="sell"><i class="fas fa-coins"></i>팔기 <b>${gf(sellOf(g.lv))}</b></button>`
         : `<button type="button" class="sl tos" data-a="toss"><i class="fas fa-trash-can"></i>버리기</button>`)
         + (can ? (luckOf(g) >= LUCK_MAX   // 행운 게이지 가득: 반드시 성공 (2026-11-17)
             ? `<button type="button" class="ag lucky" data-a="again" ${S.gold < cost ? 'disabled' : ''} title="행운 게이지가 가득 — 이번 강화는 100% 성공"><span class="agl"><i class="fas fa-clover"></i>100% 확정! <small>${cost ? gf(cost) : '공짜'}</small></span>${strumSlots(g.lv)}</button>`
             : `<button type="button" class="ag" data-a="again" ${S.gold < cost ? 'disabled' : ''}><span class="agl"><i class="fas fa-hammer"></i>강화 <small>${cost ? gf(cost) : '공짜'}</small></span>${strumSlots(g.lv)}</button>`) : '');
-    if (g.lv) fitG(el.querySelector('.sl b'), SELL[g.lv]);
+    if (g.lv) fitG(el.querySelector('.sl b'), sellOf(g.lv));
     renderOpt();
     if (can && cost) fitG(el.querySelector('.ag small'), cost);
     { const agl = el.querySelector('.ag .agl'); if (agl && cost && agl.scrollWidth > agl.clientWidth + 1) agl.querySelector('small').textContent = gshort(cost);
@@ -2612,6 +2618,14 @@ function renderTable() {
 // ---------- 도감 ----------
 const DEX_FAMS = ['strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'superstrat2', 'acoustic', 'acoustic2', 'bass', 'bass2', 'amp', 'amp2', 'multi', 'multi2', 'pedal'];
 const dexHas = (f, lv) => !!((S.dex[f] | 0) & (1 << lv));
+// 도감 특전 (2026-11-23 사용자: '도감이 모일 때마다 특전 — 악기 하나 찰 때마다 성공 확률을 올리든 돈 획득량을 올리든' · '획득량은 판매했을 때 버는 금액을'):
+//   도감 한 칸마다 성공 +0.05%(그 단계 성공 확률의 n% — 망치·작업대와 같은 셈, 줄 끊김에서 가져옴) · 팔 때 받는 골드 +0.1%. 357칸 다 채우면 성공 +17.85% · 판매 +35.7%.
+//   숫자는 Claude가 정함(바꿔도 됨). 배틀 보상은 그대로. 운영 계정의 '전체 그림'과 상관없이 내가 닿은 칸(S.dex)만 센다
+const DEX_UP = 0.05, DEX_GOLD = 0.1;
+const dexN = () => DEX_FAMS.reduce((n, f) => { let b = (S.dex[f] | 0) & ((1 << (MAX + 1)) - 1), c = 0; while (b) { c += b & 1; b >>>= 1; } return n + c; }, 0);
+const dexUp = () => Math.round(dexN() * DEX_UP * 100) / 100;     // 성공 +%
+const dexGold = () => r1(dexN() * DEX_GOLD);                      // 판매 +%
+const sellOf = lv => Math.round(SELL[lv] * (1 + dexGold() / 100));   // 팔 때 실제로 받는 골드
 function dexAdd(f, lv) {
     f = FAMS[f] ? f : 'strat';
     if (dexHas(f, lv)) return false;
@@ -2753,6 +2767,7 @@ function renderDex() {
     el.classList.toggle('whole', whole);
     el.innerHTML = `<div class="dx-top"><b>기타 도감 ${total} / ${all}</b><small>찾거나 강화해서 닿은 단계가 모여요</small></div>
         <div class="dx-bar"><i style="width:${(total / all * 100).toFixed(1)}%"></i></div>
+        <div class="dx-perk"><i class="fas fa-gift"></i><span>도감 특전 <b>성공 +${dexUp()}%</b> · <b>판매 +${dexGold()}%</b></span><small>한 칸 찰 때마다 성공 +${DEX_UP}% · 판매 +${DEX_GOLD}%</small></div>
         ${ADMIN ? `<div class="dx-admin"><i class="fas fa-user-gear"></i>${whole ? '운영 계정 · 전체 그림 (초록 점 = 내가 닿은 칸)' : '운영 계정 · 내 도감'}<button type="button" data-a="dexall">${whole ? '내 도감만 보기' : '전체 그림 보기'}</button></div>` : ''}
         ${DEX_FAMS.map(f => { const F = FAMS[f], c = cnt(f);
             return `<div class="fam"><h4>${esc(F.dexName || F.name)}<small class="${c === N ? 'full' : ''}">${c === N ? '완성! ' : ''}${c} / ${N}</small></h4><div class="grid">${
@@ -3191,7 +3206,7 @@ function plusUp(n) {   // '+1' 이 기타에서 튀어 올라 사라진다
 }
 function stamp() {   // 처음 닿은 단계: 'NEW! 도감 등록' 도장을 쾅
     const d = document.createElement('div');
-    d.className = 'stamp'; d.innerHTML = '<b>NEW!</b><span>도감 등록</span>';
+    d.className = 'stamp'; d.innerHTML = `<b>NEW!</b><span>도감 등록</span><small>성공 +${DEX_UP}% · 판매 +${DEX_GOLD}%</small>`;   // 도감 특전 한 칸 (2026-11-23)
     $('#stage').appendChild(d); sfx('drop'); buzz(20);   // 효과 층(#fx) 말고 무대에 — 기타 이름표보다 위에 보이게 (2026-11-17 사용자: 뒤로 가 있음)
     setTimeout(() => d.remove(), 2200);
 }
@@ -3355,7 +3370,7 @@ function askSell(toss) {   // toss: +0 버리기 (2026-11-15) — 골드 없이 
     m.className = 'askwrap';
     m.innerHTML = `<div class="askbox"><p class="q">${toss ? '버리시겠습니까?' : '파시겠습니까?'}</p>
         <p class="g1"><span class="lvb">+${g.lv}</span>${esc(gname(g))}</p>
-        ${toss ? '<p class="pr tos">골드는 받지 않아요</p>' : `<p class="pr"><i class="fas fa-coins"></i> ${gf(SELL[g.lv])}</p>`}
+        ${toss ? '<p class="pr tos">골드는 받지 않아요</p>' : `<p class="pr"><i class="fas fa-coins"></i> ${gf(sellOf(g.lv))}</p>`}
         <div class="yn"><button type="button" class="no">아니오</button><button type="button" class="yes">${toss ? '예, 버릴게요' : '예, 팔게요'}</button></div></div>`;
     $('#stage').appendChild(m);
     const close = () => m.remove();
@@ -3370,7 +3385,7 @@ async function sellBench() {
     const g = S.bench;
     if (busy || !g || !g.lv) return;
     busy = true; talkClear();
-    const price = SELL[g.lv], g0 = S.gold;
+    const price = sellOf(g.lv), g0 = S.gold;
     gain(price); S.st.sold++; S.st.earned += price;
     ghost = g; S.bench = null; if (S.rep === g.id) S.rep = '';
     save(); renderSact(); $('#bench').innerHTML = '';   // 위 골드 숫자는 아직 그대로 — 악기가 날아간 뒤 촤라락 올라간다
@@ -3611,7 +3626,7 @@ function storeBox() {
     if (!S.store.length) return '';
     const free = g => isSq(g) ? floorRoom(S.floor, g) : HANG_ORDER.some(i => S.open[i] && !S.wall[i]);
     return `<div class="storebox"><h4><i class="fas fa-box-archive"></i> 창고 <small>${S.store.length}대 · 기록을 합칠 때 벽에 못 건 기타</small></h4>${S.store.map(g => `<div class="grow" id="row-${g.id}">${gc(g.lv, '', 2, g.f)}
-        <div class="gt"><b>${esc(full(g))}</b><small>창고 · 팔면 ${gf(SELL[g.lv])}</small></div>
+        <div class="gt"><b>${esc(full(g))}</b><small>창고 · 팔면 ${gf(sellOf(g.lv))}</small></div>
         <div class="ga"><button type="button" class="pri" data-a="stake" data-id="${g.id}">작업대로</button>
         <button type="button" data-a="shang" data-id="${g.id}" ${free(g) ? '' : 'disabled'}>${isSq(g) ? '바닥에 놓기' : '벽에 걸기'}</button>
         <button type="button" data-a="ssell" data-id="${g.id}" ${g.lv && !g.lock ? '' : 'disabled'}>${g.lock ? '<i class="fas fa-lock"></i> 팔기' : '팔기'}</button>
@@ -3661,7 +3676,7 @@ function renderRoom(enter) {
     const wall = roomWall(enter);
     // 목록은 장비별로 (2026-11-12 사용자): 기타(걸이) · 앰프 · 멀티이펙터(바닥). 악기마다 공유 단추, 작업대로 가는 단추는 '다시 작업대로'
     const row = (g, i) => `<div class="grow ${g.id === selId ? 'sel' : ''}${g.lock ? ' locked' : ''}" id="row-${g.id}">${gc(g.lv, '', 2, g.f)}
-            <div class="gt"><b>${g.lock ? '<i class="fas fa-lock"></i>' : ''}${esc(full(g))}</b><small>${i < 0 ? `${baseOf(g.f) === 'amp' ? '파괴' : '줄 끊김'} −${gearCut(g)}%p · ` : rp && g.id === rp.id ? '⭐ 대표 기타 · ' : ''}팔면 ${gf(SELL[g.lv])}</small></div>
+            <div class="gt"><b>${g.lock ? '<i class="fas fa-lock"></i>' : ''}${esc(full(g))}</b><small>${i < 0 ? `${baseOf(g.f) === 'amp' ? '파괴' : '줄 끊김'} −${gearCut(g)}%p · ` : rp && g.id === rp.id ? '⭐ 대표 기타 · ' : ''}팔면 ${gf(sellOf(g.lv))}</small></div>
             <div class="ga">${isSq(g) ? '' : `<button type="button" class="pri" data-a="setrep" data-id="${g.id}" ${rp && g.id === rp.id ? 'disabled' : ''}>대표로</button>`}
             <button type="button" data-a="take" data-id="${g.id}">다시 작업대로</button>
             <button type="button" data-a="wsell" data-id="${g.id}" ${g.lv && !g.lock ? '' : 'disabled'}>${g.lock ? '<i class="fas fa-lock"></i> 팔기' : '팔기'}</button>
@@ -3730,7 +3745,7 @@ function roomWall(enter) {
         const b0 = S.bench, same = !!b0 && (isSq(b0) ? isSq(g) && baseOf(g.f) === baseOf(b0.f) : !isSq(g));
         popHtml = `<div class="wpop row${low ? ' low' : ''}" style="top:${low ? `${W.plate + 3.3}%` : '42%'}">
             ${g.lock ? '<button type="button" class="ps" disabled><span><i class="fas fa-lock"></i>잠긴 악기</span></button>'
-            : `<button type="button" class="ps" data-a="psell" data-id="${g.id}"><span><i class="fas fa-coins"></i>${g.lv ? `이 악기 팔기 <small>${gshort(SELL[g.lv])}</small>` : '이 악기 버리기'}</span></button>`}
+            : `<button type="button" class="ps" data-a="psell" data-id="${g.id}"><span><i class="fas fa-coins"></i>${g.lv ? `이 악기 팔기 <small>${gshort(sellOf(g.lv))}</small>` : '이 악기 버리기'}</span></button>`}
             <button type="button" class="pw" data-a="pswap" data-id="${g.id}" ${same ? '' : 'disabled'}><span><i class="fas fa-right-left"></i>${same ? '작업 중인 악기와 교체' : isSq(b0) ? `${gearName(b0.f)}끼리만 바꿔요` : '기타끼리만 바꿔요'}</span></button></div>`;
     }
     return `<div class="wall5 ${enter ? 'enter' : ''}${pickId ? ' picking' : ''}" style="aspect-ratio:${W.w} / ${W.h}">
@@ -3781,7 +3796,7 @@ async function popSell(id, inPop) {   // 꽉 찼을 때 누른 악기 팔기. in
     const wi = wallFind(id), g = wi >= 0 ? S.wall[wi] : S.floor.find(x => x.id === id);
     if (!g) return;
     if (g.lock) { toast('잠긴 악기예요 · 아래 목록에서 잠금을 풀어야 팔 수 있어요'); return; }
-    const price = SELL[g.lv], b = S.bench;
+    const price = sellOf(g.lv), b = S.bench;
     const then = inPop && b && (isSq(b) ? isSq(g) && baseOf(g.f) === baseOf(b.f) : !isSq(g)) ? `<p class="nt">그 자리에 작업대의 ${esc(full(b))}을(를) 진열해요</p>` : '';
     if (!await askYN(g.lv ? '이 악기를 파시겠습니까?' : '이 악기를 버리시겠습니까?', `${itemBadge(g)}${g.lv ? `<p class="pr"><i class="fas fa-coins"></i> ${gf(price)}</p>` : '<p class="nt">골드는 받지 않아요</p>'}${then}`, g.lv ? '예, 팔게요' : '예, 버릴게요')) return;
     if (findItem(id) !== g || g.lock) return;
@@ -4674,10 +4689,10 @@ $('#app').addEventListener('click', e => {
     } else if (a === 'wsell') {
         const g = S.wall.find(x => x && x.id === id) || S.floor.find(x => x.id === id); if (!g) return;
         if (g.lock) { toast('잠긴 악기예요 · 잠금을 풀어야 팔 수 있어요'); return; }
-        if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = gf(SELL[g.lv]) + '에 팔기?'; return; }
-        acted(); unplace(id); gain(SELL[g.lv]); S.st.sold++; S.st.earned += SELL[g.lv];
+        if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = gf(sellOf(g.lv)) + '에 팔기?'; return; }
+        acted(); unplace(id); gain(sellOf(g.lv)); S.st.sold++; S.st.earned += sellOf(g.lv);
         if (S.rep === g.id) S.rep = '';
-        save(); sfx('sell'); renderRoom(); updBar(true); toast(`${full(g)}을(를) ${gf(SELL[g.lv])}에 팔았어요`);
+        save(); sfx('sell'); renderRoom(); updBar(true); toast(`${full(g)}을(를) ${gf(sellOf(g.lv))}에 팔았어요`);
     } else if (a === 'stake' || a === 'shang' || a === 'ssell') {   // 창고
         const i = S.store.findIndex(g => g.id === id); if (i < 0) return;
         const g = S.store[i];
@@ -4691,9 +4706,9 @@ $('#app').addEventListener('click', e => {
             const where = placeItem(g); if (!where) { toast(noRoomMsg(g)); return; }
             S.store.splice(i, 1); save(); sfx('hang'); renderRoom(); toast(where === 'floor' ? '바닥에 놓았어요' : '벽에 걸었어요'); return;
         }
-        if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = gf(SELL[g.lv]) + '에 팔기?'; return; }
-        S.store.splice(i, 1); gain(SELL[g.lv]); S.st.sold++; S.st.earned += SELL[g.lv]; if (S.rep === g.id) S.rep = '';
-        save(); sfx('sell'); renderRoom(); updBar(true); toast(`${full(g)}을(를) ${gf(SELL[g.lv])}에 팔았어요`);
+        if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = gf(sellOf(g.lv)) + '에 팔기?'; return; }
+        S.store.splice(i, 1); gain(sellOf(g.lv)); S.st.sold++; S.st.earned += sellOf(g.lv); if (S.rep === g.id) S.rep = '';
+        save(); sfx('sell'); renderRoom(); updBar(true); toast(`${full(g)}을(를) ${gf(sellOf(g.lv))}에 팔았어요`);
     } else if (a === 'fight') fight(id);
     else if (a === 'findno') findNo(($('#vsno') || {}).value);
     else if (a === 'copyno') copyNo();
