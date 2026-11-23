@@ -917,6 +917,13 @@
     .askbox .no { background: rgba(255, 255, 255, 0.12); border: 1.5px solid rgba(255, 255, 255, 0.22); color: #cbbfb2; }
     .askbox .yes { background: linear-gradient(#3fb877, #23935a); color: #fff; box-shadow: 0 4px 0 #16683e; }
     .askbox .yn button:active { transform: translateY(2px); }
+    /* 다른 창에서 하고 있을 때 이 창을 멈추는 창 (2026-11-23) — 무엇보다 위에 */
+    .gk-modal.stalebox { z-index: 2147483000; }
+    .stalebox .askbox { width: min(320px, 94%); }
+    .stalebox .askbox .q i { color: #ffd76a; margin-right: 4px; }
+    .stalebox .askbox .q { line-height: 1.4; word-break: keep-all; }
+    .stalebox .askbox .nt { margin-top: 8px; font-size: 13px; color: #d8cfc4; line-height: 1.5; word-break: keep-all; }
+    .askbox .yn.one { grid-template-columns: 1fr; }
     @media (prefers-reduced-motion: reduce) { .askwrap, .askbox { animation: none; } }
     /* 광고 보고 골드 (2026-11-13 사용자) — 구글이 광고를 준비했을 때만 뜬다 */
     .adbox { max-width: 320px; }
@@ -1593,7 +1600,23 @@ const winP = (me, op) => me === op ? 0.5 : me > op ? 1 - Math.pow(0.5, me - op +
 const pct = p => p * 100 < 0.1 ? '0.1% 미만' : Math.round(p * 1000) / 10 + '%';
 // 상대 단계가 오를수록 거의 두 배씩. 싸움터 스킨이 좋을수록 조금 더 받는다 (2026-11-13 사용자, arenaUp — 최대 +12%)
 const reward = lv => Math.max(20, Math.round(SELL[lv] * 0.2 * (1 + arenaUp()) / 10) * 10);
-const today = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+// '오늘'·쿨타임은 기기 시계가 아니라 서버 시각으로 센다 (2026-11-23 사용자: 휴대폰·컴퓨터 날짜를 바꿔 선물·출석·배틀 횟수를 다시 받는 편법 막기).
+//   페이지를 열 때·다시 볼 때·5분마다 이 사이트 서버에 HEAD 로 물어 'Date' 머리글을 받고, 그 뒤는 performance.now()(기기 시계를 바꿔도 안 변함)로 흘려 센다.
+//   아직 못 받았으면 마지막으로 서버 시각을 확인한 때(저장된 S.tv)에 멈춰 있는다 — 비행기 모드로 날짜를 바꿔도 날이 안 넘어가게. 그것도 없으면(처음 온 사람) 기기 시계
+let clk = null, tvLast = 0;   // clk = { srv: 서버 시각(ms), perf: 그때 performance.now() }
+const nowMs = () => clk ? clk.srv + (performance.now() - clk.perf) : tvLast || Date.now();
+async function syncClock() {
+    try {
+        const p0 = performance.now(), r = await fetch('/ads.txt?clock=' + Date.now(), { method: 'HEAD', cache: 'no-store' }), p1 = performance.now();
+        const d = Date.parse(r.headers.get('date') || '');
+        if (isNaN(d)) return false;
+        const first = !clk, day0 = today();
+        clk = { srv: d + (+r.headers.get('age') || 0) * 1000 + 500 + (p1 - p0) / 2, perf: p1 };   // Date 는 초 단위라 가운데(+0.5초)로
+        if ((first || today() !== day0) && typeof S !== 'undefined' && !busy) { updBar(); if (tab === 'bench') renderBench(); else if (tab === 'battle') renderBattle(); else if (tab === 'shop') renderShop(); }
+        return true;
+    } catch (e) { return false; }
+}
+const today = () => { const d = new Date(nowMs()); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 const rid = () => Math.random().toString(36).slice(2, 9);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -1682,14 +1705,40 @@ function load() {
     return s;
 }
 let veil = null;   // 결과 가리기 { gold, sh, cs } — 가리는 동안 화면에 보일 값 (아래 fitGold 위 설명)
+// 창(탭) 두 개로 결과 되돌리기 막기 (2026-11-23 사용자): 예전엔 창마다 기록을 통째로 들고 있다가 덮어써서,
+//   A 창에서 부서지면 B 창(부서지기 전 기록)에서 아무거나 눌러 없던 일로 만들 수 있었다.
+//   이제 저장할 때마다 번호(GKK('wv'))를 하나 올리고, 내가 마지막으로 본 번호와 다르면(다른 창이 그사이 저장) 덮어쓰지 않고 이 창을 멈춘다.
+//   다른 창이 저장하는 순간(storage 이벤트)에도 바로 멈춘다 — '이 창에서 이어 하기'를 누르면 새로고침해서 최신 기록으로
+const WV = GKK('wv');
+let myWv = +mem.get(WV, 0) || 0, stale = false;
+function staleStop() {
+    if (stale) return;
+    stale = true; clearTimeout(cloudT); clearTimeout(syncT);
+    const m = document.createElement('div');
+    m.className = 'gk-modal stalebox';
+    m.innerHTML = `<div class="askbox"><p class="q"><i class="fas fa-clone"></i> 다른 창에서<br>기타 키우기를 하고 있어요</p>
+        <p class="nt">기록이 엉키지 않게 한 번에 한 창에서만 할 수 있어요. 이 창은 멈췄어요.</p>
+        <div class="yn one"><button type="button" class="yes" data-a="stalego">이 창에서 이어 하기</button></div></div>`;
+    m.querySelector('[data-a="stalego"]').addEventListener('click', () => location.reload());
+    document.body.appendChild(m);
+}
+// 이 창이 기록을 쓸 때는 늘 이걸로(force = 로그아웃·계정 바꿈처럼 어차피 새로고침할 때)
+function putGK(d, force) {
+    const cur = +mem.get(WV, 0) || 0;
+    if (!force && (stale || cur !== myWv)) { staleStop(); return false; }
+    myWv = cur + 1; mem.set(WV, myWv); mem.set(GK, d); return true;
+}
+addEventListener('storage', e => { if (e.key === null || e.key === 'play.' + WV || e.key === 'play.' + GK) staleStop(); });
+const staleCheck = () => { if (!stale && (+mem.get(WV, 0) || 0) !== myWv) staleStop(); };   // 뒤로 가기로 돌아온 창(bfcache)·다시 본 창
 let S = load();
-const save = () => { mem.set(GK, S); cloudDirty(); autoSync(); };
+tvLast = +S.tv || 0;
+const save = () => { if (clk) S.tv = Math.round(nowMs()); if (!putGK(S)) return; cloudDirty(); autoSync(); };
 // 골드가 들어올 때는 이걸로: 모은 돈(랭킹)에도 더한다
 const gain = n => { S.gold += n; S.st.made = (+S.st.made || 0) + n; };
 // 대표 기타를 랭킹 서버에 저절로 올린다 (2026-11-12 사용자: 사람이 쌓이면 유저끼리 붙게 — 예전엔 배틀 탭을 열어야만 올라갔다).
 //   저장할 때마다 4초 모아서, 바뀌었거나 10분 지났을 때만 실제로 보낸다(syncMe). 30일 안 온 사람은 서버가 상대 목록에서 뺀다
 let syncT = 0;
-function autoSync() { clearTimeout(syncT); syncT = setTimeout(() => { if (personaWait()) { autoSync(); return; } if (rep()) syncMe().catch(() => {}); }, 4000); }
+function autoSync() { if (stale) return; clearTimeout(syncT); syncT = setTimeout(() => { if (personaWait()) { autoSync(); return; } if (rep()) syncMe().catch(() => {}); }, 4000); }
 // 테스트 1·2·3 은 계정 칸과 이어지기 전엔 랭킹에 올리지 않는다 (2026-11-20 — 폰·다른 크롬이 이 기기의 예전 열쇠로 +0 빈 줄 익명566364·익명109494 를 만들었음).
 //   계정 칸을 불러오면 그 기록의 열쇠(S.rk)로 올린다. 서버 함수가 없거나(cloudOff) 운영 계정이 아니면 예전처럼 바로
 const personaWait = () => !!PERSONA && !linked() && !cloudOff;
@@ -1712,7 +1761,7 @@ function cloudDirty() {
     clearTimeout(cloudT); cloudT = setTimeout(cloudPush, 2500);
 }
 async function cloudPush() {
-    if (!linked() || cloudBusy || cloudOff) return;
+    if (!linked() || cloudBusy || cloudOff || stale) return;
     cloudBusy = true; cloudBtn();
     try {
         const r = (await PLAY.rpc('play_guitar_store', slotArg({ p_data: S }), { auth: true }))[0];
@@ -1727,7 +1776,7 @@ const keepPrev = why => { try { if (!localEmpty()) mem.set(GKK('prev'), { uid: c
 function adopt(srv, uid, why) {
     if (why === 'acct' || (why === 'newer' && cloud && cloud.dirty)) keepPrev(why);
     const rk0 = S.rk;
-    mem.set(GK, srv.data); S = load();
+    if (!putGK(srv.data)) return; S = load();
     if (S.rk !== rk0) { mem.set(GKK('sync2'), {}); mem.set(GKK('coll'), {}); }   // 다른 랭킹 줄 — 이 기기가 기억하던 예전 번호는 버린다
     cloud = { uid, rev: srv.rev, dirty: false, at: Date.now() }; mem.set(GKK('cloud'), cloud);
     autoSync();
@@ -1737,7 +1786,8 @@ function adopt(srv, uid, why) {
 function linkUp(uid, rev) {
     setTimeout(nickCheck, 600);
     if (!S.rk) S.rk = PLAY.myKey();
-    cloud = { uid, rev, dirty: true }; mem.set(GK, S); mem.set(GKK('cloud'), cloud);
+    if (!putGK(S)) return;
+    cloud = { uid, rev, dirty: true }; mem.set(GKK('cloud'), cloud);
     autoSync();
     cloudPush().then(() => { if (linked() && !cloud.dirty) toast(PERSONA ? `테스트 ${PERSONA} 기록을 계정에 저장했어요. 다른 기기에서도 이어서 해요` : '이 기록을 계정에 저장했어요. 다른 기기에서도 이어서 할 수 있어요'); });
 }
@@ -1745,7 +1795,9 @@ function linkUp(uid, rev) {
 //   기타: 계정 것 그대로 + 이 기기 기타(작업대·벽·창고)를 빈 작업대 → 빈 걸이 → 창고 순으로. 골드·조각·케이스·기록은 더하고,
 //   도감·스킨은 합치고, 걸이·튜너는 높은 쪽. 출석·배틀 횟수는 계정 쪽 그대로
 function mergeSaves(here, acct) {
+    const keep = localStorage.getItem('play.' + GK);   // GK 를 잠깐 빌려 load 로 다듬는다 — 다른 창은 이 쓰기로 멈춘다(storage)
     mem.set(GK, acct); const A = load(); mem.set(GK, here); const H = load();
+    try { if (keep != null) localStorage.setItem('play.' + GK, keep); } catch (e) {}
     const ids = new Set([A.bench, ...A.wall, ...A.floor, ...A.store].filter(Boolean).map(g => g.id));
     const mine = [H.bench, ...H.wall, ...H.floor, ...H.store].filter(Boolean).map(g => ids.has(g.id) ? { ...g, id: rid() } : g);
     A.open = A.open.map((o, i) => o || H.open[i]);
@@ -1800,7 +1852,7 @@ function askWhich(srv, uid) {
         m.remove();
         if (w === 'merge') {
             const M = mergeSaves(S, srv.data || {});
-            mem.set(GK, M); S = load();
+            if (!putGK(M)) return; S = load();
             linkUp(uid, srv.rev); updBar(); setTab(tab);
             toast('계정 데이터와 합쳤어요' + (S.store.length ? ` · 벽에 못 건 악기 ${S.store.length}대는 컬렉션 창고에 있어요` : ''));
         }
@@ -1832,6 +1884,7 @@ function askTest(srv, uid) {
     document.body.appendChild(m);
 }
 async function cloudSync() {
+    if (stale) return;
     const uid = acctId();
     cloudBtn();
     if (uid && cloud && cloud.uid && cloud.uid !== uid) { resetLocal('switched'); return; }   // 2026-11-16 다른 계정의 기록 — 이 계정에 올리거나 합치지 않고 처음부터
@@ -1863,7 +1916,7 @@ function newRk() { const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwx
 function resetLocal(why) {
     try { mem.set(GKK('prev'), { uid: cloud && cloud.uid, at: Date.now(), dirty: !!(cloud && cloud.dirty), why, data: S }); } catch (e) {}
     const f = fresh(); f.rk = newRk();
-    mem.set(GK, f); mem.set(GKK('cloud'), null); mem.set(GKK('sync2'), {}); mem.set(GKK('coll'), {});
+    putGK(f, true); mem.set(GKK('cloud'), null); mem.set(GKK('sync2'), {}); mem.set(GKK('coll'), {});
     location.reload();
 }
 // 로그아웃을 누르면 먼저 묻는다 (2026-11-16 사용자: '게임 진행 중이니까 팝업 — 끄면 저장 안 한 데이터가 날아간다').
@@ -3132,7 +3185,7 @@ let combo = 0, comboId = '';
 const luckOf = g => Math.min(LUCK_MAX, Math.max(0, (g && g.luck) | 0));
 const giftFam = f => FAMS[f] ? f : 'strat';
 // 선물 하루: 새벽 4시에 날이 바뀐다(한국 시간 기준 이 기기 시계). 날이 바뀌면 받은 것(S.gift)을 비운다
-const giftDay = () => { const d = new Date(Date.now() - 4 * 3600e3); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+const giftDay = () => { const d = new Date(nowMs() - 4 * 3600e3); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 // 2026-11-17 사용자: '방금 +5 선물 받았는데 새로 악기 뽑아서 하니까 또 주네? 악기마다 다를 필요 없어' → 어느 악기든 하루에 한 번(S.gift.all 비트).
 //   (같은 날 처음엔 악기 종류마다 따로였다 — 그때 받은 것은 합쳐서 '오늘 받음'으로 친다)
 function giftToday() {
@@ -3296,7 +3349,7 @@ async function reviveOffer(g, sh, wasRep) {
     }, '넥뿌의 요정 소환');
     box.remove();
     if (r !== 'viewed') { if (r === 'dismissed') toast('끝까지 봐야 넥뿌의 요정이 와요'); return false; }
-    S.rv = { at: Date.now() };
+    S.rv = { at: nowMs() };
     S.bench = g; S.shards = Math.max(0, S.shards - sh);
     S.st.boom = Math.max(0, S.st.boom - 1); S.st.revive = (S.st.revive | 0) + 1;
     if (wasRep) S.rep = g.id;
@@ -3959,7 +4012,10 @@ function noRepHint() {
 //   높은 단계(+15·+17)가 쉬운 돈벌이로 쓰지 못하게(예전: +15가 +17에 12.5%로 1.87억 → 한 판 평균 2,300만). 유효숫자 두 자리
 const exPrize = (me, o) => { const p = winP(me.lv, o.lv), x = Math.min(reward(o.lv), reward(me.lv) * 0.5 / Math.max(p, 1e-9));
     const q = Math.pow(10, Math.max(1, Math.floor(Math.log10(x)) - 1)); return Math.max(20, Math.round(x / q) * q); };
-const prizeOf = (me, o) => o.ex && me ? exPrize(me, o) : reward(o.lv);
+// 배틀 신청 링크(?vs=)인데 서버에서 그 사람을 못 찾은 상대(파이트 넘버가 없거나 틀림)는 링크에 적힌 단계를 믿을 수 없다 (2026-11-23 사용자:
+//   링크 안 단계를 +20으로 고쳐 만들면 브라우저 안에서 가짜 +20과 싸워 이기면 20억이던 편법 막기) — 극한의 대결과 같은 상한(평균은 같은 단계와 싸울 때만큼)
+const vsUnchecked = o => !!o && o.pid == null && /^vs\./.test(o.id || '');
+const prizeOf = (me, o) => (o.ex || vsUnchecked(o)) && me ? exPrize(me, o) : reward(o.lv);
 function oppRow(o, cls = '') {
     const me = rep(), done = btDay().done[o.id];
     const p = me ? winP(me.lv, o.lv) : 0;
@@ -4203,7 +4259,7 @@ $('#tab-rank').addEventListener('keydown', e => { const t = e.target.closest('[d
 //   구글이 광고를 준비 못 했으면(승인 전·광고 없음) 그냥 새로고침해 준다 — 광고가 없다고 못 쓰게 하지는 않는다
 let oppBusy = false;
 const RR_CD = 15 * 60 * 1000;   // 상대 새로고침 쿨타임 15분 (2026-11-15 사용자: 광고 승인 전이라)
-const rrLeft = k => Math.max(0, (+S.rr[k] || 0) + RR_CD - Date.now());
+const rrLeft = k => Math.max(0, (+S.rr[k] || 0) + RR_CD - nowMs());
 // 남은 쿨타임을 '14:54'처럼 분:초로 (2026-11-15 사용자: 'n분 뒤' 말고 정확한 초까지)
 const mmss = ms => { const t = Math.ceil(ms / 1000); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
 const rrBtn = k => { const left = rrLeft(k); return `<button type="button" class="rerank${left ? ' cd' : ''}" data-a="rerank" data-k="${k}" aria-label="${k === 'real' ? '오늘의 상대' : '극한의 대결'} 새로고침" ${oppBusy || netBusy || left ? 'disabled' : ''}><i class="fas fa-clapperboard"></i><span>${left ? mmss(left) : '상대 새로고침'}</span></button>`; };
@@ -4232,7 +4288,7 @@ async function oppRefresh(k = 'real') {
     oppBusy = false;
     if (r === 'skip') return;
     if (r === 'dismissed') { toast('끝까지 봐야 새 상대가 와요'); return; }
-    S.rr[k] = Date.now();
+    S.rr[k] = nowMs();
     if (k === 'prac') { const bt = btDay(); bt.rr = (bt.rr | 0) + 1; }   // 연습 상대(가상 기타리스트)를 새로
     else NET.at = 0;                                                     // 오늘의 상대는 서버에서 다시
     save();
@@ -4273,7 +4329,7 @@ async function btRefill() {
     box.remove();
     if (r === 'skip') { btrBusy = false; return; }
     if (r === 'dismissed') { btrBusy = false; toast('끝까지 봐야 배틀이 채워져요'); return; }
-    S.rr.bt = Date.now();
+    S.rr.bt = nowMs();
     let srvOk = NORANK || amHidden();   // 시험 브라우저·운영 계정은 서버가 안 세니 그대로
     if (!srvOk) try { await syncMe(); await PLAY.rpc('play_guitar_battle_refill', { p_key: gkKey() }); srvOk = true; } catch (e) {}
     const bt = btDay();
@@ -4307,7 +4363,7 @@ function nickErr(v) {
 //     S.nickCh = 바꾼 횟수, S.nickAt = 마지막으로 바꾼 때
 const NICK_PRICE = 10000000, NICK_CD = 7 * 864e5;
 const nickFree = () => !S.nickPick || (S.nickCh | 0) < 1;
-const nickLeft = () => !S.nickPick ? 0 : Math.max(0, (+S.nickAt || 0) + NICK_CD - Date.now());
+const nickLeft = () => !S.nickPick ? 0 : Math.max(0, (+S.nickAt || 0) + NICK_CD - nowMs());
 const dhm = ms => { const m = Math.ceil(ms / 60000), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60); return d ? `${d}일 ${h}시간` : h ? `${h}시간 ${m % 60}분` : `${m}분`; };
 // 묻는 때 (2026-11-19 사용자): 들어오자마자 말고, 닉네임 없이 '악기 찾기'를 처음 누를 때(nickBeforeFind). 위 X(또는 바깥·Esc) = 나중에 — 그대로 게임 시작,
 //   이 페이지에서는 다시 안 묻고 다음에 들어와 악기를 찾을 때 또 묻는다. '익명으로 하기' = S.nickPick 'anon'(이름 = '익명' + 파이트 넘버 6자리).
@@ -4351,7 +4407,7 @@ async function nickAskIn(start, done) {
         if (!first) {
             if (n === S.nick && pick === S.nickPick) { finish(); return; }   // 그대로면 돈도 횟수도 안 씀
             if (!free) { if (S.gold < NICK_PRICE) return; S.gold -= NICK_PRICE; }
-            S.nickCh = (S.nickCh | 0) + 1; S.nickAt = Date.now();
+            S.nickCh = (S.nickCh | 0) + 1; S.nickAt = nowMs();
         }
         S.nick = n; S.nickPick = pick; S.nickOk = true; save();
         finish(); updBar(true); sfx('drop');
@@ -4799,8 +4855,11 @@ function start() {
     }
     if (VS) setTab('battle'); else setTab('bench');
 }
-addEventListener('pageshow', e => { if (e.persisted && !busy && tab === 'bench') renderBench(); });
+addEventListener('pageshow', e => { if (e.persisted) { staleCheck(); syncClock(); } if (e.persisted && !busy && tab === 'bench') renderBench(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { staleCheck(); syncClock(); } });
+setInterval(syncClock, 5 * 60e3);
 document.addEventListener('visibilitychange', () => { if (!document.hidden && !busy && tab === 'bench' && !S.bench) renderBench(); });
+syncClock();
 start();
 checkAdmin(); personaBar();
 setTimeout(cloudSync, 1200);
