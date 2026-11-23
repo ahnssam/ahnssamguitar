@@ -1242,8 +1242,16 @@ const cv = $('#cv'), ctx = cv.getContext('2d');
 // 2026-11-12 사용자: 부서짐도 점점 올라가게. 마지막(+19→+20)은 성공 5 · 줄 끊김 45 · 부서짐 50으로 정하고 그 아래는 계산으로.
 //   +0~+6: 부서짐 0(그대로). +7~+19: t = (단계−7)/12 → 성공 = 75 − 70t, 부서짐 = 6 + 44·t^1.4, 줄 끊김 = 나머지
 //   → +7 75/19/6 · +8 69/24/7 · +10 58/30/12 · +12 46/35/19 · +15 28/41/31 · +17 17/43/40 · +19 5/45/50
-const ODDS = [[100, 0, 0], [96, 4, 0], [92, 8, 0], [88, 12, 0], [84, 16, 0], [82, 18, 0], [78, 22, 0],
+const ODDS0 = [[100, 0, 0], [96, 4, 0], [92, 8, 0], [88, 12, 0], [84, 16, 0], [82, 18, 0], [78, 22, 0],
     ...Array.from({ length: 13 }, (_, k) => { const t = k / 12, sp = Math.round(75 - 70 * t), dp = Math.round(6 + 44 * Math.pow(t, 1.4)); return [sp, 100 - sp - dp, dp]; })];
+// 2026-11-23 사용자: '맨 마지막 20강 성공 확률을 0.1%가 되게, 앞의 성공 비율도 그에 따라 — 단 +12강부터'
+//   +11 이하는 그대로(+11→+12 52%). +12~+19 성공은 52%에서 0.1%까지 위로 갈수록 더 가파르게 떨어지게(로그로 이차 곡선:
+//   ln 성공 = ln 52 − 0.12k − 0.0827k², k = 단계 − 11) → 두 자리로 다듬음. 파괴는 그대로, 줄어든 성공은 줄 끊김으로.
+//   +12 42/39/19 · +13 29/48/23 · +14 17/56/27 · +15 8.6/60.4/31 · +16 3.6/61.4/35 · +17 1.3/58.7/40 · +18 0.4/54.6/45 · +19 0.1/49.9/50
+//   (예전 성공: +12 46 · +13 40 · +14 34 · +15 28 · +16 23 · +17 17 · +18 11 · +19 5)
+const SUCC_HI = { 12: 42, 13: 29, 14: 17, 15: 8.6, 16: 3.6, 17: 1.3, 18: 0.4, 19: 0.1 };
+const ODDS = ODDS0.map(([s, m, d], lv) => SUCC_HI[lv] == null ? [s, m, d] : [SUCC_HI[lv], Math.round((100 - SUCC_HI[lv] - d) * 10) / 10, d]);
+const ODDS_AT = Date.parse('2026-11-23T17:40:00+09:00');   // 이 확률표를 올린 때 — 운영자 '기록 보기'가 그 전 강화는 예전 표(ODDS0)로 본다
 // 2026-11-12 사용자: +20은 100억, 위로 갈수록 확 오르게 → 이어서 '25억에서 100억은 너무 멀다, 각을 더 올려도 된다'
 //   한 단계 배수를 처음 2배 → 가운데(+10 근처) 3.5배 → 끝(+19→+20) 다시 2배로(사인 곡선). +1 = 30, +20 = 100억이 되게 맞춘다.
 //   금액은 위로 갈수록 크게 뛴다: +5 852 · +8 2.5만 · +10 29.2만 · +12 358만 · +15 1.2억 · +17 9.3억 · +18 22.7억 · +19 50억 · +20 100억 (유효숫자 세 자리)
@@ -1353,7 +1361,7 @@ const ART_V = { tele2: { 0: 2, 1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9
     ac: { 0: 3, 1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3, 7: 3, 8: 3, 9: 3, 10: 2, 11: 2, 12: 2, 13: 2, 14: 2, 15: 2, 16: 2, 17: 2, 18: 2, 19: 2, 20: 2 },
     bs: { 0: 2, 1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: 2, 11: 2, 12: 2, 13: 2, 14: 2, 15: 2, 16: 2, 17: 2, 18: 2, 19: 2, 20: 2 } };
 const artV = (pre, n) => { const v = ART_V[pre] && ART_V[pre][n]; return v ? `?v=${v}` : ''; };
-const GEAR_PER = 0.1, r1 = x => Math.round(x * 10) / 10;
+const GEAR_PER = 0.1, r1 = x => Math.round(x * 10) / 10, r2 = x => Math.round(x * 100) / 100;   // r2: 성공이 0.1%처럼 작은 단계(+18·+19)에서 보너스가 반올림에 묻히지 않게 (2026-11-23)
 // '유지' 이름: 기타는 줄 끊김, 멀티이펙터는 버튼 빠짐 (2026-11-12 사용자: 이펙터는 줄이 없으니 버튼이 빠졌다가 다시 끼움),
 //   앰프는 노브 빠짐 (2026-11-19 사용자: 앰프도 줄 끊김 말고)
 const keepWord = g => !g ? '줄 끊김' : baseOf(g.f) === 'multi' ? '버튼 빠짐' : baseOf(g.f) === 'amp' ? '노브 빠짐' : '줄 끊김';
@@ -1386,8 +1394,8 @@ function oddsFor(lv) {
     const b = gearBuff(), cd = Math.min(dp, r1(b.amp + wallCut())); dp -= cd; mp += cd;
     // 2026-11-17 사용자(경제 다시 보기): 작업대·망치·튜너·바닥 멀티의 '성공 +n'은 이 단계 성공 확률의 n%(예전엔 +n%p를 그대로 더해서 높은 단계에서 너무 셌다).
     //   성공 40%에서 +5%면 40 → 42%. 올라간 몫은 줄 끊김에서 가져온다. 파괴 줄임(앰프·컬렉션 스킨)은 %p 그대로
-    const cm = Math.min(mp, r1(ODDS[lv][0] * (b.multi + benchUp() + hammerUp() + dexUp()) / 100)); mp -= cm; sp += cm;
-    return [r1(sp), r1(mp), r1(dp), r1(cd), r1(cm)];
+    const cm = Math.min(mp, r2(ODDS[lv][0] * (b.multi + benchUp() + hammerUp() + dexUp()) / 100)); mp -= cm; sp += cm;
+    return [r2(sp), r2(mp), r1(dp), r1(cd), r2(cm)];
 }
 const STORE_MAX = 30;   // 창고: 기록을 합칠 때 벽·작업대에 못 둔 기타가 들어간다
 // 단계별 이름 (2026-11-12 사용자와 정함): +0~+9 개그 → +10부터 신비한 느낌 → +20은 그 기타로 유명한 기타리스트 이름을 살짝 바꿔서.
@@ -2651,7 +2659,7 @@ function renderOpt() {
     const el = $('#sopt'), g = S.bench, show = optStage(g) && !busy;
     el.hidden = !show;
     if (!show) { el.innerHTML = ''; return; }
-    const T = TUNERS[S.tuner], cOn = caseOnFor(g), up = T ? r1(Math.min(ODDS[g.lv][0] * T.bonus / 100, oddsFor(g.lv)[1])) : 0;   // 실제로 오르는 %p
+    const T = TUNERS[S.tuner], cOn = caseOnFor(g), up = T ? r2(Math.min(ODDS[g.lv][0] * T.bonus / 100, oddsFor(g.lv)[1])) : 0;   // 실제로 오르는 %p
     // 하케 단추 안 오른쪽 '자동' 스위치 (2026-11-19 사용자: 하케가 있을 때 자동 장착) — 하드케이스가 없어도 미리 켜 둘 수 있다
     const hka = `<button type="button" class="hka ${S.caseAuto ? 'on' : ''}" data-a="caseauto" aria-pressed="${!!S.caseAuto}" title="자동: 하드케이스가 있으면 강화할 때 저절로 끼워요">자동</button>`;
     el.innerHTML = `<div class="hkw">` + (caseUsed(g)
@@ -3017,7 +3025,7 @@ async function enhance() {
     const sn = strumNeed(lv0);
     await strumPhase(sn, () => { veil.gold = goldAfterCost; spendFx(goldBefore, goldAfterCost); }, lucky);   // 마지막 칸을 누르는 순간 골드가 내려간다(강화 비용만 — 콤보·선물 골드는 결과 뒤에)
     const bonus = willTune ? await tune(T) : 0;
-    const [s0, m0] = oddsFor(lv0), b = Math.min(r1(ODDS[lv0][0] * bonus / 100), m0), s = s0 + b, m = m0 - b;   // 바닥 앰프·멀티 능력치까지 넣은 확률 · 튜너도 성공 확률의 n% (2026-11-17)
+    const [s0, m0] = oddsFor(lv0), b = Math.min(r2(ODDS[lv0][0] * bonus / 100), m0), s = r2(s0 + b), m = r2(m0 - b);   // 바닥 앰프·멀티 능력치까지 넣은 확률 · 튜너도 성공 확률의 n% (2026-11-17)
     const r = Math.random() * 100;
     let out = lucky || r < s ? 'ok' : r < s + m ? 'keep' : 'boom';
     if (out === 'boom' && caseOnFor(g)) out = 'saved';
@@ -3049,7 +3057,7 @@ async function enhance() {
     else if (out === 'boom') { gotSh = shardDrop(g.lv); S.st.boom++; S.shards += gotSh; caseMade = autoCase(); S.bench = null; if (S.rep === g.id) S.rep = ''; }
     {   // 운영자용 일지: [악기, 종류, 전 단계, 결과, 뒤 단계, 행운, 튜너(-1 안 함), 성공·끊김·파괴 확률, 비용, 콤보 골드, 선물 골드]
         const giftG = gifts.reduce((a, G) => a + ((GIFTS[G.x] || {}).gold || 0), 0);
-        logEv('u', [g.id, g.f, lv0, out[0], g.lv, lucky ? 1 : 0, willTune ? bonus : -1, r1(s), r1(m), r1(100 - s - m), cost, comboG, giftG], -cost + comboG + giftG);
+        logEv('u', [g.id, g.f, lv0, out[0], g.lv, lucky ? 1 : 0, willTune ? bonus : -1, r2(s), r2(m), r2(100 - s - m), cost, comboG, giftG], -cost + comboG + giftG);
     }
     save();
     actsLock(false); renderSact();   // 두근두근 막대가 나올 때는 단추가 없어진다 (2026-11-17 사용자 — 긁는 동안만 그대로)
@@ -4416,9 +4424,12 @@ function audAnalyze(d) {
         const p = (+sp || 0) / 100, q = (+dp || 0) / 100;
         eS += p; vS += p * (1 - p); nS += o === 'o' ? 1 : 0;
         eD += q; vD += q * (1 - q); nD += o === 's' || o === 'b' ? 1 : 0;
-        const B = ODDS[lv0];   // 장비를 다 갖춰도 넘을 수 없는 선(audMax): 성공은 기본의 몇 배까지, 파괴는 몇 %p 까지만 준다
+        // 장비를 다 갖춰도 넘을 수 없는 선(audMax): 성공은 기본의 몇 배까지, 파괴는 몇 %p 까지만 준다
+        // 확률표가 바뀐 뒤 사흘은 예전 표도 봐준다(바뀌기 전에 열어 둔 창·못 보낸 일지) — 둘 중 느슨한 쪽
+        const B = ODDS[lv0], B0 = e.t < ODDS_AT + 3 * 864e5 ? ODDS0[lv0] : null;
         if (!B) { badLv++; return; }
-        if (+sp > B[0] * (1 + audMax.up / 100) + 0.6 || +dp < Math.max(0, B[2] - audMax.cut) - 0.6) badOdds.push(e);
+        const bS = Math.max(B[0], B0 ? B0[0] : 0), bD = Math.min(B[2], B0 ? B0[2] : 100);
+        if (+sp > bS * (1 + audMax.up / 100) + 0.6 || +dp < Math.max(0, bD - audMax.cut) - 0.6) badOdds.push(e);
         if ((o === 'o' && !(lv1 === lv0 + 1 || (lv0 <= JACKPOT_MAX_LV && lv1 === lv0 + 2))) || (o !== 'o' && lv1 !== lv0)) badLv++;
     });
     Object.assign(R, { cnt, lucky, eS, nS, zS: vS ? (nS - eS) / Math.sqrt(vS) : 0, eD, nD, zD: vD ? (nD - eD) / Math.sqrt(vD) : 0, badOdds, badLv });
