@@ -4165,7 +4165,7 @@ function renderRank() {
     if (kind !== 'rec' && (!rkAt[kind] || Date.now() - rkAt[kind] > 60e3) && !rkBusy) loadRank(kind).then(() => { if (tab === 'rank') renderRank(); });
     const mine = rows ? rows.find(r => r.me) : null, total = rows && rows.length ? rows[0].players : 0;
     const status = NORANK ? '시험 브라우저 · 랭킹에 안 올라가요' : amHidden() ? '운영 계정(시험) · 랭킹에 안 보여요'
-        : rkErr ? '랭킹에 연결이 안 돼요' : !rows ? '불러오는 중…' : mine ? `${mine.pos}위 / ${total}명`
+        : rkErr ? '랭킹에 연결이 안 돼요' : !rows ? '불러오는 중…' : mine ? `${mine.pos}위`
         : !rep() ? '대표 기타가 생기면 올라가요' : kind === 'top' && !tg ? '기타가 생기면 올라가요' : '';
     let h = `<div class="rkseg three"><button type="button" data-a="rkkind" data-k="top" class="${kind === 'top' ? 'on' : ''}"><i class="fas fa-guitar"></i>최고 무기</button>
         <button type="button" data-a="rkkind" data-k="gold" class="${kind === 'gold' ? 'on' : ''}"><i class="fas fa-coins"></i>모은 돈</button>
@@ -4191,8 +4191,9 @@ function renderRank() {
         return;
     }
     // 맨 위 = 내 순위 카드 (2026-11-23 사용자) — 최고 무기는 내 최고 무기, 모은 돈은 모은 돈·가진 돈
-    const meRow = (RKN[kind] || []).find(r => r.me) || mine, nTotal = meRow ? meRow.players : total;
-    const myPos = meRow ? `<div class="rkpos"><small>내 순위</small><b>${meRow.pos.toLocaleString()}<i>위</i></b><span>/ ${nTotal.toLocaleString()}명</span></div>`
+    // 전체 몇 명인지는 안 보여 준다 (2026-11-23 사용자: '85명 / 그건 안 적어 주는 게 나을 것 같아') — 운영 계정 줄(rkadm)에만
+    const meRow = (RKN[kind] || []).find(r => r.me) || mine;
+    const myPos = meRow ? `<div class="rkpos"><small>내 순위</small><b>${meRow.pos.toLocaleString()}<i>위</i></b></div>`
         : `<div class="rkpos none"><small>내 순위</small><span>${status || '랭킹에 아직 없어요'}</span></div>`;
     h += kind === 'gold'
         ? `<div class="card mycard rkme"><span class="coin"><i class="fas fa-coins"></i></span><div class="mt"><small>지금까지 모은 돈</small><b class="gold">${gf(+S.st.made || 0)}</b><div class="left">지금 가진 돈 ${gf(S.gold)}</div></div>${myPos}</div>`
