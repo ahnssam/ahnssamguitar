@@ -903,6 +903,8 @@
     .sopt button { display: flex; align-items: center; justify-content: center; gap: 5px; height: 32px; padding: 0 6px; border-radius: 999px; font-size: 12.5px; font-weight: 800; color: #c9d2ce; background: rgba(8, 14, 12, 0.8); border: 1.5px solid rgba(255, 255, 255, 0.24); white-space: nowrap; min-width: 0; }
     .sopt button.on { color: #fff; background: linear-gradient(#3fb877, #23935a); border-color: #b9f5d2; box-shadow: 0 2px 0 #16683e, 0 0 10px rgba(80, 230, 150, 0.45); }
     .sopt button.none { color: #a9b3ae; }
+    .sopt button.used { color: #8d9792; background: rgba(8, 14, 12, 0.6); border-style: dashed; }   /* 이 악기는 하케를 썼다 (2026-11-23) */
+    .sopt button.used .hs { display: none; } @media (max-width: 420px) { .sopt button.used .hl { display: none; } .sopt button.used .hs { display: inline; } }
     /* 하케 + 자동 스위치 한 덩어리 (2026-11-19) */
     .sopt .hkw { display: flex; min-width: 0; }
     .sopt .hkw > .hk { flex: 1 1 auto; border-radius: 999px 0 0 999px; border-right-width: 0; padding-right: 4px; }
@@ -1077,6 +1079,7 @@
     <ul>
         <li>기타가 부서지면 <b>부서진 조각</b>이 나와요. 조각 15개가 모이면 <b>하드케이스</b>가 저절로 만들어져요(3개까지, 상점에서도 살 수 있어요).</li>
         <li>+7부터 강화 단추 위 <b>[하케]</b> 스위치를 켜면, 부서질 때 하드케이스가 한 번 막아 줘요. 켠 악기에만 적용돼요. 옆의 <b>[자동]</b>을 켜 두면 하드케이스가 있을 때 저절로 끼워요.</li>
+        <li>하드케이스는 <b>악기 하나에 한 번</b>만 먹어요. 한 번 살아난 악기는 '하케 사용함'이 되고, 컬렉션에 넣었다 다시 가져와도 그대로예요. 비싼 단계에서 켜는 게 좋아요.</li>
         <li><b>튜너</b>(상점)를 사면 +7부터, 망치로 칸을 다 채운 뒤 가운데에 튜너가 떠요. 바늘이 초록 칸에 올 때 <b>튜너를 누르면</b> 성공 확률이 올라가요(좋은 튜너일수록 더).</li>
         <li><b>도감</b>에 칸이 하나 찰 때마다 성공 확률과 팔 때 받는 골드가 조금씩 쌓여서 올라가요(도감 탭 맨 위에 지금 특전).</li>
         <li><b>프렛 망치</b>(상점)는 좋은 것일수록 성공이 더 올라가요. '성공 +n%'는 그 단계 성공 확률의 n%만큼 오른다는 뜻이에요.</li>
@@ -1099,7 +1102,7 @@
         <li>하루 한 번 <b>출석 보상</b>으로 1,000골드를 받아요. 골드가 모자라 진행이 막히면 '골드 받기'로 하루 몇 번 골드를 더 받을 수 있어요.</li>
         <li>진행은 이 브라우저에 저장돼요. 사이트에 로그인하면 계정에도 저장돼서 다른 기기에서 이어 할 수 있어요.</li>
     </ul>
-    <p class="hlp-tip">작은 팁: 낮은 단계에서는 부서지지 않으니 마음껏 누르고, +7부터는 하드케이스를 켜 두세요. 행운 게이지가 거의 찼을 때 비싼 단계에서 쓰면 이득이에요.</p>
+    <p class="hlp-tip">작은 팁: 낮은 단계에서는 부서지지 않으니 마음껏 누르고, 하드케이스는 악기 하나에 한 번이니 아껴 뒀다가 높은 단계에서 켜세요. 행운 게이지가 거의 찼을 때 비싼 단계에서 쓰면 이득이에요.</p>
 </section>
 
 
@@ -1136,7 +1139,7 @@
             <!-- 이름표 + 바로 아래 작업자 대사를 한 덩어리로 (2026-11-12 사용자: 작업자 멘트를 기타 이름 아래에 붙여) — 같이 둥실 -->
             <div class="nmhud" id="nmhud"><div class="nmtag" id="nm"></div><div class="talk" id="talk" hidden></div></div>
             <!-- 2026-11-13 사용자: 조각 정보는 도형만으론 뜻을 모르니 무대 왼쪽 위(기타 이름 아래)에 글로. 누르면 안내(2026-11-15 상점 케이스 칸은 지움) -->
-            <button type="button" class="scbox" id="rSC" data-a="gocase" hidden title="파괴되면 부서진 조각이 나와요. 조각 15개가 모이면 하드케이스가 저절로 1개(3개까지, 끼우면 파괴 1번 막음)">
+            <button type="button" class="scbox" id="rSC" data-a="gocase" hidden title="파괴되면 부서진 조각이 나와요. 조각 15개가 모이면 하드케이스가 저절로 1개(3개까지, 끼우면 파괴 1번 막음 · 악기 하나에 한 번)">
                 <span class="h">파괴 시 조각</span><span><em>획득</em><i>조각</i> <b id="rShard"><span>0/15</span></b></span>
                 <span class="h">→ 하드케이스로</span><span><em>파괴 방지</em><i>하케</i> <b id="rCase"><span>0/3</span></b></span>
             </button>
@@ -1246,7 +1249,12 @@ const CASE_PRICE = 1000000;   // 상점 '장비' 칸에서 하드케이스 하�
 // 하드케이스 ON 은 켠 그 악기에만 (2026-11-17 사용자: '다시 악기 만들기 시작하면 하드케이스가 자동으로 on 되던데 그렇게 하지 마') — S.caseFor = 켠 악기 id
 // 2026-11-19 사용자: 하케 단추 안에 '자동' 스위치 — 켜 두면 하드케이스가 있을 때 작업대 악기에 저절로 끼운다(S.caseAuto).
 //   자동인 채로 그 악기만 끄면 S.caseNo = 그 악기(그 악기만 빼고 자동)
-const caseOnFor = g => !!(g && S.cases > 0 && (S.caseAuto ? S.caseNo !== g.id : S.caseOn && S.caseFor === g.id));
+// 2026-11-23 사용자: 하드케이스는 악기 하나에 한 번만 — 그 악기를 하케로 한 번 살리면 g.hc = 1 이 붙고, 그 악기에는 다시 안 먹는다.
+//   표시는 악기에 붙어서 컬렉션·창고에 넣었다 다시 가져와도 그대로(바꿔 끼우기로 다시 쓰는 꼼수 막기). 하케를 또 쓰려면 다른 악기를 키워야 한다.
+//   왜: 상점 하케(100만G)가 +15~+19 강화 한 번(2,800만~7.5억)보다 훨씬 싸서 높은 단계 파괴가 사실상 없어졌다 — 어젯밤 경제 변경 뒤 1위가 2시간에 529억
+//   (시뮬레이션: 정직하게 749번 누르면 중간값 2,300억 → 악기당 한 번이면 약 80~100억)
+const caseUsed = g => !!(g && g.hc);
+const caseOnFor = g => !!(g && !caseUsed(g) && S.cases > 0 && (S.caseAuto ? S.caseNo !== g.id : S.caseOn && S.caseFor === g.id));
 // 부서지면 나오는 조각: 1 ~ 단계 중 랜덤 (2026-11-12 사용자: +8이 깨지면 2개일 수도 7개일 수도)
 const shardDrop = lv => 1 + Math.floor(Math.random() * Math.max(1, lv));
 // ---------- 강화를 계속 누르게 (2026-11-17 사용자가 붙여 준 아이디어 다섯 가지 — 숫자는 Claude가 정함, 바꿔도 된다) ----------
@@ -2552,7 +2560,9 @@ function renderOpt() {
     const T = TUNERS[S.tuner], cOn = caseOnFor(g), up = T ? r1(Math.min(ODDS[g.lv][0] * T.bonus / 100, oddsFor(g.lv)[1])) : 0;   // 실제로 오르는 %p
     // 하케 단추 안 오른쪽 '자동' 스위치 (2026-11-19 사용자: 하케가 있을 때 자동 장착) — 하드케이스가 없어도 미리 켜 둘 수 있다
     const hka = `<button type="button" class="hka ${S.caseAuto ? 'on' : ''}" data-a="caseauto" aria-pressed="${!!S.caseAuto}" title="자동: 하드케이스가 있으면 강화할 때 저절로 끼워요">자동</button>`;
-    el.innerHTML = `<div class="hkw">` + (S.cases
+    el.innerHTML = `<div class="hkw">` + (caseUsed(g)
+        ? `<button type="button" class="hk used" data-a="caseused" title="이 악기는 하드케이스로 이미 한 번 살아났어요 — 하케는 악기 하나에 한 번"><i class="fas fa-briefcase"></i><span class="hl">하케 사용함</span><span class="hs">하케 씀</span></button>`
+        : S.cases
         ? `<button type="button" class="hk ${cOn ? 'on' : ''}" data-a="case" aria-pressed="${cOn}" title="하드케이스 ${cOn ? '끼움' : '안 끼움'} — 끼우면 파괴를 한 번 막아 줘요 (${S.cases}/${CASE_MAX}개)"><i class="fas fa-briefcase"></i>하케 ${cOn ? 'ON' : 'OFF'}</button>`
         : `<button type="button" class="hk none" data-a="gocase" title="하드케이스가 없어요 — 조각 ${S.shards}/${CASE_SHARDS}"><i class="fas fa-briefcase"></i>하케 없음</button>`) + hka + `</div>`
         + (T
@@ -2607,7 +2617,7 @@ function renderTable() {
     el.innerHTML = `<summary>강화 확률표 <small>— 화면에 적은 확률이 실제 확률이에요</small></summary>
         <table class="otab"><tr><th>강화</th><th>성공</th><th>${keepWord(S.bench)}</th><th>파괴</th><th>비용</th><th>팔면</th></tr>
         ${ODDS.map(([s, m, d], i) => `<tr class="${i === lv ? 'me' : ''}"><td>+${i}→+${i + 1}</td><td>${s}%</td><td>${m}%</td><td>${d}%</td><td>${COST[i] ? gshort(COST[i]) : '공짜'}</td><td>${gshort(SELL[i + 1])}</td></tr>`).join('')}</table>
-        <p class="note2">${S.bench && baseOf(S.bench.f) === 'multi' ? '버튼이 빠지면 다시 끼우고, 단계는 그대로예요.' : S.bench && baseOf(S.bench.f) === 'amp' ? '노브가 빠지면 다시 끼우고, 단계는 그대로예요.' : '줄이 끊기면 단계는 그대로예요.'} 파괴되면 기타가 없어지고 '부서진 조각'이 1 ~ 단계만큼 랜덤으로 남아요(+8이면 1~8개). 조각 ${CASE_SHARDS}개로 하드케이스를 만들면 파괴를 한 번 막아 줘요.</p>
+        <p class="note2">${S.bench && baseOf(S.bench.f) === 'multi' ? '버튼이 빠지면 다시 끼우고, 단계는 그대로예요.' : S.bench && baseOf(S.bench.f) === 'amp' ? '노브가 빠지면 다시 끼우고, 단계는 그대로예요.' : '줄이 끊기면 단계는 그대로예요.'} 파괴되면 기타가 없어지고 '부서진 조각'이 1 ~ 단계만큼 랜덤으로 남아요(+8이면 1~8개). 조각 ${CASE_SHARDS}개로 하드케이스를 만들면 파괴를 한 번 막아 줘요(악기 하나에 한 번).</p>
         <p class="note2"><b>대박</b>: +0~+9 강화가 성공하면 그중 ${JACKPOT_P}%는 한 번에 2단계 올라요(성공 확률 안에서 — +1→+2 성공 96%면 대박은 약 ${r1(96 * JACKPOT_P / 100)}%).
         <b>행운 게이지</b>: 그 악기로 강화를 누를 때마다(성공·${keepWord(S.bench)} 모두) 한 칸, ${LUCK_MAX}칸이 차면 다음 강화는 반드시 성공해요.
         <b>콤보</b>: 같은 악기로 3번 연속 성공하면 그 강화 비용의 ${COMBO_STEP * 100}%씩 골드를 더 받아요(최대 ${COMBO_STEP * COMBO_CAP * 100}%).
@@ -2940,7 +2950,7 @@ async function enhance() {
         gifts = GIFT_AT.filter(x => x > lv0 && x <= g.lv && !giftHas(g.f, x)).map(x => giveGift(g, x));   // 처음 닿은 선물 단계 (대박으로 건너뛴 것도)
     } else combo = 0;
     if (out === 'keep') S.st.keep++;
-    else if (out === 'saved') { S.st.saved++; S.cases--; caseMade = autoCase(); if (!S.cases) S.caseOn = false; }
+    else if (out === 'saved') { S.st.saved++; S.cases--; g.hc = 1; caseMade = autoCase(); S.caseOn = false; S.caseFor = ''; }   // 이 악기는 하케를 썼다(악기 하나에 한 번, 2026-11-23)
     // 부서지면 하드케이스도 바로 만든다(2026-11-16 — 쾅 화면에 보여 주려고. 예전엔 되살리기를 안 할 때만 나중에 만들었다)
     else if (out === 'boom') { gotSh = shardDrop(g.lv); S.st.boom++; S.shards += gotSh; caseMade = autoCase(); S.bench = null; if (S.rep === g.id) S.rep = ''; }
     save();
@@ -2982,7 +2992,7 @@ async function enhance() {
         cv.animate([{ transform: CVT }, { transform: `${CVT} rotate(-4deg)` }, { transform: `${CVT} rotate(3deg)` }, { transform: CVT }], { duration: 300 });
         await sleep(300);
     } else if (out === 'saved') {
-        sfx('case'); buzz([40, 30, 40]); shake(); pop('하드케이스가 막았다!', 'case', 34);
+        sfx('case'); buzz([40, 30, 40]); shake(); pop('하드케이스가 막았다!', 'case', 34); setTimeout(() => pop('이 악기는 하케 사용함', 'sm', 46), 120);
         burst(18, ['#2b2f2e', '#4a504e', '#7d8481', '#c9a64a'], { y: 55, spread: 140, size: [5, 11], dur: 1000 });
         cv.animate([{ transform: CVT }, { transform: `${CVT} rotate(-8deg)` }, { transform: `${CVT} rotate(6deg)` }, { transform: CVT }], { duration: 420 });
         setTimeout(() => talk(one(LINES.saved)), 600);
@@ -3627,7 +3637,7 @@ function storeBox() {
     if (!S.store.length) return '';
     const free = g => isSq(g) ? floorRoom(S.floor, g) : HANG_ORDER.some(i => S.open[i] && !S.wall[i]);
     return `<div class="storebox"><h4><i class="fas fa-box-archive"></i> 창고 <small>${S.store.length}대 · 기록을 합칠 때 벽에 못 건 기타</small></h4>${S.store.map(g => `<div class="grow" id="row-${g.id}">${gc(g.lv, '', 2, g.f)}
-        <div class="gt"><b>${esc(full(g))}</b><small>창고 · 팔면 ${gf(sellOf(g.lv))}</small></div>
+        <div class="gt"><b>${esc(full(g))}</b><small>창고 · 팔면 ${gf(sellOf(g.lv))}${caseUsed(g) ? ' · 하케 사용함' : ''}</small></div>
         <div class="ga"><button type="button" class="pri" data-a="stake" data-id="${g.id}">작업대로</button>
         <button type="button" data-a="shang" data-id="${g.id}" ${free(g) ? '' : 'disabled'}>${isSq(g) ? '바닥에 놓기' : '벽에 걸기'}</button>
         <button type="button" data-a="ssell" data-id="${g.id}" ${g.lv && !g.lock ? '' : 'disabled'}>${g.lock ? '<i class="fas fa-lock"></i> 팔기' : '팔기'}</button>
@@ -3677,7 +3687,7 @@ function renderRoom(enter) {
     const wall = roomWall(enter);
     // 목록은 장비별로 (2026-11-12 사용자): 기타(걸이) · 앰프 · 멀티이펙터(바닥). 악기마다 공유 단추, 작업대로 가는 단추는 '다시 작업대로'
     const row = (g, i) => `<div class="grow ${g.id === selId ? 'sel' : ''}${g.lock ? ' locked' : ''}" id="row-${g.id}">${gc(g.lv, '', 2, g.f)}
-            <div class="gt"><b>${g.lock ? '<i class="fas fa-lock"></i>' : ''}${esc(full(g))}</b><small>${i < 0 ? `${baseOf(g.f) === 'amp' ? '파괴' : '줄 끊김'} −${gearCut(g)}%p · ` : rp && g.id === rp.id ? '⭐ 대표 기타 · ' : ''}팔면 ${gf(sellOf(g.lv))}</small></div>
+            <div class="gt"><b>${g.lock ? '<i class="fas fa-lock"></i>' : ''}${esc(full(g))}</b><small>${i < 0 ? `${baseOf(g.f) === 'amp' ? '파괴' : '줄 끊김'} −${gearCut(g)}%p · ` : rp && g.id === rp.id ? '⭐ 대표 기타 · ' : ''}팔면 ${gf(sellOf(g.lv))}${caseUsed(g) ? ' · 하케 사용함' : ''}</small></div>
             <div class="ga">${isSq(g) ? '' : `<button type="button" class="pri" data-a="setrep" data-id="${g.id}" ${rp && g.id === rp.id ? 'disabled' : ''}>대표로</button>`}
             <button type="button" data-a="take" data-id="${g.id}">다시 작업대로</button>
             <button type="button" data-a="wsell" data-id="${g.id}" ${g.lv && !g.lock ? '' : 'disabled'}>${g.lock ? '<i class="fas fa-lock"></i> 팔기' : '팔기'}</button>
@@ -4606,8 +4616,8 @@ function renderShop() {
             return `<div class="item"><span class="ic hmr"><img src="../images/play/gk/${H.img}" alt=""></span><div class="it"><b>${H.name}${H.up ? ` · 성공 +${H.up}%` : ''}</b><small>${H.desc}</small></div>
                 ${own ? `<span class="own">${(S.hammer | 0) === n ? '사용 중' : '더 좋은 걸 써요'}</span>` : `<button type="button" data-a="buyHm" data-n="${n}" ${S.gold >= H.price ? '' : 'disabled'}>${gf(H.price)}</button>`}</div>`; }).join('')
         // 하드케이스 하나 100만G (2026-11-17 사용자) — 조각 15개로 저절로 만들어지는 것과 같은 하드케이스, 3개까지
-        + shead('하드케이스', '파괴를 한 번 막아 줘요')
-        + `<div class="item"><span class="ic case"><i class="fas fa-briefcase"></i></span><div class="it"><b>하드케이스 · 파괴 1번 막기</b><small>지금 ${S.cases}/${CASE_MAX}개 · 조각 ${CASE_SHARDS}개를 모아도 저절로 생겨요. 강화 단추 위 '하케' 스위치로 그 악기에 끼워요</small></div>
+        + shead('하드케이스', '파괴를 한 번 막아 줘요 · 악기 하나에 한 번')
+        + `<div class="item"><span class="ic case"><i class="fas fa-briefcase"></i></span><div class="it"><b>하드케이스 · 파괴 1번 막기</b><small>지금 ${S.cases}/${CASE_MAX}개 · 조각 ${CASE_SHARDS}개를 모아도 저절로 생겨요. 강화 단추 위 '하케' 스위치로 그 악기에 끼워요 · 악기 하나에 한 번만 먹어요</small></div>
             ${S.cases >= CASE_MAX ? '<span class="own">가득</span>' : `<button type="button" data-a="buyCase" ${S.gold >= CASE_PRICE ? '' : 'disabled'}>${gf(CASE_PRICE)}</button>`}</div>`
         + `<p class="note2">'성공 +n%'는 그 단계 성공 확률의 n%만큼 올라요 — 성공 40%에서 +5%면 42%.</p>`;
     if (shopCat === 'bench') h += BENCHES.map((B, i) => {
@@ -4661,6 +4671,7 @@ $('#app').addEventListener('click', e => {
     else if (a === 'gameshare') shareText('기타 키우기', `안쌤 놀이터 '기타 키우기' 🎸\n기타를 강화해서 +20 전설의 기타를 만들어 봐요`, `${location.origin}/play/gk/s/game.html`);
     else if (a === 'tabroom') { talkClear(); setTab('room'); }
     else if (a === 'caseauto') { S.caseAuto = !S.caseAuto; S.caseNo = ''; save(); renderBench(); toast(S.caseAuto ? '자동 켬 · 하드케이스가 있으면 강화할 때 저절로 끼워요' : '자동 끔 · 하드케이스는 켠 악기에만 끼워요'); }
+    else if (a === 'caseused') toast('이 악기는 하드케이스로 이미 한 번 살아났어요 · 하케는 악기 하나에 한 번만 먹어요');
     else if (a === 'case') { const on = !caseOnFor(S.bench) && S.cases > 0 && !!S.bench; S.caseOn = on; S.caseFor = on ? S.bench.id : ''; if (S.caseAuto) S.caseNo = on ? '' : S.bench.id; save(); renderBench(); }
     else if (a === 'tune') { S.tuneOn = !S.tuneOn; save(); renderBench(); }
     else if (a === 'gotuner') { talkClear(); shopCat = 'tuner'; setTab('shop'); }
