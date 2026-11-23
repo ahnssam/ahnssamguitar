@@ -178,7 +178,8 @@
         const headers = { apikey: SB_KEY, 'Content-Type': 'application/json' };
         const tok = opt.auth && userToken();
         if (tok) headers.Authorization = 'Bearer ' + tok;
-        const r = await fetch(SB_URL + '/rest/v1/rpc/' + name, { method: 'POST', headers, body: JSON.stringify(body || {}) });
+        // opt.keepalive: 페이지를 닫는 중에도 끝까지 보낸다(기타 키우기 운영자용 일지, 2026-11-23)
+        const r = await fetch(SB_URL + '/rest/v1/rpc/' + name, { method: 'POST', headers, body: JSON.stringify(body || {}), keepalive: !!opt.keepalive });
         if (!r.ok) {
             const err = new Error(name + ' ' + r.status);
             err.status = r.status;

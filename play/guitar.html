@@ -731,6 +731,35 @@
     /* 운영 계정만 보이는 봇·사람 표시 (2026-11-17) */
     .rkadm { display: flex; align-items: center; gap: 6px; margin: -2px 0 9px; padding: 7px 10px; border-radius: 10px; background: #fff3cf; font-size: 12.5px; font-weight: 800; color: #7a5200; }
     .rkadm b { color: #4a3200; }
+    /* 운영 계정: 파이트 넘버로 기록 보기 · 사람마다 '기록 보기' (2026-11-23 사용자) */
+    .rkadm.aud input { flex: 1; min-width: 0; height: 30px; padding: 0 9px; border: 1px solid #e3c77a; border-radius: 8px; font: 800 13px/1 'Arial Black', sans-serif; background: #fff; }
+    .rkadm.aud button, .collask .audbtn { flex: none; height: 30px; padding: 0 11px; border-radius: 8px; background: #7a5200; color: #fff; font-size: 12.5px; font-weight: 800; }
+    .collask .audbtn { display: inline-flex; align-items: center; gap: 5px; margin: -4px 0 10px; }
+    .gk-modal.audask .in { width: min(760px, 100%); text-align: left; }
+    .audask h4 { margin: 14px 0 6px; font-size: 14px; font-weight: 900; color: #333; }
+    .audask .ad-days { display: flex; gap: 5px; flex-wrap: wrap; margin: 2px 0 8px; }
+    .audask .ad-days button { height: 28px; padding: 0 10px; border-radius: 99px; background: #eef1ef; font-size: 12px; font-weight: 800; color: #555; }
+    .audask .ad-days button.on { background: var(--green-deep); color: #fff; }
+    .audask .ad-flags { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+    .audask .ad-flags li { padding: 7px 10px; border-radius: 9px; font-size: 12.5px; line-height: 1.45; background: #eef7f1; color: #24543a; }
+    .audask .ad-flags li.r { background: #ffe9e6; color: #8a1f12; } .audask .ad-flags li.o { background: #fff1db; color: #7a4a00; } .audask .ad-flags li.y { background: #f7f5e3; color: #5c5520; }
+    .audask .ad-flags li small { display: block; color: inherit; opacity: .75; font-size: 11.5px; }
+    .audask .ad-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+    .audask .ad-grid div { padding: 8px 10px; border-radius: 10px; background: #f4f6f5; font-size: 12px; color: #666; }
+    .audask .ad-grid b { display: block; font-size: 15px; font-weight: 900; color: #222; }
+    .audask .ad-bars { display: flex; align-items: flex-end; gap: 1px; height: 70px; padding: 4px; border-radius: 10px; background: #f4f6f5; }
+    .audask .ad-bars i { flex: 1; min-width: 1px; background: #4aa173; border-radius: 2px 2px 0 0; }
+    .audask .ad-bars i.z { background: transparent; }
+    .audask .ad-axis { display: flex; justify-content: space-between; font-size: 11px; color: #888; margin-top: 3px; }
+    .audask .ad-tl { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow: auto; border: 1px solid #eee; border-radius: 10px; }
+    .audask .ad-tl li { display: flex; gap: 8px; padding: 5px 9px; border-bottom: 1px solid #f1f1f1; font-size: 12px; line-height: 1.4; }
+    .audask .ad-tl li time { flex: none; width: 82px; color: #888; font-variant-numeric: tabular-nums; }
+    .audask .ad-tl li.r { background: #fff3f1; } .audask .ad-tl li.g { background: #f1faf4; }
+    .audask table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+    .audask th, .audask td { padding: 4px 6px; border-bottom: 1px solid #f0f0f0; text-align: right; white-space: nowrap; }
+    .audask th:first-child, .audask td:first-child { text-align: left; }
+    .audask .ad-tw { max-height: 260px; overflow: auto; border: 1px solid #eee; border-radius: 10px; }
+    .audask .ad-note { margin: 6px 0 0; font-size: 11.5px; color: #888; line-height: 1.5; }
     .who { display: inline-flex; align-items: center; gap: 3px; flex: none; margin-right: 5px; padding: 2px 6px 2px 5px; border-radius: 99px; font: 800 10.5px/1.3 sans-serif; vertical-align: 1px; white-space: nowrap; }
     .who i { font-size: 9.5px; }
     .who.bot { background: #e4e8ee; color: #56626e; }
@@ -1196,7 +1225,7 @@
     <div>© 2026 안쌤의 기타나무숲</div>
 </footer>
 
-<script src="play.js?v=2026111902"></script>
+<script src="play.js?v=2026112301"></script>
 <script>
 // ===== 기타 키우기 (2026-11-12 MVP — 스트랫 하나로 먼저) =====
 // 카톡 '검키우기' 구조: 강화 한 번 누를 때마다 성공 / 유지(줄 끊김) / 파괴(무대에서 내리찍기). 팔고, 걸고, 배틀한다.
@@ -1742,7 +1771,7 @@ addEventListener('storage', e => { if (e.key === null || e.key === 'play.' + WV 
 const staleCheck = () => { if (!stale && (+mem.get(WV, 0) || 0) !== myWv) staleStop(); };   // 뒤로 가기로 돌아온 창(bfcache)·다시 본 창
 let S = load();
 tvLast = +S.tv || 0;
-const save = () => { if (clk) S.tv = Math.round(nowMs()); if (!putGK(S)) return; cloudDirty(); autoSync(); };
+const save = () => { if (clk) S.tv = Math.round(nowMs()); logTick(); if (!putGK(S)) return; cloudDirty(); autoSync(); };
 // 골드가 들어올 때는 이걸로: 모은 돈(랭킹)에도 더한다
 const gain = n => { S.gold += n; S.st.made = (+S.st.made || 0) + n; };
 // 대표 기타를 랭킹 서버에 저절로 올린다 (2026-11-12 사용자: 사람이 쌓이면 유저끼리 붙게 — 예전엔 배틀 탭을 열어야만 올라갔다).
@@ -1787,6 +1816,7 @@ function adopt(srv, uid, why) {
     if (why === 'acct' || (why === 'newer' && cloud && cloud.dirty)) keepPrev(why);
     const rk0 = S.rk;
     if (!putGK(srv.data)) return; S = load();
+    logEv('A', [srv.rev | 0, S.st.tries | 0, Math.floor(+S.st.made || 0), why || ''], null); putGK(S);   // 운영자용 일지: 계정 기록으로 통째로 바뀜
     if (S.rk !== rk0) { mem.set(GKK('sync2'), {}); mem.set(GKK('coll'), {}); }   // 다른 랭킹 줄 — 이 기기가 기억하던 예전 번호는 버린다
     cloud = { uid, rev: srv.rev, dirty: false, at: Date.now() }; mem.set(GKK('cloud'), cloud);
     autoSync();
@@ -1863,6 +1893,7 @@ function askWhich(srv, uid) {
         if (w === 'merge') {
             const M = mergeSaves(S, srv.data || {});
             if (!putGK(M)) return; S = load();
+            logEv('M', [srv.rev | 0, S.st.tries | 0, Math.floor(+S.st.made || 0)], null); putGK(S);   // 운영자용 일지: 합침
             linkUp(uid, srv.rev); updBar(); setTab(tab);
             toast('계정 데이터와 합쳤어요' + (S.store.length ? ` · 벽에 못 건 악기 ${S.store.length}대는 컬렉션 창고에 있어요` : ''));
         }
@@ -3016,6 +3047,10 @@ async function enhance() {
     else if (out === 'saved') { S.st.saved++; S.cases--; g.hc = 1; caseMade = autoCase(); S.caseOn = false; S.caseFor = ''; }   // 이 악기는 하케를 썼다(악기 하나에 한 번, 2026-11-23)
     // 부서지면 하드케이스도 바로 만든다(2026-11-16 — 쾅 화면에 보여 주려고. 예전엔 되살리기를 안 할 때만 나중에 만들었다)
     else if (out === 'boom') { gotSh = shardDrop(g.lv); S.st.boom++; S.shards += gotSh; caseMade = autoCase(); S.bench = null; if (S.rep === g.id) S.rep = ''; }
+    {   // 운영자용 일지: [악기, 종류, 전 단계, 결과, 뒤 단계, 행운, 튜너(-1 안 함), 성공·끊김·파괴 확률, 비용, 콤보 골드, 선물 골드]
+        const giftG = gifts.reduce((a, G) => a + ((GIFTS[G.x] || {}).gold || 0), 0);
+        logEv('u', [g.id, g.f, lv0, out[0], g.lv, lucky ? 1 : 0, willTune ? bonus : -1, r1(s), r1(m), r1(100 - s - m), cost, comboG, giftG], -cost + comboG + giftG);
+    }
     save();
     actsLock(false); renderSact();   // 두근두근 막대가 나올 때는 단추가 없어진다 (2026-11-17 사용자 — 긁는 동안만 그대로)
     const sms = sn > 1 ? Math.max(700, WAIT_MS(lv0) - (sn - 1) * 400) : undefined;
@@ -3363,6 +3398,7 @@ async function reviveOffer(g, sh, wasRep) {
     S.bench = g; S.shards = Math.max(0, S.shards - sh);
     S.st.boom = Math.max(0, S.st.boom - 1); S.st.revive = (S.st.revive | 0) + 1;
     if (wasRep) S.rep = g.id;
+    logEv('v', [g.id, g.f, g.lv], 0);
     save();
     return true;
 }
@@ -3392,7 +3428,7 @@ async function goldAd() {
     // 2026-11-17 사용자: '아직 광고도 못 붙였는데 — 광고가 없으면 그냥 줘'. 광고가 준비 안 됐으면(승인 전·광고 없음·차단) 바로 준다(하루 횟수는 그대로 셈)
     if (r === 'viewed' || r === 'none') {
         const g0 = S.gold;
-        d.n++; d.after = (S.st.found | 0) + 2; gain(amt); save();
+        d.n++; d.after = (S.st.found | 0) + 2; gain(amt); logEv('a', [amt, d.n], amt); save();
         if (tab === 'bench') renderBench(); else if (tab === 'shop') renderShop();
         countGold(g0, S.gold, 1000);   // 골드 숫자가 촤라락 올라간다
         toast(`골드 +${gf(amt)} (${d.n}/${AD_GOLD_DAY})` + (d.n < AD_GOLD_DAY ? ` · 다음 +${gf(AD_GOLDS[d.n])}은 악기를 두 번 더 찾은 뒤에` : ' · 오늘은 다 받았어요'));
@@ -3422,6 +3458,7 @@ async function findGuitar(first) {
     S.bench = { id: rid(), lv: 0, f: nf };
     S.st.found = (S.st.found | 0) + 1;   // 찾은 악기 수(골드 받기 쉬기에 씀, 2026-11-17)
     const newDex = dexAdd(S.bench.f, 0);
+    logEv('f', [S.bench.id, S.bench.f, first ? 0 : FIND_GOLD], first ? 0 : -FIND_GOLD);
     save();   // 먼저 저장(새로고침해도 찾은 기타는 그대로)
     $('#empty').hidden = true; $('#bench').innerHTML = '';
     await suspense(4, { find: true, ms: first ? 1900 : 1100, txt: first ? '첫 악기를 찾는 중…' : '악기 찾는 중…', hush: first });
@@ -3462,6 +3499,7 @@ async function sellBench() {
     const price = sellOf(g.lv), g0 = S.gold;
     gain(price); S.st.sold++; S.st.earned += price;
     ghost = g; S.bench = null; if (S.rep === g.id) S.rep = '';
+    logEv('s', [g.id, g.f, g.lv, price, 'bench'], price);
     save(); renderSact(); $('#bench').innerHTML = '';   // 위 골드 숫자는 아직 그대로 — 악기가 날아간 뒤 촤라락 올라간다
     // 2026-11-17 사용자: '팔기 누르면 악기가 돈 쪽으로 날아가면서 페이드아웃, 돈 칸이 약간 커지면서 돈이 촤라라락 올라가게' —
     //   왼쪽 위 골드 칸으로 작아지며 날아가 사라지고, 골드 칸이 커지며 숫자가 2초(100만G 이상이면 3초) 동안 올라간다
@@ -3509,6 +3547,7 @@ async function tossBench() {
     if (busy || !g || g.lv) return;
     busy = true; talkClear();
     ghost = g; S.bench = null; if (S.rep === g.id) S.rep = '';
+    logEv('s', [g.id, g.f, 0, 0, 'toss'], 0);
     save(); updBar(); renderSact(); $('#bench').innerHTML = '';
     sfx('snap'); pop('버렸어요', 'sm', 40);
     const a = cv.animate([{ transform: CVT, opacity: 1 }, { transform: `${CVT} translateY(18%) rotate(-14deg) scale(.7)`, opacity: 0 }], { duration: 480, easing: 'ease-in', fill: 'forwards' });
@@ -3619,7 +3658,7 @@ function fullShow() {
                     if (S.open[i]) return;
                     if (S.gold < price) { toast(`골드가 ${gf(price - S.gold)} 모자라요`); return; }
                     if (t.dataset.sure !== '1') { m.querySelectorAll('.wsb.lock.sure').forEach(x => { x.classList.remove('sure'); x.dataset.sure = ''; x.querySelector('span').textContent = gs(price); }); t.dataset.sure = '1'; t.classList.add('sure'); t.querySelector('span').textContent = '열까요?'; return; }
-                    S.gold -= price; S.open[i] = true; save(); sfx('hang'); updBar(true);
+                    S.gold -= price; S.open[i] = true; logEv('b', ['slot', i, price], -price); save(); sfx('hang'); updBar(true);
                     if (!settle(i, `걸이를 열었어요 (${gf(price)})`)) toast('걸이를 열었어요');
                 }
             } finally { act = false; }
@@ -3877,6 +3916,7 @@ async function popSell(id, inPop) {   // 꽉 찼을 때 누른 악기 팔기. in
     const [, i0] = unplace(id);
     if (price) { gain(price); S.st.sold++; S.st.earned += price; }
     if (S.rep === g.id) S.rep = '';
+    logEv('s', [g.id, g.f, g.lv, price, 'full'], price);
     if (inPop) { save(); sfx('sell'); updBar(true); return { i: i0, note: price ? `${esc(full(g))}을(를) ${gf(price)}에 팔았어요` : `${esc(full(g))}을(를) 버렸어요` }; }
     acted(); save(); sfx('sell'); renderRoom(); updBar(true);
     toast(price ? `${full(g)}을(를) ${gf(price)}에 팔았어요 · 이제 작업대 악기를 진열할 수 있어요` : '버렸어요 · 이제 작업대 악기를 진열할 수 있어요');
@@ -3955,6 +3995,69 @@ const LINK_RE = /(https?:|www\.|\.(com|net|kr|co|io|me|ly)\b)/i;
 // 시험 브라우저(2026-11-13 사용자: Claude 시험용 +18 기타가 진짜 랭킹 1위로 올라가 지우고 막음):
 //   그 브라우저에 localStorage 'play.gk.norank' = 'true' 를 두면 랭킹에 올리지 않는다(상대·랭킹 보기는 그대로, 진짜 상대와도 브라우저 안에서만 겨룸)
 const NORANK = mem.get('gk.norank', false) === true;
+// ---------- 운영자용 일지 (2026-11-23 사용자: '유저가 어떤 과정으로 여기까지 왔는지, 중간에 어뷰징은 없었는지 알려면', db/play_guitar_audit.sql) ----------
+//   행동마다 [번호, 시각(ms — 서버 시각), 종류, 그 뒤 가진 돈, 설명 안 되는 돈, …내용]을 이 브라우저(GKK('logq'))에 쌓았다가 30초마다 서버로(play_guitar_log).
+//   번호(S.lseq)·마지막으로 적은 돈(S.lg)은 기록과 같이 저장된다 — 백업으로 되돌리면 번호가 되풀이되고,
+//   기록 없이 돈이 바뀌면(개발자 도구로 고침 등) 그다음 줄의 '설명 안 되는 돈'에 그만큼 남는다.
+//   종류: L 들어옴 · u 강화 · f 찾기 · s 팔기 · b 사기 · w 배틀 · a 광고 골드 · d 출석 · v 넥뿌의 요정 · A·M·R 기록을 통째로 바꿈(계정 불러옴·합침·처음부터) · ? 기록 없이 돈이 바뀜
+//   운영 계정(숨김 줄)·시험 브라우저는 안 보낸다. 서버 함수가 아직 없으면(SQL 적용 전) 쌓아 두기만 한다(3,000개까지)
+//   save() 가 이 줄보다 먼저 불려도 괜찮게 상태는 var, 준비되면 logReady
+var logReady = false, logQ = [], logBusy = false, logT = 0, logDead = false;
+const LOG_MAX = 3000;
+const LOG_DEV = (() => { let d = String(mem.get('gk.dev', '') || ''); if (!/^[a-z0-9]{8}$/.test(d)) { d = (Math.random().toString(36).slice(2) + '00000000').slice(0, 8); mem.set('gk.dev', d); } return d; })();
+const logOff = () => NORANK || (ADMIN && !PERSONA) || amHidden();
+function logPush(t, a, x) {
+    S.lseq = (S.lseq | 0) + 1;
+    logQ.push([S.lseq, Math.round(clk ? nowMs() : Date.now()), t, Math.floor(S.gold), Math.round(x) || 0, ...a]);   // 서버 시각을 아직 못 받았으면 기기 시각(nowMs 는 마지막 저장 때에 멈춰 있어서)
+    if (logQ.length > LOG_MAX) logQ.splice(0, logQ.length - LOG_MAX);
+    mem.set(GKK('logq'), logQ);
+    if (!logT && !logDead) logT = setTimeout(logSend, 30000);
+}
+// 돈이 바뀐 행동 바로 뒤(같은 순간)에 부른다. amt = 이 행동으로 바뀌어야 할 돈(null = 기록을 통째로 바꿈 — 거기서부터 다시 센다)
+function logEv(t, a, amt) {
+    if (!logReady || stale) return;
+    const g = Math.floor(S.gold), x = amt == null || S.lg == null ? 0 : g - S.lg - amt;
+    S.lg = g;
+    if (!logOff()) logPush(t, a || [], x);
+}
+// save() 마다: 일지에 안 적힌 채 돈이 바뀌었으면 '?' 로 남긴다
+function logTick() {
+    if (!logReady || stale || (+mem.get(WV, 0) || 0) !== myWv) return;
+    const g = Math.floor(S.gold);
+    if (S.lg == null) { S.lg = g; return; }
+    if (g === S.lg) return;
+    const x = g - S.lg; S.lg = g;
+    if (!logOff()) logPush('?', [], x);
+}
+async function logSend(leaving) {
+    clearTimeout(logT); logT = 0;
+    if (!logReady || logBusy || logDead || !logQ.length || logOff()) return;
+    const part = logQ.slice(0, 300), t0 = part[0][1];
+    const batch = { v: 1, dev: LOG_DEV, slot: +PERSONA || 0, t0, sum: { tries: S.st.tries | 0, gold: Math.floor(S.gold), made: Math.floor(+S.st.made || 0), lseq: S.lseq | 0 },
+        ev: part.map(e => [e[0], e[1] - t0, ...e.slice(2)]) };
+    logBusy = true;
+    let r = 'err';
+    try { r = await PLAY.rpc('play_guitar_log', { p_key: gkKey(), p_batch: batch }, { auth: !PERSONA, keepalive: !!leaving }); }
+    catch (e) { if (e && e.status === 404) logDead = true; }   // 서버 함수가 아직 없다(SQL 적용 전) — 이 페이지에선 그만 보낸다
+    logBusy = false;
+    if (['ok', 'big', 'bad', 'bad_key', 'full'].includes(r)) {   // 받았거나, 다시 보내도 소용없는 것은 덜어 낸다
+        const k = logQ.indexOf(part[part.length - 1]);
+        if (k >= 0) logQ.splice(0, k + 1);
+        mem.set(GKK('logq'), logQ);
+    }
+    if (logQ.length && !logDead && !leaving && !logT) logT = setTimeout(logSend, r === 'ok' ? 4000 : 60000);
+}
+addEventListener('pagehide', () => logSend(true));
+document.addEventListener('visibilitychange', () => { if (document.hidden) logSend(true); });
+function logStart() {   // start() 에서 한 번: 쌓아 둔 일지를 불러오고 '들어옴'을 남긴다
+    if (logReady) return;
+    const q = mem.get(GKK('logq'), []);
+    logQ = Array.isArray(q) ? q.filter(e => Array.isArray(e) && Number.isFinite(e[0]) && Number.isFinite(e[1])).slice(-LOG_MAX) : [];
+    logReady = true;
+    logEv('L', [S.st.tries | 0, Math.floor(+S.st.made || 0), S.st.best | 0, S.bench ? S.bench.lv : -1], 0);
+    putGK(S);   // 번호·마지막으로 적은 돈을 이 브라우저 기록에 (계정에는 다음 저장 때)
+    if (logQ.length) { clearTimeout(logT); logT = setTimeout(logSend, 5000); }
+}
 async function syncMe(force, again) {
     const g = rep();
     if (!g || NORANK || personaWait()) return null;
@@ -4202,6 +4305,7 @@ function renderRank() {
         const nb = botOn() ? [...BOTS.values()].filter(t => kind !== 'top' || t).length : 0;
         h += `<p class="rkadm"><i class="fas fa-user-gear"></i>${botOn() ? `운영 계정 · 진짜 사람 <b>${Math.max(0, total - nb)}</b>명 · 봇 <b>${nb}</b>명`
             : botsErr ? '운영 계정 · 봇 표시를 못 불러왔어요 (서버 함수 적용 전일 수 있어요)' : '운영 계정 · 봇 표시 불러오는 중…'}</p>`;
+        h += `<p class="rkadm aud"><i class="fas fa-clipboard-list"></i><input id="audNo" inputmode="numeric" maxlength="7" placeholder="파이트 넘버" aria-label="기록을 볼 파이트 넘버"><button type="button" data-a="audno">기록 보기</button></p>`;
     }
     const weapon = r => r.fam ? esc(full({ lv: r.lv, f: r.fam })) : '기타 없음';
     // 1·2·3위는 상자로 (2026-11-16 사용자: '1등은 큰 박스, 2·3등은 아래 옆으로 작은 박스' → 같은 날 '한 줄에 다') — 4위부터는 예전 줄 그대로
@@ -4253,7 +4357,7 @@ function wallViewHtml(c, hi = {}) {   // hi: 새로 진열한 악기 { w: 걸이
 }
 let collBusy = false;
 async function rkView(id) {
-    const r = (RK[rkKind] || []).find(x => +x.id === id);
+    const r = (RK[rkKind] || []).find(x => +x.id === id) || (RKN[rkKind] || []).find(x => +x.id === id);
     if (!r || collBusy || document.querySelector('.collask')) return;
     let c = null, nick = r.nickname, gold = +r.gold || 0, tf = r.fam, tl = r.lv;
     if (r.me) c = collData();
@@ -4271,6 +4375,7 @@ async function rkView(id) {
     m.innerHTML = `<div class="in"><button type="button" class="x" aria-label="닫기"><i class="fas fa-xmark"></i></button>
         <div class="ch"><span class="md ${r.pos <= 3 ? 'p' + r.pos : ''}">${r.pos === 1 ? '<i class="fas fa-crown"></i>' : ''}${r.pos}위</span><b>${esc(nick)}${r.me ? ' (나)' : ''}</b>${whoTag(r)}</div>
         <p class="cs">${tf ? `최고 무기 <b>+${tl}</b>` : '기타 없음'} · 모은 돈 <b>${gf(gold)}</b></p>
+        ${ADMIN && !r.me ? `<button type="button" class="audbtn" data-aud="${id}"><i class="fas fa-clipboard-list"></i> 기록 보기 (운영)</button>` : ''}
         ${wallViewHtml(c)}
         ${ok ? `<p class="cn">기타 ${n('')}대${n('amp') ? ` · 앰프 ${n('amp')}대` : ''}${n('multi') ? ` · 이펙터 ${n('multi')}대` : ''}</p>` : '<p class="cn">아직 컬렉션을 올리지 않았어요 · 최고 무기만 보여요</p>'}
         <div class="cl">${items.sort((a, b) => b.lv - a.lv).map(g => `<div class="ci">${gc(g.lv, '', 2, g.f)}<span>${esc(full(g))}</span></div>`).join('')}</div></div>`;
@@ -4278,13 +4383,201 @@ async function rkView(id) {
     const esc1 = e => { if (e.key === 'Escape') close(); };
     m.querySelector('.x').addEventListener('click', close);
     m.addEventListener('click', e => { if (e.target === m) close(); });
+    { const ab = m.querySelector('[data-aud]'); if (ab) ab.addEventListener('click', () => audView(+ab.dataset.aud)); }
     document.addEventListener('keydown', esc1);
     document.body.appendChild(m);
     paintAll(m);
     sfx('drop');
 }
+// ---------- 운영 계정: 사람마다 '기록 보기' (2026-11-23 사용자: '유저가 어떤 과정으로 여기까지 왔는지, 중간에 어뷰징은 없었는지', db/play_guitar_audit.sql) ----------
+//   서버의 ① 시간별 사진(play_guitar_snaps)과 ② 일지(play_guitar_events)를 받아 이 화면에서 셈한다.
+//   의심 표시: 기록 없이 돈이 바뀜(개발자 도구로 고침) · 확률표보다 좋은 확률(코드를 고침) · 번호가 뒤로 감(백업으로 되돌림) ·
+//   강화 수가 일지보다 많이 늘어남(일지를 빼고 보냄) · 운이 통계로 지나치게 좋음 · 번호 빠짐 · 쉬지 않고 오래 · 간격이 기계처럼 고름
+let audBusy = false;
+const audT = t => { const d = new Date(t), p = n => String(n).padStart(2, '0'); return `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; };
+const audDur = ms => { const m = Math.round(ms / 60000); return m < 60 ? `${m}분` : `${Math.floor(m / 60)}시간 ${m % 60}분`; };
+const famNm = f => (FAMS[f] && (FAMS[f].dexName || FAMS[f].name)) || f || '?';
+// 장비를 다 갖췄을 때 넘을 수 없는 선 — 바닥 이펙터·앰프 2대씩 +20, 가장 좋은 작업대·망치·튜너·벽, 도감 다 채움
+const audMax = (() => { const cells = Object.keys(FAMS).length * (MAX + 1), gear = FLOOR_EACH * MAX * GEAR_PER;
+    return { up: gear + Math.max(...BENCH_UP) + Math.max(...HAMMERS.map(h => h.up)) + cells * DEX_UP + Math.max(...TUNERS.filter(Boolean).map(t => t.bonus)), cut: gear + Math.max(...WALL_CUTS) }; })();
+function audAnalyze(d) {
+    const ev = [];
+    for (const b of d.batches || []) {
+        const t0 = +b.t0 || 0;
+        (b.ev || []).forEach(e => { if (Array.isArray(e) && e.length >= 5) ev.push({ seq: +e[0], t: t0 + (+e[1] || 0), k: String(e[2]), g: +e[3] || 0, x: +e[4] || 0, a: e.slice(5), dev: b.dev || '?', bid: b.id }); });
+    }
+    const R = { ev, devs: [...new Set(ev.map(e => e.dev))], U: ev.filter(e => e.k === 'u'), flags: [] };
+    const U = R.U, cnt = { o: 0, k: 0, s: 0, b: 0 };
+    let eS = 0, vS = 0, eD = 0, vD = 0, nS = 0, nD = 0, lucky = 0, badOdds = [], badLv = 0;
+    U.forEach(e => {
+        const [, , lv0, o, lv1, lk, , sp, mp, dp] = e.a;
+        cnt[o] = (cnt[o] || 0) + 1;
+        if (lk) { lucky++; return; }
+        const p = (+sp || 0) / 100, q = (+dp || 0) / 100;
+        eS += p; vS += p * (1 - p); nS += o === 'o' ? 1 : 0;
+        eD += q; vD += q * (1 - q); nD += o === 's' || o === 'b' ? 1 : 0;
+        const B = ODDS[lv0];   // 장비를 다 갖춰도 넘을 수 없는 선(audMax): 성공은 기본의 몇 배까지, 파괴는 몇 %p 까지만 준다
+        if (!B) { badLv++; return; }
+        if (+sp > B[0] * (1 + audMax.up / 100) + 0.6 || +dp < Math.max(0, B[2] - audMax.cut) - 0.6) badOdds.push(e);
+        if ((o === 'o' && !(lv1 === lv0 + 1 || (lv0 <= JACKPOT_MAX_LV && lv1 === lv0 + 2))) || (o !== 'o' && lv1 !== lv0)) badLv++;
+    });
+    Object.assign(R, { cnt, lucky, eS, nS, zS: vS ? (nS - eS) / Math.sqrt(vS) : 0, eD, nD, zD: vD ? (nD - eD) / Math.sqrt(vD) : 0, badOdds, badLv });
+    // 기록 없이 돈이 바뀜
+    R.xs = ev.filter(e => e.x !== 0 && !'AMR'.includes(e.k));
+    // 번호(기기마다 도착 순서대로): 뒤로 감 = 되돌리기 의심, 건너뜀 = 일지가 안 옴(기록 지움·오래 오프라인)
+    let back = [], gap = 0, triesBad = 0;
+    for (const dv of R.devs) {
+        const E = ev.filter(e => e.dev === dv);
+        for (let i = 1; i < E.length; i++) {
+            const a = E[i - 1], b = E[i];
+            if ('AMR'.includes(b.k)) continue;
+            if (b.seq <= a.seq) back.push(b); else if (b.seq > a.seq + 1 && !'AMR'.includes(a.k)) gap += b.seq - a.seq - 1;
+        }
+        // 묶음마다 보낸 합계(누른 수·번호)와 그사이 일지의 강화 수가 맞는지
+        const Bs = (d.batches || []).filter(b => (b.dev || '?') === dv && b.sum && Number.isFinite(+b.sum.lseq));
+        for (let i = 1; i < Bs.length; i++) {
+            const b1 = Bs[i - 1], b2 = Bs[i], l1 = +b1.sum.lseq, l2 = +b2.sum.lseq;
+            if (l2 <= l1 || E.some(e => e.bid > b1.id && e.bid <= b2.id && 'AMR'.includes(e.k))) continue;
+            const nU = E.filter(e => e.k === 'u' && e.seq > l1 && e.seq <= l2).length;
+            if ((+b2.sum.tries || 0) - (+b1.sum.tries || 0) !== nU) triesBad++;
+        }
+    }
+    Object.assign(R, { back, gap, triesBad });
+    // 시간: 10분 넘게 쉬면 다른 판으로 본다
+    const ts = ev.map(e => e.t).filter(Boolean).sort((a, b) => a - b);
+    let sess = [], s0 = ts[0], prev = ts[0];
+    for (const t of ts.slice(1)) { if (t - prev > 600000) { sess.push([s0, prev]); s0 = t; } prev = t; }
+    if (ts.length) sess.push([s0, prev]);
+    R.sess = sess; R.active = sess.reduce((a, [x, y]) => a + (y - x), 0); R.longest = sess.reduce((a, [x, y]) => Math.max(a, y - x), 0);
+    // 누른 간격(같은 기기·바로 앞도 강화일 때, 2분 안) — 단계 무리마다 가장 짧은 간격, 30번씩 묶어 간격이 얼마나 고른지(변동계수)
+    const dts = [], band = lv => lv <= 6 ? 0 : lv <= 9 ? 1 : lv <= 14 ? 2 : 3, minB = [Infinity, Infinity, Infinity, Infinity];
+    for (const dv of R.devs) {
+        const E = ev.filter(e => e.dev === dv);
+        for (let i = 1; i < E.length; i++) if (E[i].k === 'u' && E[i - 1].k === 'u') {
+            const dt = E[i].t - E[i - 1].t;
+            if (dt > 0 && dt < 120000) { dts.push(dt); const bb = band(+E[i].a[2] || 0); minB[bb] = Math.min(minB[bb], dt); }
+        }
+    }
+    const sd = [...dts].sort((a, b) => a - b);
+    R.dtMed = sd.length ? sd[Math.floor(sd.length / 2)] : 0; R.dtP10 = sd.length ? sd[Math.floor(sd.length * 0.1)] : 0; R.minB = minB;
+    let minCV = Infinity;
+    for (let i = 0; i + 30 <= dts.length; i += 10) {
+        const w = dts.slice(i, i + 30), mu = w.reduce((a, b) => a + b, 0) / w.length;
+        const cv = Math.sqrt(w.reduce((a, b) => a + (b - mu) * (b - mu), 0) / w.length) / mu;
+        minCV = Math.min(minCV, cv);
+    }
+    R.minCV = minCV;
+    // 5분에 가장 많이 누른 수
+    const ut = U.map(e => e.t).sort((a, b) => a - b);
+    let best5 = 0; for (let i = 0, j = 0; i < ut.length; i++) { while (ut[i] - ut[j] > 300000) j++; best5 = Math.max(best5, i - j + 1); }
+    R.best5 = best5;
+    // 의심 표시
+    const F = R.flags, sumX = R.xs.reduce((a, e) => a + e.x, 0);
+    if (R.xs.length) F.push(['r', `기록 없이 돈이 바뀐 적 ${R.xs.length}번 (합 ${sumX > 0 ? '+' : ''}${gf(sumX)})`, `처음 ${audT(R.xs[0].t)} · 개발자 도구로 돈을 고쳤거나, 이 기기 기록을 다른 데서 가져온 경우`]);
+    if (badOdds.length) F.push(['r', `확률표보다 좋은 확률로 강화 ${badOdds.length}번`, `장비를 다 갖춰도 안 나오는 확률 — 게임 코드를 고쳤을 수 있어요 (처음 ${audT(badOdds[0].t)})`]);
+    if (badLv) F.push(['r', `단계가 이상하게 바뀐 강화 ${badLv}번`, '성공했는데 단계가 안 맞거나, 실패했는데 단계가 바뀜']);
+    if (back.length) F.push(['r', `번호가 뒤로 간 적 ${back.length}번 — 되돌리기 의심`, `백업해 둔 기록을 다시 넣었을 때 생겨요 (처음 ${audT(back[0].t)})`]);
+    if (triesBad) F.push(['o', `강화 수가 일지보다 더 늘어난 적 ${triesBad}번`, '일지에 안 적고 강화했을 수 있어요(게임 코드를 고침). 한두 번은 일지를 보내다 끊긴 것일 수도']);
+    if (R.zS > 4) F.push(['o', `운이 통계로 지나치게 좋아요 (성공 ${nS} · 기대 ${Math.round(eS)})`, `z = ${R.zS.toFixed(1)} — 보통 사람은 ±3 안`]);
+    if (R.zD < -4) F.push(['o', `파괴가 통계로 지나치게 적어요 (파괴·하케 ${nD} · 기대 ${Math.round(eD)})`, `z = ${R.zD.toFixed(1)}`]);
+    if (gap) F.push(['y', `번호 빠짐 ${gap}개`, '그 사이 일지가 안 왔어요 — 브라우저 기록을 지웠거나 오래 오프라인이었을 때']);
+    if (R.longest > 3 * 3600e3) F.push(['y', `10분 넘게 안 쉬고 ${audDur(R.longest)} 동안 계속`, '사람도 할 수는 있지만 매크로면 이렇게 길어요']);
+    if (minCV < 0.12) F.push(['y', `누른 간격이 기계처럼 고른 구간이 있어요 (변동 ${(minCV * 100).toFixed(0)}%)`, '사람은 보통 25% 넘게 들쭉날쭉해요 — 참고']);
+    if (!F.length && ev.length) F.push(['g', '이상한 점 없음', '돈·번호·확률·운 모두 앞뒤가 맞아요']);
+    return R;
+}
+function audHtml(d, days) {
+    const P = d.player || {}, R = audAnalyze(d), U = R.U;
+    const daysBtn = [1, 3, 7, 30].map(n => `<button type="button" data-days="${n}" class="${n === days ? 'on' : ''}">${n}일</button>`).join('');
+    let h = `<div class="ch"><span class="md">#${fmtNo(P.id)}</span><b>${esc(P.nick || '익명')}</b></div>
+        <p class="cs">최고 무기 <b>${P.top_fam ? esc(full({ lv: P.top_lv, f: P.top_fam })) : '없음'}</b> · 모은 돈 <b>${gf(+P.gold || 0)}</b> · ${d.acct ? '로그인(계정 저장 있음)' : '로그인 안 함'} · 처음 ${P.created ? audT(Date.parse(P.created)) : '?'}</p>
+        <div class="ad-days">${daysBtn}</div>`;
+    if (!R.ev.length) h += `<ul class="ad-flags"><li class="y">이 기간 일지가 없어요<small>일지는 2026-11-23부터 남아요. 그 전에 한 것·시험 브라우저·운영 계정은 없어요. 아래 시간별 사진만 봐요</small></li></ul>`;
+    else h += `<h4>의심 표시</h4><ul class="ad-flags">${R.flags.map(([c, t, sm]) => `<li class="${c}">${t}<small>${sm}</small></li>`).join('')}</ul>`;
+    if (R.ev.length) {
+        const pct = (n, all) => all ? ` (${Math.round(n / all * 100)}%)` : '';
+        const nU = U.length;
+        h += `<h4>요약</h4><div class="ad-grid">
+            <div>기록 기간<b>${audT(R.ev[0].t).slice(0, 11)} ~ ${audT(R.ev[R.ev.length - 1].t).slice(6)}</b></div>
+            <div>실제로 한 시간<b>${audDur(R.active)}</b>${R.sess.length}판 · 가장 긴 판 ${audDur(R.longest)}</div>
+            <div>강화<b>${nU.toLocaleString()}번</b>행운 확정 ${R.lucky}번</div>
+            <div>성공<b>${R.cnt.o || 0}${pct(R.cnt.o || 0, nU)}</b>기대 ${Math.round(R.eS + R.lucky)} · z ${R.zS.toFixed(1)}</div>
+            <div>줄 끊김 · 하케 · 파괴<b>${R.cnt.k || 0} · ${R.cnt.s || 0} · ${R.cnt.b || 0}</b>파괴+하케 기대 ${Math.round(R.eD)}</div>
+            <div>누른 간격<b>${(R.dtMed / 1000).toFixed(1)}초</b>빠른 10% ${(R.dtP10 / 1000).toFixed(1)}초 · 5분에 최대 ${R.best5}번</div>
+            <div>가장 짧은 간격<b>${R.minB.map(v => v === Infinity ? '-' : (v / 1000).toFixed(1)).join(' / ')}</b>+0~6 / +7~9 / +10~14 / +15~</div>
+            <div>기기<b>${R.devs.length}대</b>${R.devs.join(' · ')}</div></div>`;
+        // 시간대별 강화 수
+        const t0 = R.ev[0].t, t1 = R.ev[R.ev.length - 1].t, span = Math.max(1, t1 - t0);
+        const step = [5, 10, 15, 30, 60, 120, 240, 480, 1440].map(m => m * 60000).find(s => span / s <= 90) || 1440 * 60000;
+        const nb = Math.max(1, Math.ceil(span / step)), bars = Array(nb).fill(0);
+        U.forEach(e => { bars[Math.min(nb - 1, Math.floor((e.t - t0) / step))]++; });
+        const mx = Math.max(1, ...bars);
+        h += `<h4>시간대별 강화 (${step / 60000 >= 60 ? step / 3600000 + '시간' : step / 60000 + '분'}마다)</h4>
+            <div class="ad-bars">${bars.map((n, i) => `<i class="${n ? '' : 'z'}" style="height:${Math.max(n ? 3 : 0, Math.round(n / mx * 100))}%" title="${audT(t0 + i * step)} · ${n}번"></i>`).join('')}</div>
+            <div class="ad-axis"><span>${audT(t0).slice(0, 11)}</span><span>가장 많을 때 ${mx}번</span><span>${audT(t1).slice(0, 11)}</span></div>`;
+        // 주요 장면(최근이 위)
+        const KIND = { A: '계정 기록을 불러옴', M: '계정 기록과 합침', R: '처음부터 다시' };
+        const rows = [];
+        R.ev.forEach(e => {
+            const a = e.a, warn = e.x && !'AMR'.includes(e.k) ? ` <b style="color:#b3261e">⚠ 기록 없이 돈 ${e.x > 0 ? '+' : ''}${gf(e.x)}</b>` : '';
+            let t = '', c = '';
+            if (e.k === 'L') t = `들어옴 · 가진 돈 ${gf(e.g)} · 지금까지 강화 ${(+a[0] || 0).toLocaleString()}번 · 기기 ${e.dev}`;
+            else if (e.k === 'u') {
+                const [, f, lv0, o, lv1, lk, tb] = a;
+                if (o === 'o' && lv1 >= 13) { t = `+${lv1} 성공 · ${famNm(f)}${lk ? ' · 🍀 행운 확정' : tb > 0 ? ` · 튜너 +${tb}%` : ''}${lv1 - lv0 > 1 ? ' · 대박 점프' : ''}`; c = 'g'; }
+                else if (o === 's' && lv0 >= 10) t = `하케가 막음 · +${lv0} ${famNm(f)}`;
+                else if (o === 'b' && lv0 >= 10) { t = `💥 파괴 · +${lv0} ${famNm(f)}`; c = 'r'; }
+            }
+            else if (e.k === 's' && (+a[3] || 0) >= 1e8) t = `팔기 +${a[2]} ${famNm(a[1])} · ${gf(+a[3])}`;
+            else if (e.k === 'b' && (+a[2] || 0) >= 1e7) t = `샀음 · ${a[0]} ${a[1]} · ${gf(+a[2])}`;
+            else if (e.k === 'w') t = `배틀 ${a[3] ? '승' : '패'} · +${a[1]} vs +${a[2]} (이길 확률 ${a[6]}%)${a[3] ? ` · +${gf(+a[4] || 0)}` : ''}${a[5] ? '' : ' · 브라우저 안 배틀'}`;
+            else if (e.k === 'v') t = `🧚 넥뿌의 요정 · +${a[2]} ${famNm(a[1])}`;
+            else if (KIND[e.k]) t = KIND[e.k];
+            else if (e.k === '?') t = '돈이 바뀜(일지에 없는 행동)';
+            if (warn && !t) t = ({ u: '강화', f: '악기 찾기', s: '팔기', b: '사기', w: '배틀', a: '광고 골드', d: '출석', v: '넥뿌의 요정', L: '들어옴' })[e.k] || `${e.k} 행동`;
+            if (t) rows.push(`<li class="${warn ? 'r' : c}"><time>${audT(e.t)}</time><span>${t}${warn}</span></li>`);
+        });
+        h += `<h4>주요 장면 <small style="font-weight:600;color:#888">(+13 이상 성공 · +10 이상 하케·파괴 · 1억 넘게 팔기 · 1천만 넘게 사기 · 배틀 · 들어옴)</small></h4>
+            <ul class="ad-tl">${rows.reverse().slice(0, 400).join('') || '<li>없음</li>'}</ul>`;
+    }
+    // ① 시간별 사진
+    const sv = (d.snaps || []).filter(x => x.src === 'save'), rk = (d.snaps || []).filter(x => x.src === 'rank');
+    if (sv.length) {
+        const rows = sv.map((x, i) => { const q = x.d || {}, p0 = i ? (sv[i - 1].d || {}) : null, dT = p0 ? (+q.tries || 0) - (+p0.tries || 0) : null;
+            return `<tr><td>${audT(Date.parse(x.at))}${x.slot ? ` · 테스트${x.slot}` : ''}</td><td>${(+q.tries || 0).toLocaleString()}${dT != null ? ` <small style="color:#888">(+${dT})</small>` : ''}</td><td>${gf(+q.made || 0)}</td><td>${gf(+q.gold || 0)}</td><td>+${q.top == null ? '-' : q.top}</td><td>${q.dex == null ? '-' : q.dex}</td><td>${q.saved | 0} / ${q.boom | 0}</td></tr>`; });
+        h += `<h4>시간별 사진 — 계정 저장 (5분마다)</h4><div class="ad-tw"><table><thead><tr><th>시각</th><th>강화 수</th><th>모은 돈</th><th>가진 돈</th><th>최고</th><th>도감</th><th>하케/파괴</th></tr></thead><tbody>${rows.reverse().join('')}</tbody></table></div>`;
+    }
+    if (rk.length) {
+        const rows = rk.map(x => { const q = x.d || {};
+            return `<tr><td>${audT(Date.parse(x.at))}</td><td>${q.top_fam ? esc(full({ lv: q.top_lv, f: q.top_fam })) : '-'}</td><td>${gf(+q.gold || 0)}</td><td>${q.wins | 0}승 ${q.losses | 0}패</td></tr>`; });
+        h += `<h4>시간별 사진 — 랭킹 줄 (5분마다)</h4><div class="ad-tw"><table><thead><tr><th>시각</th><th>최고 무기</th><th>모은 돈</th><th>배틀</th></tr></thead><tbody>${rows.reverse().join('')}</tbody></table></div>`;
+    }
+    if (!sv.length && !rk.length) h += '<p class="ad-note">시간별 사진도 아직 없어요 (2026-11-23부터 찍어요).</p>';
+    h += '<p class="ad-note">일지·사진은 60일 뒤 지워져요. 의심 표시는 참고용이에요 — 빨간 표시가 여러 개 겹치면 그때 자세히 봐요.</p>';
+    return h;
+}
+async function audView(id, days = 7) {
+    if (!ADMIN || audBusy || !id) return;
+    audBusy = true;
+    let d = null, err = '';
+    try { d = await PLAY.rpc('play_guitar_audit', { p_id: id, p_days: days }, { auth: true }); }
+    catch (e) { err = e && e.status === 404 ? '서버 함수가 아직 없어요 (db/play_guitar_audit.sql 적용 전)' : e && /not_admin/.test(e.code || '') ? '운영 계정만 볼 수 있어요' : '불러오지 못했어요'; }
+    audBusy = false;
+    document.querySelectorAll('.audask').forEach(x => x.remove());
+    const m = document.createElement('div');
+    m.className = 'gk-modal collask audask';
+    m.innerHTML = `<div class="in"><button type="button" class="x" aria-label="닫기"><i class="fas fa-xmark"></i></button>${err ? `<p class="ad-note" style="font-size:14px;padding:24px 4px">${err}</p>` : !d ? `<p class="ad-note" style="font-size:14px;padding:24px 4px">#${fmtNo(id)} 번호의 사람이 없어요</p>` : audHtml(d, days)}</div>`;
+    const close = () => { m.remove(); document.removeEventListener('keydown', esc1); };
+    const esc1 = e => { if (e.key === 'Escape') close(); };
+    m.querySelector('.x').addEventListener('click', close);
+    m.addEventListener('click', e => { if (e.target === m) { close(); return; } const b = e.target.closest('[data-days]'); if (b) { close(); audView(id, +b.dataset.days); } });
+    document.addEventListener('keydown', esc1);
+    document.body.appendChild(m);
+}
 // 랭킹 줄·상자는 div 라서 Enter·Space 로도 열리게
-$('#tab-rank').addEventListener('keydown', e => { const t = e.target.closest('[data-a="rkview"]'); if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); t.click(); } });
+$('#tab-rank').addEventListener('keydown', e => {
+    if (e.target.id === 'audNo') { if (e.key === 'Enter') { e.preventDefault(); const v = String(e.target.value || '').replace(/\D/g, ''); if (v) audView(+v); } return; }   // 운영 계정: 파이트 넘버로 기록 보기
+    const t = e.target.closest('[data-a="rkview"]'); if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); t.click(); } });
 // 상대 새로고침 (2026-11-13 사용자: '배틀 상대 업데이트 하는 기능, 업뎃 하려면 광고 보기')
 //   보상형 광고를 끝까지 보면 진짜 상대(서버)와 연습 상대를 모두 새로 불러온다.
 //   구글이 광고를 준비 못 했으면(승인 전·광고 없음) 그냥 새로고침해 준다 — 광고가 없다고 못 쓰게 하지는 않는다
@@ -4439,6 +4732,7 @@ async function nickAskIn(start, done) {
             if (n === S.nick && pick === S.nickPick) { finish(); return; }   // 그대로면 돈도 횟수도 안 씀
             if (!free) { if (S.gold < NICK_PRICE) return; S.gold -= NICK_PRICE; }
             S.nickCh = (S.nickCh | 0) + 1; S.nickAt = nowMs();
+            if (!free) logEv('b', ['nick', S.nickCh, NICK_PRICE], -NICK_PRICE);
         }
         S.nick = n; S.nickPick = pick; S.nickOk = true; save();
         finish(); updBar(true); sfx('drop');
@@ -4660,6 +4954,7 @@ async function fight(id) {
     const rw = win ? prizeOf(me, o) : 0;
     bt.n++; bt.done[o.id] = win ? 'w' : 'l';
     if (win) { S.st.win++; gain(rw); } else S.st.lose++;
+    logEv('w', [o.pid != null ? +o.pid : String(o.id).slice(0, 24), me.lv, o.lv, win ? 1 : 0, rw, srv ? 1 : 0, r1((+p || 0) * 100)], rw);
     save();
     const m = document.createElement('div');
     m.className = 'gk-modal';
@@ -4791,6 +5086,7 @@ $('#app').addEventListener('click', e => {
         if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = gf(sellOf(g.lv)) + '에 팔기?'; return; }
         acted(); unplace(id); gain(sellOf(g.lv)); S.st.sold++; S.st.earned += sellOf(g.lv);
         if (S.rep === g.id) S.rep = '';
+        logEv('s', [g.id, g.f, g.lv, sellOf(g.lv), 'wall'], sellOf(g.lv));
         save(); sfx('sell'); renderRoom(); updBar(true); toast(`${full(g)}을(를) ${gf(sellOf(g.lv))}에 팔았어요`);
     } else if (a === 'stake' || a === 'shang' || a === 'ssell') {   // 창고
         const i = S.store.findIndex(g => g.id === id); if (i < 0) return;
@@ -4807,6 +5103,7 @@ $('#app').addEventListener('click', e => {
         }
         if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = gf(sellOf(g.lv)) + '에 팔기?'; return; }
         S.store.splice(i, 1); gain(sellOf(g.lv)); S.st.sold++; S.st.earned += sellOf(g.lv); if (S.rep === g.id) S.rep = '';
+        logEv('s', [g.id, g.f, g.lv, sellOf(g.lv), 'store'], sellOf(g.lv));
         save(); sfx('sell'); renderRoom(); updBar(true); toast(`${full(g)}을(를) ${gf(sellOf(g.lv))}에 팔았어요`);
     } else if (a === 'fight') fight(id);
     else if (a === 'findno') findNo(($('#vsno') || {}).value);
@@ -4814,50 +5111,51 @@ $('#app').addEventListener('click', e => {
     else if (a === 'rkkind') { rkKind = ['gold', 'rec'].includes(b.dataset.k) ? b.dataset.k : 'top'; mem.set('gk.rkKind', rkKind); renderRank(); }
     else if (a === 'rkload') { if (!rkBusy && rkKind !== 'rec') { RK[rkKind] = null; RKN[rkKind] = null; rkAt[rkKind] = 0; renderRank(); } }
     else if (a === 'rkview') rkView(+b.dataset.i);
+    else if (a === 'audno') { const v = String(($('#audNo') || {}).value || '').replace(/\D/g, ''); if (v) audView(+v); }
     else if (a === 'rkall') { rkAll = !rkAll; renderRank(); if (rkAll) { const t = $('#tab-rank .rkall'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }
     else if (a === 'nickedit') nickAsk(false);
     else if (a === 'vslink') challengeLink();
     else if (a === 'buyHm') {   // 프렛 망치 사기
         const n = +b.dataset.n, H = HAMMERS[n];
         if (!H || (S.hammer | 0) >= n || S.gold < H.price) return;
-        S.gold -= H.price; S.hammer = n; save(); sfx('strum', 5); renderShop(); spendFx(S.gold + H.price, S.gold); toast(`${H.name}를 샀어요! 강화할 때 이 망치로 내려쳐요`);
+        S.gold -= H.price; S.hammer = n; logEv('b', ['hammer', n, H.price], -H.price); save(); sfx('strum', 5); renderShop(); spendFx(S.gold + H.price, S.gold); toast(`${H.name}를 샀어요! 강화할 때 이 망치로 내려쳐요`);
     }
     else if (a === 'buyCase') {
         if (S.cases >= CASE_MAX) { toast(`하드케이스는 ${CASE_MAX}개까지예요`); return; }
         if (S.gold < CASE_PRICE) return;
-        S.gold -= CASE_PRICE; S.cases++; save(); sfx('case'); renderShop(); updBar(); spendFx(S.gold + CASE_PRICE, S.gold); toast(`하드케이스를 샀어요 (${S.cases}/${CASE_MAX})`);
+        S.gold -= CASE_PRICE; S.cases++; logEv('b', ['case', S.cases, CASE_PRICE], -CASE_PRICE); save(); sfx('case'); renderShop(); updBar(); spendFx(S.gold + CASE_PRICE, S.gold); toast(`하드케이스를 샀어요 (${S.cases}/${CASE_MAX})`);
     }
     else if (a === 'buyT') {
         const n = +b.dataset.n, T = TUNERS[n];
         if (S.gold < T.price || S.tuner >= n) return;
-        S.gold -= T.price; S.tuner = n; S.tuneOn = true; save(); sfx('sell'); renderShop(); spendFx(S.gold + T.price, S.gold); toast(`${T.name}를 샀어요! 강화할 때 바늘을 맞춰요`);
+        S.gold -= T.price; S.tuner = n; S.tuneOn = true; logEv('b', ['tuner', n, T.price], -T.price); save(); sfx('sell'); renderShop(); spendFx(S.gold + T.price, S.gold); toast(`${T.name}를 샀어요! 강화할 때 바늘을 맞춰요`);
     } else if (a === 'wopen') {   // 잠긴 걸이 열기: 한 번 누르면 '열까요?', 한 번 더 누르면 연다
         const i = +b.dataset.i, price = openPrice();
         if (S.open[i]) return;
         if (S.gold < price) { toast(`골드가 ${gf(price - S.gold)} 모자라요`); return; }
         if (b.dataset.sure !== '1') { document.querySelectorAll('.wsb.lock.sure').forEach(x => { x.classList.remove('sure'); x.dataset.sure = ''; x.querySelector('span').textContent = gs(price); }); b.dataset.sure = '1'; b.classList.add('sure'); b.querySelector('span').textContent = '열까요?'; return; }
-        S.gold -= price; S.open[i] = true; justOpened = i; acted(); save(); sfx('hang'); renderRoom(); updBar(true); toast('걸이를 열었어요! 조명이 켜졌어요');
+        S.gold -= price; S.open[i] = true; justOpened = i; acted(); logEv('b', ['slot', i, price], -price); save(); sfx('hang'); renderRoom(); updBar(true); toast('걸이를 열었어요! 조명이 켜졌어요');
     } else if (a === 'skin') {
         const W = WALLS.find(w => w.id === b.dataset.id); if (!W) return; let paid = 0;
         if (!S.skins.includes(W.id)) { if (S.gold < W.price) return; S.gold -= W.price; paid = W.price; S.skins.push(W.id); sfx('sell'); }
-        S.skin = W.id; save(); renderShop(); spendFx(S.gold + paid, S.gold); toast(`진열 벽을 '${W.name}'(으)로 바꿨어요`);
+        S.skin = W.id; if (paid) logEv('b', ['wall', W.id, paid], -paid); save(); renderShop(); spendFx(S.gold + paid, S.gold); toast(`진열 벽을 '${W.name}'(으)로 바꿨어요`);
     } else if (a === 'askin') {
         const A = ARENAS.find(w => w.id === b.dataset.id); if (!A) return; let paid = 0;
         if (!S.asks.includes(A.id)) { if (S.gold < A.price) return; S.gold -= A.price; paid = A.price; S.asks.push(A.id); sfx('sell'); }
-        S.ask = A.id; save(); renderShop(); spendFx(S.gold + paid, S.gold); toast(`싸움터를 '${A.name}'(으)로 바꿨어요`);
+        S.ask = A.id; if (paid) logEv('b', ['arena', A.id, paid], -paid); save(); renderShop(); spendFx(S.gold + paid, S.gold); toast(`싸움터를 '${A.name}'(으)로 바꿨어요`);
     } else if (a === 'bskin') {
         const B = BENCHES.find(w => w.id === b.dataset.id); if (!B) return; let paid = 0;
         if (!S.bskins.includes(B.id)) { if (S.gold < B.price) return; S.gold -= B.price; paid = B.price; S.bskins.push(B.id); sfx('sell'); }
-        S.bskin = B.id; save(); applyBench(); renderShop(); spendFx(S.gold + paid, S.gold); toast(`작업대를 '${B.name}'(으)로 바꿨어요`);
+        S.bskin = B.id; if (paid) logEv('b', ['bench', B.id, paid], -paid); save(); applyBench(); renderShop(); spendFx(S.gold + paid, S.gold); toast(`작업대를 '${B.name}'(으)로 바꿨어요`);
     } else if (a === 'reset') {
         if (!confirm('골드·기타·기록을 모두 지우고 처음부터 할까요? 되돌릴 수 없어요.')) return;
-        S = fresh(); save(); setTab('bench'); start();
+        S = fresh(); logEv('R', [], null); save(); setTab('bench'); start();
     }
 });
 $('#rDaily').addEventListener('click', () => {
     if (busy) return;
     if (S.daily === today()) { toast('오늘 출석은 했어요. 내일 또 와요!'); return; }
-    S.daily = today(); gain(DAILY_GOLD); save(); updBar(true); sfx('sell');
+    S.daily = today(); gain(DAILY_GOLD); logEv('d', [DAILY_GOLD], DAILY_GOLD); save(); updBar(true); sfx('sell');
     toast(`출석 +${gf(DAILY_GOLD)}`);   // 2026-11-13 사용자: 여기선 피크 안 준다
     if (tab === 'bench') renderBench(); else if (tab === 'shop') renderShop();
 });
@@ -4879,6 +5177,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && lin
 // 다른 기기에서 하다가 이 창으로 돌아오면 계정 것부터 확인한다 (2026-11-20) — 오래 열어 둔 창이 예전 기록으로 계정을 덮어쓰지 않게
 document.addEventListener('visibilitychange', () => { if (!document.hidden && linked() && !busy && !cloudBusy && !document.querySelector('.cloudask')) cloudSync(); });
 function start() {
+    logStart();   // 운영자용 일지 (2026-11-23)
     applyBench();
     document.querySelectorAll('.pkb').forEach(b => b.remove());   // 2026-11-13 사용자: 여기선 피크를 안 쓴다(play.js 가 넣어 둔 피크 단추를 치운다)
     if (!S.intro) {
