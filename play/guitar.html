@@ -1127,7 +1127,7 @@
         <li>+7부터 강화 단추 위 <b>[하케]</b> 스위치를 켜면, 부서질 때 하드케이스가 한 번 막아 줘요. 켠 악기에만 적용돼요. 옆의 <b>[자동]</b>을 켜 두면 하드케이스가 있을 때 저절로 끼워요.</li>
         <li>하드케이스는 <b>악기 하나에 한 번</b>만 먹어요. 한 번 살아난 악기는 '하케 사용함'이 되고, 컬렉션에 넣었다 다시 가져와도 그대로예요. 비싼 단계에서 켜는 게 좋아요.</li>
         <li><b>튜너</b>(상점)를 사면 +7부터, 망치로 칸을 다 채운 뒤 가운데에 튜너가 떠요. 바늘이 초록 칸에 올 때 <b>튜너를 누르면</b> 성공 확률이 올라가요(좋은 튜너일수록 더).</li>
-        <li><b>도감</b>에 칸이 하나 찰 때마다 성공 확률과 팔 때 받는 골드가 조금씩 쌓여서 올라가요(도감 탭 맨 위에 지금 특전).</li>
+        <li><b>도감</b>에 칸이 하나 찰 때마다 성공 확률과 팔 때 받는 골드가 조금씩 쌓여서 올라가요. 다 모으면 성공 +10%(그 단계 성공 확률의 10%) · 판매 +20%(도감 탭 맨 위에 지금 특전).</li>
         <li><b>프렛 망치</b>(상점)는 좋은 것일수록 성공이 더 올라가요. '성공 +n%'는 그 단계 성공 확률의 n%만큼 오른다는 뜻이에요.</li>
     </ul>
     <h3>5. 팔기 · 컬렉션 · 상점</h3>
@@ -2734,10 +2734,15 @@ const dexHas = (f, lv) => !!((S.dex[f] | 0) & (1 << lv));
 //   도감 한 칸마다 성공 +0.05%(그 단계 성공 확률의 n% — 망치·작업대와 같은 셈, 줄 끊김에서 가져옴) · 팔 때 받는 골드 +0.1%. 357칸 다 채우면 성공 +17.85% · 판매 +35.7%.
 //   숫자는 Claude가 정함(바꿔도 됨). 배틀 보상은 그대로. 운영 계정의 '전체 그림'과 상관없이 내가 닿은 칸(S.dex)만 센다
 // 2026-11-23 사용자(같은 날 다시): '판매 퍼센트 좀 더 올려도' → 판매 한 칸 0.1 → 0.3%(357칸 다 채우면 +107.1%)
-const DEX_UP = 0.05, DEX_GOLD = 0.3;
+// 2026-11-23 사용자(또 다시): '도감 다 모았을 때 성공 확률 10% 올리기, 판매 특전 20%로 — 그때 한 칸에 몇 %씩인지 조정'
+//   → 다 모으면 딱 성공 +10% · 판매 +20%가 되게 한 칸 몫 = 10 ÷ 칸 수 · 20 ÷ 칸 수(지금 357칸: 약 0.028% · 0.056%).
+//   세트가 늘어 칸이 많아지면 한 칸 몫이 저절로 줄고 '다 모으면 10% · 20%'는 그대로. 성공은 그 단계 성공 확률의 10%(예: 40% → 44%)
+const DEX_CELLS = DEX_FAMS.length * (MAX + 1), DEX_FULL_UP = 10, DEX_FULL_GOLD = 20;
+const DEX_UP = DEX_FULL_UP / DEX_CELLS, DEX_GOLD = DEX_FULL_GOLD / DEX_CELLS;
+const DEX_UP_T = DEX_UP.toFixed(3), DEX_GOLD_T = DEX_GOLD.toFixed(3);   // 화면에 보이는 한 칸 몫
 const dexN = () => DEX_FAMS.reduce((n, f) => { let b = (S.dex[f] | 0) & ((1 << (MAX + 1)) - 1), c = 0; while (b) { c += b & 1; b >>>= 1; } return n + c; }, 0);
-const dexUp = () => Math.round(dexN() * DEX_UP * 100) / 100;     // 성공 +%
-const dexGold = () => r1(dexN() * DEX_GOLD);                      // 판매 +%
+const dexUp = () => r2(Math.min(DEX_CELLS, dexN()) * DEX_UP);     // 성공 +% (다 모으면 10)
+const dexGold = () => r2(Math.min(DEX_CELLS, dexN()) * DEX_GOLD); // 판매 +% (다 모으면 20)
 const sellOf = lv => Math.round(SELL[lv] * (1 + dexGold() / 100));   // 팔 때 실제로 받는 골드
 function dexAdd(f, lv) {
     f = FAMS[f] ? f : 'strat';
@@ -2880,7 +2885,7 @@ function renderDex() {
     el.classList.toggle('whole', whole);
     el.innerHTML = `<div class="dx-top"><b>기타 도감 ${total} / ${all}</b><small>찾거나 강화해서 닿은 단계가 모여요</small></div>
         <div class="dx-bar"><i style="width:${(total / all * 100).toFixed(1)}%"></i></div>
-        <div class="dx-perk"><i class="fas fa-gift"></i><span>도감 특전 <b>성공 +${dexUp()}%</b> · <b>판매 +${dexGold()}%</b></span><small>한 칸 찰 때마다 성공 +${DEX_UP}% · 판매 +${DEX_GOLD}%</small></div>
+        <div class="dx-perk"><i class="fas fa-gift"></i><span>도감 특전 <b>성공 +${dexUp()}%</b> · <b>판매 +${dexGold()}%</b></span><small>한 칸 찰 때마다 성공 +${DEX_UP_T}% · 판매 +${DEX_GOLD_T}% · 다 모으면 성공 +${DEX_FULL_UP}% · 판매 +${DEX_FULL_GOLD}%</small></div>
         ${ADMIN ? `<div class="dx-admin"><i class="fas fa-user-gear"></i>${whole ? '운영 계정 · 전체 그림 (초록 점 = 내가 닿은 칸)' : '운영 계정 · 내 도감'}<button type="button" data-a="dexall">${whole ? '내 도감만 보기' : '전체 그림 보기'}</button></div>` : ''}
         ${DEX_FAMS.map(f => { const F = FAMS[f], c = cnt(f);
             return `<div class="fam"><h4>${esc(F.dexName || F.name)}<small class="${c === N ? 'full' : ''}">${c === N ? '완성! ' : ''}${c} / ${N}</small></h4><div class="grid">${
@@ -3323,7 +3328,7 @@ function plusUp(n) {   // '+1' 이 기타에서 튀어 올라 사라진다
 }
 function stamp() {   // 처음 닿은 단계: 'NEW! 도감 등록' 도장을 쾅
     const d = document.createElement('div');
-    d.className = 'stamp'; d.innerHTML = `<b>NEW!</b><span>도감 등록</span><small>성공 +${DEX_UP}% · 판매 +${DEX_GOLD}%</small>`;   // 도감 특전 한 칸 (2026-11-23)
+    d.className = 'stamp'; d.innerHTML = `<b>NEW!</b><span>도감 등록</span><small>성공 +${DEX_UP_T}% · 판매 +${DEX_GOLD_T}%</small>`;   // 도감 특전 한 칸 (2026-11-23)
     $('#stage').appendChild(d); sfx('drop'); buzz(20);   // 효과 층(#fx) 말고 무대에 — 기타 이름표보다 위에 보이게 (2026-11-17 사용자: 뒤로 가 있음)
     setTimeout(() => d.remove(), 2200);
 }
