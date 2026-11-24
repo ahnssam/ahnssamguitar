@@ -754,7 +754,7 @@
 </style>
     <!-- Supabase auth (shared) -->
     <script src="auth.js?v=2026111601" defer></script>
-    <script src="checkout.js?v=20261116a" defer></script>
+    <script src="checkout.js?v=20261124a" defer></script>
 </head>
 <body>
 
@@ -1246,14 +1246,16 @@
                 note.innerHTML = '<i class="fas fa-circle-info"></i> 지금은 결제 연동을 점검하고 있어요. 열리는 결제창은 <b>테스트용</b>이라 실제로 결제되지 않아요.';
                 note.hidden = false;
             } else note.hidden = true;
-            // 음저협 이용허락(2026-12-01) 전에는 자작곡만 판다 — 실결제 중일 때만 (테스트 키 동안은 심사용 체험 결제창이 열려야 해서)
-            //   서버(create_*_sheet_order)도 같은 날짜로 막는다. db/sheet_guest_orders.sql 의 cover_sales_open()
-            const COVER_OPEN = new Date('2026-12-01T00:00:00+09:00').getTime();
+            // 음저협 이용허락 서비스 시작일 전에는 자작곡만 판다 — 실결제 중일 때만 (테스트 키 동안은 심사용 체험 결제창이 열려야 해서)
+            //   2026-11-24 음저협 담당자 회신: 결재 중이어도 계약서의 서비스 시작일(2026-11-16)부터 판매해도 된다 → 12-01 에서 앞당김.
+            //   서버(create_*_sheet_order)도 같은 날짜로 막는다. db/cover_sales_open_1116.sql 의 cover_sales_open()
+            const COVER_OPEN = new Date('2026-11-16T00:00:00+09:00').getTime();
+            const coverDay = (d => `${d.getMonth() + 1}월 ${d.getDate()}일`)(new Date(COVER_OPEN + 9 * 3600e3 + new Date().getTimezoneOffset() * 60e3));
             if (!C.isTest() && !C.isAdmin() && Date.now() < COVER_OPEN && PARTS.some(x => x.kind !== 'original')) {
-                note.innerHTML = '<i class="fas fa-circle-info"></i> 이 악보는 <b>12월 1일부터</b> 사이트에서 살 수 있어요.' +
+                note.innerHTML = '<i class="fas fa-circle-info"></i> 이 악보는 <b>' + coverDay + '부터</b> 사이트에서 살 수 있어요.' +
                     (p.fullscore_code ? ' <a href="https://www.fullscore.co.kr/shop/prd_view.php?prdcode=' + encodeURIComponent(p.fullscore_code) + '" target="_blank" rel="noopener">지금은 풀스코어에서 구매할 수 있어요 <i class="fas fa-arrow-up-right-from-square"></i></a>' : '');
                 note.hidden = false;
-                set('fa-calendar-days', '12월 1일부터 판매');
+                set('fa-calendar-days', coverDay + '부터 판매');
                 return;
             }
             set('fa-credit-card', '구매하기', async () => {
