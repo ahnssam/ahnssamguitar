@@ -11,8 +11,9 @@
 
     // 토스 개발자센터 > API 키 > 'API 개별 연동 키'의 클라이언트 키 (공개돼도 되는 키)
     // test_ck_… 인 동안은 실제 돈이 빠지지 않고, 결제 승인·PDF 는 운영 계정만 (서버에서 막음)
-    // 2026-11-24 라이브 키로 바꿈(토스 카드사 심사 끝남, 사용자). 예전 테스트 키: test_ck_c19w1q40Vjj4RvsrxDKF76oVbAlUAm3HXq
-    const TOSS_CLIENT_KEY = 'live_ck_c19w3w4CeSPtRDSWAoMwpBZNaLWahf9NJ8';
+    // 2026-11-24 라이브 키로 바꿈(토스 카드사 심사 끝남, 사용자). 상점아이디 ahnssainod(계약완료) 키 — 처음 넣은 live_ck_c19w3w4…는 취소된 ahnssa4zor 것이었음.
+    //   예전 테스트 키: test_ck_c19w1q40Vjj4RvsrxDKF76oVbAlUAm3HXq
+    const TOSS_CLIENT_KEY = 'live_ck_c19xHHgayvRoCQ0en2H7fX9Fg06EVbizZM';
     const TOSS_SDK = 'https://js.tosspayments.com/v2/standard';
     const ADMIN_EMAIL = 'steveq2568@gmail.com';
     const RETURN_KEY = 'ahnssam_pay_sheet';   // 결제 실패·취소 때 돌아갈 악보
