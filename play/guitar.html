@@ -1135,11 +1135,11 @@
         <li>강화 비용은 단계가 높을수록 비싸져요. +8쯤부터는 강화 한 번 값이 그 기타를 판 값과 꽤 비슷해요.</li>
         <li><b>대박</b>: +9 아래에서 성공하면 가끔 한 번에 두 단계가 올라가요.</li>
         <li><b>콤보</b>: 같은 기타로 연속 성공하면 세 번째부터 보너스 골드가 붙고, 더 이어질수록 두 배씩 커져요.</li>
-        <li><b>+3 강화</b>: 그 악기 세트의 도감에서 이미 열어 본 단계까지는 강화 단추 옆 <b>+3 강화</b>로 한 번에 세 단계를 올릴 수 있어요(반드시 성공, 값은 세 번 강화한 만큼). +10까지만 돼서 +7에서 누르는 게 마지막이에요.</li>
+        <li><b>+3 강화</b>: 그 악기 세트의 도감에서 이미 열어 본 단계까지는 강화 단추 옆 <b>+3 강화</b>로 한 번에 세 단계를 올릴 수 있어요. 값은 세 번 강화한 만큼이고, 줄 끊김은 없지만 +10으로 갈 때만큼 <b>파괴</b>될 수 있어요(하드케이스가 막아 줘요). +10까지만 돼서 +7에서 누르는 게 마지막이에요.</li>
     </ul>
     <h3>3. 행운 게이지와 획득보상</h3>
     <ul>
-        <li>강화에 실패할 때마다(줄 끊김·하드케이스가 막음) 그 기타의 <b>행운 게이지</b>가 한 칸씩 차요(성공하면 그대로). 10칸이 차면 다음 강화는 <b>100% 확정</b>이에요. 게이지는 기타마다 따로이고, 기타가 부서지면 함께 사라져요.</li>
+        <li>강화에 실패할 때마다(줄 끊김·하드케이스가 막음) 그 기타의 <b>행운 게이지</b>가 한 칸씩 차요(성공하면 그대로). 20칸이 차면 다음 강화는 <b>100% 확정</b>이에요. 게이지는 기타마다 따로이고, 기타가 부서지면 함께 사라져요.</li>
         <li><b>획득보상</b>: +3·+5·+7·+10·+13·+15·+20에 그날 처음 닿으면 선물 상자를 받아요(골드·행운·조각·하드케이스). 어느 악기로 받든 하루에 한 번이고, 매일 새벽 4시에 다시 받을 수 있어요.</li>
     </ul>
     <h3>4. 부서지지 않게 — 하드케이스·튜너·망치</h3>
@@ -1336,13 +1336,14 @@ const shardDrop = lv => 1 + Math.floor(Math.random() * Math.max(1, lv));
 //   ① 다음 단계 실루엣: 강화 단추 위 오른쪽에 다음 단계 그림을 까만 그림자 + '???'(도감에 있으면 그림 그대로). 처음 닿은 단계는 'NEW! 도감 등록' 도장
 //   ② 단계 선물: 악기 종류(계열)마다 +3·+5·+7·+10에 처음 닿으면 선물 상자(S.gift 비트). 검은 칸에 '+N 선물까지 n단계' 막대
 //   ③ 대박: +0~+9 강화가 성공하면 그중 5%는 한 번에 2단계(+9 → +11도). 확률표에 적었다
-//   ④ 행운 게이지: 그 악기로 강화를 누를 때마다(성공·줄 끊김·케이스로 막음) 한 칸, 10칸이 차면 다음 강화는 반드시 성공(튜닝도 안 함).
+//   ④ 행운 게이지: 그 악기로 강화를 누를 때마다(성공·줄 끊김·케이스로 막음) 한 칸(2026-11-23부터 실패할 때만), 10칸(2026-11-24부터 20칸)이 차면 다음 강화는 반드시 성공(튜닝도 안 함).
 //      악기마다 따로(g.luck) — 싼 악기로 채워서 비싼 악기에 쓰지 못하게. 부서지면 그 악기와 같이 없어진다(되살리면 그대로)
 //      2026-11-23 사용자: '10번 하면 채워지면 너무 금방 채워지는 건 아닌가' → 성공은 안 세고 실패(줄 끊김·하케가 막음·파괴)만 한 칸(천장 방식).
 //      예전엔 성공해도 한 칸이라 악기 하나 키우는 동안 거의 한 번씩 찼다(시뮬레이션: +13에서 팔면 한 시간 행운 확정 46번 → 선물로 받는 1번쯤)
 //      연속 성공 콤보: 같은 악기로 3연속부터 그 강화 비용의 20%씩(5단계 = 100%까지, 최소 10G) 골드를 더 주고, 효과음이 한 음씩 올라간다
 //   ⑤ 손맛: 휴대폰 진동(안드로이드, 소리를 끄면 진동도 끔), '+1'이 튀어 오르고, +5부터 색종이(높을수록 많이), +0~+5 기다림은 1.5초
-const JACKPOT_P = 5, JACKPOT_MAX_LV = 9, LUCK_MAX = 10, COMBO_STEP = 0.2, COMBO_MAX = 5;
+const JACKPOT_P = 5, JACKPOT_MAX_LV = 9, LUCK_MAX = 20,   // 행운 게이지 20칸 (2026-11-24 사용자: '10 말고 20으로', 예전 10)
+    COMBO_STEP = 0.2, COMBO_MAX = 5;
 // 2026-11-23 사용자: '연속으로 성공했을 때 주는 돈 양도 비율 따라 더 늘려 주면 좋겠는데'
 //   → 한 번 더 이어질 때마다 두 배: 3연속 20% · 4연속 40% · 5연속 80% · 6연속 160% · 7연속 320% · 8연속부터 500%(그 강화 비용의 몇 %, 최소 10G)
 //   예전엔 20%씩 더해 7연속부터 100%. 시뮬레이션(지금 확률·비용, +13에서 팖): 한 시간 모은 돈 약 5억 → 7억(+40%). 최대를 1,000%로 하면 약 9.3억
@@ -2672,7 +2673,7 @@ function renderSact() {
         + (can ? (luckOf(g) >= LUCK_MAX   // 행운 게이지 가득: 반드시 성공 (2026-11-17)
             ? `<button type="button" class="ag lucky" data-a="again" ${S.gold < cost ? 'disabled' : ''} title="행운 게이지가 가득 — 이번 강화는 100% 성공"><span class="agl"><i class="fas fa-clover"></i>100% 확정! <small>${cost ? gf(cost) : '공짜'}</small></span>${strumSlots(g.lv)}</button>`
             : `<button type="button" class="ag" data-a="again" ${S.gold < cost ? 'disabled' : ''}><span class="agl"><i class="fas fa-hammer"></i>강화 <small>${cost ? gf(cost) : '공짜'}</small></span>${strumSlots(g.lv)}</button>`) : '')
-        + (up3 ? `<button type="button" class="ag ag3" data-a="up3" ${S.gold < c3 ? 'disabled' : ''} title="도감에 +${g.lv + PLUS3}까지 열려 있어서 한 번에 +${PLUS3} — 반드시 성공 (${gf(c3)})"><span class="agl"><i class="fas fa-angles-up"></i>+${PLUS3} 강화</span><small>${gf(c3)}</small></button>` : '');
+        + (up3 ? `<button type="button" class="ag ag3" data-a="up3" ${S.gold < c3 ? 'disabled' : ''} title="도감에 +${g.lv + PLUS3}까지 열려 있어서 한 번에 +${PLUS3} — 성공 아니면 파괴 (${gf(c3)})"><span class="agl"><i class="fas fa-angles-up"></i>+${PLUS3} 강화</span><small>${gf(c3)}</small></button>` : '');
     if (g.lv) fitG(el.querySelector('.sl b'), sellOf(g.lv));
     if (up3) fitG(el.querySelector('.ag3 small'), c3);
     renderOpt();
@@ -2687,7 +2688,7 @@ function renderSact() {
 //   2026-11-15 사용자. 튜닝도 이 단계부터만 한다(그 아래는 스위치가 없으니 튜닝 없이 바로 강화)
 const optStage = g => !!g && g.lv < MAX && ODDS[g.lv][2] > 0;
 function renderOpt() {
-    const el = $('#sopt'), g = S.bench, show = optStage(g) && !busy;
+    const el = $('#sopt'), g = S.bench, show = (optStage(g) || can3(g)) && !busy;   // +3 강화가 보이면 +7 아래에서도 하케 스위치(+3 에는 파괴가 있어서, 2026-11-24)
     el.hidden = !show;
     if (!show) { el.innerHTML = ''; return; }
     const T = TUNERS[S.tuner], cOn = caseOnFor(g), up = T ? r2(Math.min(ODDS[g.lv][0] * T.bonus / 100, oddsFor(g.lv)[1])) : 0;   // 실제로 오르는 %p
@@ -2698,7 +2699,7 @@ function renderOpt() {
         : S.cases
         ? `<button type="button" class="hk ${cOn ? 'on' : ''}" data-a="case" aria-pressed="${cOn}" title="하드케이스 ${cOn ? '끼움' : '안 끼움'} — 끼우면 파괴를 한 번 막아 줘요 (${S.cases}/${CASE_MAX}개)"><i class="fas fa-briefcase"></i>하케 ${cOn ? 'ON' : 'OFF'}</button>`
         : `<button type="button" class="hk none" data-a="gocase" title="하드케이스가 없어요 — 조각 ${S.shards}/${CASE_SHARDS}"><i class="fas fa-briefcase"></i>하케 없음</button>`) + hka + `</div>`
-        + (T
+        + (!optStage(g) ? '' : T   // 튜너는 +7부터(+3 강화는 튜닝 없음)
         ? `<button type="button" class="tn ${S.tuneOn ? 'on' : ''}" data-a="tune" aria-pressed="${S.tuneOn}" title="${S.tuneOn ? `튜닝하고 강화 — 바늘을 맞히면 성공 +${up}%p` : '튜닝 안 함'}"><img class="tni" src="../images/play/gk/tuner_${S.tuner}.webp" alt="">튜너 ${S.tuneOn ? 'ON' : 'OFF'}</button>`
         : `<button type="button" class="tn none" data-a="gotuner" title="튜너가 없어요 — 상점에서 사요"><i class="fas fa-sliders"></i>튜너 없음</button>`);
 }
@@ -3045,33 +3046,35 @@ async function suspense(lv, o = {}) {   // o.find: 기타 찾기(그림자에서
     st.classList.remove('charging'); bar.remove(); $('#bench').classList.remove('wait');
 }
 
-async function enhance() {
+async function enhance(p3) {   // p3: +3 강화 (2026-11-24 사용자 — 아래 '+3 강화')
     const g = S.bench;
-    if (busy || !g || g.lv >= MAX) return;
-    const cost = COST[g.lv];
+    if (busy || !g || g.lv >= MAX || (p3 && !can3(g))) return;
+    const cost = p3 ? cost3(g.lv) : COST[g.lv];
     if (S.gold < cost) { toast('골드가 모자라요'); return; }
     busy = true; talkClear(); actsLock(true);   // 2026-11-17 사용자: 내려칠(긁을) 때 다른 단추가 없어지지 않게 — 누르기 전 모습 그대로 두고 눌리지만 않게
-    const lucky = luckOf(g) >= LUCK_MAX;   // 행운 게이지 가득 → 반드시 성공 (2026-11-17)
-    const T = TUNERS[S.tuner], willTune = !lucky && T && T.bonus > 0 && S.tuneOn && optStage(g) && oddsFor(g.lv)[1] > 0;   // 튜닝은 스위치가 보이는 단계(+7)부터
+    const lucky = !p3 && luckOf(g) >= LUCK_MAX;   // 행운 게이지 가득 → 반드시 성공 (2026-11-17) — +3 강화는 행운을 안 쓴다
+    const T = TUNERS[S.tuner], willTune = !p3 && !lucky && T && T.bonus > 0 && S.tuneOn && optStage(g) && oddsFor(g.lv)[1] > 0;   // 튜닝은 스위치가 보이는 단계(+7)부터
     const lv0 = g.lv, goldBefore = S.gold, goldAfterCost = goldBefore - cost;
     veil = { gold: goldBefore, sh: S.shards, cs: S.cases };   // 결과가 나올 때까지 화면엔 누르기 전 숫자 (2026-11-17 사용자: 스포 금지)
     // 망치로 내려치기 (2026-11-17 사용자): 단계가 높을수록 빈칸이 많고, 누를 때마다 한 칸 — 처음 누른 것도 한 칸. 다 차면 (튜닝 →) 결과로.
     //   2026-11-18 사용자: 튜너는 내려치기를 다 채운 뒤에 무대 가운데에 — 그래서 결과는 내려치기·튜닝이 끝난 순간 정해 바로 저장한다
     //   (그 전에 새로고침하면 강화를 안 한 것 — 돈도 안 나감. 결과를 보기 전이라 되돌리기 꼼수는 없다)
     //   내려치는 동안 두근거림이 쌓이니 그 뒤 기다림은 칸 수만큼 짧게(0.7초까지)
-    const sn = strumNeed(lv0);
-    await strumPhase(sn, () => { veil.gold = goldAfterCost; spendFx(goldBefore, goldAfterCost); }, lucky);   // 마지막 칸을 누르는 순간 골드가 내려간다(강화 비용만 — 콤보·선물 골드는 결과 뒤에)
+    const sn = p3 ? PLUS3 : strumNeed(lv0), onLast = () => { veil.gold = goldAfterCost; spendFx(goldBefore, goldAfterCost); };
+    if (p3) await autoStrikes(PLUS3, onLast); else await strumPhase(sn, onLast, lucky);   // +3 강화는 한 번 누르면 망치가 저절로 세 번   // 마지막 칸을 누르는 순간 골드가 내려간다(강화 비용만 — 콤보·선물 골드는 결과 뒤에)
     const bonus = willTune ? await tune(T) : 0;
-    const [s0, m0] = oddsFor(lv0), b = Math.min(r2(ODDS[lv0][0] * bonus / 100), m0), s = r2(s0 + b), m = r2(m0 - b);   // 바닥 앰프·멀티 능력치까지 넣은 확률 · 튜너도 성공 확률의 n% (2026-11-17)
+    const [s0, m0] = oddsFor(lv0), b = Math.min(r2(ODDS[lv0][0] * bonus / 100), m0), s = p3 ? r2(100 - p3Boom()) : r2(s0 + b), m = p3 ? 0 : r2(m0 - b);   // 바닥 앰프·멀티 능력치까지 넣은 확률 · 튜너도 성공 확률의 n% (2026-11-17)
     const r = Math.random() * 100;
     let out = lucky || r < s ? 'ok' : r < s + m ? 'keep' : 'boom';
     if (out === 'boom' && caseOnFor(g)) out = 'saved';
-    S.gold -= cost; S.st.tries++;
+    S.gold -= cost; if (p3) S.st.j3 = (S.st.j3 | 0) + 1; else S.st.tries++;   // +3 강화는 '강화' 횟수에 안 넣고 따로 센다
     // 행운 게이지(이 악기만) · 콤보 (2026-11-17)
-    if (comboId !== g.id) combo = 0;
-    comboId = g.id;
-    g.luck = lucky ? 0 : out === 'ok' ? luckOf(g) : Math.min(LUCK_MAX, luckOf(g) + 1);   // 2026-11-23: 실패할 때만 한 칸(성공은 그대로)
-    const luckNow = !lucky && g.luck >= LUCK_MAX;   // 이번에 막 가득 찼다
+    if (!p3) {   // +3 강화는 행운 게이지·콤보를 그대로 둔다(늘지도 끊기지도 않음)
+        if (comboId !== g.id) combo = 0;
+        comboId = g.id;
+        g.luck = lucky ? 0 : out === 'ok' ? luckOf(g) : Math.min(LUCK_MAX, luckOf(g) + 1);   // 2026-11-23: 실패할 때만 한 칸(성공은 그대로)
+    }
+    const luckNow = !p3 && !lucky && g.luck >= LUCK_MAX;   // 이번에 막 가득 찼다
     let jump = 1, newDex = false, comboG = 0, gifts = [];
     updBar();   // 기다리는 동안 위 줄은 골드만 줄어든다(조각·케이스 수가 결과를 먼저 알려 주지 않게)
     // 결과를 먼저 저장하고(새로고침으로 되돌리기 막기), 기다림·연출은 그다음. 기다리는 동안은 강화 전 기타·이름 그대로 보인다
@@ -3081,25 +3084,26 @@ async function enhance() {
     let caseMade = 0;   // 하드케이스를 쓰고 바로 새로 만든 개수 · 부서져서 모인 조각으로 만든 개수
     const sh0 = S.shards, cs0 = S.cases;   // 부서지기 전 조각·케이스 — 넥뿌의 요정이 되살리면 그대로 돌려놓는다
     if (out === 'ok') {
-        jump = lv0 <= JACKPOT_MAX_LV && Math.random() * 100 < JACKPOT_P ? 2 : 1;   // 대박: 한 번에 2단계
-        g.lv = Math.min(MAX, g.lv + jump); S.st.ok++; S.st.best = Math.max(S.st.best, g.lv); newDex = dexAdd(g.f, g.lv);
-        if (jump > 1) S.st.jack = (S.st.jack | 0) + 1;
-        combo++;
-        if (combo >= 3) { comboG = Math.round(Math.max(10, cost * comboRate(combo))); gain(comboG); }
-        gifts = GIFT_AT.filter(x => x > lv0 && x <= g.lv && !giftHas(g.f, x)).map(x => giveGift(g, x));   // 처음 닿은 선물 단계 (대박으로 건너뛴 것도)
-    } else combo = 0;
+        jump = p3 ? PLUS3 : lv0 <= JACKPOT_MAX_LV && Math.random() * 100 < JACKPOT_P ? 2 : 1;   // 대박: 한 번에 2단계 (+3 강화는 3단계, 대박 없음)
+        g.lv = Math.min(MAX, g.lv + jump); if (!p3) S.st.ok++; S.st.best = Math.max(S.st.best, g.lv);
+        if (p3) for (let k = lv0 + 1; k <= g.lv; k++) newDex = dexAdd(g.f, k) || newDex; else newDex = dexAdd(g.f, g.lv);
+        if (!p3 && jump > 1) S.st.jack = (S.st.jack | 0) + 1;
+        if (!p3) { combo++; if (combo >= 3) { comboG = Math.round(Math.max(10, cost * comboRate(combo))); gain(comboG); } }
+        gifts = GIFT_AT.filter(x => x > lv0 && x <= g.lv && !giftHas(g.f, x)).map(x => giveGift(g, x));   // 처음 닿은 선물 단계 (대박·+3으로 건너뛴 것도)
+    } else if (!p3) combo = 0;
     if (out === 'keep') S.st.keep++;
     else if (out === 'saved') { S.st.saved++; S.cases--; g.hc = 1; caseMade = autoCase(); S.caseOn = false; S.caseFor = ''; }   // 이 악기는 하케를 썼다(악기 하나에 한 번, 2026-11-23)
     // 부서지면 하드케이스도 바로 만든다(2026-11-16 — 쾅 화면에 보여 주려고. 예전엔 되살리기를 안 할 때만 나중에 만들었다)
     else if (out === 'boom') { gotSh = shardDrop(g.lv); S.st.boom++; S.shards += gotSh; caseMade = autoCase(); S.bench = null; if (S.rep === g.id) S.rep = ''; }
     {   // 운영자용 일지: [악기, 종류, 전 단계, 결과, 뒤 단계, 행운, 튜너(-1 안 함), 성공·끊김·파괴 확률, 비용, 콤보 골드, 선물 골드]
         const giftG = gifts.reduce((a, G) => a + ((GIFTS[G.x] || {}).gold || 0), 0);
-        logEv('u', [g.id, g.f, lv0, out[0], g.lv, lucky ? 1 : 0, willTune ? bonus : -1, r2(s), r2(m), r2(100 - s - m), cost, comboG, giftG], -cost + comboG + giftG);
+        if (p3) logEv('j', [g.id, g.f, lv0, out[0], g.lv, r2(100 - s - m), cost, giftG], -cost + giftG);   // +3 강화: [악기, 종류, 전 단계, 결과, 뒤 단계, 파괴 확률, 비용, 선물 골드]
+        else logEv('u', [g.id, g.f, lv0, out[0], g.lv, lucky ? 1 : 0, willTune ? bonus : -1, r2(s), r2(m), r2(100 - s - m), cost, comboG, giftG], -cost + comboG + giftG);
     }
     save();
     actsLock(false); renderSact();   // 두근두근 막대가 나올 때는 단추가 없어진다 (2026-11-17 사용자 — 긁는 동안만 그대로)
     const sms = sn > 1 ? Math.max(700, WAIT_MS(lv0) - (sn - 1) * 400) : undefined;
-    await suspense(lv0, lucky ? { txt: '행운 강화 — 100% 확정!', ms: sms } : { ms: sms });
+    await suspense(lv0, p3 ? { txt: '+3 강화 — 두근두근…', ms: 1600, hush: true } : lucky ? { txt: '행운 강화 — 100% 확정!', ms: sms } : { ms: sms });
     if (out !== 'boom') ghost = null;
     if (out !== 'ok') veil = null;   // 줄 끊김·하케·파괴는 더 받을 골드가 없다 — 성공이면 콤보·선물 골드를 보여 줄 때까지 가린 채로
     updBar();
@@ -3109,9 +3113,10 @@ async function enhance() {
         burst(14 + Math.min(22, g.lv * 2), ['#ffe27a', '#ffffff', '#72c492'], { y: 45, spread: 110 + Math.min(60, g.lv * 4), size: [4, 8], dur: 800, grav: false });   // 높은 단계일수록 크게
         if (g.lv >= 5 || jump > 1) confetti(jump > 1 ? 70 : Math.min(60, 10 + (g.lv - 5) * 4));   // +5부터 색종이
         plusUp(jump);
-        if (jump > 1) { flash(); sfx('jackpot'); pop(`대박! +${jump} 점프`, 'jack', 30); setTimeout(() => pop(`+${g.lv} 성공!`, 'ok', 44), 380); }
+        if (p3) { flash(); pop(`+${PLUS3} 한 번에!`, 'jack', 30); setTimeout(() => pop(`+${g.lv} 성공!`, 'ok', 44), 300); }
+        else if (jump > 1) { flash(); sfx('jackpot'); pop(`대박! +${jump} 점프`, 'jack', 30); setTimeout(() => pop(`+${g.lv} 성공!`, 'ok', 44), 380); }
         else pop(`+${g.lv} 성공!`, 'ok');
-        if (combo >= 2) setTimeout(() => pop(`${combo}연속!${comboG ? `  +${gf(comboG)}` : ''}`, 'combo', 60), jump > 1 ? 650 : 260);
+        if (!p3 && combo >= 2) setTimeout(() => pop(`${combo}연속!${comboG ? `  +${gf(comboG)}` : ''}`, 'combo', 60), jump > 1 ? 650 : 260);
         veilAdd(comboG, jump > 1 ? 650 : 260);   // 콤보 골드는 'n연속!'이 뜰 때 올라간다
         if (newDex) setTimeout(stamp, jump > 1 ? 700 : 420);
         { const UL = isSq(g) ? LINES.upGear : LINES.up; if (UL[g.lv]) setTimeout(() => talk(UL[g.lv]), 500); }
@@ -3190,59 +3195,23 @@ async function enhance() {
 // ---------- +3 강화 (2026-11-24 사용자: '이미 뚫어 놨던 악기 세트면 강화 단추를 나눠 줘 — 강화 +3, 한 번에 +3강.
 //   도감을 11까지 뚫었는데 지금 9강이면 +3 단추 없애(아직 가 본 적 없으니까). +10강 전까지만 — +7에서는 뜨고 +8부터는 안 뜨게') ----------
 //   조건: 이 세트(계열) 도감에 '지금 단계 + 3'이 이미 열려 있고, 그 단계가 +10 이하(= 지금 +0 ~ +7).
-//   한 번 누르면 반드시 3단계 오른다(Claude 판단 — '한 번에 +3강'). 값 = 그 세 번 강화 값을 더한 것(지금 단계 + 다음 + 그다음).
+//   한 번 누르면 성공(3단계) 아니면 파괴 — 줄 끊김 없음. 파괴 확률 = +9 → +10 의 파괴 확률(2026-11-24 사용자, p3Boom). 하드케이스를 끼웠으면 막고 단계 그대로.
+//   값 = 그 세 번 강화 값을 더한 것(지금 단계 + 다음 + 그다음). 강화 흐름은 enhance(true) 를 같이 쓴다(파괴·하케·넥뿌의 요정·부서진 뒤 화면 그대로).
 //   행운 게이지·연속 성공(콤보)은 그대로 둔다(늘지도 끊기지도 않음). 지나가는 선물 단계(+3·+5·+7·+10)는 받는다. 대박 없음.
-//   '강화' 횟수(st.tries)에는 안 넣고 st.j3 로 따로 센다(운영자 기록의 '강화 수 = 일지의 강화 수' 맞추기). 일지 종류 'j'
+//   '강화' 횟수(st.tries)에는 안 넣고 st.j3 로 따로 센다(운영자 기록의 '강화 수 = 일지의 강화 수' 맞추기). 하케·파괴는 saved·boom 에 같이 센다. 일지 종류 'j'
 const PLUS3 = 3, PLUS3_TOP = 10;
 const can3 = g => !!g && g.lv + PLUS3 <= PLUS3_TOP && dexHas(FAMS[g.f] ? g.f : 'strat', g.lv + PLUS3);
 const cost3 = lv => COST[lv] + COST[lv + 1] + COST[lv + 2];
-async function enhance3() {
-    const g = S.bench;
-    if (busy || !g || !can3(g)) return;
-    const lv0 = g.lv, cost = cost3(lv0);
-    if (S.gold < cost) { toast('골드가 모자라요'); return; }
-    busy = true; talkClear(); actsLock(true);
-    const goldBefore = S.gold, goldAfterCost = goldBefore - cost;
-    veil = { gold: goldBefore, sh: S.shards, cs: S.cases };   // 선물 골드는 선물 창이 열릴 때
-    // 결과(반드시 +3)를 먼저 정해 저장 — 연출은 그다음
-    S.gold -= cost; S.st.j3 = (S.st.j3 | 0) + 1;
-    g.lv = lv0 + PLUS3; S.st.best = Math.max(S.st.best, g.lv);
-    let newDex = false;
-    for (let k = lv0 + 1; k <= g.lv; k++) newDex = dexAdd(g.f, k) || newDex;
-    const gifts = GIFT_AT.filter(x => x > lv0 && x <= g.lv && !giftHas(g.f, x)).map(x => giveGift(g, x));
-    const giftG = gifts.reduce((a, G) => a + ((GIFTS[G.x] || {}).gold || 0), 0);
-    logEv('j', [g.id, g.f, lv0, g.lv, cost, giftG], -cost + giftG);   // 운영자용 일지: [악기, 종류, 전 단계, 뒤 단계, 비용, 선물 골드]
-    ghost = { ...g, lv: lv0 };   // 기다리는 동안은 강화 전 모습 그대로
-    save();
-    // 망치가 세 번 빠르게 — 마지막에 골드가 내려간다
-    for (let k = 1; k <= 3; k++) {
-        const big = k === 3;
-        hammerStrike(k, (x, y, dir) => { anvilSparks(x, y, dir, big); sfx('strum', k * 3); buzz(big ? 50 : 30); });
-        if (big) setTimeout(() => { veil.gold = goldAfterCost; spendFx(goldBefore, goldAfterCost); }, 165);
+const enhance3 = () => enhance(true);
+// +3 강화의 파괴 확률 = +9 → +10 으로 갈 때의 파괴 확률(바닥 앰프·컬렉션 스킨으로 줄인 것까지) (2026-11-24 사용자: '+3강 해도 파괴 확률 존재하게, +10강으로 갈 때의 파괴 확률')
+const p3Boom = () => oddsFor(PLUS3_TOP - 1)[2];
+async function autoStrikes(n, onLast) {   // +3 강화: 망치가 저절로 n번 빠르게 — 마지막에 골드가 내려간다
+    for (let k = 1; k <= n; k++) {
+        const big = k === n;
+        hammerStrike(k, (x, y, dir) => { anvilSparks(x, y, dir, big); sfx('strum', k); buzz(big ? 50 : 30); });
+        if (big) setTimeout(onLast, 165);
         await sleep(big ? 360 : 190);
     }
-    await suspense(lv0, { ms: 900, txt: '+3 확정!' });
-    ghost = null;
-    updBar();
-    sfx('ok', g.lv, 2); buzz([25, 40, 25, 40, 80]); renderName();
-    cv.animate([{ transform: CVT, filter: 'brightness(1)' }, { transform: `${CVT} translateY(-12px) scale(1.07)`, filter: 'brightness(2.4)', offset: 0.3 }, { transform: CVT, filter: 'brightness(1)' }], { duration: 560, easing: 'ease-out' });
-    burst(24 + g.lv * 2, ['#ffe27a', '#ffffff', '#b9a6ff', '#72c492'], { y: 45, spread: 140, size: [4, 9], dur: 850, grav: false });
-    if (g.lv >= 5) confetti(Math.min(60, 14 + (g.lv - 5) * 6));
-    plusUp(PLUS3);
-    pop(`+${PLUS3} 한 번에!`, 'jack', 30); setTimeout(() => pop(`+${g.lv} 성공!`, 'ok', 44), 300);
-    if (newDex) setTimeout(stamp, 650);
-    { const UL = isSq(g) ? LINES.upGear : LINES.up; if (UL[g.lv]) setTimeout(() => talk(UL[g.lv]), 600); }
-    await sleep(700);
-    if (gifts.length) { await sleep(500); for (const G of gifts) {
-        if (veil) { veil.sh = S.shards; veil.cs = S.cases; updBar(); }
-        veilAdd((GIFTS[G.x] || {}).gold, 600);
-        await giftCard(G, g);
-    } }
-    if (veil) { veil = null; if (!goldCounting()) updBar(); }
-    dexDot();
-    actsLock(false);
-    busy = false;
-    renderBench();
 }
 // ---------- 피크로 긁기 (2026-11-17 사용자: '강화 버튼 텍스트 아래 빈칸 — 10강이면 7개쯤. 한 번 누르면 피크로 기타를 긁는 게 강화 액션,
 //   누를 때 진동 웅, 강화 버튼에서 팡팡 튀는 효과(대장장이가 달군 쇳덩이를 망치로 내려칠 때 튀는 불꽃), 긁을 땐 드르륵 뮤트 소리') ----------
@@ -4526,7 +4495,13 @@ function audAnalyze(d) {
         if ((o === 'o' && !(lv1 === lv0 + 1 || (lv0 <= JACKPOT_MAX_LV && lv1 === lv0 + 2))) || (o !== 'o' && lv1 !== lv0)) badLv++;
     });
     // +3 강화(일지 'j', 2026-11-24): 도감이 열린 +0~+7 에서만 반드시 +3 — 그 밖이면 단계가 이상하게 바뀐 것
-    ev.forEach(e => { if (e.k !== 'j') return; const [, , lv0, lv1] = e.a; if (!(+lv1 === +lv0 + PLUS3 && +lv1 <= PLUS3_TOP)) badLv++; });
+    //   일지: [악기, 종류, 전 단계, 결과, 뒤 단계, 파괴 확률, 비용, 선물 골드] (2026-11-24 처음 몇 분은 결과·파괴 확률 없이 [악기, 종류, 전, 뒤, …])
+    ev.forEach(e => {
+        if (e.k !== 'j') return;
+        const a = e.a, nf = typeof a[3] === 'string', lv0 = +a[2], o = nf ? a[3] : 'o', lv1 = +(nf ? a[4] : a[3]);
+        if (o === 'o' ? !(lv1 === lv0 + PLUS3 && lv1 <= PLUS3_TOP) : lv1 !== lv0) badLv++;
+        if (nf && +a[5] < Math.max(0, ODDS[PLUS3_TOP - 1][2] - audMax.cut) - 0.6) badOdds.push(e);   // 파괴 확률이 장비를 다 갖춰도 안 나오게 낮음
+    });
     R.j3 = ev.filter(e => e.k === 'j').length;
     Object.assign(R, { cnt, lucky, eS, nS, zS: vS ? (nS - eS) / Math.sqrt(vS) : 0, eD, nD, zD: vD ? (nD - eD) / Math.sqrt(vD) : 0, badOdds, badLv });
     // 기록 없이 돈이 바뀜
