@@ -438,11 +438,13 @@
     .sact.p3 { grid-template-columns: 1fr 1.2fr 1.05fr; gap: 6px; }
     .sact.p3 button { font-size: 14.5px; padding-left: 6px; padding-right: 6px; }
     .sact.p3 .sl { font-size: 13px; }
-    .sact .ag.ag3 { position: relative; isolation: isolate; overflow: hidden; background: #6a3fc8; gap: 5px; padding-bottom: 9px; }
+    /* 2026-11-24 사용자: '+3 강화' 단추가 두 줄(글·값)이라 키가 커서 위 게이지·하케 줄과 겹쳤다 → 강화 단추와 같은 모양(글·값 한 줄 + 빈칸 3개)으로 */
+    .sact .ag.ag3 { position: relative; isolation: isolate; overflow: hidden; background: #6a3fc8; }
+    .sact .ag.ag3 .slots i { background: rgba(30, 0, 60, 0.35); }
     .sact .ag.ag3::before { content: ''; position: absolute; inset: 0; z-index: -1; background: url(../images/play/gk/btn_up.jpg) center / 100% 100% no-repeat; filter: hue-rotate(255deg) saturate(1.15); }
     .sact .ag.ag3 .agl i { color: #ffe27a; }
     .sact .ag.ag3[disabled]::before { filter: grayscale(1) brightness(.75); }
-    @media (max-width: 400px) { .sact.p3 .sl i, .sact.p3 .ag .agl i { display: none; } .sact.p3 button { font-size: 13.5px; gap: 4px; } .sact.p3 .ag small { padding: 2px 6px; font-size: 11.5px; } }
+    @media (max-width: 400px) { .sact.p3 .sl i, .sact.p3 .ag .agl i { display: none; } .sact.p3 button { font-size: 13.5px; gap: 4px; } .sact.p3 .ag .agl { gap: 3px; } .sact.p3 .ag { font-size: 12.5px; padding-left: 4px; padding-right: 4px; } .sact.p3 .ag small { padding: 2px 5px; font-size: 11px; } }   /* 2026-11-24: 375px 폰에서 '+3 강화 8.3만G'·'100% 확정! 300G'가 몇 px 넘쳤다 */
     .sact button { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 12px 10px; border-radius: 14px; font-weight: 900; font-size: 16px; color: #fff; white-space: nowrap; }
     /* 2026-11-13 사용자: 삼성 인터넷 강제 다크모드에서 주황이 어둡게 칠해짐 → 바탕을 그림(btn_up.jpg, 아래 입술 그늘까지 그림 안에)으로. 다크모드는 사진 같은 그림은 대부분 그대로 둔다 */
     .sact .ag { min-width: 0; background: #f0592b url(../images/play/gk/btn_up.jpg) center / 100% 100% no-repeat; padding-bottom: 16px; box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35); }
@@ -2673,13 +2675,16 @@ function renderSact() {
         + (can ? (luckOf(g) >= LUCK_MAX   // 행운 게이지 가득: 반드시 성공 (2026-11-17)
             ? `<button type="button" class="ag lucky" data-a="again" ${S.gold < cost ? 'disabled' : ''} title="행운 게이지가 가득 — 이번 강화는 100% 성공"><span class="agl"><i class="fas fa-clover"></i>100% 확정! <small>${cost ? gf(cost) : '공짜'}</small></span>${strumSlots(g.lv)}</button>`
             : `<button type="button" class="ag" data-a="again" ${S.gold < cost ? 'disabled' : ''}><span class="agl"><i class="fas fa-hammer"></i>강화 <small>${cost ? gf(cost) : '공짜'}</small></span>${strumSlots(g.lv)}</button>`) : '')
-        + (up3 ? `<button type="button" class="ag ag3" data-a="up3" ${S.gold < c3 ? 'disabled' : ''} title="도감에 +${g.lv + PLUS3}까지 열려 있어서 한 번에 +${PLUS3} — 성공 아니면 파괴 (${gf(c3)})"><span class="agl"><i class="fas fa-angles-up"></i>+${PLUS3} 강화</span><small>${gf(c3)}</small></button>` : '');
+        + (up3 ? `<button type="button" class="ag ag3" data-a="up3" ${S.gold < c3 ? 'disabled' : ''} title="도감에 +${g.lv + PLUS3}까지 열려 있어서 한 번에 +${PLUS3} — 성공 아니면 파괴 (${gf(c3)})"><span class="agl"><i class="fas fa-angles-up"></i>+${PLUS3} 강화 <small>${gf(c3)}</small></span><span class="slots">${'<i></i>'.repeat(PLUS3)}</span></button>` : '');
     if (g.lv) fitG(el.querySelector('.sl b'), sellOf(g.lv));
     if (up3) fitG(el.querySelector('.ag3 small'), c3);
     renderOpt();
     if (can && cost) fitG(el.querySelector('.ag small'), cost);
-    { const agl = el.querySelector('.ag .agl'); if (agl && cost && agl.scrollWidth > agl.clientWidth + 1) agl.querySelector('small').textContent = gshort(cost);
-      if (agl && agl.scrollWidth > agl.clientWidth + 1 && agl.querySelector('i')) agl.querySelector('i').remove(); }   // 그래도 넘치면(320px 폰의 '100% 확정!') 아이콘을 뺀다   // 좁은 폰에서 '행운 강화 100,000G'가 넘치면 만·억으로   // 2026-11-13 비용이 커져서(+19는 25억) 칸이 넘치면 만·억으로
+    el.querySelectorAll('.ag .agl').forEach(agl => { const is3 = agl.parentNode.classList.contains('ag3'), c = is3 ? c3 : cost;   // 강화·+3 강화 둘 다
+      if (c && agl.scrollWidth > agl.clientWidth + 1) agl.querySelector('small').textContent = gshort(c);
+      if (agl.scrollWidth > agl.clientWidth + 1 && agl.querySelector('i')) agl.querySelector('i').remove();
+      if (agl.scrollWidth > agl.clientWidth + 1 && is3) for (const t of agl.childNodes) if (t.nodeType === 3 && t.data.includes('강화')) t.data = `+${PLUS3} `;   // 그래도 넘치면(320px 폰) '+3 8.3만G'
+      if (agl.scrollWidth > agl.clientWidth + 1 && !is3 && agl.querySelector('small')) agl.querySelector('small').remove(); });   // 320px 폰에서 +3 단추 옆 '100% 확정!'은 값을 빼서라도 글자를 다 보이게   // 그래도 넘치면(320px 폰의 '100% 확정!') 아이콘을 뺀다   // 좁은 폰에서 '행운 강화 100,000G'가 넘치면 만·억으로   // 2026-11-13 비용이 커져서(+19는 25억) 칸이 넘치면 만·억으로
 }
 // 무대 아래 검은 칸: [튜닝 +n%p] [하케 ON] [진열하기] 한 줄 — 작업대에 기타가 있으면 늘 (2026-11-13 사용자: 버리기 뺌)
 // 2026-11-13 사용자: 튜닝 단추 안에는 확률이 오르는 것만 짧게, 하드케이스는 튜닝 오른쪽 '하케 ON'(+7부터), 진열하기는 팔기와 자리 바꿈.
@@ -3061,7 +3066,7 @@ async function enhance(p3) {   // p3: +3 강화 (2026-11-24 사용자 — 아래
     //   (그 전에 새로고침하면 강화를 안 한 것 — 돈도 안 나감. 결과를 보기 전이라 되돌리기 꼼수는 없다)
     //   내려치는 동안 두근거림이 쌓이니 그 뒤 기다림은 칸 수만큼 짧게(0.7초까지)
     const sn = p3 ? PLUS3 : strumNeed(lv0), onLast = () => { veil.gold = goldAfterCost; spendFx(goldBefore, goldAfterCost); };
-    if (p3) await autoStrikes(PLUS3, onLast); else await strumPhase(sn, onLast, lucky);   // +3 강화는 한 번 누르면 망치가 저절로 세 번   // 마지막 칸을 누르는 순간 골드가 내려간다(강화 비용만 — 콤보·선물 골드는 결과 뒤에)
+    await strumPhase(sn, onLast, lucky, p3);   // +3 강화도 세 번 눌러 깡깡깡 (2026-11-24 사용자 — 처음엔 한 번 누르면 망치가 저절로 세 번)   // 마지막 칸을 누르는 순간 골드가 내려간다(강화 비용만 — 콤보·선물 골드는 결과 뒤에)
     const bonus = willTune ? await tune(T) : 0;
     const [s0, m0] = oddsFor(lv0), b = Math.min(r2(ODDS[lv0][0] * bonus / 100), m0), s = p3 ? r2(100 - p3Boom()) : r2(s0 + b), m = p3 ? 0 : r2(m0 - b);   // 바닥 앰프·멀티 능력치까지 넣은 확률 · 튜너도 성공 확률의 n% (2026-11-17)
     const r = Math.random() * 100;
@@ -3205,14 +3210,6 @@ const cost3 = lv => COST[lv] + COST[lv + 1] + COST[lv + 2];
 const enhance3 = () => enhance(true);
 // +3 강화의 파괴 확률 = +9 → +10 으로 갈 때의 파괴 확률(바닥 앰프·컬렉션 스킨으로 줄인 것까지) (2026-11-24 사용자: '+3강 해도 파괴 확률 존재하게, +10강으로 갈 때의 파괴 확률')
 const p3Boom = () => oddsFor(PLUS3_TOP - 1)[2];
-async function autoStrikes(n, onLast) {   // +3 강화: 망치가 저절로 n번 빠르게 — 마지막에 골드가 내려간다
-    for (let k = 1; k <= n; k++) {
-        const big = k === n;
-        hammerStrike(k, (x, y, dir) => { anvilSparks(x, y, dir, big); sfx('strum', k); buzz(big ? 50 : 30); });
-        if (big) setTimeout(onLast, 165);
-        await sleep(big ? 360 : 190);
-    }
-}
 // ---------- 피크로 긁기 (2026-11-17 사용자: '강화 버튼 텍스트 아래 빈칸 — 10강이면 7개쯤. 한 번 누르면 피크로 기타를 긁는 게 강화 액션,
 //   누를 때 진동 웅, 강화 버튼에서 팡팡 튀는 효과(대장장이가 달군 쇳덩이를 망치로 내려칠 때 튀는 불꽃), 긁을 땐 드르륵 뮤트 소리') ----------
 // 2026-11-17 사용자: '0강부터 5강까진 3번, 8강부터는 5번, 12강부터는 7번' (+6·+7은 말이 '6강부터는… 8강부터는'으로 끊겨서 그 사이 4번 — Claude 판단)
@@ -3222,11 +3219,11 @@ const strumSlots = lv => `<span class="slots">${'<i></i>'.repeat(strumNeed(lv))}
 let strum = null;   // { n, done, res } — 긁는 중
 let lockedActs = false;
 function actsLock(on) { lockedActs = on; $('#stage').classList.toggle('locked', on); }
-function strumPhase(n, onLast, lucky) {   // lucky: 행운 강화 — 내려치는 동안에도 '100% 확정!' (2026-11-18 사용자)
+function strumPhase(n, onLast, lucky, p3) {   // lucky: 행운 강화 — 내려치는 동안에도 '100% 확정!' (2026-11-18 사용자) · p3: +3 강화 단추 자리에서 (2026-11-24)
     return new Promise(res => {
         strum = { n, done: 0, res, onLast };
-        const html = `<button type="button" class="ag strum${lucky ? ' lucky' : ''}" data-a="strum"><span class="agl">${lucky ? '<i class="fas fa-clover"></i>100% 확정!' : '<i class="fas fa-hammer"></i>강화'} <small>0/${n}</small></span><span class="slots">${'<i></i>'.repeat(n)}</span></button>`;
-        const old = document.querySelector('#sact .ag'), sa = $('#sact');
+        const html = `<button type="button" class="ag strum${lucky ? ' lucky' : ''}${p3 ? ' ag3' : ''}" data-a="strum"><span class="agl">${p3 ? `<i class="fas fa-angles-up"></i>+${PLUS3} 강화` : lucky ? '<i class="fas fa-clover"></i>100% 확정!' : '<i class="fas fa-hammer"></i>강화'} <small>0/${n}</small></span><span class="slots">${'<i></i>'.repeat(n)}</span></button>`;
+        const old = document.querySelector(p3 ? '#sact .ag3' : '#sact .ag:not(.ag3)'), sa = $('#sact');
         if (old) old.outerHTML = html; else sa.insertAdjacentHTML('beforeend', html);   // 강화 단추 자리만 바꾼다(팔기·스위치·게이지는 그대로)
         sa.hidden = false;
         strumHit();
