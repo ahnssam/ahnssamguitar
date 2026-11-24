@@ -69,11 +69,14 @@ CLAUDE.md 11절 'GPT 그림 프롬프트 쓰는 법' ①~④에 새 규칙 ⑤(�
 
 ## 2. 쓰는 법
 
-1. ChatGPT **새 대화**에 아래 프롬프트를 통째로 한 번 붙여 넣는다. 이미지 A(+0~+9), B(+10~+19), C(+20)를 **한 번에 이어서** 뽑게 되어 있다.
+1. ChatGPT **새 대화**에 아래 프롬프트를 통째로 한 번 붙여 넣는다. 이미지 A(+0~+9), B(+10~+19), C(+20)를 **한 번에 이어서** 뽑고, 끝나면 zip까지 만든다.
 2. 그림마다 헤드머신(튜닝 키)·기둥·줄이 6개씩인지 ChatGPT가 스스로 센다(헤드 위쪽 가장자리에 한 줄로 6개). 틀린 기타는 그 기타 **한 대만 따로** 다시 그리게 했다.
-3. 중간에 멈추면 같은 대화에 `계속해 줘 — 남은 이미지를 이어서 다 그려 줘. 매번 헤드머신·기둥·줄 개수를 세고, 틀린 기타는 한 대씩 다시 그려 줘.`를 붙여 넣는다.
+3. 중간에 멈추면 같은 대화에 `계속해 줘 — 남은 이미지를 이어서 다 그리고, 다 끝나면 zip 파일까지 만들어 줘. 매번 헤드머신·기둥·줄 개수를 세고, 틀린 기타는 한 대씩 다시 그려 줘.`를 붙여 넣는다.
 4. 배경이 투명하게 안 나와도 **무늬 없는 흰 배경**이면 된다(Claude가 오려 낸다). 뿌연 안개·눈 내리는 하늘·그라데이션 배경, **기타 뒤 아우라·빛 번짐**만 아니면 된다.
-5. 받은 그림을 구글 드라이브 `기타 키우기/1 악기/스트랫/3세트 성탄/`(드라이브 맨 위 `0 정리표.txt` 참고)에 두고 알려 주면, Claude가 다시 세어 보고 맞는 것만 잘라 넣는다.
+5. **zip** (2026-11-24 사용자: zip 파일로 만들어서 기타 키우기 폴더 안에 넣어 달라고): ChatGPT가 그림을 모두 PNG로 `strat3_christmas.zip` 하나에 묶어 구글 드라이브 **`기타 키우기`** 폴더에 넣게 했다.
+   - 안의 파일 이름: `strat3_A.png`(+0~+9 시트) · `strat3_B.png`(+10~+19 시트) · `strat3_20.png`(+20) · 다시 그린 낱장 `strat3_03.png`처럼 단계 두 자리.
+   - ChatGPT가 드라이브에 직접 못 넣으면 내려받기 링크를 준다 — 받아서 `기타 키우기` 폴더에 넣으면 된다.
+6. 넣었다고 Claude에게 알려 주면, 풀어서 `1 악기/스트랫/3세트 성탄/`(드라이브 맨 위 `0 정리표.txt` 참고)에 두고 다시 세어 본 뒤 맞는 것만 잘라 넣는다.
    - 1·2세트 스트랫과 같은 틀(448×672 — 헤드 위 끝 y=177, 몸통 아래 끝 y=608, 넥 가운데 x=224)에 맞추고 `images/play/gk/strat3_00`~`20.webp`로 넣는다.
    - 계열은 `strat3`(이름 '스트랫', 도감 줄 '성탄 스트랫'). 게임에서는 스트랫이 나오면 1·2·3세트가 1/3씩 나온다(넣을 때 정함 — 멀티·페달처럼 `SETS`로).
    - 서버(랭킹·오늘의 상대·최고 무기)도 'strat3'를 받게 SQL 한 개가 더 필요하다(기타라서 최고 무기 목록에도 넣는다).
@@ -85,7 +88,7 @@ I'm making a mobile game called "Guitar Upgrade": a guitar is upgraded step by s
 - IMAGE A: guitars +0 to +9 (one sprite sheet)
 - IMAGE B: guitars +10 to +19 (one sprite sheet)
 - IMAGE C: guitar +20 (one single guitar)
-Draw all three images one after another in this conversation. Do not stop to ask me anything and do not wait for me to say "next" - just keep going until A, B and C (and any redraws, see SELF-CHECK) are all done.
+Draw all three images one after another in this conversation, then make the ZIP file (see FINAL STEP at the end). Do not stop to ask me anything and do not wait for me to say "next" - just keep going until A, B, C, any redraws (see SELF-CHECK) and the zip file are all done.
 
 POWER CURVE (the most important rule of this set - the jump between levels must be HUGE and obvious, like a real upgrade game)
 - +0 to +4: TOTAL GARBAGE. The guitar ITSELF is wrecked - cracked, warped, scraped, charred, swollen, filthy, with broken or missing parts - NOT a clean guitar with a funny object stuck on it. Anyone would throw it in the trash. Winter street junk, with almost no Christmas decoration yet. Funny and gross-cute, never scary.
@@ -141,6 +144,14 @@ A LEGENDARY CHRISTMAS theme: candy red, pine green, gold, white snow with blue-g
 IMAGE C - guitar +20 (single image)
 One guitar, portrait 1024x1536, transparent background, upright and centered, about 85% of the image height, same style and same base guitar shape as the sheets, six keys, six posts, six strings.
 The legendary guitar hero's own red guitar, the ultimate guitar of the set: a bright candy-apple red body road-worn from decades of big stage shows, a white pickguard, three white single-coil pickups, a maple neck with a maple fretboard, chrome hardware, small festive touches of gold. Behind it big solid red, green and gold starburst rays with clear outlines (no glow), and solid outlined snowflakes and sparkles close around the guitar. No aura, no glow, no soft light - show its legend through the rich details, so it looks like the most powerful guitar in the whole game.
+
+FINAL STEP - ZIP FILE (do this after A, B, C and every redraw are finished)
+Save every final image as a full-resolution PNG (keep the transparent background) and put them ALL into ONE zip file named "strat3_christmas.zip":
+- strat3_A.png = sheet A (+0 to +9)
+- strat3_B.png = sheet B (+10 to +19)
+- strat3_20.png = guitar +20
+- every guitar you redrew as a single image, named by its level with two digits - for example strat3_03.png for +3 and strat3_17.png for +17 (only the redrawn ones).
+Then put this zip file into my Google Drive, in the folder named "기타 키우기" (it is in My Drive). If you cannot save files to my Google Drive, give me the zip as a download link instead and tell me in one short line to put it into the "기타 키우기" folder myself.
 ```
 
 ## 4. 안 맞게 나오면 (같은 대화에 이어서)
@@ -158,3 +169,4 @@ The legendary guitar hero's own red guitar, the ultimate guitar of the set: a br
 - 그림이 칸을 넘어가 옆 기타와 붙었으면: `Some objects cross into the next cell. Redraw the sheet with every guitar and its objects fully inside its own cell and more empty space between cells.`
 - 눈 내리는 하늘·방 배경이 들어갔으면: `Remove the background scene and the falling snow. Make it completely transparent (or flat white) with nothing behind the guitars except the objects described.`
 - 기타 뒤에 아우라·빛 번짐이 있으면(전구·별·순록 코 포함): `Remove the glow / aura / soft light around the guitars. Lights and effects must be solid shapes with clear outlines and hard edges, easy to cut out.`
+- zip을 안 만들었으면: `Now make the zip file as described in FINAL STEP and put it into my Google Drive folder "기타 키우기" (or give me a download link).`
