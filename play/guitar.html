@@ -1445,6 +1445,15 @@ const FAMS = { strat: { name: '스트랫', dexName: '천공 스트랫', names: [
     '수묵화에서 걸어 나온 스트랫', '청자빛으로 구워 낸 스트랫', '단청 옷을 입은 스트랫', '달토끼가 방아 찧는 스트랫', '까치호랑이가 지키는 스트랫',
     '천년 은행나무가 품은 스트랫', '선녀의 날개옷을 두른 스트랫', '아홉 꼬리 구미호가 감싼 스트랫', '여의주를 문 청룡의 스트랫', '옥황상제가 하늘에서 내린 스트랫',
     '스티비 레이 반의 스트랫'] },
+    // 스트랫 3세트 = 크리스마스 (2026-11-25 사용자가 GPT로 뽑은 21장 — docs/기타키우기_GPT_스트랫3세트_크리스마스_프롬프트.md, 이름은 그 문서 그대로·Claude가 지음).
+    //   짙은 소나무 초록 스트랫: 겨울 길바닥 쓰레기 → +6부터 크리스마스 → 진저브레드·눈사람·산타 썰매·스노볼·트리·벽난로·순록 왕·산타 마을 → +20 '마크 노플라의 스트랫'.
+    //   찾을 때 스트랫이 나오면 1·2·3세트가 1/3씩(SETS.strat). 서버가 아직 'strat3'을 모르면 'strat'로 올린다(srvFam, db/play_guitar_fam_strat3.sql 적용 전)
+    strat3: { name: '스트랫', dexName: '성탄 스트랫', art: 'strat3', artMax: 20, srv: 'strat', names: [
+    '제설차에 밀려 눈더미에 처박힌 스트랫', '썰매 대신 타다 바닥이 다 갈린 스트랫', '벽난로 장작으로 쓰다 만 스트랫', '녹은 눈에 퉁퉁 불은 스트랫', '다 마른 트리와 함께 내다 버린 스트랫',
+    '닦고 고쳐 낸 스트랫', '반짝이 줄을 칭칭 감은 스트랫', '방울을 주렁주렁 단 스트랫', '꼬마전구를 두른 스트랫', '호랑가시나무 화환을 두른 스트랫',
+    '지팡이 사탕으로 감은 스트랫', '산타 옷을 입은 스트랫', '진저브레드 하우스가 된 스트랫', '눈사람이 된 스트랫', '산타 썰매가 된 스트랫',
+    '눈 내리는 스노볼이 된 스트랫', '크리스마스트리가 된 스트랫', '벽난로 거실이 된 스트랫', '금빛 뿔 순록 왕이 된 스트랫', '북극 산타 마을이 된 스트랫',
+    '마크 노플라의 스트랫'] },
     // 텔레 2세트·레스폴 2세트 (2026-11-17 사용자가 GPT로 뽑은 21장씩 — docs/기타키우기_GPT_텔레2세트_프롬프트.md · 레스폴2세트). 이름은 그 문서 그대로(Claude가 지음).
     //   텔레 2세트 = 서프 그린 텔레, 집안 살림 고물 → 바닷가 수리 → 바다 전설 → +20 '지미 패이지의 텔레'. 레스폴 2세트 = 블랙 뷰티, 무거운 살림 고물 → 금 이음·경매 → 고대 이집트 → +20 '잭 와일더의 레스폴'.
     //   찾을 때 텔레·레스폴이 나오면 반반으로 1세트·2세트(pickFam). 서버가 아직 'tele2'·'lespaul2'를 모르면 'tele'·'lespaul'로 올린다(srvFam, db/play_guitar_fam_set2.sql 적용 전)
@@ -1571,7 +1580,9 @@ const FIND_FAMS = ['strat', 'tele', 'lespaul', 'superstrat', 'acoustic', 'bass',
 // 스트랫·텔레·레스폴이 나오면 반반으로 1세트·2세트 (2세트: 스트랫 2026-11-15 · 텔레·레스폴 2026-11-17) — 악기 종류가 나올 확률은 그대로
 const SET2 = { strat: 'strat2', tele: 'tele2', lespaul: 'lespaul2', superstrat: 'superstrat2', acoustic: 'acoustic2', bass: 'bass2' };
 // 앰프·멀티도 2세트(2026-11-19): 앰프는 반반, 멀티는 1세트 멀티·오락실 멀티·오락실 페달이 1/3씩 — 앰프·멀티가 나올 확률은 그대로
-const SETS = { amp: ['amp', 'amp2'], multi: ['multi', 'multi2', 'pedal'] };
+// 스트랫은 3세트(2026-11-25 성탄 스트랫)가 생겨 1·2·3세트가 1/3씩 — 스트랫이 나올 확률은 그대로
+const SETS = { amp: ['amp', 'amp2'], multi: ['multi', 'multi2', 'pedal'], strat: ['strat', 'strat2', 'strat3'] };
+const setsOf = f => SETS[f] || (SET2[f] ? [f, SET2[f]] : [f]);   // 그 종류의 모든 세트(극한의 대결 상대 고르기)
 // 기타가 더 자주 나오게 (2026-11-19 사용자): 베이스·앰프·이펙터가 나온 뒤 두 번은 무조건 기타, 세 번째는 반반, 네 번째는 무조건 베이스·앰프·이펙터
 //   → '3번에 1번 또는 4번에 1번'이 무작위. S.gRun = 베이스·앰프·이펙터 뒤로 기타가 연달아 나온 수(첫 악기도 기타라 1로 셈)
 const GUITAR_FAMS = ['strat', 'tele', 'lespaul', 'superstrat', 'acoustic'];
@@ -2765,7 +2776,7 @@ function renderTable() {
 }
 
 // ---------- 도감 ----------
-const DEX_FAMS = ['strat', 'strat2', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'superstrat2', 'acoustic', 'acoustic2', 'bass', 'bass2', 'amp', 'amp2', 'multi', 'multi2', 'pedal'];
+const DEX_FAMS = ['strat', 'strat2', 'strat3', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'superstrat2', 'acoustic', 'acoustic2', 'bass', 'bass2', 'amp', 'amp2', 'multi', 'multi2', 'pedal'];
 const dexHas = (f, lv) => !!((S.dex[f] | 0) & (1 << lv));
 // 도감 특전 (2026-11-23 사용자: '도감이 모일 때마다 특전 — 악기 하나 찰 때마다 성공 확률을 올리든 돈 획득량을 올리든' · '획득량은 판매했을 때 버는 금액을'):
 //   도감 한 칸마다 성공 +0.05%(그 단계 성공 확률의 n% — 망치·작업대와 같은 셈, 줄 끊김에서 가져옴) · 팔 때 받는 골드 +0.1%. 357칸 다 채우면 성공 +17.85% · 판매 +35.7%.
@@ -4046,7 +4057,7 @@ function rankers() {
     return Array.from({ length: 10 }, () => {
         const nick = names.splice(Math.floor(r() * names.length), 1)[0];
         const lv = EXTREME_LV[0] + Math.floor(r() * (EXTREME_LV[1] - EXTREME_LV[0] + 1));
-        const g = DUEL_FAMS[Math.floor(r() * DUEL_FAMS.length)], f = SET2[g] && r() < 0.5 ? SET2[g] : g;
+        const g = DUEL_FAMS[Math.floor(r() * DUEL_FAMS.length)], sets = setsOf(g), f = sets[Math.floor(r() * sets.length)];
         return { id: 'x' + hashStr(day + (rr ? rr + '|' : '') + nick), nick, lv, f, ex: true };
     }).sort((a, b) => b.lv - a.lv);
 }

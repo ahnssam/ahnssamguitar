@@ -1,6 +1,6 @@
 # 기타 키우기 공유용 페이지·썸네일 만들기 (2026-11-12 사용자: 카톡으로 공유하면 방금 공유한 기타가 썸네일로 뜨게)
 #   카톡·문자·인스타 미리보기는 링크 페이지의 og:image 를 읽는다(자바스크립트는 안 돌린다).
-#   그래서 계열 8 × 단계 21 = 168개의 작은 페이지(play/gk/s/<계열>-<단계>.html)와 썸네일(images/play/gk/share/<계열>-<단계>.jpg)을 미리 만든다.
+#   그래서 계열 × 단계 21 개(처음엔 계열 8 = 168개, 지금은 2·3세트까지)의 작은 페이지(play/gk/s/<계열>-<단계>.html)와 썸네일(images/play/gk/share/<계열>-<단계>.jpg)을 미리 만든다.
 #   페이지는 열자마자 기타 키우기(play/guitar.html)로 넘어간다(주소 뒤 ?vs= 같은 것은 그대로 넘김).
 # 다시 만들기: 새 단계 그림이 오거나 이름이 바뀌면  python -X utf8 tools/gk_share.py
 #   맥에서도 된다(2026-11-13): Pillow만 있으면 됨 — python3 -m venv /tmp/gkv && /tmp/gkv/bin/pip install pillow && /tmp/gkv/bin/python -X utf8 tools/gk_share.py
@@ -37,7 +37,7 @@ def art_info(label):   # 그 계열 줄 뒤에서 처음 나오는 art·artMax
     return m.group(1), int(m.group(2))
 
 FAMS = {}
-for key, label, nm in [('strat', "strat: { name: '스트랫'", '스트랫'), ('strat2', "strat2: { name: '스트랫'", '스트랫'), ('tele', "tele: { name: '텔레'", '텔레'), ('tele2', "tele2: { name: '텔레'", '텔레'), ('lespaul', "lespaul: { name: '레스폴'", '레스폴'), ('lespaul2', "lespaul2: { name: '레스폴'", '레스폴'),
+for key, label, nm in [('strat', "strat: { name: '스트랫'", '스트랫'), ('strat2', "strat2: { name: '스트랫'", '스트랫'), ('strat3', "strat3: { name: '스트랫'", '스트랫'), ('tele', "tele: { name: '텔레'", '텔레'), ('tele2', "tele2: { name: '텔레'", '텔레'), ('lespaul', "lespaul: { name: '레스폴'", '레스폴'), ('lespaul2', "lespaul2: { name: '레스폴'", '레스폴'),
                        ('acoustic2', "acoustic2: { name: '통기타'", '통기타'), ('bass2', "bass2: { name: '베이스'", '베이스'),
                        ('superstrat', "superstrat: { name: '슈퍼스트랫'", '슈퍼스트랫'), ('superstrat2', "superstrat2: { name: '슈퍼스트랫'", '슈퍼스트랫'), ('acoustic', "acoustic: { name: '통기타'", '통기타'), ('bass', "bass: { name: '베이스'", '베이스')]:
     art, amax = art_info(label)
