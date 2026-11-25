@@ -1,7 +1,7 @@
 -- 기타 키우기: 계열에 스트랫 3세트(strat3, 성탄 스트랫 — 크리스마스)를 더한다
 --   (2026-11-25 사용자: 구글 드라이브 기타 키우기/christmas_strat_sprites.zip — 낱장 21장)
 --   기타라서 'fam'(대표 기타)과 'top_fam'(최고 무기) 목록 둘 다에 더한다.
---   적용 전엔 게임(guitar.html 의 syncMe)이 'bad_fam' 을 받으면 'strat' 로 다시 올린다 — 다른 사람 화면(오늘의 상대·랭킹)엔 1세트 그림.
+--   2026-11-25 적용함(사용자 "적용해줘"). 그 전엔 게임(guitar.html 의 syncMe)이 'bad_fam' 을 받으면 'strat' 로 다시 올렸다 — 다른 사람 화면엔 1세트 그림이었음.
 alter table public.play_guitar_players drop constraint if exists play_guitar_players_fam_check;
 alter table public.play_guitar_players add constraint play_guitar_players_fam_check
     check (fam in ('strat', 'strat2', 'strat3', 'tele', 'tele2', 'lespaul', 'lespaul2', 'superstrat', 'superstrat2', 'acoustic', 'acoustic2', 'bass', 'bass2', 'amp', 'multi', 'amp2', 'multi2', 'pedal'));
