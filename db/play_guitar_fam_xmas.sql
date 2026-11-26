@@ -2,7 +2,7 @@
 --   (2026-11-26 사용자: 구글 드라이브 기타 키우기/christmas_all_sets.zip — 텔레·레스폴·슈퍼스트랫·통기타·베이스·앰프·멀티이펙터·페달)
 --   기타·베이스(tele3·lespaul3·superstrat3·acoustic3·bass3)는 'fam'(대표 기타)과 'top_fam'(최고 무기) 목록 둘 다에,
 --   앰프·이펙터(amp3·multi3·pedal2)는 대표가 될 수 없어서 'fam' 목록에만 더한다.
---   적용 전엔 게임(guitar.html 의 syncMe)이 'bad_fam' 을 받으면 1세트 이름(tele 등)으로 다시 올린다 — 다른 사람 화면엔 1세트 그림.
+--   2026-11-26 적용함(사용자 "적용해줘"). 그 전엔 게임(guitar.html 의 syncMe)이 'bad_fam' 을 받으면 1세트 이름(tele 등)으로 다시 올렸다 — 다른 사람 화면엔 1세트 그림이었음.
 alter table public.play_guitar_players drop constraint if exists play_guitar_players_fam_check;
 alter table public.play_guitar_players add constraint play_guitar_players_fam_check
     check (fam in ('strat', 'strat2', 'strat3', 'tele', 'tele2', 'tele3', 'lespaul', 'lespaul2', 'lespaul3', 'superstrat', 'superstrat2', 'superstrat3', 'acoustic', 'acoustic2', 'acoustic3', 'bass', 'bass2', 'bass3', 'amp', 'multi', 'amp2', 'multi2', 'pedal', 'amp3', 'multi3', 'pedal2'));
