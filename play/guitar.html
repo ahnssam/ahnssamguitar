@@ -1146,7 +1146,7 @@
     </ul>
     <h3>4. 부서지지 않게 — 하드케이스·튜너·망치</h3>
     <ul>
-        <li>기타가 부서지면 <b>부서진 조각</b>이 나와요. 조각 15개가 모이면 <b>하드케이스</b>가 저절로 만들어져요(3개까지, 상점에서도 살 수 있어요).</li>
+        <li>기타가 부서지면 <b>부서진 조각</b>이 나와요. 조각 15개가 모이면 <b>하드케이스</b>가 저절로 만들어져요(3개까지). 상점에서도 살 수 있는데, 값은 내가 가진 가장 높은 악기 단계에 따라 올라가요(+12까지 100만G, +17이면 2.3억G).</li>
         <li>+7부터 강화 단추 위 <b>[하케]</b> 스위치를 켜면, 부서질 때 하드케이스가 한 번 막아 줘요. 켠 악기에만 적용돼요. 옆의 <b>[자동]</b>을 켜 두면 하드케이스가 있을 때 저절로 끼워요.</li>
         <li>하드케이스는 <b>악기 하나에 한 번</b>만 먹어요. 한 번 살아난 악기는 '하케 사용함'이 되고, 컬렉션에 넣었다 다시 가져와도 그대로예요. 비싼 단계에서 켜는 게 좋아요.</li>
         <li><b>튜너</b>(상점)를 사면 +7부터, 망치로 칸을 다 채운 뒤 가운데에 튜너가 떠요. 바늘이 초록 칸에 올 때 <b>튜너를 누르면</b> 성공 확률이 올라가요(좋은 튜너일수록 더).</li>
@@ -1322,7 +1322,18 @@ const START_GOLD = 500, DAILY_GOLD = 1000,
 const AD_GOLDS = [1000, 2000, 3000, 5000, 10000], AD_GOLD_DAY = AD_GOLDS.length;
 const adGoldNext = () => AD_GOLDS[Math.min(AD_GOLDS.length - 1, adDay().n)];
 const CASE_MAX = 3;   // 하드케이스는 3개까지 가질 수 있다 (2026-11-12 사용자)
-const CASE_PRICE = 1000000;   // 상점 '장비' 칸에서 하드케이스 하나 100만G (2026-11-17 사용자)
+// 상점 하드케이스 값 (2026-11-26 사용자: '자기가 가진 무기 최대 레벨에 맞춰 가격 상향 — 상위권은 돈이 의미가 없는 느낌'):
+//   내가 가진 악기(작업대·컬렉션·바닥·창고) 중 가장 높은 단계의 판매가 × 25%(유효숫자 두 자리), 100만G 아래로는 안 내림.
+//   → +12까지 100만 · +13 310만 · +14 990만 · +15 3,100만 · +16 8,800만 · +17 2.3억 · +18 5.7억 · +19 13억 · +20 25억G
+//   왜: 11-24~26 일지에서 +13~+16 파괴 위기 436번 중 383번(88%)을 100만G 하케로 막았다(그 단계 강화 한 번 450만~5,300만G).
+//   25% = 그 악기를 한 번 살리는 보험료로 무겁지만 살 만한 값. 조각 15개·+15 선물로 생기는 하케는 그대로 공짜.
+//   (2026-11-17 ~ 11-26에는 늘 100만G)
+const CASE_MIN = 1000000, CASE_RATE = 0.25;
+const ownMaxLv = () => Math.max(0, ...[S.bench, ...S.wall, ...S.floor, ...S.store].filter(Boolean).map(g => g.lv | 0));
+function casePrice() {
+    const v = SELL[Math.min(MAX, ownMaxLv())] * CASE_RATE, p = Math.pow(10, Math.floor(Math.log10(Math.max(v, 1))) - 1);
+    return Math.max(CASE_MIN, Math.round(v / p) * p);
+}
 // 하드케이스 ON 은 켠 그 악기에만 (2026-11-17 사용자: '다시 악기 만들기 시작하면 하드케이스가 자동으로 on 되던데 그렇게 하지 마') — S.caseFor = 켠 악기 id
 // 2026-11-19 사용자: 하케 단추 안에 '자동' 스위치 — 켜 두면 하드케이스가 있을 때 작업대 악기에 저절로 끼운다(S.caseAuto).
 //   자동인 채로 그 악기만 끄면 S.caseNo = 그 악기(그 악기만 빼고 자동)
@@ -5087,10 +5098,10 @@ function renderShop() {
         + HAMMERS.map((H, n) => { const own = (S.hammer | 0) >= n;
             return `<div class="item"><span class="ic hmr"><img src="../images/play/gk/${H.img}" alt=""></span><div class="it"><b>${H.name}${H.up ? ` · 성공 +${H.up}%` : ''}</b><small>${H.desc}</small></div>
                 ${own ? `<span class="own">${(S.hammer | 0) === n ? '사용 중' : '더 좋은 걸 써요'}</span>` : `<button type="button" data-a="buyHm" data-n="${n}" ${S.gold >= H.price ? '' : 'disabled'}>${gf(H.price)}</button>`}</div>`; }).join('')
-        // 하드케이스 하나 100만G (2026-11-17 사용자) — 조각 15개로 저절로 만들어지는 것과 같은 하드케이스, 3개까지
+        // 하드케이스 — 값은 내가 가진 가장 높은 악기 단계에 따라(casePrice, 2026-11-26). 조각 15개로 저절로 만들어지는 것과 같은 하드케이스, 3개까지
         + shead('하드케이스', '파괴를 한 번 막아 줘요 · 악기 하나에 한 번')
-        + `<div class="item"><span class="ic case"><i class="fas fa-briefcase"></i></span><div class="it"><b>하드케이스 · 파괴 1번 막기</b><small>지금 ${S.cases}/${CASE_MAX}개 · 조각 ${CASE_SHARDS}개를 모아도 저절로 생겨요. 강화 단추 위 '하케' 스위치로 그 악기에 끼워요 · 악기 하나에 한 번만 먹어요</small></div>
-            ${S.cases >= CASE_MAX ? '<span class="own">가득</span>' : `<button type="button" data-a="buyCase" ${S.gold >= CASE_PRICE ? '' : 'disabled'}>${gf(CASE_PRICE)}</button>`}</div>`
+        + `<div class="item"><span class="ic case"><i class="fas fa-briefcase"></i></span><div class="it"><b>하드케이스 · 파괴 1번 막기</b><small>지금 ${S.cases}/${CASE_MAX}개 · 값은 내가 가진 가장 높은 악기 단계에 따라 올라요${ownMaxLv() >= 13 ? `(지금 +${ownMaxLv()} 기준)` : ''} · 조각 ${CASE_SHARDS}개를 모아도 저절로 생겨요. 강화 단추 위 '하케' 스위치로 그 악기에 끼워요 · 악기 하나에 한 번만 먹어요</small></div>
+            ${S.cases >= CASE_MAX ? '<span class="own">가득</span>' : `<button type="button" data-a="buyCase" ${S.gold >= casePrice() ? '' : 'disabled'}>${gf(casePrice())}</button>`}</div>`
         + `<p class="note2">'성공 +n%'는 그 단계 성공 확률의 n%만큼 올라요 — 성공 40%에서 +5%면 42%.</p>`;
     if (shopCat === 'bench') h += BENCHES.map((B, i) => {
         const own = S.bskins.includes(B.id), use = S.bskin === B.id, up = BENCH_UP[i] || 0;
@@ -5213,8 +5224,9 @@ $('#app').addEventListener('click', e => {
     }
     else if (a === 'buyCase') {
         if (S.cases >= CASE_MAX) { toast(`하드케이스는 ${CASE_MAX}개까지예요`); return; }
-        if (S.gold < CASE_PRICE) return;
-        S.gold -= CASE_PRICE; S.cases++; logEv('b', ['case', S.cases, CASE_PRICE], -CASE_PRICE); save(); sfx('case'); renderShop(); updBar(); spendFx(S.gold + CASE_PRICE, S.gold); toast(`하드케이스를 샀어요 (${S.cases}/${CASE_MAX})`);
+        const cp = casePrice();
+        if (S.gold < cp) return;
+        S.gold -= cp; S.cases++; logEv('b', ['case', S.cases, cp], -cp); save(); sfx('case'); renderShop(); updBar(); spendFx(S.gold + cp, S.gold); toast(`하드케이스를 샀어요 (${S.cases}/${CASE_MAX})`);
     }
     else if (a === 'buyT') {
         const n = +b.dataset.n, T = TUNERS[n];
