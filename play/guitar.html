@@ -158,10 +158,23 @@
     .dex .cell.hi { box-shadow: inset 0 0 0 2px #f5c542; }
     .dex .note2 { margin-top: 4px; }
     /* 도감 탭 (2026-11-26 사용자: '도감도 탭화 — 맨 처음엔 전체, 그 옆으로 악기별로'). 내려도 사이트 메뉴 바로 아래에 붙는다(--hdh = 위에 붙는 머리줄 높이) */
-    .dex .dxtabs { position: sticky; top: var(--hdh, 0px); z-index: 6; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin: 0 -4px 8px; padding: 6px 4px 8px; background: var(--cream); }
+    .dex .dxtabw { position: sticky; top: var(--hdh, 0px); z-index: 6; margin: 0 -4px 8px; background: var(--cream); }
+    .dex .dxtabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; padding: 6px 4px 8px; }
     .dex .dxtabs::-webkit-scrollbar { display: none; }
-    .dex .dxtabs button { flex: 0 0 auto; min-width: 44px; padding: 8px 7px; border-radius: 11px; border: 1.5px solid var(--line); background: #fff; font: inherit; font-weight: 900; font-size: 13.5px; line-height: 1.2; color: #5a6b62; cursor: pointer; }
+    .dex .dxtabs button { flex: 1 0 auto; min-width: 44px; padding: 8px 7px; border-radius: 11px; border: 1.5px solid var(--line); background: #fff; font: inherit; font-weight: 900; font-size: 13.5px; line-height: 1.2; color: #5a6b62; cursor: pointer; white-space: nowrap; }
     .dex .dxtabs button.on { background: var(--green-deep); border-color: var(--green-deep); color: #fff; }
+    /* 기타 드롭다운 (2026-11-26 사용자: '기타는 기타끼리 몰고, 기타 누르면 드롭다운') */
+    .dex .dxtabs .gtr i { margin-left: 4px; font-size: 11px; transition: transform .15s; }
+    .dex .dxtabw.open .gtr i { transform: rotate(180deg); }
+    .dex .dxtabw.open .gtr:not(.on) { border-color: var(--green-deep); color: var(--green-deep); }
+    .dex .dxmenu { position: absolute; top: calc(100% - 4px); left: 0; min-width: 150px; padding: 5px; border-radius: 13px; background: #fff; border: 1.5px solid var(--line); box-shadow: 0 10px 26px rgba(20, 40, 30, .18); display: none; }
+    .dex .dxtabw.open .dxmenu { display: block; animation: dxMenuIn .14s ease-out; }
+    @keyframes dxMenuIn { from { opacity: 0; transform: translateY(-4px); } }
+    .dex .dxmenu button { display: flex; align-items: center; width: 100%; padding: 10px 12px; border: 0; border-radius: 9px; background: none; font: inherit; font-weight: 800; font-size: 14px; color: #33453c; text-align: left; cursor: pointer; }
+    .dex .dxmenu button:hover { background: #eef5f0; }
+    .dex .dxmenu button.on { color: var(--green-deep); background: #e5f2ea; }
+    .dex .dxmenu button i { margin-left: auto; padding-left: 12px; font-size: 12px; }
+    @media (max-width: 360px) { .dex .dxtabs button { min-width: 0; padding: 8px 5px; font-size: 13px; } }   /* 320px 폰에서 '슈퍼스트랫 ▾'를 골라도 다섯 칸이 한 줄에 */
     /* 운영 계정 도감 (2026-11-13 사용자: 헤드머신 숫자가 안 맞는 그림을 직접 고치려고 — 168칸 모두, 자르지 않은 전체 그림으로) */
     .dex .dx-admin { display: flex; align-items: center; gap: 8px; margin: -4px 2px 12px; padding: 8px 10px; border-radius: 10px; background: #fff3cf; font-size: 12.5px; font-weight: 800; color: #7a5200; }
     .dex .dx-admin button { margin-left: auto; padding: 5px 11px; border-radius: 99px; border: 1.5px solid #e0b64a; background: #fff; font-size: 12px; font-weight: 800; color: #7a5200; }
@@ -2865,8 +2878,14 @@ const DEX_FAMS = ['strat', 'strat2', 'strat3', 'tele', 'tele2', 'tele3', 'lespau
 const dexHas = (f, lv) => !!((S.dex[f] | 0) & (1 << lv));
 // 도감 탭 (2026-11-26 사용자: '도감도 탭화 해서, 맨 처음엔 전체를 보여주고, 그 옆으로 각 악기별로. 스트랫, 텔레 등등'):
 //   [전체] [스트랫] [텔레] [레스폴] [슈퍼스트랫] [통기타] [베이스] [앰프] [이펙터(멀티·페달)] — 도감 탭에 들어올 때마다 '전체'부터(setTab)
-const DEX_KINDS = [['all', '전체'], ['strat', '스트랫'], ['tele', '텔레'], ['lespaul', '레스폴'], ['superstrat', '슈퍼스트랫'], ['acoustic', '통기타'], ['bass', '베이스'], ['amp', '앰프'], ['fx', '이펙터']];
+// 2026-11-26 사용자(같은 날 다시): '기타는 기타끼리 다 몰자, 그다음 오른쪽에 베이스·앰프·이펙터, 기타 누르면 드롭다운'
+//   → [전체] [기타 ▾] [베이스] [앰프] [이펙터]. '기타'를 누르면 아래로 [기타 전체 · 스트랫 · 텔레 · 레스폴 · 슈퍼스트랫 · 통기타]
+const DEX_GTRS = [['guitar', '기타 전체'], ['strat', '스트랫'], ['tele', '텔레'], ['lespaul', '레스폴'], ['superstrat', '슈퍼스트랫'], ['acoustic', '통기타']];
+const DEX_KINDS = [['all', '전체'], ...DEX_GTRS, ['bass', '베이스'], ['amp', '앰프'], ['fx', '이펙터']];
 const dexKindOf = f => baseOf(f) === 'multi' ? 'fx' : baseOf(f) === 'amp' ? 'amp' : f.replace(/\d+$/, '');
+const dexIsGtr = k => DEX_GTRS.some(([g]) => g === k);
+const dexShow = f => dexKind === 'all' || dexKindOf(f) === dexKind || (dexKind === 'guitar' && GUITAR_FAMS.includes(dexKindOf(f)));
+var dexMenu = false;   // 기타 드롭다운이 열려 있나
 // 도감 특전 (2026-11-23 사용자: '도감이 모일 때마다 특전 — 악기 하나 찰 때마다 성공 확률을 올리든 돈 획득량을 올리든' · '획득량은 판매했을 때 버는 금액을'):
 //   도감 한 칸마다 성공 +0.05%(그 단계 성공 확률의 n% — 망치·작업대와 같은 셈, 줄 끊김에서 가져옴) · 팔 때 받는 골드 +0.1%. 357칸 다 채우면 성공 +17.85% · 판매 +35.7%.
 //   숫자는 Claude가 정함(바꿔도 됨). 배틀 보상은 그대로. 운영 계정의 '전체 그림'과 상관없이 내가 닿은 칸(S.dex)만 센다
@@ -3020,15 +3039,17 @@ function renderDex() {
     const total = DEX_FAMS.reduce((n, f) => n + cnt(f), 0), all = DEX_FAMS.length * N;
     const el = $('#tab-dex');
     if (!DEX_KINDS.some(([k]) => k === dexKind)) dexKind = 'all';
-    const fams = dexKind === 'all' ? DEX_FAMS : DEX_FAMS.filter(f => dexKindOf(f) === dexKind);
+    const fams = DEX_FAMS.filter(dexShow), gOn = dexIsGtr(dexKind);
+    const tabBtn = ([k, nm]) => `<button type="button" role="tab" data-a="dexkind" data-k="${k}" class="${k === dexKind ? 'on' : ''}" aria-selected="${k === dexKind}">${nm}</button>`;
     const tabsLeft = (el.querySelector('.dxtabs') || {}).scrollLeft || 0;   // 탭 줄을 옆으로 밀어 둔 자리 그대로
     el.classList.toggle('whole', whole);
     el.innerHTML = `<div class="dx-top"><b>기타 도감 ${total} / ${all}</b><small>찾거나 강화해서 닿은 단계가 모여요</small></div>
         <div class="dx-bar"><i style="width:${(total / all * 100).toFixed(1)}%"></i></div>
         <div class="dx-perk"><i class="fas fa-gift"></i><span>도감 특전 <b>성공 +${dexUp()}%</b> · <b>판매 +${dexGold()}%</b></span><small>한 칸 찰 때마다 성공 +${DEX_UP_T}% · 판매 +${DEX_GOLD_T}% · 다 모으면 성공 +${DEX_FULL_UP}% · 판매 +${DEX_FULL_GOLD}%</small></div>
         ${ADMIN ? `<div class="dx-admin"><i class="fas fa-user-gear"></i>${whole ? '운영 계정 · 전체 그림 (초록 점 = 내가 닿은 칸)' : '운영 계정 · 내 도감'}<button type="button" data-a="dexall">${whole ? '내 도감만 보기' : '전체 그림 보기'}</button></div>` : ''}
-        <div class="dxtabs" role="tablist">${DEX_KINDS.map(([k, nm]) =>
-            `<button type="button" role="tab" data-a="dexkind" data-k="${k}" class="${k === dexKind ? 'on' : ''}" aria-selected="${k === dexKind}">${nm}</button>`).join('')}</div>
+        <div class="dxtabw${dexMenu ? ' open' : ''}"><div class="dxtabs" role="tablist">${tabBtn(DEX_KINDS[0])}<button type="button" role="tab" data-a="dexgtr" class="gtr${gOn ? ' on' : ''}" aria-selected="${gOn}" aria-haspopup="menu" aria-expanded="${dexMenu}">${gOn && dexKind !== 'guitar' ? DEX_GTRS.find(([k]) => k === dexKind)[1] : '기타'}<i class="fas fa-caret-down"></i></button>${
+            DEX_KINDS.filter(([k]) => k !== 'all' && !dexIsGtr(k)).map(tabBtn).join('')}</div>
+            <div class="dxmenu" role="menu">${DEX_GTRS.map(([k, nm]) => `<button type="button" role="menuitem" data-a="dexkind" data-k="${k}" class="${k === dexKind ? 'on' : ''}">${nm}${k === dexKind ? '<i class="fas fa-check"></i>' : ''}</button>`).join('')}</div></div>
         ${fams.map(f => { const F = FAMS[f], c = cnt(f);
             return `<div class="fam"><h4>${esc(F.dexName || F.name)}<small class="${c === N ? 'full' : ''}">${c === N ? '완성! ' : ''}${c} / ${N}</small></h4><div class="grid">${
                 Array.from({ length: N }, (_, i) => whole || dexHas(f, i)
@@ -3041,10 +3062,27 @@ function renderDex() {
     const bar = el.querySelector('.dxtabs'), on = bar.querySelector('.on');
     bar.scrollLeft = tabsLeft;
     if (on.offsetLeft < bar.scrollLeft || on.offsetLeft + on.offsetWidth > bar.scrollLeft + bar.clientWidth) bar.scrollLeft = on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2;
+    dexMenuPos();
 }
+// 기타 드롭다운: '기타' 단추 바로 아래에(탭 줄을 옆으로 밀었으면 그만큼, 오른쪽 끝을 넘지 않게)
+function dexMenuPos() {
+    const w = document.querySelector('#tab-dex .dxtabw'); if (!w) return;
+    const bar = w.querySelector('.dxtabs'), g = bar.querySelector('.gtr'), m = w.querySelector('.dxmenu');
+    m.style.left = Math.max(0, Math.min(g.offsetLeft - bar.scrollLeft, w.clientWidth - m.offsetWidth)) + 'px';
+}
+function dexMenuSet(on) {
+    dexMenu = !!on;
+    const w = document.querySelector('#tab-dex .dxtabw'); if (!w) return;
+    w.classList.toggle('open', dexMenu); w.querySelector('.gtr').setAttribute('aria-expanded', dexMenu);
+    if (dexMenu) dexMenuPos();
+}
+addEventListener('pointerdown', e => { if (dexMenu && !e.target.closest('.dxtabw')) dexMenuSet(false); }, true);
+addEventListener('keydown', e => { if (dexMenu && e.key === 'Escape') dexMenuSet(false); });
+addEventListener('resize', () => { if (dexMenu) dexMenuPos(); });
+addEventListener('scroll', e => { if (dexMenu && e.target.classList && e.target.classList.contains('dxtabs')) dexMenuPos(); }, true);   // 탭 줄을 옆으로 밀면 따라감
 
 function setTab(t) {
-    if (t === 'dex' && tab !== 'dex') dexKind = 'all';   // 도감을 누르면 늘 '전체'부터 (2026-11-26 사용자)
+    if (t === 'dex' && tab !== 'dex') { dexKind = 'all'; dexMenu = false; }   // 도감을 누르면 늘 '전체'부터 (2026-11-26 사용자)
     if (t === 'rank' && tab !== 'rank') rkAll = false;   // 랭킹을 누르면 늘 '내 순위'(내 정보 + 내 랭킹)부터 (2026-11-24 사용자)
     if (t !== 'room') { roomFull = ''; pickId = ''; }   // 꽉 찼다는 안내는 컬렉션을 떠나면 없앤다
     tab = t; dexClose();
@@ -5228,10 +5266,11 @@ $('#app').addEventListener('click', e => {
     else if (a === 'gocase') toast(`파괴되면 부서진 조각이 나와요. ${CASE_SHARDS}개 모이면 하드케이스가 저절로 만들어져요 (조각 ${S.shards}/${CASE_SHARDS} · 하케 ${S.cases}/${CASE_MAX})`);   // 2026-11-15 상점 케이스 칸을 지워서 안내만
     else if (a === 'dexall') { dexAll = !dexAll; mem.set('gk.dexAll', dexAll); dexClose(); renderDex(); }
     else if (a === 'dexkind') {   // 도감 탭: 바꾸면 탭 줄이 화면 위쪽에 오게(아래로 많이 내려 보던 중이면)
-        dexKind = b.dataset.k; dexClose(); renderDex();
+        dexKind = b.dataset.k; dexMenu = false; dexClose(); renderDex();
         const el = $('#tab-dex'), top = el.getBoundingClientRect().top - (parseFloat(el.style.getPropertyValue('--hdh')) || 0);
         if (top < 0) window.scrollBy(0, top);
     }
+    else if (a === 'dexgtr') { dexClose(); dexMenuSet(!dexMenu); }   // 기타 드롭다운 열기·닫기
     else if (a === 'dex') dexZoom(b.dataset.f, +b.dataset.lv, b);   // 2026-11-13 사용자: 도감에서 모은 기타를 누르면 그 자리 근처에 두 배쯤
     else if (a === 'new') findGuitar(false);
     else if (a === 'nextg') { const g = S.bench; if (g && g.lv < MAX) toast(dexHas(giftFam(g.f), g.lv + 1) ? `다음 단계: +${g.lv + 1} ${gname({ ...g, lv: g.lv + 1 })}` : `다음 단계는 +${g.lv + 1} ??? — 강화해서 확인해 봐요`); }
