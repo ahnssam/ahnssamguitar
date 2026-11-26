@@ -318,14 +318,17 @@ table.sl{width:100%;border-collapse:collapse;font-size:13.5px}
         };
         const R = ks.map(row), max = Math.max(1, ...R.map(r => r.rev));
         // 막대 그래프 (왼쪽 = 예전, 오른쪽 = 지금)
-        const W = 760, H = 170, pad = 22, bw = (W - 8) / R.length, show = R.length <= 13 ? 1 : R.length <= 31 ? 3 : 4;
+        // 주 단위는 막대 아래 날짜를 두 줄로 '11/23' / '~11/29' (2026-11-26 사용자: 표처럼 시작~끝이 보이게) — 그만큼 아래 칸을 넓힌다
+        const wk = u === 'week', W = 760, H = wk ? 184 : 170, pad = wk ? 36 : 22, bw = (W - 8) / R.length, show = R.length <= 13 ? 1 : R.length <= 31 ? 3 : 4;
         const bars = R.map((r, i) => {
             const h = Math.round((H - pad - 18) * r.rev / max), x = 4 + i * bw, sel = r.k === p.sel, w = Math.min(bw * 0.68, 64);
             return `<g data-sk="${esc(r.k)}" style="cursor:pointer"><title>${esc(blabel(r.k, u))} · ${won(r.rev)} · 결제 ${r.n}건</title>
                 <rect x="${x}" y="0" width="${bw}" height="${H}" fill="transparent"/>
                 <rect x="${x + (bw - w) / 2}" y="${H - pad - h}" width="${w}" height="${Math.max(h, r.rev ? 2 : 0)}" rx="3" fill="${sel ? '#2a6b4a' : '#8fcaa5'}"/>
                 ${r.rev && (R.length <= 13 || sel) ? `<text x="${x + bw / 2}" y="${H - pad - h - 5}" text-anchor="middle" font-size="11" font-weight="700" fill="#2a6b4a">${r.rev >= 10000 ? (Math.round(r.rev / 1000) / 10) + '만' : num(r.rev)}</text>` : ''}
-                ${i % show === 0 || sel ? `<text x="${x + bw / 2}" y="${H - 5}" text-anchor="middle" font-size="11" fill="${sel ? '#2a6b4a' : '#999'}"${sel ? ' font-weight="700"' : ''}>${esc(blabel(r.k, u, true))}</text>` : ''}</g>`;
+                ${i % show === 0 || sel ? `<text x="${x + bw / 2}" y="${wk ? H - 19 : H - 5}" text-anchor="middle" font-size="11" fill="${sel ? '#2a6b4a' : '#999'}"${sel ? ' font-weight="700"' : ''}>${wk
+                    ? `<tspan x="${x + bw / 2}">${esc(mmdd(r.k))}</tspan><tspan x="${x + bw / 2}" dy="14">~${esc(mmdd(addDays(r.k, 6)))}</tspan>`
+                    : esc(blabel(r.k, u, true))}</text>` : ''}</g>`;
         }).join('');
         const chart = `<div class="sl-chart"><h4>${{ day: '최근 31일', week: '최근 13주', month: '달마다', year: '해마다' }[u]} 매출 <small>막대를 누르면 그 기간 자세히</small></h4>
             <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="기간별 매출 막대 그래프"><line x1="0" x2="${W}" y1="${H - pad}" y2="${H - pad}" stroke="#e6e6e6"/>${bars}</svg></div>`;
