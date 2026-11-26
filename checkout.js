@@ -205,7 +205,7 @@
                     <div class="err" id="gbErr"></div>
                     <div class="acts"><button type="button" class="no" data-x>취소</button><button type="submit" class="go">비회원으로 결제하기</button></div>
                 </form>
-                <p class="rf"><i class="fas fa-rotate-left"></i><span>디지털 콘텐츠 특성상 PDF를 내려받은 뒤에는 단순 변심 환불이 안 돼요. <a href="/legal/terms.html#refund" target="_blank">환불 정책</a></span></p></div>`;
+                <p class="rf"><i class="fas fa-rotate-left"></i><span>디지털 콘텐츠 특성상 PDF를 내려받은 뒤에는 단순 변심 환불이 불가능합니다. <a href="/legal/terms.html#refund" target="_blank">환불 정책</a></span></p></div>`;
             const done = v => { back.remove(); document.removeEventListener('keydown', onKey); res(v); };
             const onKey = e => { if (e.key === 'Escape') done(null); };
             // 이메일 칸에서 드래그하다 바깥에서 마우스를 놓아도 닫히지 않게 — 누른 곳도 바깥일 때만 바깥 클릭으로 본다
