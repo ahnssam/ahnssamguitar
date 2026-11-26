@@ -1,7 +1,7 @@
 /* admin/sales.js — 악보관리 첫 화면의 판매 탭 (2026-11-26 사용자)
    "판매가 되기 시작했으니 얼마나 팔렸는지 볼 수 있게 — 풀스코어처럼 주문 관리, 마케팅 분석, 정산 관리(일·주·월·연, 처음엔 월)"
    탭: 주문 관리 · 정산 관리 · 마케팅 분석 · 악보 관리(예전 목록). 악보관리를 열면 주문 관리부터 보인다(주소 #orders · #settle · #mkt · #sheets).
-   - 주문·정산은 sheet_orders 를 바로 읽는다(운영 계정은 RLS 로 다 읽음). 회원 이메일은 sheet_admin_buyers(), 상세 보기·장바구니 숫자는
+   - 주문·정산은 sheet_orders 를 바로 읽는다(운영 계정은 RLS 로 다 읽음). 회원 이메일은 sheet_admin_buyers(), 조회·장바구니 숫자는
      sheet_admin_traffic() — 둘 다 db/sheet_shop_admin.sql. 함수가 아직 없으면 닉네임만 / '적용 전' 안내.
    - 매출 = 손님이 낸 금액(부가세 포함). 여러 악보 주문(반주 + 솔로·장바구니)은 정가 비율로 나눠 악보마다 매출을 잡는다(음저협 정산과 같은 규칙).
    - 결제 수수료·음저협 사용료·남는 돈은 '추정'. 수수료율은 화면에서 고치면 이 브라우저에 기억한다.
@@ -12,7 +12,7 @@
     const ADMIN_EMAIL = 'steveq2568@gmail.com';
     const STYLE = { acoustic: ['통기타', '#cf9a68'], electric: ['일렉기타', '#42a854'], fingerstyle: ['핑거스타일', '#eaac14'], solo: ['기타솔로', '#52a6f2'],
         chord: ['코드악보', '#f06a6e'], bass: ['베이스', '#a98cf2'], other: ['악보', '#8a9a90'] };
-    const TRACK_FROM = '2026-11-26';   // 상세 보기·장바구니를 세기 시작한 날
+    const TRACK_FROM = '2026-11-26';   // 조회(상세 페이지 연 수)·장바구니를 세기 시작한 날
     const $ = id => document.getElementById(id);
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const won = n => Math.round(Number(n) || 0).toLocaleString() + '원';
@@ -32,6 +32,7 @@
     let SH = {};       // 악보 id → { title, artist, style, kind, price, komca_code, published }
     let O = [];        // 주문 (새것이 위)
     let BUY = {};      // 회원 id → { email, nickname }
+    let REL = {};      // 악보 id → '새로 나온 악보' 날짜(data/sheet-released.json, 메인과 같음)
     let buyersFn = true, traffic = null, trafficFn = true, backfilled = false;
     const ST = {
         o: { period: '30d', from: '', to: '', status: 'paid', who: 'all', test: false, q: '', page: 1, open: null, odd: false },
@@ -72,7 +73,7 @@ table.sl{width:100%;border-collapse:collapse;font-size:13.5px}
 .sl .oid{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:#777;white-space:nowrap}
 .sl .it{display:flex;align-items:center;gap:6px;line-height:1.4;margin:1px 0}
 .sl .it i{width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
-.sl .it a{font-weight:700}.sl .it a:hover{text-decoration:underline}.sl .it small{color:var(--sub);font-size:11.5px;white-space:nowrap}
+.sl .it .rd{color:#b0b0b0;font-size:11px;white-space:nowrap}.sl .it a{font-weight:700}.sl .it a:hover{text-decoration:underline}.sl .it small{color:var(--sub);font-size:11.5px;white-space:nowrap}
 .sl .who b{display:block}.sl .who small{display:block;color:var(--sub);font-size:12px;word-break:break-all}
 .sl .amt{font-weight:800;white-space:nowrap}
 .sl .pm{white-space:nowrap}.sl .pm small{display:block;color:var(--sub);font-size:12px}
@@ -114,8 +115,9 @@ table.sl{width:100%;border-collapse:collapse;font-size:13.5px}
         if (loading && !force) return loading;
         loading = (async () => {
             const [sr, or] = await Promise.all([
-                sb.from('sheets').select('id, title, artist, style, kind, price, song_key, komca_code, published'),
+                sb.from('sheets').select('id, title, artist, style, kind, price, song_key, komca_code, published, updated_at'),
                 sb.from('sheet_orders').select('*').order('created_at', { ascending: false }).limit(5000),
+                fetch('../data/sheet-released.json?v=2026111802').then(r => r.ok ? r.json() : {}).then(j => { REL = (j && j.d) || {}; }).catch(() => {}),
             ]);
             if (or.error) throw or.error;
             SH = {}; (sr.data || []).forEach(s => { SH[s.id] = s; });
@@ -358,6 +360,11 @@ table.sl{width:100%;border-collapse:collapse;font-size:13.5px}
     }
 
     // ---------- 마케팅 분석 ----------
+    // 최근 올린 순 (2026-11-26 사용자: '성과 있는 순 말고 하나 추가 — 최근, 맨 위가 최근에 올린 순') — 메인 '새로 나온 악보'(index.html relKey)와 같은 순서:
+    //   data/sheet-released.json 에 있는 악보는 그 날짜(+ 사이트에 올린 시각), 없는 악보(그 뒤에 올린 것)는 사이트에 올린 때(updated_at)
+    const upKey = up => up ? String(up).replace(/\D/g, '').slice(2, 14) : '';
+    const relKey = id => { const s = SH[id] || {}; return REL[id] ? String(REL[id]).replace(/\D/g, '').slice(2) + upKey(s.updated_at).slice(6) : upKey(s.updated_at); };
+    const relDay = id => { const k = relKey(id); return k ? `${+k.slice(2, 4)}.${+k.slice(4, 6)}` + (k.slice(0, 2) !== today().slice(2, 4) ? ` ’${k.slice(0, 2)}` : '') : ''; };
     async function mktHtml() {
         const p = ST.m, [from0, to] = rangeOf(p), from = from0 < TRACK_FROM ? TRACK_FROM : from0;
         const key = from + '|' + to;
@@ -367,41 +374,45 @@ table.sl{width:100%;border-collapse:collapse;font-size:13.5px}
         (T || []).forEach(r => { const x = get(r.sheet_id); x.views += r.views; x.carts += r.carts; });
         const P = paidOf(false).filter(o => o.pday >= from && o.pday <= to);   // 전환율이 맞게 결제도 같은 기간(세기 시작한 날부터)
         P.forEach(o => split(o).forEach(x => { const y = get(x.id); y.orders++; y.rev += x.rev; }));
-        if (p.all) Object.values(SH).filter(s => s.published).forEach(s => get(s.id));
+        const recent = p.sort === 'recent';
+        if (p.all || recent) Object.values(SH).filter(s => s.published).forEach(s => get(s.id));   // 최근 올린 순은 조회가 0인 새 악보도 보이게
         const tot = Object.values(per).reduce((a, x) => ({ views: a.views + x.views, carts: a.carts + x.carts, orders: a.orders + x.orders, rev: a.rev + x.rev }), { views: 0, carts: 0, orders: 0, rev: 0 });
         const conv = x => x.views ? x.orders / x.views : -1;
         const rows = Object.entries(per).sort((a, b) => {
+            if (recent) return relKey(b[0]).localeCompare(relKey(a[0])) || b[1].views - a[1].views;
             const va = p.sort === 'conv' ? conv(a[1]) : p.sort === 'title' ? sheetName(a[0]) : a[1][p.sort], vb = p.sort === 'conv' ? conv(b[1]) : p.sort === 'title' ? sheetName(b[0]) : b[1][p.sort];
             return (typeof va === 'string' ? va.localeCompare(vb, 'ko') : va - vb) * p.dir || b[1].views - a[1].views;
         });
         const mx = Math.max(1, ...rows.map(r => r[1].views));
-        const th = (k, n) => `<th class="${k === 'title' ? '' : 'r'}"><button class="so${p.sort === k ? ' on' : ''}" data-msort="${k}">${n}${p.sort === k ? (p.dir < 0 ? ' ↓' : ' ↑') : ''}</button></th>`;
-        const body = rows.slice(0, 300).map(([id, x]) => `<tr><td>${itemHtml(id)}<div class="bar"><span style="width:${Math.round(100 * x.views / mx)}%"></span></div></td>
+        const th = (k, n) => `<th class="${k === 'title' ? '' : 'r'}"><button class="so${p.sort === k ? ' on' : ''}" data-msort="${k}">${n}${p.sort === k ? (p.dir < 0 ? ' ↓' : ' ↑') : ''}</button></th>`;   // 최근 올린 순일 때 누르면 그 칸의 성과순으로
+        const body = rows.slice(0, 300).map(([id, x]) => `<tr><td>${recent ? itemHtml(id).replace('</div>', `<span class="rd">${esc(relDay(id))}</span></div>`) : itemHtml(id)}<div class="bar"><span style="width:${Math.round(100 * x.views / mx)}%"></span></div></td>
             <td class="r">${num(x.views)}</td><td class="r">${num(x.carts)}</td><td class="r"><b>${num(x.orders)}</b></td><td class="r">${x.views ? pct(x.orders, x.views) : '–'}</td><td class="r">${x.rev ? won(x.rev) : '–'}</td></tr>`).join('');
-        // 날마다 상세 보기 · 장바구니 · 결제
+        // 날마다 조회 · 장바구니 · 결제
         const days = []; for (let d = from; d <= to && days.length < 400; d = addDays(d, 1)) days.push(d);
         const dv = {}; days.forEach(d => { dv[d] = { v: 0, c: 0, o: 0 }; });
         (T || []).forEach(r => { if (dv[r.day]) { dv[r.day].v += r.views; dv[r.day].c += r.carts; } });
         P.forEach(o => { if (dv[o.pday]) dv[o.pday].o += o.ids.length; });
         const dmax = Math.max(1, ...days.map(d => dv[d].v)), W = 760, H = 140, pad = 20, bw = (W - 8) / Math.max(days.length, 1), every = days.length <= 14 ? 1 : days.length <= 31 ? 3 : 7;
         const g = days.map((d, i) => { const x = 4 + i * bw, v = dv[d], hv = Math.round((H - pad - 16) * v.v / dmax), hc = Math.round((H - pad - 16) * v.c / dmax), ho = Math.round((H - pad - 16) * v.o / dmax);
-            return `<g><title>${esc(blabel(d, 'day'))} · 상세 보기 ${v.v} · 장바구니 ${v.c} · 결제 악보 ${v.o}</title>
+            return `<g><title>${esc(blabel(d, 'day'))} · 조회 ${v.v} · 장바구니 ${v.c} · 결제 악보 ${v.o}</title>
                 <rect x="${x + bw * 0.12}" y="${H - pad - hv}" width="${bw * 0.34}" height="${Math.max(hv, v.v ? 2 : 0)}" rx="2" fill="#8fcaa5"/>
                 <rect x="${x + bw * 0.48}" y="${H - pad - hc}" width="${bw * 0.2}" height="${Math.max(hc, v.c ? 2 : 0)}" rx="2" fill="#eaac14"/>
                 <rect x="${x + bw * 0.7}" y="${H - pad - ho}" width="${bw * 0.2}" height="${Math.max(ho, v.o ? 2 : 0)}" rx="2" fill="#2a6b4a"/>
                 ${i % every === 0 ? `<text x="${x + bw / 2}" y="${H - 4}" text-anchor="middle" font-size="11" fill="#999">${mmdd(d)}</text>` : ''}</g>`; }).join('');
-        const chart = days.length > 1 ? `<div class="sl-chart"><h4>날마다 <span class="lg" style="--c:#8fcaa5"><i></i>상세 보기</span><span class="lg" style="--c:#eaac14"><i></i>장바구니</span><span class="lg" style="--c:#2a6b4a"><i></i>결제한 악보</span></h4>
-            <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="날마다 상세 보기·장바구니·결제 막대 그래프"><line x1="0" x2="${W}" y1="${H - pad}" y2="${H - pad}" stroke="#e6e6e6"/>${g}</svg></div>` : '';
+        const chart = days.length > 1 ? `<div class="sl-chart"><h4>날마다 <span class="lg" style="--c:#8fcaa5"><i></i>조회</span><span class="lg" style="--c:#eaac14"><i></i>장바구니</span><span class="lg" style="--c:#2a6b4a"><i></i>결제한 악보</span></h4>
+            <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="날마다 조회·장바구니·결제 막대 그래프"><line x1="0" x2="${W}" y1="${H - pad}" y2="${H - pad}" stroke="#e6e6e6"/>${g}</svg></div>` : '';
         const card = (l, v, hi, sub) => `<div class="sl-card${hi ? ' hi' : ''}"><small>${l}</small><b>${v}</b>${sub ? `<em>${sub}</em>` : ''}</div>`;
-        return `<div class="sl-sum">${card('상세 보기', num(tot.views), false, '악보 페이지를 연 브라우저')}${card('장바구니 담기', num(tot.carts), false, tot.views ? '상세 보기의 ' + pct(tot.carts, tot.views) : '')}
-                ${card('결제한 악보', num(tot.orders), true, tot.views ? '상세 보기의 ' + pct(tot.orders, tot.views) : '')}${card('매출', won(tot.rev))}</div>
-            <div class="sl-bar"><span class="lbl">기간</span>${periodSeg('m', p)}<label class="ck"><input type="checkbox" data-mall${p.all ? ' checked' : ''}> 판매 중인 악보 모두 보기</label></div>
-            ${T == null ? `<p class="sl-note warn"><i class="fas fa-circle-info"></i> 상세 보기·장바구니 숫자는 서버 함수(<code>db/sheet_shop_admin.sql</code>)를 적용한 뒤부터 쌓여요. 지금은 결제 숫자만 보여요.</p>` : ''}
+        return `<div class="sl-sum">${card('조회', num(tot.views), false, '악보 페이지를 연 브라우저')}${card('장바구니 담기', num(tot.carts), false, tot.views ? '조회의 ' + pct(tot.carts, tot.views) : '')}
+                ${card('결제한 악보', num(tot.orders), true, tot.views ? '조회의 ' + pct(tot.orders, tot.views) : '')}${card('매출', won(tot.rev))}</div>
+            <div class="sl-bar"><span class="lbl">기간</span>${periodSeg('m', p)}</div>
+            <div class="sl-bar"><span class="lbl">정렬</span><div class="seg" data-mseg>${[['perf', '성과순'], ['recent', '최근 올린 순']].map(([k, n]) => `<button data-mv="${k}"${(recent ? 'recent' : 'perf') === k ? ' class="on"' : ''}>${n}</button>`).join('')}</div>
+                ${recent ? '' : `<label class="ck"><input type="checkbox" data-mall${p.all ? ' checked' : ''}> 판매 중인 악보 모두 보기</label>`}</div>
+            ${T == null ? `<p class="sl-note warn"><i class="fas fa-circle-info"></i> 조회·장바구니 숫자는 서버 함수(<code>db/sheet_shop_admin.sql</code>)를 적용한 뒤부터 쌓여요. 지금은 결제 숫자만 보여요.</p>` : ''}
             ${chart}
-            <div class="sl-tw"><table class="sl"><thead><tr>${th('title', '악보')}${th('views', '상세 보기')}${th('carts', '장바구니')}${th('orders', '결제')}${th('conv', '전환율')}${th('rev', '매출')}</tr></thead>
+            <div class="sl-tw"><table class="sl"><thead><tr>${th('title', '악보')}${th('views', '조회')}${th('carts', '장바구니')}${th('orders', '결제')}${th('conv', '전환율')}${th('rev', '매출')}</tr></thead>
             <tbody>${body || `<tr><td colspan="6" class="sl-empty">이 기간에 숫자가 없어요</td></tr>`}</tbody></table></div>
-            <p class="sl-note">상세 보기 = 악보 페이지를 연 브라우저 수(같은 브라우저의 같은 악보는 하루 한 번, 검색 로봇·운영 계정은 안 셈) · 장바구니 = 장바구니에 담은 수 ·
-            결제 = 결제 완료된 악보 수(테스트 결제 빼고) · 전환율 = 결제 ÷ 상세 보기. 상세 보기·장바구니는 ${TRACK_FROM.slice(5).replace('-', '월 ')}일부터 세서, 이 탭은 그날부터의 숫자만 보여요(그 전 판매는 정산 관리에서).</p>`;
+            <p class="sl-note">조회 = 악보 페이지를 연 브라우저 수(같은 브라우저의 같은 악보는 하루 한 번, 검색 로봇·운영 계정은 안 셈) · 장바구니 = 장바구니에 담은 수 ·
+            결제 = 결제 완료된 악보 수(테스트 결제 빼고) · 전환율 = 결제 ÷ 조회. 최근 올린 순 = 메인 '새로 나온 악보'와 같은 순서(판매 중인 악보 모두). 조회·장바구니는 ${TRACK_FROM.slice(5).replace('-', '월 ')}일부터 세서, 이 탭은 그날부터의 숫자만 보여요(그 전 판매는 정산 관리에서).</p>`;
     }
 
     // ---------- 그리기 · 탭 ----------
@@ -458,6 +469,7 @@ table.sl{width:100%;border-collapse:collapse;font-size:13.5px}
         const pg = e.target.closest('[data-opage]'); if (pg) { ST.o.page = +pg.dataset.opage; render(); return; }
         const su = e.target.closest('[data-sseg] [data-u]'); if (su) { ST.s.unit = su.dataset.u; ST.s.sel = null; render(); return; }
         const sk = e.target.closest('[data-sk]'); if (sk) { ST.s.sel = sk.dataset.sk; render(); return; }
+        const mv = e.target.closest('[data-mseg] [data-mv]'); if (mv) { if (mv.dataset.mv === 'recent') ST.m.sort = 'recent'; else if (ST.m.sort === 'recent') { ST.m.sort = 'views'; ST.m.dir = -1; } render(); return; }
         const ms = e.target.closest('[data-msort]'); if (ms) { const k = ms.dataset.msort; if (ST.m.sort === k) ST.m.dir *= -1; else { ST.m.sort = k; ST.m.dir = k === 'title' ? 1 : -1; } render(); return; }
         if (e.target.closest('[data-reload]')) { loaded = false; loading = null; traffic = null; backfilled = false; render(); return; }
         const tr = e.target.closest('tr[data-oid]');
