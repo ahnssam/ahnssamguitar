@@ -157,8 +157,8 @@
     // 비회원 주문 보기 — o: { orderId, key | paymentKey | email }
     function guestList(o) { return guestCall(Object.assign({ action: 'list', orderId: o.orderId }, cred(o))); }
 
-    // 로그인 안 한 손님: 로그인하고 살지, 비회원으로 살지 (이메일)
-    function askGuest() {
+    // 비회원 선택 창·PDF 받기 창이 같이 쓰는 모양
+    function gbCss() {
         if (!document.getElementById('ahnssam-guest-css')) {
             const st = document.createElement('style');
             st.id = 'ahnssam-guest-css';
@@ -174,9 +174,19 @@
                 .gb .agree{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;font-weight:500;color:#555;line-height:1.5;margin:10px 0 0}
                 .gb .agree input{margin-top:3px}.gb .err{color:#c0392b;font-size:12.5px;margin-top:6px;min-height:1em}
                 .gb .acts{display:flex;gap:8px;margin-top:12px}.gb .acts button{flex:1;padding:11px;border-radius:22px;border:0;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
-                .gb .acts .no{background:#f1f4f2;color:#555}.gb .acts .go{background:#2a6b4a;color:#fff}`;
+                .gb .acts .no{background:#f1f4f2;color:#555}.gb .acts .go{background:#2a6b4a;color:#fff}
+                .gb .fn{font-size:12.5px;color:#777;word-break:break-all;margin-top:4px}.gb .opt[disabled]{opacity:.55;cursor:default}
+                .gb .warn{margin-top:12px;padding:10px 12px;border-radius:10px;background:#fff6da;color:#6b4f00;font-size:12.8px;line-height:1.55}
+                .gb .warn b{color:#5a4200}.gb .warn .row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+                .gb .warn .row a,.gb .warn .row button{padding:7px 11px;border-radius:16px;border:1px solid #e8d38a;background:#fff;font:inherit;font-size:12.5px;font-weight:700;color:#6b4f00;cursor:pointer;text-decoration:none}
+                .gb .tip{margin-top:12px;font-size:12.5px;color:#666;line-height:1.6}.gb .tip b{color:#2a6b4a}`;
             document.head.appendChild(st);
         }
+    }
+
+    // 로그인 안 한 손님: 로그인하고 살지, 비회원으로 살지 (이메일)
+    function askGuest() {
+        gbCss();
         let last = '';
         try { last = (guestOrders()[0] || {}).email || ''; } catch (e) {}
         return new Promise(res => {
@@ -275,6 +285,74 @@
         }
     }
 
+    // 아이폰·앱 안 브라우저에서 PDF 받기 (2026-11-27 — 11-26 밤 아이폰 손님이 내려받기를 9번 눌렀는데 '다운로드가 안 된다'며 환불 요청.
+    //   서버는 PDF를 매번 다 보냈지만, 아이폰은 '저장' 파일을 화면에 띄우지 않고 파일 앱에 조용히 넣고(크롬은 Chrome 폴더),
+    //   네이버·카카오톡 같은 앱 안 브라우저는 저장이 아예 안 되기도 한다 → 눌러도 아무 일 없는 것처럼 보였다.)
+    //   그래서 아이폰·아이패드와 앱 안 브라우저(어느 폰이든)에서는 바로 저장하지 않고 'PDF 준비됐어요' 창:
+    //   [PDF 열기] 화면에 바로 열림 · [파일에 저장] 공유 창 → '파일에 저장'(되는 브라우저만, 안 되면 예전처럼 저장) + 찾는 곳 안내.
+    //   앱 안 브라우저면 '다른 브라우저로 열어 주세요'와 주소 복사(카카오톡은 바로 여는 단추). 컴퓨터·안드로이드 일반 브라우저는 예전처럼 바로 저장.
+    const UA = navigator.userAgent || '';
+    const IOS = /iPhone|iPad|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const INAPP = [[/KAKAOTALK/i, '카카오톡'], [/NAVER\(inapp/i, '네이버 앱'], [/Instagram/i, '인스타그램'], [/FBAN|FBAV|FB_IAB/i, '페이스북'],
+        [/\bLine\//i, '라인'], [/DaumApps/i, '다음 앱'], [/everytimeApp/i, '에브리타임'], [/BAND\//i, '밴드'], [/musical_ly|BytedanceWebview|TikTok/i, '틱톡']]
+        .reduce((f, [re, n]) => f || (re.test(UA) ? n : ''), '');
+    const inline = u => u.replace(/([?&])download=[^&]*&?/, '$1').replace(/[?&]$/, '');   // 저장 대신 화면에 열기
+    async function deliver(getUrl, name) {
+        const url = await getUrl();
+        if (!url) return false;
+        if (!IOS && !INAPP) { window.location.href = url; return true; }
+        pdfSheet(url, getUrl, name);
+        return true;
+    }
+    function pdfSheet(url0, getUrl, name) {
+        gbCss();
+        let url = url0, at = Date.now(), file = null;
+        const fresh = async () => { if (Date.now() - at > 45e3) { url = await getUrl() || url; at = Date.now(); } return url; };   // 받기 링크는 1분짜리
+        const canShare = IOS && !!(navigator.share && navigator.canShare && window.File);
+        const esc = v => String(v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        const back = document.createElement('div');
+        back.className = 'gb-back';
+        back.innerHTML = `<div class="gb" role="dialog" aria-modal="true" aria-label="악보 PDF 받기">
+            <h3><i class="fas fa-file-pdf"></i> 악보 PDF가 준비됐어요</h3><p class="fn">${esc(name)}</p>
+            ${INAPP ? `<div class="warn">지금 <b>${esc(INAPP)}</b> 안에서 열린 화면이에요. 여기서는 파일 저장이 잘 안 될 수 있어요.
+                오른쪽 위(또는 아래) <b>⋯ 메뉴 → '다른 브라우저로 열기'</b>${IOS ? "·<b>'Safari로 열기'</b>" : ''}로 이 페이지를 연 뒤 다시 받아 주세요.
+                <div class="row">${/KAKAOTALK/i.test(UA) ? `<a href="kakaotalk://web/openExternal?url=${encodeURIComponent(location.href)}">다른 브라우저로 열기</a>` : ''}<button type="button" data-copy>이 페이지 주소 복사</button></div></div>` : ''}
+            <button type="button" class="opt main" data-open><i class="fas fa-eye"></i> PDF 열기<small>화면에 바로 열려요${IOS ? " — 아래 공유 단추(□↑) → '파일에 저장'으로 보관" : ''}</small></button>
+            ${canShare ? `<button type="button" class="opt" data-share disabled><i class="fas fa-arrow-up-from-bracket"></i> <span>준비 중…</span><small>공유 창에서 '파일에 저장'을 고르세요</small></button>`
+                : `<button type="button" class="opt" data-save><i class="fas fa-download"></i> 파일로 저장<small>${IOS ? "저장한 파일은 '파일' 앱 › 다운로드(크롬은 Chrome 폴더)에 있어요" : '저장한 파일은 내 파일(다운로드) 폴더에 있어요'}</small></button>`}
+            <p class="tip">${IOS ? "아이폰은 저장해도 화면에 안 뜨고 <b>'파일' 앱</b>에 들어가요." : ''} 구매일로부터 1년 동안 언제든 다시 받을 수 있어요.</p>
+            <div class="acts"><button type="button" class="no" data-x>닫기</button></div></div>`;
+        const done = () => { back.remove(); document.removeEventListener('keydown', onKey); };
+        const onKey = e => { if (e.key === 'Escape') done(); };
+        if (canShare) {   // 공유 창은 누른 순간에 바로 불러야 해서(기다리면 막힘) 파일을 미리 받아 둔다
+            const sb = back.querySelector('[data-share]');
+            fetch(url).then(r => r.ok ? r.blob() : Promise.reject(r.status)).then(b => {
+                file = new File([b], name, { type: 'application/pdf' });
+                if (!navigator.canShare({ files: [file] })) throw 0;
+                sb.disabled = false; sb.querySelector('span').textContent = '파일에 저장';
+            }).catch(() => {   // 미리 못 받았거나 공유가 안 되면 예전처럼 저장
+                sb.outerHTML = `<button type="button" class="opt" data-save><i class="fas fa-download"></i> 파일로 저장<small>저장한 파일은 '파일' 앱 › 다운로드(크롬은 Chrome 폴더)에 있어요</small></button>`;
+            });
+        }
+        back.addEventListener('click', async e => {
+            if (e.target === back || e.target.closest('[data-x]')) { done(); return; }
+            if (e.target.closest('[data-open]')) { window.location.href = inline(await fresh()); return; }
+            if (e.target.closest('[data-save]')) { window.location.href = await fresh(); return; }
+            if (e.target.closest('[data-share]') && file) {
+                try { await navigator.share({ files: [file], title: name }); }
+                catch (err) { if (err && err.name !== 'AbortError') window.location.href = await fresh(); }
+                return;
+            }
+            const cp = e.target.closest('[data-copy]');
+            if (cp) {
+                try { await navigator.clipboard.writeText(location.href); cp.textContent = '복사했어요'; }
+                catch (err) { prompt('이 주소를 복사해 다른 브라우저에 붙여 넣어 주세요', location.href); }
+            }
+        });
+        document.addEventListener('keydown', onKey);
+        document.body.appendChild(back);
+    }
+
     // 산 악보 PDF 내려받기 — 1분짜리 링크를 만들어 바로 받는다.
     // 파일 이름: 곡제목_아티스트_악보나무숲.pdf. 아티스트 칸이 빈 곡은 자작곡(안쌤 곡)이라 '안큐'.
     //   같은 곡의 여러 악보(반주·솔로)는 part 를 곡제목 뒤에 [기타솔로]처럼 붙여 이름이 겹치지 않게.
@@ -286,11 +364,13 @@
         const clean = v => String(v || '').replace(/[\\/:*?"<>|_]+/g, ' ').replace(/\s+/g, ' ').trim();
         const t = clean(title) || '악보', a = clean(artist) || '안큐', pt = clean(full ? '반주+기타솔로' : part);
         const name = [t + (pt ? ' [' + pt + ']' : ''), a, '악보나무숲'].filter(Boolean).join('_') + '.pdf';
-        const { data, error } = await auth().supabase.storage.from('sheet-pdfs')
-            .createSignedUrl(sheetId + (full ? '-full' : '') + '.pdf', 60, { download: name });
-        if (error || !data) { alert('파일을 내려받지 못했어요. 구매한 계정으로 로그인했는지, 구매일로부터 1년이 지나지 않았는지 확인해 주세요.'); return false; }
-        window.location.href = data.signedUrl;
-        return true;
+        const getUrl = async () => {
+            const { data, error } = await auth().supabase.storage.from('sheet-pdfs')
+                .createSignedUrl(sheetId + (full ? '-full' : '') + '.pdf', 60, { download: name });
+            if (error || !data) { alert('파일을 내려받지 못했어요. 구매한 계정으로 로그인했는지, 구매일로부터 1년이 지나지 않았는지 확인해 주세요.'); return null; }
+            return data.signedUrl;
+        };
+        return deliver(getUrl, name);   // 아이폰·앱 안 브라우저는 'PDF 준비됐어요' 창
     }
 
     // 비회원 주문의 PDF 내려받기 — o: { orderId, key | paymentKey | email }
@@ -298,11 +378,13 @@
         const clean = v => String(v || '').replace(/[\\/:*?"<>|_]+/g, ' ').replace(/\s+/g, ' ').trim();
         const t = clean(title) || '악보', a = clean(artist) || '안큐', pt = clean(full ? '반주+기타솔로' : part);
         const name = [t + (pt ? ' [' + pt + ']' : ''), a, '악보나무숲'].filter(Boolean).join('_') + '.pdf';
-        const r = await guestCall(Object.assign({ action: 'download', orderId: o.orderId, sheetId, full: !!full, name }, cred(o)));
-        if (r && r.error === 'expired') { alert('다시 받을 수 있는 기간(구매일로부터 1년)이 지났어요.'); return false; }
-        if (!r || !r.ok || !r.url) { alert('파일을 내려받지 못했어요. 주문번호와 이메일을 확인해 주세요.'); return false; }
-        window.location.href = r.url;
-        return true;
+        const getUrl = async () => {
+            const r = await guestCall(Object.assign({ action: 'download', orderId: o.orderId, sheetId, full: !!full, name }, cred(o)));
+            if (r && r.error === 'expired') { alert('다시 받을 수 있는 기간(구매일로부터 1년)이 지났어요.'); return null; }
+            if (!r || !r.ok || !r.url) { alert('파일을 내려받지 못했어요. 주문번호와 이메일을 확인해 주세요.'); return null; }
+            return r.url;
+        };
+        return deliver(getUrl, name);   // 아이폰·앱 안 브라우저는 'PDF 준비됐어요' 창
     }
     // 주문번호를 잊은 비회원 — 그 이메일로 산(아직 받을 수 있는) 주문을 메일로 받는다. 주문이 없어도 서버는 똑같이 ok
     function guestResend(email) { return guestCall({ action: 'resend', email }); }
