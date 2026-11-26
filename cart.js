@@ -126,6 +126,7 @@
 .ac-go{display:block;width:100%;margin-top:12px;border:0;border-radius:26px;padding:14px;background:#2a6b4a;color:#fff;font:700 15.5px 'Noto Sans KR',sans-serif;cursor:pointer}
 .ac-go:disabled{opacity:.45;cursor:default}.ac-go:not(:disabled):hover{background:#3a8a5c}
 .ac-note{font-size:11.5px;color:#999;line-height:1.55;margin-top:10px}
+.ac-rf{font-size:11.8px;color:#8a5212;background:#fff8ee;border-radius:9px;padding:8px 10px;line-height:1.55;margin-top:8px}.ac-rf a{color:#777;white-space:nowrap;text-decoration:underline}
 .ac-sel{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#666;padding:10px 0 4px}
 .ac-sel button{border:0;background:none;color:#2a6b4a;font:inherit;font-weight:700;cursor:pointer;padding:0;margin-left:auto}
 @media (max-width:520px){.ac-fab{right:12px;bottom:12px;padding:11px 15px 11px 14px}}
@@ -241,7 +242,8 @@
             <div class="ac-ln sum"><span>결제 금액</span><span>${won(T.total)}</span></div>
             ${over ? `<p class="ac-warn"><i class="fas fa-circle-info"></i> 한 번에 <b>1만원까지</b> 결제할 수 있어요. 몇 개를 빼고 먼저 결제한 뒤, 남은 악보는 다음에 결제해 주세요.</p>` : ''}
             <button type="button" class="ac-go" data-go${!sel.length || over ? ' disabled' : ''}><i class="fas fa-credit-card"></i> ${sel.length ? `${sel.length}개 구매하기` : '살 악보를 골라 주세요'}</button>
-            <p class="ac-note">한 번에 10개 · 1만원까지 결제할 수 있어요. 같은 곡의 반주와 기타솔로를 함께 사면 500원 할인돼요.${Q.member ? '' : ' 로그인하면 이미 산 악보를 알려 주고, 이미 산 짝과 묶음 할인도 받아요.'}<br>결제 즉시 PDF로 받는 디지털 상품이에요 · 다운로드 유효기간: 구매일로부터 1년</p>`;
+            <p class="ac-note">한 번에 10개 · 1만원까지 결제할 수 있어요. 같은 곡의 반주와 기타솔로를 함께 사면 500원 할인돼요.${Q.member ? '' : ' 로그인하면 이미 산 악보를 알려 주고, 이미 산 짝과 묶음 할인도 받아요.'}<br>결제 즉시 PDF로 받는 디지털 상품이에요 · 다운로드 유효기간: 구매일로부터 1년</p>
+            <p class="ac-rf"><i class="fas fa-rotate-left"></i> 디지털 콘텐츠 특성상 PDF를 내려받은 뒤에는 단순 변심 환불이 안 돼요. <a href="/legal/terms.html#refund" target="_blank">환불 정책</a></p>`;
         draw(selBar + rows, foot);
     }
     function onChange(e) {

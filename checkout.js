@@ -179,7 +179,9 @@
                 .gb .warn{margin-top:12px;padding:10px 12px;border-radius:10px;background:#fff6da;color:#6b4f00;font-size:12.8px;line-height:1.55}
                 .gb .warn b{color:#5a4200}.gb .warn .row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
                 .gb .warn .row a,.gb .warn .row button{padding:7px 11px;border-radius:16px;border:1px solid #e8d38a;background:#fff;font:inherit;font-size:12.5px;font-weight:700;color:#6b4f00;cursor:pointer;text-decoration:none}
-                .gb .tip{margin-top:12px;font-size:12.5px;color:#666;line-height:1.6}.gb .tip b{color:#2a6b4a}`;
+                .gb .tip{margin-top:12px;font-size:12.5px;color:#666;line-height:1.6}.gb .tip b{color:#2a6b4a}
+                .gb .rf{display:flex;gap:7px;align-items:flex-start;margin:14px 0 0;padding:9px 11px;border-radius:10px;background:#fff8ee;color:#8a5212;font-size:12.3px;line-height:1.55}
+                .gb .rf i{margin-top:3px}.gb .rf a{color:#777;white-space:nowrap;text-decoration:underline}`;
             document.head.appendChild(st);
         }
     }
@@ -194,7 +196,7 @@
             back.className = 'gb-back';
             back.innerHTML = `<div class="gb" role="dialog" aria-modal="true" aria-label="구매 방법 고르기">
                 <h3>어떻게 구매할까요?</h3><p>로그인하면 구매한 악보를 구매일로부터 1년 동안 '구매한 악보'에서 다시 받을 수 있어요.</p>
-                <button type="button" class="opt main" data-login><i class="fas fa-right-to-bracket"></i> 로그인하고 구매<small>구글·카카오로 바로 로그인</small></button>
+                <button type="button" class="opt main" data-login><i class="fas fa-right-to-bracket"></i> 로그인하고 구매<small>회원가입 또는 구글로 바로 로그인</small></button>
                 <form novalidate>
                     <label for="gbEmail">비회원으로 구매 — 이메일</label>
                     <input type="email" id="gbEmail" autocomplete="email" placeholder="you@example.com" value="${String(last).replace(/"/g, '&quot;')}">
@@ -202,7 +204,8 @@
                     <p style="font-size:12px;margin-top:8px">결제가 끝나면 바로 PDF를 받을 수 있어요. 나중에 다시 받을 때는 <b>주문번호와 이 이메일</b>이 필요해요.</p>
                     <div class="err" id="gbErr"></div>
                     <div class="acts"><button type="button" class="no" data-x>취소</button><button type="submit" class="go">비회원으로 결제하기</button></div>
-                </form></div>`;
+                </form>
+                <p class="rf"><i class="fas fa-rotate-left"></i><span>디지털 콘텐츠 특성상 PDF를 내려받은 뒤에는 단순 변심 환불이 안 돼요. <a href="/legal/terms.html#refund" target="_blank">환불 정책</a></span></p></div>`;
             const done = v => { back.remove(); document.removeEventListener('keydown', onKey); res(v); };
             const onKey = e => { if (e.key === 'Escape') done(null); };
             // 이메일 칸에서 드래그하다 바깥에서 마우스를 놓아도 닫히지 않게 — 누른 곳도 바깥일 때만 바깥 클릭으로 본다
