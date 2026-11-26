@@ -160,12 +160,8 @@
     /* 도감 탭 (2026-11-26 사용자: '도감도 탭화 — 맨 처음엔 전체, 그 옆으로 악기별로'). 내려도 사이트 메뉴 바로 아래에 붙는다(--hdh = 위에 붙는 머리줄 높이) */
     .dex .dxtabs { position: sticky; top: var(--hdh, 0px); z-index: 6; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin: 0 -4px 8px; padding: 6px 4px 8px; background: var(--cream); }
     .dex .dxtabs::-webkit-scrollbar { display: none; }
-    .dex .dxtabs button { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 44px; padding: 6px 7px 5px; border-radius: 11px; border: 1.5px solid var(--line); background: #fff; font: inherit; font-weight: 900; font-size: 13.5px; line-height: 1.2; color: #5a6b62; cursor: pointer; }
-    .dex .dxtabs button small { font-size: 10.5px; font-weight: 800; color: #9aa8a1; }
-    .dex .dxtabs button.full small { color: #2f9e5f; }
+    .dex .dxtabs button { flex: 0 0 auto; min-width: 44px; padding: 8px 7px; border-radius: 11px; border: 1.5px solid var(--line); background: #fff; font: inherit; font-weight: 900; font-size: 13.5px; line-height: 1.2; color: #5a6b62; cursor: pointer; }
     .dex .dxtabs button.on { background: var(--green-deep); border-color: var(--green-deep); color: #fff; }
-    .dex .dxtabs button.on small { color: #cdeadb; }
-    .dex .dxtabs button.on.full small { color: #ffd76a; }
     /* 운영 계정 도감 (2026-11-13 사용자: 헤드머신 숫자가 안 맞는 그림을 직접 고치려고 — 168칸 모두, 자르지 않은 전체 그림으로) */
     .dex .dx-admin { display: flex; align-items: center; gap: 8px; margin: -4px 2px 12px; padding: 8px 10px; border-radius: 10px; background: #fff3cf; font-size: 12.5px; font-weight: 800; color: #7a5200; }
     .dex .dx-admin button { margin-left: auto; padding: 5px 11px; border-radius: 99px; border: 1.5px solid #e0b64a; background: #fff; font-size: 12px; font-weight: 800; color: #7a5200; }
@@ -3031,9 +3027,8 @@ function renderDex() {
         <div class="dx-bar"><i style="width:${(total / all * 100).toFixed(1)}%"></i></div>
         <div class="dx-perk"><i class="fas fa-gift"></i><span>도감 특전 <b>성공 +${dexUp()}%</b> · <b>판매 +${dexGold()}%</b></span><small>한 칸 찰 때마다 성공 +${DEX_UP_T}% · 판매 +${DEX_GOLD_T}% · 다 모으면 성공 +${DEX_FULL_UP}% · 판매 +${DEX_FULL_GOLD}%</small></div>
         ${ADMIN ? `<div class="dx-admin"><i class="fas fa-user-gear"></i>${whole ? '운영 계정 · 전체 그림 (초록 점 = 내가 닿은 칸)' : '운영 계정 · 내 도감'}<button type="button" data-a="dexall">${whole ? '내 도감만 보기' : '전체 그림 보기'}</button></div>` : ''}
-        <div class="dxtabs" role="tablist">${DEX_KINDS.map(([k, nm]) => {
-            const fs = k === 'all' ? DEX_FAMS : DEX_FAMS.filter(f => dexKindOf(f) === k), c = fs.reduce((n, f) => n + cnt(f), 0), a = fs.length * N;
-            return `<button type="button" role="tab" data-a="dexkind" data-k="${k}" class="${k === dexKind ? 'on' : ''} ${c === a ? 'full' : ''}" aria-selected="${k === dexKind}">${nm}<small>${c}/${a}</small></button>`; }).join('')}</div>
+        <div class="dxtabs" role="tablist">${DEX_KINDS.map(([k, nm]) =>
+            `<button type="button" role="tab" data-a="dexkind" data-k="${k}" class="${k === dexKind ? 'on' : ''}" aria-selected="${k === dexKind}">${nm}</button>`).join('')}</div>
         ${fams.map(f => { const F = FAMS[f], c = cnt(f);
             return `<div class="fam"><h4>${esc(F.dexName || F.name)}<small class="${c === N ? 'full' : ''}">${c === N ? '완성! ' : ''}${c} / ${N}</small></h4><div class="grid">${
                 Array.from({ length: N }, (_, i) => whole || dexHas(f, i)
