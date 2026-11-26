@@ -227,7 +227,7 @@ def page_lesson(L, all_lessons, shell_parts):
         'contentUrl': f'https://www.youtube.com/watch?v={vid}',
         'author': {'@type': 'Person', 'name': '안규호(안쌤)', 'url': SITE + '/'}}
     extra = (f'    <script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>\n'
-             f'    <style>{style}{CSS}</style>\n    <script src="/auth.js?v=2026111601" defer></script>\n</head>\n<body>\n')
+             f'    <style>{style}{CSS}</style>\n    <script src="/auth.js?v=2026112701" defer></script>\n</head>\n<body>\n')
     o = [head(title, desc, canon, thumb(vid, 'maxresdefault'), extra), header]
     o.append('<main class="ls-wrap">')
     o.append(f'<div class="ls-crumb"><a href="/lessons.html">강좌 &amp; 레슨</a> › {e(CAT_NAME.get(L["cat"], ""))}</div>')
@@ -281,7 +281,7 @@ def page_list(lessons, shell_parts):
     ld = {'@context': 'https://schema.org', '@type': 'ItemList', 'name': '안쌤의 기타 강좌',
           'itemListElement': [{'@type': 'ListItem', 'position': n + 1, 'url': f'{SITE}/lessons/{L["id"]}.html', 'name': L['title']} for n, L in enumerate(lessons)]}
     extra = (f'    <script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>\n'
-             f'    <style>{style}{CSS}</style>\n    <script src="/auth.js?v=2026111601" defer></script>\n</head>\n<body>\n')
+             f'    <style>{style}{CSS}</style>\n    <script src="/auth.js?v=2026112701" defer></script>\n</head>\n<body>\n')
     o = [head(title, desc, canon, thumb(lessons[0]['id'], 'maxresdefault'), extra), header, '<main class="ls-wrap">']
     o.append('<div class="ls-hero"><small>LESSONS</small><h1>강좌 &amp; 레슨</h1>'
              f'<p>유튜브 채널 기타나무숲의 강좌 {len(lessons)}편을 영상과 함께 글로 정리했어요. 영상을 보면서 옆의 글로 요점을 다시 확인하고, '

@@ -309,6 +309,16 @@ nav.scrolled .auth-btn:hover {
     text-decoration: underline;
 }
 .auth-footer-link:hover { color: var(--green-dark, #3a8a5c); }
+/* 비회원 주문 조회 줄 (2026-11-27 사용자: 비회원으로 산 손님이 다시 받는 곳을 못 찾음 — 로그인 창 맨 아래에) */
+.auth-guest-link {
+    display: flex; align-items: center; justify-content: center; gap: 0.35rem; flex-wrap: wrap;
+    margin-top: 1rem; padding-top: 0.9rem;
+    border-top: 1px solid rgba(42, 107, 74, 0.14);
+    font-size: 0.84rem; color: #5d6b62; text-decoration: none; text-align: center;
+}
+.auth-guest-link b { color: var(--green-deep, #2a6b4a); font-weight: 700; }
+.auth-guest-link i { font-size: 0.7rem; color: var(--green-deep, #2a6b4a); }
+.auth-guest-link:hover b { text-decoration: underline; }
 
 @media (max-width: 480px) {
     .auth-modal { max-width: 100%; }
@@ -355,6 +365,8 @@ nav.scrolled .auth-btn:hover {
     background: rgba(180, 230, 200, 0.14);
 }
 :root[data-theme="dark"] .auth-label { color: rgba(232, 240, 236, 0.78); }
+:root[data-theme="dark"] .auth-guest-link { color: rgba(232, 240, 236, 0.6); border-top-color: rgba(180, 230, 200, 0.14); }
+:root[data-theme="dark"] .auth-guest-link b, :root[data-theme="dark"] .auth-guest-link i { color: #9be0b6; }
 :root[data-theme="dark"] .auth-pw-rules span { color: rgba(232, 240, 236, 0.55); background: rgba(255, 255, 255, 0.06); }
 :root[data-theme="dark"] .auth-pw-rules span.ok { color: #9be0b6; background: rgba(82, 168, 114, 0.18); }
 :root[data-theme="dark"] .auth-input[readonly] { color: rgba(232, 240, 236, 0.55); background: rgba(255, 255, 255, 0.02); }
@@ -437,6 +449,7 @@ nav.scrolled .auth-btn:hover {
                 <div class="auth-msg" id="authMsg"></div>
                 <button class="auth-footer-link" type="button" data-auth-action="reset-password">비밀번호를 잊으셨나요?</button>
             </form>
+            <a class="auth-guest-link" id="authGuestLink" href="/purchases.html#guest">비회원으로 사셨나요? <b>비회원 주문 조회</b> <i class="fas fa-chevron-right"></i></a>
         </div>
     </div>
 </div>
@@ -830,6 +843,10 @@ nav.scrolled .auth-btn:hover {
         if (divider) divider.style.display = isRecovery ? 'none' : '';
         const forgotLink = document.querySelector('[data-auth-action="reset-password"]');
         if (forgotLink) forgotLink.style.display = newPw ? 'none' : '';
+        // 비회원 주문 조회 줄: 새 비밀번호 정하기 창과 앱(Play 결제 정책 — 앱에서는 악보 판매로 이어지는 길을 막음)에서는 숨긴다
+        const guest = document.getElementById('authGuestLink');
+        const isApp = !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+        if (guest) guest.style.display = isRecovery || isApp ? 'none' : '';
     }
 
     function wireModal() {
@@ -862,6 +879,18 @@ nav.scrolled .auth-btn:hover {
             });
         });
         document.getElementById('authForm').addEventListener('submit', onSubmitForm);
+        // 비회원 주문 조회: 다른 페이지면 구매 내역으로 가고, 이미 구매 내역 페이지면 창만 닫고 조회 칸으로 내려간다
+        const guestLink = document.getElementById('authGuestLink');
+        if (guestLink) guestLink.addEventListener('click', (e) => {
+            if (!/\/purchases\.html$/.test(window.location.pathname)) return;
+            e.preventDefault();
+            closeModal().then(() => {
+                const g = document.getElementById('guest');
+                if (g) { g.hidden = false; g.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+                const f = document.getElementById('lookOrder');
+                if (f && !_hasTouch()) f.focus({ preventScroll: true });
+            });
+        });
     }
 
     function setMsg(text, kind) {

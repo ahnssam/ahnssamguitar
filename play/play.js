@@ -225,7 +225,7 @@
         m.addEventListener('click', e => { if (e.target.closest('a')) set(false); });
         if (!document.querySelector('script[src*="auth.js"]')) {
             const s = document.createElement('script');
-            s.src = '../auth.js?v=2026111402'; s.defer = true;
+            s.src = '../auth.js?v=2026112701'; s.defer = true;
             document.head.appendChild(s);
         }
     }
