@@ -217,7 +217,8 @@
     </footer>
 
     <script src="auth.js?v=2026111601" defer></script>
-    <script src="checkout.js?v=20261124c" defer></script>
+    <script src="checkout.js?v=20261126" defer></script>
+    <script src="cart.js?v=2026112602" defer></script>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         'use strict';
@@ -390,6 +391,7 @@
                     const r = await C.confirm(pk, oid, q.get('amount'));
                     if (r && r.ok && r.guest) {
                         C.rememberGuestPayment(oid, pk);
+                        if (window.ahnssamCart) window.ahnssamCart.paid();   // 산 악보는 장바구니에서 뺀다
                         const o = C.guestOrder(oid);
                         showPay('ok', 'fa-circle-check', '결제가 완료됐어요',
                             `고맙습니다! 아래 <b>비회원 주문</b>에서 바로 PDF를 받을 수 있어요.<br>나중에 다시 받을 때는 <b>주문번호 ${esc(oid)}</b>와 주문할 때 적은 이메일${o && o.email ? `(${esc(o.email)})` : ''}로 이 페이지의 '비회원 주문 조회'를 쓰세요. 이 화면을 캡처해 두면 편해요.`);
@@ -424,6 +426,7 @@
                 history.replaceState(null, '', location.pathname);
                 if (r && r.ok) {
                     newSheet = r.sheet_id;
+                    if (window.ahnssamCart) window.ahnssamCart.paid();   // 산 악보는 장바구니에서 뺀다
                     showPay('ok', 'fa-circle-check', '결제가 완료됐어요', '고맙습니다! 아래에서 바로 PDF를 내려받을 수 있어요. 구매일로부터 1년 동안 이 페이지(내 메뉴 → 구매한 악보)에서 다시 받을 수 있어요.',
                         `<button class="btn" data-dl="${esc(r.sheet_id)}"><i class="fas fa-download"></i> PDF 내려받기</button>`);
                 } else {

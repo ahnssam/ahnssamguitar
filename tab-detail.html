@@ -549,6 +549,9 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
+        .btn-cart { gap: 0.5rem; font-size: 0.95rem; font-weight: 700; white-space: nowrap; }
+        .btn-cart.in { background: var(--green-faint); border-color: var(--green-mid); }
+        .btn-cart[hidden] { display: none; }
         .btn-cart:hover {
             border-color: var(--green-mid);
             background: var(--green-faint);
@@ -754,7 +757,8 @@
 </style>
     <!-- Supabase auth (shared) -->
     <script src="auth.js?v=2026111601" defer></script>
-    <script src="checkout.js?v=20261124c" defer></script>
+    <script src="checkout.js?v=20261126" defer></script>
+    <script src="cart.js?v=2026112602" defer></script>
 </head>
 <body>
 
@@ -855,6 +859,8 @@
                 <button type="button" id="productBuyBtn" class="btn-purchase" disabled>
                     <i class="fas fa-spinner fa-spin"></i> 확인 중
                 </button>
+                <!-- 장바구니 담기 (2026-11-26, cart.js) — 살 수 있을 때만 보인다. 이미 담았으면 '장바구니 보기' -->
+                <button type="button" id="productCartBtn" class="btn-cart" hidden><i class="fas fa-cart-plus"></i> 장바구니 담기</button>
             </div>
             <!-- 토스 심사: 구매자가 제공(다운로드) 기간을 알 수 있게 구매 버튼 바로 아래에 적는다 (12개월 이하) -->
             <p class="buy-period" id="buyPeriod"><i class="fas fa-calendar-check"></i><span><b>다운로드 유효기간: 구매일로부터 1년</b><br>결제 즉시 PDF로 받는 디지털 상품 · <span style="white-space:nowrap">배송 없음</span></span></p>
@@ -1020,7 +1026,10 @@
                 (who ? who + ' - ' : '') + p.title + ' ' + kind + '. ' + (info ? info + '. ' : '') +
                 (p.kind === 'original' ? '안쌤(안규호) 작곡·편곡' : '안쌤(안규호)이 직접 ' + (p.kind === 'arrangement' ? '편곡' : '채보')) + '한 PDF 악보, 결제 즉시 내려받기.';
         }
+        // 마케팅 분석: 이 악보 상세 보기 1번 (같은 브라우저는 하루 한 번, 운영 계정은 서버가 안 셈) — cart.js
+        const whenCart = f => { if (window.ahnssamCart) f(window.ahnssamCart); else if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => window.ahnssamCart && f(window.ahnssamCart), { once: true }); };
         function showSheet(p) {
+            whenCart(c => c.track(p.id, 'view'));
             const SEP = '<span class="by-sep"></span>';   // 원곡 · 채보를 한 줄에
             const by = p.kind === 'original'
                 ? '작곡 · ' + ME + SEP + '편곡 · ' + ME
@@ -1170,7 +1179,7 @@
             const pg = t.list.filter(x => x.pages);
             document.getElementById('pagesRow').style.display = pg.length ? '' : 'none';
             document.getElementById('productPages').textContent = pg.length === 1 ? pg[0].pages + '페이지' : pg.map(x => partShort(x) + ' ' + x.pages + '페이지').join(' · ');
-            if (buyOpen) document.getElementById('productBuyBtn').disabled = !t.list.length;
+            if (buyOpen) { document.getElementById('productBuyBtn').disabled = !t.list.length; paintCartBtn(); }
         }
         document.addEventListener('change', e => {
             const c = e.target.closest('[data-part]'); if (!c) return;
@@ -1217,6 +1226,7 @@
                 btn.disabled = !onClick;
                 btn.onclick = onClick || null;
                 buyOpen = false;
+                document.getElementById('productCartBtn').hidden = true;
             };
             if (document.readyState === 'loading') await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
             const C = window.ahnssamCheckout;
@@ -1269,7 +1279,27 @@
             });
             buyOpen = true;
             btn.disabled = !partsTotal().list.length;
+            paintCartBtn();
         }
+        // 장바구니 담기 단추 — 고른 구성(반주 + 솔로면 둘 다)을 담는다. 다 담겨 있으면 '장바구니 보기'
+        function paintCartBtn(justAdded) {
+            const cb = document.getElementById('productCartBtn'), K = window.ahnssamCart;
+            if (!buyOpen || !K || K.IS_APP) { cb.hidden = true; return; }
+            const ids = partsTotal().list.map(x => x.id), inCart = ids.length && ids.every(id => K.has(id));
+            cb.hidden = false;
+            cb.disabled = !ids.length;
+            cb.classList.toggle('in', !!inCart);
+            cb.innerHTML = inCart ? `<i class="fas fa-cart-shopping"></i> ${justAdded ? '담았어요 · 장바구니 보기' : '장바구니 보기'}` : '<i class="fas fa-cart-plus"></i> 장바구니 담기';
+            cb.onclick = () => {
+                const ids2 = partsTotal().list.map(x => x.id);
+                if (!ids2.length) return;
+                if (ids2.every(id => K.has(id))) { K.open(); return; }
+                const r = K.add(ids2);
+                if (!r.added.length && r.full) { alert('장바구니에는 ' + K.MAX + '개까지 담을 수 있어요. 장바구니에서 먼저 결제하거나 몇 개를 빼 주세요.'); return; }
+                paintCartBtn(true);
+            };
+        }
+        window.addEventListener('ahnssam-cart-change', () => paintCartBtn());
         // 운영 계정은 비공개 악보도 열어 볼 수 있다 (공개 전 확인·테스트 결제용)
         async function loadPrivateForAdmin(id) {
             if (document.readyState === 'loading') await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));

@@ -15,6 +15,22 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
+// 결제 방법 자세히 (2026-11-26, db/sheet_shop_admin.sql 의 sheet_orders.pay_detail) — 악보관리 '주문 관리'에 보인다.
+//   토스 응답의 간편결제 이름(easyPay.provider)과 카드 발급사 코드(card.issuerCode)로 '카카오페이' · '신한카드(체크)' 처럼.
+const CARD: Record<string, string> = {
+  '11': 'KB국민', '21': '하나', '31': 'BC', '41': '신한', '51': '삼성', '61': '현대', '71': '롯데', '91': 'NH농협',
+  'W1': '우리', '33': '우리', '15': '카카오뱅크', '24': '토스뱅크', '3K': '기업BC', '3A': '케이뱅크', '46': '광주',
+  '35': '전북', '42': '제주', '36': '씨티', '37': '우체국', '38': '새마을', '39': '저축은행', '62': '신협', '34': '수협', '30': 'KDB산업',
+};
+// deno-lint-ignore no-explicit-any
+function payDetail(pay: any): string | null {
+  const card = pay?.card ? (CARD[pay.card.issuerCode] ?? (pay.card.issuerCode ? '카드사 ' + pay.card.issuerCode : '')) : '';
+  const ctype = pay?.card?.cardType && pay.card.cardType !== '미확인' ? pay.card.cardType : '';
+  const easy = pay?.easyPay?.provider ?? '';
+  if (easy) return easy + (card ? ' · ' + card + '카드' : '');
+  if (card) return card + '카드' + (ctype ? '(' + ctype + ')' : '');
+  return pay?.method ?? null;
+}
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 
@@ -41,8 +57,27 @@ Deno.serve(async (req) => {
   const user = userData?.user ?? null;
   const isAdmin = (user?.email ?? '').toLowerCase() === ADMIN_EMAIL;
 
-  let body: { paymentKey?: unknown; orderId?: unknown; amount?: unknown; check?: unknown };
+  let body: { paymentKey?: unknown; orderId?: unknown; amount?: unknown; check?: unknown; backfill?: unknown };
   try { body = await req.json(); } catch { return json({ error: 'bad_request' }, 400); }
+
+  // 예전 주문의 결제 방법 채우기 (운영 계정만, 악보관리 '주문 관리'가 부름) — 실결제(테스트 아님)인데 pay_detail 이 빈 주문을 토스에서 다시 읽는다
+  if (body.backfill === true) {
+    if (!isAdmin) return json({ error: 'admin_only' }, 403);
+    if (isTest) return json({ ok: true, filled: 0 });
+    const { data: rows, error } = await db.from('sheet_orders').select('order_id, payment_key')
+      .eq('status', 'paid').eq('is_test', false).is('pay_detail', null).not('payment_key', 'is', null).limit(30);
+    if (error) return json({ error: 'not_ready', message: error.message }, 409);   // pay_detail 칸이 아직 없음(SQL 적용 전)
+    let filled = 0;
+    for (const r of rows ?? []) {
+      const res = await fetch('https://api.tosspayments.com/v1/payments/' + encodeURIComponent(r.payment_key), {
+        headers: { Authorization: 'Basic ' + btoa(secret + ':') },
+      });
+      const pay = await res.json().catch(() => ({}));
+      const d = res.ok ? payDetail(pay) : null;
+      if (d && !(await db.from('sheet_orders').update({ pay_detail: d }).eq('order_id', r.order_id)).error) filled++;
+    }
+    return json({ ok: true, filled, left: Math.max(0, (rows ?? []).length - filled) });
+  }
 
   // 키 점검 (운영 계정만) — 결제 없이 토스가 이 시크릿 키를 받아 주는지만 본다
   if (body.check === true) {
@@ -124,6 +159,8 @@ Deno.serve(async (req) => {
     console.error('record failed', orderId, upErr?.message, purErr?.message);
     return json({ error: 'record_failed', order_id: orderId }, 500);
   }
+  // 결제 방법 자세히 — 따로 저장해서, 칸이 없거나(SQL 적용 전) 실패해도 결제·구매 기록은 그대로
+  await db.from('sheet_orders').update({ pay_detail: payDetail(pay) }).eq('order_id', orderId).then(() => {}, () => {});
   // 비회원: 주문 메일 (실패해도 결제는 끝난 것 — 손님은 화면의 주문번호로 받을 수 있다). 응답은 기다리지 않고 뒤에서 보낸다.
   if (guest) {
     const task = sendGuestMail(db, [{ ...order, ...paid }], 'paid').catch((e) => { console.error('guest mail', orderId, String(e)); return false; });

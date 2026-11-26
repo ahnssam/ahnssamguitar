@@ -496,6 +496,8 @@
 <div id="gate" class="gate"><i class="fas fa-spinner fa-spin"></i><p>로그인 상태를 확인하고 있어요…</p></div>
 
 <main id="app" class="wrap" hidden>
+    <!-- 2026-11-26 사용자: 판매가 시작돼서 악보관리를 열면 판매부터 — 위 탭(주문 관리·정산 관리·마케팅 분석·악보 관리)과 판매 화면은 admin/sales.js 가 넣는다 -->
+    <div id="sheetsPane" hidden>
     <div class="toolbar">
         <h2>판매 악보</h2><span class="count" id="count"></span>
         <div class="tb-acts">
@@ -523,6 +525,7 @@
     <div class="toolbar2"><span class="lbl">종류</span><div class="seg" id="styleSeg"></div></div>
     <div class="toolbar2"><span class="lbl"><i class="fas fa-star" style="color:var(--gold)"></i> 안쌤의 픽</span><div class="pick-bar" id="pickBar"></div></div>
     <div id="listWrap"></div>
+    </div>
 </main>
 
 <div class="dim" id="dim"></div>
@@ -639,6 +642,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="sales.js?v=2026112602"></script>
 <script>
 (function () {
     'use strict';
@@ -712,6 +716,9 @@
         sb = window.ahnssamAuth.supabase;
         $('gate').hidden = true;
         $('app').hidden = false;
+        // 판매 탭(주문 관리·정산 관리·마케팅 분석) — 판매 페이지의 '악보 편집'으로 왔으면(?edit=) 악보 관리 탭부터
+        if (window.adminSales) window.adminSales.start(sb, { edit: new URL(location.href).searchParams.has('edit') });
+        else $('sheetsPane').hidden = false;
         load().then(openFromLink);
     }
     window.addEventListener('ahnssam-auth-settled', e => onAuth(e.detail && e.detail.user));

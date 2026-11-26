@@ -69,6 +69,8 @@
         cover_not_yet: '이 악보는 아직 사이트에서 살 수 없어요. 지금은 풀스코어에서 살 수 있어요.',
         bad_email: '이메일 주소를 다시 확인해 주세요.',
         too_many: '주문이 너무 많아요. 잠시 뒤 다시 시도해 주세요.',
+        over_limit: '한 번에 1만원까지 결제할 수 있어요. 장바구니에서 몇 개만 골라 나눠서 결제해 주세요.',
+        too_many_items: '한 번에 악보 10개까지 살 수 있어요.',
     };
     const errText = e => {
         const m = String((e && e.message) || e || '');
@@ -233,9 +235,11 @@
     }
 
     // 구매하기 — 성공하면 토스 결제창으로 넘어가고, 결제가 끝나면 purchases.html 로 돌아온다.
-    // sheetId 는 악보 하나, 또는 같은 곡의 악보 여러 개(반주 + 기타솔로 — 함께 사면 서버가 500원 깎는다)
+    // sheetId 는 악보 하나, 또는 여러 개(반주 + 기타솔로 — 같은 곡이면 서버가 500원 깎는다 · 장바구니면 여러 곡, 10개·1만원까지)
     async function buy(sheetId) {
         const ids = [].concat(sheetId);
+        // 결제가 끝나 purchases.html 로 돌아오면 장바구니(cart.js)에서 이 악보들을 뺀다 (2026-11-26)
+        try { sessionStorage.setItem('ahnssam_paying', JSON.stringify(ids)); } catch (e) {}
         await ready();
         if (!canPay()) { alert('지금은 결제를 준비하고 있어요. 조금만 기다려 주세요!'); return { status: 'closed' }; }
         // 실결제 전에는 운영 계정이 아니면 로그인 없이 체험 결제창 (실제 구매는 안 됨)
