@@ -39,7 +39,9 @@ def art_info(label):   # 그 계열 줄 뒤에서 처음 나오는 art·artMax
 FAMS = {}
 for key, label, nm in [('strat', "strat: { name: '스트랫'", '스트랫'), ('strat2', "strat2: { name: '스트랫'", '스트랫'), ('strat3', "strat3: { name: '스트랫'", '스트랫'), ('tele', "tele: { name: '텔레'", '텔레'), ('tele2', "tele2: { name: '텔레'", '텔레'), ('lespaul', "lespaul: { name: '레스폴'", '레스폴'), ('lespaul2', "lespaul2: { name: '레스폴'", '레스폴'),
                        ('acoustic2', "acoustic2: { name: '통기타'", '통기타'), ('bass2', "bass2: { name: '베이스'", '베이스'),
-                       ('superstrat', "superstrat: { name: '슈퍼스트랫'", '슈퍼스트랫'), ('superstrat2', "superstrat2: { name: '슈퍼스트랫'", '슈퍼스트랫'), ('acoustic', "acoustic: { name: '통기타'", '통기타'), ('bass', "bass: { name: '베이스'", '베이스')]:
+                       ('superstrat', "superstrat: { name: '슈퍼스트랫'", '슈퍼스트랫'), ('superstrat2', "superstrat2: { name: '슈퍼스트랫'", '슈퍼스트랫'), ('acoustic', "acoustic: { name: '통기타'", '통기타'), ('bass', "bass: { name: '베이스'", '베이스'),
+                       # 크리스마스 세트(2026-11-26)
+                       ('tele3', "tele3: { name: '텔레'", '텔레'), ('lespaul3', "lespaul3: { name: '레스폴'", '레스폴'), ('superstrat3', "superstrat3: { name: '슈퍼스트랫'", '슈퍼스트랫'), ('acoustic3', "acoustic3: { name: '통기타'", '통기타'), ('bass3', "bass3: { name: '베이스'", '베이스')]:
     art, amax = art_info(label)
     FAMS[key] = dict(name=nm, set=set_name(label, nm), names=names_after(label), art=art, artMax=amax, sq=False)
 for key, glabel, flabel, nm in [('amp', "amp: { name: '앰프', art: 'amp'", "FAMS.amp = {", '앰프'), ('multi', "fx: { name: '멀티이펙터', art: 'fx'", "FAMS.multi = {", '멀티이펙터')]:
@@ -47,7 +49,7 @@ for key, glabel, flabel, nm in [('amp', "amp: { name: '앰프', art: 'amp'", "FA
     m = re.search(r"FAMS\.%s\.dexName = '([^']*)'" % key, src)   # 2026-11-19 1세트에도 세트 이름(2세트가 생겨서)
     FAMS[key] = dict(name=nm, set=m.group(1) if m else nm, names=names_after(glabel), art=art, artMax=amax, sq=True)
 # 앰프·이펙터 2세트(2026-11-19): 증기기관 앰프 · 오락실 멀티이펙터 · 오락실 페달 — FAMS.<계열> = { ... names: [ ... ] } 한 덩어리
-for key, nm in [('amp2', '앰프'), ('multi2', '멀티이펙터'), ('pedal', '페달')]:
+for key, nm in [('amp2', '앰프'), ('multi2', '멀티이펙터'), ('pedal', '페달'), ('amp3', '앰프'), ('multi3', '멀티이펙터'), ('pedal2', '페달')]:   # 3세트(크리스마스)는 2026-11-26
     label = f'FAMS.{key} = {{'
     art, amax = art_info(label)
     FAMS[key] = dict(name=nm, set=set_name(label, nm), names=names_after(label), art=art, artMax=amax, sq=True)
