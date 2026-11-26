@@ -34,7 +34,7 @@
     let BUY = {};      // 회원 id → { email, nickname }
     let buyersFn = true, traffic = null, trafficFn = true, backfilled = false;
     const ST = {
-        o: { period: '30d', from: '', to: '', status: 'paid', who: 'all', test: false, q: '', page: 1, open: null },
+        o: { period: '30d', from: '', to: '', status: 'paid', who: 'all', test: false, q: '', page: 1, open: null, odd: false },
         s: { unit: 'month', test: false, sel: null, fee: store.get('feeRate', 3.74) },
         m: { period: '30d', from: '', to: '', all: false, sort: 'views', dir: -1 },
     };
@@ -78,7 +78,7 @@ table.sl{width:100%;border-collapse:collapse;font-size:13.5px}
 .sl .pm{white-space:nowrap}.sl .pm small{display:block;color:var(--sub);font-size:12px}
 .tg{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:9px;background:#eef1ef;color:#666;white-space:nowrap;margin:1px 2px 1px 0}
 .tg.paid{background:#e6f5ec;color:#1f8a52}.tg.pending{background:#f1f1f1;color:#888}.tg.failed,.tg.canceled{background:#fdecea;color:#c0392b}
-.tg.test{background:#fff3d6;color:#8a6200}.tg.guest{background:#eef2f8;color:#3b5b8c}.tg.adm{background:#f3ecff;color:#6b47b8}
+.tg.new{background:#e5484d;color:#fff}.tg.test{background:#fff3d6;color:#8a6200}.tg.guest{background:#eef2f8;color:#3b5b8c}.tg.adm{background:#f3ecff;color:#6b47b8}
 .sl .more td{background:#fbfcfb;font-size:12.5px;color:#555}
 .sl .more a{color:var(--green);font-weight:700}
 .sl-empty{padding:40px;text-align:center;color:var(--sub)}
@@ -101,6 +101,9 @@ table.sl{width:100%;border-collapse:collapse;font-size:13.5px}
 .sl th button.so{border:0;background:none;font:inherit;color:inherit;cursor:pointer;padding:0;white-space:nowrap}
 .sl th button.so.on{color:var(--green);font-weight:800}
 .sl .bar{height:6px;border-radius:3px;background:#e6f2ea;margin-top:4px;overflow:hidden}.sl .bar span{display:block;height:100%;background:var(--green-2)}
+.bang{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:#e5484d;color:#fff;font-size:11px;font-weight:900;line-height:1;flex:0 0 auto}
+.oddbtn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:1px solid var(--line);border-radius:16px;background:#fff;font:inherit;font-size:13px;color:#666;cursor:pointer;white-space:nowrap}
+.oddbtn:hover{color:var(--ink)}.oddbtn.on{background:#f4f4f4}.oddbtn i{font-size:11px}
 .sl-bar .seg{max-width:100%;overflow-x:auto;scrollbar-width:none}.sl-bar .seg::-webkit-scrollbar{display:none}
 @media (max-width:760px){table.sl{min-width:660px}.mtabs button{padding:10px 11px 9px;font-size:14px}.sl-sum{grid-template-columns:1fr 1fr}.sl-two{grid-template-columns:1fr}.sl-bar input[type=search]{width:100%}.sl-card b{font-size:18px}}`;
         document.head.appendChild(st);
@@ -123,6 +126,7 @@ table.sl{width:100%;border-collapse:collapse;font-size:13.5px}
             O.forEach(o => { o.day = kday(o.created_at); o.pday = kday(o.at); });
             await loadBuyers();
             loaded = true;
+            bang();
             backfill();
         })();
         return loading;
@@ -165,6 +169,25 @@ table.sl{width:100%;border-collapse:collapse;font-size:13.5px}
         return sh;
     }
     const isAdminBuyer = o => o.user_id && BUY[o.user_id] && String(BUY[o.user_id].email || '').toLowerCase() === ADMIN_EMAIL;
+    // 결제 대기·실패는 접어 두고, 새로 생기면 빨간 느낌표 (2026-11-26 사용자: '결제 실패, 대기 둘 다 접어놔. 이중에 뭐가 올라가면
+    //   빨간 느낌표 띄우고 내가 확인하면 느낌표 없어지는 식으로'). 확인 = 접힌 칸을 열어 본 것.
+    //   본 때는 이 브라우저에 기억(admin.oddSeen) — 다른 기기는 그 기기에서 한 번 열면 없어진다. 운영 계정이 만든 주문·테스트 결제는 세지 않는다
+    const isOdd = o => (o.status === 'pending' || o.status === 'failed' || o.status === 'canceled') && !o.is_test
+        && !isAdminBuyer(o) && String(o.guest_email || '').toLowerCase() !== ADMIN_EMAIL;
+    let oddSeen = +store.get('oddSeen', 0) || 0, oddPrev = oddSeen;   // oddPrev: 열어 본 그때 'NEW' 꼬리표를 붙일 기준
+    const newOdd = () => O.filter(o => isOdd(o) && Date.parse(o.created_at) > oddSeen);
+    function bang() {   // 주문 관리 탭의 빨간 느낌표
+        const b = document.querySelector('#mtabs [data-t="orders"]'); if (!b) return;
+        const n = loaded ? newOdd().length : 0, cur = b.querySelector('.bang');
+        if (n && !cur) b.insertAdjacentHTML('beforeend', `<span class="bang" title="새 결제 대기·실패 ${n}건">!</span>`);
+        else if (!n && cur) cur.remove();
+        else if (cur) cur.title = `새 결제 대기·실패 ${n}건`;
+    }
+    function seeOdd() {   // 접힌 칸을 열었다 = 확인함. 기기 시계가 아니라 지금 있는 대기·실패 주문의 서버 시각(가장 늦은 것)까지 본 것으로
+        oddPrev = oddSeen;
+        oddSeen = O.reduce((m, o) => isOdd(o) ? Math.max(m, Date.parse(o.created_at)) : m, oddSeen);
+        store.set('oddSeen', oddSeen); bang();
+    }
     const paidOf = test => O.filter(o => o.status === 'paid' && (test || !o.is_test));
     const sheetName = id => (SH[id] && SH[id].title) || '(지운 악보)';
     const styleOf = id => STYLE[(SH[id] && SH[id].style)] || STYLE.other;
@@ -204,9 +227,10 @@ table.sl{width:100%;border-collapse:collapse;font-size:13.5px}
         let L = O.filter(o => o.day >= from && o.day <= to && (p.test || !o.is_test));
         const cnt = { paid: 0, pending: 0, failed: 0 };
         L.forEach(o => { if (o.status === 'paid') cnt.paid++; else if (o.status === 'pending') cnt.pending++; else cnt.failed++; });
-        if (p.status === 'paid') L = L.filter(o => o.status === 'paid');
+        if (!p.odd || p.status === 'paid') L = L.filter(o => o.status === 'paid');
         else if (p.status === 'pending') L = L.filter(o => o.status === 'pending');
-        else if (p.status === 'failed') L = L.filter(o => o.status === 'failed' || o.status === 'canceled');
+        else L = L.filter(o => o.status === 'failed' || o.status === 'canceled');
+        const isNew = o => p.odd && isOdd(o) && Date.parse(o.created_at) > oddPrev;
         if (p.who === 'member') L = L.filter(o => o.user_id); else if (p.who === 'guest') L = L.filter(o => !o.user_id);
         if (q) L = L.filter(o => {
             const b = BUY[o.user_id] || {};
@@ -228,7 +252,7 @@ table.sl{width:100%;border-collapse:collapse;font-size:13.5px}
                 <td class="who">${who}</td>
                 <td class="pm">${esc(o.method || '–')}${o.pay_detail && o.pay_detail !== o.method ? `<small>${esc(o.pay_detail)}</small>` : ''}</td>
                 <td class="r amt">${won(o.amount)}</td>
-                <td><span class="tg ${esc(o.status)}">${STATUS[o.status] || esc(o.status)}</span>${o.is_test ? '<span class="tg test">테스트</span>' : ''}</td></tr>`
+                <td>${isNew(o) ? '<span class="tg new">NEW</span>' : ''}<span class="tg ${esc(o.status)}">${STATUS[o.status] || esc(o.status)}</span>${o.is_test ? '<span class="tg test">테스트</span>' : ''}</td></tr>`
                 + (open ? `<tr class="more"><td colspan="6">주문번호 <span class="oid">${esc(o.order_id)}</span> · ${esc(o.order_name)}
                     ${o.approved_at ? ` · 결제 승인 ${esc(new Date(Date.parse(o.approved_at) + KST).toISOString().slice(0, 16).replace('T', ' '))}` : ''}
                     ${o.receipt_url ? ` · <a href="${esc(o.receipt_url)}" target="_blank" rel="noopener">카드 영수증 <i class="fas fa-arrow-up-right-from-square"></i></a>` : ''}
@@ -239,16 +263,17 @@ table.sl{width:100%;border-collapse:collapse;font-size:13.5px}
         return `${summary()}
             <div class="sl-bar"><span class="lbl">기간</span>${periodSeg('o', p)}</div>
             <div class="sl-bar">
-                <div class="seg" data-oseg="status">${[['paid', `결제 완료 ${cnt.paid}`], ['all', '전체'], ['pending', `결제 대기 ${cnt.pending}`], ['failed', `실패·취소 ${cnt.failed}`]].map(([k, n]) => `<button data-v="${k}"${p.status === k ? ' class="on"' : ''}>${n}</button>`).join('')}</div>
+                <div class="seg" data-oseg="status">${[['paid', `결제 완료 ${cnt.paid}`], ...(p.odd ? [['pending', `결제 대기 ${cnt.pending}`], ['failed', `실패·취소 ${cnt.failed}`]] : [])].map(([k, n]) => `<button data-v="${k}"${(p.odd ? p.status : 'paid') === k ? ' class="on"' : ''}>${n}</button>`).join('')}</div>
+                <button type="button" class="oddbtn${p.odd ? ' on' : ''}" data-odd>${p.odd ? '접기 <i class="fas fa-chevron-up"></i>' : `결제 대기·실패 ${cnt.pending + cnt.failed}${newOdd().length ? '<span class="bang">!</span>' : ''} <i class="fas fa-chevron-down"></i>`}</button>
                 <div class="seg" data-oseg="who">${[['all', '전체'], ['member', '회원'], ['guest', '비회원']].map(([k, n]) => `<button data-v="${k}"${p.who === k ? ' class="on"' : ''}>${n}</button>`).join('')}</div>
                 <label class="ck"><input type="checkbox" data-otest${p.test ? ' checked' : ''}> 테스트 결제 포함</label>
                 <span class="sp"></span>
                 <input type="search" data-oq placeholder="주문번호·이메일·닉네임·곡명" value="${esc(p.q)}">
             </div>
-            <div class="sl-bar"><span class="lbl">이 기간 ${p.status === 'paid' ? '' : '(결제 완료만) '}매출 <b style="color:var(--green)">${won(rev)}</b> · 결제 ${paid.length}건 · 악보 ${items}개${paid.length ? ` · 주문당 평균 ${won(rev / paid.length)}` : ''}</span></div>
+            <div class="sl-bar"><span class="lbl">이 기간 ${!p.odd || p.status === 'paid' ? '' : '(결제 완료만) '}매출 <b style="color:var(--green)">${won(rev)}</b> · 결제 ${paid.length}건 · 악보 ${items}개${paid.length ? ` · 주문당 평균 ${won(rev / paid.length)}` : ''}</span></div>
             <div class="sl-tw"><table class="sl"><thead><tr><th>주문일시</th><th>주문 악보</th><th>구매자</th><th>결제 방법</th><th class="r">금액</th><th>상태</th></tr></thead>
             <tbody>${rows || `<tr><td colspan="6" class="sl-empty">이 조건의 주문이 없어요</td></tr>`}</tbody></table></div>${pager}
-            <p class="sl-note">줄을 누르면 주문번호·카드 영수증·실패 사유가 보여요. 결제 대기 = 결제창을 열었다가 끝내지 않은 주문이에요.${buyersFn ? '' : ' <b>회원 이메일은 서버 함수(db/sheet_shop_admin.sql) 적용 뒤에 보여요.</b>'}</p>`;
+            <p class="sl-note">줄을 누르면 주문번호·카드 영수증·실패 사유가 보여요. 결제 대기 = 결제창을 열었다가 끝내지 않은 주문(돈은 안 나감). 결제 대기·실패는 접어 두고, 새로 생기면 빨간 느낌표가 떠요 — 열어 보면 없어져요.${buyersFn ? '' : ' <b>회원 이메일은 서버 함수(db/sheet_shop_admin.sql) 적용 뒤에 보여요.</b>'}</p>`;
     }
 
     // ---------- 정산 관리 ----------
@@ -424,6 +449,12 @@ table.sl{width:100%;border-collapse:collapse;font-size:13.5px}
         if (P) { const k = P.closest('[data-pseg]').dataset.pseg, s = ST[k]; s.period = P.dataset.p; if (k === 'o') s.page = 1; render(); return; }
         const os = e.target.closest('[data-oseg] [data-v]');
         if (os) { ST.o[os.closest('[data-oseg]').dataset.oseg] = os.dataset.v; ST.o.page = 1; render(); return; }
+        if (e.target.closest('[data-odd]')) {   // 결제 대기·실패 펼치기 = 확인. 새로 생긴 게 실패뿐이면 실패 목록부터
+            const o = ST.o; o.odd = !o.odd; o.page = 1; o.open = null;
+            if (o.odd) { const nw = newOdd(); o.status = nw.length && nw.every(x => x.status !== 'pending') ? 'failed' : 'pending'; seeOdd(); }
+            else { o.status = 'paid'; oddPrev = oddSeen; }
+            render(); return;
+        }
         const pg = e.target.closest('[data-opage]'); if (pg) { ST.o.page = +pg.dataset.opage; render(); return; }
         const su = e.target.closest('[data-sseg] [data-u]'); if (su) { ST.s.unit = su.dataset.u; ST.s.sel = null; render(); return; }
         const sk = e.target.closest('[data-sk]'); if (sk) { ST.s.sel = sk.dataset.sk; render(); return; }
