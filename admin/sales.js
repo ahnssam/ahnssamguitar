@@ -329,13 +329,14 @@ table.sl{width:100%;border-collapse:collapse;font-size:13.5px}
         }).join('');
         const chart = `<div class="sl-chart"><h4>${{ day: '최근 31일', week: '최근 13주', month: '달마다', year: '해마다' }[u]} 매출 <small>막대를 누르면 그 기간 자세히</small></h4>
             <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="기간별 매출 막대 그래프"><line x1="0" x2="${W}" y1="${H - pad}" y2="${H - pad}" stroke="#e6e6e6"/>${bars}</svg></div>`;
-        const tbody = R.slice().reverse().map(r => `<tr class="clk${r.k === p.sel ? ' sel' : ''}" data-sk="${esc(r.k)}"><td>${esc(blabel(r.k, u))}</td><td class="r">${r.n}</td><td class="r">${r.items}</td>
+        const tbody = R.slice().reverse().map(r => `<tr class="clk${r.k === p.sel ? ' sel' : ''}" data-sk="${esc(r.k)}"><td>${esc(blabel(r.k, u))}</td><td class="r">${r.n}</td>
             <td class="r amt">${won(r.rev)}</td><td class="r">${r.rev ? '−' + won(r.fee) : '–'}</td><td class="r">${won(r.dep)}</td>
             ${u === 'month' || u === 'year' ? `<td class="r">${r.km ? '−' + won(r.km) : '–'}</td><td class="r amt">${won(r.net)}</td>` : ''}</tr>`).join('');
         const T = R.reduce((a, r) => ({ n: a.n + r.n, items: a.items + r.items, rev: a.rev + r.rev, fee: a.fee + r.fee, dep: a.dep + r.dep, km: a.km + (r.km || 0) }), { n: 0, items: 0, rev: 0, fee: 0, dep: 0, km: 0 });
-        const table = `<div class="sl-tw"><table class="sl"><thead><tr><th>기간</th><th class="r">결제</th><th class="r">악보</th><th class="r">매출</th><th class="r">결제 수수료(추정)</th><th class="r">입금 예상</th>
+        // 표 칸: 기간 · 결제 · 매출 · 수수료 · 입금 예상 (2026-11-26 사용자: '결제·악보 둘 다 있을 필요 없다, 결제 하나만' — 악보 수 칸을 뺌)
+        const table = `<div class="sl-tw"><table class="sl"><thead><tr><th>기간</th><th class="r">결제</th><th class="r">매출</th><th class="r">결제 수수료(추정)</th><th class="r">입금 예상</th>
             ${u === 'month' || u === 'year' ? '<th class="r">음저협 사용료(추정)</th><th class="r">남는 돈(추정)</th>' : ''}</tr></thead><tbody>${tbody}
-            <tr><td><b>합계</b></td><td class="r"><b>${T.n}</b></td><td class="r"><b>${T.items}</b></td><td class="r amt">${won(T.rev)}</td><td class="r">${T.rev ? '−' + won(T.fee) : '–'}</td><td class="r"><b>${won(T.dep)}</b></td>
+            <tr><td><b>합계</b></td><td class="r"><b>${T.n}</b></td><td class="r amt">${won(T.rev)}</td><td class="r">${T.rev ? '−' + won(T.fee) : '–'}</td><td class="r"><b>${won(T.dep)}</b></td>
             ${u === 'month' || u === 'year' ? `<td class="r">${T.km ? '−' + won(T.km) : '–'}</td><td class="r amt">${won(T.dep - T.km)}</td>` : ''}</tr></tbody></table></div>`;
         // 고른 기간 자세히: 많이 팔린 악보 · 결제 방법 · 회원/비회원
         const S = R.find(r => r.k === p.sel) || R[R.length - 1], per = {};
@@ -346,7 +347,7 @@ table.sl{width:100%;border-collapse:collapse;font-size:13.5px}
         const detail = `<div class="sl-two"><div class="sl-box"><h4>${esc(blabel(S.k, u))} 많이 팔린 악보<small>매출 순</small></h4>
             ${top.map(([id, v], i) => `<div class="sl-rk"><span class="n">${i + 1}</span><span class="t">${esc(sheetName(id))}<small>${esc(styleOf(id)[0])}</small></span><span class="v">${won(v.rev)}<small>${v.n}개</small></span></div>`).join('') || '<p class="sl-empty">이 기간에 팔린 악보가 없어요</p>'}</div>
             <div class="sl-box"><h4>${esc(blabel(S.k, u))} 결제</h4>
-            <div class="sl-kv"><span>매출</span><b>${won(S.rev)}</b></div><div class="sl-kv"><span>결제</span><b>${S.n}건 · 악보 ${S.items}개</b></div>
+            <div class="sl-kv"><span>매출</span><b>${won(S.rev)}</b></div><div class="sl-kv"><span>결제</span><b>${S.n}건</b></div>
             <div class="sl-kv"><span>회원 / 비회원</span><b>${mem} / ${S.n - mem}</b></div>
             ${Object.entries(pm).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<div class="sl-kv"><span>${esc(k)}</span><b>${n}건</b></div>`).join('')}
             <p class="sl-note">결제 수수료율 <input class="sl-fee" type="number" step="0.01" min="0" max="20" data-fee value="${esc(p.fee)}">% (추정 — 토스 상점관리자 정산 내역과 맞춰 고쳐 주세요. 이 브라우저에 기억해요)</p></div></div>`;
