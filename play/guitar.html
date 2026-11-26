@@ -157,6 +157,15 @@
     .dex .cell.no span { background: none; color: #9aa8a1; }
     .dex .cell.hi { box-shadow: inset 0 0 0 2px #f5c542; }
     .dex .note2 { margin-top: 4px; }
+    /* 도감 탭 (2026-11-26 사용자: '도감도 탭화 — 맨 처음엔 전체, 그 옆으로 악기별로'). 내려도 사이트 메뉴 바로 아래에 붙는다(--hdh = 위에 붙는 머리줄 높이) */
+    .dex .dxtabs { position: sticky; top: var(--hdh, 0px); z-index: 6; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin: 0 -4px 8px; padding: 6px 4px 8px; background: var(--cream); }
+    .dex .dxtabs::-webkit-scrollbar { display: none; }
+    .dex .dxtabs button { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 44px; padding: 6px 7px 5px; border-radius: 11px; border: 1.5px solid var(--line); background: #fff; font: inherit; font-weight: 900; font-size: 13.5px; line-height: 1.2; color: #5a6b62; cursor: pointer; }
+    .dex .dxtabs button small { font-size: 10.5px; font-weight: 800; color: #9aa8a1; }
+    .dex .dxtabs button.full small { color: #2f9e5f; }
+    .dex .dxtabs button.on { background: var(--green-deep); border-color: var(--green-deep); color: #fff; }
+    .dex .dxtabs button.on small { color: #cdeadb; }
+    .dex .dxtabs button.on.full small { color: #ffd76a; }
     /* 운영 계정 도감 (2026-11-13 사용자: 헤드머신 숫자가 안 맞는 그림을 직접 고치려고 — 168칸 모두, 자르지 않은 전체 그림으로) */
     .dex .dx-admin { display: flex; align-items: center; gap: 8px; margin: -4px 2px 12px; padding: 8px 10px; border-radius: 10px; background: #fff3cf; font-size: 12.5px; font-weight: 800; color: #7a5200; }
     .dex .dx-admin button { margin-left: auto; padding: 5px 11px; border-radius: 99px; border: 1.5px solid #e0b64a; background: #fff; font-size: 12px; font-weight: 800; color: #7a5200; }
@@ -2858,6 +2867,10 @@ function renderTable() {
 const DEX_FAMS = ['strat', 'strat2', 'strat3', 'tele', 'tele2', 'tele3', 'lespaul', 'lespaul2', 'lespaul3', 'superstrat', 'superstrat2', 'superstrat3',
     'acoustic', 'acoustic2', 'acoustic3', 'bass', 'bass2', 'bass3', 'amp', 'amp2', 'amp3', 'multi', 'multi2', 'multi3', 'pedal', 'pedal2'];   // 2026-11-26 크리스마스 세트로 26줄(546칸)
 const dexHas = (f, lv) => !!((S.dex[f] | 0) & (1 << lv));
+// 도감 탭 (2026-11-26 사용자: '도감도 탭화 해서, 맨 처음엔 전체를 보여주고, 그 옆으로 각 악기별로. 스트랫, 텔레 등등'):
+//   [전체] [스트랫] [텔레] [레스폴] [슈퍼스트랫] [통기타] [베이스] [앰프] [이펙터(멀티·페달)] — 도감 탭에 들어올 때마다 '전체'부터(setTab)
+const DEX_KINDS = [['all', '전체'], ['strat', '스트랫'], ['tele', '텔레'], ['lespaul', '레스폴'], ['superstrat', '슈퍼스트랫'], ['acoustic', '통기타'], ['bass', '베이스'], ['amp', '앰프'], ['fx', '이펙터']];
+const dexKindOf = f => baseOf(f) === 'multi' ? 'fx' : baseOf(f) === 'amp' ? 'amp' : f.replace(/\d+$/, '');
 // 도감 특전 (2026-11-23 사용자: '도감이 모일 때마다 특전 — 악기 하나 찰 때마다 성공 확률을 올리든 돈 획득량을 올리든' · '획득량은 판매했을 때 버는 금액을'):
 //   도감 한 칸마다 성공 +0.05%(그 단계 성공 확률의 n% — 망치·작업대와 같은 셈, 줄 끊김에서 가져옴) · 팔 때 받는 골드 +0.1%. 357칸 다 채우면 성공 +17.85% · 판매 +35.7%.
 //   숫자는 Claude가 정함(바꿔도 됨). 배틀 보상은 그대로. 운영 계정의 '전체 그림'과 상관없이 내가 닿은 칸(S.dex)만 센다
@@ -2942,7 +2955,7 @@ addEventListener('keydown', e => { if (e.key === 'Escape') dexClose(); else if (
 //   운영 계정으로 로그인해 있으면 168칸을 모두 열고, 칸·크게 보기 모두 자르지 않은 전체 그림(헤드까지)으로 보여 준다.
 //   크게 보기에 파일 이름(strat_07.webp 등)과 '원본 열기'. 내 도감 기록(S.dex)은 그대로 두고, 위 단추로 '내 도감만 보기'와 오간다.
 //   운영 계정인지는 서버 is_site_admin()에 묻는다(로그인한 계정이 바뀌면 다시 물음)
-var ADMIN = false, REAL_ADMIN = false, adminUid = null, dexAll = mem.get('gk.dexAll', true) !== false;   // var: setTab 이 이 줄보다 먼저 불려도 괜찮게
+var ADMIN = false, REAL_ADMIN = false, adminUid = null, dexAll = mem.get('gk.dexAll', true) !== false, dexKind = 'all';   // var: setTab 이 이 줄보다 먼저 불려도 괜찮게
 //   ADMIN = 게임 안에서 운영 계정 대우(테스트 모드면 false), REAL_ADMIN = 진짜 운영 계정(테스트 메뉴를 보여 줄지)
 function checkAdmin() {
     const uid = acctId();
@@ -3010,20 +3023,33 @@ function renderDex() {
     const N = MAX + 1, cnt = f => Array.from({ length: N }, (_, i) => dexHas(f, i)).filter(Boolean).length;
     const total = DEX_FAMS.reduce((n, f) => n + cnt(f), 0), all = DEX_FAMS.length * N;
     const el = $('#tab-dex');
+    if (!DEX_KINDS.some(([k]) => k === dexKind)) dexKind = 'all';
+    const fams = dexKind === 'all' ? DEX_FAMS : DEX_FAMS.filter(f => dexKindOf(f) === dexKind);
+    const tabsLeft = (el.querySelector('.dxtabs') || {}).scrollLeft || 0;   // 탭 줄을 옆으로 밀어 둔 자리 그대로
     el.classList.toggle('whole', whole);
     el.innerHTML = `<div class="dx-top"><b>기타 도감 ${total} / ${all}</b><small>찾거나 강화해서 닿은 단계가 모여요</small></div>
         <div class="dx-bar"><i style="width:${(total / all * 100).toFixed(1)}%"></i></div>
         <div class="dx-perk"><i class="fas fa-gift"></i><span>도감 특전 <b>성공 +${dexUp()}%</b> · <b>판매 +${dexGold()}%</b></span><small>한 칸 찰 때마다 성공 +${DEX_UP_T}% · 판매 +${DEX_GOLD_T}% · 다 모으면 성공 +${DEX_FULL_UP}% · 판매 +${DEX_FULL_GOLD}%</small></div>
         ${ADMIN ? `<div class="dx-admin"><i class="fas fa-user-gear"></i>${whole ? '운영 계정 · 전체 그림 (초록 점 = 내가 닿은 칸)' : '운영 계정 · 내 도감'}<button type="button" data-a="dexall">${whole ? '내 도감만 보기' : '전체 그림 보기'}</button></div>` : ''}
-        ${DEX_FAMS.map(f => { const F = FAMS[f], c = cnt(f);
+        <div class="dxtabs" role="tablist">${DEX_KINDS.map(([k, nm]) => {
+            const fs = k === 'all' ? DEX_FAMS : DEX_FAMS.filter(f => dexKindOf(f) === k), c = fs.reduce((n, f) => n + cnt(f), 0), a = fs.length * N;
+            return `<button type="button" role="tab" data-a="dexkind" data-k="${k}" class="${k === dexKind ? 'on' : ''} ${c === a ? 'full' : ''}" aria-selected="${k === dexKind}">${nm}<small>${c}/${a}</small></button>`; }).join('')}</div>
+        ${fams.map(f => { const F = FAMS[f], c = cnt(f);
             return `<div class="fam"><h4>${esc(F.dexName || F.name)}<small class="${c === N ? 'full' : ''}">${c === N ? '완성! ' : ''}${c} / ${N}</small></h4><div class="grid">${
                 Array.from({ length: N }, (_, i) => whole || dexHas(f, i)
                     ? `<button type="button" class="cell ${i >= 10 ? 'hi' : ''} ${F.sq ? 'sq' : ''} ${whole && dexHas(f, i) ? 'mine' : ''}" data-a="dex" data-f="${f}" data-lv="${i}" title="+${i} ${esc(F.names[i])}"><img src="${artSrc(f, i)}" alt="" loading="lazy"><span>+${i}</span></button>`
                     : `<div class="cell no" title="아직 못 닿은 단계"><span>+${i}</span></div>`).join('')}</div></div>`; }).join('')}
         <p class="note2">칸을 누르면 그 단계 이름이 보여요. 부서지거나 팔아도 한 번 닿은 단계는 도감에 남아요.</p>`;
+    // 탭 줄은 위에 붙는 머리줄(사이트 메뉴, 앱에선 놀이터 줄) 바로 아래에 붙고, 고른 탭이 보이게 옆으로 민다
+    const hd = [...document.querySelectorAll('header.site-hd, .ph')].find(h => h.offsetHeight && getComputedStyle(h).position === 'sticky');
+    el.style.setProperty('--hdh', (hd ? hd.offsetHeight : 0) + 'px');
+    const bar = el.querySelector('.dxtabs'), on = bar.querySelector('.on');
+    bar.scrollLeft = tabsLeft;
+    if (on.offsetLeft < bar.scrollLeft || on.offsetLeft + on.offsetWidth > bar.scrollLeft + bar.clientWidth) bar.scrollLeft = on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2;
 }
 
 function setTab(t) {
+    if (t === 'dex' && tab !== 'dex') dexKind = 'all';   // 도감을 누르면 늘 '전체'부터 (2026-11-26 사용자)
     if (t === 'rank' && tab !== 'rank') rkAll = false;   // 랭킹을 누르면 늘 '내 순위'(내 정보 + 내 랭킹)부터 (2026-11-24 사용자)
     if (t !== 'room') { roomFull = ''; pickId = ''; }   // 꽉 찼다는 안내는 컬렉션을 떠나면 없앤다
     tab = t; dexClose();
@@ -5206,6 +5232,11 @@ $('#app').addEventListener('click', e => {
     else if (a === 'btrefill') btRefill();
     else if (a === 'gocase') toast(`파괴되면 부서진 조각이 나와요. ${CASE_SHARDS}개 모이면 하드케이스가 저절로 만들어져요 (조각 ${S.shards}/${CASE_SHARDS} · 하케 ${S.cases}/${CASE_MAX})`);   // 2026-11-15 상점 케이스 칸을 지워서 안내만
     else if (a === 'dexall') { dexAll = !dexAll; mem.set('gk.dexAll', dexAll); dexClose(); renderDex(); }
+    else if (a === 'dexkind') {   // 도감 탭: 바꾸면 탭 줄이 화면 위쪽에 오게(아래로 많이 내려 보던 중이면)
+        dexKind = b.dataset.k; dexClose(); renderDex();
+        const el = $('#tab-dex'), top = el.getBoundingClientRect().top - (parseFloat(el.style.getPropertyValue('--hdh')) || 0);
+        if (top < 0) window.scrollBy(0, top);
+    }
     else if (a === 'dex') dexZoom(b.dataset.f, +b.dataset.lv, b);   // 2026-11-13 사용자: 도감에서 모은 기타를 누르면 그 자리 근처에 두 배쯤
     else if (a === 'new') findGuitar(false);
     else if (a === 'nextg') { const g = S.bench; if (g && g.lv < MAX) toast(dexHas(giftFam(g.f), g.lv + 1) ? `다음 단계: +${g.lv + 1} ${gname({ ...g, lv: g.lv + 1 })}` : `다음 단계는 +${g.lv + 1} ??? — 강화해서 확인해 봐요`); }
